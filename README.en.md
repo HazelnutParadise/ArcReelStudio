@@ -17,17 +17,9 @@
 </p>
 
 <p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/lang-中文-red?style=flat-square" alt="中文"></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/lang-繁體中文-red?style=flat-square" alt="繁體中文"></a>
   <a href="README.en.md"><img src="https://img.shields.io/badge/lang-English-blue?style=flat-square" alt="English"></a>
-</p>
-
-<p align="center">
-  <a href="https://github.com/ArcReel/ArcReel/releases/latest"><img src="https://img.shields.io/github/v/release/ArcReel/ArcReel?style=flat-square&label=release" alt="Release"></a>
-  <a href="https://github.com/ArcReel/ArcReel/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/ArcReel/ArcReel/test.yml?style=flat-square&label=tests" alt="Tests"></a>
-  <a href="https://codecov.io/gh/ArcReel/ArcReel"><img src="https://img.shields.io/codecov/c/github/ArcReel/ArcReel?style=flat-square&label=coverage" alt="Coverage"></a>
-  <a href="https://hub.docker.com/r/arcreel/arcreel"><img src="https://img.shields.io/docker/pulls/arcreel/arcreel?style=flat-square&logo=docker&logoColor=white&label=docker%20pulls" alt="Docker"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-2ea44f?style=flat-square" alt="License"></a>
-  <a href="https://github.com/ArcReel/ArcReel"><img src="https://img.shields.io/github/stars/ArcReel/ArcReel?style=flat-square" alt="Stars"></a>
 </p>
 
 <p align="center">
@@ -36,49 +28,14 @@
   <a href="https://docs.arc-reel.com/en/guide/getting-started">Getting Started</a>
   ·
   <a href="https://docs.arc-reel.com/en/">Documentation</a>
-  ·
-  <a href="#community">Community</a>
 </p>
 
 <p align="center">
   <img src="docs/assets/screenshots/hero.webp" alt="ArcReel Workspace" width="900">
 </p>
 
-## Sponsors
+> This project is a modified version of [ArcReel](https://github.com/ArcReel/ArcReel), maintained by HazelnutParadise. See "License" below for the original project's license and attribution terms.
 
-> [Want to appear here?](mailto:support@arc-reel.com)
-
-<table>
-  <tr>
-    <td width="200" align="center" valign="top">
-      <a href="https://metaso.cn/minimax-h3/?s=arc"><img src="docs/assets/sponsors/metaso.png" alt="Metaso" width="180"></a>
-    </td>
-    <td valign="top">
-      <strong>MiniMax H3 Video Generation API | Metaso</strong><br>
-      Metaso offers cost-effective MiniMax H3 video generation: <strong>CNY 0.09/sec at 768P, CNY 0.15/sec at 2K</strong>. Native 2K, synchronized audio and video, an API compatible with the <strong>OpenAI protocol</strong>, and <strong>ComfyUI</strong> support — no GPU deployment required.<br>
-      🎁 <a href="https://metaso.cn/minimax-h3/?s=arc">Sign up via ArcReel's exclusive link</a> to claim bonus credits and an exclusive discount.
-    </td>
-  </tr>
-  <tr>
-    <td width="200" align="center" valign="top">
-      <a href="https://ofox.ai/?utm_source=github&utm_medium=sponsorship&utm_content=arcreel"><img src="docs/assets/sponsors/ofox-ai.svg" alt="OfoxAI" width="180"></a>
-    </td>
-    <td valign="top">
-      <strong>OfoxAI: Model APIs for scripts, images, and video</strong><br>
-      Access text, image, and video models through OfoxAI. Choose capabilities for refining scripts, creating character and scene references, and generating video assets. Consult the API documentation for each model’s input requirements, supported parameters, and request format.<br>
-      <a href="https://ofox.ai/?utm_source=github&utm_medium=sponsorship&utm_content=arcreel">Explore OfoxAI models and APIs →</a>
-    </td>
-  </tr>
-  <tr>
-    <td width="200" align="center" valign="top">
-      <a href="https://go.apimart.ai/tw-arcreel"><img src="docs/assets/sponsors/apimart.webp" alt="APIMart" width="180"></a>
-    </td>
-    <td valign="top">
-      <strong>APIMart: Low-cost API for AI image & video generation</strong><br>
-      Thanks to APIMart for sponsoring this project! APIMart is a low-cost API platform for AI image & video generation — <strong>GPT-Image-2 from $0.006/image, 160+ images per dollar</strong>. One async API covers both image and video: submit a task, get an ID, fetch results via polling or callback. Batch tens of thousands of images without timeouts, switch models without changing code. Pay-as-you-go with no monthly fee — <a href="https://go.apimart.ai/tw-arcreel">sign up here</a> to get started.
-    </td>
-  </tr>
-</table>
 
 ## Screenshots
 
@@ -99,19 +56,19 @@
   <video src="https://github.com/user-attachments/assets/fcc4ceb2-64dd-44a0-a32c-e0c00b2f9796" width="100%" controls></video>
 </div>
 
-> 《入职地府后投诉鬼都是我老客户》Episode 1
+> 《入職地府後投訴鬼都是我老客戶》Episode 1
 
 <div align="center">
   <video src="https://github.com/user-attachments/assets/d6bfe589-a5c0-4961-8bfe-b7b59be3bb8a" width="100%" controls></video>
 </div>
 
-> 《入职地府后投诉鬼都是我老客户》Episode 2
+> 《入職地府後投訴鬼都是我老客戶》Episode 2
 
 <div align="center">
   <video src="https://github.com/user-attachments/assets/1e580769-80f7-4d14-b46d-68569b6e7e4c" width="100%" controls></video>
 </div>
 
-> 《入职地府后投诉鬼都是我老客户》Episode 3
+> 《入職地府後投訴鬼都是我老客戶》Episode 3
 
 ## What ArcReel is
 
@@ -142,8 +99,8 @@ Every stage can be orchestrated by the Agent, or reviewed, adjusted, and regener
 Install Docker and Docker Compose, then run:
 
 ```bash
-git clone https://github.com/ArcReel/ArcReel.git
-cd ArcReel/deploy
+git clone https://github.com/HazelnutParadise/ArcReelStudio.git
+cd ArcReelStudio/deploy
 
 cp .env.example .env
 docker compose up -d
@@ -159,6 +116,8 @@ For the complete first-run workflow, see [Getting Started](https://docs.arc-reel
 
 ## Documentation
 
+The links below point to the original project's documentation site.
+
 | Page | Purpose |
 |---|---|
 | [Documentation Home](https://docs.arc-reel.com/en/) | Entry points for users, operators, and developers |
@@ -172,48 +131,22 @@ For the complete first-run workflow, see [Getting Started](https://docs.arc-reel
 | [Architecture](https://docs.arc-reel.com/en/dev/architecture) | Agent Runtime, task queue, provider abstraction, and data layer |
 | [Contributing](https://docs.arc-reel.com/en/dev/contributing) | Local development, tests, conventions, and pull requests |
 
-## Community
+## Issues and contributing
 
-Scan the QR code to join the ArcReel Feishu community for help, release updates, and workflow discussions:
+Reproducible bugs and focused feature requests are welcome in [GitHub Issues](https://github.com/HazelnutParadise/ArcReelStudio/issues).
 
-<p align="center">
-  <img src="docs/assets/feishu-qr.png" alt="ArcReel Feishu Community QR Code" width="280">
-</p>
-
-Reproducible bugs and focused feature requests are welcome in [GitHub Issues](https://github.com/ArcReel/ArcReel/issues).
-
-## Contributing
-
-Contributions to code, documentation, tests, provider adapters, and reproducible bug reports are welcome.
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting. After cloning the repository, install the pre-commit hooks:
+Contributions to code, documentation, tests, provider adapters, and reproducible bug reports are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting. After cloning the repository, install the pre-commit hooks:
 
 ```bash
 uv run pre-commit install
 ```
 
-## Star History
-
-<a href="https://www.star-history.com/?repos=arcreel%2Farcreel&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=arcreel/arcreel&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=arcreel/arcreel&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=arcreel/arcreel&type=date&legend=top-left" />
- </picture>
-</a>
-
-## License and commercial use
+## License
 
 ArcReel is licensed under the [GNU Affero General Public License v3.0](LICENSE). Additional terms are available in [NOTICE](NOTICE).
 
-For organizations that cannot use AGPL-3.0, or need commercial deployment, white-labeling, or redistribution without AGPL obligations, contact:
+Under those terms, modified versions must preserve the original author attribution and a link to the original project, and must mark their changes:
 
-**support@arc-reel.com**
+Powered by ArcReel — <https://github.com/ArcReel/ArcReel>
 
 Copyright © 2026 Pollo3470 and ArcReel contributors
-
----
-
-<p align="center">
-  If ArcReel helps your work, consider giving the project a ⭐ Star.
-</p>
