@@ -22,6 +22,19 @@ export function UnsavedChangesBar({
 }) {
   const { t } = useTranslation("common");
   const saving = unit.status === "saving";
+  if (unit.live) {
+    // 多人即时协作：修改即时同步，不需要保存与放弃，只留一行连线状态
+    return (
+      <div className={cn("flex items-center gap-3 px-1", className)}>
+        <SaveStatus unit={unit} />
+        {unit.externalChangeMessage ? (
+          <p role="status" className="text-sm text-subtle-foreground">
+            {unit.externalChangeMessage}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
   if (!unit.dirty && unit.status === "idle") return null;
 
   return (
