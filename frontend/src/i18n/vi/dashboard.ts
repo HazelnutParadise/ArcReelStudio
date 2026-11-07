@@ -2141,6 +2141,9 @@ export default {
   'base_url_optional': 'Địa chỉ API (tùy chọn)',
   'base_url_region_china': 'Trang Trung Quốc (mặc định)',
   'base_url_region_international': 'Trang quốc tế',
+  'collab_status_live': 'Đang đồng bộ trực tiếp',
+  'collab_status_offline': 'Mất kết nối. Thay đổi sẽ đồng bộ khi kết nối lại',
+  'collab_peers_editing_field': '{{names}} đang sửa trường này',
   'claude_subscription_title': 'Gói đăng ký Claude',
   'claude_subscription_desc':
     'Đăng nhập bằng tài khoản Claude để Agent dùng hạn mức gói đăng ký của tài khoản đó. Cả không gian làm việc dùng chung hạn mức của một tài khoản.',

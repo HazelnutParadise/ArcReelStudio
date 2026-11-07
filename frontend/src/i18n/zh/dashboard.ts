@@ -2061,6 +2061,9 @@ export default {
   'base_url_optional': '接口地址（可选）',
   'base_url_region_china': '中国站（默认）',
   'base_url_region_international': '国际站',
+  'collab_status_live': '实时同步中',
+  'collab_status_offline': '已离线，修改会在重新连接后同步',
+  'collab_peers_editing_field': '{{names}} 正在编辑这个字段',
   'claude_subscription_title': 'Claude 订阅',
   'claude_subscription_desc':
     '用 Claude 账号登录后，Agent 可以使用这个账号的订阅额度。整个工作区共用同一个账号的额度。',

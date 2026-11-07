@@ -2060,6 +2060,9 @@ export default {
   'base_url_optional': '介面網址（可選）',
   'base_url_region_china': '中國站（預設）',
   'base_url_region_international': '國際站',
+  'collab_status_live': '即時同步中',
+  'collab_status_offline': '已離線，修改會在重新連線後同步',
+  'collab_peers_editing_field': '{{names}} 正在編輯這個欄位',
   'claude_subscription_title': 'Claude 訂閱',
   'claude_subscription_desc':
     '用 Claude 帳號登入後，Agent 可以使用這個帳號的訂閱額度。整個工作區共用同一個帳號的額度。',

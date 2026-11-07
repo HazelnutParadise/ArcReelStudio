@@ -44,7 +44,8 @@ logger = logging.getLogger(__name__)
 _EMPTY_UPDATE = b"\x00\x00"
 
 ChangeStream = Callable[[str], AbstractAsyncContextManager[AsyncIterator[Any]]]
-ErrorText = Callable[[str, str], str]
+#: (原因码, 细节, 语言) → 给界面看的一句话
+ErrorText = Callable[[str, str, str], str]
 
 
 class Connection(Protocol):
@@ -407,7 +408,7 @@ class CollabHub:
         if room.error is not None:
             message["error"] = {
                 "code": room.error["code"],
-                "message": self._error_text(room.error["code"], conn.locale),
+                "message": self._error_text(room.error["code"], room.error["detail"], conn.locale),
             }
         return message
 
@@ -432,11 +433,13 @@ def _room_id(ref: UnitRef) -> dict[str, str]:
 
 def create_collab_hub(project_events: Any) -> CollabHub:
     """按应用的单例组装中枢：项目文件经全局 ``ProjectManager`` 读写，外部改动来自项目事件流。"""
-    from lib.i18n import _
+    from lib.i18n import _, translate_or
     from lib.project.project_manager import get_project_manager
     from server.services.collab.units import UNIT_SPECS
 
-    def error_text(code: str, locale: str) -> str:
-        return _(f"collab_error_{code}", locale=locale)
+    def error_text(code: str, detail: str, locale: str) -> str:
+        # 认得的原因码用专门的文案，其余（如剧本校验的各类问题）用通用文案带上细节
+        generic = _("collab_error_generic", locale=locale, detail=detail or code)
+        return translate_or(f"collab_error_{code}", generic, locale=locale)
 
     return CollabHub(get_project_manager(), UNIT_SPECS, project_events.stream_events, error_text=error_text)

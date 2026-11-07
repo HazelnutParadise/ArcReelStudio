@@ -4,6 +4,8 @@ import { Anchor, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "cn";
 import { API } from "@/api";
+import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { useStaysInEpisodeView } from "@/components/canvas/episode-page/EpisodeViewScope";
 import { ImpactConfirmDialog } from "@/components/canvas/episodes/ImpactConfirmDialog";
 import { SourceKindSelect } from "@/components/canvas/episodes/SourceKindSelect";
@@ -20,6 +22,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { refreshAfterWrite } from "@/components/canvas/shared/refreshAfterWrite";
 import type { EpisodeMeta } from "@/types";
 import type { SourceKind } from "@/types/episodes-view";
+import { errMsg } from "@/utils/async";
 import { episodeDisplayName, episodePosition } from "@/utils/episode-display";
 
 /**
@@ -230,7 +233,25 @@ function SourceEditor({
   );
   // 只放行仍停留在脚本规划视图的跳转；去分集、别的集或别的视图照常询问
   const allowNavigation = useStaysInEpisodeView();
-  const unit = useEditUnit({ source: saved, save, allowNavigation });
+  const collab = useMemo(
+    () => ({
+      ref: { project: projectName, kind: "episode_source", key: String(episode) },
+      toUnit: sourceToUnit,
+      fromUnit: sourceFromUnit,
+    }),
+    [projectName, episode],
+  );
+  const unit = useEditUnit({ source: saved, save, allowNavigation, collab });
+  // 协作中改原文类型：文字已即时同步，类型照旧经确认后单独提交
+  const [kindError, setKindError] = useState<string | null>(null);
+  const changeKind = (kind: SourceKind) => {
+    if (!unit.live) {
+      unit.setValue((prev) => ({ ...prev, kind }));
+      return;
+    }
+    setKindError(null);
+    save({ text: unit.value.text, kind }).catch((err: unknown) => setKindError(errMsg(err)));
+  };
 
   const saveUnit = unit.save;
   const saving = unit.status === "saving";
@@ -260,28 +281,34 @@ function SourceEditor({
       {unit.value.kind !== null && (
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           {t("source_kind")}
-          <SourceKindSelect
-            value={unit.value.kind}
-            onChange={(kind) => unit.setValue((prev) => ({ ...prev, kind }))}
-            disabled={saving}
-            label={t("source_kind")}
-          />
+          <SourceKindSelect value={unit.value.kind} onChange={changeKind} disabled={saving} label={t("source_kind")} />
         </label>
       )}
       {/* 正文用编辑体，与只读的原文同一字族；框随内容撑高，由起步态整体滚动 */}
       <div className="max-w-[calc(40em+1.25rem)] font-editorial">
-        <Textarea
-          ref={fieldRef}
-          variant="plain"
-          value={unit.value.text}
-          onChange={(event) => unit.setValue((prev) => ({ ...prev, text: event.target.value }))}
-          // 保存期间只读：规划等这次保存落定后读已保存的原文，期间再改会让规划用上旧内容
-          readOnly={saving}
-          placeholder={t("episode_workspace_source_placeholder")}
-          aria-label={t("episode_workspace_source_title")}
-          className="-mx-2.5 min-h-40 max-h-none"
-        />
+        <CollabField live={unit.live} path="text">
+          <Textarea
+            {...liveFieldProps(unit.live, "text")}
+            ref={(el) => {
+              fieldRef.current = el;
+              if (unit.live) unit.live.fieldProps("text").ref(el);
+            }}
+            variant="plain"
+            value={unit.value.text}
+            onChange={(event) => unit.setValue((prev) => ({ ...prev, text: event.target.value }))}
+            // 保存期间只读：规划等这次保存落定后读已保存的原文，期间再改会让规划用上旧内容
+            readOnly={saving}
+            placeholder={t("episode_workspace_source_placeholder")}
+            aria-label={t("episode_workspace_source_title")}
+            className="-mx-2.5 min-h-40 max-h-none"
+          />
+        </CollabField>
       </div>
+      {kindError !== null && (
+        <p role="alert" className="text-sm text-destructive">
+          {kindError}
+        </p>
+      )}
       <div ref={barRef}>
         <UnsavedChangesBar unit={unit} className="max-w-[40em]" />
       </div>
@@ -461,4 +488,13 @@ export function EpisodeSourceReview({
       </div>
     </div>
   );
+}
+
+/** 原文在协作房间里的内容只有正文；类型要确认，不进房间。 */
+function sourceToUnit(value: SourceValue): UnitJson {
+  return { text: value.text };
+}
+
+function sourceFromUnit(unit: UnitJson, fallback: SourceValue): SourceValue {
+  return { text: typeof unit.text === "string" ? unit.text : fallback.text, kind: fallback.kind };
 }

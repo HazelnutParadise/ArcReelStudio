@@ -2252,6 +2252,9 @@ export default {
   'base_url_optional': 'Базовый URL (необязательно)',
   'base_url_region_china': 'Китайский сайт (по умолчанию)',
   'base_url_region_international': 'Международный сайт',
+  'collab_status_live': 'Синхронизация в реальном времени',
+  'collab_status_offline': 'Нет связи. Изменения синхронизируются после переподключения',
+  'collab_peers_editing_field': '{{names}} редактирует это поле',
   'claude_subscription_title': 'Подписка Claude',
   'claude_subscription_desc':
     'Войдите в аккаунт Claude, чтобы Agent использовал лимиты его подписки. Все в рабочем пространстве делят лимиты одного аккаунта.',

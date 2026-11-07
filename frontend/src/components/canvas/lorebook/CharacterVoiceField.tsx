@@ -1,5 +1,8 @@
 import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import type { LiveEditing } from "@/components/shared/edit-unit/useEditUnit";
 import { ChevronRight, Loader2, Pause, Play, Trash2, Upload } from "lucide-react";
 import { API } from "@/api";
 import {
@@ -102,6 +105,8 @@ interface CharacterVoiceFieldProps {
   readOnly?: boolean;
   /** 详情里其它写入或生成占用中：上传、删除与生成样本一起禁用。 */
   busy?: boolean;
+  /** 所在编辑单元的多人协作绑定；声音风格输入框据此显示其他人的光标。 */
+  live?: LiveEditing | null;
 }
 
 /**
@@ -117,6 +122,7 @@ export function CharacterVoiceField({
   voiceBinding,
   readOnly = false,
   busy = false,
+  live = null,
 }: CharacterVoiceFieldProps) {
   const { t } = useTranslation(["dashboard", "assets", "common"]);
   const voiceStyleId = useId();
@@ -243,13 +249,16 @@ export function CharacterVoiceField({
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={voiceStyleId}>{t("dashboard:voice_style")}</Label>
-        <Input
-          id={voiceStyleId}
-          value={voiceStyle}
-          readOnly={readOnly}
-          onChange={(e) => onVoiceStyleChange(e.target.value)}
-          placeholder={t("dashboard:voice_style_example")}
-        />
+        <CollabField live={live} path="voice_style">
+          <Input
+            {...liveFieldProps(live, "voice_style")}
+            id={voiceStyleId}
+            value={voiceStyle}
+            readOnly={readOnly}
+            onChange={(e) => onVoiceStyleChange(e.target.value)}
+            placeholder={t("dashboard:voice_style_example")}
+          />
+        </CollabField>
       </div>
       {readOnly && !audioUrl ? null : voiceBinding === "prompt" ? (
         <Collapsible>

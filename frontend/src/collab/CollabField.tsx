@@ -12,13 +12,19 @@ import type { CollabPeer } from "./collab-client";
  */
 export function CollabField({ live, path, children }: { live: LiveEditing | null; path: string; children: ReactNode }) {
   if (!live) return <>{children}</>;
-  const here = live.peers.filter((peer) => peer.field === path);
   return (
     <div className="relative" data-collab-frame={path}>
       {children}
-      {here.length > 0 && <PeerCarets live={live} path={path} peers={here} />}
+      <CollabCarets live={live} path={path} />
     </div>
   );
+}
+
+/** 只画其他人的光标与外框，交给已经有定位容器的输入框（如带着色镜像层的编辑器）自己摆放。 */
+export function CollabCarets({ live, path }: { live: LiveEditing | null; path: string }) {
+  const here = live ? live.peers.filter((peer) => peer.field === path) : [];
+  if (!live || here.length === 0) return null;
+  return <PeerCarets live={live} path={path} peers={here} />;
 }
 
 function PeerCarets({ live, path, peers }: { live: LiveEditing; path: string; peers: CollabPeer[] }) {

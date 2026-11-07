@@ -518,3 +518,9 @@ export function collabClient(): CollabClient | null {
   shared ??= new CollabClient();
   return shared;
 }
+
+/** 剧本里一格的房间键：剧本文件名统一去掉 `scripts/` 前缀，同一格不会因写法不同被分成两个房间。 */
+export function scriptItemRef(project: string, scriptFile: string, itemId: string): CollabRef {
+  const normalized = scriptFile.replaceAll("\\", "/").replace(/^scripts\//, "");
+  return { project, kind: "script_item", key: `${normalized}#${itemId}` };
+}

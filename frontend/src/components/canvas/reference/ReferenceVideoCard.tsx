@@ -6,6 +6,8 @@ import { useUnitPromptHighlight, type Token } from "@/hooks/useUnitPromptHighlig
 import { buildMentionLookup, characterReferenceForms, MENTION_RE } from "@/utils/reference-mentions";
 import { useProjectsStore } from "@/stores/projects-store";
 import { API } from "@/api";
+import { CollabCarets } from "@/collab/CollabField";
+import type { LiveEditing } from "@/components/shared/edit-unit/useEditUnit";
 import { PromptPreviewButton } from "@/components/shared/PromptPreviewButton";
 import { SourceTextReadonly } from "@/components/shared/SourceTextReadonly";
 import { SHEET_FIELD, type AssetKind, type ReferenceVideoUnit } from "@/types/reference-video";
@@ -108,6 +110,8 @@ export interface ReferenceVideoCardProps {
   beforePreview?: () => Promise<boolean>;
   dirty?: boolean;
   saving?: boolean;
+  /** 所在编辑单元的多人协作绑定：正文输入框回报光标、显示其他人的光标。 */
+  live?: LiveEditing | null;
 }
 
 /** 提示词预览里的参考图；单独订阅这张图的指纹，地址随重新生成换版本。 */
@@ -131,6 +135,7 @@ export function ReferenceVideoCard({
   beforePreview,
   dirty,
   saving,
+  live = null,
 }: ReferenceVideoCardProps) {
   const { t } = useTranslation("dashboard");
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -381,13 +386,25 @@ export function ReferenceVideoCard({
 
         {/* eslint-disable-next-line arcreel/no-raw-textarea -- 与着色镜像层逐字对齐、同步滚动，Textarea 的自动撑高会破坏对齐 */}
         <textarea
-          ref={taRef}
+          data-collab-field={live ? "text" : undefined}
+          ref={(el) => {
+            taRef.current = el;
+            live?.fieldProps("text").ref(el);
+          }}
           value={currentText}
           onChange={handleChange}
           onKeyUp={handleCursorUpdate}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(event) => {
+            live?.fieldProps("text").onKeyDown(event);
+            if (!event.defaultPrevented) handleKeyDown(event);
+          }}
           onClick={handleCursorUpdate}
-          onBlur={handleTextareaBlur}
+          onFocus={live?.fieldProps("text").onFocus}
+          onSelect={live?.fieldProps("text").onSelect}
+          onBlur={() => {
+            live?.fieldProps("text").onBlur();
+            handleTextareaBlur();
+          }}
           onScroll={onScroll}
           role="combobox"
           aria-expanded={pickerOpen}
@@ -400,6 +417,7 @@ export function ReferenceVideoCard({
           spellCheck={false}
           className={`absolute inset-0 h-full w-full resize-none bg-transparent ${EDITOR_LAYER_CLASS} text-transparent caret-foreground placeholder:text-muted-foreground focus:outline-none`}
         />
+        <CollabCarets live={live} path="text" />
 
         {pickerOpen && anchorEl && (
           <MentionPicker

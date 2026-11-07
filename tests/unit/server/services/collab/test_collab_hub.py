@@ -105,7 +105,7 @@ async def hub(project_files, changes):
         project_files,
         UNIT_SPECS,
         changes,
-        error_text=lambda code, locale: f"[{locale}] {code}",
+        error_text=lambda code, _detail, locale: f"[{locale}] {code}",
         debounce=0.05,
         max_wait=0.2,
         close_grace=0.05,

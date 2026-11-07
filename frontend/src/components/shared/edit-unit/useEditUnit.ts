@@ -53,8 +53,11 @@ export interface EditUnitOptions<T> {
 export interface CollabOptions<T> {
   /** 房间位置；为 null 时不协作（如只读或单元还没建立）。 */
   ref: CollabRef | null;
-  /** 编辑区内容 → 房间文档的内容（存储里的字段名）。 */
-  toUnit: (value: T) => UnitJson;
+  /**
+   * 编辑区内容 → 房间文档的内容（存储里的字段名）。`current` 是房间文档当前的内容：编辑区只负责其中几个字段时，
+   * 其余字段从这里原样带上，不会被清掉。
+   */
+  toUnit: (value: T, current: UnitJson) => UnitJson;
   /** 房间文档的内容 → 编辑区内容；`fallback` 是当前已保存内容，补齐文档里没有的部分。 */
   fromUnit: (unit: UnitJson, fallback: T) => T;
 }
@@ -310,8 +313,8 @@ export function useEditUnit<T>({
     if (!isLive || !room || !toUnit || !liveJson || carried.current) return;
     carried.current = true;
     if (!isEqual(state.value, state.saved)) {
-      const base = toUnit(state.saved);
-      const mine = toUnit(state.value);
+      const base = toUnit(state.saved, liveJson);
+      const mine = toUnit(state.value, liveJson);
       const next: UnitJson = { ...liveJson };
       for (const key of Object.keys(mine)) {
         if (!jsonEqual(mine[key], base[key])) next[key] = mine[key];
@@ -327,7 +330,7 @@ export function useEditUnit<T>({
       if (!room || !toUnit || prev === null) return;
       const resolved = typeof next === "function" ? (next as (prev: T) => T)(prev) : next;
       latestLive.current = resolved;
-      room.change(toUnit(resolved));
+      room.change(toUnit(resolved, room.getSnapshot().json ?? {}));
     },
     [room, toUnit],
   );
@@ -364,7 +367,8 @@ export function useEditUnit<T>({
       savedValue: liveValue,
       setValue: liveSetValue,
       dirty: false,
-      status: snapshot.saveState === "saving" ? "saving" : liveError !== null ? "error" : "idle",
+      // 写回在背景持续进行，不当作「保存中」：编辑区不会因此锁住输入框
+      status: liveError !== null ? "error" : "idle",
       error: liveError,
       externallyUpdated: false,
       externalChangeMessage: retention?.message,

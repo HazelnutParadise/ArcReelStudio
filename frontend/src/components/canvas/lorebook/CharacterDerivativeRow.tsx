@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Check,
@@ -23,6 +23,8 @@ import { VersionTimeMachine } from "@/components/canvas/timeline/VersionTimeMach
 import { CrossfadeImage } from "@/components/canvas/shared/CrossfadeImage";
 import { CopyButton } from "@/components/shared/CopyButton";
 import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesBar";
+import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
 import { PromptPreviewButton } from "@/components/shared/PromptPreviewButton";
 import { TruncatedText } from "@/components/shared/TruncatedText";
@@ -140,10 +142,20 @@ export function CharacterDerivativeRow({
     },
     [track, projectName, characterName, name, onSheetsChanged, t],
   );
+  const collab = useMemo(
+    () => ({
+      // 衍生形象的键写作「本体名/衍生名」，与剧本里引用衍生的写法一致
+      ref: readOnly ? null : { project: projectName, kind: "derivative", key: `${characterName}/${name}` },
+      toUnit: derivativeToUnit,
+      fromUnit: derivativeFromUnit,
+    }),
+    [projectName, characterName, name, readOnly],
+  );
   const unit = useEditUnit<string>({
     source: derivative.description,
     save,
     leaveTitle: t("assets:edit_leave_title", { name: qualified }),
+    collab,
   });
   const saving = unit.status === "saving";
   // 本条的生成、版本恢复、导入、改名或删除在途，或详情里别处在写：兄弟入口一起禁用
@@ -468,15 +480,18 @@ export function CharacterDerivativeRow({
         </div>
       </div>
 
-      <Textarea
-        id={descriptionId}
-        aria-label={t("assets:derivative_description_of", { name })}
-        placeholder={t("assets:derivative_description_placeholder")}
-        value={unit.value}
-        readOnly={readOnly}
-        onChange={(e) => unit.setValue(e.target.value)}
-        rows={2}
-      />
+      <CollabField live={unit.live} path="description">
+        <Textarea
+          {...liveFieldProps(unit.live, "description")}
+          id={descriptionId}
+          aria-label={t("assets:derivative_description_of", { name })}
+          placeholder={t("assets:derivative_description_placeholder")}
+          value={unit.value}
+          readOnly={readOnly}
+          onChange={(e) => unit.setValue(e.target.value)}
+          rows={2}
+        />
+      </CollabField>
 
       {readOnly ? null : (
         <>
@@ -606,4 +621,12 @@ export function CharacterDerivativeRow({
       )}
     </li>
   );
+}
+
+function derivativeToUnit(description: string): UnitJson {
+  return { description };
+}
+
+function derivativeFromUnit(unit: UnitJson, fallback: string): string {
+  return typeof unit.description === "string" ? unit.description : fallback;
 }

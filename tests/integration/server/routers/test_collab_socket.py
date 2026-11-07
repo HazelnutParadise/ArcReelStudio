@@ -64,7 +64,7 @@ def client(project_files, monkeypatch):
     @contextlib.asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.collab_hub = CollabHub(
-            project_files, UNIT_SPECS, _no_changes, error_text=lambda code, _l: code, debounce=0.05, max_wait=0.2
+            project_files, UNIT_SPECS, _no_changes, error_text=lambda code, _detail, _l: code, debounce=0.05, max_wait=0.2
         )
         yield
         await app.state.collab_hub.shutdown()

@@ -2,6 +2,8 @@ import { useCallback, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
+import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { DurationTierPicker } from "@/components/shared/DurationTierPicker";
 import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesBar";
 import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
@@ -12,6 +14,21 @@ interface BriefFields {
   brief: string;
   /** 目标总时长（秒）；「自定义」里填的不是正整数时为 null，不能保存。 */
   targetDuration: number | null;
+}
+
+/** 创作灵感在协作房间里的内容：`project.json` 的 `brief` 与 `target_duration`。 */
+function briefFromUnit(unit: UnitJson, fallback: BriefFields): BriefFields {
+  return {
+    brief: typeof unit.brief === "string" ? unit.brief : fallback.brief,
+    targetDuration: typeof unit.target_duration === "number" ? unit.target_duration : fallback.targetDuration,
+  };
+}
+
+function briefToUnit(value: BriefFields): UnitJson {
+  // 「自定义」里还没填成正整数时不写进房间，保留之前的目标总时长
+  return value.targetDuration === null
+    ? { brief: value.brief }
+    : { brief: value.brief, target_duration: value.targetDuration };
 }
 
 /**
@@ -53,7 +70,15 @@ export function AdBrief({
     },
     [projectName, t],
   );
-  const unit = useEditUnit({ source, save });
+  const collab = useMemo(
+    () => ({
+      ref: readOnly ? null : { project: projectName, kind: "brief", key: "" },
+      toUnit: briefToUnit,
+      fromUnit: briefFromUnit,
+    }),
+    [projectName, readOnly],
+  );
+  const unit = useEditUnit({ source, save, collab });
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
@@ -74,15 +99,18 @@ export function AdBrief({
       ) : (
         <div className="flex max-w-[40em] flex-col gap-4">
           <div className="-mx-2.5">
-            <Textarea
-              id={fieldId}
-              aria-labelledby={headingId}
-              variant="plain"
-              value={unit.value.brief}
-              onChange={(event) => unit.setValue((prev) => ({ ...prev, brief: event.target.value }))}
-              placeholder={t("ad_brief_placeholder")}
-              className="max-h-none"
-            />
+            <CollabField live={unit.live} path="brief">
+              <Textarea
+                {...liveFieldProps(unit.live, "brief")}
+                id={fieldId}
+                aria-labelledby={headingId}
+                variant="plain"
+                value={unit.value.brief}
+                onChange={(event) => unit.setValue((prev) => ({ ...prev, brief: event.target.value }))}
+                placeholder={t("ad_brief_placeholder")}
+                className="max-h-none"
+              />
+            </CollabField>
           </div>
           <DurationTierPicker
             value={unit.value.targetDuration}

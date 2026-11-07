@@ -2,6 +2,7 @@ import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { API } from "@/api";
+import { CollabField, liveFieldProps } from "@/collab/CollabField";
 import { CrossfadeImage } from "@/components/canvas/shared/CrossfadeImage";
 import { useLeaveGuard } from "@/components/shared/edit-unit/LeaveGuard";
 import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesBar";
@@ -24,8 +25,10 @@ import { AssetOriginalsField } from "./AssetOriginalsField";
 import { hasUsableDescription } from "./AssetSheetStatusBadge";
 import {
   assetFieldsEqual,
+  assetFieldsFromUnit,
   assetFieldsOf,
   assetFieldsPatch,
+  assetFieldsToUnit,
   normalizeAssetFields,
   updateAssetFields,
   type AssetFields,
@@ -126,11 +129,20 @@ export function AssetDetailEditor({
     },
     [projectName, assetType, name, t],
   );
+  const collab = useMemo(
+    () => ({
+      ref: readOnly ? null : { project: projectName, kind: "asset", key: `${assetType}:${name}` },
+      toUnit: (fields: AssetFields) => assetFieldsToUnit(assetType, fields),
+      fromUnit: assetFieldsFromUnit,
+    }),
+    [projectName, assetType, name, readOnly],
+  );
   const unit = useEditUnit<AssetFields>({
     source,
     save,
     isEqual: assetFieldsEqual,
     leaveTitle: t("assets:edit_leave_title", { name }),
+    collab,
   });
   const { value, setValue } = unit;
   // 区块里的上传、删除在途时，离开先等它们落定
@@ -294,36 +306,45 @@ export function AssetDetailEditor({
               )
             }
           >
-            <Textarea
-              id={descriptionId}
-              value={value.description}
-              readOnly={readOnly}
-              onChange={(e) => setField("description", e.target.value)}
-              rows={3}
-              placeholder={t(DESCRIPTION_PLACEHOLDER[assetType])}
-            />
+            <CollabField live={unit.live} path="description">
+              <Textarea
+                {...liveFieldProps(unit.live, "description")}
+                id={descriptionId}
+                value={value.description}
+                readOnly={readOnly}
+                onChange={(e) => setField("description", e.target.value)}
+                rows={3}
+                placeholder={t(DESCRIPTION_PLACEHOLDER[assetType])}
+              />
+            </CollabField>
           </EditorSection>
 
           {product && (
             <>
               <EditorSection title={t("dashboard:product_brand_label")} htmlFor={brandId}>
-                <Input
-                  id={brandId}
-                  value={value.brand}
-                  readOnly={readOnly}
-                  onChange={(e) => setField("brand", e.target.value)}
-                  placeholder={t("dashboard:product_brand_placeholder")}
-                />
+                <CollabField live={unit.live} path="brand">
+                  <Input
+                    {...liveFieldProps(unit.live, "brand")}
+                    id={brandId}
+                    value={value.brand}
+                    readOnly={readOnly}
+                    onChange={(e) => setField("brand", e.target.value)}
+                    placeholder={t("dashboard:product_brand_placeholder")}
+                  />
+                </CollabField>
               </EditorSection>
               <EditorSection title={t("dashboard:product_selling_points_label")} htmlFor={sellingPointsId}>
-                <Textarea
-                  id={sellingPointsId}
-                  value={value.sellingPoints}
-                  readOnly={readOnly}
-                  onChange={(e) => setField("sellingPoints", e.target.value)}
-                  rows={3}
-                  placeholder={t("dashboard:product_selling_points_placeholder")}
-                />
+                <CollabField live={unit.live} path="selling_points">
+                  <Textarea
+                    {...liveFieldProps(unit.live, "selling_points")}
+                    id={sellingPointsId}
+                    value={value.sellingPoints}
+                    readOnly={readOnly}
+                    onChange={(e) => setField("sellingPoints", e.target.value)}
+                    rows={3}
+                    placeholder={t("dashboard:product_selling_points_placeholder")}
+                  />
+                </CollabField>
               </EditorSection>
             </>
           )}
@@ -335,6 +356,7 @@ export function AssetDetailEditor({
                 name={name}
                 voiceStyle={value.voiceStyle}
                 onVoiceStyleChange={(next) => setField("voiceStyle", next)}
+                live={unit.live}
                 referenceAudio={character.reference_audio}
                 voiceBinding={voiceBinding}
                 readOnly={readOnly}
