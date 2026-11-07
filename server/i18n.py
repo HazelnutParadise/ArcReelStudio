@@ -27,7 +27,11 @@ _TRADITIONAL_CHINESE = re.compile(r"^zh-(tw|hk|mo|hant)\b")
 
 def get_locale(request: Request) -> str:
     """Get locale from Accept-Language header."""
-    accept_lang = request.headers.get("accept-language", "")
+    return locale_from_language_tags(request.headers.get("accept-language", ""))
+
+
+def locale_from_language_tags(accept_lang: str) -> str:
+    """按 Accept-Language 形式的语言列表（如 ``zh-TW,en;q=0.9``，单个语言标签也可）选出界面语言。"""
     if not accept_lang:
         return DEFAULT_LOCALE
 

@@ -15,7 +15,8 @@ from lib.i18n import DEFAULT_LOCALE, _
 
 logger = logging.getLogger(__name__)
 
-ProjectChangeSource = Literal["webui", "worker", "filesystem"]
+#: ``collab`` 是多人即时协作写回的内容：其他成员已在编辑区里即时看到，界面只刷新数据、不再弹出「谁改了」的提示
+ProjectChangeSource = Literal["webui", "worker", "filesystem", "collab"]
 
 
 class ProjectChangeActor(TypedDict):

@@ -736,8 +736,8 @@ class ProjectEventService:
     def _settled_actor(
         channel: _ProjectChannel, covered_actors: set[_ActorMark], source: ProjectChangeSource
     ) -> ProjectChangeActor | None:
-        """一轮读盘的发起成员：只在 Web 端来源、且窗口内的写入都出自同一位成员时归属到人。"""
-        if source != "webui":
+        """一轮读盘的发起成员：只在 Web 端或协作写回、且窗口内的写入都出自同一位成员时归属到人。"""
+        if source not in ("webui", "collab"):
             return None
         marks = covered_actors | channel.pending_actors
         if len(marks) != 1:
@@ -753,4 +753,6 @@ class ProjectEventService:
             return "worker"
         if "webui" in pending_sources:
             return "webui"
+        if "collab" in pending_sources:
+            return "collab"
         return "filesystem"

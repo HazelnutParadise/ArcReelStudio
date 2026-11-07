@@ -458,6 +458,14 @@ async def _payload_to_user(payload: dict) -> CurrentUserInfo:
     )
 
 
+async def authenticate_bearer(token: str) -> CurrentUserInfo:
+    """校验一个 Bearer 令牌（JWT 或 API Key）并解析出账号；无效、过期或账号已失效时抛 401。
+
+    供不经依赖注入的入口（如 WebSocket）使用，与 :func:`get_current_user` 的校验一致。
+    """
+    return await _payload_to_user(await _verify_and_get_payload_async(token))
+
+
 async def get_current_user(
     token: Annotated[str | None, Depends(oauth2_scheme_optional)] = None,
 ) -> CurrentUserInfo:
