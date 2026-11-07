@@ -39,7 +39,7 @@ const config: Config = {
           // docs-only 模式：文档直接挂在站点根，因此 src/pages/index.* 不能存在（路由冲突）
           routeBasePath: "/",
           sidebarPath: "./sidebars.ts",
-          editUrl: "https://github.com/ArcReel/ArcReel/tree/main/website/",
+          editUrl: "https://github.com/HazelnutParadise/ArcReelStudio/tree/main/website/",
         },
         blog: false,
         theme: {
@@ -85,7 +85,7 @@ const config: Config = {
           position: "right",
         },
         {
-          href: "https://github.com/ArcReel/ArcReel",
+          href: "https://github.com/HazelnutParadise/ArcReelStudio",
           label: "GitHub 仓库",
           position: "right",
         },
@@ -98,7 +98,7 @@ const config: Config = {
           title: "资源",
           items: [
             { label: "ArcReel 官网", href: "https://arc-reel.com" },
-            { label: "GitHub 仓库", href: "https://github.com/ArcReel/ArcReel" },
+            { label: "GitHub 仓库", href: "https://github.com/HazelnutParadise/ArcReelStudio" },
           ],
         },
       ],

@@ -7,7 +7,7 @@ update_docs: fact-check
 
 # Deployment and Operations {#deployment}
 
-This document covers ArcReel's default deployment, PostgreSQL production deployment, environment variables, data persistence, upgrades, backups, restoration, reverse proxies, and troubleshooting. See the [Security Policy](https://github.com/ArcReel/ArcReel/blob/main/SECURITY.md) for the official support boundaries and the [Security Threat Model](https://github.com/ArcReel/ArcReel/blob/main/docs/security/threat-model.md) for the complete trust boundaries.
+This document covers ArcReel's default deployment, PostgreSQL production deployment, environment variables, data persistence, upgrades, backups, restoration, reverse proxies, and troubleshooting. See the [Security Policy](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/SECURITY.md) for the official support boundaries and the [Security Threat Model](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/security/threat-model.md) for the complete trust boundaries.
 
 ## Choosing a Deployment Mode {#choose-deployment-mode}
 
@@ -15,6 +15,7 @@ This document covers ArcReel's default deployment, PostgreSQL production deploym
 |---|---|---|---|
 | First-time evaluation or light personal use | `deploy/` | SQLite | Minimal configuration and the fastest startup |
 | Long-running, concurrent, or production service | `deploy/production/` | PostgreSQL | Better suited to concurrency, backups, and operations, but provides no user isolation |
+| An existing PostgreSQL database | `deploy/` with `DATABASE_URL` set | External PostgreSQL | Starts no database container; see [Connect to an Existing PostgreSQL](#external-postgresql) |
 | Local development | Run from source | SQLite or PostgreSQL | See the [Contributing Guide](../dev/contributing.md) |
 
 Regardless of the method you choose, project images, videos, and other generated assets must be stored persistently.
@@ -26,8 +27,8 @@ ArcReel is currently designed for a single trusted operator and does not support
 ### 1.1 Start {#sqlite-start}
 
 ```bash
-git clone https://github.com/ArcReel/ArcReel.git
-cd ArcReel/deploy
+git clone https://github.com/HazelnutParadise/ArcReelStudio.git
+cd ArcReelStudio/deploy
 
 cp .env.example .env
 ```
@@ -164,6 +165,39 @@ At startup, ArcReel also converts historical call output paths to project-relati
 
 You must still create a backup before upgrading. Automatic migration handles schema upgrades; it does not replace a rollback-capable data backup.
 
+### 2.4 Connect to an Existing PostgreSQL {#external-postgresql}
+
+If you already run a PostgreSQL server, you do not need the database container that ships with Compose. Which Compose file you use decides whether a database container starts: `deploy/` starts none, and `deploy/production/` always starts one. `DATABASE_URL` only decides which database ArcReel connects to.
+
+1. Create a dedicated database and account for ArcReel in PostgreSQL. The account needs permission to create tables. Do not share the database with other services.
+2. Set `DATABASE_URL` in `deploy/.env`:
+
+   ```dotenv
+   DATABASE_URL=postgresql+asyncpg://arcreel:password@db.example.com:5432/arcreel
+   ```
+
+3. Start it from `deploy/`:
+
+   ```bash
+   docker compose up -d
+   ```
+
+4. Check the startup log to confirm that migrations finished without connection errors:
+
+   ```bash
+   docker compose logs --tail=100 arcreel
+   ```
+
+Notes:
+
+- Use `deploy/`, not `deploy/production/`. Production Compose fixes `DATABASE_URL` under `environment`, which overrides the value in `.env`, and it still starts its own PostgreSQL container.
+- Only PostgreSQL is supported, and the URL must start with `postgresql+asyncpg://`.
+- ArcReel runs database migrations automatically at startup, so an empty database is enough.
+- When the database runs on the same host, do not use `localhost` as the host name, because `localhost` inside the container points to the container itself. With Docker Desktop on macOS and Windows, use `host.docker.internal`. On Linux, use the host's LAN IP, or add `extra_hosts: ["host.docker.internal:host-gateway"]` to the `arcreel` service in `docker-compose.yml`.
+- If the password contains URL-reserved characters, percent-encode it in the URL as described in the [production deployment start section](#postgresql-start).
+- The database administrator is responsible for database backups. The `projects/` data root must still be persisted as in the [default deployment](#sqlite-volumes) and backed up together with the database.
+- If you already have data in SQLite, migrate it first by following [Migrate from SQLite to PostgreSQL](./migrate-to-postgres.md), then switch `DATABASE_URL`.
+
 ## 3. Environment Variables {#environment-variables}
 
 The default deployment examples currently include these core variables:
@@ -177,7 +211,7 @@ The default deployment examples currently include these core variables:
 | `LOG_LEVEL` | `INFO` | Temporarily change to `DEBUG` while troubleshooting, then restore it |
 | `POSTGRES_PASSWORD` | None | Required and must be set only for production deployments |
 | `TZ` | `Asia/Taipei` | Can be overridden in the Compose environment |
-| `DATABASE_URL` | Default SQLite path | Production Compose sets the PostgreSQL URL automatically |
+| `DATABASE_URL` | Default SQLite path | Production Compose sets the PostgreSQL URL automatically; to use an external database, set it in the default deployment's `.env` (see [Connect to an Existing PostgreSQL](#external-postgresql)) |
 | `ARCREEL_DATA_DIR` | `projects` | Data root; projects, the default SQLite database, logs, and Vertex credentials all live under it |
 | `CORS_ORIGINS` | Wildcard | When narrowed to an allowlist, browser MCP client origins must be listed too |
 | `ARCREEL_OFFICIAL_SERVICE_URL` | Built-in official service address | The official service behind market install counts, ratings, and submissions; set it to empty to turn it off entirely, leaving the market to read market sources only |
@@ -254,7 +288,7 @@ Do not paste complete logs directly into a public issue. Remove the following be
 
 ### 5.1 Before Upgrading {#before-upgrade}
 
-1. Read the [CHANGELOG](https://github.com/ArcReel/ArcReel/blob/main/CHANGELOG.md) and the target release notes;
+1. Read the [CHANGELOG](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/CHANGELOG.md) and the target release notes;
 2. Check for breaking changes;
 3. Back up the data root and the database; see [Backup and Restore](#backup-and-restore);
 4. Record the current image version;

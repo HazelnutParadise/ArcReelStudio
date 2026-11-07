@@ -2,13 +2,9 @@
 
 欢迎贡献代码、报告 Bug 或提出功能建议。
 
-以推广某项商业服务为主要目的的贡献（例如新增某家服务的接入，或在文档中加入服务推荐与链接）不走 PR 流程，这类 PR 会被关闭；合作请联系 support@arc-reel.com。
-
-带 `ready-for-agent` 标签的 issue 已写好实现说明，由维护方的 coding Agent 实现。外部 PR 不会让它更快完成，只会多一轮审查，这类 PR 会被关闭。
+本仓库 [HazelnutParadise/ArcReelStudio](https://github.com/HazelnutParadise/ArcReelStudio) 是 [ArcReel](https://github.com/ArcReel/ArcReel) 的修改版本，由 HazelnutParadise 维护。与本仓库有关的 Bug 和功能建议提交到 [本仓库的 Issues](https://github.com/HazelnutParadise/ArcReelStudio/issues)，PR 提交到本仓库的 `main` 分支。安全漏洞不要公开提交，报告方式见 [`SECURITY.md`](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/SECURITY.md)。
 
 开发新功能或进行规模较大的改动前，建议先开 issue 讨论方向，以免实现后因方向不符被关闭。
-
-PR 合并前，作者需要签署 CLA。签署入口由 CLA Assistant 在 PR 评论中给出。
 
 ArcReel 假定贡献者用 coding Agent 开发。仓库根的 `AGENTS.md`（`CLAUDE.md` 是指向它的链接）是 Agent 的入口，闸门命令、测试选择与代码规范都从它链接出去；本文只讲贡献者本人需要知道的部分。
 
@@ -71,7 +67,7 @@ pnpm check-consistency
 
 ## 测试
 
-开发循环与 push 前的完整闸门见 [`AGENTS.md`](https://github.com/ArcReel/ArcReel/blob/main/AGENTS.md)「工具链与校验」和 [`docs/agents/testing.md`](https://github.com/ArcReel/ArcReel/blob/main/docs/agents/testing.md)；CI 跑同一套检查。
+开发循环与 push 前的完整闸门见 [`AGENTS.md`](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/AGENTS.md)「工具链与校验」和 [`docs/agents/testing.md`](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/agents/testing.md)；CI 跑同一套检查。
 
 ### 前端页面级测试
 
@@ -94,15 +90,15 @@ pnpm e2e:remote   # 终端二：构建前端，连接容器里的浏览器运行
 
 ## 代码质量
 
-代码规范的入口是 [`CODING_STANDARDS.md`](https://github.com/ArcReel/ArcReel/blob/main/CODING_STANDARDS.md)：按改动路径索引到 `docs/standards/` 下的领域规范，只收工具替代不了、需要判断的项目约定。本地审查和 PR 上的 AI reviewer 都以它为依据。
+代码规范的入口是 [`CODING_STANDARDS.md`](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/CODING_STANDARDS.md)：按改动路径索引到 `docs/standards/` 下的领域规范，只收工具替代不了、需要判断的项目约定。本地审查和 PR 上的 AI reviewer 都以它为依据。
 
 ### 依赖管理
 
-新增或升级依赖的步骤见 [`docs/agents/dependencies.md`](https://github.com/ArcReel/ArcReel/blob/main/docs/agents/dependencies.md)。
+新增或升级依赖的步骤见 [`docs/agents/dependencies.md`](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/agents/dependencies.md)。
 
 ## 文档维护
 
-用户文档的唯一发布位置是 [docs.arc-reel.com](https://docs.arc-reel.com)，源文件在 `website/docs/`（本地构建与预览见上文「文档站」）。中文是唯一写作源，英文译文由 AI 生成，人工仅审校中文源。内部文档（ADR、`GLOSSARY.md`、`AGENTS.md`、安全威胁模型、供应商 API 文档索引等）不上站，留在仓库 `docs/` 下；`SECURITY.md` 因 GitHub Security 选项卡依赖也留在仓库根。
+用户文档的源文件在 `website/docs/`（本地构建与预览见上文「文档站」）。本仓库目前没有发布自己的文档站，README 链接的 [docs.arc-reel.com](https://docs.arc-reel.com) 是上游 ArcReel 的文档站，内容不包含本仓库的改动。中文是唯一写作源，英文译文由 AI 生成，人工仅审校中文源。内部文档（ADR、`GLOSSARY.md`、`AGENTS.md`、安全威胁模型、供应商 API 文档索引等）不上站，留在仓库 `docs/` 下；`SECURITY.md` 因 GitHub Security 选项卡依赖也留在仓库根。
 
 本文件是贡献指南的真相源，构建时复制为站点的开发区页面（`website/scripts/sync-contributing.mjs`），中文副本不入库。
 
@@ -130,7 +126,7 @@ pnpm e2e:remote   # 终端二：构建前端，连接容器里的浏览器运行
 
 ### 写作约定
 
-上站页面与 README 的写作规范见 [`docs/standards/docs.md`](https://github.com/ArcReel/ArcReel/blob/main/docs/standards/docs.md)；功能变更需要同步哪些文档见 [`docs/standards/general.md`](https://github.com/ArcReel/ArcReel/blob/main/docs/standards/general.md)「功能变更与对应文档在同一个 PR 里」。上站页面的每个标题写成 `## 标题 {#english-id}`，中英两个 locale 共用同一锚点。
+上站页面与 README 的写作规范见 [`docs/standards/docs.md`](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/standards/docs.md)；功能变更需要同步哪些文档见 [`docs/standards/general.md`](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/standards/general.md)「功能变更与对应文档在同一个 PR 里」。上站页面的每个标题写成 `## 标题 {#english-id}`，中英两个 locale 共用同一锚点。
 
 ## 工作流程
 
