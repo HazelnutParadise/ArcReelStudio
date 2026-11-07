@@ -81,6 +81,7 @@ export default {
   "group_deferred.updated":
     "AI vừa cập nhật {{count}} {{entity}}: {{summary}}. Nhấn để xem",
 
+  "change_by_member": "{{name}}: {{text}}",
   "list.separator": ", ",
   "list.more_suffix": " và nhiều mục khác",
 } satisfies Record<keyof typeof enEvents, string>;

@@ -10,6 +10,7 @@ import type {
   ProjectChangeBatchPayload,
   ProjectDeletedPayload,
   ProjectEventSnapshotPayload,
+  ProjectPresencePayload,
 } from "@/types";
 import type { GenerationRoute } from "@/utils/generation-mode";
 import type { SseStreamError } from "@/utils/sse-stream";
@@ -127,6 +128,8 @@ export interface ProjectEventStreamOptions {
   onProjectDeleted?: (payload: ProjectDeletedPayload) => void;
   /** 项目下某个 Agent 会话自主回到 running；当前会话经常驻 entry 流收到这一轮，此通知供会话列表等其他视图使用。 */
   onAssistantSessionResumed?: (payload: AssistantSessionResumedPayload) => void;
+  /** 项目在线成员名单变化。 */
+  onPresence?: (payload: ProjectPresencePayload) => void;
   /** 连接失败或中断；`retryable` 为 true 时客户端随后自动重建。 */
   onError?: (error: SseStreamError) => void;
 }

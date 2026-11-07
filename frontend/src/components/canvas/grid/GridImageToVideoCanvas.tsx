@@ -47,7 +47,12 @@ interface GridImageToVideoCanvasProps extends EpisodeCanvasContext {
   /** 已保存时长越界的成因判定；缺省时 ShotDetail 退回不区分成因的通用警告文案。 */
   durationWarningReason?: (seconds: number) => DurationOutOfRangeReason | null;
   /** 保存分镜字段：失败时抛错；resolve 为本地剧本是否已刷新到保存后的内容。 */
-  onUpdatePrompt?: (segmentId: string, patch: Record<string, unknown>, scriptFile?: string) => Promise<boolean>;
+  onUpdatePrompt?: (
+    segmentId: string,
+    patch: Record<string, unknown>,
+    scriptFile?: string,
+    base?: Record<string, unknown>,
+  ) => Promise<boolean>;
   onGenerateStoryboard?: (segmentId: string, scriptFile?: string) => void;
   onGenerateVideo?: (segmentId: string, scriptFile?: string) => void | Promise<void>;
   onGenerateNarration?: (segmentId: string, scriptFile?: string) => void;
@@ -181,7 +186,8 @@ export function GridImageToVideoCanvas({
   }
 
   const handleUpdatePrompt = onUpdatePrompt
-    ? (segId: string, patch: Record<string, unknown>) => onUpdatePrompt(segId, patch, scriptFile)
+    ? (segId: string, patch: Record<string, unknown>, base?: Record<string, unknown>) =>
+        onUpdatePrompt(segId, patch, scriptFile, base)
     : undefined;
   const handleGenSb = (segId: string) => onGenerateStoryboard?.(segId, scriptFile);
   const handleGenVid = (segId: string) => onGenerateVideo?.(segId, scriptFile);

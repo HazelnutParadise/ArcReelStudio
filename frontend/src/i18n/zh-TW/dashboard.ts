@@ -4044,4 +4044,8 @@ export default {
   "asset_library_binding_needs_confirmation_hint": "推理憑證或帳號在確認後有變化，確認前不使用這個帳號的素材",
   "asset_library_binding_reconfirm": "重新確認",
   "asset_library_binding_account_label": "「{{name}}」繫結的素材庫帳號",
+  "presence_trigger": "也在這個專案的成員：{{names}}",
+  "presence_title": "也在這個專案的成員",
+  "presence_view_episode": "正在看第 {{episode}} 集",
+  "presence_view_project": "在專案裡",
 } satisfies Record<keyof typeof enDashboard, string>;

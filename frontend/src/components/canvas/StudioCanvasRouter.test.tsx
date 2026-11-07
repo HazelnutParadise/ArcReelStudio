@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Route, Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
+import { ApiRequestError } from "@/api/errors";
 import { useAppStore } from "@/stores/app-store";
 import { useConfigStatusStore } from "@/stores/config-status-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -924,6 +925,30 @@ describe("StudioCanvasRouter", () => {
     });
   });
 
+  it("保存被其他成员抢先改过时先拉取最新剧本，再把冲突错误交给分镜详情", async () => {
+    useProjectsStore.setState({
+      currentProjectName: "demo",
+      currentProjectData: makeProjectData(),
+      currentScripts: { "episode_1.json": makeScript() },
+    });
+    const getProject = vi.spyOn(API, "getProject").mockResolvedValue({
+      project: makeProjectData(),
+      scripts: { "episode_1.json": makeScript() },
+    });
+    vi.spyOn(API, "updateSegment").mockRejectedValue(
+      new ApiRequestError("这段内容在你编辑期间已被其他成员修改", { code: "edit_conflict", fields: ["image_prompt"] }, 409),
+    );
+
+    renderAt("/episodes/1");
+    getProject.mockClear();
+
+    fireEvent.click(screen.getByText("update-prompt"));
+    await waitFor(() => {
+      expect(screen.getByText("update-prompt")).toHaveAttribute("data-error", "这段内容在你编辑期间已被其他成员修改");
+    });
+    expect(getProject).toHaveBeenCalledTimes(1);
+  });
+
   it("runs timeline callbacks and handles generation failures", async () => {
     useProjectsStore.setState({
       currentProjectName: "demo",
@@ -1086,9 +1111,13 @@ describe("StudioCanvasRouter", () => {
 
     fireEvent.click(screen.getByText("update-prompt"));
     await waitFor(() => {
-      expect(updateShotSpy).toHaveBeenCalledWith("demo", "SEG-1", "episode_1.json", {
-        image_prompt: "new prompt",
-      });
+      expect(updateShotSpy).toHaveBeenCalledWith(
+        "demo",
+        "SEG-1",
+        "episode_1.json",
+        { image_prompt: "new prompt" },
+        undefined,
+      );
     });
     expect(updateSceneSpy).not.toHaveBeenCalled();
     expect(updateSegmentSpy).not.toHaveBeenCalled();

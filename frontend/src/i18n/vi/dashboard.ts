@@ -4045,4 +4045,8 @@ export default {
   "asset_library_binding_needs_confirmation_hint": "Khóa hoặc tài khoản đã thay đổi sau khi xác nhận. Tư liệu của tài khoản này không được dùng cho tới khi xác nhận lại",
   "asset_library_binding_reconfirm": "Xác nhận lại",
   "asset_library_binding_account_label": "Tài khoản thư viện tư liệu liên kết với «{{name}}»",
+  "presence_trigger": "Cũng đang ở dự án này: {{names}}",
+  "presence_title": "Cũng đang ở dự án này",
+  "presence_view_episode": "Đang xem tập {{episode}}",
+  "presence_view_project": "Trong dự án",
 } satisfies Record<keyof typeof enDashboard, string>;

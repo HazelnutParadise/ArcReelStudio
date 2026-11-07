@@ -7,6 +7,7 @@ import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { AgentCopilot } from "@/components/copilot/AgentCopilot";
 import { useTaskRefresh } from "@/hooks/useTaskRefresh";
 import { useProjectEventsSSE } from "@/hooks/useProjectEventsSSE";
+import { useProjectPresence } from "@/hooks/useProjectPresence";
 import { useProjectsStore } from "@/stores/projects-store";
 import { DemoAssistantPanel } from "@/onboarding/DemoAssistantPanel";
 import { useDemoWorkbench } from "@/onboarding/use-demo-workbench";
@@ -70,6 +71,7 @@ export function StudioLayout({ children }: StudioLayoutProps) {
   const sseProjectName = isEffectivelyDemo ? null : currentProjectName;
   useTaskRefresh(sseProjectName, !isEffectivelyDemo);
   useProjectEventsSSE(sseProjectName);
+  useProjectPresence(sseProjectName);
 
   const compact = useCompactTier();
   const storeOpen = useAppStore((s) => s.assistantPanelOpen);

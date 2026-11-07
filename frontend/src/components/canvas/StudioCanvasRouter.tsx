@@ -30,6 +30,7 @@ import { EpisodePage } from "./episode-page/EpisodePage";
 import { LazyBoundary } from "@/components/shared/LazyBoundary";
 import { lazyNamed } from "@/utils/lazy-component";
 import { API } from "@/api";
+import { isEditConflict } from "@/api/errors";
 import {
   enqueueCharacter,
   enqueueEpisodeNarration,
@@ -148,19 +149,27 @@ export function StudioCanvasRouter() {
   // 分镜详情编辑单元的保存：PATCH 失败时如实抛错，由编辑单元显示在未保存提示条上。
   // resolve 为本地 store 是否已同步到新剧本；PATCH 已落库但刷新失败或被取消时为 false，
   // 此时 store 仍是旧剧本，接着生成会拿旧提示词入队，调用方据此不再继续生成。
+  // `base` 是开始编辑时这些字段的值：被其他成员抢先改过时服务端拒绝写入，这里先拉取最新剧本
+  // 再抛出错误，编辑单元随之看到对方的内容并标出冲突，由用户决定放弃还是再次保存覆盖。
   const handleUpdatePrompt = useCallback(async (
     segmentId: string,
     patch: Record<string, unknown>,
     scriptFile?: string,
+    base?: Record<string, unknown>,
   ): Promise<boolean> => {
     if (!currentProjectName) throw new Error(t("common:no_project_selected"));
     const mode = currentProjectData?.content_mode ?? "narration";
-    if (mode === "ad") {
-      await API.updateShot(currentProjectName, segmentId, scriptFile ?? "", patch);
-    } else if (mode === "drama") {
-      await API.updateScene(currentProjectName, segmentId, scriptFile ?? "", patch);
-    } else {
-      await API.updateSegment(currentProjectName, segmentId, { script_file: scriptFile, ...patch });
+    try {
+      if (mode === "ad") {
+        await API.updateShot(currentProjectName, segmentId, scriptFile ?? "", patch, base);
+      } else if (mode === "drama") {
+        await API.updateScene(currentProjectName, segmentId, scriptFile ?? "", patch, base);
+      } else {
+        await API.updateSegment(currentProjectName, segmentId, { script_file: scriptFile, ...patch, base });
+      }
+    } catch (err) {
+      if (isEditConflict(err)) await refreshProject();
+      throw err;
     }
     return refreshProject();
   }, [currentProjectName, currentProjectData, refreshProject, t]);

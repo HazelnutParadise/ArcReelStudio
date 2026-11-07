@@ -54,7 +54,7 @@ export default {
   'save_and_leave': 'Сохранить и выйти',
   'save_and_switch': 'Сохранить и переключить',
   'save_and_generate': 'Сохранить и сгенерировать',
-  'updated_by_agent': 'Агент обновил это содержимое',
+  'updated_externally': 'Это содержимое обновил другой участник или агент',
   'adopt_new_content': 'Принять новое содержимое',
   'leave_dialog_description': 'Отменённые изменения нельзя восстановить.',
   'undo': 'Отменить',

@@ -4044,4 +4044,8 @@ export default {
   "asset_library_binding_needs_confirmation_hint": "推理凭证或账号在确认后有变化，确认前不使用这个账号的素材",
   "asset_library_binding_reconfirm": "重新确认",
   "asset_library_binding_account_label": "「{{name}}」绑定的素材库账号",
+  "presence_trigger": "也在这个项目的成员：{{names}}",
+  "presence_title": "也在这个项目的成员",
+  "presence_view_episode": "正在看第 {{episode}} 集",
+  "presence_view_project": "在项目里",
 } satisfies Record<keyof typeof enDashboard, string>;

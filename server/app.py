@@ -103,6 +103,7 @@ from server.routers import (
     products,
     project_events,
     project_migration,
+    project_presence,
     project_trash,
     projects,
     prompt_authoring,
@@ -128,6 +129,7 @@ from server.routers import users as users_router
 from server.services.accounts import bootstrap_admin
 from server.services.project.episode_id_records import recorded_episode_ids_on
 from server.services.project.project_events import ProjectEventService
+from server.services.project.project_presence import ProjectPresenceService
 from server.services.tasks.generation_tasks import execute_generation_task
 from server.services.tasks.resume_executor import execute_resume_video_task
 
@@ -540,6 +542,10 @@ async def lifespan(app: FastAPI):
     assistant.assistant_service.session_manager.set_autonomous_turn_listener(
         project_event_service.publish_assistant_session_resumed
     )
+    # 在线成员名单经项目事件流广播；登记只在进程内存里，随应用关停清空
+    project_presence_service = ProjectPresenceService(publish=project_event_service.publish_presence)
+    app.state.project_presence_service = project_presence_service
+    project_presence_service.start()
 
     # 卡顿探针放在启动步骤之后：迁移等启动期同步工作不算线上卡顿，避免误报。
     stall_probe = start_loop_stall_probe()
@@ -568,6 +574,9 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     assistant.assistant_service.session_manager.set_autonomous_turn_listener(None)
+    project_presence_service = getattr(app.state, "project_presence_service", None)
+    if project_presence_service:
+        await project_presence_service.shutdown()
     project_event_service = getattr(app.state, "project_event_service", None)
     if project_event_service:
         logger.info("正在停止 ProjectEventService...")
@@ -795,6 +804,9 @@ app.include_router(
 )
 app.include_router(
     project_events.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["项目变更流"]
+)
+app.include_router(
+    project_presence.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["在线成员"]
 )
 app.include_router(tasks.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["任务队列"])
 app.include_router(providers.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["供应商管理"])

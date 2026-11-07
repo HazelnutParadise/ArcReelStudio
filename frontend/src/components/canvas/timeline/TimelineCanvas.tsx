@@ -40,7 +40,12 @@ interface TimelineCanvasProps extends EpisodeCanvasContext {
   scriptFile?: string;
   projectData: ProjectData | null;
   /** 保存分镜字段：失败时抛错；resolve 为本地剧本是否已刷新到保存后的内容。 */
-  onUpdatePrompt?: (segmentId: string, patch: Record<string, unknown>, scriptFile?: string) => Promise<boolean>;
+  onUpdatePrompt?: (
+    segmentId: string,
+    patch: Record<string, unknown>,
+    scriptFile?: string,
+    base?: Record<string, unknown>,
+  ) => Promise<boolean>;
   /** 分镜改序：移到 afterId 之后，null 移到最前；resolve 为是否移动成功 */
   onMoveShot?: (shotId: string, afterId: string | null, scriptFile?: string) => Promise<boolean>;
   /** 新增分镜（旁白带正文）：afterId 为 null 时追加到末尾；resolve 为是否成功 */
@@ -181,7 +186,8 @@ export function TimelineCanvas(props: TimelineCanvasProps) {
   }
 
   const handleUpdatePrompt = onUpdatePrompt
-    ? (segId: string, patch: Record<string, unknown>) => onUpdatePrompt(segId, patch, scriptFile)
+    ? (segId: string, patch: Record<string, unknown>, base?: Record<string, unknown>) =>
+        onUpdatePrompt(segId, patch, scriptFile, base)
     : undefined;
   const handleMoveShot = onMoveShot
     ? (shotId: string, afterId: string | null) => onMoveShot(shotId, afterId, scriptFile)

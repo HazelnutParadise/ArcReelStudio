@@ -230,6 +230,15 @@ The command generates a new password and shows it once; add `--password <new pas
 
 When you upgrade from an earlier version that had only one `.env` account, the first startup turns the current `AUTH_USERNAME` / `AUTH_PASSWORD` into the default administrator, so the existing password keeps working. Sessions issued before the upgrade all end, and everyone needs to sign in again once.
 
+Several members can open the same project at the same time:
+
+- The right side of the top bar shows the other members in the project; open it to see which episode each of them is viewing.
+- Changes other members save appear on your page within a few seconds, with a note saying who made them; your page does not move away from what you are viewing.
+- If another member changes a different field while you have unsaved edits in the shot details, the page takes their content directly, and saving does not change it back. If both of you changed the same field, your save is refused with a notice; review the latest content first, then either discard your edits or save again to overwrite theirs.
+- The conflict check currently covers only the fields in the shot details. In other editors, such as character, scene and prop descriptions or the project overview, the later save still wins when two members save at the same time.
+
+The list of online members lives only in the service process's memory; after a restart, each page restores it with its next check-in.
+
 ### 3.2 GPU Encoding {#gpu-encoding}
 
 The image ships an ffmpeg build with NVIDIA NVENC support. When the container can use an NVIDIA GPU, final cuts encode their video on the GPU; without a GPU they fall back to CPU encoding automatically, with no extra configuration.

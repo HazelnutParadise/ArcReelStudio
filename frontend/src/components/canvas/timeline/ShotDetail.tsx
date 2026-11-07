@@ -97,7 +97,8 @@ interface ShotDetailProps {
    * 提交分镜字段的增量修改，失败时抛错。resolve 为保存后项目是否已刷新：
    * 为 false 时界面上的剧本还是旧的，「保存并生成」不能接着生成。缺省时只读展示。
    */
-  onUpdatePrompt?: (segmentId: string, patch: Record<string, unknown>) => Promise<boolean>;
+  /** `base` 是开始编辑时这些字段的值，起点之后被其他成员改过的字段保存时拒绝写入。 */
+  onUpdatePrompt?: (segmentId: string, patch: Record<string, unknown>, base?: Record<string, unknown>) => Promise<boolean>;
   /** 分镜改序：向前或向后移动一位 */
   onMoveShot?: (shotId: string, direction: "earlier" | "later") => void | Promise<void>;
   /** 分镜重排请求在途，移动按钮禁用 */
@@ -495,7 +496,8 @@ export function ShotDetail({
       ) {
         throw new Error(t("duration_locked_generating"));
       }
-      const refreshed = await onUpdatePrompt(segmentId, patch);
+      // 编辑起点：同一批字段在开始编辑时的值，服务端据此拒绝覆盖其他成员在此之后的修改
+      const refreshed = await onUpdatePrompt(segmentId, patch, shotPatch(saved, value, charField));
       // 已落盘但界面上的剧本没刷新：不能当作保存成功，否则「保存并生成」会接着用旧剧本生成
       if (!refreshed) throw new PartialSaveError(t("shot_saved_not_refreshed"), { saved: value });
     },
@@ -508,6 +510,8 @@ export function ShotDetail({
     isEqual: shotFieldsEqual,
     leaveTitle: t("shot_leave_title", { id: itemLabel }),
     allowNavigation,
+    // 分镜字段相互独立：其他成员改了我没动的字段时直接采用，保存时不把它们改回去
+    mergeExternalFields: true,
   });
   const { value: fields, setValue, dirty } = unit;
   const saving = unit.status === "saving";

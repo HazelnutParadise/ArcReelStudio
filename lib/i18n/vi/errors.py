@@ -225,6 +225,7 @@ MESSAGES = {
     "draft_invalid_json": "Bản nháp kế hoạch kịch bản có cấu trúc không hợp lệ; vui lòng kiểm tra và thử lại",
     "draft_not_found": "Tập (id={episode}) không có bản nháp này; có thể nó đã được áp dụng hoặc bị hủy",
     "draft_revision_conflict": "Bản nháp đã thay đổi trong lúc bạn chỉnh sửa nên thao tác chưa được áp dụng; hãy xem nội dung mới nhất rồi thử lại",
+    "edit_conflict": "Nội dung này đã được thành viên khác sửa trong lúc bạn chỉnh sửa nên lần lưu này chưa được áp dụng; hãy xem nội dung mới nhất trước khi quyết định ghi đè",
     "draft_formal_revision_conflict": (
         "Nội dung chính thức đã thay đổi sau khi bản nháp được tạo nên lần lưu này chưa được áp dụng; "
         "hãy hủy bản nháp hoặc giao cho tác nhân hợp nhất"

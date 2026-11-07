@@ -54,7 +54,7 @@ export default {
   'save_and_leave': '儲存並離開',
   'save_and_switch': '儲存並切換',
   'save_and_generate': '儲存並生成',
-  'updated_by_agent': '此內容已被 Agent 更新',
+  'updated_externally': '此內容已被其他成員或 Agent 更新',
   'adopt_new_content': '採用新內容',
   'leave_dialog_description': '放棄的修改無法恢復。',
   'undo': '撤銷',

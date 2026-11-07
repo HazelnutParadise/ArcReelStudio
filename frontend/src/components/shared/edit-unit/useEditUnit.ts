@@ -33,6 +33,12 @@ export interface EditUnitOptions<T> {
    * 参数是带查询串的目标路径。需传稳定引用。
    */
   allowNavigation?: (to: string) => boolean;
+  /**
+   * 有未保存修改时收到外部更新（如其他成员保存），按顶层字段合并：自己没改的字段采用新内容，
+   * 自己改过的字段保留修改；只有双方改了同一字段且结果不同时才标出外部更新。
+   * 只用于字段相互独立的对象；缺省时整份保留自己的修改并标出外部更新。
+   */
+  mergeExternalFields?: boolean;
 }
 
 export interface SaveAndGenerateOptions {
@@ -97,6 +103,28 @@ function jsonEqual<T>(a: T, b: T): boolean {
   return a === b || JSON.stringify(a) === JSON.stringify(b);
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * 三方合并：`base` 是收到更新前的已保存内容，`mine` 是带未保存修改的内容，`theirs` 是新的已保存内容。
+ * 返回合并结果，以及是否有双方都改过、结果又不同的字段。
+ */
+export function mergeExternalFields<T>(base: T, mine: T, theirs: T): { value: T; conflict: boolean } {
+  if (!isPlainObject(base) || !isPlainObject(mine) || !isPlainObject(theirs)) {
+    return { value: mine, conflict: !jsonEqual(mine, theirs) };
+  }
+  const merged: Record<string, unknown> = { ...theirs };
+  let conflict = false;
+  for (const key of new Set([...Object.keys(base), ...Object.keys(mine), ...Object.keys(theirs)])) {
+    if (jsonEqual(mine[key], base[key])) continue;
+    merged[key] = mine[key];
+    if (!jsonEqual(theirs[key], base[key]) && !jsonEqual(mine[key], theirs[key])) conflict = true;
+  }
+  return { value: merged as T, conflict };
+}
+
 /**
  * 编辑单元：一次显式保存所提交的界面范围（一个设置视图、一张资产、一个分镜详情、一个记忆文件等）。
  * 单元内的字段先进入未保存修改，由 `save` 统一提交；挂载期间自动登记到离开拦截。
@@ -107,6 +135,7 @@ export function useEditUnit<T>({
   isEqual = jsonEqual,
   leaveTitle,
   allowNavigation,
+  mergeExternalFields: mergeFields = false,
 }: EditUnitOptions<T>): EditUnit<T> {
   const [state, setState] = useState<UnitState<T>>(() => ({
     value: source,
@@ -125,6 +154,16 @@ export function useEditUnit<T>({
       current = { ...state, seenSource: source };
     } else if (isEqual(state.value, state.saved)) {
       current = { ...state, seenSource: source, saved: source, value: source, externallyUpdated: false };
+    } else if (mergeFields) {
+      const { value: merged, conflict } = mergeExternalFields(state.saved, state.value, source);
+      // 先前标出的冲突仍未解决（保存或放弃才清除），本次合并没有新冲突也保留标记
+      current = {
+        ...state,
+        seenSource: source,
+        saved: source,
+        value: merged,
+        externallyUpdated: state.externallyUpdated || conflict,
+      };
     } else {
       current = {
         ...state,

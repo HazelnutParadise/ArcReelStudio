@@ -36,7 +36,7 @@ describe("ShotDetail 保存并生成", () => {
     fireEvent.click(screen.getByRole("button", { name: /保存并生成/ }));
 
     await waitFor(() => expect(onGenerateStoryboard).toHaveBeenCalledWith("E1S01"));
-    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道" });
+    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道" }, expect.anything());
     expect(onUpdatePrompt.mock.invocationCallOrder[0]).toBeLessThan(onGenerateStoryboard.mock.invocationCallOrder[0]);
     // 保存成功后提示条收起，按钮回到普通文案
     await waitFor(() => expect(screen.queryByRole("button", { name: /保存并生成/ })).not.toBeInTheDocument());
@@ -129,7 +129,7 @@ describe("ShotDetail 备注与引用进入未保存修改", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() =>
-      expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道", note: "换成雨后" }),
+      expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道", note: "换成雨后" }, expect.anything()),
     );
   });
 });

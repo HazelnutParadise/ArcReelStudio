@@ -76,6 +76,7 @@ export default {
   "group_deferred.deleted": "AI 剛刪除了 {{count}} 個{{entity}}：{{summary}}，點選檢視",
   "group_deferred.updated": "AI 剛更新了 {{count}} 個{{entity}}：{{summary}}，點選檢視",
 
+  "change_by_member": "{{name}}：{{text}}",
   "list.separator": "、",
   "list.more_suffix": "…等",
 } satisfies Record<keyof typeof enEvents, string>;

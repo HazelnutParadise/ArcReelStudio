@@ -271,7 +271,7 @@ describe("EpisodeSourceReview", () => {
     render(<EpisodeSourceReview projectName="demo" episode={6} episodes={[OWN]} />);
     fireEvent.change(await sourceBox(), { target: { value: "我的未保存修改" } });
     act(() => useAppStore.getState().invalidateEntities(["episode:6"]));
-    expect(await screen.findByText("此内容已被 Agent 更新")).toBeInTheDocument();
+    expect(await screen.findByText("此内容已被其他成员或 Agent 更新")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "本集原文" })).toHaveValue("我的未保存修改");
     fireEvent.click(screen.getByRole("button", { name: "放弃修改" }));
     expect(screen.getByRole("textbox", { name: "本集原文" })).toHaveValue("Agent 改写的原文");

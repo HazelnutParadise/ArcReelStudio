@@ -9,13 +9,22 @@ from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from contextvars import ContextVar
 from threading import RLock
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 from lib.i18n import DEFAULT_LOCALE, _
 
 logger = logging.getLogger(__name__)
 
 ProjectChangeSource = Literal["webui", "worker", "filesystem"]
+
+
+class ProjectChangeActor(TypedDict):
+    """发起本次写入的成员：多人协作时界面据此区分自己与他人的修改。"""
+
+    user_id: str
+    username: str
+
+
 ProjectChangeListener = Callable[[str, ProjectChangeSource, tuple[str, ...]], None]
 ProjectChangeBatch = dict[str, Any]
 ProjectChangeBatchListener = Callable[
@@ -27,6 +36,7 @@ _current_source: ContextVar[ProjectChangeSource] = ContextVar(
     "project_change_source",
     default="filesystem",
 )
+_current_actor: ContextVar[ProjectChangeActor | None] = ContextVar("project_change_actor", default=None)
 _listeners: list[ProjectChangeListener] = []
 _batch_listeners: list[ProjectChangeBatchListener] = []
 _listeners_lock = RLock()
@@ -58,6 +68,29 @@ def project_change_source(source: ProjectChangeSource):
         yield
     finally:
         _current_source.reset(token)
+
+
+def get_project_change_actor() -> ProjectChangeActor | None:
+    """当前上下文里发起写入的成员；后台任务、内嵌 Agent 与未登录的请求为 ``None``。
+
+    监听器在发布方的上下文里同步调用，读到的就是发起这次写入的成员。
+    """
+    return _current_actor.get()
+
+
+def set_project_change_actor(actor: ProjectChangeActor | None) -> None:
+    """为当前请求登记发起写入的成员，不还原：供认证依赖在请求的上下文里调用。"""
+    _current_actor.set(actor)
+
+
+@contextmanager
+def project_change_actor(actor: ProjectChangeActor | None):
+    """Temporarily attribute project mutations to a member."""
+    token = _current_actor.set(actor)
+    try:
+        yield
+    finally:
+        _current_actor.reset(token)
 
 
 def emit_project_change_hint(

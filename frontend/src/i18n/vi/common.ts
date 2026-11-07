@@ -54,7 +54,7 @@ export default {
   'save_and_leave': 'Lưu và rời đi',
   'save_and_switch': 'Lưu và chuyển',
   'save_and_generate': 'Lưu và tạo',
-  'updated_by_agent': 'Agent đã cập nhật nội dung này',
+  'updated_externally': 'Thành viên khác hoặc Agent đã cập nhật nội dung này',
   'adopt_new_content': 'Dùng nội dung mới',
   'leave_dialog_description': 'Không thể khôi phục các thay đổi đã hủy.',
   'undo': 'Hoàn tác',

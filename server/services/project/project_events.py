@@ -19,8 +19,10 @@ from typing import Any
 from lib import PROJECT_ROOT
 from lib.infra.content_digest import FileIdentity, file_identity
 from lib.project.project_change_hints import (
+    ProjectChangeActor,
     ProjectChangeBatch,
     ProjectChangeSource,
+    get_project_change_actor,
     register_project_change_batch_listener,
     register_project_change_listener,
 )
@@ -44,6 +46,16 @@ PROJECT_DELETED_EVENT = "project_deleted"
 # 项目下的 Agent 会话因 CLI 自主开启新一轮（后台任务完成后唤醒）回到 running；
 # 打开着的会话面板经常驻的 entry 流收到这一轮；会话列表等其他视图凭此得知状态变化。
 ASSISTANT_SESSION_RESUMED_EVENT = "assistant_session_resumed"
+# 项目在线成员名单变化时广播的事件名，载荷见 ``ProjectPresenceService``。
+PRESENCE_EVENT = "presence"
+
+#: Web 端写入的发起成员在 hint 标记里的形态：(user_id, username)；没有登录成员的写入记为 ``None``。
+_ActorMark = tuple[str, str] | None
+
+
+def _actor_mark(actor: ProjectChangeActor | None) -> _ActorMark:
+    return None if actor is None else (actor["user_id"], actor["username"])
+
 
 #: 读取一个项目当前状态的读盘入口；在线程池中调用。项目目录不存在时抛 ``FileNotFoundError``。
 ProjectStateReader = Callable[[str], ProjectState]
@@ -168,6 +180,8 @@ class _ProjectChannel:
     # 补扫需把它们让给自己那一批去广播，否则同一件事先被补扫发一次、再被本批发一次。
     inflight_batch_identities: Counter[tuple[Any, Any, Any]] = field(default_factory=Counter)
     pending_sources: set[ProjectChangeSource] = field(default_factory=set)
+    # 与 ``pending_sources`` 同时换出与结算：读盘前送达的 Web 端 hint 各自的发起成员。
+    pending_actors: set[_ActorMark] = field(default_factory=set)
     task: asyncio.Task | None = None
     snapshot: ProjectSnapshot | None = None
     # ``snapshot`` 读盘前的输入 stat 标识，与 ``snapshot`` 同时更新；轮询据此在输入未变时跳过重建。
@@ -355,6 +369,13 @@ class ProjectEventService:
         payload = {"project_name": project_name, "session_id": session_id, "status": "running"}
         channel.sse.broadcast((ASSISTANT_SESSION_RESUMED_EVENT, payload))
 
+    def publish_presence(self, project_name: str, payload: dict[str, Any]) -> None:
+        """向项目订阅者广播在线成员名单；没有订阅者时丢弃。须在事件循环线程调用。"""
+        channel = self._channels.get(project_name)
+        if channel is None:
+            return
+        channel.sse.broadcast((PRESENCE_EVENT, payload))
+
     def _on_hint(
         self,
         project_name: str,
@@ -364,11 +385,13 @@ class ProjectEventService:
         loop = self._loop
         if loop is None or loop.is_closed():
             return
+        # 监听器在发布方的上下文里同步调用：此刻读到的就是发起这次写入的成员。
         loop.call_soon_threadsafe(
             self._apply_hint,
             project_name,
             source,
             changed_paths,
+            get_project_change_actor(),
         )
 
     def _on_batch_hint(
@@ -385,6 +408,7 @@ class ProjectEventService:
             project_name,
             source,
             changes,
+            get_project_change_actor(),
         )
 
     def _apply_hint(
@@ -392,11 +416,14 @@ class ProjectEventService:
         project_name: str,
         source: ProjectChangeSource,
         changed_paths: tuple[str, ...],
+        actor: ProjectChangeActor | None = None,
     ) -> None:
         channel = self._channels.get(project_name)
         if channel is None:
             return
         channel.pending_sources.add(source)
+        if source == "webui":
+            channel.pending_actors.add(_actor_mark(actor))
         channel.scan_now.set()
         logger.debug(
             "项目变更 hint project=%s source=%s paths=%s",
@@ -410,6 +437,7 @@ class ProjectEventService:
         project_name: str,
         source: ProjectChangeSource,
         changes: tuple[ProjectChangeBatch, ...],
+        actor: ProjectChangeActor | None = None,
     ) -> None:
         channel = self._channels.get(project_name)
         if channel is None or not changes:
@@ -423,7 +451,9 @@ class ProjectEventService:
 
         # 文件 I/O 下沉到线程池，状态更新和广播留在事件循环
         task = asyncio.create_task(
-            self._async_rebuild_and_broadcast(project_name, channel, source, changes, identities),
+            self._async_rebuild_and_broadcast(
+                project_name, channel, source, changes, identities, actor if source == "webui" else None
+            ),
             name=f"batch-rebuild-{project_name}",
         )
         self._pending_batch_tasks.add(task)
@@ -436,6 +466,7 @@ class ProjectEventService:
         source: ProjectChangeSource,
         changes: tuple[ProjectChangeBatch, ...],
         identities: Counter[tuple[Any, Any, Any]],
+        actor: ProjectChangeActor | None,
     ) -> None:
         """文件 I/O 在线程中执行，状态更新和广播在事件循环线程中执行。"""
         try:
@@ -445,16 +476,20 @@ class ProjectEventService:
                 # 减掉，那条新变更会在下一轮扫描被 _resolve_batch_source 误标成 filesystem。
                 covered_sources = channel.pending_sources
                 channel.pending_sources = set()
+                covered_actors = channel.pending_actors
+                channel.pending_actors = set()
                 try:
                     stamp, snapshot = await asyncio.to_thread(self._rebuild_snapshot, project_name)
                 except FileNotFoundError:
                     channel.pending_sources |= covered_sources
+                    channel.pending_actors |= covered_actors
                     await self._handle_scan_file_not_found(
                         project_name, channel, log_message="构建显式项目事件快照失败 project=%s"
                     )
                     return
                 except Exception:
                     channel.pending_sources |= covered_sources
+                    channel.pending_actors |= covered_actors
                     logger.exception("构建显式项目事件快照失败 project=%s", project_name)
                     return
 
@@ -468,6 +503,7 @@ class ProjectEventService:
                     channel,
                     fingerprint=snapshot.fingerprint,
                     source=source,
+                    actor=actor,
                     changes=[dict(change) for change in changes],
                 )
 
@@ -476,11 +512,13 @@ class ProjectEventService:
                     # 补扫的变更不属于本批，来源按自己的 hint 标记解析，与轮询扫描同一口径：
                     # 沿用本批 source 会让 WebUI 自身的编辑被标成 worker（前端据此弹通知并自动
                     # 导航），或反之漏掉 worker 产物的通知。
+                    swept_source = self._settled_source(channel, covered_sources)
                     self._broadcast_changes(
                         project_name,
                         channel,
                         fingerprint=snapshot.fingerprint,
-                        source=self._settled_source(channel, covered_sources),
+                        source=swept_source,
+                        actor=self._settled_actor(channel, covered_actors, swept_source),
                         changes=swept,
                     )
         finally:
@@ -493,15 +531,20 @@ class ProjectEventService:
         *,
         fingerprint: str,
         source: ProjectChangeSource,
+        actor: ProjectChangeActor | None,
         changes: list[dict[str, Any]],
     ) -> None:
-        """向订阅者广播一批变更（轮询扫描与显式重建两条路径共用同一 payload 形状）。"""
+        """向订阅者广播一批变更（轮询扫描与显式重建两条路径共用同一 payload 形状）。
+
+        ``actor`` 是发起这批 Web 端写入的成员，无法归属到单一成员时为 ``None``。
+        """
         payload = {
             "project_name": project_name,
             "batch_id": uuid.uuid4().hex,
             "fingerprint": fingerprint,
             "generated_at": _utc_now_iso(),
             "source": source,
+            "actor": actor,
             "changes": changes,
         }
         channel.sse.broadcast(("changes", payload))
@@ -604,17 +647,20 @@ class ProjectEventService:
                         # 随本轮清掉的话，下一轮读到这次写入时已没有标记，会被标成 filesystem。
                         covered_sources = channel.pending_sources
                         channel.pending_sources = set()
+                        covered_actors = channel.pending_actors
+                        channel.pending_actors = set()
                         try:
                             # 仅文件 I/O 在线程中执行
                             stamp, snapshot = await asyncio.to_thread(self._poll_snapshot, project_name, known_stamp)
                         except BaseException:
                             channel.pending_sources |= covered_sources
+                            channel.pending_actors |= covered_actors
                             raise
                         # 输入未变时快照沿用，换出的来源标记随之结算（与无差异的扫描同一口径）
                         if snapshot is not None:
                             # 状态更新和广播在事件循环线程中执行（线程安全）
                             channel.input_stamp = stamp
-                            self._apply_scan_result(project_name, channel, snapshot, covered_sources)
+                            self._apply_scan_result(project_name, channel, snapshot, covered_sources, covered_actors)
                 except asyncio.CancelledError:
                     raise
                 except FileNotFoundError:
@@ -645,11 +691,13 @@ class ProjectEventService:
         channel: _ProjectChannel,
         snapshot: ProjectSnapshot,
         covered_sources: set[ProjectChangeSource],
+        covered_actors: set[_ActorMark],
     ) -> None:
         """在事件循环线程中更新 channel 状态并广播变更。"""
         previous = channel.snapshot
         channel.snapshot = snapshot
         source = self._settled_source(channel, covered_sources)
+        actor = self._settled_actor(channel, covered_actors, source)
         if previous is None or previous.fingerprint == snapshot.fingerprint:
             return
 
@@ -662,6 +710,7 @@ class ProjectEventService:
             channel,
             fingerprint=snapshot.fingerprint,
             source=source,
+            actor=actor,
             changes=changes,
         )
 
@@ -682,6 +731,19 @@ class ProjectEventService:
     ) -> ProjectChangeSource:
         """一轮读盘的来源：读盘前换出的标记，加上读盘期间已送达、仍留给下一轮的标记。"""
         return cls._resolve_batch_source(covered_sources | channel.pending_sources)
+
+    @staticmethod
+    def _settled_actor(
+        channel: _ProjectChannel, covered_actors: set[_ActorMark], source: ProjectChangeSource
+    ) -> ProjectChangeActor | None:
+        """一轮读盘的发起成员：只在 Web 端来源、且窗口内的写入都出自同一位成员时归属到人。"""
+        if source != "webui":
+            return None
+        marks = covered_actors | channel.pending_actors
+        if len(marks) != 1:
+            return None
+        mark = next(iter(marks))
+        return None if mark is None else {"user_id": mark[0], "username": mark[1]}
 
     @staticmethod
     def _resolve_batch_source(

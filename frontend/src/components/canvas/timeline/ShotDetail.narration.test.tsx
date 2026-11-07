@@ -60,7 +60,7 @@ describe("ShotDetail 旁白片段的台词", () => {
 
     expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", {
       video_prompt: { action: "撑伞走过", camera_motion: "Static", ambiance_audio: "雨声", dialogue: [] },
-    });
+    }, expect.anything());
   });
 
   it("清除台词后放弃修改，台词恢复显示", () => {
@@ -107,7 +107,7 @@ describe("ShotDetail 旁白正文", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "旁白正文" }), { target: { value: "雨停了。" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { novel_text: "雨停了。" });
+    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { novel_text: "雨停了。" }, expect.anything());
   });
 
   it("上游保存后未修改的正文跟随新内容，放弃修改恢复为已保存内容", () => {
@@ -198,7 +198,7 @@ describe("ShotDetail 改序与章节切分点", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(onUpdatePrompt).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
-    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { segment_break: true }));
+    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { segment_break: true }, expect.anything()));
   });
 
   it("只读模式不给章节切分点开关", () => {

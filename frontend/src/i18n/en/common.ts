@@ -53,7 +53,7 @@ export default {
   'save_and_leave': 'Save and leave',
   'save_and_switch': 'Save and switch',
   'save_and_generate': 'Save and generate',
-  'updated_by_agent': 'The Agent updated this content',
+  'updated_externally': 'Another member or the Agent updated this content',
   'adopt_new_content': 'Use new content',
   'leave_dialog_description': 'Discarded changes can\'t be recovered.',
   'undo': 'Undo',

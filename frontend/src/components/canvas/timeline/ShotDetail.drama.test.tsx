@@ -91,7 +91,7 @@ describe("ShotDetail 剧情演绎", () => {
           { kind: "voiceover", speaker: null, text: "三年后。" },
           { kind: "dialogue", speaker: "阿离", text: "我回来了。" },
         ],
-      }),
+      }), expect.anything(),
     );
   });
 
@@ -105,7 +105,7 @@ describe("ShotDetail 剧情演绎", () => {
       "E1S01",
       expect.objectContaining({
         utterances: [...sampleUtterances, { kind: "voiceover", speaker: null, text: "" }],
-      }),
+      }), expect.anything(),
     );
   });
 

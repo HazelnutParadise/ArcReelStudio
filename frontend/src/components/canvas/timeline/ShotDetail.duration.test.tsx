@@ -95,7 +95,7 @@ describe("ShotDetail 时长候选与越界提示", () => {
     expect(onUpdatePrompt).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
-    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { duration_seconds: 8 }));
+    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { duration_seconds: 8 }, expect.anything()));
   });
 
   it("改完时长后分镜开始生成：保存被拒并说明原因，不写回", async () => {

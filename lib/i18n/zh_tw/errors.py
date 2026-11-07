@@ -220,6 +220,7 @@ MESSAGES = {
     "draft_invalid_json": "腳本規劃草稿的結構不合法，請檢查後重試",
     "draft_not_found": "集（id={episode}）沒有這份草稿，可能已被採用或丟棄",
     "draft_revision_conflict": "草稿在你編輯期間已被修改，本次操作未生效；請檢視最新內容後重試",
+    "edit_conflict": "這段內容在你編輯期間已被其他成員修改，本次儲存未生效；請檢視最新內容後再決定是否覆蓋",
     "draft_formal_revision_conflict": "正式內容在草稿產出後已被修改，本次儲存未採用；請丟棄草稿或交給 Agent 合併",
     "draft_agent_owned": "Agent 正在修改這份內容，請交給 Agent 完成或丟棄這份修改",
     "blank_script_formal_exists": "本集已有正式腳本，不能從空白開始。請直接在時間軸上修改",

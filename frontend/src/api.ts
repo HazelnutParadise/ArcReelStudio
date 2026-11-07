@@ -36,6 +36,8 @@ import type {
   ProjectEventSnapshotPayload,
   ProjectDeletedPayload,
   AssistantSessionResumedPayload,
+  ProjectPresenceMember,
+  ProjectPresencePayload,
   AutoBackendsResponse,
   GetSystemConfigResponse,
   GetSystemVersionResponse,
@@ -1446,17 +1448,22 @@ class API {
     });
   }
 
+  /**
+   * 剧情演绎分镜 PATCH。`base` 是开始编辑时这些字段的值：起点之后被其他成员改过的字段
+   * 拒绝写入（409，`diagnostic.code === "edit_conflict"`），不覆盖对方；不给则直接写入。
+   */
   static async updateScene(
     projectName: string,
     sceneId: string,
     scriptFile: string,
-    updates: Record<string, unknown>
+    updates: Record<string, unknown>,
+    base?: Record<string, unknown>,
   ): Promise<SuccessResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/script-scenes/${encodeURIComponent(sceneId)}`,
       {
         method: "PATCH",
-        body: JSON.stringify({ script_file: scriptFile, updates }),
+        body: JSON.stringify({ script_file: scriptFile, updates, base }),
       }
     );
   }
@@ -1748,7 +1755,7 @@ class API {
    * `image_prompt`、`video_prompt`、`note`、
    * `characters_in_segment`、`scenes`、`props`。字段清单以后端为准，
    * mirrors server/routers/projects.py UpdateSegmentRequest。
-   * 保留 Record 以兼容 spread 调用。
+   * 保留 Record 以兼容 spread 调用。`updates.base` 与 {@link API.updateScene} 的 `base` 同义。
    */
   static async updateSegment(
     projectName: string,
@@ -1766,18 +1773,22 @@ class API {
 
   // ==================== 分镜管理（广告/短片） ====================
 
-  /** 更新 ad 剧本中的单个分镜（口播文案 / section / 时长 / 引用列表等白名单字段）。 */
+  /**
+   * 更新 ad 剧本中的单个分镜（口播文案 / section / 时长 / 引用列表等白名单字段）。
+   * `base` 与 {@link API.updateScene} 的 `base` 同义。
+   */
   static async updateShot(
     projectName: string,
     shotId: string,
     scriptFile: string,
-    updates: Record<string, unknown>
+    updates: Record<string, unknown>,
+    base?: Record<string, unknown>,
   ): Promise<SuccessResponse & { shot?: AdShot }> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/script-shots/${encodeURIComponent(shotId)}`,
       {
         method: "PATCH",
-        body: JSON.stringify({ script_file: scriptFile, updates }),
+        body: JSON.stringify({ script_file: scriptFile, updates, base }),
       }
     );
   }
@@ -2906,6 +2917,26 @@ class API {
     );
   }
 
+  /** 标签页报到在线，`view` 是正在看的工作区位置；返回项目当前的在线成员名单。 */
+  static async reportPresence(
+    projectName: string,
+    clientId: string,
+    view: string | null,
+  ): Promise<{ members: ProjectPresenceMember[] }> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/presence`, {
+      method: "PUT",
+      body: JSON.stringify({ client_id: clientId, view }),
+    });
+  }
+
+  /** 标签页离开项目；`keepalive` 让页面关闭时请求仍能送出。 */
+  static async leavePresence(projectName: string, clientId: string): Promise<void> {
+    await this.request(
+      `/projects/${encodeURIComponent(projectName)}/presence/${encodeURIComponent(clientId)}`,
+      { method: "DELETE", keepalive: true },
+    );
+  }
+
   /** 订阅项目事件流；断线后自动重建，重建后服务端重新下发 snapshot。 */
   static openProjectEventStream(options: ProjectEventStreamOptions): SseStreamHandle {
     const url = `${API_BASE}/projects/${encodeURIComponent(options.projectName)}/events/stream`;
@@ -2927,6 +2958,9 @@ class API {
             break;
           case "assistant_session_resumed":
             options.onAssistantSessionResumed?.(payload as unknown as AssistantSessionResumedPayload);
+            break;
+          case "presence":
+            options.onPresence?.(payload as unknown as ProjectPresencePayload);
             break;
           default:
             break;

@@ -81,11 +81,11 @@ describe("ShotSplitView 切换拦截与快捷键", () => {
     fireEvent.change(box, { target: { value: "雨后的街道" } });
 
     expect(fireEvent.keyDown(box, { key: "s", metaKey: true })).toBe(false);
-    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道" }));
+    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道" }, expect.anything()));
 
     fireEvent.change(box, { target: { value: "雨停后的街道" } });
     expect(fireEvent.keyDown(box, { key: "s", ctrlKey: true })).toBe(false);
-    await waitFor(() => expect(onUpdatePrompt).toHaveBeenLastCalledWith("E1S01", { image_prompt: "雨停后的街道" }));
+    await waitFor(() => expect(onUpdatePrompt).toHaveBeenLastCalledWith("E1S01", { image_prompt: "雨停后的街道" }, expect.anything()));
   });
 
   it("焦点在弹层里时 ⌘S 不保存分镜，但仍拦下浏览器的保存网页", () => {

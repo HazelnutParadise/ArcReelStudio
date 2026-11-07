@@ -107,6 +107,7 @@ from server.routers._coalesce import RequestCoalescer
 from server.routers._episode_source_errors import episode_source_http_error
 from server.routers._script_edits import (
     execute_current_script_edit,
+    require_fields_unchanged,
     require_script_edit_result,
     script_batch_status,
 )
@@ -1582,6 +1583,8 @@ async def move_script_item(
 class UpdateSceneRequest(BaseModel):
     script_file: str
     updates: dict
+    # 开始编辑时各字段的值；给出时，起点之后被别人改过的字段拒绝写入（409）
+    base: dict[str, Any] | None = None
 
 
 @router.patch("/projects/{name}/script-scenes/{scene_id}", dependencies=[Depends(require_project_migration_ok)])
@@ -1627,9 +1630,10 @@ async def update_scene(
                 if key in {"characters_in_scene", "scenes", "props"} and isinstance(value, list):
                     value = [asset_name_comparison_key(entry) if isinstance(entry, str) else entry for entry in value]
                 fields[key] = value
+            matched = next(scene for scene in scenes if scene.get("scene_id") == scene_id)
             if not fields:
-                matched = next(scene for scene in scenes if scene.get("scene_id") == scene_id)
                 return {"success": True, "scene": matched}
+            require_fields_unchanged(matched, fields, req.base)
             with project_change_source("webui"):
                 result = execute_current_script_edit(
                     manager,
@@ -1637,6 +1641,7 @@ async def update_scene(
                     req.script_file,
                     [{"op": "update", "id": scene_id, "fields": fields}],
                     editor=make_script_batch_editor(manager),
+                    current_script=current,
                 )
             require_script_edit_result(
                 result,
@@ -1663,6 +1668,8 @@ async def update_scene(
 class UpdateShotRequest(BaseModel):
     script_file: str
     updates: dict
+    # 开始编辑时各字段的值；给出时，起点之后被别人改过的字段拒绝写入（409）
+    base: dict[str, Any] | None = None
 
 
 # ad 分镜 PATCH 白名单：shot_id（定位键）与 generated_assets（运行时状态）不可改写。
@@ -1733,6 +1740,7 @@ async def update_shot(
             }
             if not fields:
                 return {"success": True, "shot": matched}
+            require_fields_unchanged(matched, fields, req.base)
             with project_change_source("webui"):
                 result = execute_current_script_edit(
                     manager,
@@ -1740,6 +1748,7 @@ async def update_shot(
                     req.script_file,
                     [{"op": "update", "id": shot_id, "fields": fields}],
                     editor=make_script_batch_editor(manager),
+                    current_script=current,
                 )
             require_script_edit_result(
                 result,
@@ -1774,6 +1783,8 @@ class UpdateSegmentRequest(BaseModel):
     characters_in_segment: list[str] | None = None
     scenes: list[str] | None = None
     props: list[str] | None = None
+    # 开始编辑时各字段的值；给出时，起点之后被别人改过的字段拒绝写入（409）
+    base: dict[str, Any] | None = None
 
 
 class UpdateOverviewRequest(BaseModel):
@@ -1842,6 +1853,7 @@ async def update_segment(
                     fields[field] = [asset_name_comparison_key(value) for value in (getattr(req, field) or [])]
             if not fields:
                 return {"success": True, "segment": matched}
+            require_fields_unchanged(matched, fields, req.base)
             with project_change_source("webui"):
                 result = execute_current_script_edit(
                     manager,
@@ -1849,6 +1861,7 @@ async def update_segment(
                     req.script_file,
                     [{"op": "update", "id": segment_id, "fields": fields}],
                     editor=make_script_batch_editor(manager),
+                    current_script=current,
                 )
             require_script_edit_result(
                 result,

@@ -6,6 +6,8 @@ import { useHasUnsavedChanges } from "@/components/shared/edit-unit/LeaveGuard";
 import type { SseStreamHandle } from "@/utils/sse-stream";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
+import { useAuthStore } from "@/stores/auth-store";
+import { usePresenceStore } from "@/stores/presence-store";
 import { useProjectsStore, type RefreshProjectResult } from "@/stores/projects-store";
 import { useCostStore } from "@/stores/cost-store";
 import { SCRIPT_PLAN_TASK_TYPES, useTasksStore } from "@/stores/tasks-store";
@@ -367,7 +369,17 @@ export function useProjectEventsSSE(projectName?: string | null): void {
           groupChangesByType(entityChanges),
         );
 
-        const notifyChanges = entityChanges.length > 0 && payload.source !== "webui";
+        // Web 端修改里只有其他成员的才提示；自己的修改不提示。其他成员的修改不自动跳转与聚焦：
+        // 对方在别处编辑，不该把我从正在看的地方带走。
+        const actor = payload.actor ?? null;
+        const otherMember =
+          payload.source === "webui" && actor !== null && actor.user_id !== useAuthStore.getState().userId
+            ? actor
+            : null;
+        const notifyChanges = entityChanges.length > 0 && (payload.source !== "webui" || otherMember !== null);
+        const followChanges = notifyChanges && payload.source !== "webui";
+        const byMember = (text: string) =>
+          otherMember ? tEventsRef.current("change_by_member", { name: otherMember.username, text }) : text;
         const workspaceNotifications: { group: (typeof groupedChanges)[number]; target: WorkspaceNotificationTarget }[] =
           [];
 
@@ -376,6 +388,7 @@ export function useProjectEventsSSE(projectName?: string | null): void {
           let draftHandled = false;
           for (const change of entityChanges) {
             if (
+              followChanges &&
               change.entity_type === "draft" &&
               change.action === "created" &&
               typeof change.episode === "number" &&
@@ -397,12 +410,13 @@ export function useProjectEventsSSE(projectName?: string | null): void {
                   if (!target) {
                     return null;
                   }
-                  workspaceNotifications.push({ group, target });
+                  // 工作区通知的文案是「AI 刚更新了……」，只用于 Agent 与后台任务的修改
+                  if (followChanges) workspaceNotifications.push({ group, target });
                   return target;
                 })
                 .find(Boolean) ?? null;
 
-            queuedFocusRef.current = isWorkspaceEditing(hasUnsavedChanges) ? null : nextFocusTarget;
+            queuedFocusRef.current = !followChanges || isWorkspaceEditing(hasUnsavedChanges) ? null : nextFocusTarget;
           }
         }
 
@@ -440,7 +454,7 @@ export function useProjectEventsSSE(projectName?: string | null): void {
                 continue;
               }
               pushNotification(
-                formatGroupedNotificationText(group, tEventsRef.current, episodeLedger, currentScripts),
+                byMember(formatGroupedNotificationText(group, tEventsRef.current, episodeLedger, currentScripts)),
                 "success",
               );
             }
@@ -490,6 +504,10 @@ export function useProjectEventsSSE(projectName?: string | null): void {
         if (entityChanges.some((c) => c.action === "grid_ready" || c.action === "grid_split_done")) {
           useAppStore.getState().invalidateGrids();
         }
+      },
+      onPresence(payload) {
+        if (disposed) return;
+        usePresenceStore.getState().setMembers(payload.project_name, payload.members);
       },
       onAssistantSessionResumed(payload) {
         if (disposed) return;

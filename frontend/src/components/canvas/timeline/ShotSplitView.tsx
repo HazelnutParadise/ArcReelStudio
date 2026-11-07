@@ -30,7 +30,8 @@ interface ShotSplitViewProps {
   /** 当前剧集剧本文件名，分镜图/视频自主上传需要它定位剧本条目 */
   scriptFile?: string;
   /** 提交分镜字段的增量修改，失败时抛错，resolve 为项目是否已刷新；缺省时只读展示。 */
-  onUpdatePrompt?: (segmentId: string, patch: Record<string, unknown>) => Promise<boolean>;
+  /** `base` 是开始编辑时这些字段的值，起点之后被其他成员改过的字段保存时拒绝写入。 */
+  onUpdatePrompt?: (segmentId: string, patch: Record<string, unknown>, base?: Record<string, unknown>) => Promise<boolean>;
   /** 分镜改序：移到 afterId 之后，null 移到最前；resolve 为是否移动成功 */
   onMoveShot?: (shotId: string, afterId: string | null) => Promise<boolean>;
   /** 新增分镜（旁白带正文）：afterId 为 null 时追加到末尾；resolve 为是否成功 */

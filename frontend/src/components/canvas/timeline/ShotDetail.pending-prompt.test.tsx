@@ -59,7 +59,7 @@ describe("ShotDetail 空提示词", () => {
     const [imageBox] = screen.getAllByPlaceholderText(/描述/);
     fireEvent.change(imageBox, { target: { value: "雨夜街道" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
-    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨夜街道" });
+    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨夜街道" }, expect.anything());
   });
 
   it("待编写条目显示待编写提示", () => {

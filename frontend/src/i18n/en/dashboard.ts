@@ -4045,4 +4045,8 @@ export default {
   "asset_library_binding_needs_confirmation_hint": "The key or account changed after confirmation. Its assets are not used until you confirm again",
   "asset_library_binding_reconfirm": "Confirm again",
   "asset_library_binding_account_label": "Asset library account bound to “{{name}}”",
+  "presence_trigger": "Also in this project: {{names}}",
+  "presence_title": "Also in this project",
+  "presence_view_episode": "Viewing episode {{episode}}",
+  "presence_view_project": "In the project",
 };

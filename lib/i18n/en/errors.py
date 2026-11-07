@@ -225,6 +225,7 @@ MESSAGES = {
     "draft_invalid_json": "The script plan draft has an invalid structure; please check and retry",
     "draft_not_found": "Episode (id={episode}) has no such draft; it may already have been adopted or discarded",
     "draft_revision_conflict": "The draft changed while you were editing, so this action was not applied; review the latest content and retry",
+    "edit_conflict": "Someone else changed this content while you were editing, so your save was not applied; review the latest content before deciding whether to overwrite it",
     "draft_formal_revision_conflict": (
         "The formal content changed after this draft was produced, so the save was not adopted; "
         "discard the draft or hand it to the agent to merge"

@@ -4176,4 +4176,8 @@ export default {
   'asset_library_binding_needs_confirmation_hint': 'После подтверждения ключ или аккаунт изменился. Его материалы не используются, пока вы не подтвердите снова',
   'asset_library_binding_reconfirm': 'Подтвердить снова',
   'asset_library_binding_account_label': 'Аккаунт библиотеки материалов, привязанный к «{{name}}»',
+  'presence_trigger': 'Также в этом проекте: {{names}}',
+  'presence_title': 'Также в этом проекте',
+  'presence_view_episode': 'Смотрит серию {{episode}}',
+  'presence_view_project': 'В проекте',
 } satisfies Record<keyof typeof enDashboard, string> & Record<string, string>;

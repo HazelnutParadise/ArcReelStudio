@@ -86,6 +86,7 @@ export default {
   "group_deferred.updated":
     "AI just updated {{count}} {{entity}}: {{summary}}. Tap to view",
 
+  "change_by_member": "{{name}}: {{text}}",
   "list.separator": ", ",
   "list.more_suffix": " and more",
 };

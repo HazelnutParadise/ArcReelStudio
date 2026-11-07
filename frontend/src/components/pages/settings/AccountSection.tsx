@@ -443,6 +443,7 @@ function AddMemberForm({ onAdded }: { onAdded: (member: MemberInfo) => void }) {
       onAdded(member);
     } catch (err) {
       setError(t("dashboard:members_add_failed", { message: errMsg(err) }));
+    } finally {
       setSaving(false);
     }
   };
@@ -551,6 +552,7 @@ function ResetPasswordForm({ member, onDone }: { member: MemberInfo; onDone: () 
       onDone();
     } catch (err) {
       setError(t("dashboard:members_update_failed", { message: errMsg(err) }));
+    } finally {
       setSaving(false);
     }
   };

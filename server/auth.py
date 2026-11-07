@@ -29,6 +29,7 @@ from pydantic import BaseModel, ConfigDict
 
 from lib.infra.api_errors import ApiError
 from lib.infra.data_root_layout import DataRootLayout
+from lib.project.project_change_hints import ProjectChangeActor, set_project_change_actor
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,8 @@ class CurrentUserInfo(BaseModel):
     id: str
     sub: str
     role: str = "admin"
+    # 账号的用户名；API Key 调用时 ``sub`` 是密钥标识，这里仍是持有者的用户名。内嵌 Agent 与匿名用户为空。
+    username: str | None = None
 
     model_config = ConfigDict(frozen=True)
 
@@ -427,7 +430,12 @@ async def _payload_to_user(payload: dict) -> CurrentUserInfo:
             user = await resolve_session_user(session, uid, version) if isinstance(version, int) else None
     if user is None:
         raise _unauthorized("账号不存在、已停用，或登录已失效")
-    return CurrentUserInfo(id=user.id, sub=sub if payload.get("via") == "apikey" else user.username, role=user.role)
+    return CurrentUserInfo(
+        id=user.id,
+        sub=sub if payload.get("via") == "apikey" else user.username,
+        role=user.role,
+        username=user.username,
+    )
 
 
 async def get_current_user(
@@ -439,6 +447,7 @@ async def get_current_user(
     启用时缺 token 抛 401（与旧 oauth2_scheme auto_error 行为等价）。
     """
     if not is_auth_enabled():
+        set_project_change_actor(None)
         return _anonymous_user()
     if not token:
         raise HTTPException(
@@ -447,7 +456,13 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     payload = await _verify_and_get_payload_async(token)
-    return await _payload_to_user(payload)
+    user = await _payload_to_user(payload)
+    # 本次请求里的项目写入归到这位成员名下：事件流据此让其他成员看到是谁改的。
+    actor: ProjectChangeActor | None = None
+    if user.sub != EMBEDDED_AGENT_SUB and user.username:
+        actor = {"user_id": user.id, "username": user.username}
+    set_project_change_actor(actor)
+    return user
 
 
 # Type aliases for FastAPI dependency injection

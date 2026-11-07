@@ -88,6 +88,7 @@ export default {
   "group_deferred.updated":
     'ИИ только что обновил: {{entity}} ({{count}}) — {{summary}}. Нажмите, чтобы посмотреть',
 
+  "change_by_member": "{{name}}: {{text}}",
   "list.separator": ", ",
   "list.more_suffix": " и другие",
 } satisfies Record<keyof typeof enEvents, string> & Record<string, string>;

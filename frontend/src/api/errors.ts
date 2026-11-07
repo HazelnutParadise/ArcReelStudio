@@ -98,6 +98,13 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** 保存被拒绝：要写的字段在开始编辑之后已被其他成员修改（服务端 409 `edit_conflict`）。 */
+export function isEditConflict(error: unknown): error is ApiRequestError {
+  if (!(error instanceof ApiRequestError) || error.status !== 409) return false;
+  const diagnostic = error.diagnostic as { code?: unknown } | null | undefined;
+  return diagnostic?.code === "edit_conflict";
+}
+
 /** Preserves reference request blockers so the UI can show a repair action. */
 export class ReferenceProjectionError extends Error {
   readonly code = "reference_request_projection_blocked" as const;

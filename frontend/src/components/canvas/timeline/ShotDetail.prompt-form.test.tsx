@@ -68,7 +68,7 @@ describe("ShotDetail 提示词形态切换", () => {
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     expect(onUpdatePrompt).toHaveBeenCalledWith(
       "E1S01",
-      expect.objectContaining({ image_prompt: RENDERED_IMAGE_PROMPT }),
+      expect.objectContaining({ image_prompt: RENDERED_IMAGE_PROMPT }), expect.anything(),
     );
   });
 
@@ -197,7 +197,7 @@ describe("ShotDetail 最终提示词预览", () => {
     const dialog = await screen.findByRole("dialog", { name: "分镜图最终提示词" });
     expect(await within(dialog).findByText(/Scene: 雨夜街道/)).toBeInTheDocument();
     expect(save.mock.invocationCallOrder[0]).toBeLessThan(request.mock.invocationCallOrder[0]);
-    expect(save).toHaveBeenCalledWith("E1S01", expect.objectContaining({ image_prompt: expect.objectContaining({ scene: "改过的画面" }) }));
+    expect(save).toHaveBeenCalledWith("E1S01", expect.objectContaining({ image_prompt: expect.objectContaining({ scene: "改过的画面" }) }), expect.anything());
   });
 
   it.each([false, new Error("写入失败")])("保存或刷新失败时不打开预览（%s）", async (result) => {
