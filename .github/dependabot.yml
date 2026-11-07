@@ -153,12 +153,9 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     # @types/node 跟随 package.json engines 的 Node 主版本（26），主版本随 Node 升级手动调整。
-    # TypeScript 7 不再提供原有的编译器 API，前端停在 6.x；原因与解锁条件见 docs/agents/dependencies.md。
     ignore:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
-      - dependency-name: "typescript"
-        versions: [">=7"]
     groups:
       react:
         patterns:
@@ -228,6 +225,7 @@ updates:
       testing:
         patterns:
           - "@testing-library/*"
+          - "oxc-parser"
           - "jsdom"
         update-types:
           - "minor"

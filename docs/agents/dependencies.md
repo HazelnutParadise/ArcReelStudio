@@ -6,7 +6,7 @@
 
 ## 已知版本约束
 
-- **前端 TypeScript 停在 6.x。** TypeScript 7 的 `typescript` 包不再提供原有的编译器 API，入口只剩 `typescript/unstable/*`，而 `frontend/src/api.enqueue-methods.test.ts` 用 `ts.createSourceFile` 解析 `api.ts`。解锁条件：该测试改用不依赖编译器 API 的解析器，再核对 TypeScript 7 下 `pnpm check` 的结果。`@shadcn/lint` 读取组件文件优先用随它安装的 `oxc-parser`，它的 peer `@typescript-eslint/parser` 要求 `typescript <6.1`，升级后只会出现 peer 警告。`.github/dependabot.yml` 的 frontend 段因此忽略 TypeScript 7。
+- **前端 TypeScript 是 7.x，没有原来的编译器 API。** TypeScript 7 的 `typescript` 包只提供 `tsc` 与不稳定的 `typescript/unstable/*`。前端测试或脚本需要解析 TS 源码时用 `oxc-parser`（如 `frontend/src/api.enqueue-methods.test.ts`），不 import `typescript`。`eslint-plugin-testing-library` 带入的 `@typescript-eslint/*` 要求 `typescript <6.1`，安装时的 peer 警告是预期的：Oxlint 加载该插件时不调用 TypeScript 编译器，它的规则照常生效。
 - **前端工具链是 Vite+（`vp`）。** `vite-plus` 固定它所带的 Oxlint、tsgolint、`vite-plus-core` 与 `vitest` 的版本。`frontend/pnpm-workspace.yaml` 的 catalog 把 `vite` 指向 `@voidzero-dev/vite-plus-core`，`vitest`、`@vitest/coverage-v8` 与 `vite-plus` 依赖的版本一致；升级 `vite-plus` 时在同一个改动里同步 catalog。不要把 `oxlint`、`@oxlint/plugins` 加为直接依赖，自写的 lint 插件从 `vite-plus/lint/plugins` 导入。`vite` 包不再提供 `vite` 命令，构建与预览用 `vp build`、`vp preview`。
 - **前端的 ESLint 格式插件经 Oxlint 的 JS 插件加载。** `eslint-plugin-react-hooks`（React Compiler 诊断）、`eslint-plugin-testing-library`、`eslint-plugin-jest-dom` 与 `@shadcn/lint` 仍是直接依赖，`eslint` 作为它们的 peer 留在依赖树里，但不再是直接依赖，也不再执行 lint。React Compiler 诊断不用 Oxlint 内置实现的原因写在 `frontend/lint/config.ts`。
 - **文档站 TypeScript 上限是 6.x。** 原因与解锁条件写在 `.github/dependabot.yml` 的 website 段注释里。
