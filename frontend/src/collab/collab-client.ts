@@ -49,6 +49,15 @@ export interface CollabPeer {
   field: string | null;
   /** 光标与选区在该字段文字里的位置（Yjs 相对位置，经本机文档解析成下标）。 */
   selection: { anchor: number; head: number } | null;
+  /** 鼠标指针（页面房间才有）：相对某个锚点元素的位置，见 `live-pointers`。 */
+  pointer: PointerPosition | null;
+}
+
+/** 鼠标指针相对锚点元素的位置：`x`、`y` 是锚点内容区的比例（0–1）。 */
+export interface PointerPosition {
+  anchor: string;
+  x: number;
+  y: number;
 }
 
 export const LOCAL_ORIGIN = Symbol("collab-local");
@@ -181,6 +190,10 @@ export class CollabRoom {
     return this.client.flush(this);
   }
 
+  setPointer(pointer: PointerPosition | null): void {
+    this.awareness.setLocalStateField("pointer", pointer);
+  }
+
   setPresence(presence: LocalPresence | null): void {
     if (!presence) {
       this.awareness.setLocalStateField("focus", null);
@@ -306,6 +319,7 @@ export class CollabRoom {
         color: user.color ?? colorFor(user.id),
         field: typeof focus?.field === "string" ? focus.field : null,
         selection: this.resolveSelection(focus),
+        pointer: parsePointer(state.pointer),
       });
     }
     this.update({ peers });
@@ -334,6 +348,14 @@ export class CollabRoom {
     encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(this.awareness, clientIds));
     this.client.sendData("awareness", this.ref, encoding.toUint8Array(encoder));
   }
+}
+
+function parsePointer(value: unknown): PointerPosition | null {
+  if (!value || typeof value !== "object") return null;
+  const { anchor, x, y } = value as Record<string, unknown>;
+  if (typeof anchor !== "string" || typeof x !== "number" || typeof y !== "number") return null;
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  return { anchor, x, y };
 }
 
 type ServerMessage =

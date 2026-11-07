@@ -426,9 +426,31 @@ def _selling_points(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
+# ── 页面在线状态 ─────────────────────────────────────────────────
+
+
+class PageUnit:
+    """一个项目页面上的在线状态（谁在、鼠标指在哪）。文档没有内容，只借房间转发在线状态，不写回任何东西。
+
+    键是页面路径（不含查询串），只用来把看同一页的人放进同一个房间。
+    """
+
+    kind = "page"
+
+    def read(self, pm: ProjectManager, project: str, key: str) -> dict[str, Any]:
+        if not key.startswith("/") or not pm.project_exists(project):
+            raise UnitNotFoundError(key)
+        return {}
+
+    def write(self, pm: ProjectManager, project: str, key: str, changes: dict[str, Any]) -> None:
+        # 页面房间不承载内容，浏览器也不会往文档里写；有人硬塞内容也不落盘
+        return
+
+
 UNIT_SPECS: dict[str, UnitSpec] = {
     spec.kind: spec
     for spec in (
+        PageUnit(),
         OverviewUnit(),
         BriefUnit(),
         AssetUnit(),

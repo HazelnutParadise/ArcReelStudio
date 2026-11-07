@@ -162,3 +162,14 @@ def test_a_derived_episode_source_cannot_be_written(project_files) -> None:
     with pytest.raises(UnitWriteError) as exc:
         UNIT_SPECS["episode_source"].write(project_files, PROJECT, "3", {"text": "改不了"})
     assert exc.value.code == "episode_source_derived"
+
+
+def test_page_rooms_carry_no_content_and_need_an_existing_project(project_files) -> None:
+    unit = UNIT_SPECS["page"]
+
+    assert unit.read(project_files, PROJECT, "/app/projects/demo") == {}
+    unit.write(project_files, PROJECT, "/app/projects/demo", {"anything": "x"})
+    with pytest.raises(UnitNotFoundError):
+        unit.read(project_files, "missing", "/app/projects/missing")
+    with pytest.raises(UnitNotFoundError):
+        unit.read(project_files, PROJECT, "not-a-path")
