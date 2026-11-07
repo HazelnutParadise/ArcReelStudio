@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 MIN_PASSWORD_LENGTH = 8
 _USERNAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._@-]{0,63}$")
 _DEFAULT_ADMIN_USERNAME = "admin"
+# 内嵌 Agent 的令牌主体名；成员用这个名字会被认成内嵌 Agent
+_RESERVED_USERNAMES = frozenset({"embedded-agent"})
 _GENERATED_PASSWORD_LENGTH = 20
 
 _password_hash = PasswordHash.recommended()
@@ -39,9 +41,9 @@ _DUMMY_HASH = _password_hash.hash(secrets.token_urlsafe(16))
 
 
 def normalize_username(raw: str) -> str:
-    """去掉首尾空白并转成小写；不符合规则时抛 ``username_invalid``。"""
+    """去掉首尾空白并转成小写；不符合规则或是保留名称时抛 ``username_invalid``。"""
     username = raw.strip().lower()
-    if not _USERNAME_PATTERN.fullmatch(username):
+    if not _USERNAME_PATTERN.fullmatch(username) or username in _RESERVED_USERNAMES:
         raise BadRequestError("username_invalid")
     return username
 
@@ -113,11 +115,13 @@ async def bootstrap_admin(session_factory: async_sessionmaker[AsyncSession], *, 
             admin.is_active = True
             # 此前没有可登录账号，也就没有要作废的登录，令牌版本不变
             admin.password_hash = password_hash
+        if not configured:
+            # 在提交前写出初始密码：写不出来就整笔回滚，下次启动重新初始化，不会留下没人知道的密码
+            await asyncio.to_thread(_write_owner_only, initial_password_path, password)
 
     if configured:
         logger.info("已按 AUTH_USERNAME / AUTH_PASSWORD 初始化默认管理员 %s", username)
         return
-    await asyncio.to_thread(_write_owner_only, initial_password_path, password)
     logger.warning(
         "未设置 AUTH_PASSWORD，已为默认管理员 %s 生成初始密码，保存在 %s；登录后请在「设置 › 账号与成员」中修改密码",
         username,

@@ -375,6 +375,26 @@ async def verify_api_key(token: str) -> dict | None:
     return payload
 
 
+async def verify_active_api_key(token: str) -> dict | None:
+    """验证 API Key，并确认它所属的账号仍存在且启用；远程 MCP 等不经 ``get_current_user`` 的入口用它。
+
+    ``verify_api_key`` 的缓存只记 key 本身，账号状态每次都查库，停用成员后立即生效。
+    """
+    payload = await verify_api_key(token)
+    if payload is None:
+        return None
+    uid = payload.get("uid")
+    if not isinstance(uid, str):
+        return None
+
+    from lib.db import async_session_factory
+    from lib.db.repositories.user_repo import UserRepository
+
+    async with async_session_factory() as session:
+        owner = await UserRepository(session).get(uid)
+    return payload if owner is not None and owner.is_active else None
+
+
 def _verify_and_get_payload(token: str) -> dict:
     """同步验证 JWT token 并在失败时抛出 401 异常。（仅用于 JWT 路径）"""
     payload = verify_token(token)

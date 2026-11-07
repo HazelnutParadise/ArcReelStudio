@@ -72,7 +72,7 @@ The default Compose configuration mounts:
 | `deploy/projects/` | `/app/projects` | Data root: projects, generated assets, the default SQLite database, logs, Vertex AI credentials, and all other runtime data |
 | `deploy/claude_data/` | `/root/.claude` | Agent runtime data |
 
-The table shows the default locations. After you set `ARCREEL_HOST_DATA_DIR` in `deploy/.env`, `projects/` and `claude_data/` are placed under that directory instead. For example, `ARCREEL_HOST_DATA_DIR=/srv/arcreel` maps to `/srv/arcreel/projects/` and `/srv/arcreel/claude_data/`. A relative path is resolved against `deploy/`. The paths inside the container stay the same, so you do not need to change the in-container data root `ARCREEL_DATA_DIR`.
+The table shows the default locations. After you set `ARCREEL_HOST_DATA_DIR` in `deploy/.env`, `projects/` and `claude_data/` are placed under that directory instead. For example, `ARCREEL_HOST_DATA_DIR=/srv/arcreel` maps to `/srv/arcreel/projects/` and `/srv/arcreel/claude_data/`. A relative path is resolved against `deploy/` and must start with `./` or `../`, for example `./data`. A bare `data` is read by Compose as a named volume, and the container does not start. The paths inside the container stay the same, so you do not need to change the in-container data root `ARCREEL_DATA_DIR`.
 
 To move an existing deployment to a new location:
 
@@ -201,7 +201,7 @@ Notes:
 
 - Changing `AUTH_TOKEN_SECRET` invalidates existing login tokens. A value you set takes precedence, and the secret file generated under the data root is no longer used. When no value is explicitly set, deleting the secret file and restarting generates a new secret and invalidates existing logins.
 - After editing `.env`, run `docker compose up -d` in the Compose directory to recreate the container. `docker compose restart` and automatic container restarts keep the environment variables captured when the container was created and do not reload `.env`.
-- Compose passes only the variables listed under `environment` in `docker-compose.yml` into the container. To pass a variable not listed in the table, add a line `NAME: ${NAME}` under `environment` and set its value in `.env`.
+- Compose passes only the variables listed under `environment` in `docker-compose.yml` into the container. To pass a variable not listed in the table, add a line `NAME: ${NAME}` under `environment` and set its value in `.env`. Earlier Compose files passed the whole `.env` into the container through `env_file`; after the upgrade, variables not listed in the table (for example `HTTPS_PROXY`) are no longer passed in, so add back the ones you need this way.
 - `AUTH_ENABLED=false` is only for a local machine protected by its own network boundary. Compose publishes port `1241` on all host interfaces by default, so never disable authentication for remote deployments. While authentication is off, startup logs a WARNING.
 - `.env` may contain secrets. Do not commit it to version control.
 - Vertex credential files should be readable only by the user who runs ArcReel.
@@ -218,7 +218,7 @@ On first startup, ArcReel creates the default administrator from `AUTH_USERNAME`
 - Administrators can add members, make a member an administrator, disable accounts, or reset a member's password. Disabling, changing the role, and resetting the password all end that member's existing sessions.
 - At least one active administrator must remain; administrators cannot disable themselves or remove their own administrator role.
 
-Usernames may contain only lowercase letters, digits, and `.` `_` `@` `-`, and sign-in is case-insensitive. Passwords must be at least 8 characters.
+Usernames may contain only lowercase letters, digits, and `.` `_` `@` `-`, and sign-in is case-insensitive. `embedded-agent` is reserved for the embedded Agent and cannot be used as a username. Passwords must be at least 8 characters.
 
 If you forget the password, run this in the Compose directory:
 
@@ -228,7 +228,7 @@ docker compose exec arcreel uv run python -m scripts.manage_users reset-password
 
 The command generates a new password and shows it once; add `--password <new password>` to choose one yourself. The `list` subcommand lists all accounts. For source deployments, run `uv run python -m scripts.manage_users ...` from the repository root.
 
-When you upgrade from an earlier version that had only one `.env` account, the first startup turns the current `AUTH_USERNAME` / `AUTH_PASSWORD` into the default administrator, so the existing password keeps working. Sessions issued before the upgrade all end, and everyone needs to sign in again once.
+When you upgrade from an earlier version that had only one `.env` account, the first startup turns the current `AUTH_USERNAME` / `AUTH_PASSWORD` into the default administrator, so the existing password keeps working. Sessions issued before the upgrade all end, and everyone needs to sign in again once. If the old `AUTH_USERNAME` does not meet the username rules above (for example, it contains spaces or Chinese characters), the default administrator is renamed to `admin` and the startup log records the change; sign in as `admin` from then on.
 
 Several members can open the same project at the same time:
 
@@ -251,6 +251,8 @@ To enable it on an NVIDIA GPU host:
    ```dotenv
    COMPOSE_FILE=docker-compose.yml:docker-compose.gpu.yml
    ```
+
+   On Windows hosts Compose separates files with a semicolon, so write `COMPOSE_FILE=docker-compose.yml;docker-compose.gpu.yml` instead.
 
 3. Run `docker compose up -d` to recreate the container.
 

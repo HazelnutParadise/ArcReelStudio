@@ -21,7 +21,7 @@ from lib.script.source_loader import SourceLoader
 from server.agent_toolset.remote import remote_tools
 from server.agent_toolset.toolset import AGENT_TOOLSET
 from server.auth import API_KEY_PREFIX
-from server.auth import verify_api_key as default_verify_api_key
+from server.auth import verify_active_api_key as default_verify_api_key
 from server.tool_runtime import Services
 
 _UNPUBLISHED_ISSUER_URL = AnyHttpUrl("http://localhost/")
@@ -31,7 +31,7 @@ _MAX_REQUEST_BODY_BYTES = SourceLoader.DEFAULT_MAX_BYTES * 6 + 1024 * 1024
 
 
 class ArcApiKeyVerifier(TokenVerifier):
-    """Bridge MCP Bearer auth to ArcReel's existing API Key verifier."""
+    """Bridge MCP Bearer auth to ArcReel's API Key verifier; keys of missing or disabled accounts are rejected."""
 
     def __init__(
         self, verify_api_key: Callable[[str], Awaitable[dict[str, Any] | None]] = default_verify_api_key

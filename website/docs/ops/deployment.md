@@ -72,7 +72,7 @@ curl http://localhost:1241/health
 | `deploy/projects/` | `/app/projects` | 数据根：项目、生成资产、默认 SQLite 数据库、日志、Vertex AI 凭据等全部运行数据 |
 | `deploy/claude_data/` | `/root/.claude` | Agent 运行时相关数据 |
 
-表中是默认位置。在 `deploy/.env` 中设置 `ARCREEL_HOST_DATA_DIR` 后，`projects/` 与 `claude_data/` 改放在该目录下，例如 `ARCREEL_HOST_DATA_DIR=/srv/arcreel` 对应 `/srv/arcreel/projects/` 与 `/srv/arcreel/claude_data/`；相对路径以 `deploy/` 为基准。容器内的路径不变，不需要修改容器内数据根的 `ARCREEL_DATA_DIR`。
+表中是默认位置。在 `deploy/.env` 中设置 `ARCREEL_HOST_DATA_DIR` 后，`projects/` 与 `claude_data/` 改放在该目录下，例如 `ARCREEL_HOST_DATA_DIR=/srv/arcreel` 对应 `/srv/arcreel/projects/` 与 `/srv/arcreel/claude_data/`；相对路径以 `deploy/` 为基准，并且要以 `./` 或 `../` 开头，例如 `./data`。只写 `data` 时，Compose 会把它当成命名卷，容器无法启动。容器内的路径不变，不需要修改容器内数据根的 `ARCREEL_DATA_DIR`。
 
 已有部署更换存放位置时，按以下顺序操作：
 
@@ -201,7 +201,7 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 
 - `AUTH_TOKEN_SECRET` 变化后，现有登录 Token 会失效。显式设置时以设置值为准，数据根下自动生成的密钥文件不再使用。未显式设置时，删除密钥文件并重启会生成新密钥，使现有登录失效。
 - 修改 `.env` 后，在 Compose 目录执行 `docker compose up -d` 重建容器。`docker compose restart` 与容器自动拉起沿用创建容器时的环境变量，不会重新载入 `.env`。
-- Compose 只把 `docker-compose.yml` 中 `environment` 列出的变量传进容器。要传入表中未列出的变量，在 `environment` 中加一行 `变量名: ${变量名}`，再在 `.env` 中设置取值。
+- Compose 只把 `docker-compose.yml` 中 `environment` 列出的变量传进容器。要传入表中未列出的变量，在 `environment` 中加一行 `变量名: ${变量名}`，再在 `.env` 中设置取值。旧版 Compose 用 `env_file` 把整份 `.env` 传进容器，升级后表中未列出的变量（例如 `HTTPS_PROXY`）不会再传入，需要的话按这个方法加回去。
 - `AUTH_ENABLED=false` 仅适用于受独立网络边界保护的本机环境。Compose 默认把 `1241` 端口发布到宿主机所有网卡，远程部署不得关闭认证。认证关闭时，启动日志会输出 WARNING。
 - `.env` 中可能包含密钥，不要提交到版本库。
 - Vertex 凭据文件应只授予运行 ArcReel 的用户读取权限。
@@ -218,7 +218,7 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 - 管理员可以新增成员、把成员设为管理员、停用账号或替成员重设密码。停用、改角色和重设密码都会让该成员现有的登录失效。
 - 至少要保留一位启用中的管理员；管理员不能停用自己，也不能取消自己的管理员身份。
 
-用户名只能使用小写英文字母、数字和 `.` `_` `@` `-`，登录时不区分大小写。密码至少 8 个字符。
+用户名只能使用小写英文字母、数字和 `.` `_` `@` `-`，登录时不区分大小写。`embedded-agent` 保留给内嵌 Agent，不能用作用户名。密码至少 8 个字符。
 
 忘记密码时，在 Compose 目录执行：
 
@@ -228,7 +228,7 @@ docker compose exec arcreel uv run python -m scripts.manage_users reset-password
 
 命令会生成一个新密码并显示一次；加上 `--password <新密码>` 可以自己指定。`list` 子命令列出所有账号。源码部署在仓库根目录执行 `uv run python -m scripts.manage_users ...`。
 
-从只有一组 `.env` 账号的旧版本升级时，第一次启动会把当时的 `AUTH_USERNAME` / `AUTH_PASSWORD` 写成默认管理员，原来的密码照常可用；升级前签发的登录全部失效，需要重新登录一次。
+从只有一组 `.env` 账号的旧版本升级时，第一次启动会把当时的 `AUTH_USERNAME` / `AUTH_PASSWORD` 写成默认管理员，原来的密码照常可用；升级前签发的登录全部失效，需要重新登录一次。旧的 `AUTH_USERNAME` 不符合上面的用户名规则时（例如含有空格或中文），默认管理员会改名为 `admin`，启动日志会记录这次改名，之后请用 `admin` 登录。
 
 多位成员可以同时打开同一个项目：
 
@@ -251,6 +251,8 @@ docker compose exec arcreel uv run python -m scripts.manage_users reset-password
    ```dotenv
    COMPOSE_FILE=docker-compose.yml:docker-compose.gpu.yml
    ```
+
+   Windows 主机上 Compose 用分号分隔多个文件，改写成 `COMPOSE_FILE=docker-compose.yml;docker-compose.gpu.yml`。
 
 3. 执行 `docker compose up -d` 重建容器。
 

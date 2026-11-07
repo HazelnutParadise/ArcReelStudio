@@ -49,6 +49,21 @@ async def test_bootstrap_without_a_password_writes_an_owner_only_initial_passwor
     assert await _authenticate(db_factory, "admin", generated) is not None
 
 
+async def test_a_failed_initial_password_write_leaves_the_admin_uninitialised(db_factory, tmp_path, monkeypatch):
+    monkeypatch.delenv("AUTH_USERNAME", raising=False)
+    monkeypatch.delenv("AUTH_PASSWORD", raising=False)
+    # 存放目录的位置被一个普通文件占着，初始密码写不出去
+    blocked = tmp_path / "blocked"
+    blocked.write_text("not a directory", encoding="utf-8")
+    with pytest.raises(NotADirectoryError):
+        await accounts.bootstrap_admin(db_factory, initial_password_path=blocked / "runtime" / "initial-admin-password")
+
+    password_file = await _bootstrap(db_factory, tmp_path)
+
+    generated = password_file.read_text(encoding="utf-8").strip()
+    assert await _authenticate(db_factory, "admin", generated) is not None
+
+
 async def test_bootstrap_runs_once_and_later_env_changes_do_not_reset_the_admin(db_factory, tmp_path, monkeypatch):
     monkeypatch.setenv("AUTH_PASSWORD", "first-password")
     await _bootstrap(db_factory, tmp_path)
@@ -78,6 +93,7 @@ async def test_authentication_rejects_wrong_unknown_and_disabled_accounts(db_fac
     [
         ("has space", "long-enough", "username_invalid"),
         ("", "long-enough", "username_invalid"),
+        ("Embedded-Agent", "long-enough", "username_invalid"),
         ("member", "short", "password_too_short"),
     ],
 )

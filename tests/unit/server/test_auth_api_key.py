@@ -35,9 +35,12 @@ def api_key_db(db_factory, monkeypatch):
     return db_factory
 
 
-async def _seed_api_key(factory, name: str, key: str, *, expires_at: datetime | None = None) -> None:
+async def _seed_api_key(
+    factory, name: str, key: str, *, expires_at: datetime | None = None, user_id: str | None = None
+) -> None:
     from lib.db.models.api_key import ApiKey
 
+    owner = {"user_id": user_id} if user_id is not None else {}
     async with factory() as session:
         session.add(
             ApiKey(
@@ -45,9 +48,27 @@ async def _seed_api_key(factory, name: str, key: str, *, expires_at: datetime | 
                 key_hash=auth_module.hash_api_key(key),
                 key_prefix=key[:8],
                 expires_at=expires_at,
+                **owner,
             )
         )
         await session.commit()
+
+
+async def _seed_member(factory, username: str) -> str:
+    from lib.db.repositories.user_repo import UserRepository
+
+    async with factory() as session, session.begin():
+        user = await UserRepository(session).create(username=username, password_hash="x", role="user")
+        return user.id
+
+
+async def _set_member_active(factory, user_id: str, active: bool) -> None:
+    from lib.db.repositories.user_repo import UserRepository
+
+    async with factory() as session, session.begin():
+        user = await UserRepository(session).get(user_id)
+        assert user is not None
+        user.is_active = active
 
 
 class TestHashApiKey:
@@ -150,3 +171,38 @@ class TestVerifyAndGetPayloadAsync:
         hit, cached = auth_module._get_cached_api_key_payload(auth_module.hash_api_key("arc-expiredkey"))
         assert hit
         assert cached is None
+
+
+class TestVerifyActiveApiKey:
+    async def test_keys_of_active_members_verify(self, api_key_db):
+        member = await _seed_member(api_key_db, "active-member")
+        await _seed_api_key(api_key_db, "active-key", "arc-activekey", user_id=member)
+
+        payload = await auth_module.verify_active_api_key("arc-activekey")
+
+        assert payload is not None
+        assert payload["uid"] == member
+
+    async def test_keys_of_disabled_members_are_rejected(self, api_key_db):
+        member = await _seed_member(api_key_db, "disabled-member")
+        await _seed_api_key(api_key_db, "disabled-key", "arc-disabledkey", user_id=member)
+        await _set_member_active(api_key_db, member, False)
+
+        assert await auth_module.verify_active_api_key("arc-disabledkey") is None
+
+    async def test_disabling_a_member_rejects_a_key_that_already_verified(self, api_key_db):
+        member = await _seed_member(api_key_db, "later-disabled")
+        await _seed_api_key(api_key_db, "cached-key", "arc-cachedkey", user_id=member)
+        assert await auth_module.verify_active_api_key("arc-cachedkey") is not None
+
+        await _set_member_active(api_key_db, member, False)
+
+        assert await auth_module.verify_active_api_key("arc-cachedkey") is None
+
+    async def test_keys_whose_owner_no_longer_exists_are_rejected(self, api_key_db):
+        await _seed_api_key(api_key_db, "orphan-key", "arc-orphankey", user_id="missing-member")
+
+        assert await auth_module.verify_active_api_key("arc-orphankey") is None
+
+    async def test_unknown_keys_are_rejected(self, api_key_db):
+        assert await auth_module.verify_active_api_key("arc-neverissued") is None

@@ -47,7 +47,7 @@ from server.services.project.workflow_planner import WorkflowPlanner
 from server.tool_runtime import Services, TextGenerationResult
 from tests.auth_deps import default_admin_token
 from tests.factories import install_current_video, make_test_clip, make_video_request_facts, register_project_sources
-from tests.fakes import refuse_resume_execution
+from tests.fakes import bind_session_factory, refuse_resume_execution
 from tests.integration.server.agent_tool_support import ToolHarness
 
 
@@ -341,6 +341,37 @@ async def test_remote_mcp_rejects_non_api_key_bearer_tokens(remote_server, token
     response = await _post_initialize(_mounted(remote_server), token_factory())
 
     assert response.status_code == 401
+
+
+async def _seed_member_api_key(factory, username: str, key: str) -> str:
+    from lib.db.models.api_key import ApiKey
+    from lib.db.repositories.user_repo import UserRepository
+    from server.auth import hash_api_key
+
+    async with factory() as session, session.begin():
+        member = await UserRepository(session).create(username=username, password_hash="x", role="user")
+        session.add(ApiKey(name=f"{username}-key", key_hash=hash_api_key(key), key_prefix=key[:8], user_id=member.id))
+        return member.id
+
+
+async def test_remote_mcp_rejects_api_keys_of_disabled_members(remote_projects, db_factory, monkeypatch) -> None:
+    from lib.db.repositories.user_repo import UserRepository
+
+    bind_session_factory(monkeypatch, db_factory)
+    member = await _seed_member_api_key(db_factory, "mcp-member", "arc-mcp-member-key")
+    services = Services(projects=remote_projects, workflow_planner=_Planner(), capabilities=_Capabilities())
+    server = build_remote_mcp_server(projects=remote_projects, services=services)
+    app = _mounted(server)
+
+    async with server.session_manager.run():
+        assert (await _post_initialize(app, "arc-mcp-member-key")).status_code == 200
+
+        async with db_factory() as session, session.begin():
+            user = await UserRepository(session).get(member)
+            assert user is not None
+            user.is_active = False
+
+        assert (await _post_initialize(app, "arc-mcp-member-key")).status_code == 401
 
 
 async def test_remote_mcp_returns_typed_workflow_plan_and_rejects_bad_project(
