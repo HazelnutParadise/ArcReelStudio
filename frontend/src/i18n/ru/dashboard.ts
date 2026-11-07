@@ -2757,7 +2757,8 @@ export default {
   // Timeline typed entries (interrupt / AskUserQuestion answer)
   'chat_interrupt_notice': 'Остановлено. Ответ не был завершён',
   'chat_auth_switch_from_subscription': 'Лимит подписки Claude исчерпан. Следующее сообщение пойдёт через API-ключ.',
-  'chat_auth_switch_from_api_key': 'Лимит API-ключа исчерпан или он не работает. Следующее сообщение пойдёт через подписку Claude.',
+  'chat_auth_switch_from_api_key':
+    'Лимит API-ключа исчерпан или он не работает. Следующее сообщение пойдёт через подписку Claude.',
   'chat_auth_switch_back_at': 'Вернётся к прежнему способу после {{time}}.',
   'chat_auth_switch_back_after_relogin': 'Вернётся после повторного входа в подписку.',
   'chat_auth_switch_back_after_fix': 'Вернётся, когда API-ключ будет исправлен.',

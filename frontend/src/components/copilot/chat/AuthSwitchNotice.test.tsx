@@ -12,6 +12,8 @@ describe("auth switch notice", () => {
       />,
     );
 
-    expect(screen.getByText(/订阅额度用完了，下一条消息改用 API Key。.*重新登录 Claude 订阅后改回/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/订阅额度用完了，下一条消息改用 API Key。.*重新登录 Claude 订阅后改回/),
+    ).toBeInTheDocument();
   });
 });

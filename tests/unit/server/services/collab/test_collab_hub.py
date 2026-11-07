@@ -76,18 +76,18 @@ class ManualChanges:
         self.queues[project].put_nowait(("changes", {"source": "worker"}))
 
 
-async def test_a_change_made_before_the_subscription_is_ready_is_not_missed(hub, project_files) -> None:
+async def test_a_change_made_before_the_subscription_is_ready_is_not_missed(hub, hub_project_files) -> None:
     alice = FakeConn("c1", "alice")
     await _join(hub, alice)
     # 房间已经读了内容，但订阅还没生效时就有人改了文件
-    project_files.update_project(PROJECT, lambda data: data["overview"].update({"genre": "科幻"}))
+    hub_project_files.update_project(PROJECT, lambda data: data["overview"].update({"genre": "科幻"}))
     await _settle()
 
     assert alice.text("genre") == "科幻"
 
 
 @pytest.fixture
-def project_files(tmp_path) -> ProjectManager:
+def hub_project_files(tmp_path) -> ProjectManager:
     manager = ProjectManager(tmp_path / "projects")
     manager.create_project(PROJECT)
     manager.update_project(PROJECT, lambda data: data.update({"overview": {"synopsis": "雨夜", "genre": "悬疑"}}))
@@ -100,9 +100,9 @@ def changes() -> ManualChanges:
 
 
 @pytest.fixture
-async def hub(project_files, changes):
+async def hub(hub_project_files, changes):
     instance = CollabHub(
-        project_files,
+        hub_project_files,
         UNIT_SPECS,
         changes,
         error_text=lambda code, _detail, locale: f"[{locale}] {code}",
@@ -135,7 +135,7 @@ async def test_joining_delivers_the_stored_content(hub) -> None:
     assert alice.statuses()[-1]["state"] == "saved"
 
 
-async def test_typing_reaches_the_other_member_and_is_written_back(hub, project_files) -> None:
+async def test_typing_reaches_the_other_member_and_is_written_back(hub, hub_project_files) -> None:
     alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
     await _join(hub, alice)
     await _join(hub, bob)
@@ -144,10 +144,10 @@ async def test_typing_reaches_the_other_member_and_is_written_back(hub, project_
 
     assert bob.text("synopsis") == "雨夜，街口"
     await _settle()
-    assert project_files.load_project(PROJECT)["overview"]["synopsis"] == "雨夜，街口"
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "雨夜，街口"
 
 
-async def test_simultaneous_typing_in_the_same_field_keeps_both(hub, project_files) -> None:
+async def test_simultaneous_typing_in_the_same_field_keeps_both(hub, hub_project_files) -> None:
     alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
     await _join(hub, alice)
     await _join(hub, bob)
@@ -160,30 +160,30 @@ async def test_simultaneous_typing_in_the_same_field_keeps_both(hub, project_fil
     await _settle()
 
     assert alice.text("synopsis") == bob.text("synopsis") == "深夜，雨夜的街口"
-    assert project_files.load_project(PROJECT)["overview"]["synopsis"] == "深夜，雨夜的街口"
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "深夜，雨夜的街口"
 
 
-async def test_external_change_merges_with_unsaved_typing(hub, project_files, changes) -> None:
+async def test_external_change_merges_with_unsaved_typing(hub, hub_project_files, changes) -> None:
     alice = FakeConn("c1", "alice")
     await _join(hub, alice)
     await _settle(0.05)
 
     # Alice 在开头打了字、还没写回；同时 Agent 改了文件，在结尾加了字
     await hub.on_sync(alice, REF, alice.type_into("synopsis", 0, "深夜，"))
-    project_files.update_project(PROJECT, lambda data: data["overview"].update({"synopsis": "雨夜。"}))
+    hub_project_files.update_project(PROJECT, lambda data: data["overview"].update({"synopsis": "雨夜。"}))
     changes.push(PROJECT)
     await _settle()
 
     assert alice.text("synopsis") == "深夜，雨夜。"
-    assert project_files.load_project(PROJECT)["overview"]["synopsis"] == "深夜，雨夜。"
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "深夜，雨夜。"
 
 
-async def test_external_change_to_another_field_does_not_touch_the_typed_one(hub, project_files, changes) -> None:
+async def test_external_change_to_another_field_does_not_touch_the_typed_one(hub, hub_project_files, changes) -> None:
     alice = FakeConn("c1", "alice")
     await _join(hub, alice)
     await _settle(0.05)
 
-    project_files.update_project(PROJECT, lambda data: data["overview"].update({"genre": "爱情"}))
+    hub_project_files.update_project(PROJECT, lambda data: data["overview"].update({"genre": "爱情"}))
     changes.push(PROJECT)
     await _settle()
 
@@ -191,14 +191,14 @@ async def test_external_change_to_another_field_does_not_touch_the_typed_one(hub
     assert alice.text("synopsis") == "雨夜"
 
 
-async def test_written_back_text_is_trimmed_but_the_typist_keeps_the_space(hub, project_files) -> None:
+async def test_written_back_text_is_trimmed_but_the_typist_keeps_the_space(hub, hub_project_files) -> None:
     alice = FakeConn("c1", "alice")
     await _join(hub, alice)
 
     await hub.on_sync(alice, REF, alice.type_into("synopsis", len("雨夜".encode()), " "))
     await _settle()
 
-    assert project_files.load_project(PROJECT)["overview"]["synopsis"] == "雨夜"
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "雨夜"
     # 正在打字的人刚打的空格不会被收回
     assert alice.text("synopsis") == "雨夜 "
 
@@ -221,14 +221,14 @@ async def test_a_rejected_write_is_reported_to_everyone_in_the_room(hub, monkeyp
         assert last["error"] == {"code": "overview_invalid", "message": "[zh-TW] overview_invalid"}
 
 
-async def test_flush_writes_immediately(hub, project_files) -> None:
+async def test_flush_writes_immediately(hub, hub_project_files) -> None:
     alice = FakeConn("c1", "alice")
     await _join(hub, alice)
     await hub.on_sync(alice, REF, alice.type_into("synopsis", 0, "先存："))
 
     await hub.flush(alice, REF, 7)
 
-    assert project_files.load_project(PROJECT)["overview"]["synopsis"] == "先存：雨夜"
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "先存：雨夜"
     assert alice.messages[-1] == {
         "type": "flushed",
         "room": {"project": PROJECT, "kind": "overview", "key": ""},
@@ -237,7 +237,7 @@ async def test_flush_writes_immediately(hub, project_files) -> None:
     }
 
 
-async def test_leaving_writes_back_and_closes_the_room(hub, project_files) -> None:
+async def test_leaving_writes_back_and_closes_the_room(hub, hub_project_files) -> None:
     alice = FakeConn("c1", "alice")
     await _join(hub, alice)
     await hub.on_sync(alice, REF, alice.type_into("synopsis", 0, "离开前"))
@@ -245,7 +245,7 @@ async def test_leaving_writes_back_and_closes_the_room(hub, project_files) -> No
     await hub.leave(alice, REF)
     await _settle(0.15)
 
-    assert project_files.load_project(PROJECT)["overview"]["synopsis"] == "离开前雨夜"
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "离开前雨夜"
     assert REF not in hub._rooms
 
 
@@ -261,7 +261,7 @@ async def test_a_member_who_left_receives_nothing_more(hub) -> None:
     assert len(bob.messages) == count
 
 
-async def test_a_missing_unit_is_reported_as_removed(hub, project_files) -> None:
+async def test_a_missing_unit_is_reported_as_removed(hub, hub_project_files) -> None:
     alice = FakeConn("c1", "alice")
 
     await hub.join(alice, UnitRef(project="nope", kind="overview", key=""))

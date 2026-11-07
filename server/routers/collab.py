@@ -1,8 +1,9 @@
 """多人即时协作的 WebSocket：浏览器在这里加入编辑单元的房间，收发 Yjs 同步与在线状态。
 
 浏览器的 WebSocket 不能带请求头，所以连上后第一条消息送登录令牌（不放在网址里，免得进访问日志）。
-只接受网页登录的令牌，不接受 API Key 与内嵌 Agent；之后每 ``REVALIDATE_SECONDS`` 秒重新确认一次账号仍有效，
-停用账号、改密码或改角色后连接随之关闭。
+只接受网页登录的令牌，不接受 API Key 与内嵌 Agent；之后每 ``REVALIDATE_SECONDS`` 秒（可由
+``app.state.collab_revalidate_seconds`` 覆盖）在后台重新确认一次账号仍有效；停用账号、改密码或改角色后，
+即使这个分页一直没有发消息，连接也会关闭。
 
 消息都是 JSON：
 
@@ -18,7 +19,6 @@ import asyncio
 import base64
 import binascii
 import logging
-import time
 import uuid
 from typing import Any
 
@@ -122,15 +122,11 @@ async def collab_socket(websocket: WebSocket) -> None:
     locale = locale_from_language_tags(language if isinstance(language, str) else "")
     conn = _WsConnection(websocket, actor, locale)
     await conn.send({"type": "ready", "user": actor})
-    checked_at = time.monotonic()
+    interval = float(getattr(websocket.app.state, "collab_revalidate_seconds", REVALIDATE_SECONDS))
+    watcher = asyncio.create_task(_revalidate_periodically(websocket, token, interval))
     try:
         while True:
             message = await websocket.receive_json()
-            if time.monotonic() - checked_at > REVALIDATE_SECONDS:
-                if await _authenticate(token) is None:
-                    await _close(websocket, CLOSE_UNAUTHORIZED)
-                    return
-                checked_at = time.monotonic()
             if not isinstance(message, dict):
                 await _close(websocket, CLOSE_POLICY)
                 return
@@ -141,7 +137,17 @@ async def collab_socket(websocket: WebSocket) -> None:
         # 不是 JSON
         await _close(websocket, CLOSE_POLICY)
     finally:
+        watcher.cancel()
         await hub.disconnect(conn)
+
+
+async def _revalidate_periodically(websocket: WebSocket, token: Any, interval: float) -> None:
+    """每隔 ``interval`` 秒复核令牌；失效时关闭连接，接收循环随之结束。"""
+    while True:
+        await asyncio.sleep(interval)
+        if await _authenticate(token) is None:
+            await _close(websocket, CLOSE_UNAUTHORIZED)
+            return
 
 
 async def _dispatch(hub: CollabHub, conn: _WsConnection, message: dict[str, Any]) -> None:

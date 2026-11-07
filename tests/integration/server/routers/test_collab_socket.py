@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import base64
 import contextlib
-import time
 from collections.abc import AsyncIterator
 
 import pytest
@@ -35,7 +34,7 @@ def _users(token: str) -> CurrentUserInfo:
 
 
 @pytest.fixture
-def project_files(tmp_path) -> ProjectManager:
+def socket_project_files(tmp_path) -> ProjectManager:
     manager = ProjectManager(tmp_path / "projects")
     manager.create_project("demo")
     manager.update_project("demo", lambda data: data.update({"overview": {"synopsis": "雨夜"}}))
@@ -43,7 +42,7 @@ def project_files(tmp_path) -> ProjectManager:
 
 
 @pytest.fixture
-def client(project_files, monkeypatch):
+def socket_client(socket_project_files, monkeypatch):
     monkeypatch.setenv("AUTH_ENABLED", "true")
 
     async def _authenticate(token: str) -> CurrentUserInfo:
@@ -64,8 +63,14 @@ def client(project_files, monkeypatch):
     @contextlib.asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.collab_hub = CollabHub(
-            project_files, UNIT_SPECS, _no_changes, error_text=lambda code, _detail, _l: code, debounce=0.05, max_wait=0.2
+            socket_project_files,
+            UNIT_SPECS,
+            _no_changes,
+            error_text=lambda code, _detail, _l: code,
+            debounce=0.05,
+            max_wait=0.2,
         )
+        app.state.collab_revalidate_seconds = 0.05
         yield
         await app.state.collab_hub.shutdown()
 
@@ -82,8 +87,8 @@ def _receive_until(ws, message_type: str) -> dict:
             return message
 
 
-def test_a_bad_token_closes_the_connection(client) -> None:
-    with client.websocket_connect("/api/v1/collab") as ws:
+def test_a_bad_token_closes_the_connection(socket_client) -> None:
+    with socket_client.websocket_connect("/api/v1/collab") as ws:
         ws.send_json({"type": "auth", "token": "nope"})
         with pytest.raises(WebSocketDisconnect) as exc:
             ws.receive_json()
@@ -91,25 +96,25 @@ def test_a_bad_token_closes_the_connection(client) -> None:
 
 
 @pytest.mark.parametrize("token", ["arc-some-api-key", "agent-token"])
-def test_api_keys_and_the_embedded_agent_are_refused(client, token) -> None:
-    with client.websocket_connect("/api/v1/collab") as ws:
+def test_api_keys_and_the_embedded_agent_are_refused(socket_client, token) -> None:
+    with socket_client.websocket_connect("/api/v1/collab") as ws:
         ws.send_json({"type": "auth", "token": token})
         with pytest.raises(WebSocketDisconnect) as exc:
             ws.receive_json()
     assert exc.value.code == collab.CLOSE_UNAUTHORIZED
 
 
-def test_the_first_message_must_authenticate(client) -> None:
-    with client.websocket_connect("/api/v1/collab") as ws:
+def test_the_first_message_must_authenticate(socket_client) -> None:
+    with socket_client.websocket_connect("/api/v1/collab") as ws:
         ws.send_json({"type": "join", "room": ROOM})
         with pytest.raises(WebSocketDisconnect) as exc:
             ws.receive_json()
     assert exc.value.code == collab.CLOSE_UNAUTHORIZED
 
 
-def test_typing_is_written_back(client, project_files) -> None:
+def test_typing_is_written_back(socket_client, socket_project_files) -> None:
     doc = Doc()
-    with client.websocket_connect("/api/v1/collab") as ws:
+    with socket_client.websocket_connect("/api/v1/collab") as ws:
         ws.send_json({"type": "auth", "token": "alice-token", "locale": "zh-TW"})
         assert ws.receive_json() == {"type": "ready", "user": {"user_id": "u1", "username": "alice"}}
         ws.send_json({"type": "join", "room": ROOM})
@@ -130,11 +135,11 @@ def test_typing_is_written_back(client, project_files) -> None:
         flushed = _receive_until(ws, "flushed")
 
     assert flushed == {"type": "flushed", "room": ROOM, "id": 1, "ok": True}
-    assert project_files.load_project("demo")["overview"]["synopsis"] == "深夜，雨夜"
+    assert socket_project_files.load_project("demo")["overview"]["synopsis"] == "深夜，雨夜"
 
 
-def test_unknown_rooms_and_bad_payloads_are_answered_with_errors(client) -> None:
-    with client.websocket_connect("/api/v1/collab") as ws:
+def test_unknown_rooms_and_bad_payloads_are_answered_with_errors(socket_client) -> None:
+    with socket_client.websocket_connect("/api/v1/collab") as ws:
         ws.send_json({"type": "auth", "token": "alice-token"})
         ws.receive_json()
         ws.send_json({"type": "join", "room": {"project": "demo", "kind": "nope", "key": ""}})
@@ -145,9 +150,8 @@ def test_unknown_rooms_and_bad_payloads_are_answered_with_errors(client) -> None
         assert ws.receive_json() == {"type": "error", "code": "invalid_payload"}
 
 
-def test_an_account_that_becomes_invalid_is_disconnected(client, monkeypatch) -> None:
-    monkeypatch.setattr(collab, "REVALIDATE_SECONDS", 0.0)
-    with client.websocket_connect("/api/v1/collab") as ws:
+def test_an_idle_connection_is_closed_once_the_account_becomes_invalid(socket_client, monkeypatch) -> None:
+    with socket_client.websocket_connect("/api/v1/collab") as ws:
         ws.send_json({"type": "auth", "token": "alice-token"})
         ws.receive_json()
 
@@ -155,8 +159,7 @@ def test_an_account_that_becomes_invalid_is_disconnected(client, monkeypatch) ->
             raise HTTPException(status_code=401, detail="revoked")
 
         monkeypatch.setattr(collab, "authenticate_bearer", _revoked)
-        time.sleep(0.01)
-        ws.send_json({"type": "join", "room": ROOM})
+        # 不再发任何消息：后台复核也要把连接关掉
         with pytest.raises(WebSocketDisconnect) as exc:
             ws.receive_json()
     assert exc.value.code == collab.CLOSE_UNAUTHORIZED

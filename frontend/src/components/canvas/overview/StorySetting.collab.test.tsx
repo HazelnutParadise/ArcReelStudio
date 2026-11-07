@@ -50,7 +50,9 @@ describe("StorySetting in live collaboration", () => {
     fireEvent.change(synopsis, { target: { value: "雨夜的街口" } });
     await waitFor(() => expect(unitJson(server.docFor(ROOM)).synopsis).toBe("雨夜的街口"));
 
-    act(() => server.externalChange(ROOM, { synopsis: "深夜，雨夜的街口", genre: "悬疑", theme: "", world_setting: "" }));
+    act(() =>
+      server.externalChange(ROOM, { synopsis: "深夜，雨夜的街口", genre: "悬疑", theme: "", world_setting: "" }),
+    );
     await waitFor(() => expect(synopsis).toHaveValue("深夜，雨夜的街口"));
     expect(screen.getByLabelText("类型")).toHaveValue("悬疑");
 
