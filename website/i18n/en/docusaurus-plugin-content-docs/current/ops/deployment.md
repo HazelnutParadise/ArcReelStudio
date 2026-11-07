@@ -457,7 +457,7 @@ The default Compose files use the `main` tag, which follows the latest build of 
 Change the image in Compose to:
 
 ```yaml
-image: ghcr.io/hazelnutparadise/arcreelstudio:X.Y.Z
+image: ghcr.io/hazelnutparadise/arcreel-studio:X.Y.Z
 ```
 
 Explicitly changing the version when upgrading reduces the risk of unintentionally pulling a new version.

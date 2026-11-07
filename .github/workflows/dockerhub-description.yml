@@ -30,11 +30,9 @@ jobs:
         with:
           persist-credentials: false
 
-      # 与 docker-release.yml 同一份坐标来源：Docker Hub 命名空间与 GitHub 组织同名
-      - name: Compute lowercase image name
-        run: echo "IMAGE_NAME_LC=${REPO,,}" >> "$GITHUB_ENV"
-        env:
-          REPO: ${{ github.repository }}
+      # 与 docker-release.yml 使用同一个镜像名称
+      - name: Set image name
+        run: echo "IMAGE_NAME_LC=hazelnutparadise/arcreel-studio" >> "$GITHUB_ENV"
 
       - name: Sync repository description to Docker Hub
         uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0

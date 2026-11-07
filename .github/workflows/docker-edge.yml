@@ -46,10 +46,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Compute lowercase image name
-        run: echo "IMAGE_NAME_LC=${REPO,,}" >> "$GITHUB_ENV"
-        env:
-          REPO: ${{ github.repository }}
+      # 镜像名称固定为 hazelnutparadise/arcreel-studio，不随仓库名变动
+      - name: Set image name
+        run: echo "IMAGE_NAME_LC=hazelnutparadise/arcreel-studio" >> "$GITHUB_ENV"
 
       # 按 ISO 周生成 APT_REFRESH，使 Dockerfile 的系统包层每周失效一次并重新 apt-get upgrade
       - name: Compute apt refresh key
