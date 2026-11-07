@@ -1,6 +1,7 @@
 import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { LiveStatus } from "@/collab/CollabField";
 import { Button } from "@/components/ui/button";
 
 import type { EditUnit } from "./useEditUnit";
@@ -9,11 +10,27 @@ import type { EditUnit } from "./useEditUnit";
 export type EditUnitControls = Pick<
   EditUnit<unknown>,
   "dirty" | "status" | "error" | "externallyUpdated" | "externalChangeMessage" | "save" | "discard"
->;
+> &
+  Partial<Pick<EditUnit<unknown>, "live">>;
 
 /** 保存栏与内联提示条左侧的状态：有未保存的修改、正在保存、已保存、保存失败、外部更新。 */
 export function SaveStatus({ unit }: { unit: EditUnitControls }) {
   const { t } = useTranslation("common");
+
+  if (unit.live) {
+    // 多人即时协作：没有「未保存修改」，只显示连线状态；写回被拒时一并显示原因
+    return (
+      <div className="flex min-w-0 flex-col gap-1">
+        <LiveStatus live={unit.live} />
+        {unit.status === "error" ? (
+          <p role="alert" className="flex min-w-0 items-center gap-2 text-sm text-destructive">
+            <AlertCircle aria-hidden className="size-4 shrink-0" />
+            <span className="min-w-0 wrap-break-word">{t("save_failed_detail", { message: unit.error })}</span>
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   if (unit.status === "error") {
     return (

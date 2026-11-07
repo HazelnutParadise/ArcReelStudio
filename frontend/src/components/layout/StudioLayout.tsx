@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+
+import { LivePointers } from "@/collab/LivePointers";
 import { useTranslation } from "react-i18next";
 import { usePanelRef, type LayoutChangedMeta, type PanelSize } from "react-resizable-panels";
 import { cn } from "cn";
@@ -245,6 +247,8 @@ export function StudioLayout({ children }: StudioLayoutProps) {
     // 外壳根节点是定位元素，文档本身不滚动；滚动只发生在侧栏、画布与 Agent 面板各自的区域里。
     <div ref={shellRef} className="relative flex h-dvh flex-col overflow-hidden text-foreground">
       <TaskFailureListener projectName={sseProjectName} />
+      {/* 同一页面上其他成员的鼠标指针；房间按完整路径分，看同一页的人才互相看得到 */}
+      <LivePointers project={sseProjectName} page={pagePath(location)} />
       <ScriptGenerationNoticeListener />
       <GlobalHeader />
       <ResizablePanelGroup className="min-h-0 flex-1" onLayoutChanged={handleLayoutChanged}>
@@ -324,4 +328,9 @@ export function StudioLayout({ children }: StudioLayoutProps) {
       </ResizablePanelGroup>
     </div>
   );
+}
+
+/** 指针房间用的页面路径：外壳嵌在路由里时 `location` 是相对路径，取浏览器上的完整路径。 */
+function pagePath(location: string): string {
+  return typeof window === "undefined" ? location : window.location.pathname;
 }

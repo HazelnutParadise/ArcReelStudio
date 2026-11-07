@@ -1,6 +1,7 @@
 import { API, type AssetCreateResult } from "@/api";
 import type { AssetSheetType, Character, Product } from "@/types";
 import type { GalleryAssetSource } from "./gallery-model";
+import type { UnitJson } from "@/collab/ydoc-json";
 
 /**
  * 详情编辑器里进入未保存修改的字段。四类资产共用一个形状，按类型只用到其中几项：
@@ -110,4 +111,25 @@ export function createAsset(
         parseSellingPoints(fields.sellingPoints),
       );
   }
+}
+
+/** 资产在协作房间里的内容（存储里的字段名）：卖点是每行一条的一段文字。 */
+export function assetFieldsToUnit(type: AssetSheetType, value: AssetFields): UnitJson {
+  const unit: UnitJson = { description: value.description };
+  if (type === "character") unit.voice_style = value.voiceStyle;
+  if (type === "product") {
+    unit.brand = value.brand;
+    unit.selling_points = value.sellingPoints;
+  }
+  return unit;
+}
+
+export function assetFieldsFromUnit(unit: UnitJson, fallback: AssetFields): AssetFields {
+  const text = (value: unknown, otherwise: string) => (typeof value === "string" ? value : otherwise);
+  return {
+    description: text(unit.description, fallback.description),
+    voiceStyle: text(unit.voice_style, fallback.voiceStyle),
+    brand: text(unit.brand, fallback.brand),
+    sellingPoints: text(unit.selling_points, fallback.sellingPoints),
+  };
 }

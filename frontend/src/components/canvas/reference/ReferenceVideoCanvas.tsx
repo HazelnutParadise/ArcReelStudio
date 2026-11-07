@@ -61,6 +61,8 @@ import { useReferenceDurationGate } from "@/hooks/useReferenceDurationGate";
 import { ReferenceScriptPlanPreviewPanel } from "@/components/canvas/reference/ReferenceScriptPlanPreviewPanel";
 import { PromptAuthoringDraftPanel, usePromptAuthoringDraft } from "./PromptAuthoringDraftPanel";
 import { API } from "@/api";
+import type { UnitJson } from "@/collab/ydoc-json";
+import { scriptItemRef } from "@/collab/collab-client";
 import { enqueueNarration, enqueueReferenceVideoBatch, enqueueReferenceVideoUnit } from "@/actions/generation";
 import { useReferenceVideoStore, referenceVideoCacheKey } from "@/stores/reference-video-store";
 import { isResourceBusy, useActiveResourceIds, useLatestTasksByResource } from "@/stores/tasks-store";
@@ -156,12 +158,16 @@ function unitNarrationText(unit: ReferenceVideoUnit | null): string {
  * 外部移除时由 RetainedEditUnit 保留可见编辑器，放弃或保存后才跟随真实列表。
  */
 function UnitPromptEdit({
+  projectName,
+  episode,
   unit,
   unitLabel,
   onSave,
   allowNavigation,
   children,
 }: {
+  projectName: string;
+  episode: number;
   unit: ReferenceVideoUnit;
   /** 离开确认里称呼这个单元：「视频单元 5」。 */
   unitLabel: string;
@@ -172,11 +178,24 @@ function UnitPromptEdit({
   const { t } = useTranslation("dashboard");
   const unitId = unit.unit_id;
   const save = useCallback((prompt: string) => onSave(unitId, prompt), [onSave, unitId]);
+  const scriptFile = useProjectsStore(
+    (s) => s.currentProjectData?.episodes?.find((item) => item.episode === episode)?.script_file,
+  );
+  const collab = useMemo(
+    () => ({
+      ref: scriptFile ? scriptItemRef(projectName, scriptFile, unitId) : null,
+      // 视频单元在房间里还有时长与备注，正文编辑区只改 `text`
+      toUnit: (text: string, current: UnitJson) => ({ ...current, text }),
+      fromUnit: (current: UnitJson, fallback: string) => (typeof current.text === "string" ? current.text : fallback),
+    }),
+    [projectName, scriptFile, unitId],
+  );
   const edit = useEditUnit({
     source: unit.text,
     save,
     allowNavigation,
     leaveTitle: t("reference_unit_leave_title", { id: unitLabel }),
+    collab,
   });
   return <>{children(edit)}</>;
 }
@@ -1149,6 +1168,7 @@ export function ReferenceVideoCanvas({
                   beforePreview={edit.save}
                   dirty={edit.dirty}
                   saving={edit.status === "saving"}
+                  live={edit.live}
                 />
               </TabsContent>
               <TabsContent value="parse">
@@ -1302,6 +1322,8 @@ export function ReferenceVideoCanvas({
                   selected ? (
                     <UnitPromptEdit
                       key={selected.unit_id}
+                      projectName={projectName}
+                      episode={episode}
                       unit={selected}
                       unitLabel={unitPositionOf(selected.unit_id)}
                       onSave={handlePromptSave}

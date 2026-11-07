@@ -81,6 +81,7 @@ from server.routers import (
     assistant,
     catalog,
     characters,
+    collab,
     cost_estimation,
     custom_endpoints,
     custom_providers,
@@ -128,6 +129,7 @@ from server.routers import (
 from server.routers import auth as auth_router
 from server.routers import users as users_router
 from server.services.accounts import bootstrap_admin
+from server.services.collab.hub import create_collab_hub
 from server.services.project.episode_id_records import recorded_episode_ids_on
 from server.services.project.project_events import ProjectEventService
 from server.services.project.project_presence import ProjectPresenceService
@@ -547,6 +549,8 @@ async def lifespan(app: FastAPI):
     project_presence_service = ProjectPresenceService(publish=project_event_service.publish_presence)
     app.state.project_presence_service = project_presence_service
     project_presence_service.start()
+    # 多人即时协作：编辑单元的房间只在进程内存里，关停时先把没写回的内容写回
+    app.state.collab_hub = create_collab_hub(project_event_service)
 
     # 卡顿探针放在启动步骤之后：迁移等启动期同步工作不算线上卡顿，避免误报。
     stall_probe = start_loop_stall_probe()
@@ -575,6 +579,9 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     assistant.assistant_service.session_manager.set_autonomous_turn_listener(None)
+    collab_hub = getattr(app.state, "collab_hub", None)
+    if collab_hub is not None:
+        await collab_hub.shutdown()
     project_presence_service = getattr(app.state, "project_presence_service", None)
     if project_presence_service:
         await project_presence_service.shutdown()
@@ -830,6 +837,8 @@ app.include_router(agent_config.router, prefix="/api/v1", dependencies=[Depends(
 app.include_router(
     agent_subscription.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["Agent 配置"]
 )
+# 协作 WebSocket 在连接后的第一条消息里认证（浏览器的 WebSocket 不能带请求头），不挂请求级认证依赖
+app.include_router(collab.router, prefix="/api/v1")
 app.include_router(
     custom_providers.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["自定义供应商"]
 )

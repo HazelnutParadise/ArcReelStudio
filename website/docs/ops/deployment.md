@@ -264,14 +264,16 @@ docker compose exec arcreel uv run python -m scripts.manage_users reset-password
 
 从只有一组 `.env` 账号的旧版本升级时，第一次启动会把当时的 `AUTH_USERNAME` / `AUTH_PASSWORD` 写成默认管理员，原来的密码照常可用；升级前签发的登录全部失效，需要重新登录一次。旧的 `AUTH_USERNAME` 不符合上面的用户名规则时（例如含有空格或中文），默认管理员会改名为 `admin`，启动日志会记录这次改名，之后请用 `admin` 登录。
 
-多位成员可以同时打开同一个项目：
+多位成员可以同时打开同一个项目，像共同编辑文档一样一起改：
 
-- 顶栏右侧显示也在这个项目里的其他成员，点开可以看到各自正在看哪一集。
-- 其他成员保存的修改几秒内出现在你的页面上，并提示是谁改的；你的页面不会因此跳走。
-- 你在分镜详情里还没保存时，其他成员改了另外的字段，界面直接采用对方的内容，保存时不会把它改回去。双方改的是同一个字段时，保存会被拒绝并提示；先查看最新内容，再决定放弃自己的修改，或者再次保存覆盖对方。
-- 冲突检查目前只覆盖分镜详情里的字段。角色、场景、道具的描述和项目概述等其他编辑区，同时保存时仍以后保存的一方为准。
+- 顶栏右侧显示也在这个项目里的其他成员，点开可以看到各自正在看哪一集；页面上会看到其他成员的鼠标指针和名字。
+- 项目概述、创作灵感、角色 / 场景 / 道具 / 商品、角色衍生形象、自带原文的集原文、分镜详情与参考视频单元的内容，每个人输入的字会即时出现在其他人那里。正在编辑同一个字段的成员显示为该字段上带名字的彩色光标。
+- 这些编辑区没有「保存」按钮：服务端合并所有人的输入，停止输入片刻后写回项目文件。两个人在同一段文字里同时打字，双方的字都会保留；Ctrl / ⌘ + Z 只撤销自己的修改。
+- Agent 或后台任务改了你正在编辑的内容时，改动直接并进编辑区，不会覆盖你还在打的字。
+- 断线时可以继续编辑，修改留在本机，重新连上后自动同步；断线期间编辑区下方提示「已离线」。连不上协作服务时（例如反向代理没有转发 WebSocket），编辑区退回「改完再保存」的方式。
+- 项目设置、全局设置与全局资产库不在即时协作范围内，仍是改完再保存，同时保存时以后保存的一方为准。
 
-在线名单只保存在服务进程的内存里，重启服务后由各页面下一次报到恢复。
+在线名单与协作中的编辑内容都只保存在服务进程的内存里，所以只能运行一个服务进程。服务关闭前会把还没写回的内容写回；重启后各页面自动重新连线。
 
 ### 3.2 GPU 编码 {#gpu-encoding}
 
@@ -719,6 +721,22 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
 
         proxy_buffering on;
+    }
+
+    # 多人即时协作的 WebSocket：必须转发升级请求，否则编辑区退回「改完再保存」
+    location = /api/v1/collab {
+        proxy_pass http://127.0.0.1:1241;
+        proxy_http_version 1.1;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
     }
 
     location / {

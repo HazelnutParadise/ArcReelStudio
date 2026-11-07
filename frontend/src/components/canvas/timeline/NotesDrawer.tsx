@@ -3,6 +3,9 @@ import { StickyNote } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
+import type { LiveEditing } from "@/components/shared/edit-unit/useEditUnit";
 import { Textarea } from "@/components/ui/textarea";
 import { useItemPositionLabel } from "@/components/shared/episode-item/useEpisodeItem";
 
@@ -13,13 +16,15 @@ interface NotesDrawerProps {
   value: string;
   /** 输入即写入分镜的未保存修改，由分镜详情统一保存 */
   onChange: (value: string) => void;
+  /** 所在分镜编辑单元的多人协作绑定：备注框显示其他人的光标。 */
+  live?: LiveEditing | null;
 }
 
 /**
  * 分镜备注：页头行尾的图标按钮打开弹层。备注是分镜的字段，输入写进分镜的未保存修改，
  * 与提示词一起由提示条保存或放弃。有备注时按钮带一个小圆点。
  */
-export function NotesDrawer({ shotId, value, onChange }: NotesDrawerProps) {
+export function NotesDrawer({ shotId, value, onChange, live = null }: NotesDrawerProps) {
   const { t } = useTranslation("dashboard");
   const itemLabel = useItemPositionLabel(shotId);
   const titleId = useId();
@@ -41,14 +46,20 @@ export function NotesDrawer({ shotId, value, onChange }: NotesDrawerProps) {
           </PopoverTitle>
           <span className="num text-xs text-muted-foreground">{value.length}</span>
         </div>
-        <Textarea
-          ref={textareaRef}
-          aria-labelledby={titleId}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={t("shot_notes_placeholder", { id: itemLabel })}
-          className="min-h-36"
-        />
+        <CollabField live={live} path="note">
+          <Textarea
+            {...liveFieldProps(live, "note")}
+            ref={(el) => {
+              textareaRef.current = el;
+              live?.fieldProps("note").ref(el);
+            }}
+            aria-labelledby={titleId}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={t("shot_notes_placeholder", { id: itemLabel })}
+            className="min-h-36"
+          />
+        </CollabField>
       </PopoverContent>
     </Popover>
   );

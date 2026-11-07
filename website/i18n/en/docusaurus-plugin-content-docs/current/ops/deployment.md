@@ -264,14 +264,16 @@ The command asks you to enter the new password twice and does not show what you 
 
 When you upgrade from an earlier version that had only one `.env` account, the first startup turns the current `AUTH_USERNAME` / `AUTH_PASSWORD` into the default administrator, so the existing password keeps working. Sessions issued before the upgrade all end, and everyone needs to sign in again once. If the old `AUTH_USERNAME` does not meet the username rules above (for example, it contains spaces or Chinese characters), the default administrator is renamed to `admin` and the startup log records the change; sign in as `admin` from then on.
 
-Several members can open the same project at the same time:
+Several members can open the same project at the same time and edit it together, as in a shared document:
 
-- The right side of the top bar shows the other members in the project; open it to see which episode each of them is viewing.
-- Changes other members save appear on your page within a few seconds, with a note saying who made them; your page does not move away from what you are viewing.
-- If another member changes a different field while you have unsaved edits in the shot details, the page takes their content directly, and saving does not change it back. If both of you changed the same field, your save is refused with a notice; review the latest content first, then either discard your edits or save again to overwrite theirs.
-- The conflict check currently covers only the fields in the shot details. In other editors, such as character, scene and prop descriptions or the project overview, the later save still wins when two members save at the same time.
+- The right side of the top bar shows the other members in the project; open it to see which episode each of them is viewing. You also see the other members' mouse pointers and names on the page.
+- In the project overview, the creative brief, characters / scenes / props / products, character derivatives, an episode's own source text, the shot details and reference video units, what each person types appears for the others right away. A member editing the same field shows up as a colored cursor with their name in that field.
+- These editors have no Save button: the server merges everyone's input and writes it to the project files shortly after typing stops. When two people type in the same text at once, both keep their words; Ctrl / ⌘ + Z undoes only your own changes.
+- When the Agent or a background task changes what you are editing, the change merges into the editor without overwriting what you are still typing.
+- You can keep editing while disconnected; changes stay on your device and sync automatically once you reconnect, and the editor shows "Offline" in the meantime. If the collaboration service can't be reached (for example, the reverse proxy doesn't forward WebSockets), the editors fall back to editing and then saving.
+- Project settings, global settings and the global asset library are not part of live collaboration; you still edit and then save, and the later save wins when two members save at the same time.
 
-The list of online members lives only in the service process's memory; after a restart, each page restores it with its next check-in.
+The list of online members and the content being edited together live only in the service process's memory, so run a single service process. The service writes any unsaved content before it shuts down, and pages reconnect automatically after a restart.
 
 ### 3.2 GPU Encoding {#gpu-encoding}
 
@@ -719,6 +721,22 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
 
         proxy_buffering on;
+    }
+
+    # WebSocket for live collaboration: forward the upgrade, or editors fall back to edit-then-save
+    location = /api/v1/collab {
+        proxy_pass http://127.0.0.1:1241;
+        proxy_http_version 1.1;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
     }
 
     location / {

@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, MessageSquareQuote, Plus, Radio, X } from "lucide-react";
 import { cn } from "cn";
 import type { Utterance, UtteranceKind } from "@/types";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
+import type { LiveEditing } from "@/components/shared/edit-unit/useEditUnit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +18,8 @@ interface UtteranceListEditorProps {
   disabled?: boolean;
   /** 说话人输入框的候选名字；输入框仍可以写候选之外的名字（群演，不绑定声音）。 */
   speakerCandidates?: readonly string[];
+  /** 所在分镜编辑单元的多人协作绑定：每句台词的输入框显示其他人的光标。 */
+  live?: LiveEditing | null;
 }
 
 function makeUtterance(kind: UtteranceKind): Utterance {
@@ -49,13 +54,24 @@ interface UtteranceRowProps {
   onUpdate: (next: Utterance) => void;
   onMove: (delta: -1 | 1) => void;
   onRemove: () => void;
+  live: LiveEditing | null;
 }
 
 /**
  * 一条有序发声条目：左侧时序节点（台词实心、画外音空心）、类型切换、说话人（仅台词）、
  * 随内容撑高的文本与上移 / 下移 / 删除。台词缺说话人时标为无效（后端 kind ⇄ speaker 约束，保存时会拒）。
  */
-function UtteranceRow({ value, index, total, disabled, speakerListId, onUpdate, onMove, onRemove }: UtteranceRowProps) {
+function UtteranceRow({
+  value,
+  index,
+  total,
+  disabled,
+  speakerListId,
+  onUpdate,
+  onMove,
+  onRemove,
+  live,
+}: UtteranceRowProps) {
   const { t } = useTranslation("dashboard");
   const isDialogue = value.kind === "dialogue";
   const speaker = isDialogue ? value.speaker : "";
@@ -91,16 +107,19 @@ function UtteranceRow({ value, index, total, disabled, speakerListId, onUpdate, 
             <TooltipContent>{t("utterance_toggle_kind")}</TooltipContent>
           </Tooltip>
           {isDialogue && (
-            <Input
-              value={speaker}
-              list={speakerListId}
-              disabled={disabled}
-              onChange={(e) => onUpdate({ kind: "dialogue", speaker: e.target.value, text: value.text })}
-              placeholder={t("speaker_placeholder")}
-              aria-label={t("speaker_placeholder")}
-              aria-invalid={speakerMissing}
-              className="w-28"
-            />
+            <CollabField live={live} path={`utterances.${index}.speaker`}>
+              <Input
+                {...liveFieldProps(live, `utterances.${index}.speaker`)}
+                value={speaker}
+                list={speakerListId}
+                disabled={disabled}
+                onChange={(e) => onUpdate({ kind: "dialogue", speaker: e.target.value, text: value.text })}
+                placeholder={t("speaker_placeholder")}
+                aria-label={t("speaker_placeholder")}
+                aria-invalid={speakerMissing}
+                className="w-28"
+              />
+            </CollabField>
           )}
 
           <span className="flex-1" />
@@ -126,17 +145,20 @@ function UtteranceRow({ value, index, total, disabled, speakerListId, onUpdate, 
           </TooltipIconButton>
         </div>
 
-        <Textarea
-          value={value.text}
-          disabled={disabled}
-          onChange={(e) => {
-            const text = e.target.value;
-            onUpdate(isDialogue ? { kind: "dialogue", speaker, text } : { kind: "voiceover", speaker: null, text });
-          }}
-          placeholder={isDialogue ? t("utterance_dialogue_placeholder") : t("utterance_voiceover_placeholder")}
-          aria-label={isDialogue ? t("utterance_kind_dialogue") : t("utterance_kind_voiceover")}
-          className="min-h-8"
-        />
+        <CollabField live={live} path={`utterances.${index}.text`}>
+          <Textarea
+            {...liveFieldProps(live, `utterances.${index}.text`)}
+            value={value.text}
+            disabled={disabled}
+            onChange={(e) => {
+              const text = e.target.value;
+              onUpdate(isDialogue ? { kind: "dialogue", speaker, text } : { kind: "voiceover", speaker: null, text });
+            }}
+            placeholder={isDialogue ? t("utterance_dialogue_placeholder") : t("utterance_voiceover_placeholder")}
+            aria-label={isDialogue ? t("utterance_kind_dialogue") : t("utterance_kind_voiceover")}
+            className="min-h-8"
+          />
+        </CollabField>
       </div>
     </div>
   );
@@ -152,6 +174,7 @@ export function UtteranceListEditor({
   onChange,
   disabled = false,
   speakerCandidates,
+  live = null,
 }: UtteranceListEditorProps) {
   const { t } = useTranslation("dashboard");
   const listId = useId();
@@ -213,6 +236,7 @@ export function UtteranceListEditor({
                 speakerListId={speakerListId}
                 onUpdate={(next) => updateAt(i, next)}
                 onMove={(delta) => moveAt(i, delta)}
+                live={live}
                 onRemove={() => removeAt(i)}
               />
             </li>

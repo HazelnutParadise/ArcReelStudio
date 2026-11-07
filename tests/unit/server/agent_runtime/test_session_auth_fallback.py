@@ -57,11 +57,25 @@ def availability(monkeypatch: pytest.MonkeyPatch) -> AuthAvailability:
     return fresh
 
 
+class _RecordingPipeline:
+    """只记下会话层直接写入的系统事件。"""
+
+    def __init__(self) -> None:
+        self.system_entries: list[dict] = []
+
+    async def append_system_entry(self, entry: dict) -> None:
+        self.system_entries.append(entry)
+
+    async def handle_message(self, _msg: dict) -> None:
+        return None
+
+
 async def _run_turn(session_manager, meta_store, *, source: str, messages: list[dict]) -> ManagedSession:
     meta = await meta_store.create("demo", f"sdk-auth-{source}")
     managed = ManagedSession(
         session_id=meta.id, actor=_dummy_actor(), status="running", project_name="demo", auth_source=source
     )
+    managed.entry_pipeline = _RecordingPipeline()
     managed.resolved_sdk_id = meta.id
     session_manager.sessions[meta.id] = managed
     on_message = session_manager._make_actor_message_callback([managed])
@@ -100,6 +114,10 @@ class TestSubscriptionFallback:
         await managed._cleanup_task
         assert not availability.is_available("subscription")
         assert closed == [managed.session_id]
+        # 对话里留一条提示：这一轮的订阅用完了，下一则消息改用 API Key，以及何时改回
+        [notice] = managed.entry_pipeline.system_entries
+        assert notice["subtype"] == "agent_auth_switched"
+        assert notice["auth_switch"] == {"from": "subscription", "to": "api_key", "until": 4_000_000_000}
 
     async def test_without_a_fallback_the_connection_stays(
         self, session_manager, meta_store, availability, monkeypatch

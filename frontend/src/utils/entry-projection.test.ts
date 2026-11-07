@@ -145,6 +145,16 @@ describe("projectEntriesToTurns", () => {
     expect(turns[1].uuid).toBe("i-1");
   });
 
+  it("renders an auth switch entry as a notice turn", () => {
+    const authSwitch = { from: "subscription" as const, to: "api_key" as const, until: 1_800_000_000 };
+    const turns = projectEntriesToTurns([
+      userEntry("继续"),
+      entry({ type: "system", subtype: "agent_auth_switched", uuid: "a-1", auth_switch: authSwitch }),
+    ]);
+    expect(turns.map((t) => t.type)).toEqual(["user", "system"]);
+    expect(turns[1].content).toEqual([{ type: "auth_switch_notice", auth_switch: authSwitch }]);
+  });
+
   it("projects a typed agent turn failure without sniffing its upstream message", () => {
     const failure = {
       version: 1 as const,

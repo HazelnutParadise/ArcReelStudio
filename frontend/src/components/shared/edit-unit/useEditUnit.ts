@@ -1,10 +1,14 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 
+import type { CollabPeer, CollabRef } from "@/collab/collab-client";
+import type { CollabFieldProps } from "@/collab/useLiveFields";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { errMsg } from "@/utils/async";
 
 import { EditUnitRetentionContext, useRetainWhile } from "./edit-unit-retention";
 
 import { useLeaveGuard } from "./LeaveGuard";
+import { useLiveEditUnit } from "./useLiveEditUnit";
 
 /** 保存状态：「已保存」短暂显示后回到 idle。 */
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -39,6 +43,37 @@ export interface EditUnitOptions<T> {
    * 只用于字段相互独立的对象；缺省时整份保留自己的修改并标出外部更新。
    */
   mergeExternalFields?: boolean;
+  /**
+   * 多人即时协作：给出单元在协作房间里的位置与内容互转。连上后单元内容就是房间里的文档，每个人的输入即时出现在
+   * 其他人那里、由服务端合并写回，没有「未保存修改」与保存按钮；连不上时照旧用 `save` 改完保存。
+   */
+  collab?: CollabOptions<T>;
+}
+
+export interface CollabOptions<T> {
+  /** 房间位置；为 null 时不协作（如只读或单元还没建立）。 */
+  ref: CollabRef | null;
+  /**
+   * 编辑区内容 → 房间文档的内容（存储里的字段名）。`current` 是房间文档当前的内容：编辑区只负责其中几个字段时，
+   * 其余字段从这里原样带上，不会被清掉。
+   */
+  toUnit: (value: T, current: UnitJson) => UnitJson;
+  /** 房间文档的内容 → 编辑区内容；`fallback` 是当前已保存内容，补齐文档里没有的部分。 */
+  fromUnit: (unit: UnitJson, fallback: T) => T;
+}
+
+/** 编辑单元处在多人即时协作中时的额外能力。 */
+export interface LiveEditing {
+  /** `synced` 即时同步中；`offline` 断线，修改留在本机，重连后补送。 */
+  connection: "synced" | "offline";
+  /** 同一单元里的其他成员。 */
+  peers: CollabPeer[];
+  /** 绑到输入框上：回报自己的光标位置、远端改动时保住光标、Ctrl/⌘+Z 只撤销自己的修改。 */
+  fieldProps: (path: string) => CollabFieldProps;
+  undo: () => void;
+  redo: () => void;
+  /** 绑定了 `fieldProps(path)` 的输入框，用来画其他人的光标。 */
+  fieldElement: (path: string) => HTMLInputElement | HTMLTextAreaElement | null;
 }
 
 export interface SaveAndGenerateOptions {
@@ -70,6 +105,8 @@ export interface EditUnit<T> {
    * 确认被取消时什么都不保存，保存失败时不生成；返回是否执行了生成。
    */
   saveAndGenerate: (generate: () => unknown, options?: SaveAndGenerateOptions) => Promise<boolean>;
+  /** 多人即时协作中时的状态与输入框绑定；不在协作中（连不上或未开启）时为 null。 */
+  live: LiveEditing | null;
 }
 
 interface UnitState<T> {
@@ -136,6 +173,7 @@ export function useEditUnit<T>({
   leaveTitle,
   allowNavigation,
   mergeExternalFields: mergeFields = false,
+  collab,
 }: EditUnitOptions<T>): EditUnit<T> {
   const [state, setState] = useState<UnitState<T>>(() => ({
     value: source,
@@ -246,17 +284,24 @@ export function useEditUnit<T>({
     [save],
   );
 
+  // ── 多人即时协作：连上后内容就是房间里的文档 ──
+  const live = useLiveEditUnit({ collab, source, saved, value, isEqual, onJoined: discard });
+
+  // 协作中没有「未保存修改」，离开时等待的是背景写回
+  const pending = live
+    ? { dirty: false, saving: live.saving, save: live.unit.save }
+    : { dirty, saving: status === "saving", save };
   // 外部替换后，可见单元已与真实视图分离，旧视图的放行规则不能继续用于主动跳转。
   const discarding = useLeaveGuard({
-    dirty,
-    saving: status === "saving",
-    save,
+    ...pending,
     discard,
     title: leaveTitle,
     allowNavigation: retention?.message ? undefined : allowNavigation,
   });
   // 放弃修改后等待落定的删除自己移除了本单元，不当作外部移除保留
-  useRetainWhile((dirty || status === "saving") && !discarding);
+  useRetainWhile((pending.dirty || pending.saving) && !discarding);
+
+  if (live) return { ...live.unit, externalChangeMessage: retention?.message };
 
   return {
     value,
@@ -270,5 +315,6 @@ export function useEditUnit<T>({
     save,
     discard,
     saveAndGenerate,
+    live: null,
   };
 }

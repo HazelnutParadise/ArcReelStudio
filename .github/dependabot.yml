@@ -107,6 +107,7 @@ updates:
           - "jsonschema"
           - "packaging"
           - "portalocker"
+          - "pycrdt"
           - "socksio"
         update-types:
           - "minor"
@@ -253,6 +254,10 @@ updates:
           - "wouter"
           - "zustand"
           - "eventsource-parser"
+          # 多人即时协作（CRDT 与同步协议）
+          - "yjs"
+          - "y-protocols"
+          - "lib0"
         update-types:
           - "minor"
           - "patch"

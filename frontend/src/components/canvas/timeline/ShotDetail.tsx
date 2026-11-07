@@ -43,6 +43,10 @@ import { StatusBadge } from "./StatusBadge";
 import { ShotStructureActions, type InsertShotHandler } from "./ShotStructureActions";
 import { SegmentBreakToggle } from "./SegmentBreakToggle";
 import { API } from "@/api";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
+import { scriptItemRef } from "@/collab/collab-client";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { useAppStore } from "@/stores/app-store";
 import { isResourceBusy, isScriptFileBusy } from "@/stores/tasks-store";
 import { useCostStore } from "@/stores/cost-store";
@@ -208,6 +212,29 @@ function shotPatch(value: ShotFields, saved: ShotFields, charField: CharactersFi
     patch[key === "characters" ? charField : key] = value[key];
   }
   return patch;
+}
+
+/** 字段的「空」值：剧本里没有这个字段时编辑区显示的值。 */
+function isEmptyField(value: unknown): boolean {
+  return (
+    value === null || value === "" || value === false || value === 0 || (Array.isArray(value) && value.length === 0)
+  );
+}
+
+/**
+ * 分镜在协作房间里的内容：剧本里这一格的字段（角色引用按内容类型用对应的字段名）。`current` 里编辑区不负责的
+ * 字段原样保留；剧本里本来没有、编辑区也只是空值的字段不写进去。
+ */
+function shotFieldsToUnit(value: ShotFields, current: UnitJson, charField: CharactersField): UnitJson {
+  const unit: UnitJson = { ...current };
+  for (const key of SHOT_FIELD_KEYS) {
+    const field = value[key];
+    if (field === undefined) continue;
+    const stored = key === "characters" ? charField : key;
+    if (!(stored in current) && isEmptyField(field)) continue;
+    unit[stored] = field as UnitJson[string];
+  }
+  return unit;
 }
 
 function shotFieldsOf(seg: Segment, mode: DetailContentMode): ShotFields {
@@ -480,6 +507,14 @@ export function ShotDetail({
 
   // 父级 ShotSplitView 按 segmentId 作 key 挂载：切换分镜前由离开拦截询问。
   const source = useMemo(() => shotFieldsOf(segment, contentMode), [segment, contentMode]);
+  const collab = useMemo(
+    () => ({
+      ref: !readOnly && scriptFile ? scriptItemRef(projectName, scriptFile, segmentId) : null,
+      toUnit: (value: ShotFields, current: UnitJson) => shotFieldsToUnit(value, current, charField),
+      fromUnit: (unit: UnitJson) => shotFieldsOf(unit as unknown as Segment, contentMode),
+    }),
+    [readOnly, scriptFile, projectName, segmentId, charField, contentMode],
+  );
   const save = useCallback(
     async (value: ShotFields, saved: ShotFields) => {
       if (!onUpdatePrompt) return;
@@ -508,7 +543,9 @@ export function ShotDetail({
     allowNavigation,
     // 分镜字段相互独立：其他成员改了我没动的字段时直接采用，保存时不把它们改回去
     mergeExternalFields: true,
+    collab,
   });
+  const live = unit.live;
   const { value: fields, setValue, dirty } = unit;
   const saving = unit.status === "saving";
   // 结构化 → 文本切换在途：返回后整体替换该侧提示词，期间该侧的编辑会被覆盖。
@@ -516,7 +553,8 @@ export function ShotDetail({
   const [formSwitching, setFormSwitching] = useState<PromptSide | null>(null);
   const editBusy = saving || formSwitching !== null;
   // PATCH 已落盘但刷新失败时 savedValue 领先于剧本；直到新 source 到达才允许再生成或预览。
-  const refreshPending = !shotFieldsEqual(source, unit.savedValue);
+  // 协作中内容即时写回，没有「已落盘但界面剧本没刷新」的中间态
+  const refreshPending = !live && !shotFieldsEqual(source, unit.savedValue);
   const saveForPreview = unit.save;
   const preparePreview = useCallback(
     async () => !refreshPending && (await saveForPreview()),
@@ -717,14 +755,17 @@ export function ShotDetail({
       {isAd && (
         <>
           <ShotSection title={t("detail_section_shot_section")} htmlFor={`shot-section-${segmentId}`}>
-            <Input
-              id={`shot-section-${segmentId}`}
-              list={`shot-section-options-${segmentId}`}
-              value={fields.section ?? ""}
-              onChange={(e) => setField("section", e.target.value)}
-              readOnly={readOnly}
-              placeholder={t("detail_shot_section_placeholder")}
-            />
+            <CollabField live={live} path="section">
+              <Input
+                {...liveFieldProps(live, "section")}
+                id={`shot-section-${segmentId}`}
+                list={`shot-section-options-${segmentId}`}
+                value={fields.section ?? ""}
+                onChange={(e) => setField("section", e.target.value)}
+                readOnly={readOnly}
+                placeholder={t("detail_shot_section_placeholder")}
+              />
+            </CollabField>
             <datalist id={`shot-section-options-${segmentId}`}>
               {AD_SECTION_VALUES.map((v) => (
                 <option key={v} value={v} />
@@ -740,14 +781,17 @@ export function ShotDetail({
               </span>
             }
           >
-            <Textarea
-              id={`shot-voiceover-${segmentId}`}
-              value={fields.voiceover_text ?? ""}
-              onChange={(e) => setField("voiceover_text", e.target.value)}
-              readOnly={readOnly}
-              placeholder={t("detail_voiceover_placeholder")}
-              className="max-h-none min-h-24"
-            />
+            <CollabField live={live} path="voiceover_text">
+              <Textarea
+                {...liveFieldProps(live, "voiceover_text")}
+                id={`shot-voiceover-${segmentId}`}
+                value={fields.voiceover_text ?? ""}
+                onChange={(e) => setField("voiceover_text", e.target.value)}
+                readOnly={readOnly}
+                placeholder={t("detail_voiceover_placeholder")}
+                className="max-h-none min-h-24"
+              />
+            </CollabField>
           </ShotSection>
           {productNames.length > 0 && (
             <ShotSection title={t("detail_section_products")}>
@@ -818,16 +862,20 @@ export function ShotDetail({
             prompt={imgValue}
             onUpdate={handleImgUpdate}
             readOnly={readOnly || formSwitching === "image"}
+            live={live}
           />
         ) : (
-          <Textarea
-            aria-label={t("detail_image_prompt_title")}
-            value={typeof fields.image_prompt === "string" ? fields.image_prompt : ""}
-            onChange={(e) => setField("image_prompt", e.target.value)}
-            readOnly={readOnly}
-            placeholder={t("detail_image_prompt_placeholder")}
-            className="max-h-none min-h-31"
-          />
+          <CollabField live={live} path="image_prompt">
+            <Textarea
+              {...liveFieldProps(live, "image_prompt")}
+              aria-label={t("detail_image_prompt_title")}
+              value={typeof fields.image_prompt === "string" ? fields.image_prompt : ""}
+              onChange={(e) => setField("image_prompt", e.target.value)}
+              readOnly={readOnly}
+              placeholder={t("detail_image_prompt_placeholder")}
+              className="max-h-none min-h-31"
+            />
+          </CollabField>
         )}
         {renderFormSwitchError("image")}
       </ShotSection>
@@ -852,16 +900,20 @@ export function ShotDetail({
             prompt={vidValue}
             onUpdate={handleVidUpdate}
             readOnly={readOnly || formSwitching === "video"}
+            live={live}
           />
         ) : (
-          <Textarea
-            aria-label={t("detail_video_prompt_title")}
-            value={typeof fields.video_prompt === "string" ? fields.video_prompt : ""}
-            onChange={(e) => setField("video_prompt", e.target.value)}
-            readOnly={readOnly}
-            placeholder={t("detail_video_prompt_placeholder")}
-            className="max-h-none min-h-22"
-          />
+          <CollabField live={live} path="video_prompt">
+            <Textarea
+              {...liveFieldProps(live, "video_prompt")}
+              aria-label={t("detail_video_prompt_title")}
+              value={typeof fields.video_prompt === "string" ? fields.video_prompt : ""}
+              onChange={(e) => setField("video_prompt", e.target.value)}
+              readOnly={readOnly}
+              placeholder={t("detail_video_prompt_placeholder")}
+              className="max-h-none min-h-22"
+            />
+          </CollabField>
         )}
         {renderFormSwitchError("video")}
       </ShotSection>
@@ -889,6 +941,7 @@ export function ShotDetail({
             onChange={(utterances) => setField("utterances", utterances)}
             disabled={editBusy || readOnly}
             speakerCandidates={speakerNames}
+            live={live}
           />
         </ShotSection>
       ) : isNarration ? (
@@ -948,14 +1001,17 @@ export function ShotDetail({
         >
           {/* 旁白正文用衬线字体，与配音卡里的正文一致；字体由外层继承 */}
           <div className="display-serif">
-            <Textarea
-              id={`shot-narration-text-${segmentId}`}
-              value={fields.novel_text ?? ""}
-              onChange={(e) => setField("novel_text", e.target.value)}
-              readOnly={readOnly}
-              placeholder={t("detail_narration_text_placeholder")}
-              className="max-h-none min-h-30"
-            />
+            <CollabField live={live} path="novel_text">
+              <Textarea
+                {...liveFieldProps(live, "novel_text")}
+                id={`shot-narration-text-${segmentId}`}
+                value={fields.novel_text ?? ""}
+                onChange={(e) => setField("novel_text", e.target.value)}
+                readOnly={readOnly}
+                placeholder={t("detail_narration_text_placeholder")}
+                className="max-h-none min-h-30"
+              />
+            </CollabField>
           </div>
         </ShotSection>
       )}
@@ -1137,7 +1193,7 @@ export function ShotDetail({
       notes={
         // 备注只有落库才有意义：只读展示下不给入口，免得输入的备注静默丢弃
         readOnly ? null : (
-          <NotesDrawer shotId={segmentId} value={fields.note} onChange={(note) => setField("note", note)} />
+          <NotesDrawer shotId={segmentId} value={fields.note} onChange={(note) => setField("note", note)} live={live} />
         )
       }
     />

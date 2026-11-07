@@ -28,6 +28,7 @@ from server.agent_runtime.event_log import (
     REPLAYED_USER_ECHO_ENTRY_UUID_KEY,
     REPLAYED_USER_ECHO_KEY,
     EventLogStore,
+    build_auth_switch_entry,
     build_user_entry,
 )
 from server.agent_runtime.failure_observation import (
@@ -1923,6 +1924,10 @@ class SessionManager:
             managed.auth_source,
             fallback,
         )
+        if managed.entry_pipeline is not None:
+            await managed.entry_pipeline.append_system_entry(
+                build_auth_switch_entry(managed.auth_source, fallback, until)
+            )
         # 与闲置清理共用一个槽位：任务有人持有，新一轮开始时也会按同样的规则取消
         if managed._cleanup_task is not None and not managed._cleanup_task.done():
             managed._cleanup_task.cancel()

@@ -3,6 +3,9 @@ import { RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { OutputTruncationHint } from "@/components/shared/OutputTruncationHint";
 import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesBar";
 import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
@@ -37,6 +40,24 @@ function fieldsOf(overview: ProjectOverview | undefined): SettingFields {
     theme: overview?.theme ?? "",
     world_setting: overview?.world_setting ?? "",
   };
+}
+
+function textOf(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+/** 故事设定在协作房间里的内容：就是 `project.json` 里 `overview` 的四个字段。 */
+function settingFromUnit(unit: UnitJson, fallback: SettingFields): SettingFields {
+  return {
+    synopsis: textOf(unit.synopsis, fallback.synopsis),
+    genre: textOf(unit.genre, fallback.genre),
+    theme: textOf(unit.theme, fallback.theme),
+    world_setting: textOf(unit.world_setting, fallback.world_setting),
+  };
+}
+
+function settingToUnit(value: SettingFields): UnitJson {
+  return { ...value };
 }
 
 interface StorySettingProps {
@@ -91,7 +112,16 @@ export function StorySetting({
     },
     [projectName, t],
   );
-  const unit = useEditUnit({ source, save, allowNavigation });
+  const collab = useMemo(
+    () => ({
+      ref: readOnly ? null : { project: projectName, kind: "overview", key: "" },
+      toUnit: settingToUnit,
+      fromUnit: settingFromUnit,
+    }),
+    [projectName, readOnly],
+  );
+  const unit = useEditUnit({ source, save, allowNavigation, collab });
+  const live = unit.live;
 
   const hasContent = FIELD_KEYS.some((key) => unit.savedValue[key] !== "");
   const needsConfirm = hasContent || unit.dirty;
@@ -152,44 +182,56 @@ export function StorySetting({
     body = (
       <div className="flex max-w-[40em] flex-col gap-3">
         <FieldBlock id={`${fieldId}-synopsis`} label={t("overview_field_synopsis")}>
-          <Textarea
-            id={`${fieldId}-synopsis`}
-            variant="plain"
-            value={unit.value.synopsis}
-            onChange={setField("synopsis")}
-            placeholder={t("overview_placeholder_synopsis")}
-            className="max-h-none"
-          />
+          <CollabField live={live} path="synopsis">
+            <Textarea
+              {...liveFieldProps(live, "synopsis")}
+              id={`${fieldId}-synopsis`}
+              variant="plain"
+              value={unit.value.synopsis}
+              onChange={setField("synopsis")}
+              placeholder={t("overview_placeholder_synopsis")}
+              className="max-h-none"
+            />
+          </CollabField>
         </FieldBlock>
         <div className="grid grid-cols-1 gap-3 @md/canvas:grid-cols-2">
           <FieldBlock id={`${fieldId}-genre`} label={t("overview_field_genre")}>
-            <Input
-              id={`${fieldId}-genre`}
-              variant="plain"
-              value={unit.value.genre}
-              onChange={setField("genre")}
-              placeholder={t("overview_placeholder_genre")}
-            />
+            <CollabField live={live} path="genre">
+              <Input
+                {...liveFieldProps(live, "genre")}
+                id={`${fieldId}-genre`}
+                variant="plain"
+                value={unit.value.genre}
+                onChange={setField("genre")}
+                placeholder={t("overview_placeholder_genre")}
+              />
+            </CollabField>
           </FieldBlock>
           <FieldBlock id={`${fieldId}-theme`} label={t("overview_field_theme")}>
-            <Input
-              id={`${fieldId}-theme`}
-              variant="plain"
-              value={unit.value.theme}
-              onChange={setField("theme")}
-              placeholder={t("overview_placeholder_theme")}
-            />
+            <CollabField live={live} path="theme">
+              <Input
+                {...liveFieldProps(live, "theme")}
+                id={`${fieldId}-theme`}
+                variant="plain"
+                value={unit.value.theme}
+                onChange={setField("theme")}
+                placeholder={t("overview_placeholder_theme")}
+              />
+            </CollabField>
           </FieldBlock>
         </div>
         <FieldBlock id={`${fieldId}-world`} label={t("overview_field_world_setting")}>
-          <Textarea
-            id={`${fieldId}-world`}
-            variant="plain"
-            value={unit.value.world_setting}
-            onChange={setField("world_setting")}
-            placeholder={t("overview_placeholder_world_setting")}
-            className="max-h-none"
-          />
+          <CollabField live={live} path="world_setting">
+            <Textarea
+              {...liveFieldProps(live, "world_setting")}
+              id={`${fieldId}-world`}
+              variant="plain"
+              value={unit.value.world_setting}
+              onChange={setField("world_setting")}
+              placeholder={t("overview_placeholder_world_setting")}
+              className="max-h-none"
+            />
+          </CollabField>
         </FieldBlock>
       </div>
     );

@@ -2152,6 +2152,9 @@ export default {
   'base_url_optional': 'Base URL (optional)',
   'base_url_region_china': 'China site (default)',
   'base_url_region_international': 'International site',
+  'collab_status_live': 'Syncing live',
+  'collab_status_offline': 'Offline. Your changes sync when you reconnect',
+  'collab_peers_editing_field': '{{names}} editing this field',
   'claude_subscription_title': 'Claude subscription',
   'claude_subscription_desc':
     "Sign in with a Claude account so the agent can use that account's subscription. The whole workspace shares one account's usage.",
@@ -2618,6 +2621,11 @@ export default {
   // ToolCallWithResult
   // Timeline typed entries (interrupt / AskUserQuestion answer)
   'chat_interrupt_notice': 'Stopped. This reply was not finished',
+  'chat_auth_switch_from_subscription': 'The Claude subscription ran out. The next message uses the API key.',
+  'chat_auth_switch_from_api_key': 'The API key ran out or failed. The next message uses the Claude subscription.',
+  'chat_auth_switch_back_at': 'It switches back after {{time}}.',
+  'chat_auth_switch_back_after_relogin': 'It switches back after you sign in to the subscription again.',
+  'chat_auth_switch_back_after_fix': 'It switches back once the API key is fixed.',
   'chat_compacted_label': 'Context compacted',
   // Agent message stream
   'chat_transcript_label': 'Conversation',

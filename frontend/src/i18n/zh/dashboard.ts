@@ -2061,6 +2061,9 @@ export default {
   'base_url_optional': '接口地址（可选）',
   'base_url_region_china': '中国站（默认）',
   'base_url_region_international': '国际站',
+  'collab_status_live': '实时同步中',
+  'collab_status_offline': '已离线，修改会在重新连接后同步',
+  'collab_peers_editing_field': '{{names}} 正在编辑这个字段',
   'claude_subscription_title': 'Claude 订阅',
   'claude_subscription_desc':
     '用 Claude 账号登录后，Agent 可以使用这个账号的订阅额度。整个工作区共用同一个账号的额度。',
@@ -2501,6 +2504,11 @@ export default {
   // ToolCallWithResult
   // 时间线 typed 条目（interrupt / AskUserQuestion 答复）
   'chat_interrupt_notice': '已停止，这一轮的回复没有完成',
+  'chat_auth_switch_from_subscription': 'Claude 订阅额度用完了，下一条消息改用 API Key。',
+  'chat_auth_switch_from_api_key': 'API Key 额度用完或无法使用，下一条消息改用 Claude 订阅。',
+  'chat_auth_switch_back_at': '{{time}} 之后改回原来的方式。',
+  'chat_auth_switch_back_after_relogin': '重新登录 Claude 订阅后改回。',
+  'chat_auth_switch_back_after_fix': '修好 API Key 后改回。',
   'chat_compacted_label': '上下文已压缩',
   // Agent 消息流
   'chat_transcript_label': '对话记录',

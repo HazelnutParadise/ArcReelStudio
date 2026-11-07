@@ -2252,6 +2252,9 @@ export default {
   'base_url_optional': 'Базовый URL (необязательно)',
   'base_url_region_china': 'Китайский сайт (по умолчанию)',
   'base_url_region_international': 'Международный сайт',
+  'collab_status_live': 'Синхронизация в реальном времени',
+  'collab_status_offline': 'Нет связи. Изменения синхронизируются после переподключения',
+  'collab_peers_editing_field': '{{names}} редактирует это поле',
   'claude_subscription_title': 'Подписка Claude',
   'claude_subscription_desc':
     'Войдите в аккаунт Claude, чтобы Agent использовал лимиты его подписки. Все в рабочем пространстве делят лимиты одного аккаунта.',
@@ -2753,6 +2756,12 @@ export default {
   // ToolCallWithResult
   // Timeline typed entries (interrupt / AskUserQuestion answer)
   'chat_interrupt_notice': 'Остановлено. Ответ не был завершён',
+  'chat_auth_switch_from_subscription': 'Лимит подписки Claude исчерпан. Следующее сообщение пойдёт через API-ключ.',
+  'chat_auth_switch_from_api_key':
+    'Лимит API-ключа исчерпан или он не работает. Следующее сообщение пойдёт через подписку Claude.',
+  'chat_auth_switch_back_at': 'Вернётся к прежнему способу после {{time}}.',
+  'chat_auth_switch_back_after_relogin': 'Вернётся после повторного входа в подписку.',
+  'chat_auth_switch_back_after_fix': 'Вернётся, когда API-ключ будет исправлен.',
   'chat_compacted_label': 'Контекст сжат',
   // Agent message stream
   'chat_transcript_label': 'Диалог',

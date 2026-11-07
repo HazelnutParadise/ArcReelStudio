@@ -44,6 +44,8 @@ ENTRY_SUBTYPE_QUESTION_ANSWER = "question_answer"
 ENTRY_SUBTYPE_AGENT_TURN_FAILURE = "agent_turn_failure"
 ENTRY_SUBTYPE_COMPACT_SUMMARY = "compact_summary"
 ENTRY_SUBTYPE_SUBAGENT_OUTCOME = "subagent_outcome"
+#: Agent 的认证来源（Claude 订阅 / API Key）不能用了，下一则消息改用另一方
+ENTRY_SUBTYPE_AGENT_AUTH_SWITCHED = "agent_auth_switched"
 
 SYSTEM_SUBTYPE_SKILL_INVOCATION = "skill_invocation"
 
@@ -231,6 +233,20 @@ def _build_turn_failure_entry(
     elif result_message is not None:
         _copy_parent(result_message, entry)
     return entry
+
+
+def build_auth_switch_entry(from_source: str, to_source: str, until: float | None) -> dict[str, Any]:
+    """认证来源切换的系统事件：对话里提示这一轮的来源用完了，下一则消息改用另一方，以及何时改回。
+
+    ``until`` 是原来源恢复的时间（Unix 秒）；要等重新配置（如订阅令牌失效）时为 ``None``。
+    """
+    return {
+        "type": ENTRY_TYPE_SYSTEM,
+        "subtype": ENTRY_SUBTYPE_AGENT_AUTH_SWITCHED,
+        "auth_switch": {"from": from_source, "to": to_source, "until": until},
+        "uuid": f"auth-switch-{uuid4().hex}",
+        "timestamp": utc_now_iso(),
+    }
 
 
 def build_failure_entry(observation: dict[str, Any]) -> dict[str, Any]:
