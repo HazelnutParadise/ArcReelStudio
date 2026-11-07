@@ -49,7 +49,11 @@ export function assetFieldsEqual(a: AssetFields, b: AssetFields): boolean {
 }
 
 /** 只带改过的字段，键名是资产接口的字段名。 */
-export function assetFieldsPatch(type: AssetSheetType, value: AssetFields, saved: AssetFields): Record<string, unknown> {
+export function assetFieldsPatch(
+  type: AssetSheetType,
+  value: AssetFields,
+  saved: AssetFields,
+): Record<string, unknown> {
   const patch: Record<string, unknown> = {};
   if (value.description !== saved.description) patch.description = value.description;
   if (type === "character" && value.voiceStyle !== saved.voiceStyle) patch.voice_style = value.voiceStyle;

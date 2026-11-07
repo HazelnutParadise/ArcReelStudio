@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { API, ApiRequestError } from "@/api";
@@ -63,7 +63,11 @@ describe("编写提示词", () => {
 
   it("重写会覆盖已有提示词时先确认，确认后带着清单版本重新提交", async () => {
     const user = userEvent.setup();
-    const overwrite: PromptOverwrite = { revision: "rev-7", entries: [{ id: "E1S04", fields: ["image_prompt"] }], text: "将覆盖 E1S04 的分镜图与视频提示词。" };
+    const overwrite: PromptOverwrite = {
+      revision: "rev-7",
+      entries: [{ id: "E1S04", fields: ["image_prompt"] }],
+      text: "将覆盖 E1S04 的分镜图与视频提示词。",
+    };
     const submit = vi
       .spyOn(API, "authorPrompts")
       .mockRejectedValueOnce(new ApiRequestError("需要确认覆盖", { prompt_overwrite: overwrite }, 409))

@@ -84,10 +84,7 @@ export function OverviewCanvas({ projectName, projectData, readOnly = false }: O
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto p-6 [scrollbar-gutter:stable] @3xl/canvas:p-8">
       {showWelcome ? (
-        <WelcomeCanvas
-          projectTitle={projectData.title}
-          onSelectFiles={(files) => setUpload({ projectName, files })}
-        />
+        <WelcomeCanvas projectTitle={projectData.title} onSelectFiles={(files) => setUpload({ projectName, files })} />
       ) : (
         <div className="flex w-full max-w-190 shrink-0 flex-col gap-6">
           <div className="flex flex-col gap-3">

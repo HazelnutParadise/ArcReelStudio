@@ -18,10 +18,10 @@ interface RecordedProject {
 }
 
 // 集名很长时，提示里「打开『集名』的剪辑视图」链接要换行，不能把对话框撑出视口。
-const recordedProject = (
-  JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse
-).body as RecordedProject;
-const LONG_EPISODE_TITLE = "第一集：雨夜里的旧城区，主角在废弃车站等待一位从未谋面的委托人，并发现站台广播仍在重复多年前的最后一班列车";
+const recordedProject = (JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse)
+  .body as RecordedProject;
+const LONG_EPISODE_TITLE =
+  "第一集：雨夜里的旧城区，主角在废弃车站等待一位从未谋面的委托人，并发现站台广播仍在重复多年前的最后一班列车";
 const LONG_EPISODE_NAME: ApiOverrides = {
   ...EVENT_STREAM,
   "GET /api/v1/projects/demo": {

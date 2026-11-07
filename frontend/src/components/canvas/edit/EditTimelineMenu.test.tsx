@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -72,14 +72,16 @@ describe("EditTimelineView tab menu", () => {
     renderView();
     const menu = await openMenu("快节奏版");
 
-    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["重命名", "删除"]);
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(["重命名", "删除"]);
   });
 
   it("renames the timeline and shows the new name after reloading the list", async () => {
     const list = vi.spyOn(API, "listEditTimelines").mockResolvedValue({ timelines: [FIRST, SECOND] });
-    const rename = vi
-      .spyOn(API, "renameEditTimeline")
-      .mockResolvedValue({ ...SECOND, name: "定稿" });
+    const rename = vi.spyOn(API, "renameEditTimeline").mockResolvedValue({ ...SECOND, name: "定稿" });
 
     renderView();
     const menu = await openMenu("快节奏版");
@@ -173,7 +175,9 @@ describe("EditTimelineView tab menu", () => {
     const dialog = await screen.findByRole("alertdialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "删除" }));
 
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("删除失败：这条剪辑时间线有渲染任务在排队或执行");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "删除失败：这条剪辑时间线有渲染任务在排队或执行",
+    );
     fireEvent.click(within(dialog).getByRole("button", { name: "取消" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     expect(screen.getByRole("tab", { name: "快节奏版" })).toBeInTheDocument();

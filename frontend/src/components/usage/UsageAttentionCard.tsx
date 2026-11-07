@@ -70,9 +70,7 @@ function AttentionItem({
 
   const title = isRate
     ? t("usage_attention_failure_rate_title", {
-        name: item.model
-          ? `${providerLabel(item.provider)} · ${item.model}`
-          : providerLabel(item.provider),
+        name: item.model ? `${providerLabel(item.provider)} · ${item.model}` : providerLabel(item.provider),
       })
     : t("usage_attention_consecutive_title", {
         project: usageProjectLabel(item.project_name, t, i18n.language, titleOf(item.project_name)),

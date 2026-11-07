@@ -49,7 +49,10 @@ function project(index: number, title: string, options: ProjectOptions = {}) {
 // 压力变体：24 个项目，标题长、待修复原因长、集数多，覆盖三种进度。
 const PROJECTS = Array.from({ length: 24 }, (_, index) => {
   const variant = index % 4;
-  if (variant === 0) return project(index, `${LONG_TITLE} 第 ${index + 1} 部`, { episodes: { total: 40, completed: 12, inProduction: 6 } });
+  if (variant === 0)
+    return project(index, `${LONG_TITLE} 第 ${index + 1} 部`, {
+      episodes: { total: 40, completed: 12, inProduction: 6 },
+    });
   if (variant === 1) return project(index, `短片 ${index + 1}`, { episodes: { total: 6, completed: 6 } });
   if (variant === 2) return project(index, `${LONG_TITLE} ${index + 1}`, { episodes: { total: 3 }, needsRepair: true });
   return project(index, `新项目 ${index + 1}`);
@@ -226,9 +229,13 @@ defineRegionScenarios("项目大厅", [
   {
     name: "删除失败原因很长：正文可聚焦并用键盘滚动，取消仍可达",
     path: LOBBY_PATH,
-    api: { ...MANY, "DELETE /api/v1/projects/project-0": {
-      status: 500, body: { detail: "无法删除项目，存储系统返回诊断：".repeat(120) },
-    } },
+    api: {
+      ...MANY,
+      "DELETE /api/v1/projects/project-0": {
+        status: 500,
+        body: { detail: "无法删除项目，存储系统返回诊断：".repeat(120) },
+      },
+    },
     ready: manyReady,
     act: async (page) => {
       await firstCardActions(page).click();

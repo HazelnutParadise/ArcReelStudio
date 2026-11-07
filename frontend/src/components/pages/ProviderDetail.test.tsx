@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n";
 import { createDeferred } from "@/test/deferred";
 import { API } from "@/api";
@@ -155,9 +155,7 @@ describe("ProviderDetail", () => {
       .mockImplementationOnce(
         (_id, options) =>
           new Promise((_resolve, reject) => {
-            options?.signal?.addEventListener("abort", () =>
-              reject(new DOMException("Aborted", "AbortError")),
-            );
+            options?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
             void detailRefetch.promise;
           }),
       )
@@ -176,7 +174,14 @@ describe("ProviderDetail", () => {
 
   it("patches only the changed fields and clears emptied ones", async () => {
     const detail = detailFor("zh");
-    detail.fields.push({ key: "gcs_bucket", label: "GCS Bucket", type: "text", required: false, is_set: true, value: "old" });
+    detail.fields.push({
+      key: "gcs_bucket",
+      label: "GCS Bucket",
+      type: "text",
+      required: false,
+      is_set: true,
+      value: "old",
+    });
     vi.spyOn(API, "getProviderConfig").mockResolvedValue(detail);
     const patch = vi.spyOn(API, "patchProviderConfig").mockResolvedValue(undefined);
 
@@ -195,9 +200,7 @@ describe("ProviderDetail", () => {
       .mockImplementationOnce(
         (_id, options) =>
           new Promise((_resolve, reject) => {
-            options?.signal?.addEventListener("abort", () =>
-              reject(new DOMException("Aborted", "AbortError")),
-            );
+            options?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
           }),
       )
       .mockImplementation(() => Promise.resolve(detailFor(i18n.language)));

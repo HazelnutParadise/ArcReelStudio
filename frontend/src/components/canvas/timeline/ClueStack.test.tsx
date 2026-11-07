@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { ClueStack } from "./ClueStack";
 import type { Scene, Prop } from "@/types";
 
@@ -16,26 +16,14 @@ const props: Record<string, Prop> = {
 describe("ClueStack (read-only)", () => {
   it("renders nothing when both scene and prop lists are empty", () => {
     const { container } = render(
-      <ClueStack
-        sceneNames={[]}
-        propNames={[]}
-        scenes={scenes}
-        props={props}
-        projectName="demo"
-      />,
+      <ClueStack sceneNames={[]} propNames={[]} scenes={scenes} props={props} projectName="demo" />,
     );
     expect(container).toBeEmptyDOMElement();
   });
 
   it("renders chips for both scenes and props in order (scenes first)", () => {
     render(
-      <ClueStack
-        sceneNames={["Forest"]}
-        propNames={["Sword"]}
-        scenes={scenes}
-        props={props}
-        projectName="demo"
-      />,
+      <ClueStack sceneNames={["Forest"]} propNames={["Sword"]} scenes={scenes} props={props} projectName="demo" />,
     );
     expect(screen.getByText("F")).toBeInTheDocument();
     expect(screen.getByText("S")).toBeInTheDocument();
@@ -57,13 +45,7 @@ describe("ClueStack (read-only)", () => {
 
   it("does not render any edit affordance (no add / remove buttons)", () => {
     render(
-      <ClueStack
-        sceneNames={["Forest"]}
-        propNames={["Sword"]}
-        scenes={scenes}
-        props={props}
-        projectName="demo"
-      />,
+      <ClueStack sceneNames={["Forest"]} propNames={["Sword"]} scenes={scenes} props={props} projectName="demo" />,
     );
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });

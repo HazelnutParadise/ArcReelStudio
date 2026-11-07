@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
+import { beforeEach, describe, expect, it, vi, afterEach } from "vite-plus/test";
 import { act } from "@testing-library/react";
 import { useReferenceVideoStore } from "./reference-video-store";
 import { API } from "@/api";
@@ -28,7 +28,6 @@ function mkUnit(
   };
 }
 
-
 describe("reference-video-store", () => {
   beforeEach(() => {
     useReferenceVideoStore.setState({
@@ -47,7 +46,10 @@ describe("reference-video-store", () => {
   it("loadUnits populates unitsByEpisode and clears loading", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValueOnce({
       units: [mkUnit("E1U1"), mkUnit("E1U2")],
-      unit_capabilities: { E1U1: makeReferenceUnitCapability("E1U1"), E1U2: makeReferenceUnitCapability("E1U2", { hydrated_capability: "r2v" }) },
+      unit_capabilities: {
+        E1U1: makeReferenceUnitCapability("E1U1"),
+        E1U2: makeReferenceUnitCapability("E1U2", { hydrated_capability: "r2v" }),
+      },
     });
 
     await act(async () => {
@@ -211,8 +213,7 @@ describe("reference-video-store", () => {
       await useReferenceVideoStore.getState().moveUnit("proj", 1, "E1U2", null);
     });
 
-    expect(useReferenceVideoStore.getState().unitsByEpisode["proj::1"].map((u) => u.unit_id))
-      .toEqual(["E1U2", "E1U1"]);
+    expect(useReferenceVideoStore.getState().unitsByEpisode["proj::1"].map((u) => u.unit_id)).toEqual(["E1U2", "E1U1"]);
   });
 
   it("select sets selectedUnitId", () => {

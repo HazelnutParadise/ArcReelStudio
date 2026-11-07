@@ -14,7 +14,9 @@ export function WorkspaceNotFound() {
           <EmptyMedia variant="icon">
             <FileQuestion aria-hidden />
           </EmptyMedia>
-          <EmptyTitle role="heading" aria-level={1}>{t("dashboard:workspace_not_found_title")}</EmptyTitle>
+          <EmptyTitle role="heading" aria-level={1}>
+            {t("dashboard:workspace_not_found_title")}
+          </EmptyTitle>
           <EmptyDescription>{t("common:not_found_description")}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>

@@ -218,7 +218,6 @@ export function SortableHandle({ label }: { label: string }) {
       data-dragging={isDragging ? "" : undefined}
       {...attributes}
       {...listeners}
-
     >
       <GripVertical aria-hidden />
     </Button>

@@ -22,15 +22,17 @@ export function useTtsModelCapabilities(backend: string): TtsModelCapabilities |
   useEffect(() => {
     if (!backend) return;
     const controller = new AbortController();
-    voidCall((async () => {
-      try {
-        const res = await API.getTtsModelCapabilities(backend, { signal: controller.signal });
-        if (controller.signal.aborted) return;
-        setAnswer({ backend, capabilities: { supportsSpeed: res.supports_speed, voices: res.voices } });
-      } catch {
-        // 查不到能力时不置灰、不列音色：语速仍由供应商自行决定是否生效，音色照常手填
-      }
-    })());
+    voidCall(
+      (async () => {
+        try {
+          const res = await API.getTtsModelCapabilities(backend, { signal: controller.signal });
+          if (controller.signal.aborted) return;
+          setAnswer({ backend, capabilities: { supportsSpeed: res.supports_speed, voices: res.voices } });
+        } catch {
+          // 查不到能力时不置灰、不列音色：语速仍由供应商自行决定是否生效，音色照常手填
+        }
+      })(),
+    );
     return () => controller.abort();
   }, [backend, language]);
   return answer?.backend === backend ? answer.capabilities : null;

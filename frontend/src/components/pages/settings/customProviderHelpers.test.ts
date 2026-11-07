@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { CapabilityOverrides, ImageCap, MediaType } from "@/types";
 import {
   urlPreviewFor,
@@ -30,19 +30,13 @@ const ENDPOINT_TO_CAPS: Record<string, ImageCap[]> = {
 
 describe("urlPreviewFor", () => {
   it("openai appends /v1 when missing", () => {
-    expect(urlPreviewFor("openai", "https://api.example.com")).toBe(
-      "https://api.example.com/v1/models",
-    );
+    expect(urlPreviewFor("openai", "https://api.example.com")).toBe("https://api.example.com/v1/models");
   });
   it("openai preserves /v1", () => {
-    expect(urlPreviewFor("openai", "https://api.example.com/v1")).toBe(
-      "https://api.example.com/v1/models",
-    );
+    expect(urlPreviewFor("openai", "https://api.example.com/v1")).toBe("https://api.example.com/v1/models");
   });
   it("openai strips trailing slash and appends /v1", () => {
-    expect(urlPreviewFor("openai", "https://api.example.com/")).toBe(
-      "https://api.example.com/v1/models",
-    );
+    expect(urlPreviewFor("openai", "https://api.example.com/")).toBe("https://api.example.com/v1/models");
   });
   it("google uses /v1beta/models", () => {
     expect(urlPreviewFor("google", "https://generativelanguage.googleapis.com")).toBe(
@@ -209,10 +203,7 @@ describe("mergeDiscoveredModels", () => {
   it("keeps disjoint-capability image defaults (split generations vs edits)", () => {
     // 既存 -edits(I2I) 默认；发现 -generations(T2I) 标默认 → capability 不交叠 → 两者都保留
     const prev = [row("e", "openai-images-edits", true)];
-    const discovered = [
-      row("g", "openai-images-generations", true),
-      row("e", "openai-images-edits", false),
-    ];
+    const discovered = [row("g", "openai-images-generations", true), row("e", "openai-images-edits", false)];
     const merged = mergeDiscoveredModels(prev, discovered, ENDPOINT_TO_MEDIA, ENDPOINT_TO_CAPS);
     expect(merged.find((m) => m.model_id === "g")?.is_default).toBe(true);
     expect(merged.find((m) => m.model_id === "e")?.is_default).toBe(true);
@@ -242,20 +233,18 @@ describe("mergeDiscoveredModels", () => {
     const prev = [row("z-chat", "openai-chat", true)];
     const discovered = [row("a-chat", "openai-chat", true), row("z-chat", "openai-chat", false)];
     const merged = mergeDiscoveredModels(prev, discovered, {});
-    expect(merged.filter((m) => m.is_default).map((m) => m.model_id).sort()).toEqual([
-      "a-chat",
-      "z-chat",
-    ]);
+    expect(
+      merged
+        .filter((m) => m.is_default)
+        .map((m) => m.model_id)
+        .sort(),
+    ).toEqual(["a-chat", "z-chat"]);
   });
 
   it("keeps multiple manually-added rows with empty model_id (no Map key collision)", () => {
     // 用户连点「手动添加」加了两行未填 model_id（都为 ""），再点获取模型。
     // 若用 model_id 建 Map 去重，两空行键冲突会静默丢一行；修复后两行都应保留。
-    const prev = [
-      row("", "openai-chat", false),
-      row("", "newapi-video", false),
-      row("z-chat", "openai-chat", true),
-    ];
+    const prev = [row("", "openai-chat", false), row("", "newapi-video", false), row("z-chat", "openai-chat", true)];
     const discovered = [row("z-chat", "openai-chat", false), row("a-chat", "openai-chat", true)];
     const merged = mergeDiscoveredModels(prev, discovered, ENDPOINT_TO_MEDIA);
     expect(merged.filter((m) => m.model_id === "").length).toBe(2);

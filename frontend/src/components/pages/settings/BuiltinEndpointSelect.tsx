@@ -27,9 +27,7 @@ export function BuiltinEndpointSelect({ id, value, onChange, options }: BuiltinE
       disabled={options.length < 2}
     >
       <SelectTrigger id={id} className="w-full">
-        <SelectValue>
-          {() => <span className="truncate">{selected ? label(selected) : value}</span>}
-        </SelectValue>
+        <SelectValue>{() => <span className="truncate">{selected ? label(selected) : value}</span>}</SelectValue>
       </SelectTrigger>
       <SelectContent alignItemWithTrigger={false}>
         {options.map((option) => (

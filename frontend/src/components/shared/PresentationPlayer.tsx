@@ -6,11 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
-import type {
-  PresentationReadModel,
-  PresentationResourceType,
-  PresentationVariant,
-} from "@/types/presentation";
+import type { PresentationReadModel, PresentationResourceType, PresentationVariant } from "@/types/presentation";
 import { errMsg } from "@/utils/async";
 import { downloadBlob } from "@/utils/download";
 import { useItemPositionLabel } from "@/components/shared/episode-item/useEpisodeItem";
@@ -75,19 +71,13 @@ export function PresentationPlayer({
   const [positionMicroseconds, setPositionMicroseconds] = useState(0);
   const [nativeCaptionsShowing, setNativeCaptionsShowing] = useState(false);
   const canonicalPath =
-    resourceType === "videos"
-      ? `videos/scene_${resourceId}.mp4`
-      : `reference_videos/${resourceId}.mp4`;
+    resourceType === "videos" ? `videos/scene_${resourceId}.mp4` : `reference_videos/${resourceId}.mp4`;
   const fingerprint = useProjectsStore((state) => state.getAssetFingerprint(canonicalPath));
   const narrationFingerprint = useProjectsStore((state) =>
     state.getAssetFingerprint(`audio/segment_${resourceId}.wav`),
   );
-  const projectSnapshotRevision = useProjectsStore(
-    (state) => state.projectSnapshotRevisions[projectName] ?? 0,
-  );
-  const posterFingerprint = useProjectsStore((state) =>
-    posterPath ? state.getAssetFingerprint(posterPath) : null,
-  );
+  const projectSnapshotRevision = useProjectsStore((state) => state.projectSnapshotRevisions[projectName] ?? 0);
+  const posterFingerprint = useProjectsStore((state) => (posterPath ? state.getAssetFingerprint(posterPath) : null));
   const resourceKey = JSON.stringify([projectName, resourceType, resourceId, videoVersion, audioVersion]);
   const requestKey = JSON.stringify([
     projectName,
@@ -143,10 +133,7 @@ export function PresentationPlayer({
         setPositionMicroseconds(0);
       })
       .catch((cause: unknown) => {
-        if (
-          requestEpochRef.current !== epoch ||
-          (cause instanceof DOMException && cause.name === "AbortError")
-        ) {
+        if (requestEpochRef.current !== epoch || (cause instanceof DOMException && cause.name === "AbortError")) {
           return;
         }
         setLoadState((previous) => ({
@@ -255,8 +242,7 @@ export function PresentationPlayer({
   const stopAtPresentationBoundary = useCallback(
     (video: HTMLVideoElement) => {
       if (!presentation) return false;
-      const boundaryMicroseconds =
-        presentation.video.start_microseconds + presentation.video.duration_microseconds;
+      const boundaryMicroseconds = presentation.video.start_microseconds + presentation.video.duration_microseconds;
       const boundarySeconds = boundaryMicroseconds / 1_000_000;
       if (video.currentTime < boundarySeconds) return false;
       if (video.currentTime !== boundarySeconds) video.currentTime = boundarySeconds;
@@ -299,9 +285,7 @@ export function PresentationPlayer({
         presentation.narration_audio.content_digest,
       )
     : null;
-  const posterUrl = posterPath
-    ? API.getFileUrl(projectName, posterPath, posterFingerprint)
-    : undefined;
+  const posterUrl = posterPath ? API.getFileUrl(projectName, posterPath, posterFingerprint) : undefined;
   const captions = useMemo(
     () =>
       presentation?.subtitles_webvtt
@@ -324,21 +308,14 @@ export function PresentationPlayer({
     if (!presentation || downloading) return;
     setDownloading(true);
     try {
-      const { blob, filename } = await API.downloadPresentationBundle(
-        projectName,
-        resourceType,
-        resourceId,
-        {
-          variant: presentation.variant,
-          videoVersion: presentation.video.version,
-          audioVersion: presentation.narration_audio?.version,
-        },
-      );
+      const { blob, filename } = await API.downloadPresentationBundle(projectName, resourceType, resourceId, {
+        variant: presentation.variant,
+        videoVersion: presentation.video.version,
+        audioVersion: presentation.narration_audio?.version,
+      });
       downloadBlob(blob, filename);
     } catch (cause) {
-      useAppStore
-        .getState()
-        .pushToast(t("presentation_download_failed", { message: errMsg(cause) }), "error");
+      useAppStore.getState().pushToast(t("presentation_download_failed", { message: errMsg(cause) }), "error");
     } finally {
       // react-doctor-disable-next-line react-doctor/no-unowned-async-error-clear -- 下载在途时按钮禁用且入口先判 downloading，不会有更新的下载同时持有这个标志
       setDownloading(false);
@@ -499,11 +476,7 @@ function VariantControls({
         label={postProductionLabel}
         onClick={() => onChoose("post_production")}
       />
-      <VariantButton
-        active={variant === "use_tts"}
-        label={useTtsLabel}
-        onClick={() => onChoose("use_tts")}
-      />
+      <VariantButton active={variant === "use_tts"} label={useTtsLabel} onClick={() => onChoose("use_tts")} />
     </div>
   );
 }

@@ -36,12 +36,7 @@ export function isStructuredVideoPrompt(value: unknown): value is VideoPrompt {
   const dialogue = value.dialogue;
   if (dialogue === undefined) return true;
   if (!Array.isArray(dialogue)) return false;
-  return dialogue.every(
-    (item) =>
-      isRecord(item) &&
-      typeof item.speaker === "string" &&
-      typeof item.line === "string",
-  );
+  return dialogue.every((item) => isRecord(item) && typeof item.speaker === "string" && typeof item.line === "string");
 }
 
 /** 文本形态切回结构化时的空结构：不解析原文本，字段留空由创作者重填。 */

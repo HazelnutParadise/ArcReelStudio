@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { LeaveGuardProvider } from "@/components/shared/edit-unit/LeaveGuard";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -9,7 +9,11 @@ import { EpisodePage } from "./EpisodePage";
 vi.mock("@/components/workflow/WorkflowPanel", () => ({ WorkflowPanel: () => null }));
 
 const AD_PROJECT: ProjectData = {
-  title: "夏日汽水", style: "", content_mode: "ad", characters: {}, generation_mode: "storyboard",
+  title: "夏日汽水",
+  style: "",
+  content_mode: "ad",
+  characters: {},
+  generation_mode: "storyboard",
   target_duration: 30,
   overview: { synopsis: "0-3 秒：冰块落进杯子", genre: "饮品广告", theme: "清凉", world_setting: "海边小店" },
   episodes: [{ episode: 1, title: "", script_file: "scripts/episode_1.json" }],
@@ -18,9 +22,16 @@ const AD_PROJECT: ProjectData = {
 function page() {
   return (
     <LeaveGuardProvider>
-      <EpisodePage projectName="ad" episode={1} projectData={AD_PROJECT} script={null} demo={false}
-        onSaveTitle={vi.fn()} onViewUnit={vi.fn()}
-        renderCanvas={({ view }) => <p>画布：{view}</p>} />
+      <EpisodePage
+        projectName="ad"
+        episode={1}
+        projectData={AD_PROJECT}
+        script={null}
+        demo={false}
+        onSaveTitle={vi.fn()}
+        onViewUnit={vi.fn()}
+        renderCanvas={({ view }) => <p>画布：{view}</p>}
+      />
     </LeaveGuardProvider>
   );
 }
@@ -36,7 +47,9 @@ describe("EpisodePage 广告项目的「故事设定」视图", () => {
   it("排在 tab 组第一个，替换画布，且没有原文可生成", () => {
     render(page());
 
-    const tabs = within(screen.getByRole("tablist")).getAllByRole("tab").map((tab) => tab.textContent);
+    const tabs = within(screen.getByRole("tablist"))
+      .getAllByRole("tab")
+      .map((tab) => tab.textContent);
     expect(tabs[0]).toBe("故事设定");
     expect(screen.queryByText(/^画布：/)).not.toBeInTheDocument();
     const setting = screen.getByRole("region", { name: "故事设定" });
@@ -57,7 +70,10 @@ describe("EpisodePage 广告项目的「故事设定」视图", () => {
     fireEvent.click(within(setting).getByRole("button", { name: "保存" }));
     await waitFor(() =>
       expect(update).toHaveBeenCalledWith("ad", {
-        synopsis: "0-3 秒：冰块落进杯子", genre: "饮品广告", theme: "解暑", world_setting: "海边小店",
+        synopsis: "0-3 秒：冰块落进杯子",
+        genre: "饮品广告",
+        theme: "解暑",
+        world_setting: "海边小店",
       }),
     );
   });

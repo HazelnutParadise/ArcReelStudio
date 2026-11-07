@@ -6,12 +6,7 @@ import type { ReferenceBatchAdmission } from "@/types";
  * 第一个目标上时一个任务也没建成，`interrupted` 与 `none_queued` 的差别就在这里：前者
  * 还有任务在跑，后者没有，两者对用户的意味不同，不能用同一句话陈述。
  */
-export type ReferenceBatchOutcome =
-  | "queued"
-  | "confirm"
-  | "blocked"
-  | "interrupted"
-  | "none_queued";
+export type ReferenceBatchOutcome = "queued" | "confirm" | "blocked" | "interrupted" | "none_queued";
 
 /**
  * 判定收在这一处：画布据此决定要不要留下这份结论，弹窗据此决定开合与形态。两处问的是

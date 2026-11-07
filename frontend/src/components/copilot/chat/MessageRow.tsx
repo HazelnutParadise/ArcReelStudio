@@ -96,9 +96,7 @@ function UserMessage({ turn, onStartEdit }: { turn: Turn; onStartEdit?: (text: s
   const text = turnPlainText(turn);
   const time = formatClockTime(turn.timestamp);
   const images = blocks.flatMap((block) =>
-    block.type === "image" && block.source?.data
-      ? [`data:${block.source.media_type};base64,${block.source.data}`]
-      : [],
+    block.type === "image" && block.source?.data ? [`data:${block.source.media_type};base64,${block.source.data}`] : [],
   );
   // 问答回执是 Agent 问卷的答复，不是用户写的消息，没有复制与改写
   const isAnswer = blocks.some((block) => block.type === "question_answer");

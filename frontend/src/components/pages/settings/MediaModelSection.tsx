@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
@@ -226,63 +225,62 @@ export function MediaModelSection() {
   const currentImageT2I = fields.default_image_backend_t2i ?? "";
   const currentImageI2I = fields.default_image_backend_i2i ?? "";
   const currentAudio = fields.video_generate_audio ?? false;
-  const currentPollTimeout =
-    fields.video_poll_timeout_seconds;
+  const currentPollTimeout = fields.video_poll_timeout_seconds;
 
   // 全局层是解析链的基准，细分项留空即回退全局默认模型；默认模型也留空时是自动推断，
   // 显示后端预览的自动选中模型（预览缺席时只显示「自动选择」）。
   const videoSubFields: LayeredSubField[] = degradeSubFieldsToSaved(
     [
-        {
-          key: "i2v",
-          ...bucketLabels.i2v,
-          bucket: "i2v",
-          value: currentVideoI2V,
-          options: candidates?.video.buckets.i2v ?? [],
-          filtered: candidates?.video.filtered.i2v,
-          effective: currentVideo || undefined,
-          auto: auto?.i2v,
-          onChange: (v) => setFields((prev) => ({ ...prev, default_video_backend_i2v: v })),
-        },
-        {
-          key: "r2v",
-          ...bucketLabels.r2v,
-          bucket: "r2v",
-          value: currentVideoR2V,
-          options: candidates?.video.buckets.r2v ?? [],
-          filtered: candidates?.video.filtered.r2v,
-          effective: currentVideo || undefined,
-          auto: auto?.r2v,
-          onChange: (v) => setFields((prev) => ({ ...prev, default_video_backend_r2v: v })),
-        },
+      {
+        key: "i2v",
+        ...bucketLabels.i2v,
+        bucket: "i2v",
+        value: currentVideoI2V,
+        options: candidates?.video.buckets.i2v ?? [],
+        filtered: candidates?.video.filtered.i2v,
+        effective: currentVideo || undefined,
+        auto: auto?.i2v,
+        onChange: (v) => setFields((prev) => ({ ...prev, default_video_backend_i2v: v })),
+      },
+      {
+        key: "r2v",
+        ...bucketLabels.r2v,
+        bucket: "r2v",
+        value: currentVideoR2V,
+        options: candidates?.video.buckets.r2v ?? [],
+        filtered: candidates?.video.filtered.r2v,
+        effective: currentVideo || undefined,
+        auto: auto?.r2v,
+        onChange: (v) => setFields((prev) => ({ ...prev, default_video_backend_r2v: v })),
+      },
     ],
     !!candidates,
   );
 
   const imageSubFields: LayeredSubField[] = degradeSubFieldsToSaved(
     [
-        {
-          key: "t2i",
-          ...bucketLabels.t2i,
-          bucket: "t2i",
-          value: currentImageT2I,
-          options: candidates?.image.buckets.t2i ?? [],
-          filtered: candidates?.image.filtered.t2i,
-          effective: currentImage || undefined,
-          auto: auto?.t2i,
-          onChange: (v) => setFields((prev) => ({ ...prev, default_image_backend_t2i: v })),
-        },
-        {
-          key: "i2i",
-          ...bucketLabels.i2i,
-          bucket: "i2i",
-          value: currentImageI2I,
-          options: candidates?.image.buckets.i2i ?? [],
-          filtered: candidates?.image.filtered.i2i,
-          effective: currentImage || undefined,
-          auto: auto?.i2i,
-          onChange: (v) => setFields((prev) => ({ ...prev, default_image_backend_i2i: v })),
-        },
+      {
+        key: "t2i",
+        ...bucketLabels.t2i,
+        bucket: "t2i",
+        value: currentImageT2I,
+        options: candidates?.image.buckets.t2i ?? [],
+        filtered: candidates?.image.filtered.t2i,
+        effective: currentImage || undefined,
+        auto: auto?.t2i,
+        onChange: (v) => setFields((prev) => ({ ...prev, default_image_backend_t2i: v })),
+      },
+      {
+        key: "i2i",
+        ...bucketLabels.i2i,
+        bucket: "i2i",
+        value: currentImageI2I,
+        options: candidates?.image.buckets.i2i ?? [],
+        filtered: candidates?.image.filtered.i2i,
+        effective: currentImage || undefined,
+        auto: auto?.i2i,
+        onChange: (v) => setFields((prev) => ({ ...prev, default_image_backend_i2i: v })),
+      },
     ],
     !!candidates,
   );
@@ -307,16 +305,12 @@ export function MediaModelSection() {
   const i2vAudioControl = bucketAudioControl(currentVideoI2V || currentVideo || auto?.i2v || "", "i2v");
   const r2vAudioControl = bucketAudioControl(currentVideoR2V || currentVideo || auto?.r2v || "", "r2v");
   const audioLockedControl =
-    i2vAudioControl === r2vAudioControl &&
-    (i2vAudioControl === "always_on" || i2vAudioControl === "always_off")
+    i2vAudioControl === r2vAudioControl && (i2vAudioControl === "always_on" || i2vAudioControl === "always_off")
       ? i2vAudioControl
       : null;
   const audioLocked = audioLockedControl !== null;
-  const audioConflict =
-    !currentAudio && (i2vAudioControl === "always_on" || r2vAudioControl === "always_on");
-  const videoSpecDurations = videoSpecBackend
-    ? catalogDurations(providers, customProviders, videoSpecBackend)
-    : null;
+  const audioConflict = !currentAudio && (i2vAudioControl === "always_on" || r2vAudioControl === "always_on");
+  const videoSpecDurations = videoSpecBackend ? catalogDurations(providers, customProviders, videoSpecBackend) : null;
   const videoSpecResolutions = videoSpecBackend
     ? lookupResolutions(providers, videoSpecBackend, customProviders, endpointToMediaType).options
     : [];
@@ -327,8 +321,7 @@ export function MediaModelSection() {
   const renderVideoOptionMeta = videoOptionMetaRenderer({ t, providers, customProviders, endpointToMediaType });
   const currentAudioBackend = fields.default_audio_backend ?? "";
   const currentNarrationVoice = fields.narration_voice ?? "";
-  const currentNarrationSpeed =
-    fields.narration_speed;
+  const currentNarrationSpeed = fields.narration_speed;
 
   // 全局文本档位（docs/adr/0051）：全局是解析链基准，默认模型也留空即自动推断（无继承来源）。
   const currentTextDefault = fields.default_text_backend ?? "";

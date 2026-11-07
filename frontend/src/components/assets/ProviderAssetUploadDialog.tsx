@@ -96,7 +96,11 @@ function sameScope(link: ProviderAssetLink, account: ProviderAssetLinkAccount): 
   return link.scope_key === account.scope_key;
 }
 
-function UploadPanel({ projectName, resourceType, resourceId }: Omit<ProviderAssetUploadDialogProps, "open" | "onOpenChange">) {
+function UploadPanel({
+  projectName,
+  resourceType,
+  resourceId,
+}: Omit<ProviderAssetUploadDialogProps, "open" | "onOpenChange">) {
   const { t } = useTranslation(["assets", "dashboard", "common"]);
   const [state, setState] = useState<PanelState>({ status: "loading" });
   const controllerRef = useRef<AbortController | null>(null);
@@ -108,13 +112,15 @@ function UploadPanel({ projectName, resourceType, resourceId }: Omit<ProviderAss
       controllerRef.current = controller;
       if (initial) setState({ status: "loading" });
       try {
-        const panel = await API.getProviderAssetLinks(projectName, resourceType, resourceId, { signal: controller.signal });
+        const panel = await API.getProviderAssetLinks(projectName, resourceType, resourceId, {
+          signal: controller.signal,
+        });
         if (controller.signal.aborted) return;
         setState({ status: "ready", panel });
       } catch (error) {
         if (controller.signal.aborted) return;
         // 轮询中的失败保留已显示的状态，下一轮再取；首次加载失败才换成错误提示
-        setState((current) => initial ? { status: "error", error } : { ...current });
+        setState((current) => (initial ? { status: "error", error } : { ...current }));
       }
     },
     [projectName, resourceType, resourceId],
@@ -126,7 +132,8 @@ function UploadPanel({ projectName, resourceType, resourceId }: Omit<ProviderAss
   }, [fetchPanel]);
 
   // 有入库任务仍由后台推进时轮询，全部有定论或停止自动查询后不再请求
-  const polling = state.status === "ready" && state.panel.links.some((link) => IN_FLIGHT.has(link.state) && link.polling);
+  const polling =
+    state.status === "ready" && state.panel.links.some((link) => IN_FLIGHT.has(link.state) && link.polling);
   useEffect(() => {
     if (!polling) return;
     const timer = window.setTimeout(() => void fetchPanel(false), LINK_POLL_INTERVAL_MS);
@@ -146,7 +153,10 @@ function UploadPanel({ projectName, resourceType, resourceId }: Omit<ProviderAss
   if (state.status === "error") {
     return (
       <DialogBody>
-        <RequestErrorNotice error={state.error} action={{ label: t("common:retry"), onClick: () => void fetchPanel(true) }} />
+        <RequestErrorNotice
+          error={state.error}
+          action={{ label: t("common:retry"), onClick: () => void fetchPanel(true) }}
+        />
       </DialogBody>
     );
   }
@@ -304,7 +314,9 @@ function LinkRow({
         {link === null && accountId !== null && (
           <Button size="sm" disabled={busy || !canUpload} onClick={upload}>
             {busy ? <Loader2 aria-hidden className="animate-spin" /> : <CloudUpload aria-hidden />}
-            {t(site === "byteplus" ? "provider_asset_upload_action_byteplus" : "provider_asset_upload_action_volcengine")}
+            {t(
+              site === "byteplus" ? "provider_asset_upload_action_byteplus" : "provider_asset_upload_action_volcengine",
+            )}
           </Button>
         )}
         {link && IN_FLIGHT.has(link.state) && !link.polling && (
@@ -411,7 +423,13 @@ function UnlinkControl({ busy, onConfirm }: { busy: boolean; onConfirm: () => vo
       onPointerDown={keepFocusInside}
     >
       <span className="text-xs text-muted-foreground">{t("provider_asset_unlink_prompt")}</span>
-      <Button variant="destructive" size="sm" disabled={busy} onKeyDown={(event) => dismissOnEscape(event, dismiss)} onClick={onConfirm}>
+      <Button
+        variant="destructive"
+        size="sm"
+        disabled={busy}
+        onKeyDown={(event) => dismissOnEscape(event, dismiss)}
+        onClick={onConfirm}
+      >
         {t("provider_asset_unlink_confirm")}
       </Button>
       <Button

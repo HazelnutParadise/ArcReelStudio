@@ -57,10 +57,7 @@ export function SecondaryRail({ label, groups, activeId, replace }: SecondaryRai
   const tab = chosenTab ?? selectedGroup?.id ?? groups[0]?.id;
 
   return (
-    <nav
-      aria-label={label}
-      className="relative w-14 shrink-0 overflow-y-auto border-r border-border @5xl/page:w-66"
-    >
+    <nav aria-label={label} className="relative w-14 shrink-0 overflow-y-auto border-r border-border @5xl/page:w-66">
       <div className="hidden px-3 py-4 @5xl/page:block">
         {groups.length > 1 ? (
           <Tabs value={tab} onValueChange={(value: string) => setChosenTab(value)}>
@@ -140,9 +137,7 @@ export function SecondaryRailList({
               </span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <TruncatedText text={item.label} focusable={false} />
-                {item.description && (
-                  <span className="truncate text-xs text-muted-foreground">{item.description}</span>
-                )}
+                {item.description && <span className="truncate text-xs text-muted-foreground">{item.description}</span>}
               </span>
             </Link>
           </li>
@@ -163,7 +158,9 @@ function CompactItem({ item, active, replace }: { item: SecondaryRailItem; activ
             aria-current={active ? "page" : undefined}
             className={cn(
               "flex size-10 items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-              active ? "bg-primary/15 text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+              active
+                ? "bg-primary/15 text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             )}
           />
         }

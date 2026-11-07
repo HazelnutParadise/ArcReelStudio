@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { NarrationAudioCard } from "./NarrationAudioCard";
 
 function renderCard(props: Partial<Parameters<typeof NarrationAudioCard>[0]> = {}) {

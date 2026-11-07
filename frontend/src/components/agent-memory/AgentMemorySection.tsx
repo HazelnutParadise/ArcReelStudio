@@ -23,12 +23,7 @@ export function AgentMemorySection() {
   return (
     // 全出血档：二级栏与详情栏各自滚动
     <div className="flex min-h-0 min-w-0 flex-1">
-      <SecondaryRail
-        label={t("agent_memory_files")}
-        groups={[workspace.group]}
-        activeId={workspace.activeId}
-        replace
-      />
+      <SecondaryRail label={t("agent_memory_files")} groups={[workspace.group]} activeId={workspace.activeId} replace />
       <MemoryDetail workspace={workspace} layout="pane" />
     </div>
   );

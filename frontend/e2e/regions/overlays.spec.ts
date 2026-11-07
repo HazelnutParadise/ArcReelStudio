@@ -116,9 +116,13 @@ defineRegionScenarios("弹层与提示", [
       await toast.hover();
 
       await expect
-        .poll(() => page.evaluate(() => (window as unknown as { __toastSampling: { done: boolean } }).__toastSampling.done))
+        .poll(() =>
+          page.evaluate(() => (window as unknown as { __toastSampling: { done: boolean } }).__toastSampling.done),
+        )
         .toBe(true);
-      const tops = await page.evaluate(() => (window as unknown as { __toastSampling: { tops: number[] } }).__toastSampling.tops);
+      const tops = await page.evaluate(
+        () => (window as unknown as { __toastSampling: { tops: number[] } }).__toastSampling.tops,
+      );
       expect(Math.max(...tops) - Math.min(...tops), "提示在进场过程中发生了位移").toBeLessThanOrEqual(1);
 
       await expect(region.getByRole("button", { name: "关闭提示" })).toBeVisible();

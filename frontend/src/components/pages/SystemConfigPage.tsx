@@ -68,14 +68,22 @@ const SECTIONS: Record<SettingsSection, SectionDef> = {
 
 /** 侧栏分组与顺序。市场与使用记录各自单独成项，不设分组标题。 */
 const SECTION_GROUPS: { id: string; labelKey?: string; sections: SettingsSection[] }[] = [
-  { id: "generation", labelKey: "dashboard:settings_group_generation", sections: ["providers", "default-models", "endpoints", "asset-library"] },
+  {
+    id: "generation",
+    labelKey: "dashboard:settings_group_generation",
+    sections: ["providers", "default-models", "endpoints", "asset-library"],
+  },
   {
     id: "agent",
     labelKey: "dashboard:settings_group_agent",
     sections: ["arcreel-agent", "agent-memory", "external-agent", "access-tokens"],
   },
   { id: "standalone", sections: ["market", "usage"] },
-  { id: "system", labelKey: "dashboard:settings_group_system", sections: ["account", "general", "prompt-templates", "about"] },
+  {
+    id: "system",
+    labelKey: "dashboard:settings_group_system",
+    sections: ["account", "general", "prompt-templates", "about"],
+  },
 ];
 
 /** 引导第 4、5 步指向的侧栏入口。 */
@@ -119,12 +127,11 @@ export function SystemConfigPage() {
           icon: SECTIONS[id].icon,
           href: settingsSectionPath(id),
           onboardingAnchor: SECTION_ONBOARDING_ANCHORS[id],
-          badge:
-            issueSections.has(id) ? (
-              <span role="img" aria-label={t("dashboard:config_incomplete")} className="text-warn">
-                <AlertTriangle aria-hidden className="size-3.5" />
-              </span>
-            ) : undefined,
+          badge: issueSections.has(id) ? (
+            <span role="img" aria-label={t("dashboard:config_incomplete")} className="text-warn">
+              <AlertTriangle aria-hidden className="size-3.5" />
+            </span>
+          ) : undefined,
         })),
       })),
     [t, issueSections],

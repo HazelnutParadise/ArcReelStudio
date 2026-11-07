@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
@@ -12,7 +12,9 @@ import { EditTimelineEmptyState } from "./EditTimelineEmptyState";
 
 /** 制作状态里本集「新建剪辑时间线」的准入不成立：还没有可用视频。 */
 function refuseCreate(projectName: string, episode: number) {
-  const status = makeStatus({ operations: { create_edit_timeline: { state: "refused", reason: "no_available_video" } } });
+  const status = makeStatus({
+    operations: { create_edit_timeline: { state: "refused", reason: "no_available_video" } },
+  });
   useWorkflowStore.setState({ plan: makePlan({ status }), planKey: `${projectName}::${episode}` });
 }
 
@@ -143,9 +145,7 @@ describe("EditTimelineEmptyState", () => {
     await userEvent.click(screen.getByRole("button", { name: "新建剪辑时间线" }));
 
     await waitFor(() =>
-      expect(useAppStore.getState().toast?.text).toBe(
-        "新建剪辑时间线失败：集（id=1）已有名为「完整版」的剪辑时间线",
-      ),
+      expect(useAppStore.getState().toast?.text).toBe("新建剪辑时间线失败：集（id=1）已有名为「完整版」的剪辑时间线"),
     );
     expect(onCreated).not.toHaveBeenCalled();
   });

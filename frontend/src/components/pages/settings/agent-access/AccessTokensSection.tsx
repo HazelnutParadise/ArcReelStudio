@@ -83,7 +83,10 @@ export function AccessTokensSection() {
           {t("common:loading")}
         </p>
       ) : load.status === "error" ? (
-        <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4"
+        >
           <p className="min-w-0 text-sm text-destructive">
             {t("dashboard:access_token_load_failed", { message: load.message })}
           </p>
@@ -257,7 +260,11 @@ function RevokeTokenDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{t("dashboard:access_token_revoke_title", { name: shown?.name ?? "" })}</AlertDialogTitle>
         </AlertDialogHeader>
-        <AlertDialogBody tabIndex={0} role="region" aria-label={t("dashboard:access_token_revoke_title", { name: shown?.name ?? "" })}>
+        <AlertDialogBody
+          tabIndex={0}
+          role="region"
+          aria-label={t("dashboard:access_token_revoke_title", { name: shown?.name ?? "" })}
+        >
           <div className="flex flex-col gap-3">
             <AlertDialogDescription>{t("dashboard:access_token_revoke_desc")}</AlertDialogDescription>
             {error && (

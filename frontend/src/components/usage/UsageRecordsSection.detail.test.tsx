@@ -1,15 +1,11 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useTasksStore } from "@/stores/tasks-store";
 import { useUsageRecordsStore } from "@/stores/usage-records-store";
-import {
-  makeUsageRecord,
-  makeUsageRecordDetail,
-  makeUsageSummary,
-} from "./usage-fixtures";
+import { makeUsageRecord, makeUsageRecordDetail, makeUsageSummary } from "./usage-fixtures";
 import { renderUsageRecordsSection } from "./usage-test-utils";
 
 describe("UsageRecordsSection detail", () => {
@@ -27,22 +23,20 @@ describe("UsageRecordsSection detail", () => {
   });
 
   it("opens the dialog straight from a record deep link", async () => {
-    const detail = vi
-      .spyOn(API, "getUsageRecord")
-      .mockResolvedValue(
-        makeUsageRecordDetail({
-          id: 42,
-          segment_id: "E1S10",
-          segment_ref: {
-            episode_title: "",
-            episode_position: 1,
-            item_id: "S10",
-            item_position: 3,
-            item_excerpt: "推门而入",
-            item_thumbnail: null,
-          },
-        }),
-      );
+    const detail = vi.spyOn(API, "getUsageRecord").mockResolvedValue(
+      makeUsageRecordDetail({
+        id: 42,
+        segment_id: "E1S10",
+        segment_ref: {
+          episode_title: "",
+          episode_position: 1,
+          item_id: "S10",
+          item_position: 3,
+          item_excerpt: "推门而入",
+          item_thumbnail: null,
+        },
+      }),
+    );
 
     renderUsageRecordsSection("section=usage&record=42");
 
@@ -83,9 +77,7 @@ describe("UsageRecordsSection detail", () => {
     expect(dialog.getByRole("heading", { name: "用量" })).toBeInTheDocument();
     expect(dialog.getByText("150")).toBeInTheDocument();
     expect(dialog.getByText("按你配置的单价估算，只作参考")).toBeInTheDocument();
-    expect(
-      dialog.getByRole("button", { name: "供应商原始响应" }),
-    ).toHaveAttribute("aria-expanded", "false");
+    expect(dialog.getByRole("button", { name: "供应商原始响应" })).toHaveAttribute("aria-expanded", "false");
   });
 
   it("links the model to its Sheet in the provider settings", async () => {
@@ -136,7 +128,10 @@ describe("UsageRecordsSection detail", () => {
     const dialog = within(await screen.findByRole("dialog"));
 
     const valueOf = (label: string) =>
-      (dialog.getByText(label, { selector: "span, button" }).closest("div") as HTMLElement).textContent?.replace(label, "");
+      (dialog.getByText(label, { selector: "span, button" }).closest("div") as HTMLElement).textContent?.replace(
+        label,
+        "",
+      );
     // 记录里的总输入 1000 含缓存命中 600 与缓存写入 150，「输入」只剩没缓存的 250。
     expect(valueOf("输入")).toBe("250");
     expect(valueOf("缓存命中")).toBe("600");
@@ -158,7 +153,10 @@ describe("UsageRecordsSection detail", () => {
     const dialog = within(await screen.findByRole("dialog"));
 
     const valueOf = (label: string) =>
-      (dialog.getByText(label, { selector: "span, button" }).closest("div") as HTMLElement).textContent?.replace(label, "");
+      (dialog.getByText(label, { selector: "span, button" }).closest("div") as HTMLElement).textContent?.replace(
+        label,
+        "",
+      );
     expect(valueOf("输入")).toBe("120");
     expect(valueOf("缓存命中")).toBe("—");
     expect(valueOf("缓存写入")).toBe("—");
@@ -180,9 +178,7 @@ describe("UsageRecordsSection detail", () => {
   });
 
   it("shows a zero amount, with no unpriced reason, for a call priced at zero", async () => {
-    vi.spyOn(API, "getUsageRecord").mockResolvedValue(
-      makeUsageRecordDetail({ id: 42, cost_amount: 0 }),
-    );
+    vi.spyOn(API, "getUsageRecord").mockResolvedValue(makeUsageRecordDetail({ id: 42, cost_amount: 0 }));
 
     renderUsageRecordsSection("section=usage&record=42");
     const dialog = within(await screen.findByRole("dialog"));
@@ -217,9 +213,7 @@ describe("UsageRecordsSection detail", () => {
         id: 42,
         media_type: "video",
         inputs: {
-          reference_images: [
-            { path: "characters/hero.png", label: "主角参考", role: "array" },
-          ],
+          reference_images: [{ path: "characters/hero.png", label: "主角参考", role: "array" }],
           start_image: "storyboards/E1S01.png",
           end_image: "storyboards/E1S02.png",
           reference_audio: ["characters/hero.wav"],
@@ -313,9 +307,7 @@ describe("UsageRecordsSection detail", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "详情" }));
 
-    await waitFor(() =>
-      expect(location.history.at(-1)).toBe("/app/settings?section=usage&record=42"),
-    );
+    await waitFor(() => expect(location.history.at(-1)).toBe("/app/settings?section=usage&record=42"));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 });

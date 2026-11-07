@@ -111,7 +111,11 @@ function MediaIcon({ record, className }: { record: UsageRecordView; className?:
   const { t } = useTranslation("dashboard");
   const media = MEDIA_META[record.mediaType];
   return (
-    <media.Icon role="img" aria-label={t(media.labelKey)} className={cn("size-3.5 shrink-0", media.iconClass, className)} />
+    <media.Icon
+      role="img"
+      aria-label={t(media.labelKey)}
+      className={cn("size-3.5 shrink-0", media.iconClass, className)}
+    />
   );
 }
 
@@ -195,7 +199,9 @@ export function RecordRow({
       <td className="num px-2 py-2 text-xs whitespace-nowrap text-muted-foreground">
         {formatShortDateTime(record.startedAt) ?? "—"}
       </td>
-      <td className="num px-2 py-2 text-right text-xs whitespace-nowrap">{costText(record, t("usage_cost_unpriced"))}</td>
+      <td className="num px-2 py-2 text-right text-xs whitespace-nowrap">
+        {costText(record, t("usage_cost_unpriced"))}
+      </td>
       <td className="py-2 pr-3 text-right">
         {trailing ??
           (canOpen && (

@@ -1,5 +1,5 @@
 import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import "@/i18n";
@@ -104,7 +104,10 @@ describe("NarrationDeliveryFields", () => {
       return (
         <NarrationDeliveryFields
           value={value}
-          onChange={(next) => { setValue(next); onChange(next); }}
+          onChange={(next) => {
+            setValue(next);
+            onChange(next);
+          }}
           audioBackends={[value.audioBackend]}
           providerNames={{ dashscope: "DashScope" }}
           modelNames={{}}

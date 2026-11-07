@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Search } from "lucide-react";
-import { SortableHandle, SortableItem, SortableList, type SortableMove } from "@/components/shared/sortable/SortableList";
+import {
+  SortableHandle,
+  SortableItem,
+  SortableList,
+  type SortableMove,
+} from "@/components/shared/sortable/SortableList";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { resolveUnitStatus } from "./unit-status";
@@ -92,12 +97,7 @@ export function UnitList({ units, selectedId, onSelect, onAdd, statusMap, onMove
           {t("reference_unit_search_empty")}
         </p>
       ) : (
-        <SortableList
-          ids={ids}
-          disabled={!reorderable}
-          getName={positionLabel}
-          onMove={move}
-        >
+        <SortableList ids={ids} disabled={!reorderable} getName={positionLabel} onMove={move}>
           <ul aria-label={t("reference_unit_list_title")} className="relative min-h-0 flex-1 overflow-y-auto px-2 pb-2">
             {shown.map((u) => {
               const selected = u.unit_id === selectedId;

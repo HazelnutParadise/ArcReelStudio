@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router, Route } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import "@/i18n";
@@ -294,7 +294,10 @@ describe("ProjectSettingsPage – 分页与一次保存", () => {
     await user.click(screen.getByRole("button", { name: "更换" }));
     const dialog = await screen.findByRole("dialog", { name: "更换风格" });
     await user.click(within(dialog).getByRole("tab", { name: /自定义/ }));
-    await user.upload(dialog.querySelector<HTMLInputElement>('input[type="file"]')!, new File(["png"], "ref.png", { type: "image/png" }));
+    await user.upload(
+      dialog.querySelector<HTMLInputElement>('input[type="file"]')!,
+      new File(["png"], "ref.png", { type: "image/png" }),
+    );
     await user.click(within(dialog).getByRole("button", { name: "使用此风格" }));
     await user.click(await screen.findByRole("button", { name: "保存" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/其他修改已保存/);
@@ -308,9 +311,20 @@ describe("ProjectSettingsPage – 分页与一次保存", () => {
   });
 
   it("已保存参考图的地址带项目详情里的资产指纹，只改其他设置的保存不换掉这个版本", async () => {
-    const updateSpy = mockProject({ style_image: "style_reference.png", style_description: "水墨", aspect_ratio: "9:16" });
+    const updateSpy = mockProject({
+      style_image: "style_reference.png",
+      style_description: "水墨",
+      aspect_ratio: "9:16",
+    });
     vi.mocked(API.getProject).mockResolvedValue({
-      project: { title: "Demo", episodes: [], characters: {}, clues: {}, style_image: "style_reference.png", style_description: "水墨" },
+      project: {
+        title: "Demo",
+        episodes: [],
+        characters: {},
+        clues: {},
+        style_image: "style_reference.png",
+        style_description: "水墨",
+      },
       scripts: {},
       asset_fingerprints: { "style_reference.png": 1712345678901 },
     } as unknown as ProjectResponse);
@@ -318,7 +332,8 @@ describe("ProjectSettingsPage – 分页与一次保存", () => {
     const { container } = renderAt("/app/projects/demo/settings?tab=style");
 
     expect(await screen.findByText("自定义风格")).toBeInTheDocument();
-    const preview = () => container.querySelector<HTMLImageElement>('img[src*="style_reference.png"]')?.getAttribute("src");
+    const preview = () =>
+      container.querySelector<HTMLImageElement>('img[src*="style_reference.png"]')?.getAttribute("src");
     expect(preview()).toBe("/api/v1/files/demo/style_reference.png?v=1712345678901");
 
     await user.click(within(sidebar()).getByRole("link", { name: /^基础/ }));
@@ -467,59 +482,75 @@ describe("ProjectSettingsPage – model_settings resolution", () => {
 
   beforeEach(() => mockConfig(FAKE_CONFIG_WITH_DEFAULTS));
 
-  it.each([false, true])("keeps bucket resolution edits consistent through save (shared model: %s)", async (sharedModel) => {
-    vi.spyOn(providerModels, "getProviderModels").mockResolvedValue([
-      ...["gemini", "ark"].map((id) => ({
-        id, display_name: id, description: "", status: "ready", media_types: ["video"],
-        capabilities: [], credential_count: 0,
-        models: { [id === "gemini" ? "veo-3" : "seedance"]: {
-          display_name: id, media_type: "video", capabilities: [], default: true,
-          supported_durations: [8], resolutions: ["720p", "1080p"],
-          audio_track: "controllable", reference_route_audio_track: "controllable", voice_consistency: "soft",
-        } },
-      })),
-    ] as Awaited<ReturnType<typeof providerModels.getProviderModels>>);
-    const updateSpy = mockProject({
-      generation_mode: "reference_video",
-      video_provider_i2v: "gemini/veo-3",
-      video_provider_r2v: sharedModel ? "gemini/veo-3" : "ark/seedance",
-      model_settings: {
-        "gemini/veo-3": { resolution: "720p" },
-        "ark/seedance": { resolution: "1080p" },
-      },
-    });
-    const user = userEvent.setup();
-    renderAt("/app/projects/demo/settings?tab=models");
-    const i2v = await screen.findByRole("combobox", { name: /图生视频.*分辨率/ });
-    const r2v = screen.getByRole("combobox", { name: /参考生视频.*分辨率/ });
-    const pick = async (trigger: HTMLElement, value: string) => {
-      await user.click(trigger);
-      await user.click(await screen.findByRole("option", { name: value }));
-    };
-    expect(i2v).toHaveTextContent("720p");
-    expect(r2v).toHaveTextContent(sharedModel ? "720p" : "1080p");
-    await pick(i2v, "1080p");
-    expect(i2v).toHaveTextContent("1080p");
-    expect(r2v).toHaveTextContent("1080p");
-    await pick(r2v, "720p");
-    expect(i2v).toHaveTextContent(sharedModel ? "720p" : "1080p");
-    expect(r2v).toHaveTextContent("720p");
-    // 共用模型时两次修改互相抵消，另改一处让保存可用
-    fireEvent.click(within(sidebar()).getByRole("link", { name: /^基础/ }));
-    fireEvent.click(await screen.findByRole("radio", { name: /横屏 16:9/ }));
-    fireEvent.click(saveButton());
-    await waitFor(() => expect(updateSpy).toHaveBeenCalledTimes(1));
-    // 共用模型时两次修改抵消，分辨率表与已保存的一致，不回写
-    expect(updateSpy.mock.calls[0][1].model_settings).toEqual(
-      sharedModel
-        ? undefined
-        : {
-            "gemini/veo-3": { resolution: "1080p" },
-            "ark/seedance": { resolution: "720p" },
-            "gemini/nano-banana": { resolution: null },
+  it.each([false, true])(
+    "keeps bucket resolution edits consistent through save (shared model: %s)",
+    async (sharedModel) => {
+      vi.spyOn(providerModels, "getProviderModels").mockResolvedValue([
+        ...["gemini", "ark"].map((id) => ({
+          id,
+          display_name: id,
+          description: "",
+          status: "ready",
+          media_types: ["video"],
+          capabilities: [],
+          credential_count: 0,
+          models: {
+            [id === "gemini" ? "veo-3" : "seedance"]: {
+              display_name: id,
+              media_type: "video",
+              capabilities: [],
+              default: true,
+              supported_durations: [8],
+              resolutions: ["720p", "1080p"],
+              audio_track: "controllable",
+              reference_route_audio_track: "controllable",
+              voice_consistency: "soft",
+            },
           },
-    );
-  });
+        })),
+      ] as Awaited<ReturnType<typeof providerModels.getProviderModels>>);
+      const updateSpy = mockProject({
+        generation_mode: "reference_video",
+        video_provider_i2v: "gemini/veo-3",
+        video_provider_r2v: sharedModel ? "gemini/veo-3" : "ark/seedance",
+        model_settings: {
+          "gemini/veo-3": { resolution: "720p" },
+          "ark/seedance": { resolution: "1080p" },
+        },
+      });
+      const user = userEvent.setup();
+      renderAt("/app/projects/demo/settings?tab=models");
+      const i2v = await screen.findByRole("combobox", { name: /图生视频.*分辨率/ });
+      const r2v = screen.getByRole("combobox", { name: /参考生视频.*分辨率/ });
+      const pick = async (trigger: HTMLElement, value: string) => {
+        await user.click(trigger);
+        await user.click(await screen.findByRole("option", { name: value }));
+      };
+      expect(i2v).toHaveTextContent("720p");
+      expect(r2v).toHaveTextContent(sharedModel ? "720p" : "1080p");
+      await pick(i2v, "1080p");
+      expect(i2v).toHaveTextContent("1080p");
+      expect(r2v).toHaveTextContent("1080p");
+      await pick(r2v, "720p");
+      expect(i2v).toHaveTextContent(sharedModel ? "720p" : "1080p");
+      expect(r2v).toHaveTextContent("720p");
+      // 共用模型时两次修改互相抵消，另改一处让保存可用
+      fireEvent.click(within(sidebar()).getByRole("link", { name: /^基础/ }));
+      fireEvent.click(await screen.findByRole("radio", { name: /横屏 16:9/ }));
+      fireEvent.click(saveButton());
+      await waitFor(() => expect(updateSpy).toHaveBeenCalledTimes(1));
+      // 共用模型时两次修改抵消，分辨率表与已保存的一致，不回写
+      expect(updateSpy.mock.calls[0][1].model_settings).toEqual(
+        sharedModel
+          ? undefined
+          : {
+              "gemini/veo-3": { resolution: "1080p" },
+              "ark/seedance": { resolution: "720p" },
+              "gemini/nano-banana": { resolution: null },
+            },
+      );
+    },
+  );
 
   it("loads existing model_settings resolution into video/image pickers", async () => {
     vi.spyOn(providerModels, "getProviderModels").mockResolvedValue(RESOLUTION_PROVIDERS);
@@ -557,13 +588,26 @@ describe("ProjectSettingsPage – model_settings resolution", () => {
     vi.spyOn(providerModels, "getProviderModels").mockResolvedValue([
       ...RESOLUTION_PROVIDERS,
       {
-        id: "openai", display_name: "OpenAI", description: "", status: "ready", media_types: ["image"],
-        capabilities: [], credential_count: 0,
-        models: { "gpt-image": {
-          display_name: "GPT Image", media_type: "image", capabilities: [], default: true,
-          supported_durations: [], resolutions: ["720p", "1080p"],
-          audio_track: "always_off", reference_route_audio_track: "always_off", voice_consistency: "none",
-        } },
+        id: "openai",
+        display_name: "OpenAI",
+        description: "",
+        status: "ready",
+        media_types: ["image"],
+        capabilities: [],
+        credential_count: 0,
+        models: {
+          "gpt-image": {
+            display_name: "GPT Image",
+            media_type: "image",
+            capabilities: [],
+            default: true,
+            supported_durations: [],
+            resolutions: ["720p", "1080p"],
+            audio_track: "always_off",
+            reference_route_audio_track: "always_off",
+            voice_consistency: "none",
+          },
+        },
       },
     ] as Awaited<ReturnType<typeof providerModels.getProviderModels>>);
     const user = userEvent.setup();
@@ -706,7 +750,10 @@ describe("ProjectSettingsPage – 配音", () => {
     fireEvent.click(screen.getByRole("radio", { name: /^参考音频/ }));
     fireEvent.click(saveButton());
     await waitFor(() => {
-      expect(updateSpy).toHaveBeenCalledWith("demo", expect.objectContaining({ character_voice_binding: "reference_audio" }));
+      expect(updateSpy).toHaveBeenCalledWith(
+        "demo",
+        expect.objectContaining({ character_voice_binding: "reference_audio" }),
+      );
     });
   });
 

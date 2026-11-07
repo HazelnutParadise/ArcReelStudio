@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -93,10 +93,7 @@ describe("projects-store refreshProject", () => {
   it("在途合并：在途期间的多次请求只多触发一次 getProject，最终反映最新一轮", async () => {
     const d1 = createDeferred<GetProjectResult>();
     const d2 = createDeferred<GetProjectResult>();
-    const spy = vi
-      .spyOn(API, "getProject")
-      .mockReturnValueOnce(d1.promise)
-      .mockReturnValueOnce(d2.promise);
+    const spy = vi.spyOn(API, "getProject").mockReturnValueOnce(d1.promise).mockReturnValueOnce(d2.promise);
 
     const store = useProjectsStore.getState();
     const p1 = store.refreshProject("demo"); // owner：发起第一轮
@@ -433,9 +430,7 @@ describe("projects-store refreshProject", () => {
   it("切换项目后新项目的刷新照常生效（取消域轮换不会长期作废后续刷新）", async () => {
     useProjectsStore.getState().setCurrentProject("A", makeProject("A-数据"), {}, {});
     const dA = createDeferred<GetProjectResult>();
-    vi.spyOn(API, "getProject")
-      .mockReturnValueOnce(dA.promise)
-      .mockResolvedValue(makeResult("B-新数据"));
+    vi.spyOn(API, "getProject").mockReturnValueOnce(dA.promise).mockResolvedValue(makeResult("B-新数据"));
 
     const store = useProjectsStore.getState();
     const pA = store.refreshProject("A");
@@ -458,9 +453,7 @@ describe("projects-store refreshProject", () => {
     useProjectsStore.getState().setCurrentProject("B", null);
     const dB = createDeferred<GetProjectResult>();
     const dStale = createDeferred<GetProjectResult>();
-    vi.spyOn(API, "getProject").mockImplementation((name) =>
-      name === "B" ? dB.promise : dStale.promise,
-    );
+    vi.spyOn(API, "getProject").mockImplementation((name) => (name === "B" ? dB.promise : dStale.promise));
 
     const store = useProjectsStore.getState();
     const pB = store.refreshProject("B"); // 当前项目 B 的首屏轮，在途
@@ -484,9 +477,7 @@ describe("projects-store refreshProject", () => {
     useProjectsStore.getState().setCurrentProject("A", makeProject("A-数据"), {}, {});
     const dSseA = createDeferred<GetProjectResult>();
     const dB = createDeferred<GetProjectResult>();
-    vi.spyOn(API, "getProject").mockImplementation((name) =>
-      name === "B" ? dB.promise : dSseA.promise,
-    );
+    vi.spyOn(API, "getProject").mockImplementation((name) => (name === "B" ? dB.promise : dSseA.promise));
 
     const store = useProjectsStore.getState();
     const pSseA = store.refreshProject("A"); // A 页面上的 SSE 刷新，在途

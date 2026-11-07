@@ -14,10 +14,34 @@ export const MEDIA_META: Record<
   CallType,
   { Icon: typeof Image; iconClass: string; swatchClass: string; color: string; labelKey: string }
 > = {
-  image: { Icon: Image, iconClass: "text-media-image", swatchClass: "bg-media-image", color: "var(--media-image)", labelKey: "usage_media_image" },
-  video: { Icon: Video, iconClass: "text-media-video", swatchClass: "bg-media-video", color: "var(--media-video)", labelKey: "usage_media_video" },
-  text: { Icon: FileText, iconClass: "text-media-text", swatchClass: "bg-media-text", color: "var(--media-text)", labelKey: "usage_media_text" },
-  audio: { Icon: AudioLines, iconClass: "text-media-audio", swatchClass: "bg-media-audio", color: "var(--media-audio)", labelKey: "usage_media_audio" },
+  image: {
+    Icon: Image,
+    iconClass: "text-media-image",
+    swatchClass: "bg-media-image",
+    color: "var(--media-image)",
+    labelKey: "usage_media_image",
+  },
+  video: {
+    Icon: Video,
+    iconClass: "text-media-video",
+    swatchClass: "bg-media-video",
+    color: "var(--media-video)",
+    labelKey: "usage_media_video",
+  },
+  text: {
+    Icon: FileText,
+    iconClass: "text-media-text",
+    swatchClass: "bg-media-text",
+    color: "var(--media-text)",
+    labelKey: "usage_media_text",
+  },
+  audio: {
+    Icon: AudioLines,
+    iconClass: "text-media-audio",
+    swatchClass: "bg-media-audio",
+    color: "var(--media-audio)",
+    labelKey: "usage_media_audio",
+  },
 };
 
 /** 无值时的占位。 */
@@ -104,8 +128,7 @@ export function targetParts(
     const positioned = isPositionedItemId(segmentId);
     if (segmentRef) {
       const name =
-        segmentRef.episode_title.trim() ||
-        t("common:episode_position_name", { position: segmentRef.episode_position });
+        segmentRef.episode_title.trim() || t("common:episode_position_name", { position: segmentRef.episode_position });
       if (!positioned) return { item: null, prefix: segmentRef.item_id, name };
       const item = {
         kind: episodeItemKind(segmentId),
@@ -120,22 +143,19 @@ export function targetParts(
     // 带集前缀却没有指称：集已移出账本，集名用「未命名集」；条目随集一起不在了，显示「已删除」。
     const name = t("common:episode_unlisted_name");
     if (!positioned) return { item: null, prefix: itemId, name };
-    return { item: { kind: episodeItemKind(segmentId), position: null, excerpt: "", thumbnail: null }, prefix: null, name };
+    return {
+      item: { kind: episodeItemKind(segmentId), position: null, excerpt: "", thumbnail: null },
+      prefix: null,
+      name,
+    };
   }
   const key = purposeKey(purpose);
   return { item: null, prefix: null, name: key ? t(`dashboard:${key}`) : DASH };
 }
 
 /** 供应商显示名优先取筛选候选值里的 label，查不到回退 id。 */
-export function providerLabelResolver(
-  summary: UsageSummary | null,
-): (provider: string | null) => string {
-  const labels = new Map(
-    (summary?.filter_options.providers ?? []).map((option) => [
-      option.provider,
-      option.label,
-    ]),
-  );
+export function providerLabelResolver(summary: UsageSummary | null): (provider: string | null) => string {
+  const labels = new Map((summary?.filter_options.providers ?? []).map((option) => [option.provider, option.label]));
   return (provider) => (provider ? (labels.get(provider) ?? provider) : DASH);
 }
 
@@ -243,11 +263,7 @@ const dayFormatters = new Map<string, Intl.DateTimeFormat>();
  * 日历日 `YYYY-MM-DD` 按当前语言渲染。这个日期是后端算好的本地日，不是时刻，故按
  * 本地时区构造 Date——交给 `new Date(string)` 会当成 UTC 午夜，东西半球各挪一天。
  */
-export function formatCalendarDay(
-  day: string,
-  language: string,
-  options: Intl.DateTimeFormatOptions,
-): string {
+export function formatCalendarDay(day: string, language: string, options: Intl.DateTimeFormatOptions): string {
   const [year, month, date] = day.split("-").map(Number);
   if (!year || !month || !date) return day;
   const locale = intlLocale(language);
@@ -288,10 +304,7 @@ export function usageProjectLabel(
 }
 
 /** 耗时列；无时长可显示时给破折号。文案与任务读数共用 `formatElapsedMs`。 */
-export function formatDurationMs(
-  durationMs: number | null,
-  t: ElapsedTranslate,
-): string {
+export function formatDurationMs(durationMs: number | null, t: ElapsedTranslate): string {
   if (durationMs === null || durationMs < 0) return DASH;
   return formatElapsedMs(durationMs, t);
 }

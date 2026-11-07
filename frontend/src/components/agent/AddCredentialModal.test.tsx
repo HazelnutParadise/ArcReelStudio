@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import type { PresetProvider } from "@/types/agent-credential";
@@ -49,13 +49,7 @@ const presetsWithSecond: PresetProvider[] = [
 describe("AddCredentialModal", () => {
   it("renders custom config chip first", () => {
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={vi.fn()} />,
     );
     const chips = screen.getAllByTestId("preset-chip");
     expect(chips[0]).toHaveTextContent(/custom|自定义|Tuỳ chỉnh/i);
@@ -63,36 +57,20 @@ describe("AddCredentialModal", () => {
 
   it("when preset chosen, base_url is shown and prefilled with messages_url", () => {
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
-    const baseUrlInput = screen.getByLabelText(
-      /base[_ ]url|代理地址/i,
-    ) as HTMLInputElement;
+    const baseUrlInput = screen.getByLabelText(/base[_ ]url|代理地址/i) as HTMLInputElement;
     expect(baseUrlInput).toBeInTheDocument();
     expect(baseUrlInput.value).toBe("https://api.deepseek.com/anthropic");
   });
 
   it("when custom chosen, base_url input shown and empty", () => {
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={vi.fn()} />,
     );
     fireEvent.click(screen.getAllByTestId("preset-chip")[0]); // custom
-    const input = screen.getByLabelText(
-      /base[_ ]url|代理地址/i,
-    ) as HTMLInputElement;
+    const input = screen.getByLabelText(/base[_ ]url|代理地址/i) as HTMLInputElement;
     expect(input).toBeInTheDocument();
     expect(input.value).toBe("");
   });
@@ -100,13 +78,7 @@ describe("AddCredentialModal", () => {
   it("preset submit payload uses preset_id only", async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={onSubmit}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={onSubmit} onClose={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
     fireEvent.change(screen.getByLabelText("密钥"), {
@@ -125,13 +97,7 @@ describe("AddCredentialModal", () => {
   it("preset chip prefill is not an override: discovery uses the preset discovery_url", async () => {
     const discover = vi.spyOn(API, "discoverAnthropicModels").mockResolvedValue({ models: [] });
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
     fireEvent.change(screen.getByLabelText("密钥"), {
@@ -146,13 +112,7 @@ describe("AddCredentialModal", () => {
   it("a preset messages_url with only a trailing slash is still the preset default", async () => {
     const discover = vi.spyOn(API, "discoverAnthropicModels").mockResolvedValue({ models: [] });
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
     fireEvent.change(screen.getByLabelText("密钥"), {
@@ -170,13 +130,7 @@ describe("AddCredentialModal", () => {
   it("a base_url the user edited overrides the preset discovery_url", async () => {
     const discover = vi.spyOn(API, "discoverAnthropicModels").mockResolvedValue({ models: [] });
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
     fireEvent.change(screen.getByLabelText("密钥"), {
@@ -193,13 +147,7 @@ describe("AddCredentialModal", () => {
 
   it("get-api-key link rendered when preset has api_key_url", () => {
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
     const link = screen.getByRole("link", {
@@ -213,13 +161,7 @@ describe("AddCredentialModal", () => {
   it("calls onClose when Escape pressed", () => {
     const onClose = vi.fn();
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={onClose}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={onClose} />,
     );
     fireEvent.keyDown(document, { key: "Escape" });
     expect(onClose).toHaveBeenCalled();
@@ -228,19 +170,10 @@ describe("AddCredentialModal", () => {
   it("shows submit error when onSubmit rejects", async () => {
     const onSubmit = vi.fn().mockRejectedValue(new Error("boom"));
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={onSubmit}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={onSubmit} onClose={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
-    fireEvent.change(
-      screen.getByLabelText("密钥"),
-      { target: { value: "sk-test" } },
-    );
+    fireEvent.change(screen.getByLabelText("密钥"), { target: { value: "sk-test" } });
     fireEvent.click(screen.getByRole("button", { name: /add|添加|confirm/i }));
     await waitFor(() => {
       expect(screen.getByText(/boom/)).toBeInTheDocument();
@@ -258,9 +191,7 @@ describe("AddCredentialModal", () => {
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
-    const nameInput = screen.getByLabelText(
-      /display[_ ]name|显示名/i,
-    ) as HTMLInputElement;
+    const nameInput = screen.getByLabelText(/display[_ ]name|显示名/i) as HTMLInputElement;
     expect(nameInput.value).toBe("DeepSeek");
     // 用户改名
     fireEvent.change(nameInput, { target: { value: "My Custom Name" } });
@@ -287,9 +218,7 @@ describe("AddCredentialModal", () => {
         onClose={vi.fn()}
       />,
     );
-    expect(
-      screen.getByRole("heading", { name: "编辑 Agent 供应商" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "编辑 Agent 供应商" })).toBeInTheDocument();
   });
 
   it("does not require apiKey in edit mode and submits with empty key", async () => {
@@ -311,10 +240,7 @@ describe("AddCredentialModal", () => {
       />,
     );
     // 改一个非 api_key 字段触发 dirty,api_key 留空提交
-    fireEvent.change(
-      screen.getByLabelText(/display[_ ]name|显示名/i),
-      { target: { value: "DS Prod 2" } },
-    );
+    fireEvent.change(screen.getByLabelText(/display[_ ]name|显示名/i), { target: { value: "DS Prod 2" } });
     const submitBtn = screen.getByRole("button", {
       name: /^save$|^保存$|^Lưu$/i,
     });
@@ -323,9 +249,7 @@ describe("AddCredentialModal", () => {
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
     });
-    expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ api_key: "" }),
-    );
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ api_key: "" }));
   });
 
   it("disables submit in edit mode when no field changed", () => {
@@ -430,9 +354,7 @@ describe("AddCredentialModal", () => {
 
       const btn = await screen.findByTestId("import-from-provider");
       fireEvent.click(btn);
-      expect(await screen.findByTestId("import-provider-option")).toHaveTextContent(
-        "DeepSeek (Custom)",
-      );
+      expect(await screen.findByTestId("import-provider-option")).toHaveTextContent("DeepSeek (Custom)");
     });
 
     const renderAndImport = async (onSubmit = vi.fn().mockResolvedValue(undefined)) => {
@@ -453,15 +375,12 @@ describe("AddCredentialModal", () => {
       return onSubmit;
     };
 
-    const apiKeyInput = () =>
-      screen.getByLabelText("密钥") as HTMLInputElement;
+    const apiKeyInput = () => screen.getByLabelText("密钥") as HTMLInputElement;
 
     it("prefills base_url and leaves the key to the server", async () => {
       await renderAndImport();
 
-      const baseUrlInput = (await screen.findByLabelText(
-        /base[_ ]url|代理地址/i,
-      )) as HTMLInputElement;
+      const baseUrlInput = (await screen.findByLabelText(/base[_ ]url|代理地址/i)) as HTMLInputElement;
       await waitFor(() => {
         expect(baseUrlInput.value).toBe("https://api.deepseek.com");
       });
@@ -489,9 +408,7 @@ describe("AddCredentialModal", () => {
     it("submits an edited base_url as an override", async () => {
       const onSubmit = await renderAndImport();
 
-      const baseUrlInput = (await screen.findByLabelText(
-        /base[_ ]url|代理地址/i,
-      )) as HTMLInputElement;
+      const baseUrlInput = (await screen.findByLabelText(/base[_ ]url|代理地址/i)) as HTMLInputElement;
       fireEvent.change(baseUrlInput, { target: { value: "https://api.deepseek.com/anthropic" } });
       const submit = screen.getByRole("button", { name: /^(add|添加)$/i });
       await waitFor(() => expect(submit).toBeEnabled());
@@ -586,10 +503,7 @@ describe("AddCredentialModal", () => {
         />,
       );
       fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
-      fireEvent.change(
-        screen.getByLabelText("密钥"),
-        { target: { value: "sk-test" } },
-      );
+      fireEvent.change(screen.getByLabelText("密钥"), { target: { value: "sk-test" } });
       fireEvent.click(screen.getByTestId("test-connection"));
       await waitFor(() => {
         expect(spy).toHaveBeenCalledWith(
@@ -644,9 +558,7 @@ describe("AddCredentialModal", () => {
     it("预览拼出的地址与运行时调用一致，不剥版本段", () => {
       renderModal();
       fillBaseUrl("https://api.deepseek.com/anthropic/v1");
-      expect(
-        screen.getByText("https://api.deepseek.com/anthropic/v1/v1/messages"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("https://api.deepseek.com/anthropic/v1/v1/messages")).toBeInTheDocument();
     });
 
     it("带 query 的地址拦下测试与保存", () => {
@@ -662,10 +574,7 @@ describe("AddCredentialModal", () => {
         />,
       );
       fillBaseUrl("https://relay.example.com/anthropic?api_key=sk-x");
-      fireEvent.change(
-        screen.getByLabelText("密钥"),
-        { target: { value: "sk-test" } },
-      );
+      fireEvent.change(screen.getByLabelText("密钥"), { target: { value: "sk-test" } });
 
       expect(screen.getByTestId("test-connection")).toBeDisabled();
       expect(screen.getByRole("button", { name: /common:add|添加|Add|Thêm/i })).toBeDisabled();
@@ -754,9 +663,7 @@ describe("AddCredentialModal 模型下拉回退", () => {
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: /Volcengine Ark Agent Plan/i }));
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "显示候选模型" })[0],
-    );
+    fireEvent.click(screen.getAllByRole("button", { name: "显示候选模型" })[0]);
 
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "kimi-k3" })).toBeInTheDocument();
@@ -766,13 +673,7 @@ describe("AddCredentialModal 模型下拉回退", () => {
 
   it("sets the key and the model ID in monospace, and leaves the proxy URL proportional", () => {
     render(
-      <AddCredentialModal
-        open
-        presets={presets}
-        customSentinelId="__custom__"
-        onSubmit={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <AddCredentialModal open presets={presets} customSentinelId="__custom__" onSubmit={vi.fn()} onClose={vi.fn()} />,
     );
 
     expect(screen.getByLabelText("密钥")).toHaveClass("font-mono");

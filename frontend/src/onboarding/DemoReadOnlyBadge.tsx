@@ -12,20 +12,11 @@ export function DemoReadOnlyBadge() {
 
   return (
     <Tooltip>
-      <TooltipTrigger
-        render={
-          <Badge
-            variant="outline"
-            tabIndex={0}
-          />
-        }
-      >
+      <TooltipTrigger render={<Badge variant="outline" tabIndex={0} />}>
         {t("demo_badge")}
         <span className="sr-only">{hint}</span>
       </TooltipTrigger>
-      <TooltipContent side="bottom">
-        {hint}
-      </TooltipContent>
+      <TooltipContent side="bottom">{hint}</TooltipContent>
     </Tooltip>
   );
 }

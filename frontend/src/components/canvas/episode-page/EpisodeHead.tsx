@@ -83,7 +83,8 @@ export function EpisodeHead({
 
   const facts: string[] = [];
   if (meta?.item_count != null) facts.push(t(itemCountKey(route), { count: meta.item_count }));
-  if (meta?.duration_seconds) facts.push(t("episode_head_duration", { duration: formatDuration(meta.duration_seconds) }));
+  if (meta?.duration_seconds)
+    facts.push(t("episode_head_duration", { duration: formatDuration(meta.duration_seconds) }));
   if (meta?.videos && meta.videos.total > 0) {
     facts.push(t("episode_head_videos", { available: meta.videos.available, total: meta.videos.total }));
   }
@@ -113,10 +114,14 @@ export function EpisodeHead({
           <>
             {facts.length > 0 ? <span aria-hidden>·</span> : null}
             <InfoTip>
-              <InfoTipTrigger render={<button type="button" className="inline-flex min-h-6 shrink-0 items-center rounded-sm" />}>
+              <InfoTipTrigger
+                render={<button type="button" className="inline-flex min-h-6 shrink-0 items-center rounded-sm" />}
+              >
                 {t("episode_head_cost", { cost: costSummary.estimate })}
               </InfoTipTrigger>
-              <InfoTipContent title={t("episode_head_cost", { cost: costSummary.estimate })}>{costDetail}</InfoTipContent>
+              <InfoTipContent title={t("episode_head_cost", { cost: costSummary.estimate })}>
+                {costDetail}
+              </InfoTipContent>
             </InfoTip>
           </>
         ) : null}
@@ -124,9 +129,7 @@ export function EpisodeHead({
       {canDelete ? (
         <>
           <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant="ghost" size="icon-xs" aria-label={t("episode_head_more")} />}
-            >
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label={t("episode_head_more")} />}>
               <MoreHorizontal aria-hidden />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-auto">

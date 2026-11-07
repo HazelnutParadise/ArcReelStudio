@@ -44,9 +44,7 @@ export function PresenceAvatars() {
 
   return (
     <Popover>
-      <PopoverTrigger
-        render={<Button variant="ghost" size="sm" aria-label={t("presence_trigger", { names })} />}
-      >
+      <PopoverTrigger render={<Button variant="ghost" size="sm" aria-label={t("presence_trigger", { names })} />}>
         <span aria-hidden className="flex -space-x-1.5">
           {visible.map((member) => (
             <span

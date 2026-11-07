@@ -57,10 +57,7 @@ interface UseScrollTargetOptions {
  * this hook retries until the target element is mounted, then scrolls it into
  * view and applies a workspace flash animation.
  */
-export function useScrollTarget(
-  type: string,
-  options?: UseScrollTargetOptions,
-): void {
+export function useScrollTarget(type: string, options?: UseScrollTargetOptions): void {
   const scrollTarget = useAppStore((s) => s.scrollTarget);
   const clearScrollTarget = useAppStore((s) => s.clearScrollTarget);
   const pushToast = useAppStore((s) => s.pushToast);

@@ -4,12 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AlertCircle, Bot, Brain, Film, Loader2, Mic, Palette, SlidersHorizontal, type LucideIcon } from "lucide-react";
 
 import { API } from "@/api";
-import {
-  PROJECT_SETTINGS_TABS,
-  ROUTE_APP_PROJECTS,
-  projectSettingsPath,
-  type ProjectSettingsTab,
-} from "@/app-routes";
+import { PROJECT_SETTINGS_TABS, ROUTE_APP_PROJECTS, projectSettingsPath, type ProjectSettingsTab } from "@/app-routes";
 import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ProjectMemoryFiles } from "@/components/agent-memory/ProjectMemoryFiles";
@@ -287,8 +282,12 @@ function LoadedProjectSettings({ projectName, loaded }: { projectName: string; l
   const tab = parseTab(useSearch());
   const { facts, globals } = loaded;
 
-  const { candidates, error: candidatesError, retrying: candidatesRetrying, reload: reloadCandidates } =
-    useModelCandidates();
+  const {
+    candidates,
+    error: candidatesError,
+    retrying: candidatesRetrying,
+    reload: reloadCandidates,
+  } = useModelCandidates();
   // 候选是全局配置，与项目无关；reload 的标识随界面语言变化，语言切换时只刷新候选与译名
   useEffect(() => {
     void reloadCandidates();
@@ -313,7 +312,9 @@ function LoadedProjectSettings({ projectName, loaded }: { projectName: string; l
       }
       const narrationProblem = narrationDeliveryProblem(value.narration);
       if (narrationProblem) {
-        throw new Error(t(narrationProblem === "model" ? "project_tts_model_required" : "project_narration_voice_required"));
+        throw new Error(
+          t(narrationProblem === "model" ? "project_tts_model_required" : "project_narration_voice_required"),
+        );
       }
       const res = await API.updateProject(projectName, buildProjectPatch(value, saved, facts, globals));
       // grid_storyboard、video_backend 落盘后 /video-capabilities 按已存值解析，查询 key 不变，需显式失效
@@ -373,7 +374,8 @@ function LoadedProjectSettings({ projectName, loaded }: { projectName: string; l
   const usesReferenceImages = facts.generationRoute === "reference_video";
   const modelValue: ModelConfigValue = {
     ...value.models,
-    videoResolution: value.models.videoResolutions?.[executingVideoModel(value.models, globals, usesReferenceImages)] ?? null,
+    videoResolution:
+      value.models.videoResolutions?.[executingVideoModel(value.models, globals, usesReferenceImages)] ?? null,
   };
 
   let content: ReactNode;

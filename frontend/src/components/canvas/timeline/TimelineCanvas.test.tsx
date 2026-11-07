@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { DEMO_PROJECT_NAME } from "@/onboarding/demo-project";
 import { useCostStore } from "@/stores/cost-store";
@@ -33,8 +33,12 @@ vi.mock("./ShotSplitView", () => ({
       data-can-insert-shot={onInsertShot ? "yes" : "no"}
       data-can-remove-shot={onRemoveShot ? "yes" : "no"}
     >
-      <button type="button" onClick={() => void onInsertShot?.("SEG-1", "风停了。")}>insert</button>
-      <button type="button" onClick={() => void onRemoveShot?.("SEG-1")}>remove</button>
+      <button type="button" onClick={() => void onInsertShot?.("SEG-1", "风停了。")}>
+        insert
+      </button>
+      <button type="button" onClick={() => void onRemoveShot?.("SEG-1")}>
+        remove
+      </button>
     </div>
   ),
 }));
@@ -235,15 +239,7 @@ describe("TimelineCanvas", () => {
   });
 
   it("shows the select-episode hint when there is no project data and no draft", () => {
-    render(
-      <TimelineCanvas
-        {...BOARD}
-        projectName="demo"
-        episode={1}
-        episodeScript={null}
-        projectData={null}
-      />,
-    );
+    render(<TimelineCanvas {...BOARD} projectName="demo" episode={1} episodeScript={null} projectData={null} />);
 
     expect(screen.getByText("请在左侧选择剧集")).toBeInTheDocument();
   });
@@ -257,7 +253,7 @@ describe("TimelineCanvas", () => {
     function renderWithAllWriteHandlers() {
       return render(
         <TimelineCanvas
-        {...BOARD}
+          {...BOARD}
           projectName={DEMO_PROJECT_NAME}
           episode={1}
           hasDraft

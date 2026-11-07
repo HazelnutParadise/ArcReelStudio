@@ -32,7 +32,9 @@ function PlayFrame({ active }: { active: boolean }) {
         active ? "border-primary/50" : "border-border",
       )}
     >
-      <Play className={cn("size-4", active ? "fill-primary text-primary" : "fill-muted-foreground text-muted-foreground")} />
+      <Play
+        className={cn("size-4", active ? "fill-primary text-primary" : "fill-muted-foreground text-muted-foreground")}
+      />
     </span>
   );
 }
@@ -58,7 +60,10 @@ function StoryboardDiagram({ active }: { active: boolean }) {
 function ReferenceDiagram({ active }: { active: boolean }) {
   const iconCls = cn("size-4", active ? "text-primary" : "text-muted-foreground");
   const chip = (icon: ReactNode, key: string) => (
-    <span key={key} className={cn("grid size-9 place-items-center rounded-sm border transition-colors", frameClass(active))}>
+    <span
+      key={key}
+      className={cn("grid size-9 place-items-center rounded-sm border transition-colors", frameClass(active))}
+    >
       {icon}
     </span>
   );
@@ -102,12 +107,7 @@ export function GenerationRouteCards({ value, onChange, children }: GenerationRo
         <RouteLockBadge />
       </div>
 
-      <div
-        role="radiogroup"
-        aria-labelledby={labelId}
-        aria-required="true"
-        className="grid grid-cols-2 gap-2.5"
-      >
+      <div role="radiogroup" aria-labelledby={labelId} aria-required="true" className="grid grid-cols-2 gap-2.5">
         {ROUTE_CARDS.map(({ route, Diagram }) => {
           const selected = value === route;
           const meta = ROUTE_META[route];

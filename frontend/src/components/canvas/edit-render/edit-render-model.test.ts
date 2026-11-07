@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { EditTimelineIssueRef } from "@/types";
 import { blockingIssues, issueUnitIds } from "./edit-render-model";
 

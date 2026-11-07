@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -13,7 +13,14 @@ const ADMIN: CurrentAccount = { id: "default", username: "admin", role: "admin" 
 const MEMBER: CurrentAccount = { id: "u2", username: "editor", role: "user" };
 
 function member(overrides: Partial<MemberInfo>): MemberInfo {
-  return { id: "u2", username: "editor", role: "user", is_active: true, created_at: "2026-11-01T00:00:00Z", ...overrides };
+  return {
+    id: "u2",
+    username: "editor",
+    role: "user",
+    is_active: true,
+    created_at: "2026-11-01T00:00:00Z",
+    ...overrides,
+  };
 }
 
 describe("AccountSection", () => {

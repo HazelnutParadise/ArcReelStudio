@@ -24,7 +24,6 @@ const MIN_PIXELS_PER_SECOND = 14;
 /** 轨道名一列的宽度，与下方 `pl-16` / `-left-16` 一致。 */
 const LABEL_WIDTH = 64;
 
-
 interface EditTimelineTracksProps {
   projectName: string;
   readout: EditTimelineReadout;
@@ -139,7 +138,8 @@ export function EditTimelineTracks({
           aria-label={translate("edit_view_unused")}
           // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- 条目多时这一行横向滚动，里面没有可聚焦的元素，键盘要能聚焦后滚动
           tabIndex={0}
-          className="focus-ring relative flex items-center gap-2 overflow-x-auto border-t edit-short:hidden border-border/50 pt-2 text-xs whitespace-nowrap text-muted-foreground scroll-fade-x">
+          className="focus-ring relative flex items-center gap-2 overflow-x-auto border-t edit-short:hidden border-border/50 pt-2 text-xs whitespace-nowrap text-muted-foreground scroll-fade-x"
+        >
           <span className="shrink-0">{translate("edit_view_unused")}</span>
           {unusedUnits.map((unitId) => {
             const thumbnail = thumbnails.get(unitId);
@@ -316,7 +316,9 @@ const VideoClips = memo(function VideoClips({
               key={`transition-${clip.id}`}
               aria-hidden
               title={t("edit_view_transition_marker", {
-                type: t(`edit_transition_${clip.transition_to_next.type}`, { defaultValue: clip.transition_to_next.type }),
+                type: t(`edit_transition_${clip.transition_to_next.type}`, {
+                  defaultValue: clip.transition_to_next.type,
+                }),
                 duration: formatSeconds(clip.transition_to_next.duration),
               })}
               className="pointer-events-none absolute top-1/2 left-[calc(var(--at)-var(--span)/2)] h-5 w-(--span) -translate-y-1/2 rounded-xs bg-primary/35 ring-1 ring-primary"
@@ -381,11 +383,7 @@ function ClipBlock({ clip, left, width, selected, active, trimIgnored, position,
       data-trim-ignored={trimIgnored || undefined}
       className={cn(
         "focus-ring absolute inset-y-1.5 left-(--at) w-[calc(var(--span)-2px)] overflow-hidden text-ellipsis rounded-sm border text-left",
-        trimIgnored
-          ? "border-dashed border-warn"
-          : missingVideo
-            ? "border-dashed border-input"
-            : "border-black/30",
+        trimIgnored ? "border-dashed border-warn" : missingVideo ? "border-dashed border-input" : "border-black/30",
         missingVideo ? "bg-muted" : "bg-unit-clip",
         selected ? "ring-2 ring-foreground" : active && "ring-1 ring-primary",
       )}
@@ -401,7 +399,9 @@ function ClipBlock({ clip, left, width, selected, active, trimIgnored, position,
           {trimIgnored && <AlertTriangle aria-hidden className="size-3 shrink-0 text-warn" />}
         </span>
         {/* 视图矮时轨道变矮，只留第一行；时长仍在悬停提示里 */}
-        <span className="tabular-nums edit-short:hidden">{t("edit_view_seconds", { value: formatSeconds(clip.duration) })}</span>
+        <span className="tabular-nums edit-short:hidden">
+          {t("edit_view_seconds", { value: formatSeconds(clip.duration) })}
+        </span>
       </span>
     </button>
   );

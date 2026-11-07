@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import type { GetSystemConfigResponse, ProviderInfo } from "@/types";
 import { useConfigStatusStore } from "./config-status-store";
@@ -79,7 +79,17 @@ describe("config-status-store", () => {
 
   it("reports no issues when all configured", async () => {
     vi.spyOn(API, "getProviders").mockResolvedValue(
-      makeProviders([{ id: "gemini", display_name: "Google Gemini", status: "ready", media_types: ["image", "video", "text"], capabilities: [], credential_count: 1, models: {} }]),
+      makeProviders([
+        {
+          id: "gemini",
+          display_name: "Google Gemini",
+          status: "ready",
+          media_types: ["image", "video", "text"],
+          capabilities: [],
+          credential_count: 1,
+          models: {},
+        },
+      ]),
     );
     vi.spyOn(API, "listCustomProviders").mockResolvedValue({ providers: [] });
     vi.spyOn(API, "getSystemConfig").mockResolvedValue(

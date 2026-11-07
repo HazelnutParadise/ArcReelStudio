@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { EpisodesView, EpisodesViewSegment, ReplanCandidateEpisode, ReplanSummary } from "@/types";
 
@@ -155,7 +155,10 @@ describe("新旧分法的对照", () => {
   });
 
   it("生成中的方案只到第一个文件时，跨文件的集按起点判断是否等待规划", () => {
-    const compare = replanCompare(crossing, summary([draft(10, 20)], { end: { source_file: "source/a.txt", offset: 20 } }))!;
+    const compare = replanCompare(
+      crossing,
+      summary([draft(10, 20)], { end: { source_file: "source/a.txt", offset: 20 } }),
+    )!;
 
     expect([...compare.waiting]).toEqual([3]);
     expect(compare.lanes(1, 0, 10)).toEqual([{ from: 0, to: 10, lane: { kind: "pending" } }]);

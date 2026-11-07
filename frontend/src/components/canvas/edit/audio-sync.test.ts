@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import {
   AUDIO_LOOKAHEAD,
@@ -115,10 +115,12 @@ describe("syncAudio", () => {
   });
 
   it("does not stack jumps while one is in flight", () => {
-    expect(syncAudio(NARRATION, 6, true, { currentTime: 0, paused: false, seeking: true, ended: false })).toMatchObject({
-      play: true,
-      seekTo: null,
-    });
+    expect(syncAudio(NARRATION, 6, true, { currentTime: 0, paused: false, seeking: true, ended: false })).toMatchObject(
+      {
+        play: true,
+        seekTo: null,
+      },
+    );
   });
 
   it("pauses with the clock and keeps the position lined up for resuming", () => {

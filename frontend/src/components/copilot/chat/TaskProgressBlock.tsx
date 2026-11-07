@@ -28,7 +28,8 @@ export function TaskProgressBlock({ block }: { block: ContentBlock }) {
   const status = taskStatus(block, sessionDone);
   if (!status) return null;
 
-  const text = (status === "running" || status === "stopped" ? block.description : block.summary || block.description) ?? "";
+  const text =
+    (status === "running" || status === "stopped" ? block.description : block.summary || block.description) ?? "";
   const tokens = status === "running" ? block.usage?.total_tokens : undefined;
   const summary = [text, tokens != null ? t("subagent_tokens", { count: tokens }) : ""].filter(Boolean).join(" · ");
   const input = block.description?.trim() ? block.description : "";

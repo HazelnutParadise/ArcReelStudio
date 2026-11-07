@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useEndpointCatalogStore } from "@/stores/endpoint-catalog-store";
@@ -94,7 +94,11 @@ function renderForm(initialEndpoint?: string) {
   render(<CustomProviderForm onSaved={vi.fn()} initialEndpoint={initialEndpoint} />);
 }
 
-const PROTOCOL_LABELS: Record<string, string> = { openai: "OpenAI 兼容", google: "Google AI Studio", comfyui: "ComfyUI" };
+const PROTOCOL_LABELS: Record<string, string> = {
+  openai: "OpenAI 兼容",
+  google: "Google AI Studio",
+  comfyui: "ComfyUI",
+};
 
 function protocolPicker() {
   return screen.getByRole("combobox", { name: "模型发现协议" });
@@ -552,10 +556,7 @@ describe("CustomProviderForm（comfyui 协议）", () => {
   it("disables the resolution picker and names the native tier when the size is fixed", async () => {
     useEndpointCatalogStore.setState(useEndpointCatalogStore.getInitialState(), true);
     vi.spyOn(API, "listEndpointCatalog").mockResolvedValue({
-      endpoints: [
-        CHAT_ENDPOINT,
-        { ...COMFYUI_VIDEO_ENDPOINT, size_fixed: true, native_resolution: "480p" },
-      ],
+      endpoints: [CHAT_ENDPOINT, { ...COMFYUI_VIDEO_ENDPOINT, size_fixed: true, native_resolution: "480p" }],
     });
     renderForm();
     await waitFor(() => expect(useEndpointCatalogStore.getState().initialized).toBe(true));

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { flattenOutputSchema } from "./promptTemplateSchema";
 
 describe("flattenOutputSchema", () => {
@@ -42,7 +42,12 @@ describe("flattenOutputSchema", () => {
       type: "object",
       properties: {
         value: { anyOf: [{ type: "string" }, { type: "integer" }, { type: "null" }] },
-        mode: { anyOf: [{ enum: ["a"], type: "string" }, { enum: ["b"], type: "string" }] },
+        mode: {
+          anyOf: [
+            { enum: ["a"], type: "string" },
+            { enum: ["b"], type: "string" },
+          ],
+        },
         shape: { anyOf: [{ $ref: "#/$defs/Circle" }, { $ref: "#/$defs/Square" }] },
       },
       $defs: {

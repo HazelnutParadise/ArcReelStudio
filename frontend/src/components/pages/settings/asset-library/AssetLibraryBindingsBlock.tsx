@@ -100,7 +100,10 @@ export function AssetLibraryBindingsBlock({
           {t("common:loading")}
         </p>
       ) : load.status === "error" ? (
-        <RequestErrorNotice error={load.error} action={{ label: t("common:retry"), onClick: () => void fetchBindings() }} />
+        <RequestErrorNotice
+          error={load.error}
+          action={{ label: t("common:retry"), onClick: () => void fetchBindings() }}
+        />
       ) : load.credentials.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
           {t("asset_library_bindings_empty")}

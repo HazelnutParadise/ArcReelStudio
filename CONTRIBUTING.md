@@ -24,7 +24,7 @@ ArcReel 假定贡献者用 coding Agent 开发。仓库根的 `AGENTS.md`（`CLA
 uv sync
 cd frontend && pnpm install && cd ..
 
-# 一次性安装 pre-commit 钩子（ruff / vp lint / actionlint / zizmor）
+# 一次性安装 pre-commit 钩子（ruff / vp check / actionlint / zizmor）
 uv run pre-commit install
 
 # 初始化数据库

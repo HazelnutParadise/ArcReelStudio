@@ -5,7 +5,10 @@ import { Link } from "wouter";
 
 import { API, ApiRequestError } from "@/api";
 import { settingsSectionPath } from "@/app-routes";
-import { providerAssetStatusLabelKey, siteLabelKey } from "@/components/pages/settings/asset-library/asset-library-labels";
+import {
+  providerAssetStatusLabelKey,
+  siteLabelKey,
+} from "@/components/pages/settings/asset-library/asset-library-labels";
 import { RequestErrorNotice } from "@/components/shared/RequestErrorNotice";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { Button } from "@/components/ui/button";
@@ -163,7 +166,11 @@ function BrowserBody({
     pageController.current = controller;
     setPage({ status: "loading" });
     try {
-      const result = await API.listProviderAssets(id, { page: number, pageSize: PAGE_SIZE }, { signal: controller.signal });
+      const result = await API.listProviderAssets(
+        id,
+        { page: number, pageSize: PAGE_SIZE },
+        { signal: controller.signal },
+      );
       if (controller.signal.aborted) return;
       setPage({ status: "ready", page: result });
     } catch (error) {
@@ -208,8 +215,16 @@ function BrowserBody({
       if (leftSignal?.aborted) {
         // 4xx 是服务端在提交前的明确拒绝，导入已整体回滚。连接中断与 5xx（含网关超时）无法确认服务端
         // 是否已经提交，只提示结果待确认，避免用户据「未导入」重试而多出一个版本。
-        if (error instanceof ApiRequestError && error.status !== undefined && error.status >= 400 && error.status < 500) {
-          pushToast(t("provider_asset_import_failed_left", { project: target.projectName, message: errMsg(error) }), "error");
+        if (
+          error instanceof ApiRequestError &&
+          error.status !== undefined &&
+          error.status >= 400 &&
+          error.status < 500
+        ) {
+          pushToast(
+            t("provider_asset_import_failed_left", { project: target.projectName, message: errMsg(error) }),
+            "error",
+          );
         } else {
           pushToast(t("provider_asset_import_unknown_left", { project: target.projectName }), "warning");
         }
@@ -234,7 +249,10 @@ function BrowserBody({
       } else if (leftSignal?.aborted) {
         // 刷新期间离开：刷新按取消结算，不会自行提示，导入本身已经成功
         pushToast(
-          t("provider_asset_import_done_left", { project: target.projectName, version: result.content_version.version }),
+          t("provider_asset_import_done_left", {
+            project: target.projectName,
+            version: result.content_version.version,
+          }),
           "success",
         );
       }
@@ -257,7 +275,10 @@ function BrowserBody({
   if (accounts.status === "error") {
     return (
       <DialogBody>
-        <RequestErrorNotice error={accounts.error} action={{ label: t("common:retry"), onClick: () => void fetchAccounts() }} />
+        <RequestErrorNotice
+          error={accounts.error}
+          action={{ label: t("common:retry"), onClick: () => void fetchAccounts() }}
+        />
       </DialogBody>
     );
   }
@@ -366,7 +387,10 @@ function BrowserBody({
                             {t(providerAssetStatusLabelKey(asset.status))}
                           </span>
                           {asset.error_code && (
-                            <TruncatedText text={asset.error_code} className="font-mono text-xs text-muted-foreground" />
+                            <TruncatedText
+                              text={asset.error_code}
+                              className="font-mono text-xs text-muted-foreground"
+                            />
                           )}
                         </div>
                       </TableCell>

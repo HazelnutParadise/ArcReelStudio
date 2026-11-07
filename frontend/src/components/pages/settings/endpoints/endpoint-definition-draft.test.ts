@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import {
   definitionFileName,
   isRenderableDefinition,
@@ -68,9 +68,7 @@ describe("renameKey", () => {
   it("keeps both rows when the target key already exists", () => {
     const original = { Authorization: "Bearer {{ api_key }}", "X-Token": "abc" };
 
-    expect(renameKey(original, "Authorization", "X-Token", "Bearer {{ api_key }}")).toEqual(
-      original,
-    );
+    expect(renameKey(original, "Authorization", "X-Token", "Bearer {{ api_key }}")).toEqual(original);
   });
 });
 

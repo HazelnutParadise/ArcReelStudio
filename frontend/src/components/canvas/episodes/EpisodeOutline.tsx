@@ -145,7 +145,9 @@ function OutlineRow({
   const position = episodePosition(episodes, id);
   const title = episode.title?.trim() || t("dashboard:episodes_view_untitled");
   const volume =
-    info?.units != null ? formatVolume(t, info.units, view.unit) : t(`dashboard:episodes_view_origin_${info?.origin ?? "none"}`);
+    info?.units != null
+      ? formatVolume(t, info.units, view.unit)
+      : t(`dashboard:episodes_view_origin_${info?.origin ?? "none"}`);
   const rowClass = cn(
     "focus-ring flex w-full items-center gap-2 rounded-md py-1.5 pr-9 pl-2 text-left text-sm transition-colors duration-fast",
     active ? "bg-primary/15 text-foreground" : "text-subtle-foreground hover:bg-muted/60 hover:text-foreground",
@@ -159,9 +161,7 @@ function OutlineRow({
       >
         {position ?? "—"}
       </span>
-      {position !== null ? (
-        <span className="sr-only">{t("common:episode_position_name", { position })}</span>
-      ) : null}
+      {position !== null ? <span className="sr-only">{t("common:episode_position_name", { position })}</span> : null}
       <TruncatedText text={title} focusable={false} className="flex-1" />
       {episode.ledger_status === "stale" ? (
         <>

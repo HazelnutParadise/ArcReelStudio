@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { EpisodesView, EpisodesViewFile, EpisodesViewSegment } from "@/types";
 
@@ -18,7 +18,18 @@ function chars(count: number): string {
 }
 
 function segment(overrides: Partial<EpisodesViewSegment>): EpisodesViewSegment {
-  return { kind: "unsplit", start: 0, end: 0, text: "", episode: null, gap: false, units: 0, continued: false, continues: false, ...overrides };
+  return {
+    kind: "unsplit",
+    start: 0,
+    end: 0,
+    text: "",
+    episode: null,
+    gap: false,
+    units: 0,
+    continued: false,
+    continues: false,
+    ...overrides,
+  };
 }
 
 function file(name: string, length: number, segments: EpisodesViewSegment[]): EpisodesViewFile {
@@ -104,7 +115,10 @@ describe("落点", () => {
   it("切分不跨过源文件类型的切换处", () => {
     const kinds: EpisodesView = {
       ...view,
-      files: [{ ...view.files[0], source_kind: "novel" }, { ...view.files[1], source_kind: "screenplay" }],
+      files: [
+        { ...view.files[0], source_kind: "novel" },
+        { ...view.files[1], source_kind: "screenplay" },
+      ],
     };
     expect(resolvePointAction(kinds, { file: 1, offset: 3 })).toMatchObject({ kind: "cut", start: 30, end: 33 });
     expect(cutEpisodeActions(kinds, 2)).toEqual({ placed: true, merge: "none", clearAfter: false });

@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { createDeferred } from "@/test/deferred";
 import { useEndpointCatalogStore } from "@/stores/endpoint-catalog-store";
@@ -219,48 +219,51 @@ describe("EndpointsSection", () => {
       await screen.findByText(`来自 ${fileName}`);
     }
 
-    it.each([false, true])("updates a market-installed workflow and replaces its draft (re-imported: %s)", async (reimport) => {
-      const { installed, entryResponse, updated, installResult } = marketUpdateFixtures();
-      vi.mocked(API.listCustomEndpoints).mockResolvedValue({ endpoints: [MINE, installed] });
-      const entryRequest = createDeferred<Awaited<ReturnType<typeof API.getMarketEntry>>>();
-      vi.spyOn(API, "getMarketEntry").mockReturnValue(entryRequest.promise);
-      renderSection("section=endpoints&endpoint=ce-8");
+    it.each([false, true])(
+      "updates a market-installed workflow and replaces its draft (re-imported: %s)",
+      async (reimport) => {
+        const { installed, entryResponse, updated, installResult } = marketUpdateFixtures();
+        vi.mocked(API.listCustomEndpoints).mockResolvedValue({ endpoints: [MINE, installed] });
+        const entryRequest = createDeferred<Awaited<ReturnType<typeof API.getMarketEntry>>>();
+        vi.spyOn(API, "getMarketEntry").mockReturnValue(entryRequest.promise);
+        renderSection("section=endpoints&endpoint=ce-8");
 
-      expect(await screen.findByText("来自市场 ArcReel 官方市场")).toBeInTheDocument();
-      expect(screen.getByText("可更新")).toBeInTheDocument();
-      // 重新导入的 workflow 与已保存的不同，备份导出才分得清带走的是哪一份。
-      const saved = COMFYUI_MINE.definition as ComfyuiEndpointDefinition;
-      const reimportedWorkflow = { ...saved.workflow, "12": { class_type: "VHS_VideoCombine", inputs: {} } };
-      if (reimport) await reimportDraft("reimport.json", { ...saved, workflow: reimportedWorkflow });
-      await userEvent.type(screen.getByLabelText("端点名称"), "!");
-      await userEvent.click(screen.getByRole("button", { name: "更新" }));
+        expect(await screen.findByText("来自市场 ArcReel 官方市场")).toBeInTheDocument();
+        expect(screen.getByText("可更新")).toBeInTheDocument();
+        // 重新导入的 workflow 与已保存的不同，备份导出才分得清带走的是哪一份。
+        const saved = COMFYUI_MINE.definition as ComfyuiEndpointDefinition;
+        const reimportedWorkflow = { ...saved.workflow, "12": { class_type: "VHS_VideoCombine", inputs: {} } };
+        if (reimport) await reimportDraft("reimport.json", { ...saved, workflow: reimportedWorkflow });
+        await userEvent.type(screen.getByLabelText("端点名称"), "!");
+        await userEvent.click(screen.getByRole("button", { name: "更新" }));
 
-      await userEvent.type(screen.getByLabelText("端点名称"), "late edit");
-      expect(screen.getByLabelText("端点名称")).toHaveValue("我的 ComfyUI!");
-      expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
-      expect(screen.getByRole("button", { name: "放弃修改" })).toBeDisabled();
-      await act(async () => entryRequest.resolve(entryResponse));
+        await userEvent.type(screen.getByLabelText("端点名称"), "late edit");
+        expect(screen.getByLabelText("端点名称")).toHaveValue("我的 ComfyUI!");
+        expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "放弃修改" })).toBeDisabled();
+        await act(async () => entryRequest.resolve(entryResponse));
 
-      expect(await screen.findByRole("button", { name: "更新到 v1.1.0" })).toBeInTheDocument();
-      expect(API.getMarketEntry).toHaveBeenCalledWith(1, "my-comfyui", expect.anything());
-      expect(await screen.findByText("你的本地修改会被覆盖")).toBeInTheDocument();
-      const downloads = captureDownloads();
-      await userEvent.click(screen.getByRole("button", { name: "先导出当前定义" }));
-      expect(downloads[0].name).toBe("my-comfyui.json");
-      const backup = JSON.parse(await downloads[0].blob.text());
-      expect(backup).toMatchObject({ kind: "comfyui", meta: { name: "我的 ComfyUI!" } });
-      expect(backup.workflow).toEqual(reimport ? reimportedWorkflow : saved.workflow);
-      vi.mocked(API.listCustomEndpoints).mockResolvedValue({ endpoints: [MINE, updated] });
-      vi.spyOn(API, "installMarketEntry").mockResolvedValue(installResult);
-      const update = screen.getByRole("button", { name: "更新到 v1.1.0" });
-      await waitFor(() => expect(update).toBeEnabled());
-      await userEvent.click(update);
-      expect(await screen.findByText("已更新到 v1.1.0")).toBeInTheDocument();
-      await userEvent.click(screen.getByRole("button", { name: "关闭" }));
-      expect(await screen.findByLabelText("端点名称")).toHaveValue("Updated workflow");
-      expect(screen.queryByText("来自 reimport.json")).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: "更新" })).not.toBeInTheDocument();
-    });
+        expect(await screen.findByRole("button", { name: "更新到 v1.1.0" })).toBeInTheDocument();
+        expect(API.getMarketEntry).toHaveBeenCalledWith(1, "my-comfyui", expect.anything());
+        expect(await screen.findByText("你的本地修改会被覆盖")).toBeInTheDocument();
+        const downloads = captureDownloads();
+        await userEvent.click(screen.getByRole("button", { name: "先导出当前定义" }));
+        expect(downloads[0].name).toBe("my-comfyui.json");
+        const backup = JSON.parse(await downloads[0].blob.text());
+        expect(backup).toMatchObject({ kind: "comfyui", meta: { name: "我的 ComfyUI!" } });
+        expect(backup.workflow).toEqual(reimport ? reimportedWorkflow : saved.workflow);
+        vi.mocked(API.listCustomEndpoints).mockResolvedValue({ endpoints: [MINE, updated] });
+        vi.spyOn(API, "installMarketEntry").mockResolvedValue(installResult);
+        const update = screen.getByRole("button", { name: "更新到 v1.1.0" });
+        await waitFor(() => expect(update).toBeEnabled());
+        await userEvent.click(update);
+        expect(await screen.findByText("已更新到 v1.1.0")).toBeInTheDocument();
+        await userEvent.click(screen.getByRole("button", { name: "关闭" }));
+        expect(await screen.findByLabelText("端点名称")).toHaveValue("Updated workflow");
+        expect(screen.queryByText("来自 reimport.json")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "更新" })).not.toBeInTheDocument();
+      },
+    );
 
     it("keeps another endpoint's re-import draft when a market update replaces this one", async () => {
       // 更新只覆盖市场安装的那一个端点；别的端点上还没保存的重新导入草稿不能跟着丢。
@@ -385,9 +388,9 @@ describe("EndpointsSection", () => {
         workflow,
         bindings: {},
       };
-      const validate = vi.spyOn(API, "validateCustomEndpoint").mockResolvedValue(
-        validation({ import_shape: "comfyui_api_workflow", wrapped_definition: wrapped }),
-      );
+      const validate = vi
+        .spyOn(API, "validateCustomEndpoint")
+        .mockResolvedValue(validation({ import_shape: "comfyui_api_workflow", wrapped_definition: wrapped }));
       const infer = vi.spyOn(API, "inferComfyuiBindings").mockResolvedValue(inference());
       renderSection();
       await screen.findByRole("navigation");
@@ -404,9 +407,9 @@ describe("EndpointsSection", () => {
 
     it("asks a raw workflow what it produces and re-wraps it under the answer", async () => {
       const workflow = { "9": { class_type: "SaveImage", inputs: {} } };
-      const validate = vi.spyOn(API, "validateCustomEndpoint").mockResolvedValue(
-        validation({ import_shape: "comfyui_api_workflow", wrapped_definition: null }),
-      );
+      const validate = vi
+        .spyOn(API, "validateCustomEndpoint")
+        .mockResolvedValue(validation({ import_shape: "comfyui_api_workflow", wrapped_definition: null }));
       renderSection();
       await screen.findByRole("navigation");
 

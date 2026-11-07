@@ -23,11 +23,11 @@ repos:
         always_run: true
         stages: [pre-push]
 
-      - id: frontend-lint
-        name: vp lint (frontend staged)
-        entry: bash -c 'files=(); for f in "$@"; do files+=("${f#frontend/}"); done; cd frontend && ./node_modules/.bin/vp lint --fix "${files[@]}"' --
+      - id: frontend-check
+        name: vp check (frontend staged)
+        entry: bash -c 'files=(); for f in "$@"; do files+=("${f#frontend/}"); done; cd frontend && ./node_modules/.bin/vp check --fix "${files[@]}"' --
         language: system
-        files: ^frontend/.*\.(ts|tsx|js|jsx)$
+        files: ^frontend/.*\.(ts|tsx|js|jsx|css)$
         pass_filenames: true
 
   # workflow 闸门的本地对应物；两个 rev 须与 .github/workflows/test.yml 的

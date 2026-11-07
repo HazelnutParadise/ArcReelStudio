@@ -222,9 +222,12 @@ defineRegionScenarios("资产库", [
     name: "删除失败原因很长：正文可聚焦并用键盘滚动，取消仍可达",
     path: LIBRARY_PATH,
     ready: libraryReady,
-    api: { "DELETE /api/v1/assets/00000000-0000-4000-8000-000000000002": {
-      status: 500, body: { detail: "无法删除资产，存储系统返回诊断：".repeat(120) },
-    } },
+    api: {
+      "DELETE /api/v1/assets/00000000-0000-4000-8000-000000000002": {
+        status: 500,
+        body: { detail: "无法删除资产，存储系统返回诊断：".repeat(120) },
+      },
+    },
     act: async (page) => {
       await page.getByRole("button", { name: "「林夕」的更多操作" }).click();
       await page.getByRole("menuitem", { name: "删除" }).click();

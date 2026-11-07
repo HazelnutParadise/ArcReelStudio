@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -101,9 +101,7 @@ describe("SourceUploadDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "上传 1 个文件" }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(useAppStore.getState().toast?.text).toBe(
-      "已把 1 个文件加入整本源文，与已有文件重名的另存为 a (1).txt",
-    );
+    expect(useAppStore.getState().toast?.text).toBe("已把 1 个文件加入整本源文，与已有文件重名的另存为 a (1).txt");
   });
 
   it("appends per-episode files to the end of the playback order in list order", async () => {
@@ -209,7 +207,9 @@ describe("SourceUploadDialog", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "上传 1 个文件" }));
     await screen.findByText("清单");
-    fireEvent.click(within(screen.getByRole("alertdialog", { name: "插入「x.txt」" })).getByRole("button", { name: "取消" }));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog", { name: "插入「x.txt」" })).getByRole("button", { name: "取消" }),
+    );
 
     await waitFor(() => expect(screen.getByRole("button", { name: "上传 1 个文件" })).toBeEnabled());
     expect(onClose).not.toHaveBeenCalled();
@@ -290,7 +290,9 @@ describe("SourceUploadDialog", () => {
   });
 
   it("offers no source kind outside drama projects", async () => {
-    const upload = vi.spyOn(API, "uploadFile").mockResolvedValue({ success: true, path: "source/x.txt", filename: "x.txt" });
+    const upload = vi
+      .spyOn(API, "uploadFile")
+      .mockResolvedValue({ success: true, path: "source/x.txt", filename: "x.txt" });
     const { onClose } = renderDialog({ initialFiles: [txt("x.txt")] });
 
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useAppStore } from "@/stores/app-store";
 import { UnitPreviewPanel } from "./UnitPreviewPanel";
@@ -108,9 +108,7 @@ describe("UnitPreviewPanel", () => {
 
   it("invokes onUploadVideo with unit id and selected file", () => {
     const onUploadVideo = vi.fn();
-    const { container } = render(
-      <UnitPreviewPanel unit={mkUnit()} projectName="proj" onUploadVideo={onUploadVideo} />,
-    );
+    const { container } = render(<UnitPreviewPanel unit={mkUnit()} projectName="proj" onUploadVideo={onUploadVideo} />);
     const input = container.querySelector<HTMLInputElement>('input[type="file"]');
     expect(input).not.toBeNull();
     const file = new File(["x"], "clip.mp4", { type: "video/mp4" });
@@ -124,14 +122,7 @@ describe("UnitPreviewPanel", () => {
   });
 
   it("disables upload button while the unit is generating", () => {
-    render(
-      <UnitPreviewPanel
-        unit={mkUnit()}
-        projectName="proj"
-        status="running"
-        onUploadVideo={vi.fn()}
-      />,
-    );
+    render(<UnitPreviewPanel unit={mkUnit()} projectName="proj" status="running" onUploadVideo={vi.fn()} />);
     expect(screen.getByRole("button", { name: "上传视频" })).toBeDisabled();
   });
 
@@ -144,12 +135,7 @@ describe("UnitPreviewPanel", () => {
     });
 
     const { container } = render(
-      <UnitPreviewPanel
-        unit={unit}
-        projectName="proj"
-        narrationText=""
-        onGenerateNarration={vi.fn()}
-      />,
+      <UnitPreviewPanel unit={unit} projectName="proj" narrationText="" onGenerateNarration={vi.fn()} />,
     );
 
     expect(container.querySelector('audio[src*="audio/segment_E1U1.wav"]')).toBeInTheDocument();
@@ -177,9 +163,7 @@ describe("UnitPreviewPanel", () => {
     });
 
     it("成片上传在途置 busy", () => {
-      render(
-        <UnitPreviewPanel unit={mkUnit()} projectName="proj" onUploadVideo={vi.fn()} uploadingVideo />,
-      );
+      render(<UnitPreviewPanel unit={mkUnit()} projectName="proj" onUploadVideo={vi.fn()} uploadingVideo />);
       expect(versionMachineBusy()).toBe(true);
     });
 
@@ -187,18 +171,10 @@ describe("UnitPreviewPanel", () => {
       // 恢复与生成、上传写同一个 reference_videos/{unit_id}.mp4：恢复返回前若这两个
       // 入口仍可点，两个请求并发落盘，后完成者覆盖前者且双方都提示成功。
       const { container } = render(
-        <UnitPreviewPanel
-          unit={mkUnit()}
-          projectName="proj"
-          onGenerate={vi.fn()}
-          onUploadVideo={vi.fn()}
-          restoring
-        />,
+        <UnitPreviewPanel unit={mkUnit()} projectName="proj" onGenerate={vi.fn()} onUploadVideo={vi.fn()} restoring />,
       );
       const uploadButton = screen.getByRole("button", { name: "上传视频" });
-      const generateButton = [...container.querySelectorAll("button")].find((b) =>
-        b.textContent?.trim(),
-      );
+      const generateButton = [...container.querySelectorAll("button")].find((b) => b.textContent?.trim());
 
       expect(uploadButton).toBeDisabled();
       expect(generateButton).toBeDisabled();
@@ -232,24 +208,40 @@ describe("UnitPreviewPanel", () => {
   describe("链接带来的起始播放请求", () => {
     const readyUnit = () =>
       mkUnit({
-        generated_assets: { ...mkUnit().generated_assets, video_clip: "reference_videos/E1U1.mp4", status: "completed" },
+        generated_assets: {
+          ...mkUnit().generated_assets,
+          video_clip: "reference_videos/E1U1.mp4",
+          status: "completed",
+        },
       });
 
     it("把针对本单元的请求交给播放器，针对其他单元的不理会", () => {
       render(<UnitPreviewPanel unit={readyUnit()} projectName="demo" status="ready" />);
       expect(screen.getByTestId("presentation-player")).not.toHaveAttribute("data-start-at");
 
-      act(() => useAppStore.getState().requestPlaybackStart({ resource_type: "reference_videos", resource_id: "E1U2", seconds: 9 }));
+      act(() =>
+        useAppStore
+          .getState()
+          .requestPlaybackStart({ resource_type: "reference_videos", resource_id: "E1U2", seconds: 9 }),
+      );
       expect(screen.getByTestId("presentation-player")).not.toHaveAttribute("data-start-at");
 
-      act(() => useAppStore.getState().requestPlaybackStart({ resource_type: "reference_videos", resource_id: "E1U1", seconds: 3.5 }));
+      act(() =>
+        useAppStore
+          .getState()
+          .requestPlaybackStart({ resource_type: "reference_videos", resource_id: "E1U1", seconds: 3.5 }),
+      );
       expect(screen.getByTestId("presentation-player")).toHaveAttribute("data-start-at", "3.5");
       act(() => useAppStore.setState({ playbackStart: null }));
     });
 
     it("不带时间点的请求不让播放器定位", () => {
       render(<UnitPreviewPanel unit={readyUnit()} projectName="demo" status="ready" />);
-      act(() => useAppStore.getState().requestPlaybackStart({ resource_type: "reference_videos", resource_id: "E1U1", seconds: null }));
+      act(() =>
+        useAppStore
+          .getState()
+          .requestPlaybackStart({ resource_type: "reference_videos", resource_id: "E1U1", seconds: null }),
+      );
       expect(screen.getByTestId("presentation-player")).not.toHaveAttribute("data-start-at");
       act(() => useAppStore.setState({ playbackStart: null }));
     });

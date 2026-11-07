@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vite-plus/test";
 import { ASSET_COLORS, assetColor, type MentionKind } from "./asset-colors";
 
 describe("asset-colors", () => {

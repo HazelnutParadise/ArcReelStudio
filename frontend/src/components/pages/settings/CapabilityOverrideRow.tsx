@@ -50,8 +50,7 @@ export function CapabilityOverrideRow({
   const state = overrideToState(override);
   const overridden = state !== "follow";
 
-  const valueLabel = (v: boolean) =>
-    v ? t("cap_override_value_supported") : t("cap_override_value_unsupported");
+  const valueLabel = (v: boolean) => (v ? t("cap_override_value_supported") : t("cap_override_value_unsupported"));
   const detectedLabel = systemValue === null ? t("cap_override_value_unknown") : valueLabel(systemValue);
 
   const groupRef = useRef<HTMLDivElement>(null);
@@ -102,7 +101,9 @@ export function CapabilityOverrideRow({
         onKeyDown={onKeyDown}
         className={cn(
           "-ml-px h-8 border px-2.5 text-sm transition-colors first:ml-0 first:rounded-l-lg last:rounded-r-lg focus-visible:relative focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-          active ? "relative border-primary/40 bg-primary/15 text-foreground" : "border-input text-muted-foreground hover:text-foreground",
+          active
+            ? "relative border-primary/40 bg-primary/15 text-foreground"
+            : "border-input text-muted-foreground hover:text-foreground",
         )}
       >
         {label}
@@ -128,11 +129,7 @@ export function CapabilityOverrideRow({
           {segment("off", t("cap_override_off"), t("cap_override_off"), t("cap_override_off_title"))}
         </div>
 
-        {overridden && (
-          <Badge variant="secondary">
-            {t("cap_override_badge")}
-          </Badge>
-        )}
+        {overridden && <Badge variant="secondary">{t("cap_override_badge")}</Badge>}
 
         {overridden && (
           <span className="text-xs text-muted-foreground">

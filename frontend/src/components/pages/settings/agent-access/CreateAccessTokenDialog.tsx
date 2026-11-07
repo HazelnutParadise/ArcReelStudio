@@ -165,7 +165,10 @@ function CreateAccessTokenForm({
             </p>
           </div>
           {error && (
-            <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <p
+              role="alert"
+              className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+            >
               {error}
             </p>
           )}

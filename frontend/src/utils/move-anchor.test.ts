@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { dropAnchor, stepAnchor } from "./move-anchor";
 
 const IDS = ["A", "B", "C", "D"];

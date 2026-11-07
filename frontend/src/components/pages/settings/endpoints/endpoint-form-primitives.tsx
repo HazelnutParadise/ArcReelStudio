@@ -72,13 +72,7 @@ function useInsertion(): InsertionApi | null {
 }
 
 /** 可用变量提示条。没有登记过焦点目标时点击无害地什么都不做。 */
-export function VariableChips({
-  variables,
-  note,
-}: {
-  variables: { token: string; desc: string }[];
-  note?: string;
-}) {
+export function VariableChips({ variables, note }: { variables: { token: string; desc: string }[]; note?: string }) {
   const { t } = useTranslation("dashboard");
   const insertion = useInsertion();
   return (
@@ -362,10 +356,15 @@ export function PathsEditor({
         ))}
       </div>
       {!readOnly && (
-        <Button variant="ghost" size="xs" className="mt-1.5" onClick={() => {
+        <Button
+          variant="ghost"
+          size="xs"
+          className="mt-1.5"
+          onClick={() => {
             rowIds.append();
             onChange([...paths, ""]);
-          }}>
+          }}
+        >
           <Plus aria-hidden data-icon="inline-start" />
           {t("ce_path_add")}
         </Button>

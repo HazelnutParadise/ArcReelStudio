@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { LeaveGuardProvider, useLeaveGuard } from "@/components/shared/edit-unit/LeaveGuard";
 import { useProjectsStore } from "@/stores/projects-store";
 import type { EpisodeScript, ProjectData } from "@/types";
@@ -8,17 +8,26 @@ import { EpisodePage } from "./EpisodePage";
 
 vi.mock("@/components/workflow/WorkflowPanel", () => ({
   WorkflowPanel: ({ onViewUnit }: { onViewUnit?: (unitId: string) => void }) => (
-    <button type="button" onClick={() => onViewUnit?.("E1S02")}>查看 E1S02</button>
+    <button type="button" onClick={() => onViewUnit?.("E1S02")}>
+      查看 E1S02
+    </button>
   ),
 }));
 
 const PROJECT: ProjectData = {
-  title: "测试", style: "", content_mode: "narration", characters: {},
-  generation_mode: "storyboard", grid_storyboard: true,
+  title: "测试",
+  style: "",
+  content_mode: "narration",
+  characters: {},
+  generation_mode: "storyboard",
+  grid_storyboard: true,
   episodes: [{ episode: 1, title: "第一集", script_file: "episode_1.json" }],
 };
 const SCRIPT: EpisodeScript = {
-  episode: 1, title: "第一集", content_mode: "narration", novel: { title: "小说", chapter: "第一章" },
+  episode: 1,
+  title: "第一集",
+  content_mode: "narration",
+  novel: { title: "小说", chapter: "第一章" },
   segments: [makeNarrationSegment({ segment_id: "E1S01" }), makeNarrationSegment({ segment_id: "E1S02" })],
 };
 
@@ -32,9 +41,21 @@ function DirtyGridUnit() {
 function page(onViewUnit: (unitId: string) => void, dirtyOnGrid = false) {
   return (
     <LeaveGuardProvider>
-      <EpisodePage projectName="demo" episode={1} projectData={PROJECT} script={SCRIPT} demo={false}
-        onSaveTitle={vi.fn()} onViewUnit={onViewUnit}
-        renderCanvas={({ view }) => <><p>当前视图：{view}</p>{dirtyOnGrid && view === "grid" && <DirtyGridUnit />}</>} />
+      <EpisodePage
+        projectName="demo"
+        episode={1}
+        projectData={PROJECT}
+        script={SCRIPT}
+        demo={false}
+        onSaveTitle={vi.fn()}
+        onViewUnit={onViewUnit}
+        renderCanvas={({ view }) => (
+          <>
+            <p>当前视图：{view}</p>
+            {dirtyOnGrid && view === "grid" && <DirtyGridUnit />}
+          </>
+        )}
+      />
     </LeaveGuardProvider>
   );
 }

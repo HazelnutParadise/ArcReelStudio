@@ -32,8 +32,7 @@ export function BatchAdmissionSummary({ admission, skippedUnitIds, className }: 
   const blocked = admission.decision === "blocked";
   const tiers = admission.confirmation?.tiers ?? [];
   const seconds = (value: number) => t("duration_seconds", { value });
-  const tierSeconds = (value: number | null) =>
-    value == null ? t("tier_unknown") : seconds(value);
+  const tierSeconds = (value: number | null) => (value == null ? t("tier_unknown") : seconds(value));
 
   const failing = admission.units.filter((unit) => !unit.admitted && !isWithheld(unit));
   const withheld = admission.units.filter(isWithheld);

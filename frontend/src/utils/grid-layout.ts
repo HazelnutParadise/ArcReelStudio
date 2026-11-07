@@ -59,9 +59,7 @@ export function matchGridsForGroup<G extends GridMatchRecord>(
   return matched;
 }
 
-export function groupBySegmentBreak<S extends { segment_break?: boolean }>(
-  segments: S[],
-): S[][] {
+export function groupBySegmentBreak<S extends { segment_break?: boolean }>(segments: S[]): S[][] {
   const groups: S[][] = [];
   let current: S[] = [];
   for (const seg of segments) {
@@ -75,10 +73,7 @@ export function groupBySegmentBreak<S extends { segment_break?: boolean }>(
   return groups;
 }
 
-export function computeGridSize(
-  count: number,
-  maxCellCount: number = FALLBACK_MAX_CELL_COUNT
-): GridLayout {
+export function computeGridSize(count: number, maxCellCount: number = FALLBACK_MAX_CELL_COUNT): GridLayout {
   if (count < 1) return { gridSize: null, rows: 0, cols: 0, cellCount: 0, batchCount: 0 };
   const effective = Math.min(count, maxCellCount);
   const { cellCount, gridSize, side } =

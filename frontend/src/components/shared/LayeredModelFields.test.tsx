@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import type { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
 import "@/i18n";
@@ -93,9 +93,7 @@ describe("LayeredModelFields", () => {
     const user = userEvent.setup();
     renderFields({ subFields: [subField({ effective: "ark/seedance" })] });
     await user.click(disclosure()!);
-    expect(screen.getByRole("combobox", { name: "图生视频" })).toHaveTextContent(
-      /跟随默认 · Ark · seedance/,
-    );
+    expect(screen.getByRole("combobox", { name: "图生视频" })).toHaveTextContent(/跟随默认 · Ark · seedance/);
   });
 
   it("offers the unfiltered list on the default layer and the per-purpose list on a sub-field", async () => {
@@ -197,7 +195,7 @@ describe("LayeredModelFields", () => {
     const onRetry = vi.fn();
     renderFields({ subFields: [], subFieldsError: { onRetry } });
     // 无任何细分项本应让整块折叠区消失，但错误态下仍需展示，用户才能感知失败并重试
-        expect(disclosure()).toHaveAttribute("aria-expanded", "true");
+    expect(disclosure()).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("alert")).toHaveTextContent(/模型列表加载失败/);
     expect(screen.queryByText("留空的用途沿用上方默认模型。")).not.toBeInTheDocument();
   });

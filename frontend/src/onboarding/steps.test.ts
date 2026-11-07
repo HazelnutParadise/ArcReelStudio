@@ -7,7 +7,7 @@
  * 这里被抓到，而不必等到跑 `OnboardingTour` 的集成测试才发现。
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { TFunction } from "i18next";
 import { ROUTE_APP_PROJECTS, ROUTE_APP_SETTINGS } from "@/app-routes";
 import { ONBOARDING_ANCHORS } from "./anchors";

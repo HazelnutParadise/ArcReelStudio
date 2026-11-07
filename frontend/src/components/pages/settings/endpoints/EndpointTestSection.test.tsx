@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import "@/i18n";
 import { API } from "@/api";
 import type { EndpointDefinition, TrialRunInfo } from "@/types";
@@ -115,10 +115,12 @@ describe("EndpointTestSection", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
 
-    await waitFor(() => expect(createTrialRun).toHaveBeenLastCalledWith(
-      expect.objectContaining({ parameters: { model: "video-1", prompt: "" } }),
-      {},
-    ));
+    await waitFor(() =>
+      expect(createTrialRun).toHaveBeenLastCalledWith(
+        expect.objectContaining({ parameters: { model: "video-1", prompt: "" } }),
+        {},
+      ),
+    );
   });
 
   it("summarizes a base64 image hit by its size instead of echoing it", async () => {
@@ -158,19 +160,13 @@ describe("EndpointTestSection", () => {
       has_artifact: true,
     });
     const { unmount } = render(
-      <EndpointTestSection
-        definition={{ ...DEFINITION, inputs: undefined }}
-        providers={[]}
-      />,
+      <EndpointTestSection definition={{ ...DEFINITION, inputs: undefined }} providers={[]} />,
     );
 
     await userEvent.type(screen.getAllByLabelText("模型")[1], "video-1");
     await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
 
-    expect(await screen.findByLabelText("测试连接产物")).toHaveAttribute(
-      "src",
-      "blob:trial-artifact",
-    );
+    expect(await screen.findByLabelText("测试连接产物")).toHaveAttribute("src", "blob:trial-artifact");
     expect(API.getTrialRunArtifact).toHaveBeenCalledWith("run-1", { signal: expect.any(AbortSignal) });
     expect(screen.getByRole("link", { name: "使用记录 #42" })).toHaveAttribute(
       "href",
@@ -189,19 +185,13 @@ describe("EndpointTestSection", () => {
       has_artifact: true,
     });
     render(
-      <EndpointTestSection
-        definition={{ ...DEFINITION, media_type: "image", inputs: undefined }}
-        providers={[]}
-      />,
+      <EndpointTestSection definition={{ ...DEFINITION, media_type: "image", inputs: undefined }} providers={[]} />,
     );
 
     await userEvent.type(screen.getAllByLabelText("模型")[1], "gpt-image-2");
     await userEvent.click(screen.getByRole("button", { name: "开始测试" }));
 
-    expect(await screen.findByRole("img", { name: "测试连接产物" })).toHaveAttribute(
-      "src",
-      "blob:trial-artifact",
-    );
+    expect(await screen.findByRole("img", { name: "测试连接产物" })).toHaveAttribute("src", "blob:trial-artifact");
   });
 
   it("sets model IDs, the key and the pasted response in monospace, and leaves the URL proportional", () => {

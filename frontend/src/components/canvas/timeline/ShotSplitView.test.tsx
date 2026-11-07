@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { ShotSplitView } from "./ShotSplitView";
 import type { NarrationSegment } from "@/types";
 import { makeNarrationSegment } from "@/test/factories";
@@ -26,11 +26,21 @@ vi.mock("./ShotDetail", () => ({
     onRemoveShot?: (itemId: string) => Promise<boolean>;
   }) => (
     <div data-testid="detail" data-segment-id={segmentId}>
-      <button type="button" onClick={onNext}>next</button>
-      <button type="button" onClick={() => void onInsertShot?.(segmentId)}>insert</button>
-      <button type="button" onClick={() => void onRemoveShot?.(segmentId)}>remove</button>
-      <button type="button" onClick={() => onMoveShot?.(segmentId, "earlier")}>earlier</button>
-      <button type="button" onClick={() => onMoveShot?.(segmentId, "later")}>later</button>
+      <button type="button" onClick={onNext}>
+        next
+      </button>
+      <button type="button" onClick={() => void onInsertShot?.(segmentId)}>
+        insert
+      </button>
+      <button type="button" onClick={() => void onRemoveShot?.(segmentId)}>
+        remove
+      </button>
+      <button type="button" onClick={() => onMoveShot?.(segmentId, "earlier")}>
+        earlier
+      </button>
+      <button type="button" onClick={() => onMoveShot?.(segmentId, "later")}>
+        later
+      </button>
     </div>
   ),
 }));
@@ -38,9 +48,7 @@ vi.mock("./ShotDetail", () => ({
 const segments = (...ids: string[]): NarrationSegment[] => ids.map((id) => makeNarrationSegment({ segment_id: id }));
 
 function view(items: NarrationSegment[], props: Partial<Parameters<typeof ShotSplitView>[0]> = {}) {
-  return (
-    <ShotSplitView segments={items} contentMode="narration" aspectRatio="9:16" projectName="demo" {...props} />
-  );
+  return <ShotSplitView segments={items} contentMode="narration" aspectRatio="9:16" projectName="demo" {...props} />;
 }
 
 describe("ShotSplitView 新增 / 移除分镜", () => {

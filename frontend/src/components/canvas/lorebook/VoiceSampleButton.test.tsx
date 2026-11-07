@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { VoiceSampleButton } from "./VoiceSampleButton";
 import { API } from "@/api";
 import * as generationActions from "@/actions/generation";
@@ -23,9 +23,7 @@ describe("VoiceSampleButton", () => {
   it("disables the entry and explains why when no audio provider is configured", () => {
     setAudioConfigured(false);
     const spy = vi.spyOn(API, "getAudioBackendVoices");
-    render(
-      <VoiceSampleButton projectName="demo" characterName="艾莉" onSaved={vi.fn()} />,
-    );
+    render(<VoiceSampleButton projectName="demo" characterName="艾莉" onSaved={vi.fn()} />);
 
     const button = screen.getByRole("button", { name: "用 TTS 生成参考音频" });
     expect(button).toBeDisabled();
@@ -46,9 +44,7 @@ describe("VoiceSampleButton", () => {
       voices: [{ id: "Cherry", label: "芊悦 · 阳光正向的自然年轻女声" }],
     });
 
-    render(
-      <VoiceSampleButton projectName="demo" characterName="艾莉" onSaved={vi.fn()} />,
-    );
+    render(<VoiceSampleButton projectName="demo" characterName="艾莉" onSaved={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("button", { name: /用 TTS 生成参考音频/ }));
     await waitFor(() => {
@@ -60,9 +56,7 @@ describe("VoiceSampleButton", () => {
 
   it("stays disabled while the character is busy with another task", () => {
     setAudioConfigured(true);
-    render(
-      <VoiceSampleButton projectName="demo" characterName="艾莉" busy onSaved={vi.fn()} />,
-    );
+    render(<VoiceSampleButton projectName="demo" characterName="艾莉" busy onSaved={vi.fn()} />);
     expect(screen.getByRole("button", { name: /用 TTS 生成参考音频/ })).toBeDisabled();
   });
 

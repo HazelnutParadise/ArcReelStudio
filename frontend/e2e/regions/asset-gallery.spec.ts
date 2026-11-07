@@ -150,7 +150,10 @@ const MANY_API: ApiOverrides = {
   ...BASE,
   "GET /api/v1/projects/demo": projectWith(MANY),
   "GET /api/v1/projects/demo/asset-sheets/status": { status: 200, body: { assets: [] } },
-  "GET /api/v1/tasks?page_size=200&project_name=demo": { status: 200, body: { items: [], total: 0, page: 1, page_size: 200 } },
+  "GET /api/v1/tasks?page_size=200&project_name=demo": {
+    status: 200,
+    body: { items: [], total: 0, page: 1, page_size: 200 },
+  },
 };
 
 // 删除前的引用预览（dry_run）：林夕被前三集引用。
@@ -228,7 +231,10 @@ const VIEWER_API: ApiOverrides = {
 // 压力变体：名字很长、有 60 个版本。
 const VIEWER_MANY_API: ApiOverrides = {
   ...BASE,
-  "GET /api/v1/projects/demo": projectWith({ [LONG_NAME]: { description: LONG_DESCRIPTION, character_sheet: sheetSvg(200) }, ...CHARACTERS }),
+  "GET /api/v1/projects/demo": projectWith({
+    [LONG_NAME]: { description: LONG_DESCRIPTION, character_sheet: sheetSvg(200) },
+    ...CHARACTERS,
+  }),
   "GET /api/v1/projects/demo/asset-sheets/status": { status: 200, body: { assets: [] } },
   [`GET /api/v1/projects/demo/versions/characters/${LONG_NAME}`]: versionsOf(LONG_NAME, 60),
 };
@@ -376,7 +382,10 @@ defineRegionScenarios("资产画廊", [
     api: {
       ...BASE,
       // 详情的衍生区块读取衍生图状态
-      "GET /api/v1/projects/demo/characters/林夕/derivatives": { status: 200, body: { success: true, derivatives: {} } },
+      "GET /api/v1/projects/demo/characters/林夕/derivatives": {
+        status: 200,
+        body: { success: true, derivatives: {} },
+      },
     },
     ready: galleryReady,
     act: async (page) => {

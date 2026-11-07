@@ -420,7 +420,9 @@ export function MarketInstallDialog({
               <div role="status" className="flex flex-col gap-2 rounded-md border border-border p-3 text-sm">
                 <p className="flex items-center gap-2 text-foreground">
                   <Check className="size-4 text-good" aria-hidden />
-                  {updatedTo === null ? t("market_install_success") : t("market_update_success", { version: updatedTo })}
+                  {updatedTo === null
+                    ? t("market_install_success")
+                    : t("market_update_success", { version: updatedTo })}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -456,7 +458,12 @@ export function MarketInstallDialog({
         </DialogBody>
         <DialogFooter>
           {installed && (
-            <Button variant="destructive" disabled={busy} className="mr-auto" onClick={() => setConfirmingUninstall(true)}>
+            <Button
+              variant="destructive"
+              disabled={busy}
+              className="mr-auto"
+              onClick={() => setConfirmingUninstall(true)}
+            >
               {t("market_uninstall")}
             </Button>
           )}

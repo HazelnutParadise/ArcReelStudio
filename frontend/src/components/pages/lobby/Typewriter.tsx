@@ -49,8 +49,7 @@ export function Typewriter({
   const totalLen = useMemo(() => segments.reduce((n, s) => n + s.text.length, 0), [segments]);
   const fullText = useMemo(() => segments.map((s) => s.text).join(""), [segments]);
 
-  const skip =
-    totalLen === 0 || prefersReducedMotion() || (once ? playedOnce.has(once) : false);
+  const skip = totalLen === 0 || prefersReducedMotion() || (once ? playedOnce.has(once) : false);
 
   const [pos, setPos] = useState(skip ? totalLen : 0);
   const [phase, setPhase] = useState<"typing" | "linger" | "done">(skip ? "done" : "typing");
@@ -109,12 +108,7 @@ export function Typewriter({
         acc += seg.text.length;
       }
       const next = current + 1;
-      const extra =
-        crossesSegmentEnd && next < totalLen
-          ? segmentGap
-          : PUNCTUATION.test(ch)
-            ? punctuationDelay
-            : 0;
+      const extra = crossesSegmentEnd && next < totalLen ? segmentGap : PUNCTUATION.test(ch) ? punctuationDelay : 0;
       timers.push(
         setTimeout(() => {
           if (cancelled) return;
@@ -153,9 +147,7 @@ export function Typewriter({
       <span className="sr-only">{fullText}</span>
       <span aria-hidden="true">
         {visibleNodes}
-        {caret && phase !== "done" ? (
-          <TypewriterCaret key={phase} finite={phase === "linger"} />
-        ) : null}
+        {caret && phase !== "done" ? <TypewriterCaret key={phase} finite={phase === "linger"} /> : null}
       </span>
     </span>
   );

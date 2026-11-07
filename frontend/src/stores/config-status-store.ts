@@ -52,7 +52,7 @@ async function getConfigStatus(): Promise<{
 
     // Check custom providers for enabled models of this media type
     return customProviders.some((cp) =>
-      cp.models.some((m) => endpointToMediaType[m.endpoint] === type && m.is_enabled)
+      cp.models.some((m) => endpointToMediaType[m.endpoint] === type && m.is_enabled),
     );
   };
 

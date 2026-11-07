@@ -150,9 +150,7 @@ function SourceRangeNote({ meta }: { meta: EpisodeMeta | undefined }) {
   return (
     <p className="flex min-w-0 flex-wrap gap-x-3 text-xs text-muted-foreground tabular-nums">
       {parts.filter(Boolean).map((part) => (
-        <span key={part}>
-          {part}
-        </span>
+        <span key={part}>{part}</span>
       ))}
     </p>
   );
@@ -339,7 +337,9 @@ function EpisodeSource({
   // 无原文的集没有集原文文件：盘上同名的 episode_N.txt 是未登记文件，不当作本集原文读取
   const withoutSource = meta !== undefined && origin === "none";
   const fetchKey = `${projectName}::${episode}`;
-  const sourceRevision = useAppStore((s) => s.getEntityRevision(`episode:${episode}`) + s.getEntityRevision("project:project"));
+  const sourceRevision = useAppStore(
+    (s) => s.getEntityRevision(`episode:${episode}`) + s.getEntityRevision("project:project"),
+  );
   // 取到的原文带上归属 key，加载中由 key 是否匹配派生；无原文的集只显示本页刚保存的内容
   const [fetched, setFetched] = useState<{ key: string; text: string | null } | null>(null);
 
@@ -444,7 +444,13 @@ export function EpisodeSourceReview({
             prepare={saveSource}
           />
           {guide && <GuideCollapsible key={episode} meta={meta} className="@min-[860px]/plan-start:hidden" />}
-          <EpisodeSource projectName={projectName} episode={episode} episodes={episodes} meta={meta} editRef={sourceRef} />
+          <EpisodeSource
+            projectName={projectName}
+            episode={episode}
+            episodes={episodes}
+            meta={meta}
+            editRef={sourceRef}
+          />
         </div>
         {guide && (
           <GuideRail

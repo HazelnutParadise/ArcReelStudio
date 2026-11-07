@@ -152,7 +152,13 @@ function TextField({
   return (
     <div className="flex flex-col gap-1 text-xs text-muted-foreground">
       <label htmlFor={id}>{label}</label>
-      <Input id={id} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+      <Input
+        id={id}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+      />
     </div>
   );
 }
@@ -213,7 +219,8 @@ function NewAssetRow({
         .map((other) => other.asset_name || other.name),
     ]),
   ];
-  const decisions = item.type === "character" ? NEW_ASSET_DECISIONS : NEW_ASSET_DECISIONS.filter((d) => d !== "derivative");
+  const decisions =
+    item.type === "character" ? NEW_ASSET_DECISIONS : NEW_ASSET_DECISIONS.filter((d) => d !== "derivative");
   const decisionItems = decisions.map((decision) => ({ value: decision, label: t(`new_asset_decision_${decision}`) }));
 
   return (
@@ -303,7 +310,11 @@ function NewAssetRow({
       {appearances.length > 0 && (
         <Collapsible>
           <CollapsibleTrigger render={<Button variant="ghost" size="xs" className="-ml-2" />}>
-            <ChevronDown aria-hidden data-icon="inline-start" className="transition-transform group-aria-expanded/button:rotate-180" />
+            <ChevronDown
+              aria-hidden
+              data-icon="inline-start"
+              className="transition-transform group-aria-expanded/button:rotate-180"
+            />
             {t("new_asset_appearances", { count: appearances.length })}
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -350,7 +361,9 @@ export function NewAssetsSection({ items, entries, readOnly, disabled, onChange 
       </div>
       <div className="rounded-lg border border-border bg-card p-4">
         {autoMergedCount > 0 && (
-          <p className="mb-3 text-xs text-muted-foreground">{t("new_assets_auto_merged_notice", { count: autoMergedCount })}</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {t("new_assets_auto_merged_notice", { count: autoMergedCount })}
+          </p>
         )}
         <div className="flex flex-col gap-4">
           {GROUPS.map((group) => {

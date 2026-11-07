@@ -49,11 +49,7 @@ interface UsageBreakdownCardProps {
   onChange: (patch: Partial<UsageRecordsFilters>) => void;
 }
 
-export function UsageBreakdownCard({
-  summary,
-  filters,
-  onChange,
-}: UsageBreakdownCardProps) {
+export function UsageBreakdownCard({ summary, filters, onChange }: UsageBreakdownCardProps) {
   const { t, i18n } = useTranslation("dashboard");
   const [dim, setDim] = useState<BreakdownDim>("provider");
   const providerLabel = providerLabelResolver(summary);
@@ -69,7 +65,10 @@ export function UsageBreakdownCard({
   const totalCalls = Math.max(1, summary?.kpi.calls ?? 0);
 
   return (
-    <section aria-label={t("usage_breakdown_title")} className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card p-4">
+    <section
+      aria-label={t("usage_breakdown_title")}
+      className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card p-4"
+    >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-medium">{t("usage_breakdown_title")}</h3>
         <div role="group" aria-label={t("usage_breakdown_dim_label")} className="flex items-center gap-1">
@@ -94,7 +93,12 @@ export function UsageBreakdownCard({
         <p className="py-6 text-center text-sm text-muted-foreground">{t("usage_breakdown_empty")}</p>
       ) : (
         <div className="flex flex-col">
-          <div className={cn(GRID_CLS, "border-b border-border px-2 pb-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground")}>
+          <div
+            className={cn(
+              GRID_CLS,
+              "border-b border-border px-2 pb-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground",
+            )}
+          >
             <span>{t(NAME_COL_KEYS[dim])}</span>
             <span className="text-right">{t("usage_breakdown_col_calls")}</span>
             <span className="text-right">{t("usage_kpi_success_rate")}</span>
@@ -188,9 +192,7 @@ function CostCell({
   const entries = costEntries(cost);
   const others = entries.filter(([currency]) => currency !== primary);
   const main = primary ? formatCurrencyAmount(primary, cost[primary] ?? 0) : "—";
-  const othersText = others
-    .map(([currency, amount]) => formatCurrencyAmount(currency, amount))
-    .join(" + ");
+  const othersText = others.map(([currency, amount]) => formatCurrencyAmount(currency, amount)).join(" + ");
   return (
     <span className="num relative text-right">
       {main}
@@ -204,9 +206,7 @@ function CostCell({
           <span aria-hidden="true" className="ml-1 text-xs text-muted-foreground">
             +{others.length}
           </span>
-          <span className="sr-only">
-            {` ${t("usage_breakdown_cost_others", { amounts: othersText })}`}
-          </span>
+          <span className="sr-only">{` ${t("usage_breakdown_cost_others", { amounts: othersText })}`}</span>
         </>
       )}
     </span>
@@ -243,10 +243,7 @@ function buildRows(
         sub: null,
         stats: row,
         active: filters.project === row.project_name,
-        filters:
-          filters.project === row.project_name
-            ? { project: null }
-            : { project: row.project_name },
+        filters: filters.project === row.project_name ? { project: null } : { project: row.project_name },
       });
     }
   } else if (dim === "provider") {
@@ -271,9 +268,7 @@ function buildRows(
         sub: null,
         stats: row,
         active,
-        filters: active
-          ? { provider: null, model: null }
-          : { provider: row.provider, model: null },
+        filters: active ? { provider: null, model: null } : { provider: row.provider, model: null },
       });
     }
   } else {

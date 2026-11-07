@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vite-plus/test";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { API } from "@/api";
@@ -139,18 +139,14 @@ describe("ReferenceVideoCard", () => {
   // 正在输入的 mention，否则会弹出 query="。" 的永远空 picker。
   it("does not open the picker when cursor sits after a punctuation following an orphan '@'", async () => {
     const user = userEvent.setup();
-    render(
-      <ControlledCard unit={mkUnit({ text: "" })} />,
-    );
+    render(<ControlledCard unit={mkUnit({ text: "" })} />);
     const ta = screen.getByRole("combobox");
     await user.clear(ta);
     await user.type(ta, "眼@");
     expect(await screen.findByRole("listbox")).toBeInTheDocument();
     // 放弃这次 mention，输入中文句号
     await user.type(ta, "。");
-    await waitFor(() =>
-      expect(screen.queryByRole("listbox")).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
     // 方向键左右移动光标，也不应"复活"那个悬挂的 @
     await user.keyboard("{ArrowLeft}{ArrowRight}");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
@@ -178,20 +174,13 @@ describe("ReferenceVideoCard", () => {
     const ta = screen.getByRole("combobox") as HTMLTextAreaElement;
     const value = "x @{道具甲";
     fireEvent.change(ta, { target: { value, selectionStart: value.length } });
-    await waitFor(() =>
-      expect(screen.queryByRole("listbox")).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
   });
 
   it("inserts selected mention into the prompt and closes picker", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <ControlledCard
-        unit={mkUnit({ text: "" })}
-        onChange={onChange}
-      />,
-    );
+    render(<ControlledCard unit={mkUnit({ text: "" })} onChange={onChange} />);
     const ta = screen.getByRole("combobox");
     await user.clear(ta);
     await user.type(ta, "@");
@@ -253,9 +242,7 @@ describe("ReferenceVideoCard", () => {
     // mousedown preventDefault on options keeps the textarea focused through
     // clicks, so genuine blurs can close the picker without a setTimeout.
     // No artificial delay — only wait for React's state flush.
-    await waitFor(() =>
-      expect(screen.queryByRole("listbox")).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
   });
 
   // Backspace 两次删除：第一次高亮整个 @mention，第二次由默认 delete-selection 完成删除。
@@ -282,11 +269,7 @@ describe("ReferenceVideoCard", () => {
   });
 
   it("renders an unknown-mention chip for names not in project", () => {
-    render(
-      <ControlledCard
-        unit={mkUnit({ text: "@路人", duration_seconds: 3 })}
-      />,
-    );
+    render(<ControlledCard unit={mkUnit({ text: "@路人", duration_seconds: 3 })} />);
     const chip = screen.getByRole("status");
     expect(chip).toHaveTextContent(/路人/);
     expect(chip).toHaveTextContent(/未注册|Unregistered/);
@@ -380,7 +363,13 @@ describe("ReferenceVideoCard final prompt preview", () => {
     expect(await within(dialog).findByText("首次渲染的文本")).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "复制最终提示词" }));
     expect(await within(dialog).findByRole("button", { name: /已复制/ })).toBeInTheDocument();
-    preview.mockResolvedValueOnce({ text: "重新渲染的文本", unavailable: null, is_text_form: true, references: [], warnings: [] });
+    preview.mockResolvedValueOnce({
+      text: "重新渲染的文本",
+      unavailable: null,
+      is_text_form: true,
+      references: [],
+      warnings: [],
+    });
     await user.click(within(dialog).getByRole("button", { name: "重新渲染" }));
     expect(await within(dialog).findByText("重新渲染的文本")).toBeInTheDocument();
     expect(within(dialog).getByText("本次请求不携带参考图")).toBeInTheDocument();

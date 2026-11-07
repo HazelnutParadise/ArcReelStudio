@@ -131,9 +131,7 @@ export function EndFrameRow({
     try {
       await action();
     } catch (err) {
-      useAppStore
-        .getState()
-        .pushToast(t("end_frame_action_failed", { message: errMsg(err) }), "error");
+      useAppStore.getState().pushToast(t("end_frame_action_failed", { message: errMsg(err) }), "error");
       return;
     } finally {
       updateSubmitting(false);
@@ -155,8 +153,7 @@ export function EndFrameRow({
   const handlePickUpload = (file: File) =>
     void runWrite(() => API.uploadEndFrame(projectName, segmentId, scriptFile, file));
 
-  const handleClear = () =>
-    void runWrite(() => API.clearEndFrame(projectName, segmentId, scriptFile));
+  const handleClear = () => void runWrite(() => API.clearEndFrame(projectName, segmentId, scriptFile));
 
   // 摘要行与展开面板里都只是小图，取 160 宽的缩略图
   const previewUrl = endFramePath ? API.getFileUrl(projectName, endFramePath, fp, { width: 160 }) : null;
@@ -267,7 +264,13 @@ export function EndFrameRow({
                   {endFramePath ? t("end_frame_replace") : t("end_frame_choose")}
                 </Button>
                 {endFramePath && (
-                  <Button variant="ghost" size="sm" onClick={handleClear} disabled={controlsDisabled} title={disabledHint}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClear}
+                    disabled={controlsDisabled}
+                    title={disabledHint}
+                  >
                     {t("end_frame_clear")}
                   </Button>
                 )}

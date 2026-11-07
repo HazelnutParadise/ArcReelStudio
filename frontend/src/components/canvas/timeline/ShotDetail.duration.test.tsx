@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { ShotDetail } from "./ShotDetail";
 import { useTasksStore } from "@/stores/tasks-store";
 import type { DramaScene } from "@/types";
@@ -95,7 +95,9 @@ describe("ShotDetail 时长候选与越界提示", () => {
     expect(onUpdatePrompt).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
-    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { duration_seconds: 8 }, expect.anything()));
+    await waitFor(() =>
+      expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { duration_seconds: 8 }, expect.anything()),
+    );
   });
 
   it("改完时长后分镜开始生成：保存被拒并说明原因，不写回", async () => {
@@ -346,7 +348,9 @@ describe("ShotDetail 时长编辑的占用态门控", () => {
   it("空档位的两种成因各说各的话", () => {
     renderDetail({ durationOptions: [] });
 
-    expect(screen.getByRole("button", { name: /4 秒/ })).toHaveAccessibleDescription("当前模型未配置可用时长，无法修改");
+    expect(screen.getByRole("button", { name: /4 秒/ })).toHaveAccessibleDescription(
+      "当前模型未配置可用时长，无法修改",
+    );
   });
 
   it("时长由端点固定时不说成「未配置」", () => {

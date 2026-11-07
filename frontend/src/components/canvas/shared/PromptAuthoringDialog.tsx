@@ -116,8 +116,7 @@ export function PromptAuthoringDialog({
     request.currentEntryId && entries.some((entry) => entry.id === request.currentEntryId)
       ? request.currentEntryId
       : null;
-  const initialScope: PromptAuthoringScope =
-    request.scope === "current" && !currentEntryId ? "pending" : request.scope;
+  const initialScope: PromptAuthoringScope = request.scope === "current" && !currentEntryId ? "pending" : request.scope;
 
   const [scope, setScope] = useState<PromptAuthoringScope>(initialScope);
   const [selected, setSelected] = useState<string[]>(() =>
@@ -200,9 +199,7 @@ export function PromptAuthoringDialog({
   };
 
   const toggle = (id: string) =>
-    setSelected((current) =>
-      current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
-    );
+    setSelected((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
 
   const scopes: { value: PromptAuthoringScope; label: string; disabled: boolean }[] = [
     { value: "current", label: t("prompt_authoring_scope_current"), disabled: !currentEntryId },

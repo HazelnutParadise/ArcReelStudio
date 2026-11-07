@@ -31,7 +31,10 @@ function projectWith(status: Record<string, unknown>, episodes: Record<string, u
   return {
     "GET /api/v1/projects/demo": {
       status: 200,
-      body: { ...recordedProject, project: { ...recordedProject.project, status: { ...recordedProject.project.status, ...status }, episodes } },
+      body: {
+        ...recordedProject,
+        project: { ...recordedProject.project, status: { ...recordedProject.project.status, ...status }, episodes },
+      },
     },
   };
 }

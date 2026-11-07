@@ -45,15 +45,7 @@ export function PageSidebar({ label, groups, activeId, replace }: PageSidebarPro
   );
 }
 
-function SidebarGroup({
-  group,
-  activeId,
-  replace,
-}: {
-  group: PageSidebarGroup;
-  activeId: string;
-  replace?: boolean;
-}) {
+function SidebarGroup({ group, activeId, replace }: { group: PageSidebarGroup; activeId: string; replace?: boolean }) {
   const labelId = useId();
   return (
     <div className="flex flex-col gap-1">
@@ -80,7 +72,10 @@ function SidebarGroup({
                     : "text-subtle-foreground hover:bg-muted/50 hover:text-foreground",
                 )}
               >
-                <Icon aria-hidden className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                <Icon
+                  aria-hidden
+                  className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")}
+                />
                 <span className="min-w-0 flex-1">{item.label}</span>
                 {item.badge}
               </Link>

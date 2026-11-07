@@ -18,7 +18,13 @@ interface ItemPositionBadgeProps {
  * 分镜与视频单元的位置角标：只写数字，类型交给可访问名称（「分镜 5」「视频单元 5」）。
  * 条目已不在剧本里时写「已删除」，不回退成条目 ID。
  */
-export function ItemPositionBadge({ position, kind, overlay = false, active = false, className }: ItemPositionBadgeProps) {
+export function ItemPositionBadge({
+  position,
+  kind,
+  overlay = false,
+  active = false,
+  className,
+}: ItemPositionBadgeProps) {
   const { t } = useTranslation("common");
   const deleted = position === null;
   const label = deleted ? t("deleted") : t(`item_position_${kind}`, { position });

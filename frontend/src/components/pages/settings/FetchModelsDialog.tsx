@@ -127,7 +127,8 @@ function FetchModelsBody({
   const updateRow = (model: FetchedProviderModel, patch: Partial<RowState>) =>
     setRows((prev) => ({ ...prev, [rowKey(model)]: { ...prev[rowKey(model)], ...patch } }));
 
-  const mediaOf = (model: FetchedProviderModel, row: RowState): MediaType => row.binding?.media_type ?? model.media_type;
+  const mediaOf = (model: FetchedProviderModel, row: RowState): MediaType =>
+    row.binding?.media_type ?? model.media_type;
 
   // 对应模型的媒体类型与调用端点不一致时，换成该媒体类型下的默认端点
   const bind = (model: FetchedProviderModel, binding: CatalogEntryHit | null) => {
@@ -248,7 +249,11 @@ function FetchModelsBody({
             </FetchGroup>
           )}
           {unrecognized.length > 0 && (
-            <FetchGroup title={t("pm_fetch_unrecognized")} count={unrecognized.length} hint={t("pm_fetch_unrecognized_hint")}>
+            <FetchGroup
+              title={t("pm_fetch_unrecognized")}
+              count={unrecognized.length}
+              hint={t("pm_fetch_unrecognized_hint")}
+            >
               {unrecognized.map(renderRow)}
             </FetchGroup>
           )}

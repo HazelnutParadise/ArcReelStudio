@@ -107,23 +107,23 @@ const MANY_ENDPOINTS: ApiOverrides = {
       endpoints: [
         ...recordedCatalog.endpoints,
         ...Array.from({ length: 18 }, (_, i) => ({
-        key: `ce-${i + 1}`,
-        media_type: "video",
-        family: "custom",
-        kind: "declarative",
-        source: "custom",
-        display_name_key: "",
-        display_name: `${LONG_NAME} ${i + 1}`,
-        request_method: "POST",
-        request_path_template: "/v1/videos/image2video",
-        image_capabilities: null,
-        end_image_capable: false,
-        size_fixed: false,
-        duration_fixed: false,
-        duration_frame_rate_missing: false,
-        duration_tier_empty: false,
-        native_resolution: null,
-      })),
+          key: `ce-${i + 1}`,
+          media_type: "video",
+          family: "custom",
+          kind: "declarative",
+          source: "custom",
+          display_name_key: "",
+          display_name: `${LONG_NAME} ${i + 1}`,
+          request_method: "POST",
+          request_path_template: "/v1/videos/image2video",
+          image_capabilities: null,
+          end_image_capable: false,
+          size_fixed: false,
+          duration_fixed: false,
+          duration_frame_rate_missing: false,
+          duration_tier_empty: false,
+          native_resolution: null,
+        })),
       ],
     },
   },
@@ -176,7 +176,9 @@ defineRegionScenarios("调用端点", [
     ready: detailReady,
     act: async (page) => {
       // 紧凑档多组上下叠放，「新建端点」是「我的」组的末尾，在内置组上方，滚到底并不会经过它。
-      const create = rail(page).getByRole("link", { name: /新建端点/ }).filter({ visible: true });
+      const create = rail(page)
+        .getByRole("link", { name: /新建端点/ })
+        .filter({ visible: true });
       await create.scrollIntoViewIfNeeded();
       await expect(create).toBeInViewport();
     },

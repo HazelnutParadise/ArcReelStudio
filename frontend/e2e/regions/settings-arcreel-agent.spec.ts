@@ -61,7 +61,10 @@ defineRegionScenarios("全局设置 · ArcReel Agent", [
       await page.getByText("ArcReel Agent 尚未配置").waitFor();
       await page.getByText(/还没有 Agent 供应商/).waitFor();
     },
-    screenshot: { name: "settings-arcreel-agent", target: (page) => page.getByRole("region", { name: "ArcReel Agent" }) },
+    screenshot: {
+      name: "settings-arcreel-agent",
+      target: (page) => page.getByRole("region", { name: "ArcReel Agent" }),
+    },
   },
   {
     name: "Agent 供应商多且名称长时展开高级运行参数，修改后外壳底行的保存按钮可见可用",
@@ -82,7 +85,10 @@ defineRegionScenarios("全局设置 · ArcReel Agent", [
       await expect(page.getByRole("button", { name: "保存", exact: true })).toBeInViewport({ ratio: 1 });
       await expect(page.getByRole("button", { name: "保存", exact: true })).toBeEnabled();
     },
-    screenshot: { name: "settings-arcreel-agent-providers", target: (page) => page.getByRole("listitem", { name: /网关 1 ·/ }) },
+    screenshot: {
+      name: "settings-arcreel-agent-providers",
+      target: (page) => page.getByRole("listitem", { name: /网关 1 ·/ }),
+    },
   },
   {
     name: "添加 Agent 供应商对话框展开模型路由后，内容可滚动到底，底部按钮始终可见",
@@ -109,7 +115,10 @@ defineRegionScenarios("全局设置 · ArcReel Agent", [
       await page.getByRole("listitem", { name: /网关 2 ·/ }).waitFor();
     },
     act: async (page) => {
-      await page.getByRole("listitem", { name: /网关 2 ·/ }).getByRole("button", { name: "删除" }).click();
+      await page
+        .getByRole("listitem", { name: /网关 2 ·/ })
+        .getByRole("button", { name: "删除" })
+        .click();
       const dialog = page.getByRole("alertdialog", { name: "删除 Agent 供应商" });
       await expect(dialog).toContainText("自建 Anthropic 兼容网关 2");
       await expect(dialog.getByRole("button", { name: "取消" })).toBeFocused();

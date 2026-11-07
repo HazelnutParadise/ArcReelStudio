@@ -125,7 +125,11 @@ export function AssetOriginalsField({
           disabled={disabled}
           className="focus-ring flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-4 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {uploading ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <Upload aria-hidden className="size-4" />}
+          {uploading ? (
+            <Loader2 aria-hidden className="size-4 animate-spin" />
+          ) : (
+            <Upload aria-hidden className="size-4" />
+          )}
           {uploadLabel}
         </button>
       )}

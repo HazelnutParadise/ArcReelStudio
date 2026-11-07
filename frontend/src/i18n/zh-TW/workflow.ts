@@ -1,4 +1,4 @@
-import type enWorkflow from "@/i18n/en/workflow";
+import type enWorkflow from '@/i18n/en/workflow';
 
 export default {
   // ---- 面板外殼 ----
@@ -146,15 +146,18 @@ export default {
   'next_detail_repair_video_units_one': '{{ids}} 需要修改後才能生成影片。',
   'next_detail_repair_video_units_other': '{{ids}} 需要修改後才能生成影片。',
   'next_detail_patch_episode_script': '正式腳本里有欄位不符合要求，問題列在本行。',
-  'next_detail_generate_asset_sheets_one': '本集引用的 {{count}} 個資產還沒有資產圖：{{names}}。衍生會在本體完成後生成。',
-  'next_detail_generate_asset_sheets_other': '本集引用的 {{count}} 個資產還沒有資產圖：{{names}}。衍生會在本體完成後生成。',
+  'next_detail_generate_asset_sheets_one':
+    '本集引用的 {{count}} 個資產還沒有資產圖：{{names}}。衍生會在本體完成後生成。',
+  'next_detail_generate_asset_sheets_other':
+    '本集引用的 {{count}} 個資產還沒有資產圖：{{names}}。衍生會在本體完成後生成。',
   'next_detail_generate_storyboards_one': '{{count}} 個分鏡還沒有分鏡圖。',
   'next_detail_generate_storyboards_other': '{{count}} 個分鏡還沒有分鏡圖。',
   'next_detail_generate_grid_one': '{{count}} 個分鏡還沒有分鏡圖，按宮格分組生成。',
   'next_detail_generate_grid_other': '{{count}} 個分鏡還沒有分鏡圖，按宮格分組生成。',
   'next_detail_generate_videos_one': '{{count}} 個還沒有影片。',
   'next_detail_generate_videos_other': '{{count}} 個還沒有影片。',
-  'next_detail_create_edit_timeline': '本集影片已齊。交給 Agent 剪輯，或按腳本新增一條剪輯時間軸：每段影片整段使用、全部硬切。',
+  'next_detail_create_edit_timeline':
+    '本集影片已齊。交給 Agent 剪輯，或按腳本新增一條剪輯時間軸：每段影片整段使用、全部硬切。',
   'next_detail_wait_for_task': '正在生成，完成後狀態會自動更新。',
   'next_title_wait_for_episode_planning': '分集規劃進行中',
   'next_detail_wait_for_episode_planning': 'AI 正在逐段規劃分集，完成後狀態會自動更新。',
@@ -188,7 +191,8 @@ export default {
   // ---- 已過時但可用的產物 ----
   'stale_title_one': '{{count}} 件產物比當前內容舊',
   'stale_title_other': '{{count}} 件產物比當前內容舊',
-  'stale_still_usable': '這些檔案仍然保留，可以在畫布上檢視，也照常參與本整合片。保留不花錢，重新生成會再次向供應商計費。',
+  'stale_still_usable':
+    '這些檔案仍然保留，可以在畫布上檢視，也照常參與本整合片。保留不花錢，重新生成會再次向供應商計費。',
   'stale_view': '檢視',
   'stale_view_unit': '在畫布上檢視 {{id}}',
   'stale_regenerate': '重新生成',

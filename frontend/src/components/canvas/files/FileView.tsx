@@ -89,7 +89,10 @@ function useDirectories(projectName: string, refreshKey: number) {
     setDirectories((current) => {
       const directory = current[parent];
       if (directory?.status !== "ready") return current;
-      return { ...current, [parent]: { status: "ready", entries: directory.entries.filter((entry) => entry.path !== path) } };
+      return {
+        ...current,
+        [parent]: { status: "ready", entries: directory.entries.filter((entry) => entry.path !== path) },
+      };
     });
   }, []);
 
@@ -152,7 +155,11 @@ export function FileView({ projectName }: { projectName: string }) {
               <TabsTrigger value="files" id={tabId("files")} aria-controls={panelId("files")}>
                 {t("file_view_section_files")}
               </TabsTrigger>
-              <TabsTrigger value="trash" id={tabId("trash")} aria-controls={trashMounted ? panelId("trash") : undefined}>
+              <TabsTrigger
+                value="trash"
+                id={tabId("trash")}
+                aria-controls={trashMounted ? panelId("trash") : undefined}
+              >
                 {t("file_view_section_trash")}
               </TabsTrigger>
             </TabsList>
@@ -210,32 +217,36 @@ function FilesSection({ projectName, refreshKey }: { projectName: string; refres
     if (deleting) return;
     setDeleting(true);
     try {
-      await Promise.all(entries.map(async (entry) => {
-        try {
-          const { record } = await API.deleteFileViewEntry(projectName, entry.path);
-          dropEntry(entry.path);
-          setSelectedPath((current) => (current === entry.path ? null : current));
-          setChecked((current) => {
-            const next = new Map(current);
-            next.delete(entry.path);
-            return next;
-          });
-          useAppStore.getState().pushToast(t("file_view_moved_to_trash", { name: entry.name }), "info", {
-            action: {
-              label: t("trash_restore"),
-              onClick: () => {
-                API.restoreTrashRecord(projectName, record.id)
-                  .catch((error: unknown) => {
-                    useAppStore.getState().pushToast(t("trash_action_failed", { message: errMsg(error) }), "error");
-                  })
-                  .finally(() => useAppStore.getState().invalidateTrash());
+      await Promise.all(
+        entries.map(async (entry) => {
+          try {
+            const { record } = await API.deleteFileViewEntry(projectName, entry.path);
+            dropEntry(entry.path);
+            setSelectedPath((current) => (current === entry.path ? null : current));
+            setChecked((current) => {
+              const next = new Map(current);
+              next.delete(entry.path);
+              return next;
+            });
+            useAppStore.getState().pushToast(t("file_view_moved_to_trash", { name: entry.name }), "info", {
+              action: {
+                label: t("trash_restore"),
+                onClick: () => {
+                  API.restoreTrashRecord(projectName, record.id)
+                    .catch((error: unknown) => {
+                      useAppStore.getState().pushToast(t("trash_action_failed", { message: errMsg(error) }), "error");
+                    })
+                    .finally(() => useAppStore.getState().invalidateTrash());
+                },
               },
-            },
-          });
-        } catch (error) {
-          useAppStore.getState().pushToast(t("file_view_delete_failed", { name: entry.name, message: errMsg(error) }), "error");
-        }
-      }));
+            });
+          } catch (error) {
+            useAppStore
+              .getState()
+              .pushToast(t("file_view_delete_failed", { name: entry.name, message: errMsg(error) }), "error");
+          }
+        }),
+      );
     } finally {
       setDeleting(false);
       useAppStore.getState().invalidateTrash();
@@ -250,8 +261,17 @@ function FilesSection({ projectName, refreshKey }: { projectName: string; refres
       >
         {checked.size > 0 ? (
           <div className="flex flex-wrap items-center gap-2 px-2 pb-3">
-            <Button variant="outline" size="sm" disabled={deleting} onClick={() => void moveToTrash([...checked.values()])}>
-              {deleting ? <Loader2 data-icon="inline-start" aria-hidden className="animate-spin" /> : <Trash2 data-icon="inline-start" aria-hidden />}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={deleting}
+              onClick={() => void moveToTrash([...checked.values()])}
+            >
+              {deleting ? (
+                <Loader2 data-icon="inline-start" aria-hidden className="animate-spin" />
+              ) : (
+                <Trash2 data-icon="inline-start" aria-hidden />
+              )}
               {t("file_view_delete_selected", { total: checked.size })}
             </Button>
             <Button variant="ghost" size="sm" disabled={deleting} onClick={() => setChecked(new Map())}>
@@ -273,7 +293,13 @@ function FilesSection({ projectName, refreshKey }: { projectName: string; refres
         />
       </nav>
       {selected ? (
-        <FileDetail key={selected.path} projectName={projectName} entry={selected} deleting={deleting} onDelete={() => void moveToTrash([selected])} />
+        <FileDetail
+          key={selected.path}
+          projectName={projectName}
+          entry={selected}
+          deleting={deleting}
+          onDelete={() => void moveToTrash([selected])}
+        />
       ) : (
         <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center">
           <Empty>
@@ -327,7 +353,8 @@ function DirectoryList(props: DirectoryListProps) {
     <ul className="flex flex-col gap-px">
       {state.entries.map((entry) => {
         const open = expanded.has(entry.path);
-        const rowClass = "focus-ring flex w-full min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors duration-fast";
+        const rowClass =
+          "focus-ring flex w-full min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors duration-fast";
         if (entry.type === "directory") {
           const Icon = open ? FolderOpen : Folder;
           return (
@@ -338,7 +365,10 @@ function DirectoryList(props: DirectoryListProps) {
                 onClick={() => onToggle(entry.path)}
                 className={cn(rowClass, "text-subtle-foreground hover:bg-muted/60 hover:text-foreground")}
               >
-                <ChevronRight aria-hidden className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-90")} />
+                <ChevronRight
+                  aria-hidden
+                  className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-90")}
+                />
                 <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
                 <TruncatedText text={entry.name} focusable={false} className="flex-1" />
                 <span className="num shrink-0 text-xs text-muted-foreground">{formatFileSize(entry.size)}</span>
@@ -370,7 +400,9 @@ function DirectoryList(props: DirectoryListProps) {
               className={cn(
                 rowClass,
                 canDeleteFile(entry) ? "flex-1" : "pl-7",
-                active ? "bg-primary/15 text-foreground" : "text-subtle-foreground hover:bg-muted/60 hover:text-foreground",
+                active
+                  ? "bg-primary/15 text-foreground"
+                  : "text-subtle-foreground hover:bg-muted/60 hover:text-foreground",
               )}
             >
               <File aria-hidden className="size-4 shrink-0 self-start mt-0.5 text-muted-foreground" />
@@ -418,7 +450,9 @@ function FileDetail({
     try {
       downloadBlob(await API.getFileViewContent(projectName, entry.path, { download: true }), entry.name);
     } catch (error) {
-      useAppStore.getState().pushToast(t("file_view_download_failed", { name: entry.name, message: errMsg(error) }), "error");
+      useAppStore
+        .getState()
+        .pushToast(t("file_view_download_failed", { name: entry.name, message: errMsg(error) }), "error");
     } finally {
       setDownloading(false);
     }

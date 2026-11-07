@@ -1,4 +1,4 @@
-import type enEvents from '../en/events';
+import type enEvents from "../en/events";
 
 export default {
   "label.grid": 'Phân cảnh đa lưới "{{id}}"',
@@ -58,8 +58,7 @@ export default {
   "single.deleted": "Đã xóa {{label}}",
   "single.updated": "Đã cập nhật {{label}}",
 
-  "deferred.storyboard_ready":
-    "AI vừa tạo ảnh phân cảnh của {{label}}. Nhấn để xem",
+  "deferred.storyboard_ready": "AI vừa tạo ảnh phân cảnh của {{label}}. Nhấn để xem",
   "deferred.video_ready": "AI vừa tạo video của {{label}}. Nhấn để xem",
   "deferred.generated": "Đã tạo xong {{label}}",
   "deferred.completed": "Đã hoàn tất {{label}}",
@@ -72,14 +71,10 @@ export default {
   "group.deleted": "Đã xóa {{count}} {{entity}}: {{summary}}",
   "group.updated": "Đã cập nhật {{count}} {{entity}}: {{summary}}",
 
-  "group_deferred.generated":
-    "AI vừa tạo {{count}} {{entity}}: {{summary}}. Nhấn để xem",
-  "group_deferred.created":
-    "AI vừa thêm {{count}} {{entity}}: {{summary}}. Nhấn để xem",
-  "group_deferred.deleted":
-    "AI vừa xóa {{count}} {{entity}}: {{summary}}. Nhấn để xem",
-  "group_deferred.updated":
-    "AI vừa cập nhật {{count}} {{entity}}: {{summary}}. Nhấn để xem",
+  "group_deferred.generated": "AI vừa tạo {{count}} {{entity}}: {{summary}}. Nhấn để xem",
+  "group_deferred.created": "AI vừa thêm {{count}} {{entity}}: {{summary}}. Nhấn để xem",
+  "group_deferred.deleted": "AI vừa xóa {{count}} {{entity}}: {{summary}}. Nhấn để xem",
+  "group_deferred.updated": "AI vừa cập nhật {{count}} {{entity}}: {{summary}}. Nhấn để xem",
 
   "change_by_member": "{{name}}: {{text}}",
   "list.separator": ", ",

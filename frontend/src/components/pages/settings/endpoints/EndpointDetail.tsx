@@ -199,7 +199,10 @@ export function EndpointDetail({
           ? await API.createCustomEndpoint(value.definition)
           : await API.updateCustomEndpoint(persistedId, value.definition);
       onSaved(saved);
-      return { definition: isRenderableDefinition(saved.definition) ? saved.definition : value.definition, jsonText: null };
+      return {
+        definition: isRenderableDefinition(saved.definition) ? saved.definition : value.definition,
+        jsonText: null,
+      };
     },
     [hasErrors, persistedId, onSaved, t],
   );
@@ -362,7 +365,9 @@ export function EndpointDetail({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("ce_delete_title")}</AlertDialogTitle>
-            {!deleteReferences && <AlertDialogDescription>{t("ce_delete_desc", { name: title })}</AlertDialogDescription>}
+            {!deleteReferences && (
+              <AlertDialogDescription>{t("ce_delete_desc", { name: title })}</AlertDialogDescription>
+            )}
           </AlertDialogHeader>
           {deleteReferences && (
             <AlertDialogBody>
@@ -487,7 +492,10 @@ export function EndpointDetail({
           )}
           {t("ce_copy_as_mine")}
         </Button>
-        <Button onClick={() => draft && endpointKey && onCreateProvider(draft, endpointKey)} disabled={!draft || !endpointKey}>
+        <Button
+          onClick={() => draft && endpointKey && onCreateProvider(draft, endpointKey)}
+          disabled={!draft || !endpointKey}
+        >
           <Plus aria-hidden data-icon="inline-start" />
           {t("ce_create_provider")}
         </Button>
@@ -568,8 +576,12 @@ export function EndpointDetail({
           )}
 
           {selection.mode === "python" && (
-            <p className="rounded-lg border border-border px-4 py-3 font-mono text-sm break-all text-subtle-foreground" translate="no">
-              {selection.descriptor.request_method} <span className="text-good">{selection.descriptor.request_path_template}</span>
+            <p
+              className="rounded-lg border border-border px-4 py-3 font-mono text-sm break-all text-subtle-foreground"
+              translate="no"
+            >
+              {selection.descriptor.request_method}{" "}
+              <span className="text-good">{selection.descriptor.request_path_template}</span>
             </p>
           )}
 
@@ -591,7 +603,11 @@ export function EndpointDetail({
           {draft && selection.mode !== "python" && (
             <div className="flex flex-col gap-4">
               {editable && validation && (
-                <EndpointDiagnostics errors={validation.errors} warnings={validation.warnings} onLocate={locateSection} />
+                <EndpointDiagnostics
+                  errors={validation.errors}
+                  warnings={validation.warnings}
+                  onLocate={locateSection}
+                />
               )}
 
               {selection.mode === "new" && (
@@ -671,7 +687,11 @@ export function EndpointDetail({
                 </div>
               ) : (
                 <VariableInsertionProvider key={formEpoch}>
-                  <EndpointForm definition={draft} onChange={(next) => unit.setValue({ definition: next, jsonText: null })} readOnly={readOnly} />
+                  <EndpointForm
+                    definition={draft}
+                    onChange={(next) => unit.setValue({ definition: next, jsonText: null })}
+                    readOnly={readOnly}
+                  />
                   <EndpointTestSection definition={draft} providers={providers} />
                 </VariableInsertionProvider>
               )}

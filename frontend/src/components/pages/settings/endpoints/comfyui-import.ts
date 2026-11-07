@@ -1,8 +1,4 @@
-import type {
-  ComfyuiEndpointDefinition,
-  ComfyuiInferResponse,
-  CustomEndpointInfo,
-} from "@/types";
+import type { ComfyuiEndpointDefinition, ComfyuiInferResponse, CustomEndpointInfo } from "@/types";
 
 /**
  * 一份刚导入、还没保存的 ComfyUI 端点：定义连同它这一轮的推断结果。

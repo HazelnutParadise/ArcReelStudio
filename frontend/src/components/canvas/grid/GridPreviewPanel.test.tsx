@@ -1,12 +1,8 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
-import {
-  useTasksStore,
-  useActiveResourceIds,
-  selectHasActiveTaskForScriptFile,
-} from "@/stores/tasks-store";
+import { useTasksStore, useActiveResourceIds, selectHasActiveTaskForScriptFile } from "@/stores/tasks-store";
 import type { GridGeneration } from "@/types/grid";
 import type { TaskItem } from "@/types";
 import { GridPreviewPanel } from "./GridPreviewPanel";
@@ -152,17 +148,15 @@ describe("GridPreviewPanel regenerate", () => {
       expect(API.regenerateGrid).toHaveBeenCalledWith("demo", "grid-1");
     });
     const { tasks, optimisticActiveScriptFile } = useTasksStore.getState();
-    expect(
-      selectHasActiveTaskForScriptFile(tasks, "grid", "episode_1.json", "demo", optimisticActiveScriptFile),
-    ).toBe(false);
+    expect(selectHasActiveTaskForScriptFile(tasks, "grid", "episode_1.json", "demo", optimisticActiveScriptFile)).toBe(
+      false,
+    );
   });
 });
 
 describe("GridPreviewPanel occupancy", () => {
   it("记录停在 generating 但队列无活动任务时显示已中断，并允许重新生成或上传", async () => {
-    vi.spyOn(API, "getGrid").mockResolvedValue(
-      makeGrid({ status: "generating", grid_image_path: null }),
-    );
+    vi.spyOn(API, "getGrid").mockResolvedValue(makeGrid({ status: "generating", grid_image_path: null }));
     useTasksStore.setState({ tasks: [], connected: true, optimisticActive: new Set() });
 
     render(<GridPreviewPanel projectName="demo" gridIds={["grid-1"]} />);
@@ -285,9 +279,7 @@ describe("GridPreviewPanel upload", () => {
     });
     const revisionBefore = useAppStore.getState().gridsRevision;
 
-    const { container } = render(
-      <GridPreviewPanel projectName="demo" gridIds={["grid-1"]} />,
-    );
+    const { container } = render(<GridPreviewPanel projectName="demo" gridIds={["grid-1"]} />);
 
     await screen.findByText("上传联合图");
     const input = container.querySelector<HTMLInputElement>('input[type="file"]');
@@ -313,7 +305,12 @@ describe("GridPreviewPanel 版本时光机跨宫格切换", () => {
       file_size: 1,
       is_current: false,
     });
-    let resolveStale: (r: { resource_type: string; resource_id: string; current_version: number; versions: ReturnType<typeof version>[] }) => void = () => {};
+    let resolveStale: (r: {
+      resource_type: string;
+      resource_id: string;
+      current_version: number;
+      versions: ReturnType<typeof version>[];
+    }) => void = () => {};
 
     vi.spyOn(API, "getGrid").mockImplementation(async (_p, id) => makeGrid({ id }));
     vi.spyOn(API, "getVersions").mockImplementation(async (_p, _t, resourceId) => {
@@ -330,7 +327,9 @@ describe("GridPreviewPanel 版本时光机跨宫格切换", () => {
     // grid-1 的版本列表请求发出后不解析，切到 grid-2 并读到它自己的版本；
     // 保护来自切换时的 setGrid(null) 卸载，改成加载期间留旧数据渲染即回归
     fireEvent.click(await screen.findByLabelText("版本"));
-    await waitFor(() => expect(API.getVersions).toHaveBeenCalledWith("demo", "grids", "grid-1", { signal: expect.any(AbortSignal) }));
+    await waitFor(() =>
+      expect(API.getVersions).toHaveBeenCalledWith("demo", "grids", "grid-1", { signal: expect.any(AbortSignal) }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "第 2 张联合图" }));
     fireEvent.click(await screen.findByLabelText("版本"));
     await waitFor(() => expect(screen.getByText("v3")).toBeInTheDocument());
@@ -362,9 +361,7 @@ describe("GridPreviewPanel 图片地址版本", () => {
     );
     expect(referenceSrc()).toBe("/api/v1/files/demo/characters/主角.png?w=160");
 
-    act(() =>
-      useProjectsStore.setState({ assetFingerprints: { "grids/grid-1.png": 11, "characters/主角.png": 22 } }),
-    );
+    act(() => useProjectsStore.setState({ assetFingerprints: { "grids/grid-1.png": 11, "characters/主角.png": 22 } }));
     expect(await screen.findByRole("img", { name: "联合图" })).toHaveAttribute(
       "src",
       "/api/v1/files/demo/grids/grid-1.png?v=11&w=1280",
@@ -383,7 +380,9 @@ describe("gridImageAspect", () => {
   });
 
   it("记录未冻结视频比例时按项目画幅回退", () => {
-    expect(gridImageAspect({ rows: 2, cols: 2, video_aspect_ratio: null }, { aspect_ratio: "16:9", content_mode: "drama" })).toBe("16:9");
+    expect(
+      gridImageAspect({ rows: 2, cols: 2, video_aspect_ratio: null }, { aspect_ratio: "16:9", content_mode: "drama" }),
+    ).toBe("16:9");
     expect(gridImageAspect({ rows: 2, cols: 2 }, { aspect_ratio: "9:16", content_mode: "drama" })).toBe("9:16");
   });
 });

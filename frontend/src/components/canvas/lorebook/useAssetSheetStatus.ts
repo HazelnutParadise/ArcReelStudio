@@ -47,9 +47,7 @@ export function useSheetStatusByName(
   return useMemo(
     () =>
       new Map(
-        rows
-          .filter((row) => row.asset_type === assetType && row.derivative === null)
-          .map((row) => [row.name, row]),
+        rows.filter((row) => row.asset_type === assetType && row.derivative === null).map((row) => [row.name, row]),
       ),
     [rows, assetType],
   );

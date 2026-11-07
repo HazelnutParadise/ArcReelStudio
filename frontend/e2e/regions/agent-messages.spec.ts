@@ -75,7 +75,7 @@ function buildEntries(): Entry[] {
     },
     { type: "tool_use", id: "tool-read-1", name: "Read", input: { file_path: "scripts/episode_1.json" } },
   ]);
-  push({ type: "tool_result", tool_use_id: "tool-read-1", content: "{\"shots\": []}" });
+  push({ type: "tool_result", tool_use_id: "tool-read-1", content: '{"shots": []}' });
   reply("m-2", [{ type: "text", text: REVIEW_REPLY }]);
   say(
     "参考这篇分析再看看第二段：https://example.com/storyboard/episode-1/opening-sequence/rhythm-analysis?version=20260101&section=night-patrol-and-city-gate 另外第二段里守门人那几句旁白是不是也可以删掉一些，我觉得信息有点重复，观众在画面里已经能看出时间和地点了。",
@@ -149,9 +149,7 @@ async function messagesReady(page: Page) {
 /** 视口停在最底部（误差 1px 以内）。 */
 async function expectAtEnd(page: Page) {
   await expect
-    .poll(() =>
-      transcript(page).evaluate((el) => Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) <= 1),
-    )
+    .poll(() => transcript(page).evaluate((el) => Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) <= 1))
     .toBe(true);
 }
 

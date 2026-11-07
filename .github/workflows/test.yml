@@ -348,6 +348,10 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      - name: Format
+        working-directory: frontend
+        run: pnpm format:check
+
       - name: Lint
         working-directory: frontend
         run: pnpm lint

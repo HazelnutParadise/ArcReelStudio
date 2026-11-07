@@ -47,7 +47,10 @@ interface Props {
 }
 
 /** 获取到的模型添加时的请求：内置供应商对上官方收录的模型即启用它，自定义供应商带调用端点。 */
-function addRequestFor({ model, mediaType, endpoint, binding }: FetchSelection, custom: boolean): AddProviderModelRequest {
+function addRequestFor(
+  { model, mediaType, endpoint, binding }: FetchSelection,
+  custom: boolean,
+): AddProviderModelRequest {
   return {
     model_id: model.model_id,
     media_type: mediaType,
@@ -132,10 +135,7 @@ export function ProviderModelList({
         if (listLoadingRef.current) setReloadKey((k) => k + 1);
         onModelsChanged?.();
       } catch (err) {
-        pushToast(
-          t("pm_toggle_failed", { name: model.display_name ?? model.model_id, message: errMsg(err) }),
-          "error",
-        );
+        pushToast(t("pm_toggle_failed", { name: model.display_name ?? model.model_id, message: errMsg(err) }), "error");
       } finally {
         setPending((prev) => {
           const next = new Set(prev);
@@ -276,13 +276,13 @@ export function ProviderModelList({
         onAdd={addFetched}
       />
       <ProviderModelSheet
-      providerId={providerId}
-      providerName={providerName}
-      open={openModel}
-      custom={custom}
-      onClose={closeSheet}
-      onSaved={handleSheetSaved}
-      onRemoved={handleSheetRemoved}
+        providerId={providerId}
+        providerName={providerName}
+        open={openModel}
+        custom={custom}
+        onClose={closeSheet}
+        onSaved={handleSheetSaved}
+        onRemoved={handleSheetRemoved}
       />
     </>
   );
@@ -338,7 +338,7 @@ export function ProviderModelList({
             {t("common:retry")}
           </Button>
         </div>
-      </section>
+      </section>,
     );
   }
 
@@ -350,7 +350,7 @@ export function ProviderModelList({
           <Loader2 aria-hidden className="size-4 animate-spin text-primary" />
           {t("common:loading")}
         </p>
-      </section>
+      </section>,
     );
   }
 
@@ -397,7 +397,10 @@ export function ProviderModelList({
               {t(MEDIA_LABEL_KEY[media])}
               <span className="ml-1.5 tabular-nums">{group.length}</span>
             </h4>
-            <ul aria-labelledby={groupHeadingId} className="flex flex-col divide-y divide-border/60 rounded-lg border border-border">
+            <ul
+              aria-labelledby={groupHeadingId}
+              className="flex flex-col divide-y divide-border/60 rounded-lg border border-border"
+            >
               {group.map((model) => {
                 const name = model.display_name ?? model.model_id;
                 const price = model.price ? priceSummaryText(t, model.price) : "";
@@ -459,6 +462,6 @@ export function ProviderModelList({
           </div>
         );
       })}
-    </section>
+    </section>,
   );
 }

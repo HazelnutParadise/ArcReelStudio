@@ -1,12 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import type { UsageRecordsQuery } from "@/api";
-import {
-  makeUsageAgentSession,
-  makeUsageRecord,
-  makeUsageSummary,
-} from "@/components/usage/usage-fixtures";
+import { makeUsageAgentSession, makeUsageRecord, makeUsageSummary } from "@/components/usage/usage-fixtures";
 import { createDeferred } from "@/test/deferred";
 import type { UsageAgentSession, UsageRecord } from "@/types";
 import { DEFAULT_USAGE_FILTERS, useUsageRecordsStore, viewPatch } from "./usage-records-store";
@@ -136,11 +132,13 @@ describe("usage-records-store", () => {
       sessions.resolve(sessionPage(null));
       await Promise.all([switching, refreshing]);
 
-      const requests = filters.view === "agent"
-        ? listCursors(API.getUsageSessions)
-        : vi.mocked(API.getUsageRecords).mock.calls
-          .filter(([query]) => query?.models && !isPending(query))
-          .map(([query]) => query?.cursor);
+      const requests =
+        filters.view === "agent"
+          ? listCursors(API.getUsageSessions)
+          : vi
+              .mocked(API.getUsageRecords)
+              .mock.calls.filter(([query]) => query?.models && !isPending(query))
+              .map(([query]) => query?.cursor);
       expect(requests.length).toBeGreaterThan(0);
       expect(requests.every((cursor) => cursor === undefined)).toBe(true);
       expect(useUsageRecordsStore.getState()).toMatchObject({ pageIndex: 0, cursors: [null] });

@@ -59,7 +59,9 @@ export function ManualSplitToolbar({
     summary = (
       <>
         <Scissors className={iconCls} aria-hidden />
-        <span className="text-muted-foreground">{t("dashboard:manual_split_cut_summary", { volume: volume(action.start, action.end) })}</span>
+        <span className="text-muted-foreground">
+          {t("dashboard:manual_split_cut_summary", { volume: volume(action.start, action.end) })}
+        </span>
         <input
           aria-label={t("dashboard:manual_split_title_label")}
           placeholder={t("dashboard:manual_split_title_placeholder")}

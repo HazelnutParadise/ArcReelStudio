@@ -199,7 +199,10 @@ interface Facts {
 }
 
 /** 媒体类内容的一句话现状：「N 个中 M 个已生成」，都齐时「全部 N 个已生成」。 */
-function mediaStatus(t: TFunction, collection: WorkflowArtifactCollection | undefined): { status: string; tone: StepRowTone } {
+function mediaStatus(
+  t: TFunction,
+  collection: WorkflowArtifactCollection | undefined,
+): { status: string; tone: StepRowTone } {
   if (collection?.state === "blocked") return { status: t("workflow:status_unreadable"), tone: "danger" };
   const available = ids(collection, "current_ids").length + ids(collection, "stale_ids").length;
   const total = available + ids(collection, "missing_ids").length;
@@ -230,7 +233,12 @@ function goPlanScriptAct(t: TFunction): StepAct {
 }
 
 function blankScriptAct(t: TFunction): StepAct {
-  return { key: "blank-script", label: t("dashboard:blank_script_start"), kind: "nav", intent: { type: "start_blank_script" } };
+  return {
+    key: "blank-script",
+    label: t("dashboard:blank_script_start"),
+    kind: "nav",
+    intent: { type: "start_blank_script" },
+  };
 }
 
 function draftStatus(t: TFunction, draft: WorkflowDraft): string {
@@ -287,7 +295,14 @@ function buildRows(facts: Facts, ctx: StepListContext): StepRowView[] {
       status: present ? t("workflow:status_brief_present") : t("workflow:status_brief_absent"),
       notes,
       acts: present
-        ? [{ key: "edit-brief", label: t("workflow:act_edit_brief"), kind: "nav", intent: { type: "route", path: "/" } }]
+        ? [
+            {
+              key: "edit-brief",
+              label: t("workflow:act_edit_brief"),
+              kind: "nav",
+              intent: { type: "route", path: "/" },
+            },
+          ]
         : [],
       steps: stepsFor(facts, ["project_input", "selling_points"]),
     });
@@ -349,7 +364,8 @@ function buildRows(facts: Facts, ctx: StepListContext): StepRowView[] {
       planTone = "todo";
     }
     const planOp = status.operations.prepare_script_plan;
-    const planOffered = !planDraft && planState === "missing" && nextType !== "prepare_script_plan" && operationApplies(planOp);
+    const planOffered =
+      !planDraft && planState === "missing" && nextType !== "prepare_script_plan" && operationApplies(planOp);
     let planActs: StepAct[] = [];
     if (planOffered && formal !== "present") {
       // 首次规划只在「脚本规划」tab 的起步区里做，这里只跳过去。
@@ -442,9 +458,17 @@ function buildRows(facts: Facts, ctx: StepListContext): StepRowView[] {
     promptsNotes.push({
       key: "replan",
       tone: "warn",
-      text: t("workflow:note_needs_replan", { count: replan.length, ids: formatNameList(replan.map(ctx.itemLabel), ctx.lang) }),
+      text: t("workflow:note_needs_replan", {
+        count: replan.length,
+        ids: formatNameList(replan.map(ctx.itemLabel), ctx.lang),
+      }),
       act: ctx.canViewUnit
-        ? { key: "view-replan", label: t("workflow:act_view_unit", { id: ctx.itemLabel(replan[0]) }), kind: "nav", intent: { type: "view_unit", unitId: replan[0] } }
+        ? {
+            key: "view-replan",
+            label: t("workflow:act_view_unit", { id: ctx.itemLabel(replan[0]) }),
+            kind: "nav",
+            intent: { type: "view_unit", unitId: replan[0] },
+          }
         : undefined,
     });
   }
@@ -526,7 +550,12 @@ function editActs(facts: Facts, ctx: StepListContext): StepAct[] {
   const { t } = ctx;
   const refusal = refusalReason(t, facts.plan.status.operations.create_edit_timeline);
   return [
-    agentAct(t, t("workflow:agent_prefill_create_edit_timeline", { episodeRef: ctx.episodeRef }), t("workflow:act_agent_edit"), refusal),
+    agentAct(
+      t,
+      t("workflow:agent_prefill_create_edit_timeline", { episodeRef: ctx.episodeRef }),
+      t("workflow:act_agent_edit"),
+      refusal,
+    ),
     {
       key: "create-edit-timeline",
       label: t("workflow:act_create_edit_timeline"),
@@ -566,7 +595,10 @@ function editRow(facts: Facts, ctx: StepListContext): StepRowView {
       tone: "warn",
       text: t("workflow:note_final_cut_stale", {
         count: stale.length,
-        names: formatNameList(stale.map((timeline) => timeline.name), ctx.lang),
+        names: formatNameList(
+          stale.map((timeline) => timeline.name),
+          ctx.lang,
+        ),
       }),
       act: openEditViewAct(ctx, "final-cut-stale-render", t("workflow:act_go_render"), stale[0].id),
     });
@@ -611,7 +643,10 @@ function assetsRow(facts: Facts, ctx: StepListContext): StepRowView {
     notes.push({
       key: "no-description",
       tone: "info",
-      text: t("workflow:note_assets_without_description", { count: names.length, names: formatNameList(names, ctx.lang) }),
+      text: t("workflow:note_assets_without_description", {
+        count: names.length,
+        names: formatNameList(names, ctx.lang),
+      }),
       act: galleryAct("describe", t("workflow:act_fill_description"), names[0]),
     });
   }
@@ -719,7 +754,9 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
   const base = {
     rowKey,
     actionType: action.type,
-    title: t(`workflow:next_title_${action.type}`, { defaultValue: t(`workflow:action_${action.type}`, { defaultValue: t("workflow:action_unknown") }) }),
+    title: t(`workflow:next_title_${action.type}`, {
+      defaultValue: t(`workflow:action_${action.type}`, { defaultValue: t("workflow:action_unknown") }),
+    }),
     detail: null as string | null,
     instruction: null as StepInstruction | null,
     primary: [] as StepAct[],
@@ -747,7 +784,8 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
       const draft = content.drafts.find((d) => d.kind === action.args.draft_kind) ?? content.drafts[0];
       const docType = draft ? draftDocType(draft) : null;
       if (!draft || !docType) return { ...base, detail: t("workflow:next_detail_resolve_draft_unknown") };
-      const surface: EpisodeSurface = draft.kind === PROMPT_AUTHORING_DRAFT_KIND ? "prompt_authoring_draft" : "script_plan";
+      const surface: EpisodeSurface =
+        draft.kind === PROMPT_AUTHORING_DRAFT_KIND ? "prompt_authoring_draft" : "script_plan";
       if (draft.needs_repair) {
         return {
           ...base,
@@ -755,11 +793,26 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
           detail: t("workflow:next_detail_resolve_draft_repair"),
           instruction: { initial: "", persist: null },
           primary: [
-            { key: "agent", label: t("workflow:act_agent"), kind: "agent", intent: { type: "draft_to_agent", docType } },
-            { key: "ai-repair", label: t("dashboard:draft_ai_repair"), kind: "ai", intent: { type: "repair_draft", docType } },
+            {
+              key: "agent",
+              label: t("workflow:act_agent"),
+              kind: "agent",
+              intent: { type: "draft_to_agent", docType },
+            },
+            {
+              key: "ai-repair",
+              label: t("dashboard:draft_ai_repair"),
+              kind: "ai",
+              intent: { type: "repair_draft", docType },
+            },
           ],
           alternatives: [
-            { key: "edit-draft", label: t("workflow:act_edit_draft"), kind: "nav", intent: { type: "show_surface", surface } },
+            {
+              key: "edit-draft",
+              label: t("workflow:act_edit_draft"),
+              kind: "nav",
+              intent: { type: "show_surface", surface },
+            },
             ...(surface === "script_plan"
               ? [
                   {
@@ -770,7 +823,12 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
                   } satisfies StepAct,
                 ]
               : []),
-            { key: "discard-draft", label: t("dashboard:draft_discard_action"), kind: "danger", intent: { type: "discard_draft", docType } },
+            {
+              key: "discard-draft",
+              label: t("dashboard:draft_discard_action"),
+              kind: "danger",
+              intent: { type: "discard_draft", docType },
+            },
           ],
         };
       }
@@ -779,10 +837,19 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
         title: t("workflow:next_title_resolve_draft_agent"),
         detail: t("workflow:next_detail_resolve_draft_agent"),
         primary: [
-          agentAct(t, t("dashboard:draft_agent_finish_prefill", { episodeRef, docType }), t("dashboard:draft_agent_finish")),
+          agentAct(
+            t,
+            t("dashboard:draft_agent_finish_prefill", { episodeRef, docType }),
+            t("dashboard:draft_agent_finish"),
+          ),
         ],
         alternatives: [
-          { key: "discard-draft", label: t("dashboard:draft_agent_discard"), kind: "danger", intent: { type: "discard_draft", docType } },
+          {
+            key: "discard-draft",
+            label: t("dashboard:draft_agent_discard"),
+            kind: "danger",
+            intent: { type: "discard_draft", docType },
+          },
         ],
       };
     }
@@ -811,7 +878,12 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
         ...base,
         detail: t("workflow:next_detail_confirm_script_plan"),
         primary: [
-          { key: "go-confirm", label: t("workflow:act_go_confirm"), kind: "nav", intent: { type: "show_surface", surface: "script_plan" } },
+          {
+            key: "go-confirm",
+            label: t("workflow:act_go_confirm"),
+            kind: "nav",
+            intent: { type: "show_surface", surface: "script_plan" },
+          },
         ],
       };
     case "generate_script":
@@ -823,7 +895,8 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
         alternatives,
       };
     case "collect_project_input": {
-      const reason = refusalReason(t, plan.status.operations.generate_script) ?? t("workflow:refusal_ad_brief_and_products_missing");
+      const reason =
+        refusalReason(t, plan.status.operations.generate_script) ?? t("workflow:refusal_ad_brief_and_products_missing");
       return {
         ...base,
         title: t("workflow:next_title_generate_script"),
@@ -837,7 +910,12 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
           key: "fill-brief",
           tone: "info",
           text: t("workflow:hint_fill_brief"),
-          act: { key: "fill-brief", label: t("workflow:act_fill_brief"), kind: "nav", intent: { type: "route", path: "/" } },
+          act: {
+            key: "fill-brief",
+            label: t("workflow:act_fill_brief"),
+            kind: "nav",
+            intent: { type: "route", path: "/" },
+          },
         },
       };
     }
@@ -855,7 +933,12 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
         { key: "agent", label: t("workflow:act_agent"), kind: "agent", intent: { type: "author_prompts_to_agent" } },
       ];
       if (ctx.canAuthorPrompts) {
-        primary.push({ key: "author", label: t("workflow:act_author_prompts"), kind: "ai", intent: { type: "author_prompts" } });
+        primary.push({
+          key: "author",
+          label: t("workflow:act_author_prompts"),
+          kind: "ai",
+          intent: { type: "author_prompts" },
+        });
       }
       return {
         ...base,
@@ -876,7 +959,12 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
         ),
       ];
       if (first && ctx.canViewUnit) {
-        primary.push({ key: "view", label: t("workflow:act_view_unit", { id: ctx.itemLabel(first) }), kind: "nav", intent: { type: "view_unit", unitId: first } });
+        primary.push({
+          key: "view",
+          label: t("workflow:act_view_unit", { id: ctx.itemLabel(first) }),
+          kind: "nav",
+          intent: { type: "view_unit", unitId: first },
+        });
       }
       return {
         ...base,
@@ -896,7 +984,10 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
     case "generate_asset_sheets":
       return {
         ...base,
-        detail: t("workflow:next_detail_generate_asset_sheets", { count, names: formatNameList(action.requested_ids, ctx.lang) }),
+        detail: t("workflow:next_detail_generate_asset_sheets", {
+          count,
+          names: formatNameList(action.requested_ids, ctx.lang),
+        }),
         primary: [
           agentAct(t, t("workflow:agent_prefill_generate_asset_sheets", { episodeRef })),
           {
@@ -923,7 +1014,9 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
       if (batchKind) {
         primary.push({
           key: "batch",
-          label: t(batchKind === "storyboards" ? "dashboard:batch_generate_storyboards" : "dashboard:batch_generate_videos"),
+          label: t(
+            batchKind === "storyboards" ? "dashboard:batch_generate_storyboards" : "dashboard:batch_generate_videos",
+          ),
           kind: "ai",
           intent: { type: "storyboard_batch", episodeId: ctx.episodeId, kind: batchKind },
         });
@@ -967,7 +1060,12 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
       return {
         ...base,
         primary: [
-          { key: "settings", label: t("workflow:act_open_settings"), kind: "nav", intent: { type: "route", path: `~${ROUTE_APP_SETTINGS}` } },
+          {
+            key: "settings",
+            label: t("workflow:act_open_settings"),
+            kind: "nav",
+            intent: { type: "route", path: `~${ROUTE_APP_SETTINGS}` },
+          },
         ],
       };
     case "confirm_request_duration":
@@ -984,7 +1082,11 @@ function buildNext(facts: Facts, rows: StepRowView[], ctx: StepListContext): Nex
  * 引用了还没有资产图的资产时，生成入口会拒绝引用它们的分镜：下一步照常给出，另附一条跳转提示。
  * 提示只说数量，具体是哪些资产、为什么没有资产图由资产图行的提醒陈述。视频只在参考生视频模式直接引用资产。
  */
-function unsheetedAssetsHint(facts: Facts, ctx: StepListContext, actionType: WorkflowNextAction["type"]): StepNote | null {
+function unsheetedAssetsHint(
+  facts: Facts,
+  ctx: StepListContext,
+  actionType: WorkflowNextAction["type"],
+): StepNote | null {
   const names = facts.content.referenced_assets_without_sheet;
   if (names.length === 0) return null;
   if (actionType === "generate_videos" && facts.plan.status.project.generation_mode !== "reference_video") return null;
@@ -994,7 +1096,14 @@ function unsheetedAssetsHint(facts: Facts, ctx: StepListContext, actionType: Wor
     key: "unsheeted-assets",
     tone: "warn",
     text: t(`workflow:hint_assets_without_sheet_${facts.unitWordKey}`, { count: names.length }),
-    act: path ? { key: "unsheeted-gallery", label: t("workflow:act_view_gallery"), kind: "nav", intent: { type: "route", path } } : undefined,
+    act: path
+      ? {
+          key: "unsheeted-gallery",
+          label: t("workflow:act_view_gallery"),
+          kind: "nav",
+          intent: { type: "route", path },
+        }
+      : undefined,
   };
 }
 

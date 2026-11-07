@@ -55,25 +55,28 @@ export function PromptPreviewButton<T extends RenderedPromptPreview>({
 
   // 接管方轮换 controller：新一轮加载先作废上一轮，被作废方不再回写共享状态。
   const inflight = useRef<AbortController | null>(null);
-  const fetchPreview = useCallback(async (prepared?: AbortController) => {
-    if (!prepared) inflight.current?.abort();
-    const controller = prepared ?? new AbortController();
-    inflight.current = controller;
-    const { signal } = controller;
-    setLoading(true);
-    setError(null);
-    try {
-      const next = await load(signal);
-      if (signal.aborted || inflight.current !== controller) return;
-      setResult(next);
-    } catch (e) {
-      if (signal.aborted || inflight.current !== controller) return;
-      setError(errMsg(e));
-    } finally {
-      // react-doctor-disable-next-line react-doctor/no-loading-flag-reset-outside-finally -- 已在 finally 中复位；只有仍持有 inflight 的请求才复位，被接管的请求交给接管方收尾
-      if (!signal.aborted && inflight.current === controller) setLoading(false);
-    }
-  }, [load]);
+  const fetchPreview = useCallback(
+    async (prepared?: AbortController) => {
+      if (!prepared) inflight.current?.abort();
+      const controller = prepared ?? new AbortController();
+      inflight.current = controller;
+      const { signal } = controller;
+      setLoading(true);
+      setError(null);
+      try {
+        const next = await load(signal);
+        if (signal.aborted || inflight.current !== controller) return;
+        setResult(next);
+      } catch (e) {
+        if (signal.aborted || inflight.current !== controller) return;
+        setError(errMsg(e));
+      } finally {
+        // react-doctor-disable-next-line react-doctor/no-loading-flag-reset-outside-finally -- 已在 finally 中复位；只有仍持有 inflight 的请求才复位，被接管的请求交给接管方收尾
+        if (!signal.aborted && inflight.current === controller) setLoading(false);
+      }
+    },
+    [load],
+  );
 
   // 卸载时作废在途请求：清理函数不写 state，只切断被接管方的回写。
   useEffect(() => () => inflight.current?.abort(), []);
@@ -122,7 +125,13 @@ export function PromptPreviewButton<T extends RenderedPromptPreview>({
 
   return (
     <>
-      <Button variant="ghost" size="xs" onClick={() => void handleOpen()} disabled={disabled || preparing} title={title}>
+      <Button
+        variant="ghost"
+        size="xs"
+        onClick={() => void handleOpen()}
+        disabled={disabled || preparing}
+        title={title}
+      >
         <Eye aria-hidden data-icon="inline-start" />
         {t(saveFirst ? "prompt_preview_save_first" : "prompt_preview_open")}
       </Button>
@@ -170,7 +179,11 @@ export function PromptPreviewButton<T extends RenderedPromptPreview>({
             </Button>
             {result?.text ? (
               <Button onClick={() => handleCopy(result.text ?? "")}>
-                {copied ? <Check aria-hidden data-icon="inline-start" /> : <Copy aria-hidden data-icon="inline-start" />}
+                {copied ? (
+                  <Check aria-hidden data-icon="inline-start" />
+                ) : (
+                  <Copy aria-hidden data-icon="inline-start" />
+                )}
                 {copied ? t("message_copied") : t("prompt_preview_copy")}
               </Button>
             ) : null}

@@ -8,14 +8,7 @@ import type { PromptTemplateDetail } from "@/types";
 import { errMsg } from "@/utils/async";
 import { flattenOutputSchema } from "./promptTemplateSchema";
 import { categoryLabel } from "./promptTemplateCategory";
-import {
-  CHIP_CLS,
-  DetailSection,
-  ErrorCard,
-  LoadingCard,
-  LockBadge,
-  type Load,
-} from "./promptTemplateShared";
+import { CHIP_CLS, DetailSection, ErrorCard, LoadingCard, LockBadge, type Load } from "./promptTemplateShared";
 import { PromptTemplateSource } from "./PromptTemplateSource";
 
 export function PromptTemplateDetailView({
@@ -58,11 +51,7 @@ export function PromptTemplateDetailView({
 
       {state.status === "loading" && <LoadingCard label={t("dashboard:prompt_templates_loading")} />}
       {state.status === "error" && (
-        <ErrorCard
-          title={t("dashboard:prompt_templates_detail_load_failed")}
-          message={state.message}
-          onRetry={retry}
-        />
+        <ErrorCard title={t("dashboard:prompt_templates_detail_load_failed")} message={state.message} onRetry={retry} />
       )}
       {state.status === "ready" && <DetailBody detail={state.data} onOpenPartial={onOpenPartial} />}
     </div>
@@ -80,10 +69,7 @@ function DetailBody({
   const { template, source, partials, output_schema: outputSchema } = detail;
   const axes = Object.entries(template.applies_to);
   const slots = Object.entries(template.slots);
-  const schemaRows = useMemo(
-    () => (outputSchema ? flattenOutputSchema(outputSchema) : []),
-    [outputSchema],
-  );
+  const schemaRows = useMemo(() => (outputSchema ? flattenOutputSchema(outputSchema) : []), [outputSchema]);
 
   return (
     <div className="flex w-full flex-col gap-6">

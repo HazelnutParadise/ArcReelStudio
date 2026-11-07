@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -16,7 +16,9 @@ describe("StartBlankScriptButton", () => {
   });
 
   it("warns when the blank script is created but the project refresh fails", async () => {
-    const start = vi.spyOn(API, "startBlankScript").mockResolvedValue({ success: true, script_file: "scripts/episode_2.json" });
+    const start = vi
+      .spyOn(API, "startBlankScript")
+      .mockResolvedValue({ success: true, script_file: "scripts/episode_2.json" });
     vi.spyOn(API, "getProject").mockRejectedValue(new Error("offline"));
     render(<StartBlankScriptButton projectName="demo" episode={2} discardsPlan={false} />);
 

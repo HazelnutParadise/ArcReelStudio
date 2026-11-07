@@ -2,7 +2,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowUp, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 
-import { SortableHandle, SortableItem, SortableList, type SortableMove } from "@/components/shared/sortable/SortableList";
+import {
+  SortableHandle,
+  SortableItem,
+  SortableList,
+  type SortableMove,
+} from "@/components/shared/sortable/SortableList";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -68,8 +73,7 @@ export function SidebarEpisodeList({
   const nameOf = (ep: EpisodeMeta, position: number) =>
     ep.title?.trim() || t("common:episode_position_name", { position });
 
-  const check = (episode: number, after: number | null) =>
-    episodeMoveCheck(episodes, wholeSourceFiles, episode, after);
+  const check = (episode: number, after: number | null) => episodeMoveCheck(episodes, wholeSourceFiles, episode, after);
 
   const move = (episode: number, after: number | null) => {
     if (moving) return;

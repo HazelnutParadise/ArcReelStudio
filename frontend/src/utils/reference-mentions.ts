@@ -214,7 +214,9 @@ export const LINE_BREAK_RE = /(\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029])/;
  */
 export function splitScriptLines(text: string): string[] {
   if (text.length === 0) return [];
-  const lines = normalizeSource(text).split(LINE_BREAK_RE).filter((_, i) => i % 2 === 0);
+  const lines = normalizeSource(text)
+    .split(LINE_BREAK_RE)
+    .filter((_, i) => i % 2 === 0);
   if (lines[lines.length - 1] === "") lines.pop();
   return lines;
 }
@@ -271,8 +273,9 @@ export type MentionLookup = Record<string, ProjectAssetKind>;
 
 // Python str.strip() whitespace set. JavaScript trim() additionally removes U+FEFF,
 // but backend asset-name comparison deliberately treats U+FEFF as a name character.
-// eslint-disable-next-line no-control-regex -- 须显式匹配 Python str.strip() 空白集中的控制字符
-const PYTHON_STRIP_RE = /^[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/gu;
+const PYTHON_STRIP_RE =
+  // eslint-disable-next-line no-control-regex -- 须显式匹配 Python str.strip() 空白集中的控制字符
+  /^[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/gu;
 
 /**
  * 把资产名归一到项目名称空间的比对坐标系（strip + Unicode NFC）。镜像后端
@@ -322,9 +325,7 @@ export interface CharacterForm {
  * `lib/references/reference_catalog.py::ReferenceCatalog` 对角色类的展开（见 `docs/adr/0072`）：
  * 引用弹窗的候选、头像堆的取图与编辑器高亮都从这一处取名字，不各自遍历 `derivatives`。
  */
-export function characterReferenceForms(
-  characters: Record<string, Character> | null | undefined,
-): CharacterForm[] {
+export function characterReferenceForms(characters: Record<string, Character> | null | undefined): CharacterForm[] {
   const forms: CharacterForm[] = [];
   for (const [name, character] of Object.entries(characters ?? {})) {
     forms.push({ name, ownerName: name, derivativeName: "", asset: character });

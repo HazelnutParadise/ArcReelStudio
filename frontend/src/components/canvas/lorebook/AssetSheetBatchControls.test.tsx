@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { AssetSheetStatusRow } from "@/types";
 import { AssetSheetBatchControls } from "./AssetSheetBatchControls";
 
@@ -35,4 +35,3 @@ describe("AssetSheetBatchControls", () => {
     expect(screen.getByText("另有 1 个资产缺少描述")).toBeInTheDocument();
   });
 });
-

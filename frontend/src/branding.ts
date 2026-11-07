@@ -27,4 +27,3 @@ export const BRAND = {
 } as const;
 
 export const BRAND_DOCUMENT_TITLE = `${BRAND.name} · ${BRAND.tagline}`;
-

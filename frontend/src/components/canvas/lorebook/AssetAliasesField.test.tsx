@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { API } from "@/api";
@@ -10,7 +10,10 @@ import { AssetAliasesField } from "./AssetAliasesField";
 
 describe("AssetAliasesField", () => {
   beforeEach(() => useAppStore.setState(useAppStore.getInitialState(), true));
-  afterEach(() => { vi.restoreAllMocks(); useTasksStore.setState({ tasks: [], optimisticActive: new Set() }); });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    useTasksStore.setState({ tasks: [], optimisticActive: new Set() });
+  });
 
   function stubSave() {
     vi.spyOn(useProjectsStore.getState(), "refreshProject").mockResolvedValue("success");
@@ -46,9 +49,7 @@ describe("AssetAliasesField", () => {
     const toast = useAppStore.getState().toast;
     expect(toast?.text).toBe("已删除别名「村头」");
     toast?.action?.onClick();
-    await waitFor(() =>
-      expect(update).toHaveBeenLastCalledWith("p", "村口", { aliases: ["槐树下", "村头"] }),
-    );
+    await waitFor(() => expect(update).toHaveBeenLastCalledWith("p", "村口", { aliases: ["槐树下", "村头"] }));
   });
 
   it("warns instead of offering an undo it could not honour when the refresh after removing fails", async () => {
@@ -88,7 +89,9 @@ describe("AssetAliasesField", () => {
     render(<AssetAliasesField projectName="p" name="村口" assetType="scene" aliases={[]} />);
     await user.click(screen.getByRole("button", { name: "添加别名" }));
     await user.type(await screen.findByLabelText("别名"), "槐树下");
-    useTasksStore.setState({ tasks: [makeTask({ project_name: "p", task_type: "scene", resource_id: "村口", status: "running" })] });
+    useTasksStore.setState({
+      tasks: [makeTask({ project_name: "p", task_type: "scene", resource_id: "村口", status: "running" })],
+    });
     await user.click(screen.getByRole("button", { name: "添加" }));
     expect(update).not.toHaveBeenCalled();
     expect(screen.getByLabelText("别名")).toHaveValue("槐树下");

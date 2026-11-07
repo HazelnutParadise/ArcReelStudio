@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -37,30 +37,14 @@ describe("MentionPicker", () => {
   });
 
   it("renders three group headers when all groups have items", () => {
-    render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByTestId("picker-group-character")).toBeInTheDocument();
     expect(screen.getByTestId("picker-group-scene")).toBeInTheDocument();
     expect(screen.getByTestId("picker-group-prop")).toBeInTheDocument();
   });
 
   it("hides a group when it has no items after filtering", () => {
-    render(
-      <MentionPicker
-        open
-        query="主"
-        candidates={CANDIDATES}
-        onSelect={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="主" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByTestId("picker-group-scene")).not.toBeInTheDocument();
     expect(screen.queryByTestId("picker-group-prop")).not.toBeInTheDocument();
     expect(screen.getByText("主角")).toBeInTheDocument();
@@ -68,19 +52,14 @@ describe("MentionPicker", () => {
 
   it("filters case-insensitively by substring", () => {
     const altCandidates = {
-      character: [{ name: "Alice", imagePath: null }, { name: "Bob", imagePath: null }],
+      character: [
+        { name: "Alice", imagePath: null },
+        { name: "Bob", imagePath: null },
+      ],
       scene: [],
       prop: [],
     };
-    render(
-      <MentionPicker
-        open
-        query="ali"
-        candidates={altCandidates}
-        onSelect={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="ali" candidates={altCandidates} onSelect={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.queryByText("Bob")).not.toBeInTheDocument();
   });
@@ -94,28 +73,12 @@ describe("MentionPicker", () => {
       scene: [],
       prop: [],
     };
-    render(
-      <MentionPicker
-        open
-        query={queryNfc}
-        candidates={altCandidates}
-        onSelect={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query={queryNfc} candidates={altCandidates} onSelect={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByText(nameNfd)).toBeInTheDocument();
   });
 
   it("shows empty state when nothing matches", () => {
-    render(
-      <MentionPicker
-        open
-        query="xxxnomatch"
-        candidates={CANDIDATES}
-        onSelect={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="xxxnomatch" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByText(/No matches|无匹配项/)).toBeInTheDocument();
   });
 
@@ -136,15 +99,7 @@ describe("MentionPicker", () => {
 
   it("invokes onSelect with {type,name} when an option is clicked", () => {
     const onSelect = vi.fn();
-    render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={onSelect}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={onSelect} onClose={vi.fn()} />);
     fireEvent.click(screen.getByRole("option", { name: /张三/ }));
     expect(onSelect).toHaveBeenCalledWith({ type: "character", name: "张三" });
   });
@@ -152,15 +107,7 @@ describe("MentionPicker", () => {
   it("supports ArrowDown/ArrowUp/Enter keyboard navigation", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
-    render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={onSelect}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={onSelect} onClose={vi.fn()} />);
     // First option is initially active
     await user.keyboard("{ArrowDown}{ArrowDown}");
     await user.keyboard("{Enter}");
@@ -171,15 +118,7 @@ describe("MentionPicker", () => {
   it("calls onClose when Escape is pressed", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={vi.fn()}
-        onClose={onClose}
-      />,
-    );
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={vi.fn()} onClose={onClose} />);
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalled();
   });
@@ -188,25 +127,11 @@ describe("MentionPicker", () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
     const { rerender } = render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={onSelect}
-        onClose={vi.fn()}
-      />,
+      <MentionPicker open query="" candidates={CANDIDATES} onSelect={onSelect} onClose={vi.fn()} />,
     );
     // Move highlight down twice (主角 → 张三 → 酒馆) then narrow the filter.
     await user.keyboard("{ArrowDown}{ArrowDown}");
-    rerender(
-      <MentionPicker
-        open
-        query="主"
-        candidates={CANDIDATES}
-        onSelect={onSelect}
-        onClose={vi.fn()}
-      />,
-    );
+    rerender(<MentionPicker open query="主" candidates={CANDIDATES} onSelect={onSelect} onClose={vi.fn()} />);
     // After the filter change, Enter must pick the first item in the filtered
     // list (主角), not whatever was highlighted before.
     await user.keyboard("{Enter}");
@@ -215,13 +140,7 @@ describe("MentionPicker", () => {
 
   it("renders nothing when open=false", () => {
     const { container } = render(
-      <MentionPicker
-        open={false}
-        query=""
-        candidates={CANDIDATES}
-        onSelect={vi.fn()}
-        onClose={vi.fn()}
-      />,
+      <MentionPicker open={false} query="" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />,
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -323,15 +242,7 @@ describe("MentionPicker", () => {
   });
 
   it("renders five tabs (all/product/character/scene/prop) with counts", () => {
-    render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />);
     const tabs = screen.getAllByRole("tab");
     expect(tabs).toHaveLength(5);
     // 第一个 tab 是 "全部/All"，默认选中
@@ -342,15 +253,7 @@ describe("MentionPicker", () => {
 
   it("activating the scene tab restricts visible options to that kind", async () => {
     const user = userEvent.setup();
-    render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />);
     const sceneTab = screen.getByRole("tab", { name: /场景|Scene/i });
     await user.click(sceneTab);
     expect(sceneTab).toHaveAttribute("aria-selected", "true");
@@ -364,15 +267,7 @@ describe("MentionPicker", () => {
   it("Tab key completes the active mention like Enter", async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
-    render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={onSelect}
-        onClose={vi.fn()}
-      />,
-    );
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={onSelect} onClose={vi.fn()} />);
     await user.keyboard("{Tab}");
     expect(onSelect).toHaveBeenCalledWith({ type: "character", name: "主角" });
   });
@@ -397,15 +292,7 @@ describe("MentionPicker", () => {
   it("Shift+Tab does not trigger selection nor preventDefault (keeps a11y focus reversal)", () => {
     const onSelect = vi.fn();
     const onClose = vi.fn();
-    render(
-      <MentionPicker
-        open
-        query=""
-        candidates={CANDIDATES}
-        onSelect={onSelect}
-        onClose={onClose}
-      />,
-    );
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={onSelect} onClose={onClose} />);
     // picker 以 window keydown 监听；Shift+Tab 应当是 no-op（不插入、不吞 preventDefault）
     const event = new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, cancelable: true });
     window.dispatchEvent(event);

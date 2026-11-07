@@ -1,4 +1,4 @@
-import type enAssets from '../en/assets';
+import type enAssets from "../en/assets";
 
 export default {
   prompt_preview_title: "資產圖提示詞 · {{name}}",
@@ -34,7 +34,8 @@ export default {
   "merge_mode_asset": "併為本體",
   "merge_mode_asset_hint": "「{{name}}」和它的別名記為保留方的別名。",
   "merge_mode_derivative": "併為衍生",
-  "merge_mode_derivative_hint": "「{{name}}」成為保留方的一個衍生，沿用它的描述，衍生資產圖待生成；台詞仍歸保留方本人。",
+  "merge_mode_derivative_hint":
+    "「{{name}}」成為保留方的一個衍生，沿用它的描述，衍生資產圖待生成；台詞仍歸保留方本人。",
   "merge_source_description": "「{{name}}」的描述",
   "merge_copy_description": "複製描述",
   "merge_source_description_empty": "沒有描述。",
@@ -56,7 +57,8 @@ export default {
   "merge_derivative_existing": "保留方已有名為「{{name}}」的衍生，併入這個衍生，被並方的描述不保留。",
   "merge_derivatives_moved": "遷到保留方名下的衍生：{{names}}",
   "merge_derivatives_folded": "併入保留方已有同名衍生的：{{names}}",
-  "merge_discarded": "「{{name}}」的描述、資產圖及版本歷史、聲音設定、原圖和參考音訊不併入保留方，將移入專案垃圾桶，保留 30 天。劇本里改指保留方的引用不會隨恢復改回。",
+  "merge_discarded":
+    "「{{name}}」的描述、資產圖及版本歷史、聲音設定、原圖和參考音訊不併入保留方，將移入專案垃圾桶，保留 30 天。劇本里改指保留方的引用不會隨恢復改回。",
   "merge_confirm": "併入",
   "merging": "正在合併…",
   "merge_failed": "合併失敗：{{message}}",
@@ -100,7 +102,8 @@ export default {
   "delete": "刪除",
   "derivatives": "衍生",
   "derivatives_with_count": "衍生（{{n}}）",
-  "derivative_hint": "衍生是這個角色的另一套持續外觀，如換裝、變身，只寫相對本體的變化。在腳本里用 @[角色/衍生] 引用它。",
+  "derivative_hint":
+    "衍生是這個角色的另一套持續外觀，如換裝、變身，只寫相對本體的變化。在腳本里用 @[角色/衍生] 引用它。",
   "derivative_name": "衍生名",
   "derivative_name_placeholder": "如「戰鬥裝」",
   "derivative_description": "外觀變化",
@@ -178,8 +181,10 @@ export default {
   "reference_audio_included": "附帶參考音訊",
   "derivatives_count_one": "{{count}} 個衍生",
   "derivatives_count_other": "{{count}} 個衍生",
-  "library_derivatives_edit_note_one": "這個角色有 {{count}} 個衍生，隨角色一起進出資產庫；衍生在專案的角色詳情裡編輯。",
-  "library_derivatives_edit_note_other": "這個角色有 {{count}} 個衍生，隨角色一起進出資產庫；衍生在專案的角色詳情裡編輯。",
+  "library_derivatives_edit_note_one":
+    "這個角色有 {{count}} 個衍生，隨角色一起進出資產庫；衍生在專案的角色詳情裡編輯。",
+  "library_derivatives_edit_note_other":
+    "這個角色有 {{count}} 個衍生，隨角色一起進出資產庫；衍生在專案的角色詳情裡編輯。",
   "back_to_details": "返回詳情",
   "edit_leave_title": "「{{name}}」有未儲存的修改",
   "create_failed": "建立失敗：{{message}}",
@@ -192,7 +197,8 @@ export default {
   "load_more_failed": "載入更多失敗：{{message}}",
   "delete_title": "刪除{{type}}「{{name}}」？",
   "delete_description": "只從資產庫刪除，已應用到專案裡的副本不受影響。資產圖會一併刪除，刪除後無法恢復。",
-  "delete_description_with_audio": "只從資產庫刪除，已應用到專案裡的副本不受影響。資產圖與參考音訊會一併刪除，刪除後無法恢復。",
+  "delete_description_with_audio":
+    "只從資產庫刪除，已應用到專案裡的副本不受影響。資產圖與參考音訊會一併刪除，刪除後無法恢復。",
   "delete_failed": "刪除失敗：{{message}}",
   "apply_to_project": "應用到專案…",
   "apply_title": "把「{{name}}」應用到專案",
@@ -255,13 +261,20 @@ export default {
   "gallery_delete_title.product": "刪除商品「{{name}}」？",
   "gallery_delete_checking": "正在檢查腳本里的引用…",
   "gallery_delete_check_failed": "無法檢查引用：{{message}}",
-  "gallery_delete_moves_to_trash": "資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
-  "gallery_delete_impact_single_one": "被「{{episode}}」中的 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
-  "gallery_delete_impact_single_other": "被「{{episode}}」中的 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
-  "gallery_delete_impact_many_one": "被「{{episode}}」等 {{episodes}} 集共 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
-  "gallery_delete_impact_many_other": "被「{{episode}}」等 {{episodes}} 集共 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
-  "gallery_delete_impact_unattributed_one": "被 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
-  "gallery_delete_impact_unattributed_other": "被 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
+  "gallery_delete_moves_to_trash":
+    "資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
+  "gallery_delete_impact_single_one":
+    "被「{{episode}}」中的 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
+  "gallery_delete_impact_single_other":
+    "被「{{episode}}」中的 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
+  "gallery_delete_impact_many_one":
+    "被「{{episode}}」等 {{episodes}} 集共 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
+  "gallery_delete_impact_many_other":
+    "被「{{episode}}」等 {{episodes}} 集共 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
+  "gallery_delete_impact_unattributed_one":
+    "被 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
+  "gallery_delete_impact_unattributed_other":
+    "被 {{count}} 處引用，刪除後這些分鏡在生成時會被攔下。資產將連同資產圖、版本歷史與衍生移入專案垃圾桶，保留 30 天，期間可以在「檔案」檢視的專案垃圾桶裡恢復。",
   "gallery_delete_episode_count_one": "{{count}} 處",
   "gallery_delete_episode_count_other": "{{count}} 處",
   "gallery_delete_merge_instead": "改為併入…",
@@ -298,7 +311,8 @@ export default {
   "viewer_image_alt_version": "「{{name}}」的資產圖，第 {{version}} 版",
   "viewer_restore": "還原到此版本",
   "viewer_restore_title": "還原到第 {{version}} 版？",
-  "viewer_restore_description": "「{{name}}」的資產圖會換成第 {{version}} 版。其他版本仍保留在版本記錄裡，之後可以再還原。",
+  "viewer_restore_description":
+    "「{{name}}」的資產圖會換成第 {{version}} 版。其他版本仍保留在版本記錄裡，之後可以再還原。",
   "viewer_restore_confirm": "還原",
   "viewer_restore_busy_hint": "資產圖正在生成、上傳或修改，完成後才能還原版本。",
   "viewer_restore_failed": "還原失敗：{{message}}",
@@ -308,11 +322,13 @@ export default {
   "derivative_copy_token": "複製引用記號 {{token}}",
   "derivative_delete_title": "刪除衍生「{{name}}」？",
   "derivative_delete_description": "外觀變化描述與衍生圖將一起移入專案垃圾桶，保留 30 天。",
-  "derivative_delete_description_referenced": "腳本中仍在用 {{token}} 引用它。外觀變化描述與衍生圖將一起移入專案垃圾桶，保留 30 天。",
+  "derivative_delete_description_referenced":
+    "腳本中仍在用 {{token}} 引用它。外觀變化描述與衍生圖將一起移入專案垃圾桶，保留 30 天。",
   editor_derivative_removed: "此衍生已被刪除或改名。未儲存的修改仍保留，儲存或放棄後採用當前狀態。",
   "provider_asset_select_from_library": "從供應商素材庫選擇",
   "provider_asset_dialog_title": "從供應商素材庫選擇",
-  "provider_asset_dialog_desc": "選擇一張可用的圖片素材。ArcReel 取回原圖，儲存為這張圖片的新版本，並與該素材建立關聯。",
+  "provider_asset_dialog_desc":
+    "選擇一張可用的圖片素材。ArcReel 取回原圖，儲存為這張圖片的新版本，並與該素材建立關聯。",
   "provider_asset_account": "素材庫帳號",
   "provider_asset_no_account": "還沒有素材庫帳號。在設定的「素材庫與儲存」中新增帳號後再選擇。",
   "provider_asset_open_settings": "前往設定",
@@ -338,10 +354,12 @@ export default {
   "provider_asset_import_done": "已匯入為第 {{version}} 版",
   "provider_asset_import_done_left": "供應商素材已匯入專案「{{project}}」，成為第 {{version}} 版",
   "provider_asset_import_failed_left": "供應商素材未匯入專案「{{project}}」，原選中的圖片不變：{{message}}",
-  "provider_asset_import_unknown_left": "無法確認供應商素材是否已匯入專案「{{project}}」：匯入期間沒有收到服務端的確定結果。回到該專案檢視版本歷史，確認沒有新版本後再重新選擇。",
+  "provider_asset_import_unknown_left":
+    "無法確認供應商素材是否已匯入專案「{{project}}」：匯入期間沒有收到服務端的確定結果。回到該專案檢視版本歷史，確認沒有新版本後再重新選擇。",
   "provider_asset_upload": "上傳到供應商素材庫",
   "provider_asset_upload_title": "上傳到供應商素材庫",
-  "provider_asset_upload_desc": "上傳這張圖片當前選中的版本，經你的物件儲存中轉後提交入庫。供應商稽核期間可以關閉視窗，只有可用的關聯會用於生成。",
+  "provider_asset_upload_desc":
+    "上傳這張圖片當前選中的版本，經你的物件儲存中轉後提交入庫。供應商稽核期間可以關閉視窗，只有可用的關聯會用於生成。",
   "provider_asset_upload_version": "當前版本：第 {{version}} 版",
   "provider_asset_upload_no_image": "這張圖片還沒有可上傳的版本。先生成或上傳圖片。",
   "provider_asset_upload_no_account": "還沒有素材庫帳號。在設定的「素材庫與儲存」中新增帳號後再上傳。",
@@ -361,14 +379,17 @@ export default {
   "provider_asset_link_state_active": "可用",
   "provider_asset_link_state_failed": "失敗",
   "provider_asset_link_state_uncertain": "結果待確認",
-  "provider_asset_link_hint_uncertain": "提交結果不確定，正在按提交記錄查詢素材，不會重複建立。長時間沒有結果時，解除關聯後重新上傳。",
+  "provider_asset_link_hint_uncertain":
+    "提交結果不確定，正在按提交記錄查詢素材，不會重複建立。長時間沒有結果時，解除關聯後重新上傳。",
   "provider_asset_link_hint_stalled": "已停止自動查詢。點「重新整理狀態」重新查詢。",
   "provider_asset_link_failure_provider": "供應商未完成入庫。解除關聯後可以重新上傳。",
   "provider_asset_link_failure_unlinked_before_submit": "上傳前已解除關聯，沒有提交入庫。",
   "provider_asset_link_failure_account_missing": "素材庫帳號已刪除，沒有提交入庫。",
-  "provider_asset_link_failure_account_scope_changed": "素材庫帳號的 Access Key、站點、區域或專案已修改，沒有提交入庫。",
+  "provider_asset_link_failure_account_scope_changed":
+    "素材庫帳號的 Access Key、站點、區域或專案已修改，沒有提交入庫。",
   "provider_asset_link_failure_object_storage_missing": "物件儲存連線已刪除，沒有提交入庫。",
   "provider_asset_link_failure_content_unavailable": "圖片版本檔案不存在，沒有提交入庫。",
   "provider_asset_link_failure_content_changed": "圖片版本檔案與記錄不一致，沒有提交入庫。",
-  "provider_asset_link_failure_relay_upload_failed": "上傳到物件儲存失敗，沒有提交入庫。檢查物件儲存連線後，解除關聯並重新上傳。",
+  "provider_asset_link_failure_relay_upload_failed":
+    "上傳到物件儲存失敗，沒有提交入庫。檢查物件儲存連線後，解除關聯並重新上傳。",
 } satisfies Record<keyof typeof enAssets, string>;

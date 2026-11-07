@@ -211,7 +211,11 @@ const DRIVER_ARIA = ["aria-haspopup", "aria-expanded", "aria-controls"] as const
 const DRIVER_DUMMY_ID = "driver-dummy-element";
 
 function snapshotAria(snapshots: Map<Element, (string | null)[]>, el: Element): void {
-  if (!snapshots.has(el)) snapshots.set(el, DRIVER_ARIA.map((name) => el.getAttribute(name)));
+  if (!snapshots.has(el))
+    snapshots.set(
+      el,
+      DRIVER_ARIA.map((name) => el.getAttribute(name)),
+    );
 }
 
 function restoreAria(snapshots: Map<Element, (string | null)[]>): void {

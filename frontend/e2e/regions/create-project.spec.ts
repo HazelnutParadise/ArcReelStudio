@@ -34,7 +34,10 @@ function manyModels(): ApiOverrides {
           audio_backends: audio,
           provider_names: { "custom-12": "自建 OpenAI 兼容网关 · 华东二区备用线路（按量计费）" },
           model_names: Object.fromEntries(
-            [...video, ...image, ...text, ...audio].map((id, i) => [id, `超长模型名称 ${i + 1} · 高清长时长电影级生成（预览版）`]),
+            [...video, ...image, ...text, ...audio].map((id, i) => [
+              id,
+              `超长模型名称 ${i + 1} · 高清长时长电影级生成（预览版）`,
+            ]),
           ),
         },
       },
@@ -49,8 +52,6 @@ async function lobbyReady(page: Page) {
 function wizard(page: Page): Locator {
   return page.getByRole("dialog", { name: "新建项目" });
 }
-
-
 
 async function openWizard(page: Page) {
   await page.getByRole("button", { name: "新建项目" }).first().click();
@@ -227,8 +228,12 @@ defineRegionScenarios("新建项目向导", [
       const dialog = wizard(page);
       await dialog.getByRole("tab", { name: /自定义/ }).click();
       await dialog.locator('input[type="file"]').setInputFiles({
-        name: "reference.png", mimeType: "image/png",
-        buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4X0AAAAASUVORK5CYII=", "base64"),
+        name: "reference.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4X0AAAAASUVORK5CYII=",
+          "base64",
+        ),
       });
       const preview = dialog.getByRole("img", { name: "上传风格参考图" });
       await expect(preview).toBeVisible();

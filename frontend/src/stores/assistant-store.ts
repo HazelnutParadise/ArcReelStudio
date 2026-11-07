@@ -330,9 +330,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
       const index = queuedMessages.findIndex((m) => m.id === message.id);
       set({
         queuedMessages:
-          index < 0
-            ? [...queuedMessages, message]
-            : queuedMessages.map((m, i) => (i === index ? message : m)),
+          index < 0 ? [...queuedMessages, message] : queuedMessages.map((m, i) => (i === index ? message : m)),
       });
     },
     removeQueuedMessage: (id) => {

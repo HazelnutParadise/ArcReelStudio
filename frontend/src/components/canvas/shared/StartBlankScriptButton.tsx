@@ -107,7 +107,15 @@ export function StartBlankScriptButton({ projectName, episode, discardsPlan, var
  * 没有脚本规划可走的集（广告/短片）在没有正式脚本时的画布：说明现状，「AI 生成脚本」与「从空白开始」并排。
  * 缺创作灵感与商品时「AI 生成脚本」置灰，并给出去填写的链接。
  */
-export function NoScriptBlankState({ projectName, episode, className }: { projectName: string; episode: number; className?: string }) {
+export function NoScriptBlankState({
+  projectName,
+  episode,
+  className,
+}: {
+  projectName: string;
+  episode: number;
+  className?: string;
+}) {
   const { t } = useTranslation("dashboard");
   const { refusedReason } = useAdScriptEntry(projectName, episode);
   return (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import "@/i18n";
 import type { CapabilityOverrides, ProviderModelCapabilities } from "@/types";
 import { ProviderCapabilityOverrides } from "./ProviderCapabilityOverrides";
@@ -158,7 +158,10 @@ describe("ProviderCapabilityOverrides", () => {
     render(
       <Harness
         onValidityChange={onValidityChange}
-        initial={{ resolutions: ["720p", "1080p"], duration_constraints: { by_resolution: {}, with_reference_images: [] } }}
+        initial={{
+          resolutions: ["720p", "1080p"],
+          duration_constraints: { by_resolution: {}, with_reference_images: [] },
+        }}
       />,
     );
     fireEvent.change(screen.getByRole("textbox", { name: "1080p的可选时长" }), { target: { value: "8-4" } });
@@ -176,8 +179,14 @@ describe("ProviderCapabilityOverrides", () => {
     const base = { max_reference_images: 3 };
     render(
       <Harness
-        capabilities={{ media_type: media, editable: ["max_reference_images"], displayed: ["max_reference_images"],
-          base, overrides: {}, effective: base }}
+        capabilities={{
+          media_type: media,
+          editable: ["max_reference_images"],
+          displayed: ["max_reference_images"],
+          base,
+          overrides: {},
+          effective: base,
+        }}
       />,
     );
 

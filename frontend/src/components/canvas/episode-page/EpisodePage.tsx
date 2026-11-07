@@ -187,9 +187,17 @@ function EpisodePageContent({
   } else if (demo && !script) {
     body = <DemoEpisodePlaceholder />;
   } else if (sourceReview) {
-    body = <EpisodeViewFactsProvider value={facts}><EpisodeSourceReview projectName={projectName} episode={episode} episodes={projectData?.episodes ?? []} /></EpisodeViewFactsProvider>;
+    body = (
+      <EpisodeViewFactsProvider value={facts}>
+        <EpisodeSourceReview projectName={projectName} episode={episode} episodes={projectData?.episodes ?? []} />
+      </EpisodeViewFactsProvider>
+    );
   } else {
-    body = <EpisodeViewFactsProvider value={facts}>{renderCanvas({ view, onViewChange: changeView })}</EpisodeViewFactsProvider>;
+    body = (
+      <EpisodeViewFactsProvider value={facts}>
+        {renderCanvas({ view, onViewChange: changeView })}
+      </EpisodeViewFactsProvider>
+    );
   }
 
   return (
@@ -258,7 +266,11 @@ export function EpisodePage(props: Parameters<typeof EpisodePageContent>[0]) {
   const meta = props.projectData?.episodes?.find((entry) => entry.episode === props.episode);
   const source = showsEpisodeSource(props.projectData, props.episode, props.script, props.demo);
   const identity = `${props.projectName}:${props.episode}:${!meta ? "missing" : source ? "source" : props.script ? "script" : "draft"}`;
-  const message = !meta ? "episode_externally_removed" : props.script || hasEpisodeDraft(meta) ? "episode_source_replaced" : "episode_script_removed";
+  const message = !meta
+    ? "episode_externally_removed"
+    : props.script || hasEpisodeDraft(meta)
+      ? "episode_source_replaced"
+      : "episode_script_removed";
   return (
     <RetainedEditUnit identity={identity} value={props} message={t(message)}>
       {(shown) => <EpisodePageContent {...shown} />}

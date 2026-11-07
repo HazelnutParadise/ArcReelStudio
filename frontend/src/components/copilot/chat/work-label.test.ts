@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import i18n from "@/i18n";
 import type { ContentBlock } from "@/types";
 import { segmentWorkBlocks, toolLabel, type EpisodeRefs } from "./work-label";
@@ -31,7 +31,8 @@ describe("toolLabel", () => {
 
   it("writes the episode once for item ids of the same episode and lists at most three", () => {
     expect(
-      label("mcp__arcreel__generate_storyboards", { script: "episode_3.json", segment_ids: ["E3S01", "E3S02"] }).summary,
+      label("mcp__arcreel__generate_storyboards", { script: "episode_3.json", segment_ids: ["E3S01", "E3S02"] })
+        .summary,
     ).toBe("雨夜 · 2、3");
     expect(label("mcp__arcreel__inspect_video_units", { unit_ids: ["E3S01", "E3S02", "E3S03", "E3S04"] }).summary).toBe(
       "雨夜 · 2、3、4 等 4 个",
@@ -40,7 +41,8 @@ describe("toolLabel", () => {
 
   it("summarizes inspected images by type, then storyboards by position or assets by name", () => {
     expect(
-      label("mcp__arcreel__inspect_images", { resource_type: "storyboard", ids: ["E3S04", "E3S01"], version: 2 }).summary,
+      label("mcp__arcreel__inspect_images", { resource_type: "storyboard", ids: ["E3S04", "E3S01"], version: 2 })
+        .summary,
     ).toBe("分镜图 · 雨夜 · 1、2 · 第 2 版");
     expect(label("mcp__arcreel__inspect_images", { resource_type: "character", ids: ["阿岚"] })).toMatchObject({
       name: "查看图片",
@@ -81,10 +83,12 @@ describe("segmentWorkBlocks", () => {
       { type: "text", text: "读完了" },
       { type: "tool_use", id: "b", name: "Bash" },
     ];
-    expect(segmentWorkBlocks(blocks).map((segment) => [segment.work, segment.items.map((item) => item.index)])).toEqual([
-      [true, [0, 1]],
-      [false, [2]],
-      [true, [3]],
-    ]);
+    expect(segmentWorkBlocks(blocks).map((segment) => [segment.work, segment.items.map((item) => item.index)])).toEqual(
+      [
+        [true, [0, 1]],
+        [false, [2]],
+        [true, [3]],
+      ],
+    );
   });
 });

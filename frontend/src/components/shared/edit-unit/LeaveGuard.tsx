@@ -302,8 +302,7 @@ export function LeaveGuardProvider({ children }: { children: ReactNode }) {
     const onPopState = (event: PopStateEvent) => {
       const target = currentUrl();
       // 保存在途的单元即使此刻没有修改也不放行：保存失败或期间又改过时还要询问
-      const unaffected =
-        dirtyUnitIds(target).length === 0 && !leavingUnits(target).some(([, unit]) => unit.saving);
+      const unaffected = dirtyUnitIds(target).length === 0 && !leavingUnits(target).some(([, unit]) => unit.saving);
       if (releasingPopRef.current || passingRef.current || unaffected) {
         releasingPopRef.current = false;
         lastUrlRef.current = target;

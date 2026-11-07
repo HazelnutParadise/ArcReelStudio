@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import "@/i18n";
@@ -10,11 +10,7 @@ import { useAppStore } from "@/stores/app-store";
 import { useConfigStatusStore } from "@/stores/config-status-store";
 import { AgentConfigTab } from "@/components/pages/AgentConfigTab";
 import type { GetSystemConfigResponse } from "@/types";
-import type {
-  AgentCredential,
-  AgentCredentialTierStatus,
-  PresetProvider,
-} from "@/types/agent-credential";
+import type { AgentCredential, AgentCredentialTierStatus, PresetProvider } from "@/types/agent-credential";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -160,8 +156,12 @@ describe("AgentConfigTab", () => {
 
     const item = await screen.findByRole("listitem", { name: "Anthropic 主号" });
     expect(screen.queryByRole("note", { name: "ArcReel Agent 尚未配置" })).not.toBeInTheDocument();
-    const terms = within(item).getAllByRole("term").map((el) => el.textContent);
-    const values = within(item).getAllByRole("definition").map((el) => el.textContent);
+    const terms = within(item)
+      .getAllByRole("term")
+      .map((el) => el.textContent);
+    const values = within(item)
+      .getAllByRole("definition")
+      .map((el) => el.textContent);
     expect(Object.fromEntries(terms.map((term, i) => [term, values[i]]))).toEqual({ 密钥: "sk-ant-***", 倍率: "×0" });
     const tiers = within(within(item).getByRole("region", { name: "模型档位与定价" })).getAllByRole("listitem");
     expect(tiers.map((el) => el.textContent)).toEqual([
@@ -184,18 +184,28 @@ describe("AgentConfigTab", () => {
       ...overrides,
     });
     const credentialWith = (haiku: Partial<AgentCredentialTierStatus>) =>
-      makeCredential({ tiers: [tierRow("model", { priced: true, entry_display_name: "GW" }), tierRow("haiku", haiku)] });
+      makeCredential({
+        tiers: [tierRow("model", { priced: true, entry_display_name: "GW" }), tierRow("haiku", haiku)],
+      });
 
     it("未定价的档位选择模型后变为已定价，提交的是所选条目", async () => {
       setupBaseMocks({ credentials: [credentialWith({})] });
       const search = vi.spyOn(API, "searchCatalogEntries").mockResolvedValue({
         entries: [
-          { maker: "anthropic", name: "claude-haiku-4-5", media_type: "text", display_name: "Claude Haiku 4.5", discontinued: false },
+          {
+            maker: "anthropic",
+            name: "claude-haiku-4-5",
+            media_type: "text",
+            display_name: "Claude Haiku 4.5",
+            discontinued: false,
+          },
         ],
       });
-      const bind = vi.spyOn(API, "bindAgentCredentialTier").mockResolvedValue(
-        credentialWith({ entry_display_name: "Claude Haiku 4.5", manually_bound: true, priced: true }),
-      );
+      const bind = vi
+        .spyOn(API, "bindAgentCredentialTier")
+        .mockResolvedValue(
+          credentialWith({ entry_display_name: "Claude Haiku 4.5", manually_bound: true, priced: true }),
+        );
       renderSection();
       const user = userEvent.setup();
 
@@ -211,7 +221,9 @@ describe("AgentConfigTab", () => {
           "gw-llm已定价Claude Haiku 4.5手动选择解除绑定",
         ),
       );
-      expect(within(screen.getByRole("listitem", { name: "Haiku 模型" })).queryByRole("button", { name: "选择模型" })).not.toBeInTheDocument();
+      expect(
+        within(screen.getByRole("listitem", { name: "Haiku 模型" })).queryByRole("button", { name: "选择模型" }),
+      ).not.toBeInTheDocument();
       // 面板选中后关闭
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
@@ -231,7 +243,9 @@ describe("AgentConfigTab", () => {
       await waitFor(() =>
         expect(screen.getByRole("listitem", { name: "Haiku 模型" })).toHaveTextContent("gw-llm未定价选择模型"),
       );
-      expect(within(screen.getByRole("listitem", { name: "Haiku 模型" })).queryByRole("button", { name: "解除绑定" })).not.toBeInTheDocument();
+      expect(
+        within(screen.getByRole("listitem", { name: "Haiku 模型" })).queryByRole("button", { name: "解除绑定" }),
+      ).not.toBeInTheDocument();
     });
 
     it("所选模型已下线的档位仍可解除绑定", async () => {
@@ -239,9 +253,9 @@ describe("AgentConfigTab", () => {
       setupBaseMocks({
         credentials: [credentialWith({ entry_display_name: "Claude Haiku 4.5", binding_stale: true, priced: true })],
       });
-      const unbind = vi.spyOn(API, "unbindAgentCredentialTier").mockResolvedValue(
-        credentialWith({ entry_display_name: "Claude Haiku 4.5", priced: true }),
-      );
+      const unbind = vi
+        .spyOn(API, "unbindAgentCredentialTier")
+        .mockResolvedValue(credentialWith({ entry_display_name: "Claude Haiku 4.5", priced: true }));
       renderSection();
       const user = userEvent.setup();
 
@@ -251,7 +265,9 @@ describe("AgentConfigTab", () => {
 
       await waitFor(() => expect(unbind).toHaveBeenCalledWith(1, "haiku"));
       await waitFor(() => expect(screen.getByRole("listitem", { name: "Haiku 模型" })).not.toHaveTextContent("已下线"));
-      expect(within(screen.getByRole("listitem", { name: "Haiku 模型" })).queryByRole("button", { name: "解除绑定" })).not.toBeInTheDocument();
+      expect(
+        within(screen.getByRole("listitem", { name: "Haiku 模型" })).queryByRole("button", { name: "解除绑定" }),
+      ).not.toBeInTheDocument();
     });
 
     it("两个 Agent 供应商的绑定同时在途时，先结束的一个不放开另一个的按钮", async () => {

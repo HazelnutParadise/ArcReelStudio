@@ -44,7 +44,11 @@ export function OverviewHeader({
   const meta = [
     t(MODE_LABEL_KEY[data.content_mode]),
     aspect === "9:16" ? t("portrait_9_16") : aspect === "16:9" ? t("landscape_16_9") : aspect,
-    isAd ? null : episodes.length > 0 ? t("overview_meta_episodes", { count: episodes.length }) : t("overview_meta_no_episodes"),
+    isAd
+      ? null
+      : episodes.length > 0
+        ? t("overview_meta_episodes", { count: episodes.length })
+        : t("overview_meta_no_episodes"),
     scriptSeconds > 0 ? t("overview_meta_script_duration", { duration: formatDuration(scriptSeconds) }) : null,
   ].filter(Boolean);
 

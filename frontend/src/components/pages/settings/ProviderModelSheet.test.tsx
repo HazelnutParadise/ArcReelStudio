@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import "@/i18n";
 import { API } from "@/api";
 import { useEndpointCatalogStore } from "@/stores/endpoint-catalog-store";
@@ -147,13 +147,31 @@ describe("ProviderModelSheet", () => {
     const detail = unmatchedVideo({
       model: item({ media_type: "image", endpoint: "openai-images" }),
       endpoint: "openai-images",
-      capabilities: { media_type: "image", editable: ["image_to_image", "max_reference_images"],
-        displayed: ["image_to_image", "max_reference_images"], base, overrides: {}, effective: base },
-      entry: { ...veoDetail().entry!, maker: "xai", name: "grok-imagine-image", media_type: "image",
-        display_name: "Image", facts: { text_to_image: true, image_to_image: true } },
+      capabilities: {
+        media_type: "image",
+        editable: ["image_to_image", "max_reference_images"],
+        displayed: ["image_to_image", "max_reference_images"],
+        base,
+        overrides: {},
+        effective: base,
+      },
+      entry: {
+        ...veoDetail().entry!,
+        maker: "xai",
+        name: "grok-imagine-image",
+        media_type: "image",
+        display_name: "Image",
+        facts: { text_to_image: true, image_to_image: true },
+      },
     });
-    const saved: ProviderModelDetail = { ...detail, capabilities: { ...detail.capabilities,
-      overrides: { max_reference_images: 8 }, effective: { ...base, image_to_image: true, max_reference_images: 8 } } };
+    const saved: ProviderModelDetail = {
+      ...detail,
+      capabilities: {
+        ...detail.capabilities,
+        overrides: { max_reference_images: 8 },
+        effective: { ...base, image_to_image: true, max_reference_images: 8 },
+      },
+    };
     vi.spyOn(API, "getProviderModel").mockResolvedValue(detail);
     const update = vi.spyOn(API, "updateProviderModel").mockResolvedValue(saved);
     renderSheet();
@@ -163,7 +181,9 @@ describe("ProviderModelSheet", () => {
     fireEvent.change(within(area).getByRole("textbox", { name: "「参考图上限」的值" }), { target: { value: "8" } });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() =>
-      expect(update).toHaveBeenCalledWith("custom-3", "relay-video", { capability_overrides: { max_reference_images: 8 } }),
+      expect(update).toHaveBeenCalledWith("custom-3", "relay-video", {
+        capability_overrides: { max_reference_images: 8 },
+      }),
     );
     expect(within(area).getByRole("textbox", { name: "「参考图上限」的值" })).toHaveValue("8");
   });
@@ -211,7 +231,12 @@ describe("ProviderModelSheet", () => {
       capabilities: { media_type: "video", editable: [], displayed: [], base: {}, overrides: {}, effective: {} },
       endpoint: null,
     });
-    renderSheet({ providerId: "gemini-aistudio", providerName: "Gemini", custom: undefined, open: { modelId: "veo-3", key: 1 } });
+    renderSheet({
+      providerId: "gemini-aistudio",
+      providerName: "Gemini",
+      custom: undefined,
+      open: { modelId: "veo-3", key: 1 },
+    });
 
     expect(await screen.findByText("内置模型的其他设置由官方维护。")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "启用" })).toBeInTheDocument();
@@ -228,10 +253,22 @@ describe("ProviderModelSheet", () => {
       ...unmatchedVideo(),
       model: item({ model_id: "veo-3", official: true, endpoint: null, flags: [] }),
       multiplier: null,
-      capabilities: { media_type: "video", editable: [], displayed: ["durations", "resolutions", "last_frame", "max_reference_images"], base: effective, overrides: {}, effective },
+      capabilities: {
+        media_type: "video",
+        editable: [],
+        displayed: ["durations", "resolutions", "last_frame", "max_reference_images"],
+        base: effective,
+        overrides: {},
+        effective,
+      },
       endpoint: null,
     });
-    renderSheet({ providerId: "gemini-aistudio", providerName: "Gemini", custom: undefined, open: { modelId: "veo-3", key: 1 } });
+    renderSheet({
+      providerId: "gemini-aistudio",
+      providerName: "Gemini",
+      custom: undefined,
+      open: { modelId: "veo-3", key: 1 },
+    });
 
     expect(await screen.findByText("这个供应商支持的参数")).toBeInTheDocument();
     expect(screen.getByText("这些值跟随官方数据，不能修改。")).toBeInTheDocument();
@@ -259,7 +296,12 @@ describe("ProviderModelSheet", () => {
       },
       endpoint: null,
     });
-    renderSheet({ providerId: "grok", providerName: "Grok", custom: undefined, open: { modelId: "grok-imagine-image", key: 1 } });
+    renderSheet({
+      providerId: "grok",
+      providerName: "Grok",
+      custom: undefined,
+      open: { modelId: "grok-imagine-image", key: 1 },
+    });
 
     await screen.findByText("这个供应商支持的参数");
     expect(within(rowOf("文生图")).getByText("支持")).toBeInTheDocument();
@@ -285,7 +327,9 @@ describe("ProviderModelSheet", () => {
     renderSheet({ open: { modelId: "my-flux-workflow", key: 1 } });
 
     await screen.findByText("这个供应商支持的参数");
-    const rows = within(rowOf("文生图").closest("ul")!).getAllByRole("listitem").map((row) => row.textContent);
+    const rows = within(rowOf("文生图").closest("ul")!)
+      .getAllByRole("listitem")
+      .map((row) => row.textContent);
     expect(rows).toEqual(["文生图支持", "图生图支持", "参考图上限2"]);
     expect(screen.queryByRole("button", { name: /^修改「/ })).not.toBeInTheDocument();
   });
@@ -328,10 +372,18 @@ describe("ProviderModelSheet", () => {
     });
     vi.spyOn(API, "getProviderModel").mockResolvedValue(detail);
     const update = vi.spyOn(API, "updateProviderModel").mockResolvedValue(detail);
-    renderSheet({ providerId: "minimax", providerName: "MiniMax", custom: undefined, open: { modelId: "acme-video", key: 1 } });
+    renderSheet({
+      providerId: "minimax",
+      providerName: "MiniMax",
+      custom: undefined,
+      open: { modelId: "acme-video", key: 1 },
+    });
 
     await user.click(await screen.findByRole("combobox", { name: "调用端点" }));
-    expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual(["MiniMax 海螺", "MiniMax H3"]);
+    expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual([
+      "MiniMax 海螺",
+      "MiniMax H3",
+    ]);
     await user.click(screen.getByRole("option", { name: "MiniMax H3" }));
 
     // 参数随调用端点变化，换了端点先保存再改
@@ -442,9 +494,7 @@ describe("ProviderModelSheet", () => {
     expect(restore).not.toHaveBeenCalled();
     await user.click(within(dialog).getByRole("button", { name: "恢复官方数据" }));
 
-    await waitFor(() =>
-      expect(restore).toHaveBeenCalledWith({ maker: "google", name: "veo-3", media_type: "video" }),
-    );
+    await waitFor(() => expect(restore).toHaveBeenCalledWith({ maker: "google", name: "veo-3", media_type: "video" }));
     await waitFor(() => expect(within(info).getByLabelText("显示名称")).toHaveValue("Veo 3"));
     expect(within(info).getByText("信息由官方维护，随官方数据更新。")).toBeInTheDocument();
     expect(get).toHaveBeenCalledTimes(2);
@@ -488,7 +538,10 @@ describe("ProviderModelSheet", () => {
 
   it("clears the price table when every billing item is deleted", async () => {
     const user = userEvent.setup();
-    const price = { currency: "USD", meters: [{ meter: "output_seconds", dims: [], rows: [{ when: {}, price: 0.5 }] }] };
+    const price = {
+      currency: "USD",
+      meters: [{ meter: "output_seconds", dims: [], rows: [{ when: {}, price: 0.5 }] }],
+    };
     vi.spyOn(API, "getProviderModel").mockResolvedValue(veoDetail({ price }));
     const update = vi.spyOn(API, "updateProviderModel").mockResolvedValue(veoDetail());
     renderSheet();
@@ -536,7 +589,13 @@ describe("ProviderModelSheet", () => {
   });
 
   describe("linking another model and filling in model information", () => {
-    const VEO_HIT = { maker: "google", name: "veo-3", media_type: "video" as const, display_name: "Veo 3", discontinued: false };
+    const VEO_HIT = {
+      maker: "google",
+      name: "veo-3",
+      media_type: "video" as const,
+      display_name: "Veo 3",
+      discontinued: false,
+    };
 
     beforeEach(() => {
       vi.spyOn(API, "searchCatalogEntries").mockResolvedValue({
@@ -616,7 +675,9 @@ describe("ProviderModelSheet", () => {
       const dialog = await screen.findByRole("dialog", { name: "手动填写模型信息" });
       // 模型名称取模型 ID；视频的可选时长按名字预设预填
       expect(within(dialog).getByLabelText("模型名称")).toHaveValue("relay-video");
-      await waitFor(() => expect(within(dialog).getByRole("textbox", { name: "「可选时长」的值" })).toHaveValue("5, 10"));
+      await waitFor(() =>
+        expect(within(dialog).getByRole("textbox", { name: "「可选时长」的值" })).toHaveValue("5, 10"),
+      );
       expect(within(dialog).getByText("不填价格时，调用费用记为未定价。")).toBeInTheDocument();
       expect(within(dialog).getByRole("button", { name: "确定" })).toBeDisabled();
 
@@ -685,7 +746,10 @@ describe("ProviderModelSheet", () => {
     });
 
     it("offers no linking for an official model", async () => {
-      vi.spyOn(API, "getProviderModel").mockResolvedValue({ ...veoDetail(), model: item({ official: true, flags: [] }) });
+      vi.spyOn(API, "getProviderModel").mockResolvedValue({
+        ...veoDetail(),
+        model: item({ official: true, flags: [] }),
+      });
       renderSheet({ providerId: "gemini-vertex", custom: undefined });
 
       const info = await infoSection();
@@ -712,11 +776,15 @@ describe("ProviderModelSheet", () => {
       ).toBeInTheDocument();
       await user.click(within(info).getByRole("button", { name: "改用官方数据" }));
       const dialog = await screen.findByRole("alertdialog");
-      expect(dialog).toHaveTextContent("你为「My Veo」填写的信息会被官方数据替换，无法撤销。「Vertex AI」也会一起改用。");
+      expect(dialog).toHaveTextContent(
+        "你为「My Veo」填写的信息会被官方数据替换，无法撤销。「Vertex AI」也会一起改用。",
+      );
       expect(restore).not.toHaveBeenCalled();
       await user.click(within(dialog).getByRole("button", { name: "改用官方数据" }));
 
-      await waitFor(() => expect(restore).toHaveBeenCalledWith({ maker: "google", name: "veo-3", media_type: "video" }));
+      await waitFor(() =>
+        expect(restore).toHaveBeenCalledWith({ maker: "google", name: "veo-3", media_type: "video" }),
+      );
     });
   });
 });

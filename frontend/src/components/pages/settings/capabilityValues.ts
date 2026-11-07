@@ -21,7 +21,7 @@ export const ENUM_OPTIONS: Partial<Record<CapabilityKey, string[]>> = {
 };
 
 export function asConstraints(value: unknown): Constraints {
-  return value && typeof value === "object" ? (value) : {};
+  return value && typeof value === "object" ? value : {};
 }
 
 /** 时长联动约束的分辨率键与可选分辨率按小写比较（与服务端一致）。 */
@@ -62,11 +62,14 @@ export function capabilityValueText(t: TFunction, key: CapabilityKey, value: unk
       t("pm_cap_constraint_resolution_item", { resolution: res, list: compactRangeFormat(allowed) }),
     );
     if (constraints.with_reference_images?.length) {
-      parts.push(t("pm_cap_constraint_reference_item", { list: compactRangeFormat(constraints.with_reference_images) }));
+      parts.push(
+        t("pm_cap_constraint_reference_item", { list: compactRangeFormat(constraints.with_reference_images) }),
+      );
     }
     return parts.length ? parts.join(t("pm_cap_value_group_separator")) : t("pm_cap_value_none");
   }
-  if (ENUM_OPTIONS[key]) return t(`pm_cap_option_${key === "reference_audio_mode" ? "audio_mode" : "audio_track"}_${scalarText(value)}`);
+  if (ENUM_OPTIONS[key])
+    return t(`pm_cap_option_${key === "reference_audio_mode" ? "audio_mode" : "audio_track"}_${scalarText(value)}`);
   if (key === "max_reference_audio_total_seconds") return t("pm_cap_value_seconds", { list: scalarText(value) });
   return scalarText(value);
 }

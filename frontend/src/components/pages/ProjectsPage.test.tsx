@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
@@ -68,7 +68,13 @@ function summary(name: string, options: SummaryOptions = {}): ProjectSummary {
   };
 }
 
-function importResult(projectName: string, diagnostics: { auto_fixed: never[] | { code: string; message: string }[]; warnings: { code: string; message: string }[] }) {
+function importResult(
+  projectName: string,
+  diagnostics: {
+    auto_fixed: never[] | { code: string; message: string }[];
+    warnings: { code: string; message: string }[];
+  },
+) {
   return {
     success: true,
     project_name: projectName,
@@ -204,16 +210,18 @@ describe("ProjectsPage", () => {
   it("does not mark settings incomplete when only the embedded-agent credential is missing", async () => {
     vi.spyOn(API, "listProjects").mockResolvedValue({ projects: [] });
     vi.spyOn(API, "getProviders").mockResolvedValue({
-      providers: [{
-        id: "gemini",
-        display_name: "Google Gemini",
-        description: "Google Gemini API",
-        status: "ready",
-        media_types: ["image", "video", "text"],
-        capabilities: [],
-        credential_count: 1,
-        models: {},
-      }],
+      providers: [
+        {
+          id: "gemini",
+          display_name: "Google Gemini",
+          description: "Google Gemini API",
+          status: "ready",
+          media_types: ["image", "video", "text"],
+          capabilities: [],
+          credential_count: 1,
+          models: {},
+        },
+      ],
     });
     vi.spyOn(API, "listCustomProviders").mockResolvedValue({ providers: [] });
     vi.spyOn(API, "getSystemConfig").mockResolvedValue({
@@ -299,7 +307,9 @@ describe("ProjectsPage", () => {
     expect(screen.getByRole("button", { name: /^待修复\s*1$/ })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /^已完成\s*1$/ }));
-    const shown = within(await projectList()).getAllByRole("link").map((link) => link.getAttribute("href"));
+    const shown = within(await projectList())
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href"));
     expect(shown).toEqual(["/app/projects/done"]);
   });
 
@@ -309,7 +319,9 @@ describe("ProjectsPage", () => {
     });
 
     renderPage();
-    const hrefs = within(await projectList()).getAllByRole("link").map((link) => link.getAttribute("href"));
+    const hrefs = within(await projectList())
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href"));
     expect(hrefs).toEqual(["/app/projects/newest", "/app/projects/older", "/app/projects/oldest"]);
   });
 
@@ -370,7 +382,9 @@ describe("ProjectsPage", () => {
 
   it("deletes a project only after confirming, then drops it from the grid", async () => {
     vi.spyOn(API, "listProjects")
-      .mockResolvedValueOnce({ projects: [summary("first", { title: "First" }), summary("second", { title: "Second" })] })
+      .mockResolvedValueOnce({
+        projects: [summary("first", { title: "First" }), summary("second", { title: "Second" })],
+      })
       .mockResolvedValueOnce({ projects: [summary("first", { title: "First" })] });
     vi.spyOn(API, "deleteProject").mockResolvedValue({ success: true } as never);
 
@@ -643,7 +657,9 @@ describe("ProjectsPage", () => {
     const file = chooseZip(container);
 
     const dialog = await screen.findByRole("alertdialog", { name: "导入前请确认" });
-    expect(within(dialog).getByText("雨夜的剧本从 scripts/custom.json 移到 scripts/episode_3.json。")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText("雨夜的剧本从 scripts/custom.json 移到 scripts/episode_3.json。"),
+    ).toBeInTheDocument();
     expect(API.listProjects).toHaveBeenCalledTimes(1);
     fireEvent.click(within(dialog).getByRole("button", { name: "确认导入" }));
 
@@ -691,7 +707,9 @@ describe("ProjectsPage", () => {
     const file = chooseZip(container);
 
     fireEvent.click(
-      within(await screen.findByRole("alertdialog", { name: "导入前请确认" })).getByRole("button", { name: "确认导入" }),
+      within(await screen.findByRole("alertdialog", { name: "导入前请确认" })).getByRole("button", {
+        name: "确认导入",
+      }),
     );
     fireEvent.click(
       within(await screen.findByRole("alertdialog", { name: "项目 ID 已存在" })).getByRole("button", {
@@ -720,7 +738,11 @@ describe("ProjectsPage", () => {
       chooseZip(container);
       await waitFor(() => expect(API.importProject).toHaveBeenCalledTimes(1));
       unmount();
-      return { location, resolve: (v: Awaited<ReturnType<typeof API.importProject>>) => act(async () => resolve(v)), reject: (e: Error) => act(async () => reject(e)) };
+      return {
+        location,
+        resolve: (v: Awaited<ReturnType<typeof API.importProject>>) => act(async () => resolve(v)),
+        reject: (e: Error) => act(async () => reject(e)),
+      };
     }
 
     it("does not navigate after a clean import, and offers to open the new project", async () => {
@@ -754,7 +776,11 @@ describe("ProjectsPage", () => {
       const { reject } = await leaveWhileImporting();
       await reject(
         importError("导入包校验失败", {
-          diagnostics: { blocking: [{ code: "validation_error", message: "缺少 project.json" }], auto_fixable: [], warnings: [] },
+          diagnostics: {
+            blocking: [{ code: "validation_error", message: "缺少 project.json" }],
+            auto_fixable: [],
+            warnings: [],
+          },
         }),
       );
 

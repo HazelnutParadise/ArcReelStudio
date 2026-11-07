@@ -11,11 +11,7 @@ export function dropAnchor<T>(ids: readonly T[], source: number, target: number)
 }
 
 /** 前移或后移一位：前移落到前两条之后（第二条前移即移到最前），后移落到下一条之后。 */
-export function stepAnchor<T>(
-  ids: readonly T[],
-  index: number,
-  direction: "earlier" | "later",
-): T | null | undefined {
+export function stepAnchor<T>(ids: readonly T[], index: number, direction: "earlier" | "later"): T | null | undefined {
   if (index < 0 || index >= ids.length) return undefined;
   if (direction === "earlier") return index > 0 ? (ids[index - 2] ?? null) : undefined;
   return index < ids.length - 1 ? ids[index + 1] : undefined;

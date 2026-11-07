@@ -21,7 +21,10 @@ export function GalleryStatusMarker({ marker, className }: { marker: GalleryMark
         className,
       )}
     >
-      <span aria-hidden className={cn("size-1.5 rounded-full bg-current", marker === "generating" && "animate-breath")} />
+      <span
+        aria-hidden
+        className={cn("size-1.5 rounded-full bg-current", marker === "generating" && "animate-breath")}
+      />
       {t(`gallery_marker.${marker}`)}
     </span>
   );

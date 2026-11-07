@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vite-plus/test";
 import { tokenizePrompt, toScriptLines, type MentionLookup, type Token } from "./useUnitPromptHighlight";
 import { extractMentions } from "@/utils/reference-mentions";
 
@@ -20,13 +20,7 @@ function kinds(tokens: Token[]): string[] {
 describe("tokenizePrompt", () => {
   it("resolves mentions against lookup (three types)", () => {
     const t = tokenizePrompt("@主角 in @酒馆 with @长剑", LOOKUP);
-    expect(kinds(t)).toEqual([
-      "mention:character",
-      "text",
-      "mention:scene",
-      "text",
-      "mention:prop",
-    ]);
+    expect(kinds(t)).toEqual(["mention:character", "text", "mention:scene", "text", "mention:prop"]);
   });
 
   it("marks unknown names as 'unknown'", () => {
@@ -43,10 +37,7 @@ describe("tokenizePrompt", () => {
   });
 
   it("resolves wrapped mentions with punctuation", () => {
-    const t = tokenizePrompt(
-      "@[角色甲（成年）]引导@[角色乙]靠近@[载具甲]区域，移动到@[地点甲·版本A]",
-      LOOKUP,
-    );
+    const t = tokenizePrompt("@[角色甲（成年）]引导@[角色乙]靠近@[载具甲]区域，移动到@[地点甲·版本A]", LOOKUP);
     const mentions = t.filter((x) => x.kind === "mention");
     expect(mentions.map((x) => (x.kind === "mention" ? x.name : ""))).toEqual([
       "角色甲（成年）",
@@ -202,7 +193,11 @@ describe("unicode line boundaries", () => {
 
   it("keeps tokenizePrompt output concatenable back to the source text", () => {
     const text = `@主角 在场。${LS}@[张三]：{我来了}\r\n结束`;
-    expect(tokenizePrompt(text, LOOKUP).map((t) => t.text).join("")).toBe(text);
+    expect(
+      tokenizePrompt(text, LOOKUP)
+        .map((t) => t.text)
+        .join(""),
+    ).toBe(text);
   });
 
   it("splits a line that follows a unicode separator", () => {

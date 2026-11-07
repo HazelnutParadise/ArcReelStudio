@@ -21,9 +21,7 @@ test("flex 链中间层漏设 min-height:0 时报告裁切它的外壳", async (
     </div>`,
   );
 
-  expect(report.clipped).toEqual([
-    expect.objectContaining({ path: expect.stringContaining("div#shell"), axis: "y" }),
-  ]);
+  expect(report.clipped).toEqual([expect.objectContaining({ path: expect.stringContaining("div#shell"), axis: "y" })]);
 });
 
 test("flex 链补上 min-height:0 后内容可在内层滚动，不报告", async ({ page }) => {
@@ -157,7 +155,10 @@ test.describe("横向滚动", () => {
       // 只写了 overflow-y:auto，overflow-x 也被算成 auto：内容没有被裁切，裁切检查报不出来
       expect(report.clipped).toEqual([]);
       expect(report.strayScrollX).toEqual([
-        expect.objectContaining({ path: `body > div > div[data-slot="${slot}"]`, culprit: expect.stringContaining("code#reason") }),
+        expect.objectContaining({
+          path: `body > div > div[data-slot="${slot}"]`,
+          culprit: expect.stringContaining("code#reason"),
+        }),
       ]);
     });
   }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import "@/i18n";
 import type { MediaType } from "@/types/custom-provider";
 import { PriceEditor } from "./PriceEditor";
@@ -20,7 +20,13 @@ function Harness({
   const [value, setValue] = useState<PriceTable>(initial);
   return (
     <>
-      <PriceEditor value={value} onChange={setValue} mediaType={mediaType} official={official} resolutions={resolutions} />
+      <PriceEditor
+        value={value}
+        onChange={setValue}
+        mediaType={mediaType}
+        official={official}
+        resolutions={resolutions}
+      />
       <output data-testid="saved">{JSON.stringify(priceForSave(value))}</output>
       <output data-testid="valid">{String(isPriceTableValid(value))}</output>
     </>
@@ -51,13 +57,17 @@ describe("PriceEditor", () => {
 
     await pickMenuItem("添加计费项", "视频时长");
     await pickMenuItem(/按条件分价/, "分辨率");
-    fireEvent.change(screen.getByRole("textbox", { name: "视频时长的单价（分辨率：720p）" }), { target: { value: "0.4" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "视频时长的单价（分辨率：720p）" }), {
+      target: { value: "0.4" },
+    });
     fireEvent.click(within(card("视频时长")).getByRole("button", { name: "添加一档" }));
     // 新的一档沿用上一档的条件，点选条件标签改成 1080p
     const tags = within(card("视频时长")).getAllByRole("button", { name: /修改条件：分辨率：720p/ });
     fireEvent.click(tags[1]);
     fireEvent.click(screen.getByRole("button", { name: "1080p" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "视频时长的单价（分辨率：1080p）" }), { target: { value: "0.8" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "视频时长的单价（分辨率：1080p）" }), {
+      target: { value: "0.8" },
+    });
 
     await pickMenuItem("添加计费项", "参考图");
     fireEvent.click(within(card("参考图")).getByRole("button", { name: "添加免费额度" }));

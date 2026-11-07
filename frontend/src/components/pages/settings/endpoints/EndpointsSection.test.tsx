@@ -1,14 +1,9 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
-import type {
-  CustomEndpointInfo,
-  CustomProviderInfo,
-  CustomProviderModelInfo,
-  EndpointDefinition,
-} from "@/types";
+import type { CustomEndpointInfo, CustomProviderInfo, CustomProviderModelInfo, EndpointDefinition } from "@/types";
 import imageTemplate from "@/data/example-templates/generic-image-submit-poll.json";
 import {
   MINE,
@@ -75,7 +70,11 @@ describe("EndpointsSection", () => {
           bindings: {},
         },
         errors: [
-          { path: "bindings.prompt", code: "comfyui_binding_required", message: "语义键 prompt 必须绑定到节点后才能保存" },
+          {
+            path: "bindings.prompt",
+            code: "comfyui_binding_required",
+            message: "语义键 prompt 必须绑定到节点后才能保存",
+          },
         ],
       }),
     );
@@ -130,24 +129,29 @@ describe("EndpointsSection", () => {
     expect(screen.getByRole("textbox", { name: "JSON" })).toHaveClass("font-mono");
   });
 
-  it.each(["{", '{"meta": {}}'])("keeps invalid JSON edits in the leave guard and discards the raw text: %s", async (text) => {
-    const update = vi.spyOn(API, "updateCustomEndpoint");
-    const { location } = renderSection("section=endpoints&endpoint=ce-7", { guarded: true });
-    await screen.findByDisplayValue("Example Video API");
-    await userEvent.click(screen.getByRole("button", { name: "JSON" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "JSON" }), { target: { value: text } });
-    await clickRail("新建端点");
-    const dialog = await screen.findByRole("alertdialog");
-    await userEvent.click(within(dialog).getByRole("button", { name: "继续编辑" }));
-    expect(location.history.at(-1)).toBe("/app/settings?section=endpoints&endpoint=ce-7");
-    expect(screen.getByRole("textbox", { name: "JSON" })).toHaveValue(text);
-    await userEvent.click(screen.getByRole("button", { name: "保存" }));
-    expect(screen.getByRole("textbox", { name: "JSON" })).toHaveValue(text);
-    expect(update).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole("button", { name: "放弃修改" }));
-    expect(JSON.parse((screen.getByRole("textbox", { name: "JSON" }) as HTMLTextAreaElement).value)).toEqual(MINE.definition);
-    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
-  });
+  it.each(["{", '{"meta": {}}'])(
+    "keeps invalid JSON edits in the leave guard and discards the raw text: %s",
+    async (text) => {
+      const update = vi.spyOn(API, "updateCustomEndpoint");
+      const { location } = renderSection("section=endpoints&endpoint=ce-7", { guarded: true });
+      await screen.findByDisplayValue("Example Video API");
+      await userEvent.click(screen.getByRole("button", { name: "JSON" }));
+      fireEvent.change(screen.getByRole("textbox", { name: "JSON" }), { target: { value: text } });
+      await clickRail("新建端点");
+      const dialog = await screen.findByRole("alertdialog");
+      await userEvent.click(within(dialog).getByRole("button", { name: "继续编辑" }));
+      expect(location.history.at(-1)).toBe("/app/settings?section=endpoints&endpoint=ce-7");
+      expect(screen.getByRole("textbox", { name: "JSON" })).toHaveValue(text);
+      await userEvent.click(screen.getByRole("button", { name: "保存" }));
+      expect(screen.getByRole("textbox", { name: "JSON" })).toHaveValue(text);
+      expect(update).not.toHaveBeenCalled();
+      await userEvent.click(screen.getByRole("button", { name: "放弃修改" }));
+      expect(JSON.parse((screen.getByRole("textbox", { name: "JSON" }) as HTMLTextAreaElement).value)).toEqual(
+        MINE.definition,
+      );
+      expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+    },
+  );
 
   it("shows an editable lifecycle form for one of my endpoints", async () => {
     renderSection("section=endpoints&endpoint=ce-7");
@@ -194,9 +198,7 @@ describe("EndpointsSection", () => {
     );
     renderSection("section=endpoints&endpoint=ce-7");
     // 诊断卡要等 400ms 校验防抖再发请求，默认 1s 等待在并行负载下不够。
-    expect(
-      await screen.findByText("不支持递归下降语法", undefined, { timeout: 4000 }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("不支持递归下降语法", undefined, { timeout: 4000 })).toBeInTheDocument();
     await userEvent.type(screen.getByDisplayValue("Example Video API"), "!");
     await userEvent.click(screen.getByRole("button", { name: "保存" }));
     expect(await screen.findByText(/存在错误，修正后才能保存。/)).toBeInTheDocument();
@@ -204,9 +206,7 @@ describe("EndpointsSection", () => {
   });
 
   it("saves an edited definition through the update endpoint", async () => {
-    const update = vi
-      .spyOn(API, "updateCustomEndpoint")
-      .mockResolvedValue({ ...MINE, display_name: "Renamed" });
+    const update = vi.spyOn(API, "updateCustomEndpoint").mockResolvedValue({ ...MINE, display_name: "Renamed" });
     renderSection("section=endpoints&endpoint=ce-7");
     const nameField = await screen.findByDisplayValue("Example Video API");
     await userEvent.type(nameField, "!");
@@ -215,9 +215,7 @@ describe("EndpointsSection", () => {
     await userEvent.click(save);
     await waitFor(() => expect(update).toHaveBeenCalledOnce());
     expect(update.mock.calls[0][0]).toBe(7);
-    expect((update.mock.calls[0][1] as EndpointDefinition).meta.name).toBe(
-      "Example Video API!",
-    );
+    expect((update.mock.calls[0][1] as EndpointDefinition).meta.name).toBe("Example Video API!");
   });
 
   it("shows server references when deletion conflicts and offers a model-row jump", async () => {
@@ -385,7 +383,10 @@ describe("EndpointsSection", () => {
         provider({
           id: 2,
           display_name: "Backup relay",
-          models: [model({ id: 21, model_id: "backup-video" }), model({ id: 22, model_id: "other", endpoint: "newapi-video" })],
+          models: [
+            model({ id: 21, model_id: "backup-video" }),
+            model({ id: 22, model_id: "other", endpoint: "newapi-video" }),
+          ],
         }),
       ],
     });

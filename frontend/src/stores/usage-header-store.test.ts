@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { makeUsageRecord, makeUsageSummary } from "@/components/usage/usage-fixtures";
@@ -30,10 +30,7 @@ describe("usage-header-store", () => {
     expect(state.summary?.primary_currency).toBe("CNY");
     expect(state.recent).toHaveLength(1);
     expect(state.pending).toHaveLength(1);
-    expect(recordsSpy).toHaveBeenCalledWith(
-      { projectName: "星海列车", statuses: ["pending"] },
-      expect.anything(),
-    );
+    expect(recordsSpy).toHaveBeenCalledWith({ projectName: "星海列车", statuses: ["pending"] }, expect.anything());
   });
 
   it("refreshes again when the same project is registered after a remount", async () => {
@@ -93,9 +90,7 @@ describe("usage-header-store", () => {
     vi.spyOn(API, "getUsageSummary").mockImplementation(
       (_query, options) =>
         new Promise((resolve, reject) => {
-          options?.signal?.addEventListener("abort", () =>
-            reject(new DOMException("Aborted", "AbortError")),
-          );
+          options?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
           pendingSummaries.push(resolve);
         }),
     );
@@ -107,9 +102,7 @@ describe("usage-header-store", () => {
     await vi.waitFor(() => expect(pendingSummaries).toHaveLength(2));
     pendingSummaries[1](makeUsageSummary());
 
-    await vi.waitFor(() =>
-      expect(useUsageHeaderStore.getState().summary).not.toBeNull(),
-    );
+    await vi.waitFor(() => expect(useUsageHeaderStore.getState().summary).not.toBeNull());
     // 第一轮是被接管方主动作废的，不是接口失败，不该在面板上报错。
     expect(useUsageHeaderStore.getState().loadFailed).toBe(false);
   });
@@ -122,9 +115,7 @@ describe("usage-header-store", () => {
     vi.spyOn(API, "getUsageSummary").mockImplementation(
       (query, options) =>
         new Promise((resolve, reject) => {
-          options?.signal?.addEventListener("abort", () =>
-            reject(new DOMException("Aborted", "AbortError")),
-          );
+          options?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
           pending.push({ projectName: query?.projectName, resolve });
         }),
     );
@@ -140,27 +131,27 @@ describe("usage-header-store", () => {
     pending[0].resolve(makeUsageSummary({ primary_currency: "JPY" }));
     pending[1].resolve(makeUsageSummary({ primary_currency: "USD" }));
 
-    await vi.waitFor(() =>
-      expect(useUsageHeaderStore.getState().summary?.primary_currency).toBe("USD"),
-    );
+    await vi.waitFor(() => expect(useUsageHeaderStore.getState().summary?.primary_currency).toBe("USD"));
   });
 
   it("keeps the last detail request when several rows are opened in a row", async () => {
-    const first = createDeferred<ReturnType<typeof makeUsageRecord> & {
-      prompt: null;
-      inputs: null;
-      last_provider_response: null;
-      provider_in_settings: boolean;
-    }>();
-    const second = createDeferred<ReturnType<typeof makeUsageRecord> & {
-      prompt: null;
-      inputs: null;
-      last_provider_response: null;
-      provider_in_settings: boolean;
-    }>();
-    vi.spyOn(API, "getUsageRecord").mockImplementation((recordId) =>
-      recordId === 7 ? first.promise : second.promise,
-    );
+    const first = createDeferred<
+      ReturnType<typeof makeUsageRecord> & {
+        prompt: null;
+        inputs: null;
+        last_provider_response: null;
+        provider_in_settings: boolean;
+      }
+    >();
+    const second = createDeferred<
+      ReturnType<typeof makeUsageRecord> & {
+        prompt: null;
+        inputs: null;
+        last_provider_response: null;
+        provider_in_settings: boolean;
+      }
+    >();
+    vi.spyOn(API, "getUsageRecord").mockImplementation((recordId) => (recordId === 7 ? first.promise : second.promise));
 
     const firstRequest = useUsageHeaderStore.getState().openDetail(7);
     const secondRequest = useUsageHeaderStore.getState().openDetail(9);

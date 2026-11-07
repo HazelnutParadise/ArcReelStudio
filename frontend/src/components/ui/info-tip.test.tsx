@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { InfoTip, InfoTipContent, InfoTipTrigger } from "./info-tip";
 
 const HINT = "不含缓存命中与缓存写入的部分";

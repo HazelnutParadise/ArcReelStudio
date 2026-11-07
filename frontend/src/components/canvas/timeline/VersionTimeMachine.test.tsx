@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vite-plus/test";
 import { makeNarrationSegment } from "@/test/factories";
 import userEvent from "@testing-library/user-event";
 import { createDeferred } from "@/test/deferred";
@@ -67,12 +67,7 @@ describe("VersionTimeMachine", () => {
     const onRestore = vi.fn().mockResolvedValue(undefined);
 
     render(
-      <VersionTimeMachine
-        projectName="demo"
-        resourceType="storyboards"
-        resourceId="SEG-1"
-        onRestore={onRestore}
-      />,
+      <VersionTimeMachine projectName="demo" resourceType="storyboards" resourceId="SEG-1" onRestore={onRestore} />,
     );
 
     expect(API.getVersions).not.toHaveBeenCalled();
@@ -91,12 +86,7 @@ describe("VersionTimeMachine", () => {
     fireEvent.click(screen.getByRole("button", { name: /切换到此版本/ }));
 
     await waitFor(() => {
-      expect(API.restoreVersion).toHaveBeenCalledWith(
-        "demo",
-        "storyboards",
-        "SEG-1",
-        1,
-      );
+      expect(API.restoreVersion).toHaveBeenCalledWith("demo", "storyboards", "SEG-1", 1);
       expect(onRestore).toHaveBeenCalledWith(1);
       expect(API.getVersions).toHaveBeenCalledTimes(2);
     });
@@ -123,11 +113,21 @@ describe("VersionTimeMachine", () => {
   it("drops the previewed version when the resource gets a new version elsewhere, but keeps the one just restored", async () => {
     useProjectsStore.setState({ assetFingerprints: { "products/Cup.png": 1 } });
     const versions = [
-      { version: 1, filename: "v1.png", created_at: "2026-10-01", file_size: 1, is_current: false, file_url: "/v1.png" },
+      {
+        version: 1,
+        filename: "v1.png",
+        created_at: "2026-10-01",
+        file_size: 1,
+        is_current: false,
+        file_url: "/v1.png",
+      },
       { version: 2, filename: "v2.png", created_at: "2026-10-02", file_size: 1, is_current: true, file_url: "/v2.png" },
     ];
     vi.spyOn(API, "getVersions").mockResolvedValue({
-      resource_type: "products", resource_id: "Cup", current_version: 2, versions,
+      resource_type: "products",
+      resource_id: "Cup",
+      current_version: 2,
+      versions,
     });
     vi.spyOn(API, "restoreVersion").mockResolvedValue({
       success: true,
@@ -154,7 +154,9 @@ describe("VersionTimeMachine", () => {
     const user = userEvent.setup();
     const pending = createDeferred<{ success: boolean }>();
     vi.spyOn(API, "getVersions").mockResolvedValue({
-      resource_type: "products", resource_id: "Cup", current_version: 2,
+      resource_type: "products",
+      resource_id: "Cup",
+      current_version: 2,
       versions: [{ version: 1, filename: "v1.png", created_at: "2026-10-01", file_size: 1, is_current: false }],
     });
     vi.spyOn(API, "restoreVersion").mockReturnValue(pending.promise);
@@ -195,13 +197,7 @@ describe("VersionTimeMachine", () => {
       ],
     });
 
-    render(
-      <VersionTimeMachine
-        projectName="demo"
-        resourceType="characters"
-        resourceId="Hero"
-      />,
-    );
+    render(<VersionTimeMachine projectName="demo" resourceType="characters" resourceId="Hero" />);
 
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
     expect(await screen.findByRole("button", { name: "v1" })).toBeInTheDocument();
@@ -241,13 +237,7 @@ describe("VersionTimeMachine", () => {
     });
     const restore = vi.spyOn(API, "restoreVersion").mockResolvedValue({ success: true });
 
-    render(
-      <VersionTimeMachine
-        projectName="demo"
-        resourceType="audio"
-        resourceId="E1S01"
-      />,
-    );
+    render(<VersionTimeMachine projectName="demo" resourceType="audio" resourceId="E1S01" />);
 
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
     fireEvent.click(await screen.findByRole("button", { name: "v1" }));
@@ -291,13 +281,7 @@ describe("VersionTimeMachine", () => {
     });
     const restore = vi.spyOn(API, "restoreVersion").mockResolvedValue({ success: true });
 
-    render(
-      <VersionTimeMachine
-        projectName="demo"
-        resourceType="audio"
-        resourceId="E1S01"
-      />,
-    );
+    render(<VersionTimeMachine projectName="demo" resourceType="audio" resourceId="E1S01" />);
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
     fireEvent.click(await screen.findByRole("button", { name: "v1" }));
 
@@ -335,13 +319,7 @@ describe("VersionTimeMachine", () => {
     });
     const presentation = vi.spyOn(API, "getPresentation");
 
-    render(
-      <VersionTimeMachine
-        projectName="demo"
-        resourceType="videos"
-        resourceId="E1S01"
-      />,
-    );
+    render(<VersionTimeMachine projectName="demo" resourceType="videos" resourceId="E1S01" />);
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
     fireEvent.click(await screen.findByRole("button", { name: "v1" }));
 
@@ -419,20 +397,13 @@ describe("VersionTimeMachine", () => {
       },
     });
     onTestFinished(() => useProjectsStore.setState({ currentScripts: {} }));
-    render(
-      <VersionTimeMachine projectName="demo" resourceType="videos" resourceId="E1S01" />,
-    );
+    render(<VersionTimeMachine projectName="demo" resourceType="videos" resourceId="E1S01" />);
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
     fireEvent.click(await screen.findByRole("button", { name: "v1" }));
 
     const previewSource = (await screen.findByLabelText("分镜 2 成片预览")).getAttribute("src");
     expect(previewSource?.startsWith("/api/v1/files/demo/versions/videos/E1S01_v1.mp4")).toBe(true);
-    expect(presentation).toHaveBeenCalledWith(
-      "demo",
-      "videos",
-      "E1S01",
-      expect.objectContaining({ videoVersion: 1 }),
-    );
+    expect(presentation).toHaveBeenCalledWith("demo", "videos", "E1S01", expect.objectContaining({ videoVersion: 1 }));
     expect(screen.getByText("来源不可用")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /切换到此版本/ })).not.toBeInTheDocument();
   });
@@ -464,14 +435,7 @@ describe("VersionTimeMachine", () => {
     });
     const restoreSpy = vi.spyOn(API, "restoreVersion").mockResolvedValue({ success: true });
 
-    render(
-      <VersionTimeMachine
-        projectName="demo"
-        resourceType="storyboards"
-        resourceId="SEG-1"
-        busy
-      />,
-    );
+    render(<VersionTimeMachine projectName="demo" resourceType="storyboards" resourceId="SEG-1" busy />);
 
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
     expect(await screen.findByRole("button", { name: "v1" })).toBeInTheDocument();
@@ -518,12 +482,7 @@ describe("VersionTimeMachine", () => {
     const checkBusy = vi.fn().mockReturnValue(true);
 
     render(
-      <VersionTimeMachine
-        projectName="demo"
-        resourceType="storyboards"
-        resourceId="SEG-1"
-        checkBusy={checkBusy}
-      />,
+      <VersionTimeMachine projectName="demo" resourceType="storyboards" resourceId="SEG-1" checkBusy={checkBusy} />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
@@ -536,8 +495,6 @@ describe("VersionTimeMachine", () => {
     fireEvent.click(restoreButton);
 
     expect(restoreSpy).not.toHaveBeenCalled();
-    await waitFor(() =>
-      expect(useAppStore.getState().toast?.text).toBe("生成或编辑进行中，暂无法切换版本"),
-    );
+    await waitFor(() => expect(useAppStore.getState().toast?.text).toBe("生成或编辑进行中，暂无法切换版本"));
   });
 });

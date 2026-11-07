@@ -1,6 +1,17 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, ArrowRight, CheckCircle2, ChevronDown, Clock, Lock, OctagonAlert, Pencil, RotateCcw, Save } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Lock,
+  OctagonAlert,
+  Pencil,
+  RotateCcw,
+  Save,
+} from "lucide-react";
 import type {
   DraftSoftViolation,
   PlanNewAsset,
@@ -244,12 +255,14 @@ function InlineViolations({ violations, position }: { violations: ScriptReviewVi
         const location = v.locations
           ?.map(({ path, line }) => `${path.join(".")}${line === null ? "" : `:${line + 1}`}`)
           .join(", ");
-        const message = speechKey && location
-          ? t(speechKey, { position, location })
-          : draftViolationMessage(v, t, position);
+        const message =
+          speechKey && location ? t(speechKey, { position, location }) : draftViolationMessage(v, t, position);
         return (
           // react-doctor-disable-next-line react-doctor/no-array-index-as-key -- 违约由服务端整表算出、没有 ID，同一 code 可重复出现；只读文本、行内无状态
-          <p key={`${v.code}-${i}`} className="mt-1 flex items-start gap-1.5 pl-1 text-xs leading-snug text-destructive">
+          <p
+            key={`${v.code}-${i}`}
+            className="mt-1 flex items-start gap-1.5 pl-1 text-xs leading-snug text-destructive"
+          >
             <OctagonAlert className="mt-px size-3 shrink-0" aria-hidden="true" />
             <span>{message}</span>
           </p>
@@ -471,8 +484,7 @@ export function ReferenceScriptPlanPreviewPanel({
     capability?.duration_endpoint_fixed ? fixedPlanningDurations : (capability?.allowed_durations ?? null);
   const pushToast = useAppStore((s) => s.pushToast);
   const savedInstructions = useProjectsStore(
-    (s) =>
-      s.currentProjectData?.episodes?.find((ep) => ep.episode === episode)?.script_plan_instructions ?? "",
+    (s) => s.currentProjectData?.episodes?.find((ep) => ep.episode === episode)?.script_plan_instructions ?? "",
   );
 
   const [editingUnitKey, setEditingUnitKey] = useState<string | null>(null);
@@ -558,7 +570,11 @@ export function ReferenceScriptPlanPreviewPanel({
   const scrollTo = (el: HTMLElement | null | undefined) => el?.scrollIntoView({ behavior: "smooth", block: "center" });
 
   if (loading) {
-    return <div className="flex h-64 items-center justify-center text-muted-foreground">{t("dashboard:loading_script_plan")}</div>;
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground">
+        {t("dashboard:loading_script_plan")}
+      </div>
+    );
   }
 
   if (loadError) {
@@ -567,7 +583,9 @@ export function ReferenceScriptPlanPreviewPanel({
         <AlertTriangle className="size-6 text-warn" aria-hidden="true" />
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium text-subtle-foreground">{t("dashboard:review_load_failed")}</p>
-          {loadError.message && <p className="max-w-sm px-4 font-mono text-xs text-muted-foreground">{loadError.message}</p>}
+          {loadError.message && (
+            <p className="max-w-sm px-4 font-mono text-xs text-muted-foreground">{loadError.message}</p>
+          )}
         </div>
         <Button variant="outline" onClick={handleRetry}>
           <RotateCcw aria-hidden data-icon="inline-start" />
@@ -760,7 +778,9 @@ export function ReferenceScriptPlanPreviewPanel({
         <AgentDraftBar
           busy={draftBusy}
           onFinish={() =>
-            prefillAssistant(t("dashboard:draft_agent_finish_prefill", { episodeRef, docType: "reference_script_plan" }))
+            prefillAssistant(
+              t("dashboard:draft_agent_finish_prefill", { episodeRef, docType: "reference_script_plan" }),
+            )
           }
           onDiscard={() => setDiscardOpen(true)}
         />
@@ -800,7 +820,7 @@ export function ReferenceScriptPlanPreviewPanel({
               projectName={projectName}
               episode={episode}
               replaces={confirmed ? "confirmed_plan" : "pending_plan"}
-             
+
               disabledReason={!readOnly && dirty ? t("dashboard:script_plan_dirty_hint") : null}
             />
             {!readOnly && dirty && (
@@ -824,7 +844,9 @@ export function ReferenceScriptPlanPreviewPanel({
               <Button
                 size="sm"
                 onClick={voidPromise(() => handleConfirm())}
-                disabled={busy || confirmLocked || outOfTierUnitKeys.size > 0 || unknownUnitKeys.size > 0 || videoModelBlocked}
+                disabled={
+                  busy || confirmLocked || outOfTierUnitKeys.size > 0 || unknownUnitKeys.size > 0 || videoModelBlocked
+                }
                 title={confirmBlockedHint}
               >
                 {confirmLocked ? (

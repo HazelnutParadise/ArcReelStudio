@@ -1,13 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { RecordRow } from "./RecordRow";
 import { makeUsageRecord } from "./usage-fixtures";
 import { usageRecordToView } from "./usage-record-view";
 
-const providerLabel = (provider: string | null) =>
-  provider === "google" ? "Google" : (provider ?? "—");
+const providerLabel = (provider: string | null) => (provider === "google" ? "Google" : (provider ?? "—"));
 
 describe("RecordRow compact layout", () => {
   it("stacks target and model and opens the detail from anywhere on the row", async () => {

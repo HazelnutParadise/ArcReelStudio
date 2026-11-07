@@ -1,10 +1,5 @@
 /** 市场源的刷新状态。 */
-export type MarketSourceStatus =
-  | "never_fetched"
-  | "ok"
-  | "unreachable"
-  | "invalid_index"
-  | "unsupported_schema";
+export type MarketSourceStatus = "never_fetched" | "ok" | "unreachable" | "invalid_index" | "unsupported_schema";
 
 export type MarketSourceKind = "official" | "custom";
 
@@ -99,7 +94,10 @@ export interface EndpointInstallation {
 
 export interface MarketEntryDetail {
   entry: MarketEntry;
-  source: Pick<MarketSourceInfo, "id" | "kind" | "display_name" | "canonical_key" | "is_enabled" | "status" | "fetched_at" | "index">;
+  source: Pick<
+    MarketSourceInfo,
+    "id" | "kind" | "display_name" | "canonical_key" | "is_enabled" | "status" | "fetched_at" | "index"
+  >;
   app_version: string | null;
 }
 

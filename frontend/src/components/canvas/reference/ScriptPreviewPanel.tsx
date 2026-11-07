@@ -152,21 +152,20 @@ export function ScriptPreviewPanel({ projectName, episode, text, lookup }: Scrip
       >
         <dt className="text-muted-foreground">{t("script_preview_utterances")}</dt>
         <dd className="text-subtle-foreground">
-          {counts.dialogue + counts.voiceover > 0
-            ? t("script_preview_utterances_value", {
-                dialogue: counts.dialogue,
-                voiceover: counts.voiceover,
-              })
-            : <span className="text-muted-foreground">{t("script_preview_none")}</span>}
+          {counts.dialogue + counts.voiceover > 0 ? (
+            t("script_preview_utterances_value", {
+              dialogue: counts.dialogue,
+              voiceover: counts.voiceover,
+            })
+          ) : (
+            <span className="text-muted-foreground">{t("script_preview_none")}</span>
+          )}
         </dd>
       </dl>
 
       {/* 服务端派生出的逐条台词：与上方本地高亮互为对照，解析口径若有出入在此显形。 */}
       {utterances.length > 0 && (
-        <ul
-          aria-busy={stale || undefined}
-          className={`mt-2 flex flex-col gap-1 text-xs ${stale ? "opacity-45" : ""}`}
-        >
+        <ul aria-busy={stale || undefined} className={`mt-2 flex flex-col gap-1 text-xs ${stale ? "opacity-45" : ""}`}>
           {utterances.map((u) => {
             const palette = assetColor(u.kind === "dialogue" ? "character" : "unknown");
             return (
@@ -174,10 +173,7 @@ export function ScriptPreviewPanel({ projectName, episode, text, lookup }: Scrip
                 <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
                   {t("script_preview_utterance_badge", { index: u.index })}
                 </span>
-                <span
-                  translate="no"
-                  className={`shrink-0 rounded-sm px-1 ${palette.textClass} ${palette.bgClass}`}
-                >
+                <span translate="no" className={`shrink-0 rounded-sm px-1 ${palette.textClass} ${palette.bgClass}`}>
                   {u.kind === "dialogue" ? u.speaker : t("script_highlight_voiceover")}
                 </span>
                 <span className="min-w-0 flex-1 break-words text-subtle-foreground">{u.text}</span>

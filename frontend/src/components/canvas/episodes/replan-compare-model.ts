@@ -83,7 +83,11 @@ export function replanCompare(view: EpisodesView, replan: ReplanSummary | null):
     const pieces: LanePiece[] = [];
     for (const draft of drafts) {
       if (draft.file !== file || draft.end <= from || draft.start >= to) continue;
-      pieces.push({ from: Math.max(draft.start, from), to: Math.min(draft.end, to), lane: { kind: "new", index: draft.index } });
+      pieces.push({
+        from: Math.max(draft.start, from),
+        to: Math.min(draft.end, to),
+        lane: { kind: "new", index: draft.index },
+      });
     }
     if (!replan.complete) {
       // 等待规划：方案的结尾之后，且不早于起点
@@ -112,10 +116,18 @@ export function replanCompare(view: EpisodesView, replan: ReplanSummary | null):
     view.files.flatMap((file, index) =>
       file.segments
         .filter((s) => s.kind === "episode")
-        .flatMap((s): Pos[] => [...(s.continued ? [] : [[index, s.start] as Pos]), ...(s.continues ? [] : [[index, s.end] as Pos])]),
+        .flatMap((s): Pos[] => [
+          ...(s.continued ? [] : [[index, s.start] as Pos]),
+          ...(s.continues ? [] : [[index, s.end] as Pos]),
+        ]),
     ),
   );
-  const fresh = boundarySet(drafts.flatMap((d): Pos[] => [[d.file, d.start], [d.file, d.end]]));
+  const fresh = boundarySet(
+    drafts.flatMap((d): Pos[] => [
+      [d.file, d.start],
+      [d.file, d.end],
+    ]),
+  );
   const byFile = new Map<number, number[]>();
   for (const [key, pos] of [...old, ...fresh]) {
     if (old.has(key) && fresh.has(key)) continue;

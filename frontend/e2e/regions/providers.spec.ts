@@ -17,9 +17,8 @@ interface RecordedProvider {
 }
 
 // 录制环境没有配置任何密钥：在录制的目录上给几个预置供应商补上密钥数量，二级栏第二行才有「已配置 N 个密钥」。
-const recordedProviders = (
-  JSON.parse(readFileSync(join(RECORDED_DIR, "providers.json"), "utf8")) as RecordedResponse
-).body as { providers: RecordedProvider[] };
+const recordedProviders = (JSON.parse(readFileSync(join(RECORDED_DIR, "providers.json"), "utf8")) as RecordedResponse)
+  .body as { providers: RecordedProvider[] };
 
 const PROVIDERS_WITH_KEYS: ApiOverrides = {
   "GET /api/v1/providers": {
@@ -370,7 +369,10 @@ const gptImageDetail = {
 const CUSTOM_PROVIDER_DETAIL: ApiOverrides = {
   "GET /api/v1/custom-providers": { status: 200, body: { providers: [customProvider] } },
   [`GET /api/v1/custom-providers/${CUSTOM_PROVIDER_ID}`]: { status: 200, body: customProvider },
-  [`GET /api/v1/providers/custom-${CUSTOM_PROVIDER_ID}/multiplier`]: { status: 200, body: { multiplier: 0.9, default: 1 } },
+  [`GET /api/v1/providers/custom-${CUSTOM_PROVIDER_ID}/multiplier`]: {
+    status: 200,
+    body: { multiplier: 0.9, default: 1 },
+  },
   [`GET /api/v1/providers/custom-${CUSTOM_PROVIDER_ID}/models`]: {
     status: 200,
     body: { discoverable: true, models: customListItems },
@@ -420,7 +422,13 @@ const CUSTOM_DISCOVERY: ApiOverrides = {
 };
 
 const SEEDANCE_ENTRIES = [
-  { maker: "bytedance", name: "doubao-seedance-2-0-pro-260128", media_type: "video", display_name: "Seedance 2.0 Pro", discontinued: false },
+  {
+    maker: "bytedance",
+    name: "doubao-seedance-2-0-pro-260128",
+    media_type: "video",
+    display_name: "Seedance 2.0 Pro",
+    discontinued: false,
+  },
   {
     maker: "bytedance",
     name: "doubao-seedance-1-0-lite-i2v-250428",
@@ -477,7 +485,9 @@ defineRegionScenarios("供应商", [
     act: async (page) => {
       const models = page.getByRole("region", { name: "模型" });
       await models.scrollIntoViewIfNeeded();
-      const legacy = models.getByRole("listitem").filter({ hasText: "gemini-2.0-flash-experimental-image-generation-legacy-2025-03-preview" });
+      const legacy = models
+        .getByRole("listitem")
+        .filter({ hasText: "gemini-2.0-flash-experimental-image-generation-legacy-2025-03-preview" });
       await expect(legacy.getByText("已下线")).toBeVisible();
       await models.getByRole("button", { name: /已启用/ }).click();
       await expect(models.getByText("已下线")).toHaveCount(0);
@@ -510,7 +520,11 @@ defineRegionScenarios("供应商", [
         expect(firstBox!.y - railBox!.y).toBeLessThan(tabBox!.y - railBox!.y + tabBox!.height + 24);
       }
       await rail(page).evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
-      await expect(rail(page).getByRole("link", { name: /添加自定义供应商/ }).filter({ visible: true })).toBeInViewport();
+      await expect(
+        rail(page)
+          .getByRole("link", { name: /添加自定义供应商/ })
+          .filter({ visible: true }),
+      ).toBeInViewport();
     },
     screenshot: { name: "providers-rail-custom", target: rail },
   },
@@ -714,7 +728,10 @@ defineRegionScenarios("供应商", [
       await expect(dialog.getByRole("button", { name: "确定" })).toBeInViewport({ ratio: 1 });
       await expect(dialog.getByRole("button", { name: "确定" })).toBeEnabled();
     },
-    screenshot: { name: "providers-manual-entry-dialog", target: (page) => page.getByRole("dialog", { name: "手动填写模型信息" }) },
+    screenshot: {
+      name: "providers-manual-entry-dialog",
+      target: (page) => page.getByRole("dialog", { name: "手动填写模型信息" }),
+    },
   },
   {
     name: "自定义供应商详情：删除确认写明模型数量，操作按钮留在视口内",

@@ -7,7 +7,6 @@ import { expect, type ApiOverrides } from "../support/test.ts";
 // 集页「多宫格分镜图」视图：按章节切分点分组，每组一张卡片，信息栏加联合图媒体栏。
 const GRID_PATH = "/app/projects/demo/episodes/1?view=grid";
 
-
 interface RecordedProject {
   project: Record<string, unknown>;
   scripts: Record<string, Record<string, unknown>>;
@@ -74,11 +73,7 @@ const REFERENCES = [
 const LONG_ERROR =
   "图像供应商返回错误：请求的联合图包含 9 个分镜，提示词合计超出模型单次输入上限（约 32k token），请减少这一组的分镜数量，或缩短各分镜图提示词后重新生成。";
 
-function grid(
-  id: string,
-  sceneIds: string[],
-  overrides: Record<string, unknown> & { rows: number; cols: number },
-) {
+function grid(id: string, sceneIds: string[], overrides: Record<string, unknown> & { rows: number; cols: number }) {
   return {
     id,
     episode: 1,
@@ -132,9 +127,7 @@ const API: ApiOverrides = {
   ...Object.fromEntries(GRIDS.map((g) => [`GET /api/v1/projects/demo/grids/${g.id}`, { status: 200, body: g }])),
 };
 
-
 const groupCard = (page: Page, index: number) => page.getByRole("region", { name: new RegExp(`^第 ${index} 组`) });
-
 
 async function gridReady(page: Page) {
   await page.getByRole("tab", { name: "多宫格分镜图" }).waitFor();

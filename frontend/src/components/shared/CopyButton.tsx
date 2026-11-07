@@ -25,9 +25,7 @@ export function CopyButton({ text, label, copiedLabel, className }: CopyButtonPr
     return () => clearTimeout(timer);
   }, [copied]);
 
-  const title = copied
-    ? (copiedLabel ?? t("message_copied"))
-    : (label ?? t("message_copy"));
+  const title = copied ? (copiedLabel ?? t("message_copied")) : (label ?? t("message_copy"));
 
   return (
     <Tooltip>

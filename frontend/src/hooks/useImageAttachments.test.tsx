@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { base64OfSize } from "@/test/image-data";
 import { stubImageCanvas } from "@/test/imageCanvas";
 import { MAX_ENCODED_IMAGE_BYTES } from "@/utils/image-transcode";
@@ -79,7 +79,7 @@ describe("useImageAttachments", () => {
 
     expect(canvas.decodes).toHaveLength(0);
     expect(result.current.images).toHaveLength(0);
-    expect(result.current.error).toBe('图片「huge.png」超过 5 MB，已跳过');
+    expect(result.current.error).toBe("图片「huge.png」超过 5 MB，已跳过");
   });
 
   it("rejects a GIF instead of uploading it unresized", () => {
@@ -92,7 +92,7 @@ describe("useImageAttachments", () => {
 
     expect(canvas.decodes).toHaveLength(0);
     expect(result.current.images).toHaveLength(0);
-    expect(result.current.error).toBe('暂不支持 GIF，图片「loop.gif」已跳过，请转为 PNG 或 JPEG 后再上传');
+    expect(result.current.error).toBe("暂不支持 GIF，图片「loop.gif」已跳过，请转为 PNG 或 JPEG 后再上传");
   });
 
   it("rejects a GIF whose MIME type claims it is a PNG", async () => {
@@ -101,9 +101,7 @@ describe("useImageAttachments", () => {
     const { result } = renderHook(() => useImageAttachments());
 
     act(() => {
-      result.current.addFiles([
-        new File([new TextEncoder().encode("GIF89a fake")], "loop.png", { type: "image/png" }),
-      ]);
+      result.current.addFiles([new File([new TextEncoder().encode("GIF89a fake")], "loop.png", { type: "image/png" })]);
     });
     await act(async () => {
       await canvas.decodes[0].finish({ width: 800, height: 600 });
@@ -111,7 +109,7 @@ describe("useImageAttachments", () => {
 
     expect(canvas.encodes).toHaveLength(0);
     expect(result.current.images).toHaveLength(0);
-    expect(result.current.error).toBe('暂不支持 GIF，图片「loop.png」已跳过，请转为 PNG 或 JPEG 后再上传');
+    expect(result.current.error).toBe("暂不支持 GIF，图片「loop.png」已跳过，请转为 PNG 或 JPEG 后再上传");
     expect(result.current.isReading).toBe(false);
   });
 
@@ -145,7 +143,7 @@ describe("useImageAttachments", () => {
 
     expect(result.current.isReading).toBe(false);
     expect(result.current.images).toHaveLength(0);
-    expect(result.current.error).toBe('图片「shot.png」无法读取，已跳过');
+    expect(result.current.error).toBe("图片「shot.png」无法读取，已跳过");
   });
 
   it("steps the JPEG quality down before giving up on an image that stays too large", async () => {
@@ -161,7 +159,7 @@ describe("useImageAttachments", () => {
 
     expect(canvas.encodes.map((encode) => encode.quality)).toEqual([0.85, 0.75, 0.65, 0.55, 0.45]);
     expect(result.current.images).toHaveLength(0);
-    expect(result.current.error).toBe('图片「dense.png」压缩后仍然过大，已跳过');
+    expect(result.current.error).toBe("图片「dense.png」压缩后仍然过大，已跳过");
     expect(result.current.isReading).toBe(false);
   });
 
@@ -194,7 +192,7 @@ describe("useImageAttachments", () => {
     });
 
     expect(result.current.images).toHaveLength(0);
-    expect(result.current.error).toBe('图片「broken.png」无法读取，已跳过');
+    expect(result.current.error).toBe("图片「broken.png」无法读取，已跳过");
     expect(result.current.isReading).toBe(false);
   });
 
@@ -211,7 +209,7 @@ describe("useImageAttachments", () => {
     });
 
     expect(result.current.images).toHaveLength(0);
-    expect(result.current.error).toBe('图片「unsupported.png」无法读取，已跳过');
+    expect(result.current.error).toBe("图片「unsupported.png」无法读取，已跳过");
     expect(result.current.isReading).toBe(false);
   });
 

@@ -9,9 +9,10 @@ import { usePresenceStore } from "@/stores/presence-store";
 export const PRESENCE_HEARTBEAT_MS = 20_000;
 
 /** 本标签页的标识：每次载入页面重新生成，同一标签页里切换项目时沿用。 */
-const TAB_ID = typeof crypto !== "undefined" && "randomUUID" in crypto
-  ? crypto.randomUUID()
-  : `tab-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
+const TAB_ID =
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `tab-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`;
 
 /**
  * 工作区内的位置：去掉项目前缀与首尾斜杠，如 `episodes/3`；在项目首页时为 null。

@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { lintConfig } from "../lint/config";
 
 // 用真实的 lint/config.ts 跑 vp lint（Oxlint）：夹具按各条 override 匹配的路径写进临时目录，
@@ -33,7 +33,12 @@ type Report = { rule: string; message: string };
 async function lint(cwd: string, args: string[]): Promise<Map<string, Report[]>> {
   const stdout = await vp(cwd, ["lint", "-f", "json", ...args]);
   const { diagnostics } = JSON.parse(stdout) as {
-    diagnostics: Array<{ code?: string; message: string; filename: string; labels?: Array<{ span: { line: number } }> }>;
+    diagnostics: Array<{
+      code?: string;
+      message: string;
+      filename: string;
+      labels?: Array<{ span: { line: number } }>;
+    }>;
   };
   const byLine = new Map<string, Report[]>();
   for (const d of diagnostics) {
@@ -157,7 +162,10 @@ const LAYOUT_ENFORCED: Record<string, LayoutGuard[]> = {
 
 const API_GUARDS = {
   enqueue: { code: () => `API.generateVideo("${uid()}");`, message: "入队类 API 方法只能经 src/actions/" },
-  capabilities: { code: () => `API.getVideoCapabilities("${uid()}");`, message: "模型能力只能经 useModelCapabilities 消费" },
+  capabilities: {
+    code: () => `API.getVideoCapabilities("${uid()}");`,
+    message: "模型能力只能经 useModelCapabilities 消费",
+  },
   moduleMock: { code: () => `vi.mock("@/api/${uid()}");`, message: "禁止整模块 mock" },
   // 丢弃结算值的三种写法：直接调用、await 后丢弃、void。
   discardedRefresh: {
@@ -318,7 +326,8 @@ describe("类名守卫", () => {
     });
 
     const allowed = ALLOWED.map(
-      (className) => [className, at(filePath, literalFixture(className)), at(filePath, templateFixture(className))] as const,
+      (className) =>
+        [className, at(filePath, literalFixture(className)), at(filePath, templateFixture(className))] as const,
     );
     it.each(allowed)("放过 %s", (_className, literal, template) => {
       expect(guardReports(literal)).toEqual([]);

@@ -1,11 +1,13 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import type { FetchedProviderModel, FetchProviderModelsResponse } from "@/types";
 import { FetchModelsDialog, type FetchSelection } from "./FetchModelsDialog";
 
-function fetched(overrides: Partial<FetchedProviderModel> & Pick<FetchedProviderModel, "model_id">): FetchedProviderModel {
+function fetched(
+  overrides: Partial<FetchedProviderModel> & Pick<FetchedProviderModel, "model_id">,
+): FetchedProviderModel {
   return {
     display_name: overrides.model_id,
     media_type: "text",
@@ -94,7 +96,9 @@ describe("FetchModelsDialog", () => {
   it("submits the matching model chosen for an unrecognized row as its binding", async () => {
     const user = userEvent.setup();
     vi.spyOn(API, "searchCatalogEntries").mockResolvedValue({
-      entries: [{ maker: "openai", name: "gpt-image-2", media_type: "image", display_name: "GPT Image 2", discontinued: false }],
+      entries: [
+        { maker: "openai", name: "gpt-image-2", media_type: "image", display_name: "GPT Image 2", discontinued: false },
+      ],
     });
     const { onAdd, onOpenChange } = renderDialog(async () => RESPONSE);
 

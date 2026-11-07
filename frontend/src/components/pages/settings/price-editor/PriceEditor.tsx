@@ -3,7 +3,12 @@ import { Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -159,7 +164,8 @@ function MeterCard({ meter, currency, mediaType, resolutions, issues, onChange, 
   const symbol = currencySymbol(t, currency);
   const conditional = meter.dims.length > 0;
   const addableDims = addableDimensions(meter, mediaType);
-  const canAddAllowance = isKnownMeter(meter.meter) && METERS[meter.meter].kind === "count" && meter.meter !== "requests";
+  const canAddAllowance =
+    isKnownMeter(meter.meter) && METERS[meter.meter].kind === "count" && meter.meter !== "requests";
   // 档在数据里没有身份（条件可编辑、可暂时重复）：行 key 用客户端 id，删掉中间一档时其余档的输入不错位
   const rowIds = useRowIds(meter.rows.length);
 
@@ -286,7 +292,9 @@ function MeterCard({ meter, currency, mediaType, resolutions, issues, onChange, 
         (issue) =>
           (issue.kind === "context_tier_not_from_zero" || issue.kind === "context_tier_mismatch") && (
             <p key={issue.kind} role="alert" className="text-xs text-warn">
-              {issue.kind === "context_tier_not_from_zero" ? t("pm_pe_context_tier_from_zero") : t("pm_pe_context_tier_mismatch")}
+              {issue.kind === "context_tier_not_from_zero"
+                ? t("pm_pe_context_tier_from_zero")
+                : t("pm_pe_context_tier_mismatch")}
             </p>
           ),
       )}
@@ -380,13 +388,7 @@ function ConditionTag({ meter, dim, value, resolutions, onChange, anyKey }: Cond
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        render={
-          <Button
-            variant="outline"
-            size="xs"
-            aria-label={t("pm_pe_condition_edit", { name: text })}
-          />
-        }
+        render={<Button variant="outline" size="xs" aria-label={t("pm_pe_condition_edit", { name: text })} />}
       >
         {text}
       </PopoverTrigger>
@@ -412,7 +414,13 @@ function ConditionTag({ meter, dim, value, resolutions, onChange, anyKey }: Cond
             key={String(value)}
             kind={kind}
             initial={value}
-            label={kind === "tier" ? t("pm_pe_context_lower") : kind === "seconds" ? t("pm_pe_seconds_input") : t("pm_pe_condition_custom")}
+            label={
+              kind === "tier"
+                ? t("pm_pe_context_lower")
+                : kind === "seconds"
+                  ? t("pm_pe_seconds_input")
+                  : t("pm_pe_condition_custom")
+            }
             onApply={pick}
           />
         )}
@@ -421,7 +429,15 @@ function ConditionTag({ meter, dim, value, resolutions, onChange, anyKey }: Cond
   );
 }
 
-function OptionButton({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) {
+function OptionButton({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
   return (
     <Button
       variant={selected ? "secondary" : "ghost"}

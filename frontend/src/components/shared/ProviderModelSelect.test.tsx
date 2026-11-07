@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import "@/i18n";
 import { ProviderModelSelect } from "./ProviderModelSelect";
 
@@ -15,25 +15,13 @@ const PROVIDER_NAMES = { "gemini-aistudio": "Gemini AI Studio", ark: "Ark" };
 
 describe("ProviderModelSelect – trigger display", () => {
   it("shows placeholder when value is empty and no fallback provided", () => {
-    render(
-      <ProviderModelSelect
-        value=""
-        options={OPTIONS}
-        providerNames={PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
-    );
+    render(<ProviderModelSelect value="" options={OPTIONS} providerNames={PROVIDER_NAMES} onChange={() => {}} />);
     expect(screen.getByRole("combobox")).toHaveTextContent(/选择模型/);
   });
 
   it("shows selected provider · model when value is non-empty", () => {
     render(
-      <ProviderModelSelect
-        value="ark/seedance"
-        options={OPTIONS}
-        providerNames={PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
+      <ProviderModelSelect value="ark/seedance" options={OPTIONS} providerNames={PROVIDER_NAMES} onChange={() => {}} />,
     );
     const trigger = screen.getByRole("combobox");
     expect(trigger).toHaveTextContent(/Ark/);
@@ -60,14 +48,7 @@ describe("ProviderModelSelect – trigger display", () => {
   it("shows the provider name for a bare provider id carrying no model", () => {
     // 后端接受不带 model 的裸 provider id（下游按该供应商默认模型执行）；按 provider/model
     // 硬拆会把触发按钮显示成空的「 · 」，用户看不出这项其实已配置
-    render(
-      <ProviderModelSelect
-        value="ark"
-        options={OPTIONS}
-        providerNames={PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
-    );
+    render(<ProviderModelSelect value="ark" options={OPTIONS} providerNames={PROVIDER_NAMES} onChange={() => {}} />);
     const trigger = screen.getByRole("combobox");
     expect(trigger).toHaveTextContent("Ark");
     expect(trigger).not.toHaveTextContent("·");
@@ -109,14 +90,7 @@ const MANY_PROVIDER_NAMES = {
 describe("ProviderModelSelect – search", () => {
   it("does not render search input when option count is below threshold", async () => {
     const user = userEvent.setup();
-    render(
-      <ProviderModelSelect
-        value=""
-        options={OPTIONS}
-        providerNames={PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
-    );
+    render(<ProviderModelSelect value="" options={OPTIONS} providerNames={PROVIDER_NAMES} onChange={() => {}} />);
     await open(user);
     expect(screen.queryByPlaceholderText(/搜索模型或供应商/)).not.toBeInTheDocument();
   });
@@ -124,12 +98,7 @@ describe("ProviderModelSelect – search", () => {
   it("renders search input when option count meets threshold", async () => {
     const user = userEvent.setup();
     render(
-      <ProviderModelSelect
-        value=""
-        options={MANY_OPTIONS}
-        providerNames={MANY_PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
+      <ProviderModelSelect value="" options={MANY_OPTIONS} providerNames={MANY_PROVIDER_NAMES} onChange={() => {}} />,
     );
     await open(user);
     expect(screen.getByPlaceholderText(/搜索模型或供应商/)).toBeInTheDocument();
@@ -138,12 +107,7 @@ describe("ProviderModelSelect – search", () => {
   it("filters options by model name substring", async () => {
     const user = userEvent.setup();
     render(
-      <ProviderModelSelect
-        value=""
-        options={MANY_OPTIONS}
-        providerNames={MANY_PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
+      <ProviderModelSelect value="" options={MANY_OPTIONS} providerNames={MANY_PROVIDER_NAMES} onChange={() => {}} />,
     );
     await open(user);
     await user.type(screen.getByPlaceholderText(/搜索模型或供应商/), "veo");
@@ -155,12 +119,7 @@ describe("ProviderModelSelect – search", () => {
   it("matches provider display name and shows all of its models", async () => {
     const user = userEvent.setup();
     render(
-      <ProviderModelSelect
-        value=""
-        options={MANY_OPTIONS}
-        providerNames={MANY_PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
+      <ProviderModelSelect value="" options={MANY_OPTIONS} providerNames={MANY_PROVIDER_NAMES} onChange={() => {}} />,
     );
     await open(user);
     await user.type(screen.getByPlaceholderText(/搜索模型或供应商/), "Gemini");
@@ -174,12 +133,7 @@ describe("ProviderModelSelect – search", () => {
   it("matches case-insensitively", async () => {
     const user = userEvent.setup();
     render(
-      <ProviderModelSelect
-        value=""
-        options={MANY_OPTIONS}
-        providerNames={MANY_PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
+      <ProviderModelSelect value="" options={MANY_OPTIONS} providerNames={MANY_PROVIDER_NAMES} onChange={() => {}} />,
     );
     await open(user);
     await user.type(screen.getByPlaceholderText(/搜索模型或供应商/), "OPENAI");
@@ -191,12 +145,7 @@ describe("ProviderModelSelect – search", () => {
   it("shows empty state when nothing matches", async () => {
     const user = userEvent.setup();
     render(
-      <ProviderModelSelect
-        value=""
-        options={MANY_OPTIONS}
-        providerNames={MANY_PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
+      <ProviderModelSelect value="" options={MANY_OPTIONS} providerNames={MANY_PROVIDER_NAMES} onChange={() => {}} />,
     );
     await open(user);
     await user.type(screen.getByPlaceholderText(/搜索模型或供应商/), "zzz-no-match");
@@ -255,12 +204,7 @@ describe("ProviderModelSelect – search", () => {
     const user = userEvent.setup();
     // Start with searchable enabled so user can type a query
     const { rerender } = render(
-      <ProviderModelSelect
-        value=""
-        options={MANY_OPTIONS}
-        providerNames={MANY_PROVIDER_NAMES}
-        onChange={() => {}}
-      />,
+      <ProviderModelSelect value="" options={MANY_OPTIONS} providerNames={MANY_PROVIDER_NAMES} onChange={() => {}} />,
     );
     await open(user);
     await user.type(screen.getByPlaceholderText(/搜索模型或供应商/), "veo");
@@ -285,12 +229,7 @@ describe("ProviderModelSelect – search", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
-      <ProviderModelSelect
-        value=""
-        options={MANY_OPTIONS}
-        providerNames={MANY_PROVIDER_NAMES}
-        onChange={onChange}
-      />,
+      <ProviderModelSelect value="" options={MANY_OPTIONS} providerNames={MANY_PROVIDER_NAMES} onChange={onChange} />,
     );
     await open(user);
     await user.type(screen.getByPlaceholderText(/搜索模型或供应商/), "sora");

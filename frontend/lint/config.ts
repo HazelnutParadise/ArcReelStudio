@@ -208,7 +208,10 @@ const JSX_A11Y_RECOMMENDED = {
   "jsx-a11y/no-access-key": "error",
   "jsx-a11y/no-autofocus": "error",
   "jsx-a11y/no-distracting-elements": "error",
-  "jsx-a11y/no-interactive-element-to-noninteractive-role": ["error", { tr: ["none", "presentation"], canvas: ["img"] }],
+  "jsx-a11y/no-interactive-element-to-noninteractive-role": [
+    "error",
+    { tr: ["none", "presentation"], canvas: ["img"] },
+  ],
   "jsx-a11y/no-noninteractive-element-interactions": [
     "error",
     {
@@ -408,6 +411,7 @@ export const lintConfig = {
     "eslint-plugin-testing-library",
     "eslint-plugin-jest-dom",
     "./lint/arcreel-plugin.ts",
+    { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
   ],
   categories: { correctness: "off" },
   options: {
@@ -424,6 +428,8 @@ export const lintConfig = {
     "**/*.config.*",
   ],
   rules: {
+    // 测试 API 从 vite-plus/test 导入，配置从 vite-plus 导入，不直接依赖 Vite+ 打包的 vitest、vite。
+    "vite-plus/prefer-vite-plus-imports": "error",
     ...ESLINT_RECOMMENDED,
     ...TYPESCRIPT_RECOMMENDED,
     ...TYPESCRIPT_TYPE_CHECKED,

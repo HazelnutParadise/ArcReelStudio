@@ -54,7 +54,8 @@ export function ReplanCandidatePanel({ projectName, view, replan, episodes, gene
   if (!generating && stopRequested) setStopRequested(false);
 
   const name = (episode: number) => episodeDisplayName(episodes, episode, t);
-  const names = (ids: number[]) => (ids.length === 0 ? t("dashboard:replan_none") : ids.map(name).join(t("dashboard:replan_name_separator")));
+  const names = (ids: number[]) =>
+    ids.length === 0 ? t("dashboard:replan_none") : ids.map(name).join(t("dashboard:replan_name_separator"));
 
   const fail = (err: unknown) =>
     useAppStore.getState().pushToast(t("dashboard:replan_failed", { message: errMsg(err) }), "error");
@@ -159,7 +160,8 @@ export function ReplanCandidatePanel({ projectName, view, replan, episodes, gene
   if (replan.stale !== null) {
     notice = t(`dashboard:replan_stale_${replan.stale}`);
   } else if (stopped) {
-    const reason = replan.interrupted === null ? "dashboard:replan_stopped" : `dashboard:replan_stopped_${replan.interrupted}`;
+    const reason =
+      replan.interrupted === null ? "dashboard:replan_stopped" : `dashboard:replan_stopped_${replan.interrupted}`;
     notice = t(reason, { end: point(view, replan.end) });
   }
   const truncated =
@@ -168,16 +170,16 @@ export function ReplanCandidatePanel({ projectName, view, replan, episodes, gene
   return shell(
     <>
       <h2 className="text-sm font-medium text-foreground">{t("dashboard:replan_title")}</h2>
-      <p className="text-muted-foreground">
-        {t("dashboard:replan_detail", { name: name(replan.episode) })}
-      </p>
+      <p className="text-muted-foreground">{t("dashboard:replan_detail", { name: name(replan.episode) })}</p>
       {replan.stale === null ? <CompareLegend pending={stopped} /> : null}
       {notice ? (
         <p role="status" className="flex gap-1.5 rounded-md bg-warn/10 p-2 text-subtle-foreground">
           <AlertTriangle aria-hidden className="mt-0.5 size-3.5 shrink-0 text-warn" />
           <span>
             {notice}
-            {stopped && adoptable ? <span className="mt-1 block">{t("dashboard:replan_stopped_adopt_hint")}</span> : null}
+            {stopped && adoptable ? (
+              <span className="mt-1 block">{t("dashboard:replan_stopped_adopt_hint")}</span>
+            ) : null}
           </span>
         </p>
       ) : null}
@@ -189,7 +191,9 @@ export function ReplanCandidatePanel({ projectName, view, replan, episodes, gene
             : t("dashboard:replan_count_value", { old: replan.old_count, new: replan.new_count })}
         </SummaryRow>
         <SummaryRow label={t("dashboard:replan_average")}>
-          {replan.average_units === null ? t("dashboard:replan_none") : formatVolume(t, replan.average_units, view.unit)}
+          {replan.average_units === null
+            ? t("dashboard:replan_none")
+            : formatVolume(t, replan.average_units, view.unit)}
         </SummaryRow>
         <SummaryRow label={t("dashboard:replan_coverage")}>
           {t("dashboard:replan_coverage_value", { start: point(view, replan.start), end: point(view, replan.end) })}
@@ -206,7 +210,9 @@ export function ReplanCandidatePanel({ projectName, view, replan, episodes, gene
               {replan.moved.length === 0
                 ? t("dashboard:replan_none")
                 : replan.moved
-                    .map((move) => t("dashboard:replan_moved_item", { name: name(move.episode), from: move.from, to: move.to }))
+                    .map((move) =>
+                      t("dashboard:replan_moved_item", { name: name(move.episode), from: move.from, to: move.to }),
+                    )
                     .join(t("dashboard:replan_name_separator"))}
             </SummaryRow>
           </>
@@ -225,8 +231,12 @@ export function ReplanCandidatePanel({ projectName, view, replan, episodes, gene
                 className="flex flex-col gap-0.5 rounded-md bg-muted/50 px-2 py-1.5"
               >
                 <span className="flex flex-wrap items-baseline gap-x-1.5">
-                  <span className="num text-muted-foreground">{t("dashboard:replan_episode_index", { index: index + 1 })}</span>
-                  <span className="min-w-0 text-foreground">{draft.title.trim() || t("dashboard:episodes_view_untitled")}</span>
+                  <span className="num text-muted-foreground">
+                    {t("dashboard:replan_episode_index", { index: index + 1 })}
+                  </span>
+                  <span className="min-w-0 text-foreground">
+                    {draft.title.trim() || t("dashboard:episodes_view_untitled")}
+                  </span>
                   <span className="num text-muted-foreground">{formatVolume(t, draft.units, view.unit)}</span>
                 </span>
                 <span className="text-muted-foreground">{relation(t, draft.same_as, draft.overlaps, name, names)}</span>

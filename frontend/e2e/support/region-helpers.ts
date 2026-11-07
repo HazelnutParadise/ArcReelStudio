@@ -19,11 +19,14 @@ export async function waitForEntrance(target: Locator) {
     // 先交出一帧，使新挂载弹层的样式与动画进入 DocumentTimeline。
     for (;;) {
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      const animations = el.getAnimations({ subtree: true }).filter((animation) =>
-        animation.timeline instanceof DocumentTimeline &&
-        Number.isFinite(animation.effect?.getComputedTiming().endTime) &&
-        (animation.playState === "running" || animation.pending),
-      );
+      const animations = el
+        .getAnimations({ subtree: true })
+        .filter(
+          (animation) =>
+            animation.timeline instanceof DocumentTimeline &&
+            Number.isFinite(animation.effect?.getComputedTiming().endTime) &&
+            (animation.playState === "running" || animation.pending),
+        );
       if (animations.length === 0) return;
       await Promise.allSettled(animations.map((animation) => animation.finished));
     }
@@ -34,6 +37,6 @@ export async function waitForEntrance(target: Locator) {
 export async function clearAgentOverlay(page: Page) {
   if (viewport(page).width >= 1280) return;
   const toggle = page.getByRole("button", { name: "Agent", exact: true });
-  if (await toggle.getAttribute("aria-pressed") === "true") await toggle.click();
+  if ((await toggle.getAttribute("aria-pressed")) === "true") await toggle.click();
   await expect(toggle).toHaveAttribute("aria-pressed", "false");
 }

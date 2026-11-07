@@ -1,7 +1,7 @@
 // 引导开启时预取设置页 chunk：设置页承载引导锚点（settingsProviders、settingsAgent），
 // 懒加载后锚点要等 chunk 到达才出现，引导的锚点等待有上限，只能靠提前拉取兜住。
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 

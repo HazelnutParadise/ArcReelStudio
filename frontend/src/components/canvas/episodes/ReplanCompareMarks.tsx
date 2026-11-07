@@ -42,7 +42,10 @@ export function LaneBar({
             key={piece.from}
             aria-hidden
             data-replan-lane={piece.lane.kind}
-            className={cn("pointer-events-none absolute -right-5 top-(--lane-top) bottom-(--lane-bottom)", laneClass(piece.lane))}
+            className={cn(
+              "pointer-events-none absolute -right-5 top-(--lane-top) bottom-(--lane-bottom)",
+              laneClass(piece.lane),
+            )}
             style={
               {
                 "--lane-top": `${top}%`,

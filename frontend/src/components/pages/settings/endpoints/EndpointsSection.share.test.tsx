@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useEndpointCatalogStore } from "@/stores/endpoint-catalog-store";
 import type { CustomEndpointInfo } from "@/types";
@@ -41,14 +41,16 @@ describe("EndpointsSection · share to official market", () => {
         prompt: {
           state: "auto_selected",
           notes: [],
-          candidates: [{
-            target: { node: "6", input: "text", class_type: "CLIPTextEncode" },
-            score: 200,
-            signals: [],
-            selected: true,
-            origin: "inferred",
-            depth: null,
-          }],
+          candidates: [
+            {
+              target: { node: "6", input: "text", class_type: "CLIPTextEncode" },
+              score: 200,
+              signals: [],
+              selected: true,
+              origin: "inferred",
+              depth: null,
+            },
+          ],
         },
       },
     });
@@ -86,13 +88,17 @@ describe("EndpointsSection · share to official market", () => {
     await userEvent.type(within(dialog).getByLabelText("slug 建议"), "example-video");
     expect(await within(dialog).findByText("本地校验通过，可以提交")).toBeInTheDocument();
     expect(check).toHaveBeenLastCalledWith(
-      { endpoint_id: endpoint.id, slug: "example-video", icon: null }, expect.anything(),
+      { endpoint_id: endpoint.id, slug: "example-video", icon: null },
+      expect.anything(),
     );
     await userEvent.type(within(dialog).getByLabelText("GitHub 用户名（可选）"), "octo-cat");
     await userEvent.click(within(dialog).getByRole("button", { name: "提交" }));
 
     expect(create).toHaveBeenCalledWith({
-      endpoint_id: endpoint.id, slug: "example-video", icon: null, github_username: "octo-cat",
+      endpoint_id: endpoint.id,
+      slug: "example-video",
+      icon: null,
+      github_username: "octo-cat",
     });
     expect(await screen.findByText("审核中")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "查看 PR" })).toHaveAttribute(
@@ -118,10 +124,16 @@ describe("EndpointsSection · share to official market", () => {
     });
     let finishStale!: (buffer: ArrayBuffer) => void;
     const stale = new File(["a"], "old.png", { type: "image/png" });
-    stale.arrayBuffer = () => new Promise((resolve) => { finishStale = resolve; });
+    stale.arrayBuffer = () =>
+      new Promise((resolve) => {
+        finishStale = resolve;
+      });
     let finishLatest!: (buffer: ArrayBuffer) => void;
     const latest = new File(["b"], "new.svg", { type: "image/svg+xml" });
-    latest.arrayBuffer = () => new Promise((resolve) => { finishLatest = resolve; });
+    latest.arrayBuffer = () =>
+      new Promise((resolve) => {
+        finishLatest = resolve;
+      });
     renderSection(`section=endpoints&endpoint=${MINE.key}`);
 
     await chooseMenu("分享到官方市场");
@@ -138,13 +150,17 @@ describe("EndpointsSection · share to official market", () => {
     const latestIcon = { filename: "icon.svg", content: btoa("<svg/>") };
     await waitFor(() =>
       expect(check).toHaveBeenLastCalledWith(
-        { endpoint_id: MINE.id, slug: "example-video-api", icon: latestIcon }, expect.anything(),
+        { endpoint_id: MINE.id, slug: "example-video-api", icon: latestIcon },
+        expect.anything(),
       ),
     );
     await waitFor(() => expect(within(dialog).getByRole("button", { name: "提交" })).toBeEnabled());
     await userEvent.click(within(dialog).getByRole("button", { name: "提交" }));
     expect(create).toHaveBeenCalledWith({
-      endpoint_id: MINE.id, slug: "example-video-api", icon: latestIcon, github_username: null,
+      endpoint_id: MINE.id,
+      slug: "example-video-api",
+      icon: latestIcon,
+      github_username: null,
     });
   });
 
@@ -185,6 +201,9 @@ describe("EndpointsSection · share to official market", () => {
     await screen.findByText("1 个节点");
     await userEvent.type(screen.getByLabelText("端点名称"), " changed");
     await userEvent.click(screen.getByRole("button", { name: "更多操作" }));
-    expect(await screen.findByRole("menuitem", { name: "先保存修改，再分享" })).toHaveAttribute("aria-disabled", "true");
+    expect(await screen.findByRole("menuitem", { name: "先保存修改，再分享" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 });

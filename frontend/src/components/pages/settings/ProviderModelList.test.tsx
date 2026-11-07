@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -153,7 +153,11 @@ describe("ProviderModelList", () => {
     vi.spyOn(API, "listProviderModels").mockResolvedValue({ models: [gated], discoverable: false });
     const user = userEvent.setup();
 
-    render(<TooltipProvider><ProviderModelList providerId="acme" providerName="Acme" /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <ProviderModelList providerId="acme" providerName="Acme" />
+      </TooltipProvider>,
+    );
     const name = await screen.findByText(gated.display_name!);
     const modelId = screen.getByText(gated.model_id);
     screen.getByRole("switch").focus();
@@ -167,7 +171,12 @@ describe("ProviderModelList", () => {
 
   it("leaves models that need a newer app version out of the add dialog's not-enabled group", async () => {
     const user = userEvent.setup();
-    const gated = item({ model_id: "chat-next", enabled: false, min_app_version: "0.36.0", min_app_version_satisfied: false });
+    const gated = item({
+      model_id: "chat-next",
+      enabled: false,
+      min_app_version: "0.36.0",
+      min_app_version_satisfied: false,
+    });
     vi.spyOn(API, "listProviderModels").mockResolvedValue({ models: [...MODELS, gated], discoverable: false });
     vi.spyOn(API, "searchCatalogEntries").mockResolvedValue({ entries: [] });
 
@@ -253,9 +262,13 @@ describe("ProviderModelList", () => {
       .mockResolvedValue({ models: [added], discoverable: false });
     vi.spyOn(API, "searchCatalogEntries").mockResolvedValue({ entries: [] });
     vi.spyOn(API, "getNewEntryHints").mockResolvedValue({ existing: null, durations: null });
-    const create = vi
-      .spyOn(API, "createCatalogEntry")
-      .mockResolvedValue({ maker: "bfl", name: "flux-x", media_type: "image", display_name: "flux-x", discontinued: false });
+    const create = vi.spyOn(API, "createCatalogEntry").mockResolvedValue({
+      maker: "bfl",
+      name: "flux-x",
+      media_type: "image",
+      display_name: "flux-x",
+      discontinued: false,
+    });
     const add = vi.spyOn(API, "addProviderModel").mockResolvedValue({ model: added, official: false });
     vi.spyOn(API, "getProviderModel").mockResolvedValue(detailOf(added));
 
@@ -320,9 +333,13 @@ describe("ProviderModelList", () => {
       .mockResolvedValue({ models: [added], discoverable: false });
     vi.spyOn(API, "searchCatalogEntries").mockResolvedValue({ entries: [] });
     vi.spyOn(API, "getNewEntryHints").mockResolvedValue({ existing: null, durations: null });
-    const create = vi
-      .spyOn(API, "createCatalogEntry")
-      .mockResolvedValue({ maker: "acme", name: "relay-chat", media_type: "text", display_name: "relay-chat", discontinued: false });
+    const create = vi.spyOn(API, "createCatalogEntry").mockResolvedValue({
+      maker: "acme",
+      name: "relay-chat",
+      media_type: "text",
+      display_name: "relay-chat",
+      discontinued: false,
+    });
     vi.spyOn(API, "addProviderModel").mockResolvedValue({ model: added, official: false });
     vi.spyOn(API, "getProviderModel").mockResolvedValue(detailOf(added));
 
@@ -379,14 +396,24 @@ describe("ProviderModelList", () => {
     const own = item({ model_id: "my-chat", official: false });
     vi.spyOn(API, "listProviderModels")
       .mockResolvedValueOnce({ models: [own], discoverable: false })
-      .mockResolvedValue({ models: [{ ...own, model_id: "my-chat-2", api_model_name: "my-chat-2" }], discoverable: false });
+      .mockResolvedValue({
+        models: [{ ...own, model_id: "my-chat-2", api_model_name: "my-chat-2" }],
+        discoverable: false,
+      });
     const detail = {
       model: own,
       multiplier: 1,
       provider_multiplier: 1,
       entry: null,
       entry_binding: null,
-      capabilities: { media_type: "text" as const, editable: [], displayed: [], base: {}, overrides: {}, effective: {} },
+      capabilities: {
+        media_type: "text" as const,
+        editable: [],
+        displayed: [],
+        base: {},
+        overrides: {},
+        effective: {},
+      },
       endpoint: null,
       resolution: null,
       path_overrides: null,
@@ -402,7 +429,9 @@ describe("ProviderModelList", () => {
     render(<ProviderModelList providerId="acme" providerName="Acme" onModelsChanged={onModelsChanged} />);
     fireEvent.click(await screen.findByRole("button", { name: /my-chat/ }));
     const sheet = await screen.findByRole("dialog");
-    fireEvent.change(await within(sheet).findByRole("textbox", { name: "模型 ID" }), { target: { value: "my-chat-2" } });
+    fireEvent.change(await within(sheet).findByRole("textbox", { name: "模型 ID" }), {
+      target: { value: "my-chat-2" },
+    });
     fireEvent.click(within(sheet).getByRole("button", { name: "保存" }));
 
     await waitFor(() => expect(update).toHaveBeenCalledWith("acme", "my-chat", { model_id: "my-chat-2" }));

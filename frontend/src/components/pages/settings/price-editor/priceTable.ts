@@ -89,7 +89,11 @@ export function withoutMeter(table: PriceTable, key: string): PriceTable {
   return { ...table, meters: table.meters.filter((m) => m.meter !== key) };
 }
 
-export function withMeterChanged(table: PriceTable, key: string, change: (meter: PriceMeter) => PriceMeter): PriceTable {
+export function withMeterChanged(
+  table: PriceTable,
+  key: string,
+  change: (meter: PriceMeter) => PriceMeter,
+): PriceTable {
   return { ...table, meters: table.meters.map((m) => (m.meter === key ? change(m) : m)) };
 }
 
@@ -99,7 +103,9 @@ export function withMeterChanged(table: PriceTable, key: string, change: (meter:
  */
 export function withDimension(meter: PriceMeter, dim: DimKey, resolutions: readonly string[] = []): PriceMeter {
   const initial = initialDimensionValue(dim, resolutions);
-  const rows = meter.rows.map((row) => (initial === undefined ? row : { ...row, when: { ...row.when, [dim]: initial } }));
+  const rows = meter.rows.map((row) =>
+    initial === undefined ? row : { ...row, when: { ...row.when, [dim]: initial } },
+  );
   const defaults = initial === undefined ? meter.defaults : { ...meter.defaults, [dim]: initial };
   return { ...meter, dims: [...meter.dims, dim], rows, ...(defaults ? { defaults } : {}) };
 }
@@ -152,7 +158,12 @@ export function withoutRow(meter: PriceMeter, index: number): PriceMeter {
 }
 
 /** 修改某一档某个维度的取值；`undefined` 表示任意。 */
-export function withRowCondition(meter: PriceMeter, index: number, dim: string, value: DimValue | undefined): PriceMeter {
+export function withRowCondition(
+  meter: PriceMeter,
+  index: number,
+  dim: string,
+  value: DimValue | undefined,
+): PriceMeter {
   const rows = meter.rows.map((row, i) => {
     if (i !== index) return row;
     const when = { ...row.when };

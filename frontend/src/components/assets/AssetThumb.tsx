@@ -15,7 +15,12 @@ export function AssetThumb({
   className?: string;
 }) {
   return (
-    <div className={cn("flex aspect-video items-center justify-center overflow-hidden bg-muted text-muted-foreground", className)}>
+    <div
+      className={cn(
+        "flex aspect-video items-center justify-center overflow-hidden bg-muted text-muted-foreground",
+        className,
+      )}
+    >
       {imageUrl ? (
         <img src={imageUrl} alt={alt} loading="lazy" decoding="async" className="size-full object-contain" />
       ) : (

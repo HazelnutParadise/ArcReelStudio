@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vite-plus/test";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { UnitList } from "./UnitList";
@@ -63,23 +63,14 @@ describe("UnitList", () => {
   });
 
   it("highlights the selected unit", () => {
-    render(
-      <UnitList
-        units={[mkUnit("E1U1"), mkUnit("E1U2")]}
-        selectedId="E1U2"
-        onSelect={vi.fn()}
-        onAdd={vi.fn()}
-      />,
-    );
+    render(<UnitList units={[mkUnit("E1U1"), mkUnit("E1U2")]} selectedId="E1U2" onSelect={vi.fn()} onAdd={vi.fn()} />);
     expect(screen.getByTestId("unit-row-E1U2")).toHaveAttribute("aria-current", "true");
     expect(screen.getByTestId("unit-row-E1U1")).not.toHaveAttribute("aria-current");
   });
 
   it("calls onSelect when a row is clicked", () => {
     const onSelect = vi.fn();
-    render(
-      <UnitList units={[mkUnit("E1U1")]} selectedId={null} onSelect={onSelect} onAdd={vi.fn()} />,
-    );
+    render(<UnitList units={[mkUnit("E1U1")]} selectedId={null} onSelect={onSelect} onAdd={vi.fn()} />);
     fireEvent.click(screen.getByTestId("unit-row-E1U1"));
     expect(onSelect).toHaveBeenCalledWith("E1U1");
   });
@@ -124,7 +115,9 @@ describe("UnitList", () => {
       const units = [mkUnit("E1U1"), mkUnit("E1U2", { text: "另一段" })];
       render(<UnitList units={units} selectedId={null} onSelect={vi.fn()} onAdd={vi.fn()} onMove={vi.fn()} />);
       fireEvent.change(screen.getByRole("searchbox"), { target: { value: "pub" } });
-      expect(screen.getByRole("button", { name: "调整「视频单元 1」的顺序", description: /空格|space/i })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "调整「视频单元 1」的顺序", description: /空格|space/i }),
+      ).toBeDisabled();
     });
   });
 });

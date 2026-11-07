@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { base64OfSize } from "@/test/image-data";
 import { stubImageCanvas } from "@/test/imageCanvas";
 import type { Turn } from "@/types";
@@ -107,9 +107,7 @@ describe("MessageRow", () => {
     fireEvent.change(textarea, { target: { value: "按这张图改场景" } });
     fireEvent.keyDown(textarea, { key: "Enter", metaKey: true });
 
-    expect(onSubmitEdit).toHaveBeenCalledWith("u-2", "按这张图改场景", [
-      { data: "AAAA", media_type: "image/png" },
-    ]);
+    expect(onSubmitEdit).toHaveBeenCalledWith("u-2", "按这张图改场景", [{ data: "AAAA", media_type: "image/png" }]);
   });
 
   it("shows editable attachment thumbnails and submits only the images that remain", () => {
@@ -123,9 +121,7 @@ describe("MessageRow", () => {
 
     expect(screen.getByRole("img", { name: "编辑中的附件 1/1" })).toBeInTheDocument();
     fireEvent.keyDown(screen.getByLabelText("改写消息内容"), { key: "Enter", metaKey: true });
-    expect(onSubmitEdit).toHaveBeenCalledWith("u-2", "按这两张图改人设", [
-      { data: "BBBB", media_type: "image/jpeg" },
-    ]);
+    expect(onSubmitEdit).toHaveBeenCalledWith("u-2", "按这两张图改人设", [{ data: "BBBB", media_type: "image/jpeg" }]);
   });
 
   it("adds an image in the editor and includes it in the rewrite payload", async () => {
@@ -168,9 +164,7 @@ describe("MessageRow", () => {
     expect(screen.getByRole("img", { name: "编辑中的附件 1/1" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "重新发送" }));
 
-    expect(onSubmitEdit).toHaveBeenCalledWith("u-1", "只改第 3 集", [
-      { data: "anBlZw==", media_type: "image/jpeg" },
-    ]);
+    expect(onSubmitEdit).toHaveBeenCalledWith("u-1", "只改第 3 集", [{ data: "anBlZw==", media_type: "image/jpeg" }]);
   });
 
   it("keeps the browser's default paste behavior for text-only clipboard data", () => {
@@ -336,9 +330,7 @@ describe("MessageRow", () => {
 
   it("keeps the draft but locks resend once the turn is no longer editable", () => {
     const onSubmitEdit = vi.fn();
-    const { rerender } = render(
-      <MessageRow turn={userTurn} editable editing onSubmitEdit={onSubmitEdit} />,
-    );
+    const { rerender } = render(<MessageRow turn={userTurn} editable editing onSubmitEdit={onSubmitEdit} />);
     fireEvent.change(screen.getByLabelText("改写消息内容"), { target: { value: "写到一半的草稿" } });
 
     // 会话在编辑期间开跑：草稿留着，重新发送锁住
@@ -453,9 +445,7 @@ describe("MessageRow", () => {
       await canvas.decodes[0].fail();
     });
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "第 2 张历史附图无法读取，已移除；如需保留请重新上传",
-    );
+    expect(screen.getByRole("alert")).toHaveTextContent("第 2 张历史附图无法读取，已移除；如需保留请重新上传");
     expect(screen.getByRole("img", { name: "编辑中的附件 1/2" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "编辑中的附件 2/2" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "重新发送" }));

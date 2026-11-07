@@ -6,14 +6,7 @@ import { API } from "@/api";
 import { ROUTE_APP_PROJECTS, projectSettingsPath } from "@/app-routes";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDemoWorkbench } from "@/onboarding/use-demo-workbench";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -27,7 +20,10 @@ const CONTENT_MODE_LABEL_KEY = {
   ad: "dashboard:ad_short_video",
 } as const;
 
-type ProjectList = { status: "loading" } | { status: "ready"; projects: ProjectSummary[] } | { status: "error"; message: string };
+type ProjectList =
+  | { status: "loading" }
+  | { status: "ready"; projects: ProjectSummary[] }
+  | { status: "error"; message: string };
 
 /** 打开切换器时拉取一次全部项目；先用大厅已经拉到的列表顶上，新列表到达后替换。 */
 function useProjectList(open: boolean): ProjectList {

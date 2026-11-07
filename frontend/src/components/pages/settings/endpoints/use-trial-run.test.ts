@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import type { TrialRunInfo } from "@/types";
 
@@ -64,11 +64,13 @@ function stubTrialRunServer(replies: Partial<Record<Route, Reply[]>>) {
   return {
     replies: queues,
     requested: (route: Route) =>
-      fetchMock.mock.calls.filter(([input, init]) => {
-        const url = String(input);
-        if (route === "cancel") return url.endsWith("/cancel");
-        return !url.endsWith("/cancel") && (route === "create") === (init?.method === "POST");
-      }).map(([input]) => String(input)),
+      fetchMock.mock.calls
+        .filter(([input, init]) => {
+          const url = String(input);
+          if (route === "cancel") return url.endsWith("/cancel");
+          return !url.endsWith("/cancel") && (route === "create") === (init?.method === "POST");
+        })
+        .map(([input]) => String(input)),
   };
 }
 
@@ -123,7 +125,9 @@ describe("useTrialRun cancel", () => {
   });
 
   it("clears the trial as cancelled without reading back when the cancel succeeds", async () => {
-    const { result, server } = await startedTrial({ cancel: [() => Promise.resolve(new Response(null, { status: 204 }))] });
+    const { result, server } = await startedTrial({
+      cancel: [() => Promise.resolve(new Response(null, { status: 204 }))],
+    });
 
     await act(() => result.current.cancel());
 

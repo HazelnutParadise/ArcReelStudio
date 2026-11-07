@@ -1,16 +1,12 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useTasksStore } from "@/stores/tasks-store";
 import { useUsageHeaderStore } from "@/stores/usage-header-store";
 import type { UsageSummary } from "@/types";
 import { makeUsageSummary } from "./usage-fixtures";
-import {
-  HEADER_PROJECT,
-  renderUsageHeaderEntry,
-  resetHeaderStores,
-} from "./usage-header-test-utils";
+import { HEADER_PROJECT, renderUsageHeaderEntry, resetHeaderStores } from "./usage-header-test-utils";
 
 function stubUsageApi(summary: UsageSummary | null) {
   vi.spyOn(API, "getUsageRecords").mockResolvedValue({
@@ -55,9 +51,7 @@ describe("UsageHeaderEntry", () => {
 
     expect(screen.getByText("CN¥75.30")).toBeInTheDocument();
     expect(screen.getByText("$4.59")).toBeInTheDocument();
-    expect(screen.getByRole("button")).toHaveAccessibleName(
-      "使用记录 · 参考费用 CN¥75.30 + $4.59",
-    );
+    expect(screen.getByRole("button")).toHaveAccessibleName("使用记录 · 参考费用 CN¥75.30 + $4.59");
   });
 
   it("shows a zero amount before any call is recorded", () => {
@@ -88,9 +82,7 @@ describe("UsageHeaderEntry", () => {
     });
 
     expect(screen.getByText("3")).toBeInTheDocument();
-    expect(screen.getByRole("button")).toHaveAccessibleName(
-      "使用记录 · 参考费用 $0.00 · 3 个任务进行中",
-    );
+    expect(screen.getByRole("button")).toHaveAccessibleName("使用记录 · 参考费用 $0.00 · 3 个任务进行中");
   });
 
   it("tracks the popover state on aria-expanded and refetches when opened", async () => {
@@ -107,11 +99,6 @@ describe("UsageHeaderEntry", () => {
 
     expect(screen.getByRole("button", { name: "关闭使用记录面板" })).toBeInTheDocument();
     expect(button).toHaveAttribute("aria-expanded", "true");
-    await waitFor(() =>
-      expect(summarySpy).toHaveBeenCalledWith(
-        { projectName: HEADER_PROJECT },
-        expect.anything(),
-      ),
-    );
+    await waitFor(() => expect(summarySpy).toHaveBeenCalledWith({ projectName: HEADER_PROJECT }, expect.anything()));
   });
 });

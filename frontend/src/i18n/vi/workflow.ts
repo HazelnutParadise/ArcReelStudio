@@ -1,4 +1,4 @@
-import type enWorkflow from "@/i18n/en/workflow";
+import type enWorkflow from '@/i18n/en/workflow';
 
 export default {
   // ---- Khung bảng ----
@@ -88,10 +88,14 @@ export default {
   'note_products_without_selling_points_one': '{{count}} sản phẩm chưa có điểm bán hàng: {{names}}',
   'note_products_without_selling_points_other': '{{count}} sản phẩm chưa có điểm bán hàng: {{names}}',
   'hint_fill_brief': 'Hãy điền ý tưởng hoặc thêm sản phẩm trước.',
-  'hint_assets_without_sheet_storyboard_one': '{{count}} tài sản được tham chiếu chưa có ảnh, các phân cảnh tham chiếu nó không tạo được.',
-  'hint_assets_without_sheet_storyboard_other': '{{count}} tài sản được tham chiếu chưa có ảnh, các phân cảnh tham chiếu chúng không tạo được.',
-  'hint_assets_without_sheet_unit_one': '{{count}} tài sản được tham chiếu chưa có ảnh, các đơn vị video tham chiếu nó không tạo được.',
-  'hint_assets_without_sheet_unit_other': '{{count}} tài sản được tham chiếu chưa có ảnh, các đơn vị video tham chiếu chúng không tạo được.',
+  'hint_assets_without_sheet_storyboard_one':
+    '{{count}} tài sản được tham chiếu chưa có ảnh, các phân cảnh tham chiếu nó không tạo được.',
+  'hint_assets_without_sheet_storyboard_other':
+    '{{count}} tài sản được tham chiếu chưa có ảnh, các phân cảnh tham chiếu chúng không tạo được.',
+  'hint_assets_without_sheet_unit_one':
+    '{{count}} tài sản được tham chiếu chưa có ảnh, các đơn vị video tham chiếu nó không tạo được.',
+  'hint_assets_without_sheet_unit_other':
+    '{{count}} tài sản được tham chiếu chưa có ảnh, các đơn vị video tham chiếu chúng không tạo được.',
   'act_agent': 'Giao cho Agent',
   'act_agent_edit': 'Giao cho Agent dựng',
   'act_create_edit_timeline': 'Tạo dòng thời gian dựng',
@@ -130,8 +134,10 @@ export default {
   'next_title_generate_videos': 'Tạo video',
   'next_title_create_edit_timeline': 'Dựng phim',
   'next_title_wait_for_task': 'Chờ tạo xong',
-  'next_detail_resolve_draft_repair': 'Nội dung AI tạo có chỗ chưa đạt yêu cầu. Trước khi sửa xong, nội dung chính thức giữ nguyên.',
-  'next_detail_resolve_draft_agent': 'Chỉ Agent mới hoàn thành được chỉnh sửa này; cũng có thể bỏ nó và quay lại nội dung cũ.',
+  'next_detail_resolve_draft_repair':
+    'Nội dung AI tạo có chỗ chưa đạt yêu cầu. Trước khi sửa xong, nội dung chính thức giữ nguyên.',
+  'next_detail_resolve_draft_agent':
+    'Chỉ Agent mới hoàn thành được chỉnh sửa này; cũng có thể bỏ nó và quay lại nội dung cũ.',
   'next_detail_resolve_draft_unknown': 'Tập này có một bản nháp cần xử lý.',
   'next_detail_prepare_script_plan': 'Lập kế hoạch kịch bản theo nguyên văn tập, sau đó cần xác nhận nội dung.',
   'next_detail_start_blank_script_storyboard': 'Tạo một kịch bản chính thức trống, rồi thêm từng phân cảnh.',
@@ -141,23 +147,30 @@ export default {
   'next_detail_generate_script': 'Viết kịch bản hoàn chỉnh theo ý tưởng và sản phẩm.',
   'next_detail_add_script_items_storyboard': 'Kịch bản chính thức đang trống, hãy thêm phân cảnh trước.',
   'next_detail_add_script_items_unit': 'Kịch bản chính thức đang trống, hãy thêm đơn vị video trước.',
-  'next_detail_author_prompts_one': 'Viết prompt ảnh và video cho {{count}} mục đang chờ, prompt đã có được giữ nguyên.',
-  'next_detail_author_prompts_other': 'Viết prompt ảnh và video cho {{count}} mục đang chờ, prompt đã có được giữ nguyên.',
+  'next_detail_author_prompts_one':
+    'Viết prompt ảnh và video cho {{count}} mục đang chờ, prompt đã có được giữ nguyên.',
+  'next_detail_author_prompts_other':
+    'Viết prompt ảnh và video cho {{count}} mục đang chờ, prompt đã có được giữ nguyên.',
   'next_detail_repair_video_units_one': '{{ids}} cần sửa trước khi tạo video.',
   'next_detail_repair_video_units_other': '{{ids}} cần sửa trước khi tạo video.',
-  'next_detail_patch_episode_script': 'Một số trường trong kịch bản chính thức chưa đạt yêu cầu, vấn đề được liệt kê ở hàng này.',
-  'next_detail_generate_asset_sheets_one': '{{count}} tài sản được tập này tham chiếu chưa có ảnh: {{names}}. Phái sinh được tạo sau khi bản gốc xong.',
-  'next_detail_generate_asset_sheets_other': '{{count}} tài sản được tập này tham chiếu chưa có ảnh: {{names}}. Phái sinh được tạo sau khi bản gốc xong.',
+  'next_detail_patch_episode_script':
+    'Một số trường trong kịch bản chính thức chưa đạt yêu cầu, vấn đề được liệt kê ở hàng này.',
+  'next_detail_generate_asset_sheets_one':
+    '{{count}} tài sản được tập này tham chiếu chưa có ảnh: {{names}}. Phái sinh được tạo sau khi bản gốc xong.',
+  'next_detail_generate_asset_sheets_other':
+    '{{count}} tài sản được tập này tham chiếu chưa có ảnh: {{names}}. Phái sinh được tạo sau khi bản gốc xong.',
   'next_detail_generate_storyboards_one': '{{count}} phân cảnh chưa có ảnh phân cảnh.',
   'next_detail_generate_storyboards_other': '{{count}} phân cảnh chưa có ảnh phân cảnh.',
   'next_detail_generate_grid_one': '{{count}} phân cảnh chưa có ảnh phân cảnh, được tạo theo nhóm lưới.',
   'next_detail_generate_grid_other': '{{count}} phân cảnh chưa có ảnh phân cảnh, được tạo theo nhóm lưới.',
   'next_detail_generate_videos_one': '{{count}} mục chưa có video.',
   'next_detail_generate_videos_other': '{{count}} mục chưa có video.',
-  'next_detail_create_edit_timeline': 'Video của tập đã đủ. Giao cho Agent dựng, hoặc tạo dòng thời gian dựng theo kịch bản: dùng nguyên mỗi video, toàn bộ là cắt thẳng.',
+  'next_detail_create_edit_timeline':
+    'Video của tập đã đủ. Giao cho Agent dựng, hoặc tạo dòng thời gian dựng theo kịch bản: dùng nguyên mỗi video, toàn bộ là cắt thẳng.',
   'next_detail_wait_for_task': 'Đang tạo, trạng thái sẽ tự cập nhật khi xong.',
   'next_title_wait_for_episode_planning': 'Đang lập kế hoạch tập',
-  'next_detail_wait_for_episode_planning': 'AI đang lập kế hoạch tập theo từng đoạn, trạng thái sẽ tự cập nhật khi xong.',
+  'next_detail_wait_for_episode_planning':
+    'AI đang lập kế hoạch tập theo từng đoạn, trạng thái sẽ tự cập nhật khi xong.',
   'act_view_planning_progress': 'Xem tiến độ lập kế hoạch',
   'agent_prefill_generate_script': 'Tạo kịch bản cho {{episodeRef}} theo ý tưởng và sản phẩm',
   'agent_prefill_add_script_items_storyboard': 'Thêm phân cảnh vào kịch bản chính thức của {{episodeRef}}',
@@ -188,7 +201,8 @@ export default {
   // ---- Sản phẩm cũ nhưng vẫn dùng được ----
   'stale_title_one': '{{count}} kết quả cũ hơn nội dung hiện tại',
   'stale_title_other': '{{count}} kết quả cũ hơn nội dung hiện tại',
-  'stale_still_usable': 'Các tệp này vẫn được giữ lại, mở được trên canvas và vẫn tham gia vào tập phim này. Giữ lại thì không tốn phí; tạo lại sẽ bị nhà cung cấp tính phí lần nữa.',
+  'stale_still_usable':
+    'Các tệp này vẫn được giữ lại, mở được trên canvas và vẫn tham gia vào tập phim này. Giữ lại thì không tốn phí; tạo lại sẽ bị nhà cung cấp tính phí lần nữa.',
   'stale_view': 'Xem',
   'stale_view_unit': 'Xem {{id}} trên canvas',
   'stale_regenerate': 'Tạo lại',
@@ -225,11 +239,14 @@ export default {
   'checkpoint_submitted': 'Đã gửi tới nhà cung cấp — thử lại có thể bị tính phí lần nữa.',
 
   // ---- Xét duyệt hàng loạt ----
-  'admission_blocked_intro': 'Lô này không tạo tác vụ nào và không phát sinh chi phí. Sửa các mục bên dưới rồi gửi lại.',
+  'admission_blocked_intro':
+    'Lô này không tạo tác vụ nào và không phát sinh chi phí. Sửa các mục bên dưới rồi gửi lại.',
   'admission_withheld_title_one': '{{count}} đơn vị không có lỗi nhưng bị giữ lại cùng lô:',
   'admission_withheld_title_other': '{{count}} đơn vị không có lỗi nhưng bị giữ lại cùng lô:',
-  'admission_confirm_intro_one': '{{count}} đơn vị sẽ được tạo theo mức thời lượng bên dưới. Chưa xác nhận thì chưa có tác vụ nào.',
-  'admission_confirm_intro_other': '{{count}} đơn vị sẽ được tạo theo các mức thời lượng bên dưới. Chưa xác nhận thì chưa có tác vụ nào.',
+  'admission_confirm_intro_one':
+    '{{count}} đơn vị sẽ được tạo theo mức thời lượng bên dưới. Chưa xác nhận thì chưa có tác vụ nào.',
+  'admission_confirm_intro_other':
+    '{{count}} đơn vị sẽ được tạo theo các mức thời lượng bên dưới. Chưa xác nhận thì chưa có tác vụ nào.',
   'admission_confirm_note': 'Video được tạo đúng mức thời lượng hiển thị và không bị cắt lại sau đó.',
   'admission_confirm_cta': 'Xác nhận các mức này',
   'admission_skipped_one': '{{count}} đơn vị đã có video nên được bỏ qua.',
@@ -285,7 +302,8 @@ export default {
   'problem_generation_unit_request_invalid': 'Yêu cầu của đơn vị này không hợp lệ.',
   'problem_generation_artifact_state_unavailable': 'Không đọc được tệp sẵn có của đơn vị này.',
   'problem_generation_enqueue_failed': 'Không xếp hàng được đơn vị này.',
-  'problem_generation_enqueue_interrupted': 'Việc xếp hàng dừng trước khi đơn vị này có tác vụ; các tác vụ đã xếp vẫn chạy.',
+  'problem_generation_enqueue_interrupted':
+    'Việc xếp hàng dừng trước khi đơn vị này có tác vụ; các tác vụ đã xếp vẫn chạy.',
   'problem_generation_active_task_conflict': 'Đơn vị này đã có một lần thử đang chạy.',
   'problem_generation_batch_admission_withheld': 'Bị giữ lại vì một đơn vị khác trong lô không qua được xét duyệt.',
   'problem_generation_task_failed': 'Lần thử gần nhất đã thất bại.',
@@ -294,29 +312,38 @@ export default {
   'problem_generation_post_processing_failed': 'Video đã tạo xong nhưng xử lý hậu kỳ thất bại.',
   'problem_reference_asset_unregistered': 'Đơn vị này tham chiếu đến tài nguyên chưa được đăng ký.',
   'problem_reference_asset_missing': 'Tài nguyên được tham chiếu chưa có ảnh tài nguyên.',
-  'problem_video_capability_unavailable': 'Không đọc được khả năng của mô hình video đã chọn. Hãy kiểm tra cấu hình nhà cung cấp và mô hình.',
+  'problem_video_capability_unavailable':
+    'Không đọc được khả năng của mô hình video đã chọn. Hãy kiểm tra cấu hình nhà cung cấp và mô hình.',
   'problem_video_supported_durations_missing': 'Mô hình video đã chọn chưa khai báo các mức thời lượng được hỗ trợ.',
   'problem_video_supported_durations_invalid': 'Dữ liệu mức thời lượng của mô hình video đã chọn không hợp lệ.',
-  'problem_video_supported_durations_incompatible': 'Mô hình video đã chọn không có mức thời lượng tương thích với độ phân giải hiện tại.',
-  'problem_reference_capability_unavailable': 'Không đọc được khả năng của mô hình video đã chọn. Hãy kiểm tra cấu hình nhà cung cấp và mô hình.',
-  'problem_reference_supported_durations_missing': 'Mô hình video đã chọn chưa khai báo các mức thời lượng được hỗ trợ.',
+  'problem_video_supported_durations_incompatible':
+    'Mô hình video đã chọn không có mức thời lượng tương thích với độ phân giải hiện tại.',
+  'problem_reference_capability_unavailable':
+    'Không đọc được khả năng của mô hình video đã chọn. Hãy kiểm tra cấu hình nhà cung cấp và mô hình.',
+  'problem_reference_supported_durations_missing':
+    'Mô hình video đã chọn chưa khai báo các mức thời lượng được hỗ trợ.',
   'problem_reference_supported_durations_invalid': 'Dữ liệu mức thời lượng của mô hình video đã chọn không hợp lệ.',
-  'problem_reference_supported_durations_incompatible': 'Mô hình video đã chọn không có mức thời lượng tương thích với độ phân giải và ảnh tham chiếu hiện tại.',
+  'problem_reference_supported_durations_incompatible':
+    'Mô hình video đã chọn không có mức thời lượng tương thích với độ phân giải và ảnh tham chiếu hiện tại.',
   'problem_mixed_speech': 'Đơn vị này có cả lời thoại nhân vật lẫn lời dẫn, cần tách ra.',
   'problem_needs_replan': 'Đơn vị này dài hơn mức thời lượng lớn nhất của mô hình đã chọn, cần lập kế hoạch lại.',
   'problem_parse_failed': 'Không đọc được lời thoại của đơn vị này, hãy kiểm tra cách viết.',
   'problem_empty_speaker': 'Đơn vị này có lời thoại chưa chỉ định nhân vật nói.',
   'problem_project_migration_failed': 'Việc nâng cấp dữ liệu dự án chưa hoàn tất, tạm thời chưa thể tạo nội dung.',
-  'problem_video_audio_switch_not_supported': 'Mô hình video đã chọn luôn tạo video có âm thanh, không thể tắt âm thanh.',
+  'problem_video_audio_switch_not_supported':
+    'Mô hình video đã chọn luôn tạo video có âm thanh, không thể tắt âm thanh.',
   'problem_reference_capability_changed': 'Tư liệu tham chiếu không khớp với cách tạo đã khai báo.',
-  'problem_reference_duration_confirmation_required': 'Đơn vị này sẽ được tạo theo một mức thời lượng khác, cần xác nhận.',
+  'problem_reference_duration_confirmation_required':
+    'Đơn vị này sẽ được tạo theo một mức thời lượng khác, cần xác nhận.',
   'problem_video_capability_missing_i2v': 'Mô hình video đã chọn không hỗ trợ tạo video từ ảnh.',
   'problem_video_capability_missing_r2v': 'Mô hình video đã chọn không hỗ trợ tạo video từ tham chiếu.',
   'problem_video_capability_missing_t2v': 'Mô hình video đã chọn không hỗ trợ tạo video từ văn bản, cần ảnh khung đầu.',
   'problem_video_capability_reference_unavailable': 'Mô hình video chọn trong Cài đặt không còn khả dụng.',
-  'problem_model_not_in_provider_catalog': 'Mô hình chọn trong Cài đặt không còn trong danh sách mô hình của nhà cung cấp.',
+  'problem_model_not_in_provider_catalog':
+    'Mô hình chọn trong Cài đặt không còn trong danh sách mô hình của nhà cung cấp.',
   'problem_model_discontinued': 'Mô hình chọn trong Cài đặt đã ngừng hoạt động.',
-  'problem_generation_dependency_failed': 'Đơn vị mà đơn vị này phụ thuộc trong cùng lô chưa tạo thành công, nên đơn vị này chưa được gửi.',
+  'problem_generation_dependency_failed':
+    'Đơn vị mà đơn vị này phụ thuộc trong cùng lô chưa tạo thành công, nên đơn vị này chưa được gửi.',
   'problem_fallback_retry': 'Lần thử trước chưa thành công.',
   'problem_fallback_fix_input': 'Nội dung của đơn vị này cần sửa trước khi tạo.',
   'problem_fallback_generate_dependency': 'Thiếu tư liệu tham chiếu cần tạo trước.',

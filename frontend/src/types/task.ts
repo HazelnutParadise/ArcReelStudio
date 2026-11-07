@@ -8,12 +8,7 @@ import type { EpisodeItemRef } from "./project";
  * - webui/server/routers/tasks.py (API responses)
  */
 
-export type TaskStatus =
-  | "queued"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "cancelled";
+export type TaskStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 /** `render` 是本地渲染车道（成片等），不产生用量记录。 */
 export type TaskMediaType = "image" | "video" | "audio" | "render";
 

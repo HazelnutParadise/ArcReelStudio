@@ -19,13 +19,7 @@
  * `createTimelineProjector` 是同一实现的增量入口，二者结果恒等。
  */
 
-import type {
-  ContentBlock,
-  DraftDeltaPayload,
-  DraftState,
-  TimelineEntry,
-  Turn,
-} from "@/types";
+import type { ContentBlock, DraftDeltaPayload, DraftState, TimelineEntry, Turn } from "@/types";
 
 function entryBlocks(entry: TimelineEntry): ContentBlock[] {
   const content = entry.content;
@@ -50,10 +44,7 @@ function cloneBlock(block: ContentBlock): ContentBlock {
  * 按 seq 不可变，任一来源（冷读整帧 / SSE 直播 / 发送响应）先到后到均可安全
  * 并集，不存在覆盖语义。
  */
-export function mergeEntriesBySeq(
-  existing: TimelineEntry[],
-  incoming: TimelineEntry[],
-): TimelineEntry[] {
+export function mergeEntriesBySeq(existing: TimelineEntry[], incoming: TimelineEntry[]): TimelineEntry[] {
   if (existing.length === 0) return [...incoming].sort((a, b) => a.seq - b.seq);
   if (incoming.length === 0) return existing;
   const bySeq = new Map<number, TimelineEntry>();
@@ -332,12 +323,7 @@ export function createTimelineProjector(): TimelineProjector {
 
     if (entry.type === "system") {
       if (entry.subtype === "agent_turn_failure" && entry.failure) {
-        startTurn(
-          fold,
-          "system",
-          [{ type: "agent_failure", failure: structuredClone(entry.failure) }],
-          entry,
-        );
+        startTurn(fold, "system", [{ type: "agent_failure", failure: structuredClone(entry.failure) }], entry);
         return;
       }
       if (entry.subtype === "skill_invocation") {
@@ -377,7 +363,11 @@ export function createTimelineProjector(): TimelineProjector {
         }
         return;
       }
-      if (entry.subtype !== "task_started" && entry.subtype !== "task_progress" && entry.subtype !== "task_notification") {
+      if (
+        entry.subtype !== "task_started" &&
+        entry.subtype !== "task_progress" &&
+        entry.subtype !== "task_notification"
+      ) {
         return;
       }
       applyTaskBlock(
@@ -522,7 +512,13 @@ export function createTimelineProjector(): TimelineProjector {
     // 不丢子时间线。只扫 pendingGroups（当前仍未锚定的组），不扫全部历史
     // groups——已锚定的组不会再变回待锚定，扫描量不随会话内子智能体总数增长。
     for (const group of pendingGroups) {
-      const card: ContentBlock = { type: "tool_use", id: group.id, name: "Agent", input: {}, sub_turns: foldDisplay(group.fold) };
+      const card: ContentBlock = {
+        type: "tool_use",
+        id: group.id,
+        name: "Agent",
+        input: {},
+        sub_turns: foldDisplay(group.fold),
+      };
       const outcome = subagentOutcomes.get(group.id);
       if (outcome) card.task_info = { ...outcome };
       out.push({ type: "system", content: [card], uuid: `subagent-${group.id}` });
@@ -576,10 +572,7 @@ export function collectCommittedMessageIds(entries: TimelineEntry[]): Set<string
  * draft 是否已被权威条目替换：按身份比对（同 message_id 的 assistant 条目
  * 已落库即视为替换），不做内容比对。集合由调用方增量维护，判定 O(1)。
  */
-export function isDraftReplaced(
-  draft: DraftState | null,
-  committedMessageIds: ReadonlySet<string>,
-): boolean {
+export function isDraftReplaced(draft: DraftState | null, committedMessageIds: ReadonlySet<string>): boolean {
   if (!draft || !draft.message_id) return false;
   return committedMessageIds.has(draft.message_id);
 }
@@ -603,10 +596,7 @@ export function buildDraftTurn(draft: DraftState | null, replaced: boolean): Tur
 }
 
 /** draft → Turn 全量入口：从 entries 派生替换判定（热路径请用 buildDraftTurn）。 */
-export function projectDraftToTurn(
-  draft: DraftState | null,
-  entries: TimelineEntry[],
-): Turn | null {
+export function projectDraftToTurn(draft: DraftState | null, entries: TimelineEntry[]): Turn | null {
   return buildDraftTurn(draft, isDraftReplaced(draft, collectCommittedMessageIds(entries)));
 }
 
@@ -619,10 +609,7 @@ export interface DraftMirror extends DraftState {
  * 应用一条 delta（纯函数，返回新对象）。调用方须先按 rev 门槛过滤；
  * message_id 变化时另起新 draft（身份切换即上一条已由权威条目收尾）。
  */
-export function applyDraftDelta(
-  draft: DraftMirror | null,
-  payload: DraftDeltaPayload,
-): DraftMirror {
+export function applyDraftDelta(draft: DraftMirror | null, payload: DraftDeltaPayload): DraftMirror {
   const base: DraftMirror =
     draft && draft.message_id === payload.message_id
       ? { ...draft, content: [...draft.content], toolJson: { ...draft.toolJson } }
@@ -640,7 +627,8 @@ export function applyDraftDelta(
   }
 
   if (payload.delta_type === "text_delta") {
-    const block = base.content[index]?.type === "text" ? { ...base.content[index] } : { type: "text" as const, text: "" };
+    const block =
+      base.content[index]?.type === "text" ? { ...base.content[index] } : { type: "text" as const, text: "" };
     block.text = `${block.text ?? ""}${payload.text ?? ""}`;
     base.content[index] = block;
     return base;
@@ -648,7 +636,9 @@ export function applyDraftDelta(
 
   if (payload.delta_type === "thinking_delta") {
     const block =
-      base.content[index]?.type === "thinking" ? { ...base.content[index] } : { type: "thinking" as const, thinking: "" };
+      base.content[index]?.type === "thinking"
+        ? { ...base.content[index] }
+        : { type: "thinking" as const, thinking: "" };
     block.thinking = `${block.thinking ?? ""}${payload.thinking ?? ""}`;
     base.content[index] = block;
     return base;

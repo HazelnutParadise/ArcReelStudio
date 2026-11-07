@@ -78,7 +78,12 @@ export function useProjectExport({ editViewEpisode, onOpenEditView }: ProjectExp
           description={t("export_diagnostics_description")}
           sections={[
             { key: "blocking", title: t("diagnostics_blocking"), severity: "blocking", items: diagnostics.blocking },
-            { key: "auto_fixed", title: t("diagnostics_auto_fixed"), severity: "auto_fixed", items: diagnostics.auto_fixed },
+            {
+              key: "auto_fixed",
+              title: t("diagnostics_auto_fixed"),
+              severity: "auto_fixed",
+              items: diagnostics.auto_fixed,
+            },
             { key: "warnings", title: t("diagnostics_warnings"), severity: "warnings", items: diagnostics.warnings },
           ]}
           onClose={() => setDiagnostics(null)}

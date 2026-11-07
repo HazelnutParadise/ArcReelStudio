@@ -5,7 +5,12 @@
  * - lib/script/script_models.py (NarrationSegment, DramaScene, ImagePrompt, VideoPrompt, etc.)
  */
 
-import type { DraftSoftViolation, ReferenceScriptPlanDraft, ReferenceUnitCapabilityMap, ScriptReviewQuarantine } from "./reference-video";
+import type {
+  DraftSoftViolation,
+  ReferenceScriptPlanDraft,
+  ReferenceUnitCapabilityMap,
+  ScriptReviewQuarantine,
+} from "./reference-video";
 
 export const SHOT_TYPES = [
   "Extreme Close-up",
@@ -174,11 +179,7 @@ export interface NarrationScriptPlanDraft {
   new_assets?: PlanNewAsset[];
 }
 
-export type ScriptReviewStatus =
-  | "not_applicable"
-  | "no_script_plan"
-  | "pending_review"
-  | "confirmed";
+export type ScriptReviewStatus = "not_applicable" | "no_script_plan" | "pending_review" | "confirmed";
 
 /** 内容确认将覆盖的正式脚本条目，及其名下无法在项目内恢复的产物与归属。 */
 export interface ScriptOverwriteEntry {
@@ -262,13 +263,13 @@ export interface VideoPrompt {
 
 export interface GeneratedAssets {
   storyboard_image: string | null;
-  storyboard_last_image: string | null;  // grid mode last frame
-  grid_id: string | null;                // source grid ID
-  grid_cell_index: number | null;        // cell index in source grid
+  storyboard_last_image: string | null; // grid mode last frame
+  grid_id: string | null; // source grid ID
+  grid_cell_index: number | null; // cell index in source grid
   video_clip: string | null;
   video_thumbnail: string | null;
   video_uri: string | null;
-  narration_audio?: string | null;       // narration audio file path
+  narration_audio?: string | null; // narration audio file path
   status: AssetStatus;
 }
 

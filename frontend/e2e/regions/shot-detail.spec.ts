@@ -7,7 +7,6 @@ import { expect, test, type ApiOverrides } from "../support/test.ts";
 // 集页「分镜」视图：左侧分镜列表，右侧分镜详情（中栏引用、提示词、台词、对应原文，媒体栏分镜图与视频）。
 const BOARD_PATH = "/app/projects/demo/episodes/1";
 
-
 interface RecordedProject {
   project: Record<string, unknown>;
   scripts: Record<string, Record<string, unknown>>;
@@ -106,7 +105,9 @@ const API: ApiOverrides = {
           CHARACTERS.map((name, i) => [name, { description: `${name}的设定`, character_sheet: refSvg(i * 50) }]),
         ),
         scenes: { [SCENE]: { description: "茶馆二楼", scene_sheet: refSvg(200) } },
-        props: Object.fromEntries(PROPS.map((name, i) => [name, { description: name, prop_sheet: refSvg(260 + i * 40) }])),
+        props: Object.fromEntries(
+          PROPS.map((name, i) => [name, { description: name, prop_sheet: refSvg(260 + i * 40) }]),
+        ),
       },
       scripts: {
         "episode_1.json": { ...recordedScript, content_mode: "drama", segments: undefined, scenes },
@@ -149,18 +150,21 @@ const API_WITH_DURATIONS: ApiOverrides = {
       last_frame: true,
       source: "registry",
       voice_consistency: "none",
-      duration_constraints: { resolution: null, uses_reference_images: false, allowed: [4, 6, 8], planning: [4, 6, 8], excluded: {} },
+      duration_constraints: {
+        resolution: null,
+        uses_reference_images: false,
+        allowed: [4, 6, 8],
+        planning: [4, 6, 8],
+        excluded: {},
+      },
     },
   },
 };
-
 
 const shotList = (page: Page) => page.getByRole("navigation", { name: "分镜列表" });
 const detail = (page: Page) => page.getByRole("tabpanel");
 const agentToggle = (page: Page) => page.getByRole("button", { name: "Agent", exact: true });
 const storyboard = (page: Page) => page.getByRole("img", { name: "分镜 1 分镜图" });
-
-
 
 /** 弹层带入场动画，量尺寸、跑 axe 之前等它停下；进行中的转圈等循环动画不等。 */
 
@@ -178,7 +182,10 @@ defineRegionScenarios("分镜详情", [
     api: API,
     ready: boardReady,
     act: async (page) => {
-      await expect(shotList(page).getByRole("button", { name: /^分镜 1(?!\d)/ })).toHaveAttribute("aria-current", "true");
+      await expect(shotList(page).getByRole("button", { name: /^分镜 1(?!\d)/ })).toHaveAttribute(
+        "aria-current",
+        "true",
+      );
       const { width } = viewport(page);
       // 1440 宽、Agent 面板展开时，引用与台词区同屏可见（提示词随内容撑高，长台词可能在首屏之下）
       if (width === 1440) {
@@ -369,9 +376,14 @@ defineRegionScenarios("分镜详情", [
         body: {
           ...project,
           project: { ...project.project, content_mode: "drama" },
-          scripts: { "episode_1.json": { ...recordedScript, content_mode: "drama", segments: undefined,
-            scenes: Array.from({ length: 500 }, (_, i) => ({ ...scenes[1], scene_id: shotId(i + 1) })),
-          } },
+          scripts: {
+            "episode_1.json": {
+              ...recordedScript,
+              content_mode: "drama",
+              segments: undefined,
+              scenes: Array.from({ length: 500 }, (_, i) => ({ ...scenes[1], scene_id: shotId(i + 1) })),
+            },
+          },
         },
       },
       "POST /api/v1/projects/demo/script-items/E1S500/move": { status: 200, body: { success: true } },
@@ -386,7 +398,7 @@ defineRegionScenarios("分镜详情", [
         const intervals: number[] = [];
         let previous = performance.now();
         for (let i = 1; i <= 30; i++) {
-          el.scrollTop = (el.scrollHeight - el.clientHeight) * i / 30;
+          el.scrollTop = ((el.scrollHeight - el.clientHeight) * i) / 30;
           await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
           const now = performance.now();
           intervals.push(now - previous);
@@ -400,15 +412,23 @@ defineRegionScenarios("分镜详情", [
         expect(Math.max(...frames), `500 镜滚动帧间隔：${JSON.stringify(frames)}`).toBeLessThan(500);
         expect(frames.reduce((sum, value) => sum + value, 0)).toBeLessThan(2000);
       } else {
-        test.info().annotations.push({ type: "skip-frame-budget", description: `多 worker 并行，未断言帧耗时：${JSON.stringify(frames)}` });
+        test.info().annotations.push({
+          type: "skip-frame-budget",
+          description: `多 worker 并行，未断言帧耗时：${JSON.stringify(frames)}`,
+        });
       }
       const handle = list.getByRole("button", { name: "调整「分镜 500」的顺序" });
       await handle.scrollIntoViewIfNeeded();
       await handle.focus();
-      const move = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/script-items/E1S500/move"));
+      const move = page.waitForRequest(
+        (request) => request.method() === "POST" && request.url().endsWith("/script-items/E1S500/move"),
+      );
       // 拿起后立即方向键：同一事件循环内不等测量或播报。
       await handle.evaluate((el) => {
-        for (const [key, code] of [[" ", "Space"], ["ArrowUp", "ArrowUp"]]) {
+        for (const [key, code] of [
+          [" ", "Space"],
+          ["ArrowUp", "ArrowUp"],
+        ]) {
           el.dispatchEvent(new KeyboardEvent("keydown", { key, code, bubbles: true, cancelable: true }));
         }
       });
@@ -416,5 +436,5 @@ defineRegionScenarios("分镜详情", [
       await page.keyboard.press("Space");
       expect((await move).postDataJSON()).toEqual({ script_file: "episode_1.json", after_id: "E1S498" });
     },
-  }
+  },
 ]);

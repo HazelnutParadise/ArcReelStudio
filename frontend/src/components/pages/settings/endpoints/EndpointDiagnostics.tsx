@@ -35,7 +35,10 @@ export function EndpointDiagnostics({
 
   if (issues.length === 0) {
     return (
-      <div aria-live="polite" className="mb-5 rounded-lg border border-border px-4 py-2.5 text-sm text-subtle-foreground">
+      <div
+        aria-live="polite"
+        className="mb-5 rounded-lg border border-border px-4 py-2.5 text-sm text-subtle-foreground"
+      >
         {t("ce_diagnostics_clean")}
       </div>
     );

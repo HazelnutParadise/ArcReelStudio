@@ -22,9 +22,7 @@ export function episodeDisplayName(episodes: EpisodeLedger, episodeId: number, t
   const title = episodes.find((entry) => entry.episode === episodeId)?.title?.trim();
   if (title) return title;
   const position = episodePosition(episodes, episodeId);
-  return position === null
-    ? t("common:episode_unlisted_name")
-    : t("common:episode_position_name", { position });
+  return position === null ? t("common:episode_unlisted_name") : t("common:episode_position_name", { position });
 }
 
 /** 发给 Agent 的集指称：集名与集 ID 一起给，Agent 调工具只用集 ID，对创作者复述用集名。 */
@@ -82,11 +80,7 @@ export function episodeItemAgentRef(
  * 后端附上的条目指称拼成「标题 · 5」，后端判定条目已不在剧本里时「标题 · 已删除」。
  * 缺少指称时（项目读不到、集已移出账本）仍隐藏集 ID。
  */
-export function episodeItemRefLabel(
-  itemId: string,
-  ref: EpisodeItemRef | null | undefined,
-  t: TFunction,
-): string {
+export function episodeItemRefLabel(itemId: string, ref: EpisodeItemRef | null | undefined, t: TFunction): string {
   if (!ref) return episodeItemLabel(itemId, {}, [], t);
   const name = ref.episode_title.trim() || t("common:episode_position_name", { position: ref.episode_position });
   if (!isPositionedItemId(itemId)) return `${name} · ${ref.item_id}`;

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { ShotDetail } from "./ShotDetail";
 import { API } from "@/api";
 import type { NarrationSegment } from "@/types";
@@ -40,7 +40,9 @@ describe("ShotDetail 旁白片段的台词", () => {
   });
 
   it("存量台词只读列出，没有可编辑的输入框和添加入口", () => {
-    render(detailElement(legacyDialogueSegment([{ speaker: "阿离", line: "你终于回来了。" }]), { onUpdatePrompt: vi.fn() }));
+    render(
+      detailElement(legacyDialogueSegment([{ speaker: "阿离", line: "你终于回来了。" }]), { onUpdatePrompt: vi.fn() }),
+    );
 
     expect(screen.getByText("阿离")).toBeInTheDocument();
     expect(screen.getByText("你终于回来了。")).toBeInTheDocument();
@@ -58,13 +60,19 @@ describe("ShotDetail 旁白片段的台词", () => {
     expect(screen.getByText("台词已清除，保存后生效")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
 
-    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", {
-      video_prompt: { action: "撑伞走过", camera_motion: "Static", ambiance_audio: "雨声", dialogue: [] },
-    }, expect.anything());
+    expect(onUpdatePrompt).toHaveBeenCalledWith(
+      "E1S01",
+      {
+        video_prompt: { action: "撑伞走过", camera_motion: "Static", ambiance_audio: "雨声", dialogue: [] },
+      },
+      expect.anything(),
+    );
   });
 
   it("清除台词后放弃修改，台词恢复显示", () => {
-    render(detailElement(legacyDialogueSegment([{ speaker: "阿离", line: "你终于回来了。" }]), { onUpdatePrompt: vi.fn() }));
+    render(
+      detailElement(legacyDialogueSegment([{ speaker: "阿离", line: "你终于回来了。" }]), { onUpdatePrompt: vi.fn() }),
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "清除台词" }));
     fireEvent.click(screen.getByRole("button", { name: "放弃修改" }));
@@ -81,7 +89,9 @@ describe("ShotDetail 旁白片段的台词", () => {
       storyboard_image: { text: "雨夜街道", unavailable: null, is_text_form: true, warnings: [] },
       video: { text: rendered, unavailable: null, is_text_form: false, warnings: [] },
     });
-    render(detailElement(legacyDialogueSegment([{ speaker: "阿离", line: "你终于回来了。" }]), { onUpdatePrompt: vi.fn() }));
+    render(
+      detailElement(legacyDialogueSegment([{ speaker: "阿离", line: "你终于回来了。" }]), { onUpdatePrompt: vi.fn() }),
+    );
 
     const videoToText = screen.getAllByRole("button", { name: "文本" }).at(-1)!;
     fireEvent.click(videoToText);
@@ -112,7 +122,9 @@ describe("ShotDetail 旁白正文", () => {
 
   it("上游保存后未修改的正文跟随新内容，放弃修改恢复为已保存内容", () => {
     const onUpdatePrompt = vi.fn();
-    const { rerender } = render(detailElement(makeNarrationSegment({ novel_text: "雨下了一夜。" }), { onUpdatePrompt }));
+    const { rerender } = render(
+      detailElement(makeNarrationSegment({ novel_text: "雨下了一夜。" }), { onUpdatePrompt }),
+    );
     const box = () => screen.getByRole("textbox", { name: "旁白正文" }) as HTMLTextAreaElement;
 
     rerender(detailElement(makeNarrationSegment({ novel_text: "Agent 改过的正文。" }), { onUpdatePrompt }));
@@ -150,7 +162,7 @@ describe("ShotDetail 旁白正文", () => {
         onUpdatePrompt: vi.fn(),
         onInsertShot: vi.fn(),
         onRemoveShot: vi.fn(),
-      })
+      }),
     );
 
     expect(screen.getByRole("button", { name: "移除分镜" })).toBeEnabled();
@@ -163,7 +175,7 @@ describe("ShotDetail 旁白正文", () => {
         onInsertShot: vi.fn(),
         onRemoveShot: vi.fn(),
         generatingNarration: true,
-      })
+      }),
     );
 
     const remove = screen.getByRole("button", { name: "移除分镜" });
@@ -198,7 +210,9 @@ describe("ShotDetail 改序与章节切分点", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(onUpdatePrompt).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
-    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { segment_break: true }, expect.anything()));
+    await waitFor(() =>
+      expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { segment_break: true }, expect.anything()),
+    );
   });
 
   it("只读模式不给章节切分点开关", () => {

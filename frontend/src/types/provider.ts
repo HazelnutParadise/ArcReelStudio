@@ -107,7 +107,6 @@ export interface ProviderCredential {
 
 export type CallType = "image" | "video" | "text" | "audio";
 
-
 /** 价格摘要里一个计费项的单价范围；`per` 是单价对应的计数量（每百万 token 为 1000000，每张、每秒为 1）。 */
 export interface PriceSummaryItem {
   meter: string;

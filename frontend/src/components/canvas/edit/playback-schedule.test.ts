@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { EditClip, EditTimelinePreviewMedia, EditTimelineReadout } from "@/types/edit-timeline";
 
@@ -36,10 +36,32 @@ function readout(clips: EditClip[], duration: number): EditTimelineReadout {
 // c5 的截取依据 v1，current 已是 v2，整段使用 5s。
 const SAMPLE = readout(
   [
-    clip({ id: "c1", unit_id: "E1U1", start: 0, duration: 2.8, trim: { source_in: 1.2, source_out: 4, basis_version: 1 } }),
-    clip({ id: "c2", unit_id: "E1U2", start: 2.8, duration: 0, status: "unit_deleted", video_version: null, source_duration: null }),
+    clip({
+      id: "c1",
+      unit_id: "E1U1",
+      start: 0,
+      duration: 2.8,
+      trim: { source_in: 1.2, source_out: 4, basis_version: 1 },
+    }),
+    clip({
+      id: "c2",
+      unit_id: "E1U2",
+      start: 2.8,
+      duration: 0,
+      status: "unit_deleted",
+      video_version: null,
+      source_duration: null,
+    }),
     clip({ id: "c3", unit_id: "E1U3", start: 2.8, duration: 4, hold: 1, source_duration: 3 }),
-    clip({ id: "c4", unit_id: "E1U4", start: 6.8, duration: 2, status: "video_missing", video_version: null, source_duration: null }),
+    clip({
+      id: "c4",
+      unit_id: "E1U4",
+      start: 6.8,
+      duration: 2,
+      status: "video_missing",
+      video_version: null,
+      source_duration: null,
+    }),
     clip({
       id: "c5",
       unit_id: "E1U5",
@@ -64,7 +86,13 @@ describe("buildPlaybackPlan", () => {
     const plan = buildPlaybackPlan(
       readout(
         [
-          clip({ id: "c1", unit_id: "E1U1", start: 0, duration: 0, trim: { source_in: 6, source_out: 7, basis_version: 1 } }),
+          clip({
+            id: "c1",
+            unit_id: "E1U1",
+            start: 0,
+            duration: 0,
+            trim: { source_in: 6, source_out: 7, basis_version: 1 },
+          }),
           clip({ id: "c2", unit_id: "E1U2", start: 0, duration: 5 }),
         ],
         5,
@@ -286,8 +314,22 @@ describe("transitions", () => {
   const withTransitions = readout(
     [
       clip({ id: "c1", unit_id: "E1U1", start: 0, duration: 3, transition_to_next: { type: "dissolve", duration: 1 } }),
-      clip({ id: "c2", unit_id: "E1U2", start: 3, duration: 3, transition_to_next: { type: "fade_black", duration: 0.5 } }),
-      clip({ id: "c3", unit_id: "E1U3", start: 6, duration: 0, status: "unit_deleted", video_version: null, source_duration: null }),
+      clip({
+        id: "c2",
+        unit_id: "E1U2",
+        start: 3,
+        duration: 3,
+        transition_to_next: { type: "fade_black", duration: 0.5 },
+      }),
+      clip({
+        id: "c3",
+        unit_id: "E1U3",
+        start: 6,
+        duration: 0,
+        status: "unit_deleted",
+        video_version: null,
+        source_duration: null,
+      }),
       clip({ id: "c4", unit_id: "E1U4", start: 6, duration: 3, transition_to_next: { type: "dissolve", duration: 1 } }),
     ],
     9,

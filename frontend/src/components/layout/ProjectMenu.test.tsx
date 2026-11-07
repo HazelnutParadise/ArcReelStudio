@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
@@ -34,7 +34,15 @@ describe("ProjectMenu", () => {
     useProjectsStore.setState(useProjectsStore.getInitialState(), true);
     useProjectsStore.setState({
       currentProjectName: "alpha",
-      currentProjectData: { title: "春日来信", content_mode: "drama", style: "", episodes: [], characters: {}, scenes: {}, props: {} },
+      currentProjectData: {
+        title: "春日来信",
+        content_mode: "drama",
+        style: "",
+        episodes: [],
+        characters: {},
+        scenes: {},
+        props: {},
+      },
     });
     vi.restoreAllMocks();
     vi.spyOn(API, "listProjects").mockResolvedValue({

@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAgentMemory } from "@/hooks/useAgentMemory";
@@ -55,10 +55,7 @@ describe("useAgentMemory", () => {
 
   it("换项目即重取，旧目录的数据不残留", async () => {
     const other: AgentMemoryOverview = { ...OVERVIEW, path: "/projects/b/.arcreel/memory", files: [] };
-    const spy = vi
-      .spyOn(API, "getAgentMemory")
-      .mockResolvedValueOnce(OVERVIEW)
-      .mockResolvedValueOnce(other);
+    const spy = vi.spyOn(API, "getAgentMemory").mockResolvedValueOnce(OVERVIEW).mockResolvedValueOnce(other);
     const { result, rerender } = renderHook(
       ({ project }: { project: string }) => useAgentMemory({ level: "project", projectName: project }),
       { initialProps: { project: "a" } },
@@ -100,9 +97,7 @@ describe("useAgentMemory", () => {
   });
 
   it("拉取失败时给出可读说明，重试成功后清空错误", async () => {
-    vi.spyOn(API, "getAgentMemory")
-      .mockRejectedValueOnce(new Error("boom"))
-      .mockResolvedValueOnce(OVERVIEW);
+    vi.spyOn(API, "getAgentMemory").mockRejectedValueOnce(new Error("boom")).mockResolvedValueOnce(OVERVIEW);
     const { result } = renderHook(() => useAgentMemory({ level: "user" }));
 
     await waitFor(() => expect(result.current.error).toBe("boom"));

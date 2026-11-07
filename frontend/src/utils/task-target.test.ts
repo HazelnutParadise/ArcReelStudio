@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { TFunction } from "i18next";
 import i18n from "@/i18n";
 import type { ProjectData, TaskItem } from "@/types";
@@ -38,7 +38,9 @@ const projectData = {
 
 // 回显 key 与参数，便于断言文案选择逻辑。
 const t = ((key: string, params?: Record<string, unknown>) =>
-  key === "common:episode_unlisted_name" ? "未命名集" : `${key}|${params?.id ?? params?.unitId ?? params?.episode ?? ""}|${params?.reason ?? ""}`) as unknown as TFunction;
+  key === "common:episode_unlisted_name"
+    ? "未命名集"
+    : `${key}|${params?.id ?? params?.unitId ?? params?.episode ?? ""}|${params?.reason ?? ""}`) as unknown as TFunction;
 
 // 失败通知按条目在本集里的当前位置称呼：E1S01 与 E1U1 都排在第 2 位，与 ID 序号不同。
 const SCRIPTS = {
@@ -131,14 +133,9 @@ describe("buildTaskFailureTarget", () => {
 
   it("routes product tasks and product image edits to the products page", () => {
     const expected = { type: "product", id: "Bag", route: "/products", highlight_style: "flash" };
-    expect(buildTaskFailureTarget(makeTask({ task_type: "product", resource_id: "Bag" }), null)).toEqual(
-      expected,
-    );
+    expect(buildTaskFailureTarget(makeTask({ task_type: "product", resource_id: "Bag" }), null)).toEqual(expected);
     expect(
-      buildTaskFailureTarget(
-        makeTask({ task_type: "image_edit", resource_type: "product", resource_id: "Bag" }),
-        null,
-      ),
+      buildTaskFailureTarget(makeTask({ task_type: "image_edit", resource_type: "product", resource_id: "Bag" }), null),
     ).toEqual(expected);
   });
 
@@ -179,9 +176,9 @@ describe("describeTaskFailure", () => {
 
   it("names the episode for script plan failures", () => {
     for (const taskType of ["text_drama_script_plan", "text_narration_script_plan", "text_reference_script_plan"]) {
-      expect(
-        describeFailure(t, makeTask({ task_type: taskType, resource_id: "episode-2" }), projectData),
-      ).toBe("script_plan_task_failed|E2|boom");
+      expect(describeFailure(t, makeTask({ task_type: taskType, resource_id: "episode-2" }), projectData)).toBe(
+        "script_plan_task_failed|E2|boom",
+      );
     }
   });
 
@@ -195,12 +192,9 @@ describe("describeTaskFailure", () => {
   });
 
   it("uses the image_edit key regardless of resource_type", () => {
-    expect(
-      describeFailure(
-        t,
-        makeTask({ task_type: "image_edit", resource_type: "prop", resource_id: "Sword" }),
-      ),
-    ).toBe("image_edit_task_failed|Sword|boom");
+    expect(describeFailure(t, makeTask({ task_type: "image_edit", resource_type: "prop", resource_id: "Sword" }))).toBe(
+      "image_edit_task_failed|Sword|boom",
+    );
   });
 
   it("appends the provider reason when the task was rejected upstream", () => {
@@ -214,8 +208,8 @@ describe("describeTaskFailure", () => {
       }),
     );
     expect(text).toBe(
-      "storyboard_task_failed|未命名集 · 2|boomtask_failed_provider_reason_suffix||"
-        + "InvalidParameter: S01 prompt violates the content policy",
+      "storyboard_task_failed|未命名集 · 2|boomtask_failed_provider_reason_suffix||" +
+        "InvalidParameter: S01 prompt violates the content policy",
     );
   });
 
@@ -234,7 +228,7 @@ describe("describeTaskFailure", () => {
         error_params: { provider_reason: "InvalidParameter" },
       }),
     );
-    expect(text).toBe('分镜「未命名集 · 2」生成失败：上游返回 {{reason}}（供应商拒因：InvalidParameter）');
+    expect(text).toBe("分镜「未命名集 · 2」生成失败：上游返回 {{reason}}（供应商拒因：InvalidParameter）");
   });
 
   it("says the item is deleted once it has left the script", async () => {

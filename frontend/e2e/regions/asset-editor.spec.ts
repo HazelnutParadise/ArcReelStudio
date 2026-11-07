@@ -95,7 +95,10 @@ const MANY_DERIVATIVES: Record<string, Asset> = Object.fromEntries(
     {
       description:
         i % 3 === 0
-          ? Array.from({ length: 3 }, () => "换上深色长袍与斗笠，腰间别一把短刀，袖口用麻绳扎紧，脚上换成草鞋，其余保持不变。").join("")
+          ? Array.from(
+              { length: 3 },
+              () => "换上深色长袍与斗笠，腰间别一把短刀，袖口用麻绳扎紧，脚上换成草鞋，其余保持不变。",
+            ).join("")
           : "换上深色长袍与斗笠。",
       ...(i % 2 === 0 ? { character_sheet: svg(250 + i * 12) } : {}),
       referenced: i % 3 !== 1,
@@ -111,7 +114,9 @@ const BASE: ApiOverrides = {
   "GET /api/v1/projects/demo": projectWith({ characters: CHARACTERS }),
   "GET /api/v1/projects/demo/asset-sheets/status": statusRows("character", Object.keys(CHARACTERS)),
   "GET /api/v1/tasks?page_size=200&project_name=demo": NO_TASKS,
-  "GET /api/v1/projects/demo/characters/林夕/derivatives": derivativeSheets(CHARACTERS.林夕.derivatives as Record<string, Asset>),
+  "GET /api/v1/projects/demo/characters/林夕/derivatives": derivativeSheets(
+    CHARACTERS.林夕.derivatives as Record<string, Asset>,
+  ),
 };
 
 const DERIVATIVES_API: ApiOverrides = {
@@ -170,7 +175,12 @@ const STALE_IMPACT_FAILED_API: ApiOverrides = {
 };
 
 async function galleryReady(page: Page) {
-  await expect(page.getByRole("list", { name: /角色|商品/ }).getByRole("article").first()).toBeVisible();
+  await expect(
+    page
+      .getByRole("list", { name: /角色|商品/ })
+      .getByRole("article")
+      .first(),
+  ).toBeVisible();
 }
 
 async function openSheet(page: Page, name: string): Promise<Locator> {
@@ -189,7 +199,9 @@ function derivativesSection(sheet: Locator): Locator {
 
 /** 滚到某条衍生并返回这一行。 */
 async function derivativeRow(sheet: Locator, name: string): Promise<Locator> {
-  const row = derivativesSection(sheet).getByRole("listitem").filter({ has: sheet.page().getByRole("heading", { name, exact: true }) });
+  const row = derivativesSection(sheet)
+    .getByRole("listitem")
+    .filter({ has: sheet.page().getByRole("heading", { name, exact: true }) });
   await row.scrollIntoViewIfNeeded();
   return row;
 }
@@ -372,7 +384,10 @@ defineRegionScenarios("资产详情 Sheet", [
       await expect(row.getByRole("button", { name: "复制引用记号 @[林夕/夜行装]" })).toBeInViewport({ ratio: 1 });
       await expect(row.getByRole("button", { name: "重新生成" })).toBeInViewport({ ratio: 1 });
     },
-    screenshot: { name: "asset-editor-derivatives", target: (page) => derivativesSection(page.getByRole("dialog", { name: "林夕" })) },
+    screenshot: {
+      name: "asset-editor-derivatives",
+      target: (page) => derivativesSection(page.getByRole("dialog", { name: "林夕" })),
+    },
   },
   {
     name: "衍生多且名称与外观变化很长：只有正文滚动，末条的操作完整可见",

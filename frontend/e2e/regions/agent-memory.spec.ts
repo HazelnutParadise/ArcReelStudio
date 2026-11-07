@@ -139,10 +139,16 @@ defineRegionScenarios("Agent 记忆", [
   {
     name: "删除失败原因很长：确认正文可聚焦并用键盘滚动",
     path: "/app/settings?section=agent-memory",
-    api: { ...USER_FILES, "DELETE /api/v1/agent/memory/files/MEMORY.md": {
-      status: 500, body: { detail: "无法删除记忆文件，存储系统返回诊断：".repeat(120) },
-    } },
-    ready: async (page) => { await expect(editor(page)).toHaveValue(/第 300 条记忆/); },
+    api: {
+      ...USER_FILES,
+      "DELETE /api/v1/agent/memory/files/MEMORY.md": {
+        status: 500,
+        body: { detail: "无法删除记忆文件，存储系统返回诊断：".repeat(120) },
+      },
+    },
+    ready: async (page) => {
+      await expect(editor(page)).toHaveValue(/第 300 条记忆/);
+    },
     act: async (page) => {
       await page.getByRole("button", { name: "删除" }).click();
       const dialog = page.getByRole("alertdialog", { name: "删除 MEMORY.md？" });

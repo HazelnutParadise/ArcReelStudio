@@ -18,9 +18,8 @@ interface RecordedProject {
 }
 
 // 多集且标题很长：侧栏列表与图标栏都要在自己的区域里滚动。
-const recordedProject = (
-  JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse
-).body as RecordedProject;
+const recordedProject = (JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse)
+  .body as RecordedProject;
 const [firstEpisode] = recordedProject.project.episodes;
 const MANY_EPISODES: ApiOverrides = {
   ...API,
@@ -157,7 +156,11 @@ defineRegionScenarios("项目工作区外壳", [
       await shellReady(page);
       // 侧栏展开时是列表项，收为图标栏时是带名称的链接
       const lastEpisode = { name: /第 40 集/ };
-      await page.getByRole("button", lastEpisode).or(page.getByRole("link", lastEpisode)).first().waitFor({ state: "attached" });
+      await page
+        .getByRole("button", lastEpisode)
+        .or(page.getByRole("link", lastEpisode))
+        .first()
+        .waitFor({ state: "attached" });
     },
     act: async (page) => {
       const expected = viewport(page).width >= STANDARD_TIER_MIN_WIDTH ? SIDEBAR_DEFAULT : SIDEBAR_RAIL;

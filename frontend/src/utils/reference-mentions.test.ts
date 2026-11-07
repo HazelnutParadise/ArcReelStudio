@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vite-plus/test";
 import {
   buildMentionLookup,
   characterReferenceForms,
@@ -26,7 +26,12 @@ function normalize(text: string): string {
 }
 function mkProject(): Pick<ProjectData, "characters" | "scenes" | "props" | "products"> {
   return {
-    characters: { 主角: { description: "" }, 张三: { description: "" }, "角色甲（成年）": { description: "" }, 角色乙: { description: "" } },
+    characters: {
+      主角: { description: "" },
+      张三: { description: "" },
+      "角色甲（成年）": { description: "" },
+      角色乙: { description: "" },
+    },
     scenes: { 酒馆: { description: "" }, "地点甲·版本A": { description: "" } },
     props: { 长剑: { description: "" }, 载具甲: { description: "" }, 道具甲: { description: "" } },
     products: { 水杯: { description: "", brand: "" } },
@@ -47,10 +52,7 @@ describe("extractMentions", () => {
   });
 
   it("matches wrapped names containing punctuation", () => {
-    expect(extractMentions("@[角色甲（成年）] 接近 @[地点甲·版本A]")).toEqual([
-      "角色甲（成年）",
-      "地点甲·版本A",
-    ]);
+    expect(extractMentions("@[角色甲（成年）] 接近 @[地点甲·版本A]")).toEqual(["角色甲（成年）", "地点甲·版本A"]);
   });
 
   it("matches wrapped names adjacent to verbs", () => {
@@ -115,10 +117,7 @@ describe("parser output is normalized", () => {
   });
 
   it("emits normalized script lines", () => {
-    expect(splitScriptLines(`${BOM}中景\n@[${nameNfd}]：{我来了}`)).toEqual([
-      "中景",
-      `@[${nameNfc}]：{我来了}`,
-    ]);
+    expect(splitScriptLines(`${BOM}中景\n@[${nameNfd}]：{我来了}`)).toEqual(["中景", `@[${nameNfc}]：{我来了}`]);
   });
 
   it("resolves a BOM-laced mention against the registered bucket", () => {
@@ -130,7 +129,10 @@ describe("parser output is normalized", () => {
 describe("buildMentionLookup", () => {
   it("normalizes keys and resolves cross-bucket duplicates by stable priority", () => {
     const lookup = buildMentionLookup({
-      characters: Object.fromEntries([[" café ", {}], ["__proto__", {}]]),
+      characters: Object.fromEntries([
+        [" café ", {}],
+        ["__proto__", {}],
+      ]),
       scenes: { "cafe\u0301": {} },
       props: { toString: {} },
       products: { Product: {} },
@@ -200,7 +202,6 @@ describe("MENTION_RE prefix boundary", () => {
   it("rejects underscore prefix", () => {
     expect(extractMentions("prefix_@张三")).toEqual([]);
   });
-
 });
 
 describe("inline speech marks", () => {
@@ -240,10 +241,7 @@ describe("inline speech marks", () => {
 
   it("keeps speaker slots out of mention extraction", () => {
     // 与后端 text_parser.extract_mentions 同口径：给画外说话的角色附参考图会诱导它入画
-    expect(extractMentions("@酒馆 内景。\n@张三：{我来了}\n@张三 抬眼。")).toEqual([
-      "酒馆",
-      "张三",
-    ]);
+    expect(extractMentions("@酒馆 内景。\n@张三：{我来了}\n@张三 抬眼。")).toEqual(["酒馆", "张三"]);
     expect(extractMentions("@张三：{我来了}")).toEqual([]);
   });
 

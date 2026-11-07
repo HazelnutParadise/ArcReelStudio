@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vite-plus/test";
 import { API } from "@/api";
 import { useWorkflowStore } from "./workflow-store";
 import { makePlan } from "@/test/factories";
@@ -56,8 +56,12 @@ describe("workflow-store", () => {
     let resolveB!: (plan: ReturnType<typeof makePlan>) => void;
     vi.spyOn(API, "getWorkflowPlan").mockImplementation((project) =>
       project === "A"
-        ? new Promise((resolve) => { resolveA = resolve; })
-        : new Promise((resolve) => { resolveB = resolve; }),
+        ? new Promise((resolve) => {
+            resolveA = resolve;
+          })
+        : new Promise((resolve) => {
+            resolveB = resolve;
+          }),
     );
     const store = useWorkflowStore.getState();
 

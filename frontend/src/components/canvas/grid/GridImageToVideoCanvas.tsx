@@ -57,11 +57,7 @@ interface GridImageToVideoCanvasProps extends EpisodeCanvasContext {
   onGenerateVideo?: (segmentId: string, scriptFile?: string) => void | Promise<void>;
   onGenerateNarration?: (segmentId: string, scriptFile?: string) => void;
   onGenerateEpisodeNarration?: (scriptFile?: string) => void;
-  onGenerateGrid?: (
-    episode: number,
-    scriptFile: string,
-    sceneIds?: string[],
-  ) => Promise<void> | void;
+  onGenerateGrid?: (episode: number, scriptFile: string, sceneIds?: string[]) => Promise<void> | void;
   onRestoreStoryboard?: () => Promise<unknown> | void;
   onRestoreVideo?: () => Promise<unknown> | void;
   /** 分镜改序：移到 afterId 之后，null 移到最前；resolve 为是否成功 */
@@ -117,10 +113,8 @@ export function GridImageToVideoCanvas({
   const rawAspect =
     typeof projectData?.aspect_ratio === "string"
       ? projectData.aspect_ratio
-      : (projectData?.aspect_ratio?.storyboard ??
-        (contentMode === "narration" ? "9:16" : "16:9"));
-  const aspectRatio: "9:16" | "16:9" =
-    rawAspect === "9:16" || rawAspect === "16:9" ? rawAspect : "16:9";
+      : (projectData?.aspect_ratio?.storyboard ?? (contentMode === "narration" ? "9:16" : "16:9"));
+  const aspectRatio: "9:16" | "16:9" = rawAspect === "9:16" || rawAspect === "16:9" ? rawAspect : "16:9";
 
   const segments = useMemo<Segment[]>(
     () =>
@@ -146,14 +140,8 @@ export function GridImageToVideoCanvas({
     (segId: string) => storyboardBusyIds.has(segId) || gridActiveForEpisode,
     [storyboardBusyIds, gridActiveForEpisode],
   );
-  const generatingVideo = useCallback(
-    (segId: string) => videoBusyIds.has(segId),
-    [videoBusyIds],
-  );
-  const generatingNarration = useCallback(
-    (segId: string) => ttsBusyIds.has(segId),
-    [ttsBusyIds],
-  );
+  const generatingVideo = useCallback((segId: string) => videoBusyIds.has(segId), [videoBusyIds]);
+  const generatingNarration = useCallback((segId: string) => ttsBusyIds.has(segId), [ttsBusyIds]);
   // 批量旁白进行中：当前分集还有未完结的 tts 任务时禁用批量按钮，避免重复入队
   const currentSegmentIds = useMemo(
     () => new Set(segments.map((s) => getScriptItemId(s, editorContentMode ?? "drama"))),
@@ -179,9 +167,7 @@ export function GridImageToVideoCanvas({
 
   if (!projectData || (!episodeScript && !hasDraft)) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        {t("select_episode_hint")}
-      </div>
+      <div className="flex h-full items-center justify-center text-muted-foreground">{t("select_episode_hint")}</div>
     );
   }
 
@@ -200,9 +186,7 @@ export function GridImageToVideoCanvas({
       ? (shotId: string, afterId: string | null) => onMoveShot(shotId, afterId, scriptFile)
       : undefined;
   const handleInsertShot: InsertShotHandler | undefined =
-    onInsertShot && !demoReadOnly
-      ? (afterId, novelText) => onInsertShot(afterId, novelText, scriptFile)
-      : undefined;
+    onInsertShot && !demoReadOnly ? (afterId, novelText) => onInsertShot(afterId, novelText, scriptFile) : undefined;
   const handleRemoveShot =
     onRemoveShot && !demoReadOnly ? (itemId: string) => onRemoveShot(itemId, scriptFile) : undefined;
 
@@ -263,61 +247,64 @@ export function GridImageToVideoCanvas({
       )}
 
       <div className="min-h-0 flex-1 overflow-hidden">
-        <RetainedEditUnit identity={episodeScript && segments.length > 0 ? "shots" : "empty"} message={t("shot_externally_removed")} value={view === "plan" && hasDraft && editorContentMode ? (
-          <div className="relative h-full overflow-y-auto p-4">
-            <ScriptReviewGate
-              key={`${projectName}:${episode}`}
-              projectName={projectName}
-              episode={episode}
-              contentMode={editorContentMode}
-              videoModelUnresolved={videoModelUnresolved}
-              durationOptions={planDurationOptions}
-              durationEndpointFixed={durationEndpointFixed}
-              durationWarningReason={durationWarningReason}
-              onOpenTimeline={hasScript ? () => onViewChange("board") : undefined}
-            />
-          </div>
-        ) : view === "grid" && editorContentMode ? (
-          <GridPreviewView
-            projectName={projectName}
-            episode={episode}
-            scriptFile={scriptFile}
-            segments={segments}
-            contentMode={editorContentMode}
-            onGenerateGrid={onGenerateGrid}
-          />
-        ) : episodeScript && segments.length > 0 && editorContentMode ? (
-          <ShotSplitView
-            segments={segments}
-            contentMode={editorContentMode}
-            aspectRatio={aspectRatio}
-            projectName={projectName}
-            episode={episode}
-            scriptFile={scriptFile}
-            onUpdatePrompt={handleUpdatePrompt}
-            onMoveShot={handleMoveShot}
-            onInsertShot={handleInsertShot}
-            onRemoveShot={handleRemoveShot}
-            onGenerateStoryboard={handleGenSb}
-            onGenerateVideo={handleGenVid}
-            onGenerateNarration={handleGenNarration}
-            onRestoreStoryboard={onRestoreStoryboard}
-            onRestoreVideo={onRestoreVideo}
-            generatingStoryboard={generatingStoryboard}
-            generatingVideo={generatingVideo}
-            generatingNarration={generatingNarration}
-            durationOptions={durationOptions}
-            durationEndpointFixed={durationEndpointFixed}
-            lastFrame={lastFrame}
-            capabilitiesLoading={capabilitiesLoading}
-            durationWarningReason={durationWarningReason}
-          />
-        ) : episodeScript && editorContentMode ? (
-          <EmptyScriptState
-            contentMode={editorContentMode}
-            onInsert={handleInsertShot}
-          />
-        ) : null}>
+        <RetainedEditUnit
+          identity={episodeScript && segments.length > 0 ? "shots" : "empty"}
+          message={t("shot_externally_removed")}
+          value={
+            view === "plan" && hasDraft && editorContentMode ? (
+              <div className="relative h-full overflow-y-auto p-4">
+                <ScriptReviewGate
+                  key={`${projectName}:${episode}`}
+                  projectName={projectName}
+                  episode={episode}
+                  contentMode={editorContentMode}
+                  videoModelUnresolved={videoModelUnresolved}
+                  durationOptions={planDurationOptions}
+                  durationEndpointFixed={durationEndpointFixed}
+                  durationWarningReason={durationWarningReason}
+                  onOpenTimeline={hasScript ? () => onViewChange("board") : undefined}
+                />
+              </div>
+            ) : view === "grid" && editorContentMode ? (
+              <GridPreviewView
+                projectName={projectName}
+                episode={episode}
+                scriptFile={scriptFile}
+                segments={segments}
+                contentMode={editorContentMode}
+                onGenerateGrid={onGenerateGrid}
+              />
+            ) : episodeScript && segments.length > 0 && editorContentMode ? (
+              <ShotSplitView
+                segments={segments}
+                contentMode={editorContentMode}
+                aspectRatio={aspectRatio}
+                projectName={projectName}
+                episode={episode}
+                scriptFile={scriptFile}
+                onUpdatePrompt={handleUpdatePrompt}
+                onMoveShot={handleMoveShot}
+                onInsertShot={handleInsertShot}
+                onRemoveShot={handleRemoveShot}
+                onGenerateStoryboard={handleGenSb}
+                onGenerateVideo={handleGenVid}
+                onGenerateNarration={handleGenNarration}
+                onRestoreStoryboard={onRestoreStoryboard}
+                onRestoreVideo={onRestoreVideo}
+                generatingStoryboard={generatingStoryboard}
+                generatingVideo={generatingVideo}
+                generatingNarration={generatingNarration}
+                durationOptions={durationOptions}
+                durationEndpointFixed={durationEndpointFixed}
+                lastFrame={lastFrame}
+                capabilitiesLoading={capabilitiesLoading}
+                durationWarningReason={durationWarningReason}
+              />
+            ) : episodeScript && editorContentMode ? (
+              <EmptyScriptState contentMode={editorContentMode} onInsert={handleInsertShot} />
+            ) : null
+          }
+        >
           {(content) => content}
         </RetainedEditUnit>
       </div>

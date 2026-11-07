@@ -32,10 +32,7 @@ const ASSISTANT_PANEL_OPEN_STORAGE_KEY = "arcreel_assistant_panel_open";
 
 export function clampAssistantPanelWidth(value: number): number {
   if (!Number.isFinite(value)) return ASSISTANT_PANEL_DEFAULT_WIDTH;
-  return Math.min(
-    ASSISTANT_PANEL_MAX_WIDTH,
-    Math.max(ASSISTANT_PANEL_MIN_WIDTH, Math.round(value)),
-  );
+  return Math.min(ASSISTANT_PANEL_MAX_WIDTH, Math.max(ASSISTANT_PANEL_MIN_WIDTH, Math.round(value)));
 }
 
 function readPersistedAssistantPanelWidth(): number {
@@ -159,9 +156,7 @@ interface AppState {
  */
 const MAX_WORKSPACE_NOTIFICATIONS = 40;
 
-function buildWorkspaceNotification(
-  input: WorkspaceNotificationInput,
-): WorkspaceNotification {
+function buildWorkspaceNotification(input: WorkspaceNotificationInput): WorkspaceNotification {
   return {
     id: `${Date.now()}-${Math.random()}`,
     text: input.text,
@@ -208,8 +203,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return s;
     }),
   assistantToolActivitySuppressed: false,
-  setAssistantToolActivitySuppressed: (suppressed) =>
-    set({ assistantToolActivitySuppressed: suppressed }),
+  setAssistantToolActivitySuppressed: (suppressed) => set({ assistantToolActivitySuppressed: suppressed }),
 
   toast: null,
   pushToast: (text, tone = "info", options) =>
@@ -227,22 +221,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   workspaceNotifications: [],
   pushWorkspaceNotification: (input) =>
     set((s) => ({
-      workspaceNotifications: [
-        buildWorkspaceNotification(input),
-        ...s.workspaceNotifications,
-      ].slice(0, MAX_WORKSPACE_NOTIFICATIONS),
+      workspaceNotifications: [buildWorkspaceNotification(input), ...s.workspaceNotifications].slice(
+        0,
+        MAX_WORKSPACE_NOTIFICATIONS,
+      ),
     })),
   markWorkspaceNotificationRead: (id) =>
     set((s) => ({
-      workspaceNotifications: s.workspaceNotifications.map((item) =>
-        item.id === id ? { ...item, read: true } : item
-      ),
+      workspaceNotifications: s.workspaceNotifications.map((item) => (item.id === id ? { ...item, read: true } : item)),
     })),
   markAllWorkspaceNotificationsRead: () =>
     set((s) => ({
-      workspaceNotifications: s.workspaceNotifications.map((item) =>
-        item.read ? item : { ...item, read: true }
-      ),
+      workspaceNotifications: s.workspaceNotifications.map((item) => (item.read ? item : { ...item, read: true })),
     })),
   removeWorkspaceNotification: (id) =>
     set((s) => ({
@@ -259,16 +249,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     }),
   setAssistantPanelOpen: (open) => set({ assistantPanelOpen: open }),
   assistantPanelWidth: readPersistedAssistantPanelWidth(),
-  setAssistantPanelWidth: (width) =>
-    set({ assistantPanelWidth: clampAssistantPanelWidth(width) }),
+  setAssistantPanelWidth: (width) => set({ assistantPanelWidth: clampAssistantPanelWidth(width) }),
   persistAssistantPanelWidth: () => {
     if (typeof window === "undefined") return;
     const width = clampAssistantPanelWidth(get().assistantPanelWidth);
     try {
-      window.localStorage.setItem(
-        ASSISTANT_PANEL_WIDTH_STORAGE_KEY,
-        String(width),
-      );
+      window.localStorage.setItem(ASSISTANT_PANEL_WIDTH_STORAGE_KEY, String(width));
     } catch {
       // localStorage 不可用（隐私模式 / quota exceeded）静默失败，内存值仍生效
     }
@@ -283,8 +269,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   invalidateTrash: () => set((s) => ({ trashRevision: s.trashRevision + 1 })),
 
   referenceVideoUnitsRevision: 0,
-  invalidateReferenceVideoUnits: () =>
-    set((s) => ({ referenceVideoUnitsRevision: s.referenceVideoUnitsRevision + 1 })),
+  invalidateReferenceVideoUnits: () => set((s) => ({ referenceVideoUnitsRevision: s.referenceVideoUnitsRevision + 1 })),
 
   entityRevisions: {},
   invalidateEntities: (keys) =>
@@ -304,15 +289,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({
       entityRevisions: {
         ...s.entityRevisions,
-        [ALL_ENTITIES_REVISION_KEY]:
-          (s.entityRevisions[ALL_ENTITIES_REVISION_KEY] ?? 0) + 1,
+        [ALL_ENTITIES_REVISION_KEY]: (s.entityRevisions[ALL_ENTITIES_REVISION_KEY] ?? 0) + 1,
       },
     })),
   getEntityRevision: (key) => {
     const entityRevisions = get().entityRevisions;
-    return (
-      (entityRevisions[key] ?? 0) +
-      (entityRevisions[ALL_ENTITIES_REVISION_KEY] ?? 0)
-    );
+    return (entityRevisions[key] ?? 0) + (entityRevisions[ALL_ENTITIES_REVISION_KEY] ?? 0);
   },
 }));

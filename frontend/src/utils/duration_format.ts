@@ -41,7 +41,10 @@ export function parseDurationInput(text: string): number[] | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
-  const segments = trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+  const segments = trimmed
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (segments.length === 0) {
     throw new DurationParseError("empty_after_split", { input: trimmed });
   }

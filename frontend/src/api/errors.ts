@@ -3,10 +3,7 @@
  * 对外经 `@/api` 再导出，调用方继续从 `@/api` 导入。
  */
 
-import type {
-  FailureObservation,
-  ReferenceProjectionAdmission,
-} from "@/types";
+import type { FailureObservation, ReferenceProjectionAdmission } from "@/types";
 import i18n from "@/i18n";
 import { useProjectsStore } from "@/stores/projects-store";
 import { findEpisodeItem } from "@/utils/episode-item";
@@ -145,7 +142,7 @@ export class ConflictError extends Error {
   constructor(
     public readonly existing: string,
     public readonly suggestedName: string,
-    message: string
+    message: string,
   ) {
     super(message);
     this.name = "ConflictError";
@@ -193,11 +190,11 @@ export function isAgentFailureDetail(value: unknown): value is AgentFailureDetai
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const detail = value as Record<string, unknown>;
   return (
-    detail.code === "agent_startup_failed"
-    && typeof detail.message === "string"
-    && Boolean(detail.failure)
-    && typeof detail.failure === "object"
-    && !Array.isArray(detail.failure)
+    detail.code === "agent_startup_failed" &&
+    typeof detail.message === "string" &&
+    Boolean(detail.failure) &&
+    typeof detail.failure === "object" &&
+    !Array.isArray(detail.failure)
   );
 }
 
@@ -205,29 +202,29 @@ export function isSpeechAdmission(value: unknown): value is SpeechAdmission {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const detail = value as Record<string, unknown>;
   return (
-    detail.allowed === false
-    && typeof detail.unit_id === "string"
-    && detail.mode === null
-    && Array.isArray(detail.problems)
-    && detail.problems.length > 0
-    && detail.problems.every((problem) => {
+    detail.allowed === false &&
+    typeof detail.unit_id === "string" &&
+    detail.mode === null &&
+    Array.isArray(detail.problems) &&
+    detail.problems.length > 0 &&
+    detail.problems.every((problem) => {
       if (!problem || typeof problem !== "object" || Array.isArray(problem)) return false;
       const entry = problem as Record<string, unknown>;
       return (
-        ["mixed_speech", "needs_replan", "parse_failed", "empty_speaker"].includes(String(entry.code))
-        && typeof entry.unit_id === "string"
-        && Array.isArray(entry.locations)
-        && entry.locations.every((location) => {
+        ["mixed_speech", "needs_replan", "parse_failed", "empty_speaker"].includes(String(entry.code)) &&
+        typeof entry.unit_id === "string" &&
+        Array.isArray(entry.locations) &&
+        entry.locations.every((location) => {
           if (!location || typeof location !== "object" || Array.isArray(location)) return false;
           const field = location as Record<string, unknown>;
           return (
-            Array.isArray(field.path)
-            && field.path.every((part) => typeof part === "string" || typeof part === "number")
-            && (field.line === null || typeof field.line === "number")
+            Array.isArray(field.path) &&
+            field.path.every((part) => typeof part === "string" || typeof part === "number") &&
+            (field.line === null || typeof field.line === "number")
           );
-        })
-        && typeof entry.reason === "string"
-        && typeof entry.action === "string"
+        }) &&
+        typeof entry.reason === "string" &&
+        typeof entry.action === "string"
       );
     })
   );
@@ -237,11 +234,11 @@ export function isScriptEditResult(value: unknown): value is ScriptEditResult {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const result = value as Record<string, unknown>;
   return (
-    result.success === false
-    && typeof result.script === "string"
-    && typeof result.revision === "string"
-    && Array.isArray(result.problems)
-    && result.problems.length > 0
+    result.success === false &&
+    typeof result.script === "string" &&
+    typeof result.revision === "string" &&
+    Array.isArray(result.problems) &&
+    result.problems.length > 0
   );
 }
 
@@ -249,33 +246,33 @@ export function isReferenceProjectionAdmission(value: unknown): value is Referen
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const detail = value as Record<string, unknown>;
   return (
-    detail.allowed === false
-    && detail.kind === "reference_request_projection"
-    && typeof detail.unit_id === "string"
-    && Array.isArray(detail.problems)
-    && detail.problems.length > 0
-    && detail.problems.every((problem) => {
+    detail.allowed === false &&
+    detail.kind === "reference_request_projection" &&
+    typeof detail.unit_id === "string" &&
+    Array.isArray(detail.problems) &&
+    detail.problems.length > 0 &&
+    detail.problems.every((problem) => {
       if (!problem || typeof problem !== "object" || Array.isArray(problem)) return false;
       const entry = problem as Record<string, unknown>;
       return (
-        typeof entry.code === "string"
-        && typeof entry.blocking === "boolean"
-        && typeof entry.unit_id === "string"
-        && Array.isArray(entry.locations)
-        && entry.locations.every((location) => {
+        typeof entry.code === "string" &&
+        typeof entry.blocking === "boolean" &&
+        typeof entry.unit_id === "string" &&
+        Array.isArray(entry.locations) &&
+        entry.locations.every((location) => {
           if (!location || typeof location !== "object" || Array.isArray(location)) return false;
           const field = location as Record<string, unknown>;
           return (
-            Array.isArray(field.path)
-            && field.path.every((part) => typeof part === "string" || typeof part === "number")
-            && (field.line === null || typeof field.line === "number")
+            Array.isArray(field.path) &&
+            field.path.every((part) => typeof part === "string" || typeof part === "number") &&
+            (field.line === null || typeof field.line === "number")
           );
-        })
-        && Boolean(entry.params)
-        && typeof entry.params === "object"
-        && !Array.isArray(entry.params)
-        && typeof entry.action === "string"
-        && (entry.message === undefined || typeof entry.message === "string")
+        }) &&
+        Boolean(entry.params) &&
+        typeof entry.params === "object" &&
+        !Array.isArray(entry.params) &&
+        typeof entry.action === "string" &&
+        (entry.message === undefined || typeof entry.message === "string")
       );
     })
   );
@@ -309,9 +306,7 @@ function formatScriptEditResult(result: ScriptEditResult): string {
   if (speechCodes.includes(first.code as SpeechAdmissionProblem["code"]) && first.unit_id !== null) {
     const unitId = first.unit_id;
     const problems = result.problems
-      .filter(({ code, unit_id }) => (
-        unit_id === unitId && speechCodes.includes(code as SpeechAdmissionProblem["code"])
-      ))
+      .filter(({ code, unit_id }) => unit_id === unitId && speechCodes.includes(code as SpeechAdmissionProblem["code"]))
       .map((problem) => ({
         code: problem.code as SpeechAdmissionProblem["code"],
         unit_id: problem.unit_id ?? unitId,
@@ -321,14 +316,15 @@ function formatScriptEditResult(result: ScriptEditResult): string {
       }));
     return formatSpeechAdmission({ allowed: false, unit_id: unitId, mode: null, problems });
   }
-  const key = {
-    revision_conflict: "script_edit_revision_conflict",
-    operation_invalid: "script_edit_operation_invalid",
-    schema_invalid: "script_edit_schema_invalid",
-    references_invalid: "script_edit_references_invalid",
-    manifest_invalid: "script_edit_manifest_invalid",
-    commit_failed: "script_edit_commit_failed",
-  }[first.code] ?? "script_edit_rejected";
+  const key =
+    {
+      revision_conflict: "script_edit_revision_conflict",
+      operation_invalid: "script_edit_operation_invalid",
+      schema_invalid: "script_edit_schema_invalid",
+      references_invalid: "script_edit_references_invalid",
+      manifest_invalid: "script_edit_manifest_invalid",
+      commit_failed: "script_edit_commit_failed",
+    }[first.code] ?? "script_edit_rejected";
   return i18n.t(`dashboard:${key}`);
 }
 

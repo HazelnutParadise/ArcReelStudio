@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { safeReturnPath } from "@/utils/safe-url";
 
 describe("safeReturnPath", () => {
@@ -9,9 +9,7 @@ describe("safeReturnPath", () => {
 
   it("preserves the URL hash alongside path and query", () => {
     expect(safeReturnPath("/app/projects/demo#shot-3")).toBe("/app/projects/demo#shot-3");
-    expect(safeReturnPath("/app/projects/demo?tab=scene#shot-3")).toBe(
-      "/app/projects/demo?tab=scene#shot-3",
-    );
+    expect(safeReturnPath("/app/projects/demo?tab=scene#shot-3")).toBe("/app/projects/demo?tab=scene#shot-3");
   });
 
   it("rejects internal paths outside /app/", () => {

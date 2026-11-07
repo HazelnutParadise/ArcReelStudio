@@ -20,7 +20,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -208,7 +213,11 @@ export function CustomProviderForm({
       const multiplier = parseOptionalMultiplier(value.providerMultiplier);
       if (multiplier === undefined) fail(t("cp_provider_multiplier_invalid"));
 
-      const workers = { image_max_workers: imageMax ?? null, video_max_workers: videoMax ?? null, audio_max_workers: audioMax ?? null };
+      const workers = {
+        image_max_workers: imageMax ?? null,
+        video_max_workers: videoMax ?? null,
+        audio_max_workers: audioMax ?? null,
+      };
       if (existing) {
         // 只更新供应商本身：不带 models，模型保持在列表与 Sheet 里保存的样子
         await API.fullUpdateCustomProvider(existing.id, {
@@ -274,7 +283,17 @@ export function CustomProviderForm({
       }
       onSaved(created);
     },
-    [formatOf, deriveModels, t, existing, catalogInitialized, catalogEndpoints, initialEndpoint, savedMultiplier, onSaved],
+    [
+      formatOf,
+      deriveModels,
+      t,
+      existing,
+      catalogInitialized,
+      catalogEndpoints,
+      initialEndpoint,
+      savedMultiplier,
+      onSaved,
+    ],
   );
 
   const unit = useEditUnit({ source, save, allowNavigation });
@@ -293,8 +312,7 @@ export function CustomProviderForm({
   // 用户改动以派生后的行为基准写回，派生结果就此坐实。否则那些由派生兜底改写的字段（改挂的端点、
   // 随之作废的默认标记）会在下一次派生里被同一条规则再改一遍，用户的改动看不见效果。
   const updateModels = useCallback(
-    (change: (rows: ModelRow[]) => ModelRow[]) =>
-      setValue((prev) => ({ ...prev, models: change(deriveModels(prev)) })),
+    (change: (rows: ModelRow[]) => ModelRow[]) => setValue((prev) => ({ ...prev, models: change(deriveModels(prev)) })),
     [setValue, deriveModels],
   );
 
@@ -519,9 +537,7 @@ export function CustomProviderForm({
       </Button>
       {existing && (
         <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" size="icon-sm" aria-label={t("cp_more_actions")} />}
-          >
+          <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={t("cp_more_actions")} />}>
             <MoreHorizontal />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -668,9 +684,7 @@ export function CustomProviderForm({
             label={t("cp_provider_multiplier_label")}
             htmlFor={`${billingHeadingId}-input`}
             hint={
-              providerMultiplierInvalid ? (
-                <FieldHint tone="warn">{t("cp_multiplier_invalid")}</FieldHint>
-              ) : undefined
+              providerMultiplierInvalid ? <FieldHint tone="warn">{t("cp_multiplier_invalid")}</FieldHint> : undefined
             }
           >
             <Input
@@ -732,7 +746,9 @@ export function CustomProviderForm({
                 }
                 onRemove={(key) => updateModels((rows) => rows.filter((m) => m.key !== key))}
                 onToggleDefault={(key) =>
-                  updateModels((rows) => toggleDefaultReducer(rows, key, endpointToMediaType, endpointToImageCapabilities))
+                  updateModels((rows) =>
+                    toggleDefaultReducer(rows, key, endpointToMediaType, endpointToImageCapabilities),
+                  )
                 }
                 onSetEnabled={(keys, enabled) => {
                   const selected = new Set(keys);
@@ -808,7 +824,11 @@ export function CustomProviderForm({
             <AlertDialogHeader>
               <AlertDialogTitle>{t("cp_delete_provider_title", { name: existing.display_name })}</AlertDialogTitle>
             </AlertDialogHeader>
-            <AlertDialogBody tabIndex={0} role="region" aria-label={t("cp_delete_provider_title", { name: existing.display_name })}>
+            <AlertDialogBody
+              tabIndex={0}
+              role="region"
+              aria-label={t("cp_delete_provider_title", { name: existing.display_name })}
+            >
               <div className="flex flex-col gap-2">
                 <AlertDialogDescription>
                   {t("cp_delete_provider_description", { count: existing.models.length })}
@@ -833,4 +853,3 @@ export function CustomProviderForm({
     </DetailPane>
   );
 }
-

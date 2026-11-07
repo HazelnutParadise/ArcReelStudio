@@ -2,10 +2,15 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseSync } from "oxc-parser";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { ENQUEUE_METHODS } from "../lint/arcreel-plugin";
 
-type AstNode = { type: string; start: number; method?: boolean; key?: { type: string; name?: string; start: number; end: number } };
+type AstNode = {
+  type: string;
+  start: number;
+  method?: boolean;
+  key?: { type: string; name?: string; start: number; end: number };
+};
 
 function walk(value: unknown, visit: (node: AstNode) => void): void {
   if (Array.isArray(value)) {
@@ -44,7 +49,9 @@ function taggedEnqueueMethods(source: string): string[] {
       (node.type === "Property" && node.method === true);
     const doc = isMethod ? jsdocOf(node.start) : undefined;
     if (node.key && doc !== undefined && /(^|[\s*])@enqueue(?![\w-])/.test(doc)) {
-      names.push(node.key.type === "Identifier" && node.key.name ? node.key.name : source.slice(node.key.start, node.key.end));
+      names.push(
+        node.key.type === "Identifier" && node.key.name ? node.key.name : source.slice(node.key.start, node.key.end),
+      );
     }
   });
   return names.sort();

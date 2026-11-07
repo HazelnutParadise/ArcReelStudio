@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { LeaveGuardProvider, useLeaveGuard } from "@/components/shared/edit-unit/LeaveGuard";
 import { useAppStore } from "@/stores/app-store";
@@ -104,7 +104,11 @@ describe("AssetGallery", () => {
 
     const menu = await openMenu(user, "庭院");
 
-    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual([
       "查看大图",
       "重新生成资产图",
       "上传资产图",
@@ -121,7 +125,9 @@ describe("AssetGallery", () => {
   it("disables restoring a version once another task occupies the asset", async () => {
     const user = userEvent.setup();
     vi.spyOn(API, "getVersions").mockResolvedValue({
-      resource_type: "scenes", resource_id: "庭院", current_version: 2,
+      resource_type: "scenes",
+      resource_id: "庭院",
+      current_version: 2,
       versions: [{ version: 1, filename: "v1.png", created_at: "2026-10-01", file_size: 1, is_current: false }],
     });
     renderGallery();
@@ -129,9 +135,11 @@ describe("AssetGallery", () => {
     await user.click(await screen.findByRole("button", { name: "v1" }));
     expect(screen.getByRole("button", { name: "切换到此版本" })).toBeEnabled();
 
-    act(() => useTasksStore.setState({
-      tasks: [makeTask({ project_name: "demo", task_type: "scene", resource_id: "庭院", status: "running" })],
-    }));
+    act(() =>
+      useTasksStore.setState({
+        tasks: [makeTask({ project_name: "demo", task_type: "scene", resource_id: "庭院", status: "running" })],
+      }),
+    );
 
     expect(screen.getByRole("button", { name: "切换到此版本" })).toBeDisabled();
   });
@@ -153,7 +161,11 @@ describe("AssetGallery", () => {
 
     const menu = await openMenu(user, "庭院");
 
-    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["查看大图"]);
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(["查看大图"]);
     expect(screen.queryByRole("button", { name: /添加场景/ })).not.toBeInTheDocument();
   });
 
@@ -162,9 +174,19 @@ describe("AssetGallery", () => {
     renderGallery();
     const menu = await openMenu(user, "庭院");
     // 菜单打开之后，该场景被 Agent 入队占用，菜单应即时禁用写入入口。
-    act(() => useTasksStore.setState({
-      tasks: [makeTask({ project_name: "demo", task_type: "scene", media_type: "image", resource_id: "庭院", status: "running" })],
-    }));
+    act(() =>
+      useTasksStore.setState({
+        tasks: [
+          makeTask({
+            project_name: "demo",
+            task_type: "scene",
+            media_type: "image",
+            resource_id: "庭院",
+            status: "running",
+          }),
+        ],
+      }),
+    );
 
     const addToLibrary = within(menu).getByRole("menuitem", { name: "加入资产库" });
     expect(addToLibrary).toHaveAttribute("aria-disabled", "true");
@@ -178,7 +200,15 @@ describe("AssetGallery", () => {
     renderGallery();
     const card = screen.getByRole("article", { name: "庭院" });
     useTasksStore.setState({
-      tasks: [makeTask({ project_name: "demo", task_type: "scene", media_type: "image", resource_id: "庭院", status: "running" })],
+      tasks: [
+        makeTask({
+          project_name: "demo",
+          task_type: "scene",
+          media_type: "image",
+          resource_id: "庭院",
+          status: "running",
+        }),
+      ],
     });
 
     const file = new File(["sheet"], "scene.png", { type: "image/png" });
@@ -190,22 +220,54 @@ describe("AssetGallery", () => {
 
   it("从素材库选择时复核弹窗打开后的资源占用", async () => {
     vi.spyOn(API, "listAssetLibraryAccounts").mockResolvedValue({
-      sites: [], default_project_name: "default",
-      accounts: [{ id: 7, site: "volcengine", name: "TEST-account", region: "cn-beijing", project_name: "film",
-        access_key_id_masked: "TEST…key", secret_access_key_masked: "TEST…key", created_at: "2026-11-03T00:00:00Z" }],
+      sites: [],
+      default_project_name: "default",
+      accounts: [
+        {
+          id: 7,
+          site: "volcengine",
+          name: "TEST-account",
+          region: "cn-beijing",
+          project_name: "film",
+          access_key_id_masked: "TEST…key",
+          secret_access_key_masked: "TEST…key",
+          created_at: "2026-11-03T00:00:00Z",
+        },
+      ],
     });
     vi.spyOn(API, "listProviderAssets").mockResolvedValue({
-      items: [{ id: "TEST-asset", name: "供应商庭院", asset_type: "Image", status: "active", error_code: null, created_at: null }],
-      total: 1, page: 1, page_size: 20,
+      items: [
+        {
+          id: "TEST-asset",
+          name: "供应商庭院",
+          asset_type: "Image",
+          status: "active",
+          error_code: null,
+          created_at: null,
+        },
+      ],
+      total: 1,
+      page: 1,
+      page_size: 20,
     });
     const importAsset = vi.spyOn(API, "importProviderAsset");
     const user = userEvent.setup();
     renderGallery();
     await user.click(within(await openMenu(user, "庭院")).getByRole("menuitem", { name: "从供应商素材库选择" }));
     const select = await screen.findByRole("button", { name: "选择 供应商庭院" });
-    act(() => useTasksStore.setState({
-      tasks: [makeTask({ project_name: "demo", task_type: "scene", media_type: "image", resource_id: "庭院", status: "running" })],
-    }));
+    act(() =>
+      useTasksStore.setState({
+        tasks: [
+          makeTask({
+            project_name: "demo",
+            task_type: "scene",
+            media_type: "image",
+            resource_id: "庭院",
+            status: "running",
+          }),
+        ],
+      }),
+    );
     await user.click(select);
     expect(importAsset).not.toHaveBeenCalled();
     expect(useAppStore.getState().toast?.text).toBe("资产图正在生成或修改，请等它结束后再操作");
@@ -248,7 +310,9 @@ describe("AssetGallery", () => {
 
       const dialog = await screen.findByRole("alertdialog", { name: "删除场景「庭院」？" });
       expect(
-        await within(dialog).findByText("被「开端」等 2 集共 5 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。"),
+        await within(dialog).findByText(
+          "被「开端」等 2 集共 5 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+        ),
       ).toBeInTheDocument();
       expect(within(dialog).getByText("夜访")).toBeInTheDocument();
       expect(preview).toHaveBeenCalledWith("demo", "scene", "庭院", { signal: expect.any(AbortSignal) });
@@ -274,7 +338,11 @@ describe("AssetGallery", () => {
 
       await user.click(within(await openMenu(user, "书房")).getByRole("menuitem", { name: "删除" }));
       const dialog = await screen.findByRole("alertdialog", { name: "删除场景「书房」？" });
-      expect(await within(dialog).findByText("资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。")).toBeInTheDocument();
+      expect(
+        await within(dialog).findByText(
+          "资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+        ),
+      ).toBeInTheDocument();
       expect(within(dialog).queryByRole("button", { name: "改为并入…" })).not.toBeInTheDocument();
 
       await user.click(within(dialog).getByRole("button", { name: "删除" }));
@@ -318,7 +386,9 @@ describe("AssetGallery", () => {
         );
         await user.click(within(await openMenu(user, "书房")).getByRole("menuitem", { name: "删除" }));
         const dialog = await screen.findByRole("alertdialog", { name: "删除场景「书房」？" });
-        await within(dialog).findByText("资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。");
+        await within(dialog).findByText(
+          "资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+        );
         await user.click(within(dialog).getByRole("button", { name: "删除" }));
         return within(await screen.findByRole("alertdialog", { name: "有未保存的修改" }));
       }
@@ -339,12 +409,24 @@ describe("AssetGallery", () => {
         const remove = vi.spyOn(API, "deleteProjectAsset").mockResolvedValue({ success: true });
         const leave = await confirmDeletion(user);
 
-        act(() => useTasksStore.setState({
-          tasks: [makeTask({ project_name: "demo", task_type: "scene", media_type: "image", resource_id: "书房", status: "running" })],
-        }));
+        act(() =>
+          useTasksStore.setState({
+            tasks: [
+              makeTask({
+                project_name: "demo",
+                task_type: "scene",
+                media_type: "image",
+                resource_id: "书房",
+                status: "running",
+              }),
+            ],
+          }),
+        );
         await user.click(leave.getByRole("button", { name: "放弃修改" }));
 
-        await waitFor(() => expect(useAppStore.getState().toast?.text).toBe("资产图正在生成或修改，请等它结束后再操作"));
+        await waitFor(() =>
+          expect(useAppStore.getState().toast?.text).toBe("资产图正在生成或修改，请等它结束后再操作"),
+        );
         expect(remove).not.toHaveBeenCalled();
         expect(discard).not.toHaveBeenCalled();
       });
@@ -394,24 +476,40 @@ describe("AssetGallery", () => {
       // 保留方「书房」的卡片上正在上传资产图
       const target = screen.getByRole("article", { name: "书房" });
       const file = new File(["sheet"], "scene.png", { type: "image/png" });
-      fireEvent.change(within(target).getByLabelText("上传资产图", { selector: "input" }), { target: { files: [file] } });
+      fireEvent.change(within(target).getByLabelText("上传资产图", { selector: "input" }), {
+        target: { files: [file] },
+      });
 
       await user.click(within(await openMenu(user, "庭院")).getByRole("menuitem", { name: "并入…" }));
       const dialog = await screen.findByRole("alertdialog", { name: "把「庭院」并入另一个资产" });
       await user.click(within(dialog).getByRole("combobox", { name: "保留方" }));
       await user.click(await screen.findByRole("option", { name: "书房" }));
 
-      await waitFor(() => expect(merge).toHaveBeenCalledWith("demo", "scene", "庭院", "书房", expect.objectContaining({ dryRun: true })));
+      await waitFor(() =>
+        expect(merge).toHaveBeenCalledWith("demo", "scene", "庭院", "书房", expect.objectContaining({ dryRun: true })),
+      );
       const confirm = within(dialog).getByRole("button", { name: "并入" });
-      expect(await within(dialog).findByText("「书房」正在上传资产图、恢复版本或删除，完成后才能合并")).toBeInTheDocument();
+      expect(
+        await within(dialog).findByText("「书房」正在上传资产图、恢复版本或删除，完成后才能合并"),
+      ).toBeInTheDocument();
       expect(confirm).toBeDisabled();
 
       await act(async () => finishUpload({ path: "x" } as never));
       await waitFor(() => expect(confirm).toBeEnabled());
 
-      act(() => useTasksStore.setState({
-        tasks: [makeTask({ project_name: "demo", task_type: "scene", media_type: "image", resource_id: "书房", status: "running" })],
-      }));
+      act(() =>
+        useTasksStore.setState({
+          tasks: [
+            makeTask({
+              project_name: "demo",
+              task_type: "scene",
+              media_type: "image",
+              resource_id: "书房",
+              status: "running",
+            }),
+          ],
+        }),
+      );
       expect(confirm).toBeDisabled();
       expect(within(dialog).getByText("「书房」正在生成，生成结束后才能合并")).toBeInTheDocument();
       expect(merge).toHaveBeenCalledTimes(1);
@@ -500,7 +598,10 @@ describe("AssetGallery", () => {
 
       await user.click(await within(viewer).findByRole("button", { name: "第 1 版" }));
 
-      expect(within(viewer).getByRole("img", { name: "「庭院」的资产图，第 1 版" })).toHaveAttribute("src", "/files/庭院_v1.png");
+      expect(within(viewer).getByRole("img", { name: "「庭院」的资产图，第 1 版" })).toHaveAttribute(
+        "src",
+        "/files/庭院_v1.png",
+      );
       expect(within(viewer).getByText("正在查看旧版本，当前是第 2 版")).toBeInTheDocument();
       expect(restore).not.toHaveBeenCalled();
 

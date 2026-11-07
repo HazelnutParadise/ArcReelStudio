@@ -1,4 +1,4 @@
-import type enAuth from "@/i18n/en/auth";
+import type enAuth from '@/i18n/en/auth';
 
 export default {
   'login': 'Đăng nhập',

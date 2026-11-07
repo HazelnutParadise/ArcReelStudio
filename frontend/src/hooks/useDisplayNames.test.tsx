@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import i18n from "@/i18n";
 import { useDisplayNames } from "@/hooks/useDisplayNames";
@@ -66,9 +66,7 @@ describe("useDisplayNames", () => {
       .spyOn(API, "getProviders")
       .mockResolvedValue({ providers: [provider("p", "P 英文名", "M 英文名")] });
 
-    const { result } = renderHook(() =>
-      useDisplayNames([provider("p", "P 中文名", "M 中文名")], [], null, null),
-    );
+    const { result } = renderHook(() => useDisplayNames([provider("p", "P 中文名", "M 中文名")], [], null, null));
 
     expect(result.current.providerNames.p).toBe("P 中文名");
     expect(result.current.modelNames["p/m-1"]).toBe("M 中文名");
@@ -88,9 +86,7 @@ describe("useDisplayNames", () => {
       providers: [provider("p", "P 英文名", "M 英文名")],
     });
 
-    const { result } = renderHook(() =>
-      useDisplayNames([provider("p", "P 中文名", "M 中文名")], [], null, null),
-    );
+    const { result } = renderHook(() => useDisplayNames([provider("p", "P 中文名", "M 中文名")], [], null, null));
 
     await act(async () => {
       await i18n.changeLanguage("en");
@@ -108,9 +104,7 @@ describe("useDisplayNames", () => {
   it("重取失败时保留上一份译名，不退回裸 id", async () => {
     vi.spyOn(API, "getProviders").mockRejectedValue(new Error("boom"));
 
-    const { result } = renderHook(() =>
-      useDisplayNames([provider("p", "P 中文名", "M 中文名")], [], null, null),
-    );
+    const { result } = renderHook(() => useDisplayNames([provider("p", "P 中文名", "M 中文名")], [], null, null));
 
     await act(async () => {
       await i18n.changeLanguage("en");

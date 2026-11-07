@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { PromptPreviewButton } from "./PromptPreviewButton";
 import { createDeferred } from "@/test/deferred";
 import { copyText } from "@/utils/clipboard";
@@ -113,7 +113,13 @@ describe("PromptPreviewButton", () => {
       <PromptPreviewButton
         title="分镜图最终提示词"
         load={load}
-        renderExtra={(result) => <ul aria-label="参考图">{result.references.map((r) => <li key={r}>{r}</li>)}</ul>}
+        renderExtra={(result) => (
+          <ul aria-label="参考图">
+            {result.references.map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
+        )}
       />,
     );
     const dialog = openPreview();
@@ -123,12 +129,13 @@ describe("PromptPreviewButton", () => {
   it("前置保存期间卸载后，不再打开或请求预览", async () => {
     const saved = createDeferred<boolean>();
     const load = vi.fn().mockResolvedValue(rendered());
-    const { unmount } = render(<PromptPreviewButton title="分镜图最终提示词" load={load} saveFirst beforeOpen={() => saved.promise} />);
+    const { unmount } = render(
+      <PromptPreviewButton title="分镜图最终提示词" load={load} saveFirst beforeOpen={() => saved.promise} />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "保存并预览" }));
     unmount();
     await act(async () => saved.resolve(true));
     expect(load).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
-
 });

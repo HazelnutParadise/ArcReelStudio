@@ -112,7 +112,10 @@ function ApplyToProjectForm({
       if (result.skipped.length > 0) {
         pushToast(t("apply_skipped", { name: asset.name, project: targetLabel }), "info");
       } else {
-        pushToast(t("apply_success", { name: result.succeeded[0]?.name ?? asset.name, project: targetLabel }), "success");
+        pushToast(
+          t("apply_success", { name: result.succeeded[0]?.name ?? asset.name, project: targetLabel }),
+          "success",
+        );
       }
       onDone();
     } catch (err) {
@@ -142,7 +145,11 @@ function ApplyToProjectForm({
               <p className="text-sm text-muted-foreground">{t("apply_no_projects")}</p>
             ) : (
               <Select items={items} value={target} onValueChange={(value: string | null) => setTarget(value)}>
-                <SelectTrigger aria-labelledby={projectLabelId} disabled={projects === null || applying} className="w-full">
+                <SelectTrigger
+                  aria-labelledby={projectLabelId}
+                  disabled={projects === null || applying}
+                  className="w-full"
+                >
                   <SelectValue placeholder={projects === null ? t("loading") : t("apply_target_placeholder")} />
                 </SelectTrigger>
                 <SelectContent>

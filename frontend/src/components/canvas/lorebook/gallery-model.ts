@@ -41,7 +41,10 @@ export function toGalleryAsset(type: AssetSheetType, name: string, asset: Galler
 }
 
 /** 资产图本身的状态：产物清单有判定时以它为准，未取到时按条目上是否登记了资产图推断。 */
-export function sheetStateOf(asset: GalleryAsset, row: AssetSheetStatusRow | undefined): "missing" | "stale" | "current" {
+export function sheetStateOf(
+  asset: GalleryAsset,
+  row: AssetSheetStatusRow | undefined,
+): "missing" | "stale" | "current" {
   if (row) return row.status === "missing" || row.status === "stale" ? row.status : "current";
   return asset.sheetPath ? "current" : "missing";
 }
@@ -49,7 +52,11 @@ export function sheetStateOf(asset: GalleryAsset, row: AssetSheetStatusRow | und
 /** 卡片图片角上的状态标记；`current` 不显示。 */
 export type GalleryMarker = "generating" | "no-description" | "missing" | "stale" | "current";
 
-export function markerOf(asset: GalleryAsset, row: AssetSheetStatusRow | undefined, generating: boolean): GalleryMarker {
+export function markerOf(
+  asset: GalleryAsset,
+  row: AssetSheetStatusRow | undefined,
+  generating: boolean,
+): GalleryMarker {
   if (generating) return "generating";
   if (!asset.description.trim()) return "no-description";
   return sheetStateOf(asset, row);
@@ -58,7 +65,11 @@ export function markerOf(asset: GalleryAsset, row: AssetSheetStatusRow | undefin
 export type GalleryFilter = "all" | "pending" | "stale";
 
 /** 工具栏筛选只看资产图状态：待生成即还没有可用的资产图，过期即资产图与当前描述或原图不一致。 */
-export function matchesGalleryFilter(asset: GalleryAsset, row: AssetSheetStatusRow | undefined, filter: GalleryFilter): boolean {
+export function matchesGalleryFilter(
+  asset: GalleryAsset,
+  row: AssetSheetStatusRow | undefined,
+  filter: GalleryFilter,
+): boolean {
   if (filter === "all") return true;
   const state = sheetStateOf(asset, row);
   return filter === "pending" ? state === "missing" : state === "stale";

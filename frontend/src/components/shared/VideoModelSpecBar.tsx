@@ -34,7 +34,10 @@ export function VoiceConsistencyBadge({ tier }: { tier: VoiceConsistencyTier }) 
       role="note"
       title={desc}
       aria-label={`${label}: ${desc}`}
-      className={cn("inline-flex w-fit cursor-help items-center gap-1 rounded-sm border px-1.5 py-0.5 text-xs font-medium", TIER_CLASS[tier])}
+      className={cn(
+        "inline-flex w-fit cursor-help items-center gap-1 rounded-sm border px-1.5 py-0.5 text-xs font-medium",
+        TIER_CLASS[tier],
+      )}
     >
       <Icon className="size-3" aria-hidden />
       {label}
@@ -60,9 +63,7 @@ export function VideoModelSpecBar({ durations, resolutions, tier }: VideoModelSp
       label: t("video_spec_duration_label"),
       content:
         durations && durations.length > 0 ? (
-          <span className="text-xs tabular-nums text-subtle-foreground">
-            {formatDurationsLabel(durations)}
-          </span>
+          <span className="text-xs tabular-nums text-subtle-foreground">{formatDurationsLabel(durations)}</span>
         ) : (
           <span className="text-xs text-muted-foreground">—</span>
         ),
@@ -89,7 +90,12 @@ export function VideoModelSpecBar({ durations, resolutions, tier }: VideoModelSp
     },
     {
       label: t("voice_consistency_label"),
-      content: tier !== null ? <VoiceConsistencyBadge tier={tier} /> : <span className="text-xs text-muted-foreground">—</span>,
+      content:
+        tier !== null ? (
+          <VoiceConsistencyBadge tier={tier} />
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        ),
     },
   ];
 

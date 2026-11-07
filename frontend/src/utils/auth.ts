@@ -32,7 +32,10 @@ export function tokenIdentity(token: string | null): TokenIdentity | null {
   const payload = token?.split(".")[1];
   if (!payload) return null;
   try {
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(payload.length / 4) * 4, "=");
+    const base64 = payload
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(payload.length / 4) * 4, "=");
     const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
     const claims: unknown = JSON.parse(new TextDecoder().decode(bytes));
     if (typeof claims !== "object" || claims === null) return null;

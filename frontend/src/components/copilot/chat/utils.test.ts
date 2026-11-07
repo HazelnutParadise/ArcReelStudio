@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { Turn } from "@/types";
 import { canEditUserTurn, composeAllTurns, turnImageAttachments, turnPlainText } from "./utils";
 
@@ -32,22 +32,23 @@ describe("composeAllTurns", () => {
   });
 
   it("appends draft at end when last turn is not interrupt_notice", () => {
-    expect(composeAllTurns([userTurn], assistantDraft)).toEqual([
-      userTurn,
-      assistantDraft,
-    ]);
+    expect(composeAllTurns([userTurn], assistantDraft)).toEqual([userTurn, assistantDraft]);
   });
 
   it("inserts draft before interrupt_notice when last turn is interrupt_notice", () => {
-    expect(
-      composeAllTurns([userTurn, interruptTurn], assistantDraft),
-    ).toEqual([userTurn, assistantDraft, interruptTurn]);
+    expect(composeAllTurns([userTurn, interruptTurn], assistantDraft)).toEqual([
+      userTurn,
+      assistantDraft,
+      interruptTurn,
+    ]);
   });
 
   it("does not reorder for non-interrupt system turns", () => {
-    expect(
-      composeAllTurns([userTurn, taskProgressSysTurn], assistantDraft),
-    ).toEqual([userTurn, taskProgressSysTurn, assistantDraft]);
+    expect(composeAllTurns([userTurn, taskProgressSysTurn], assistantDraft)).toEqual([
+      userTurn,
+      taskProgressSysTurn,
+      assistantDraft,
+    ]);
   });
 
   it("handles empty turns with draft", () => {

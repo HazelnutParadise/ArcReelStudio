@@ -1,4 +1,4 @@
-import type enEvents from '../en/events';
+import type enEvents from "../en/events";
 
 export default {
   "label.grid": "多宮格分鏡「{{id}}」",

@@ -64,7 +64,11 @@ export function parseAppLink(href: string, origin: string): AppLink | null {
   let unit: AppLink["unit"] = null;
   const unitId = params.get(LINK_UNIT_PARAM);
   if (unitId && EPISODE_PATH.test(url.pathname) && params.get(EPISODE_VIEW_PARAM) !== EPISODE_VIEW_EDIT) {
-    unit = { id: unitId, seconds: parseSeconds(params.get(LINK_TIME_PARAM)), project: decodeProjectSegment(url.pathname) };
+    unit = {
+      id: unitId,
+      seconds: parseSeconds(params.get(LINK_TIME_PARAM)),
+      project: decodeProjectSegment(url.pathname),
+    };
     params.delete(LINK_UNIT_PARAM);
     params.delete(LINK_TIME_PARAM);
   }

@@ -22,7 +22,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { useCapabilitiesStore } from "@/stores/capabilities-store";
 import { useEndpointCatalogStore } from "@/stores/endpoint-catalog-store";
@@ -326,7 +334,8 @@ function ModelSheetForm({
           Object.entries(value.entry.facts).filter(([key, fact]) => !sameJson(fact, saved.entry?.facts[key])),
         );
         patch.entry = { maker: entry.maker, name: entry.name, media_type: entry.media_type };
-        if (value.entry.display_name !== saved.entry.display_name) patch.entry.display_name = value.entry.display_name.trim();
+        if (value.entry.display_name !== saved.entry.display_name)
+          patch.entry.display_name = value.entry.display_name.trim();
         if (Object.keys(facts).length > 0) patch.entry.facts = facts;
         if (!samePrice(value.entry.price, saved.entry.price)) patch.entry.price = priceForSave(value.entry.price);
       }
@@ -337,9 +346,26 @@ function ModelSheetForm({
       onSaved(updated.model, detail.model.model_id);
       return draftOf(updated);
     },
-    [isCustom, builtinEndpoint, userOwned, providerInvalid, entryInvalid, providerId, detail.model.model_id, detail.entry, onDetailChange, onSaved, t],
+    [
+      isCustom,
+      builtinEndpoint,
+      userOwned,
+      providerInvalid,
+      entryInvalid,
+      providerId,
+      detail.model.model_id,
+      detail.entry,
+      onDetailChange,
+      onSaved,
+      t,
+    ],
   );
-  const unit = useEditUnit({ source, save, isEqual: sameDraft, leaveTitle: t("pm_sheet_leave_title", { name: detail.model.display_name ?? detail.model.model_id }) });
+  const unit = useEditUnit({
+    source,
+    save,
+    isEqual: sameDraft,
+    leaveTitle: t("pm_sheet_leave_title", { name: detail.model.display_name ?? detail.model.model_id }),
+  });
   const draft = unit.value;
   const setDraft = (patch: Partial<Draft>) => unit.setValue((prev) => ({ ...prev, ...patch }));
 
@@ -553,10 +579,7 @@ function ModelSheetForm({
           )}
 
           {showCapabilities && (
-            <Subsection
-              title={t("pm_sheet_capabilities")}
-              hint={capabilitiesHint}
-            >
+            <Subsection title={t("pm_sheet_capabilities")} hint={capabilitiesHint}>
               {!endpointChanged && (
                 <ProviderCapabilityOverrides
                   capabilities={detail.capabilities}
@@ -734,7 +757,9 @@ function RemoveModel({
                 </p>
               )}
               {referencesError && (
-                <p className="text-sm text-destructive">{t("pm_sheet_remove_references_failed", { message: referencesError })}</p>
+                <p className="text-sm text-destructive">
+                  {t("pm_sheet_remove_references_failed", { message: referencesError })}
+                </p>
               )}
               {used && (
                 <div className="flex flex-col gap-1">

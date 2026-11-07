@@ -43,7 +43,11 @@ export const test = base.extend<{ api: ApiStub }>({
         }
         // 记忆文件正文等接口按 text/plain 返回原文：替换响应的 body 写成字符串
         if (typeof response.body === "string") {
-          await route.fulfill({ status: response.status, body: response.body, contentType: "text/plain; charset=utf-8" });
+          await route.fulfill({
+            status: response.status,
+            body: response.body,
+            contentType: "text/plain; charset=utf-8",
+          });
           return;
         }
         await route.fulfill({ status: response.status, json: response.body });
@@ -58,9 +62,7 @@ export const test = base.extend<{ api: ApiStub }>({
         },
       });
 
-      expect(unrecorded, "页面请求了没有录制的接口：运行 pnpm e2e:record 补录，或在场景里提供替换响应").toEqual(
-        [],
-      );
+      expect(unrecorded, "页面请求了没有录制的接口：运行 pnpm e2e:record 补录，或在场景里提供替换响应").toEqual([]);
     },
     { auto: true },
   ],

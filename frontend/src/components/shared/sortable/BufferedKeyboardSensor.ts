@@ -14,7 +14,8 @@ export class BufferedKeyboardSensor {
     let listening = false;
     let replaying = false;
     let frame: number | undefined;
-    const ready = () => listening && props.context.current.collisionRect !== null && props.context.current.droppableRects.size > 0;
+    const ready = () =>
+      listening && props.context.current.collisionRect !== null && props.context.current.droppableRects.size > 0;
     const cleanup = () => {
       ownerWindow.removeEventListener("keydown", capture, true);
       if (frame !== undefined) ownerWindow.cancelAnimationFrame(frame);
@@ -28,10 +29,18 @@ export class BufferedKeyboardSensor {
         const event = pending.shift()!;
         replaying = true;
         // 直接交给 document 上的传感器：Dialog / Sheet 在 React 冒泡阶段会拦下方向键。
-        target.ownerDocument.dispatchEvent(new KeyboardEvent("keydown", {
-          key: event.key, code: event.code, bubbles: true, cancelable: true,
-          altKey: event.altKey, ctrlKey: event.ctrlKey, metaKey: event.metaKey, shiftKey: event.shiftKey,
-        }));
+        target.ownerDocument.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: event.key,
+            code: event.code,
+            bubbles: true,
+            cancelable: true,
+            altKey: event.altKey,
+            ctrlKey: event.ctrlKey,
+            metaKey: event.metaKey,
+            shiftKey: event.shiftKey,
+          }),
+        );
         replaying = false;
       }
       if (pending.length) frame = ownerWindow.requestAnimationFrame(flush);
@@ -46,10 +55,18 @@ export class BufferedKeyboardSensor {
     ownerWindow.addEventListener("keydown", capture, true);
     new KeyboardSensor({
       ...props,
-      onEnd: () => { cleanup(); props.onEnd(); },
-      onCancel: () => { cleanup(); props.onCancel(); },
+      onEnd: () => {
+        cleanup();
+        props.onEnd();
+      },
+      onCancel: () => {
+        cleanup();
+        props.onCancel();
+      },
     });
     // KeyboardSensor 同样经零延迟 timer 安装 document 监听器；排在它之后才允许重放。
-    const timer = setTimeout(() => { listening = true; }, 0);
+    const timer = setTimeout(() => {
+      listening = true;
+    }, 0);
   }
 }

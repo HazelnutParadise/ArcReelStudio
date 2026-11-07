@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   AgentFailureError,
   API,
@@ -41,9 +41,7 @@ function mockResponse(options: JsonResponseOptions = {}): Response {
     status,
     statusText,
     headers: new Headers(headers),
-    json: jsonError
-      ? vi.fn().mockRejectedValue(jsonError)
-      : vi.fn().mockResolvedValue(jsonData),
+    json: jsonError ? vi.fn().mockRejectedValue(jsonError) : vi.fn().mockResolvedValue(jsonData),
     text: vi.fn().mockResolvedValue(textData),
     blob: vi.fn().mockResolvedValue(blobData),
   } as unknown as Response;
@@ -64,27 +62,36 @@ describe("API", () => {
     const fetchMock = vi.fn().mockResolvedValue(mockResponse({ jsonData: body }));
     vi.stubGlobal("fetch", fetchMock);
     const signal = new AbortController().signal;
-    const result = await API.previewAssetPrompt("demo project", "character", "Hero One", "草稿", { signal, derivativeName });
+    const result = await API.previewAssetPrompt("demo project", "character", "Hero One", "草稿", {
+      signal,
+      derivativeName,
+    });
 
     expect(result).toEqual(body);
-    expect(fetchMock).toHaveBeenCalledWith(expectedUrl, expect.objectContaining({
-      method: "POST", body: JSON.stringify({ description: "草稿" }), signal,
-    }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      expectedUrl,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ description: "草稿" }),
+        signal,
+      }),
+    );
   });
 
   describe("request", () => {
     it("returns parsed JSON and applies default JSON header", async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        mockResponse({ jsonData: { ok: true } }),
-      );
+      const fetchMock = vi.fn().mockResolvedValue(mockResponse({ jsonData: { ok: true } }));
       vi.stubGlobal("fetch", fetchMock);
 
       const result = await API.request("/projects");
 
       expect(result).toEqual({ ok: true });
-      expect(fetchMock).toHaveBeenCalledWith("/api/v1/projects", expect.objectContaining({
-        headers: expect.any(Headers),
-      }));
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/projects",
+        expect.objectContaining({
+          headers: expect.any(Headers),
+        }),
+      );
       const headers = fetchMock.mock.calls[0][1].headers as Headers;
       expect(headers.get("Content-Type")).toBe("application/json");
     });
@@ -190,20 +197,23 @@ describe("API", () => {
           sdk_stderr: "stderr evidence",
         },
       };
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-        mockResponse({
-          ok: false,
-          status: 502,
-          statusText: "Bad Gateway",
-          jsonData: {
-            detail: {
-              code: "agent_startup_failed",
-              message: "Agent 启动失败",
-              failure,
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          mockResponse({
+            ok: false,
+            status: 502,
+            statusText: "Bad Gateway",
+            jsonData: {
+              detail: {
+                code: "agent_startup_failed",
+                message: "Agent 启动失败",
+                failure,
+              },
             },
-          },
-        }),
-      ));
+          }),
+        ),
+      );
 
       const error: AgentFailureError = await API.sendAssistantMessage("demo", "hello").catch((e) => e);
 
@@ -216,39 +226,42 @@ describe("API", () => {
     it("preserves and presents a structured speech admission blocker", async () => {
       // 文案按单元在本集里的当前位置称呼：E1U2 排在第 2 位。
       useProjectsStore.setState({
-        currentScripts: { "episode_1.json": { episode: 1, video_units: [{ unit_id: "E1U5" }, { unit_id: "E1U2" }] } as never },
+        currentScripts: {
+          "episode_1.json": { episode: 1, video_units: [{ unit_id: "E1U5" }, { unit_id: "E1U2" }] } as never,
+        },
       });
       const admission = {
         allowed: false as const,
         unit_id: "E1U2",
         mode: null,
-        problems: [{
-          code: "needs_replan" as const,
-          unit_id: "E1U2",
-          locations: [{ path: ["needs_replan"], line: null }],
-          reason: "unit_marked_needs_replan",
-          action: "replan_unit",
-        }, {
-          code: "mixed_speech" as const,
-          unit_id: "E1U2",
-          locations: [
-            { path: ["utterances", 0, "text"], line: null },
-            { path: ["utterances", 1, "text"], line: null },
-          ],
-          reason: "character_and_narrator_mixed",
-          action: "replan_unit",
-        }],
+        problems: [
+          {
+            code: "needs_replan" as const,
+            unit_id: "E1U2",
+            locations: [{ path: ["needs_replan"], line: null }],
+            reason: "unit_marked_needs_replan",
+            action: "replan_unit",
+          },
+          {
+            code: "mixed_speech" as const,
+            unit_id: "E1U2",
+            locations: [
+              { path: ["utterances", 0, "text"], line: null },
+              { path: ["utterances", 1, "text"], line: null },
+            ],
+            reason: "character_and_narrator_mixed",
+            action: "replan_unit",
+          },
+        ],
       };
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-        mockResponse({ ok: false, status: 409, jsonData: { detail: admission } }),
-      ));
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(mockResponse({ ok: false, status: 409, jsonData: { detail: admission } })),
+      );
 
-      const error: SpeechAdmissionError = await API.generateVideo(
-        "demo",
-        "E1U2",
-        "vid",
-        "episode_1.json",
-      ).catch((e) => e);
+      const error: SpeechAdmissionError = await API.generateVideo("demo", "E1U2", "vid", "episode_1.json").catch(
+        (e) => e,
+      );
 
       expect(error).toBeInstanceOf(SpeechAdmissionError);
       expect(error.admission).toEqual(admission);
@@ -264,18 +277,21 @@ describe("API", () => {
         before_revision: `sha256-v1:${"0".repeat(64)}`,
         revision: `sha256-v1:${"0".repeat(64)}`,
         affected_ids: [],
-        problems: [{
-          code: "mixed_speech",
-          operation_index: 2,
-          unit_id: "E1S01",
-          locations: [{ path: ["utterances", 0, "text"], line: null }],
-          reason: "character_and_narrator_mixed",
-          next_action: "replan_unit",
-        }],
+        problems: [
+          {
+            code: "mixed_speech",
+            operation_index: 2,
+            unit_id: "E1S01",
+            locations: [{ path: ["utterances", 0, "text"], line: null }],
+            reason: "character_and_narrator_mixed",
+            next_action: "replan_unit",
+          },
+        ],
       };
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-        mockResponse({ ok: false, status: 409, jsonData: { detail: result } }),
-      ));
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(mockResponse({ ok: false, status: 409, jsonData: { detail: result } })),
+      );
 
       const error: ScriptEditCommandError = await API.updateScene("demo", "E1S01", "episode_1.json", {
         note: "keep",
@@ -311,9 +327,10 @@ describe("API", () => {
           },
         ],
       };
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-        mockResponse({ ok: false, status: 400, jsonData: { detail: projection } }),
-      ));
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(mockResponse({ ok: false, status: 400, jsonData: { detail: projection } })),
+      );
 
       const call = API.precheckReferenceVideoDuration("demo", 1, "E1U1");
       await expect(call).rejects.toBeInstanceOf(ReferenceProjectionError);
@@ -341,9 +358,7 @@ describe("API", () => {
     });
 
     it("appends the current /app path as ?from when redirecting on 401", async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        mockResponse({ ok: false, status: 401, statusText: "Unauthorized" }),
-      );
+      const fetchMock = vi.fn().mockResolvedValue(mockResponse({ ok: false, status: 401, statusText: "Unauthorized" }));
       vi.stubGlobal("fetch", fetchMock);
       const location = { href: "", pathname: "/app/projects/demo", search: "", hash: "" };
       vi.stubGlobal("location", location);
@@ -383,9 +398,7 @@ describe("API", () => {
 
   describe("request-based wrappers", () => {
     it("covers project, character, scene, prop, product, script and generation endpoints", async () => {
-      const requestSpy = vi
-        .spyOn(API, "request")
-        .mockResolvedValue({ success: true } as never);
+      const requestSpy = vi.spyOn(API, "request").mockResolvedValue({ success: true } as never);
 
       await API.listProjects();
       await API.createProject({ title: "Demo", generation_mode: "storyboard" });
@@ -507,9 +520,7 @@ describe("API", () => {
       expect(requestSpy).toHaveBeenCalledWith("/projects/demo/generate/product/Phone", {
         method: "POST",
       });
-      expect(requestSpy).toHaveBeenCalledWith(
-        "/projects/demo/scripts/episode%201.json",
-      );
+      expect(requestSpy).toHaveBeenCalledWith("/projects/demo/scripts/episode%201.json");
       expect(requestSpy).toHaveBeenCalledWith("/projects/demo/script-edits", {
         method: "POST",
         body: JSON.stringify({
@@ -576,10 +587,10 @@ describe("API", () => {
         body: JSON.stringify({ script_file: "episode_1.json" }),
       });
       expect(requestSpy).toHaveBeenCalledWith("/projects/demo/episodes-view", { signal: undefined });
-      expect(requestSpy).toHaveBeenCalledWith(
-        "/projects/demo/source-files/%E6%97%A7%20%E7%A8%BF.txt/adopt",
-        { method: "POST", body: JSON.stringify({ target: "episode", episode: 2 }) },
-      );
+      expect(requestSpy).toHaveBeenCalledWith("/projects/demo/source-files/%E6%97%A7%20%E7%A8%BF.txt/adopt", {
+        method: "POST",
+        body: JSON.stringify({ target: "episode", episode: 2 }),
+      });
     });
 
     it("editImage posts instruction with singular resource_type; script_file null for non-storyboard", async () => {
@@ -628,24 +639,18 @@ describe("API", () => {
     });
 
     it("rejects unsupported project mode updates before sending the request", async () => {
-      const requestSpy = vi
-        .spyOn(API, "request")
-        .mockResolvedValue({ success: true } as never);
+      const requestSpy = vi.spyOn(API, "request").mockResolvedValue({ success: true } as never);
 
-      await expect(
-        API.updateProject("demo", { content_mode: "drama" } as never),
-      ).rejects.toThrow("项目创建后不支持修改 content_mode");
+      await expect(API.updateProject("demo", { content_mode: "drama" } as never)).rejects.toThrow(
+        "项目创建后不支持修改 content_mode",
+      );
       expect(requestSpy).not.toHaveBeenCalled();
     });
 
     it("allows aspect_ratio updates via updateProject", async () => {
-      const requestSpy = vi
-        .spyOn(API, "request")
-        .mockResolvedValue({ success: true } as never);
+      const requestSpy = vi.spyOn(API, "request").mockResolvedValue({ success: true } as never);
 
-      await expect(
-        API.updateProject("demo", { aspect_ratio: "16:9" }),
-      ).resolves.not.toThrow();
+      await expect(API.updateProject("demo", { aspect_ratio: "16:9" })).resolves.not.toThrow();
       expect(requestSpy).toHaveBeenCalledOnce();
     });
 
@@ -656,9 +661,7 @@ describe("API", () => {
     });
 
     it("covers task, assistant, version and usage query builders", async () => {
-      const requestSpy = vi
-        .spyOn(API, "request")
-        .mockResolvedValue({ success: true } as never);
+      const requestSpy = vi.spyOn(API, "request").mockResolvedValue({ success: true } as never);
 
       await API.getTask("task id");
       await API.listTasks({
@@ -697,14 +700,12 @@ describe("API", () => {
         "/projects/demo/tasks?status=failed&task_type=image&source=agent&page=3&page_size=20",
       );
       expect(requestSpy).toHaveBeenCalledWith("/tasks/stats?project_name=demo");
-      expect(requestSpy).toHaveBeenCalledWith(
-        "/projects/demo/assistant/sessions?status=running",
-        { signal: undefined },
-      );
-      expect(requestSpy).toHaveBeenCalledWith(
-        "/projects/demo/assistant/sessions/session-1/entries?after=5",
-        { signal: undefined },
-      );
+      expect(requestSpy).toHaveBeenCalledWith("/projects/demo/assistant/sessions?status=running", {
+        signal: undefined,
+      });
+      expect(requestSpy).toHaveBeenCalledWith("/projects/demo/assistant/sessions/session-1/entries?after=5", {
+        signal: undefined,
+      });
       expect(requestSpy).toHaveBeenCalledWith("/projects/demo/assistant/skills", { signal: undefined });
     });
 
@@ -715,21 +716,13 @@ describe("API", () => {
       expect(API.getFileUrl("demo", "storyboards/E1S1.png", null, { width: 160 })).toBe(
         "/api/v1/files/demo/storyboards/E1S1.png?w=160",
       );
-      expect(API.getFileUrl("demo", "storyboards/E1S1.png", 7, {})).toBe(
-        "/api/v1/files/demo/storyboards/E1S1.png?v=7",
-      );
+      expect(API.getFileUrl("demo", "storyboards/E1S1.png", 7, {})).toBe("/api/v1/files/demo/storyboards/E1S1.png?v=7");
     });
 
     it("builds static file and stream urls", () => {
-      expect(API.getFileUrl("my project", "source/a.txt", null)).toBe(
-        "/api/v1/files/my%20project/source/a.txt",
-      );
-      expect(API.getFileUrl("my project", "source/a.txt", "")).toBe(
-        "/api/v1/files/my%20project/source/a.txt",
-      );
-      expect(API.getFileUrl("my project", "source/a.txt", 3)).toBe(
-        "/api/v1/files/my%20project/source/a.txt?v=3",
-      );
+      expect(API.getFileUrl("my project", "source/a.txt", null)).toBe("/api/v1/files/my%20project/source/a.txt");
+      expect(API.getFileUrl("my project", "source/a.txt", "")).toBe("/api/v1/files/my%20project/source/a.txt");
+      expect(API.getFileUrl("my project", "source/a.txt", 3)).toBe("/api/v1/files/my%20project/source/a.txt?v=3");
       expect(API.getAssistantEntriesStreamUrl("demo", "session-1")).toBe(
         "/api/v1/projects/demo/assistant/sessions/session-1/entries/stream",
       );
@@ -837,9 +830,7 @@ describe("API", () => {
       await expect(API.getMarketEntryIcon(3, "kling-master", "1.0.0+b")).resolves.toBe(blob);
 
       expect(fetchMock.mock.calls[0][0]).toBe("/api/v1/market/entries?type=endpoint");
-      expect(fetchMock.mock.calls[1][0]).toBe(
-        "/api/v1/market/sources/3/entries/kling-master/icon?v=1.0.0%2Bb",
-      );
+      expect(fetchMock.mock.calls[1][0]).toBe("/api/v1/market/sources/3/entries/kling-master/icon?v=1.0.0%2Bb");
     });
 
     it("throws when a market entry icon cannot be fetched", async () => {
@@ -852,9 +843,7 @@ describe("API", () => {
     });
 
     it("uploads files via multipart form and returns JSON", async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        mockResponse({ jsonData: { success: true, path: "p", url: "u" } }),
-      );
+      const fetchMock = vi.fn().mockResolvedValue(mockResponse({ jsonData: { success: true, path: "p", url: "u" } }));
       vi.stubGlobal("fetch", fetchMock);
 
       const file = new File(["hello"], "demo.txt", { type: "text/plain" });
@@ -862,17 +851,15 @@ describe("API", () => {
 
       expect(result).toEqual({ success: true, path: "p", url: "u" });
       expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(fetchMock.mock.calls[0][0]).toBe(
-        "/api/v1/projects/my%20project/upload/source?name=x%20y",
-      );
+      expect(fetchMock.mock.calls[0][0]).toBe("/api/v1/projects/my%20project/upload/source?name=x%20y");
       expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("POST");
       expect((fetchMock.mock.calls[0][1] as RequestInit).body).toBeInstanceOf(FormData);
     });
 
     it("registers whole-source uploads at a position and per-episode uploads by role", async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        mockResponse({ jsonData: { success: true, path: "source/a.txt", filename: "a.txt" } }),
-      );
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(mockResponse({ jsonData: { success: true, path: "source/a.txt", filename: "a.txt" } }));
       vi.stubGlobal("fetch", fetchMock);
       const file = new File(["hello"], "a.txt", { type: "text/plain" });
 
@@ -933,13 +920,7 @@ describe("API", () => {
       vi.stubGlobal("fetch", fetchMock);
 
       const file = new File(["img"], "board.png", { type: "image/png" });
-      const result = await API.uploadShotMedia(
-        "my project",
-        "scripts/ep 1.json",
-        "E1S01",
-        "storyboard",
-        file,
-      );
+      const result = await API.uploadShotMedia("my project", "scripts/ep 1.json", "E1S01", "storyboard", file);
 
       expect(result.version).toBe(2);
       expect(result.asset_fingerprints["storyboards/scene_E1S01.png"]).toBe(2);
@@ -980,27 +961,19 @@ describe("API", () => {
       );
       expect((fetchMock.mock.calls[0][1] as RequestInit).body).toBeInstanceOf(FormData);
 
-      await expect(API.uploadReferenceUnitVideo("demo", 1, "unit-1", file)).rejects.toThrow(
-        "不支持的视频格式",
-      );
+      await expect(API.uploadReferenceUnitVideo("demo", 1, "unit-1", file)).rejects.toThrow("不支持的视频格式");
     });
 
     it("handles source and draft text APIs", async () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(mockResponse({ textData: "source content" }))
-        .mockResolvedValueOnce(
-          mockResponse({ jsonData: { success: true }, statusText: "OK" }),
-        )
+        .mockResolvedValueOnce(mockResponse({ jsonData: { success: true }, statusText: "OK" }))
         .mockResolvedValueOnce(mockResponse({ textData: "draft content" }))
-        .mockResolvedValueOnce(
-          mockResponse({ jsonData: { success: true }, statusText: "OK" }),
-        );
+        .mockResolvedValueOnce(mockResponse({ jsonData: { success: true }, statusText: "OK" }));
       vi.stubGlobal("fetch", fetchMock);
 
-      await expect(API.getSourceContent("demo", "source.txt")).resolves.toBe(
-        "source content",
-      );
+      await expect(API.getSourceContent("demo", "source.txt")).resolves.toBe("source content");
       await expect(API.deleteSourceFile("demo", "source.txt")).resolves.toEqual({
         success: true,
       });
@@ -1026,9 +999,7 @@ describe("API", () => {
       );
       vi.stubGlobal("fetch", fetchMock);
 
-      await expect(API.getSourceContent("demo", "missing.txt")).rejects.toThrow(
-        "Not Found",
-      );
+      await expect(API.getSourceContent("demo", "missing.txt")).rejects.toThrow("Not Found");
     });
 
     it("uploads style image using multipart form", async () => {
@@ -1090,12 +1061,8 @@ describe("API", () => {
                   { code: "validation_error", message: "缺少 project.json" },
                   { code: "validation_error", message: "缺少 scripts/episode_1.json" },
                 ],
-                auto_fixable: [
-                  { code: "missing_clues_field", message: "segments[0]: 补全缺失字段 clues_in_segment" },
-                ],
-                warnings: [
-                  { code: "validation_warning", message: "发现未识别的附加文件/目录：extra" },
-                ],
+                auto_fixable: [{ code: "missing_clues_field", message: "segments[0]: 补全缺失字段 clues_in_segment" }],
+                warnings: [{ code: "validation_warning", message: "发现未识别的附加文件/目录：extra" }],
               },
             },
           }),
@@ -1116,12 +1083,8 @@ describe("API", () => {
             { code: "validation_error", message: "缺少 project.json" },
             { code: "validation_error", message: "缺少 scripts/episode_1.json" },
           ],
-          auto_fixable: [
-            { code: "missing_clues_field", message: "segments[0]: 补全缺失字段 clues_in_segment" },
-          ],
-          warnings: [
-            { code: "validation_warning", message: "发现未识别的附加文件/目录：extra" },
-          ],
+          auto_fixable: [{ code: "missing_clues_field", message: "segments[0]: 补全缺失字段 clues_in_segment" }],
+          warnings: [{ code: "validation_warning", message: "发现未识别的附加文件/目录：extra" }],
         },
       });
 
@@ -1151,13 +1114,13 @@ describe("API", () => {
       );
       vi.stubGlobal("fetch", fetchMock);
 
-      await expect(
-        API.importProject(new File(["zip"], "demo.zip", { type: "application/zip" }))
-      ).rejects.toMatchObject({
-        message: "检测到项目编号冲突",
-        status: 409,
-        conflict_project_name: "demo",
-      });
+      await expect(API.importProject(new File(["zip"], "demo.zip", { type: "application/zip" }))).rejects.toMatchObject(
+        {
+          message: "检测到项目编号冲突",
+          status: 409,
+          conflict_project_name: "demo",
+        },
+      );
     });
 
     it("carries the upgrade report that needs confirmation and resubmits with the confirmation", async () => {
@@ -1206,9 +1169,9 @@ describe("API", () => {
       const location = { href: "/app/projects" };
       vi.stubGlobal("location", location);
 
-      await expect(
-        API.importProject(new File(["zip"], "demo.zip", { type: "application/zip" }))
-      ).rejects.toThrow("认证已过期，请重新登录");
+      await expect(API.importProject(new File(["zip"], "demo.zip", { type: "application/zip" }))).rejects.toThrow(
+        "认证已过期，请重新登录",
+      );
 
       expect(clearTokenMock).toHaveBeenCalledTimes(1);
       expect(location.href).toBe("/login");
@@ -1238,9 +1201,7 @@ describe("API", () => {
       });
 
       it("falls back to default filename when Content-Disposition is missing", async () => {
-        const fetchMock = vi.fn().mockResolvedValue(
-          mockResponse({ blobData: new Blob() }),
-        );
+        const fetchMock = vi.fn().mockResolvedValue(mockResponse({ blobData: new Blob() }));
         vi.stubGlobal("fetch", fetchMock);
 
         const result = await API.downloadDiagnostics();
@@ -1248,9 +1209,9 @@ describe("API", () => {
       });
 
       it("triggers unauthorized handling on 401", async () => {
-        const fetchMock = vi.fn().mockResolvedValue(
-          mockResponse({ ok: false, status: 401, statusText: "Unauthorized" }),
-        );
+        const fetchMock = vi
+          .fn()
+          .mockResolvedValue(mockResponse({ ok: false, status: 401, statusText: "Unauthorized" }));
         vi.stubGlobal("fetch", fetchMock);
         const clearTokenMock = vi.spyOn(await import("@/utils/auth"), "clearToken");
         const location = { href: "", pathname: "/app/settings", search: "", hash: "" };
@@ -1262,9 +1223,11 @@ describe("API", () => {
       });
 
       it("throws on other HTTP errors", async () => {
-        const fetchMock = vi.fn().mockResolvedValue(
-          mockResponse({ ok: false, status: 500, statusText: "Internal Server Error", textData: "boom" }),
-        );
+        const fetchMock = vi
+          .fn()
+          .mockResolvedValue(
+            mockResponse({ ok: false, status: 500, statusText: "Internal Server Error", textData: "boom" }),
+          );
         vi.stubGlobal("fetch", fetchMock);
 
         await expect(API.downloadDiagnostics()).rejects.toThrow();
@@ -1424,22 +1387,30 @@ describe("API", () => {
 
   describe("listAssets", () => {
     it("GETs /api/v1/assets with type query", async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        mockResponse({ jsonData: { items: [] } }),
-      );
+      const fetchMock = vi.fn().mockResolvedValue(mockResponse({ jsonData: { items: [] } }));
       vi.stubGlobal("fetch", fetchMock);
       await API.listAssets({ type: "character" });
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("/api/v1/assets"),
-        expect.anything()
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("/api/v1/assets"), expect.anything());
     });
   });
 
   describe("createAsset", () => {
     it("POSTs multipart to /api/v1/assets", async () => {
       const fetchMock = vi.fn().mockResolvedValue(
-        mockResponse({ jsonData: { asset: { id: "x", type: "scene", name: "A", description: "", voice_style: "", image_path: null, source_project: null, updated_at: null } } }),
+        mockResponse({
+          jsonData: {
+            asset: {
+              id: "x",
+              type: "scene",
+              name: "A",
+              description: "",
+              voice_style: "",
+              image_path: null,
+              source_project: null,
+              updated_at: null,
+            },
+          },
+        }),
       );
       vi.stubGlobal("fetch", fetchMock);
       const res = await API.createAsset({ type: "scene", name: "A", description: "d" });
@@ -1450,27 +1421,40 @@ describe("API", () => {
   describe("addAssetFromProject", () => {
     it("POSTs /api/v1/assets/from-project", async () => {
       const fetchMock = vi.fn().mockResolvedValue(
-        mockResponse({ jsonData: { asset: { id: "x", type: "character", name: "王", description: "", voice_style: "", image_path: null, source_project: "demo", updated_at: null } } }),
+        mockResponse({
+          jsonData: {
+            asset: {
+              id: "x",
+              type: "character",
+              name: "王",
+              description: "",
+              voice_style: "",
+              image_path: null,
+              source_project: "demo",
+              updated_at: null,
+            },
+          },
+        }),
       );
       vi.stubGlobal("fetch", fetchMock);
       await API.addAssetFromProject({ project_name: "demo", resource_type: "character", resource_id: "王" });
       expect(fetchMock).toHaveBeenCalledWith(
         expect.stringContaining("/api/v1/assets/from-project"),
-        expect.objectContaining({ method: "POST" })
+        expect.objectContaining({ method: "POST" }),
       );
     });
   });
 
   describe("applyAssetsToProject", () => {
     it("POSTs /api/v1/assets/apply-to-project", async () => {
-      const fetchMock = vi.fn().mockResolvedValue(
-        mockResponse({ jsonData: { succeeded: [], skipped: [], failed: [] } }),
-      );
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(mockResponse({ jsonData: { succeeded: [], skipped: [], failed: [] } }));
       vi.stubGlobal("fetch", fetchMock);
       await API.applyAssetsToProject({ asset_ids: ["1"], target_project: "demo", conflict_policy: "skip" });
       expect(fetchMock).toHaveBeenCalledWith(
         expect.stringContaining("/api/v1/assets/apply-to-project"),
-        expect.anything()
+        expect.anything(),
       );
     });
   });
@@ -1563,10 +1547,9 @@ describe("API.referenceVideos", () => {
 
   it("generateReferenceVideoBatch posts the batch admission payload", async () => {
     fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({ decision: "admitted", task_ids: ["t-1"], units: [], deduped: false }),
-        { status: 200 },
-      ),
+      new Response(JSON.stringify({ decision: "admitted", task_ids: ["t-1"], units: [], deduped: false }), {
+        status: 200,
+      }),
     );
 
     const res = await API.generateReferenceVideoBatch("proj", 1, {
@@ -1574,9 +1557,7 @@ describe("API.referenceVideos", () => {
       confirmed_request_durations: { E1U1: 8 },
     });
 
-    expect(fetchMock.mock.calls[0]![0]).toContain(
-      "/projects/proj/reference-videos/episodes/1/units/generate-batch",
-    );
+    expect(fetchMock.mock.calls[0]![0]).toContain("/projects/proj/reference-videos/episodes/1/units/generate-batch");
     expect(JSON.parse(fetchMock.mock.calls[0]![1]!.body as string)).toEqual({
       unit_ids: ["E1U1", "E1U2"],
       confirmed_request_durations: { E1U1: 8 },
@@ -1587,7 +1568,13 @@ describe("API.referenceVideos", () => {
   it("previewReferenceVideoBatch posts the same selection to the preview endpoint", async () => {
     fetchMock.mockResolvedValueOnce(
       new Response(
-        JSON.stringify({ decision: "admitted", units: [], skipped_unit_ids: [], estimated_cost: null, unpriced_count: 0 }),
+        JSON.stringify({
+          decision: "admitted",
+          units: [],
+          skipped_unit_ids: [],
+          estimated_cost: null,
+          unpriced_count: 0,
+        }),
         { status: 200 },
       ),
     );
@@ -1631,7 +1618,7 @@ describe("uploadFile (source) onConflict", () => {
 
   it("passes on_conflict query when provided", async () => {
     (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-      new Response(JSON.stringify({ success: true, path: "source/a.txt", url: "/x" }), { status: 200 })
+      new Response(JSON.stringify({ success: true, path: "source/a.txt", url: "/x" }), { status: 200 }),
     );
     await API.uploadFile("p", "source", new File(["x"], "a.txt"), null, { onConflict: "replace" });
     const url = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
@@ -1644,12 +1631,10 @@ describe("uploadFile (source) onConflict", () => {
         JSON.stringify({
           detail: { existing: "a.txt", suggested_name: "a_1", message: "conflict" },
         }),
-        { status: 409 }
-      )
+        { status: 409 },
+      ),
     );
-    await expect(
-      API.uploadFile("p", "source", new File(["x"], "a.txt"))
-    ).rejects.toBeInstanceOf(ConflictError);
+    await expect(API.uploadFile("p", "source", new File(["x"], "a.txt"))).rejects.toBeInstanceOf(ConflictError);
   });
 
   it("ConflictError carries existing and suggestedName", async () => {
@@ -1658,8 +1643,8 @@ describe("uploadFile (source) onConflict", () => {
         JSON.stringify({
           detail: { existing: "a.txt", suggested_name: "a_1", message: "conflict" },
         }),
-        { status: 409 }
-      )
+        { status: 409 },
+      ),
     );
     const call = API.uploadFile("p", "source", new File(["x"], "a.txt"));
     await expect(call).rejects.toBeInstanceOf(ConflictError);
@@ -1697,9 +1682,7 @@ describe("custom endpoint test multipart", () => {
   });
 
   it("uses the server asset field names and leaves the multipart boundary to the browser", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      mockResponse({ jsonData: { id: "run-1", status: "running" } }),
-    );
+    const fetchMock = vi.fn().mockResolvedValue(mockResponse({ jsonData: { id: "run-1", status: "running" } }));
     vi.stubGlobal("fetch", fetchMock);
     const start = new File(["start"], "start.png", { type: "image/png" });
     const end = new File(["end"], "end.png", { type: "image/png" });
@@ -1792,9 +1775,7 @@ describe("Agent 记忆的两级路径", () => {
   });
 
   it("读取失败时把后端说明带进异常", async () => {
-    fetchMock().mockResolvedValueOnce(
-      new Response(JSON.stringify({ detail: "记忆文件不存在" }), { status: 404 }),
-    );
+    fetchMock().mockResolvedValueOnce(new Response(JSON.stringify({ detail: "记忆文件不存在" }), { status: 404 }));
     await expect(API.getAgentMemoryFile({ level: "user" }, "missing.md")).rejects.toThrow("记忆文件不存在");
   });
 });

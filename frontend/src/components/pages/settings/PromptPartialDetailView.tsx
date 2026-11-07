@@ -6,14 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { PromptTemplateMeta, PromptTemplatePartial } from "@/types";
 import { errMsg } from "@/utils/async";
 import { categoryLabel } from "./promptTemplateCategory";
-import {
-  DetailSection,
-  ErrorCard,
-  LoadingCard,
-  LockBadge,
-  SOURCE_BLOCK_CLS,
-  type Load,
-} from "./promptTemplateShared";
+import { DetailSection, ErrorCard, LoadingCard, LockBadge, SOURCE_BLOCK_CLS, type Load } from "./promptTemplateShared";
 
 type PartialDetail = {
   partial: PromptTemplatePartial;
@@ -110,8 +103,13 @@ function PartialBody({
 
       <DetailSection title={t("prompt_templates_partial_source")}>
         {partial.source.trim() ? (
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- 只读的滚动区域需要键盘聚焦才能滚动
-          <div tabIndex={0} role="region" aria-label={t("prompt_templates_partial_source")} className={SOURCE_BLOCK_CLS}>
+          <div
+            // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- 只读的滚动区域需要键盘聚焦才能滚动
+            tabIndex={0}
+            role="region"
+            aria-label={t("prompt_templates_partial_source")}
+            className={SOURCE_BLOCK_CLS}
+          >
             {partial.source}
           </div>
         ) : (

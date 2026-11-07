@@ -14,8 +14,10 @@ export default {
   'source_too_large': 'Исходный файл «{{filename}}» слишком большой ({{size_mb}} MB > {{limit_mb}} MB)',
   'source_conflict': 'Исходный файл «{{existing}}» уже существует',
   // Image Capability
-  'image_endpoint_mismatch_no_i2i': 'Модель {{model}} поддерживает только генерацию изображений по тексту (без /v1/images/edits)',
-  'image_endpoint_mismatch_no_t2i': 'Модель {{model}} поддерживает только генерацию изображений по референсу (референс обязателен)',
+  'image_endpoint_mismatch_no_i2i':
+    'Модель {{model}} поддерживает только генерацию изображений по тексту (без /v1/images/edits)',
+  'image_endpoint_mismatch_no_t2i':
+    'Модель {{model}} поддерживает только генерацию изображений по референсу (референс обязателен)',
   // Fallback messages for the API layer and event streams (when the server gives no reason)
   'request_failed': 'Не удалось выполнить запрос',
   'session_expired': 'Сессия истекла. Войдите снова.',

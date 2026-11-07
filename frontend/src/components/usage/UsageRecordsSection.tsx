@@ -27,11 +27,7 @@ import { UsageSessionsCard } from "./UsageSessionsCard";
 import { UsageTrendCard } from "./UsageTrendCard";
 import { providerLabelResolver } from "./usage-record-format";
 import { useTaskCancellation } from "./use-task-cancellation";
-import {
-  sortByStartedDesc,
-  taskToUsageRecordView,
-  usageRecordToView,
-} from "./usage-record-view";
+import { sortByStartedDesc, taskToUsageRecordView, usageRecordToView } from "./usage-record-view";
 
 /** 进行中区非空时的兜底轮询间隔；设置页不订阅事件流。 */
 const PENDING_POLL_MS = 3000;
@@ -92,9 +88,7 @@ export function UsageRecordsSection() {
   const openDetail = useUsageRecordsStore((s) => s.openDetail);
   const closeDetail = useUsageRecordsStore((s) => s.closeDetail);
 
-  const activeTasks = useTasksStore(
-    useShallow((s) => s.tasks.filter((task) => isActiveStatus(task.status))),
-  );
+  const activeTasks = useTasksStore(useShallow((s) => s.tasks.filter((task) => isActiveStatus(task.status))));
 
   // 打开与筛选变化时取数；URL 是筛选的真相源，刷新后从 URL 恢复走的是同一条路径。
   // store 跨挂载常驻，打开那次要连 summary 一起重取，离开期间结束的调用才进 KPI 与图表。
@@ -145,16 +139,11 @@ export function UsageRecordsSection() {
     [writeQuery],
   );
 
-  const onCloseDetail = useCallback(
-    () => writeQuery((params) => params.delete("record")),
-    [writeQuery],
-  );
+  const onCloseDetail = useCallback(() => writeQuery((params) => params.delete("record")), [writeQuery]);
 
   // 进行中区 = 任务 store（有任务的调用）∪ 无任务的 pending 调用，两者不相交。
   const showInProgress =
-    filters.view === "generation" &&
-    pageIndex === 0 &&
-    (filters.status === "all" || filters.status === "pending");
+    filters.view === "generation" && pageIndex === 0 && (filters.status === "all" || filters.status === "pending");
   const inProgress = useMemo(() => {
     if (!showInProgress) return [];
     return sortByStartedDesc([
@@ -190,10 +179,7 @@ export function UsageRecordsSection() {
     if (previous.keys.some((key) => !current.has(key))) void refresh();
   }, [inProgressKeys, viewKey, refresh]);
 
-  const rows = useMemo(
-    () => records.filter((record) => record.status !== "pending").map(usageRecordToView),
-    [records],
-  );
+  const rows = useMemo(() => records.filter((record) => record.status !== "pending").map(usageRecordToView), [records]);
 
   const hasAttention = (summary?.attention.length ?? 0) > 0;
 
@@ -209,9 +195,7 @@ export function UsageRecordsSection() {
   const cancelProject = filters.project;
   const onCancelAll =
     cancelProject === null ||
-    activeTasks.every(
-      (task) => task.status !== "queued" || !taskMatchesFilters(task, filters),
-    )
+    activeTasks.every((task) => task.status !== "queued" || !taskMatchesFilters(task, filters))
       ? undefined
       : () => void cancellation.requestAll(cancelProject);
 

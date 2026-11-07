@@ -226,7 +226,6 @@ async function withPanelWidth(page: Page, width: number, ready: (page: Page) => 
   await expect.poll(async () => (await agentPanel(page).boundingBox())?.width).toBeCloseTo(width, 0);
 }
 
-
 async function openHistory(page: Page) {
   await agentPanel(page).getByRole("button", { name: "会话历史" }).click();
   await page.getByRole("searchbox", { name: "搜索会话" }).waitFor();
@@ -335,7 +334,10 @@ defineRegionScenarios("Agent 输入区", [
     ready: historyReady,
     act: async (page) => {
       await openHistory(page);
-      await page.getByRole("button", { name: /^删除会话「把第 3 集的旁白/ }).first().click();
+      await page
+        .getByRole("button", { name: /^删除会话「把第 3 集的旁白/ })
+        .first()
+        .click();
       const dialog = page.getByRole("alertdialog");
       await dialog.waitFor();
       await waitForEntrance(dialog);
@@ -364,9 +366,11 @@ defineRegionScenarios("Agent 输入区", [
     ready: historyReady,
     act: async (page) => {
       const buffer = Buffer.from(IMAGE_DATA, "base64");
-      await page.getByLabel("上传附件图片").setInputFiles(
-        Array.from({ length: 5 }, (_, index) => ({ name: `ref-${index + 1}.png`, mimeType: "image/png", buffer })),
-      );
+      await page
+        .getByLabel("上传附件图片")
+        .setInputFiles(
+          Array.from({ length: 5 }, (_, index) => ({ name: `ref-${index + 1}.png`, mimeType: "image/png", buffer })),
+        );
       await expect(agentPanel(page).getByRole("button", { name: /^放大图片附件/ })).toHaveCount(5);
       await agentInput(page).fill(`${LONG_PARAGRAPH}\n${LONG_PARAGRAPH}`);
       await expect(page.getByRole("button", { name: "附加图片" })).toHaveCount(0);

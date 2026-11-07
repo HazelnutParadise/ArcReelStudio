@@ -98,9 +98,7 @@ export function lookupSupportedDurations(
   // Built-in provider
   const provider = providers.find((p) => p.id === providerId);
   const model = provider?.models?.[modelId];
-  return model?.supported_durations?.length
-    ? model.supported_durations
-    : undefined;
+  return model?.supported_durations?.length ? model.supported_durations : undefined;
 }
 
 /**
@@ -132,10 +130,7 @@ export interface CatalogVideoAudio {
  * 徽章共用同一份查表。自定义供应商目录无逐模型声明，与服务端 `_resolve_video_caps_for_model`
  * 同口径固定假定有声（soft）——无信号时判定为有声但保证降级，比误判为无声更不易误导。
  */
-export function lookupCatalogVideoAudio(
-  providers: ProviderInfo[],
-  videoBackend: string,
-): CatalogVideoAudio | null {
+export function lookupCatalogVideoAudio(providers: ProviderInfo[], videoBackend: string): CatalogVideoAudio | null {
   const slashIdx = videoBackend.indexOf("/");
   if (slashIdx === -1) return null;
   const providerId = videoBackend.slice(0, slashIdx);
@@ -207,11 +202,7 @@ export function lookupResolutions(
     if (!model) return { options: [], isCustom: true };
     const media = endpointToMediaType?.[model.endpoint];
     const standard =
-      media === "image"
-        ? IMAGE_STANDARD_RESOLUTIONS
-        : media === "video"
-          ? VIDEO_STANDARD_RESOLUTIONS
-          : [];
+      media === "image" ? IMAGE_STANDARD_RESOLUTIONS : media === "video" ? VIDEO_STANDARD_RESOLUTIONS : [];
     return { options: standard, isCustom: true };
   }
 

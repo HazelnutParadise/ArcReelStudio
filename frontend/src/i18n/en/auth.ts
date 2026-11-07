@@ -1,4 +1,3 @@
-
 export default {
   'login': 'Login',
   'logging_in': 'Logging in...',

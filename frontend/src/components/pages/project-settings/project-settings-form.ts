@@ -215,7 +215,8 @@ export function deriveForm(
       narrationVoice: str(project.narration_voice),
       narrationSpeed: typeof rawSpeed === "number" && Number.isFinite(rawSpeed) ? rawSpeed : null,
     },
-    voiceBinding: project.character_voice_binding === "reference_audio" ? "reference_audio" : DEFAULT_CHARACTER_VOICE_BINDING,
+    voiceBinding:
+      project.character_voice_binding === "reference_audio" ? "reference_audio" : DEFAULT_CHARACTER_VOICE_BINDING,
     modelSettings,
   };
 }
@@ -294,7 +295,9 @@ function fullProjectPatch(
 
 function sameModelSettings(a: Record<string, ModelSettingEntry>, b: Record<string, ModelSettingEntry>): boolean {
   const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length && keys.every((key) => key in b && a[key].resolution === b[key].resolution);
+  return (
+    keys.length === Object.keys(b).length && keys.every((key) => key in b && a[key].resolution === b[key].resolution)
+  );
 }
 
 /**

@@ -22,12 +22,14 @@ export function CrossfadeImage({
   loading?: "lazy" | "eager";
   onError?: () => void;
 }) {
-  const [shown, setShown] = useState<{ src: string | null; loaded: boolean; failed: boolean; previous: string | null }>({
-    src,
-    loaded: false,
-    failed: false,
-    previous: null,
-  });
+  const [shown, setShown] = useState<{ src: string | null; loaded: boolean; failed: boolean; previous: string | null }>(
+    {
+      src,
+      loaded: false,
+      failed: false,
+      previous: null,
+    },
+  );
 
   // 随 props 调整 state：换图时把已加载的当前图降为底图，新图从透明开始。
   if (shown.src !== src) {

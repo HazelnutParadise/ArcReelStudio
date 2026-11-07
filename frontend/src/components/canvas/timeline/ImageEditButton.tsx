@@ -17,11 +17,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAppStore } from "@/stores/app-store";
-import {
-  selectHasActiveTaskForScriptFile,
-  useTasksStore,
-  type ImageEditResourceKind,
-} from "@/stores/tasks-store";
+import { selectHasActiveTaskForScriptFile, useTasksStore, type ImageEditResourceKind } from "@/stores/tasks-store";
 import { errMsg } from "@/utils/async";
 import { TooltipIconButton } from "./TooltipIconButton";
 
@@ -116,7 +112,7 @@ export function ImageEditDialog({
         resourceType,
         resourceId,
         instruction: trimmed,
-        scriptFile: resourceType === "storyboard" ? scriptFile ?? null : null,
+        scriptFile: resourceType === "storyboard" ? (scriptFile ?? null) : null,
       });
       setInstruction("");
       onOpenChange(false);
@@ -165,8 +161,15 @@ export function ImageEditDialog({
           <DialogClose render={<Button variant="outline" />} disabled={submitting}>
             {t("common:cancel")}
           </DialogClose>
-          <Button onClick={() => void handleSubmit()} disabled={submitting || instruction.trim().length === 0 || disabled}>
-            {submitting ? <Loader2 aria-hidden data-icon="inline-start" className="animate-spin" /> : <Wand2 aria-hidden data-icon="inline-start" />}
+          <Button
+            onClick={() => void handleSubmit()}
+            disabled={submitting || instruction.trim().length === 0 || disabled}
+          >
+            {submitting ? (
+              <Loader2 aria-hidden data-icon="inline-start" className="animate-spin" />
+            ) : (
+              <Wand2 aria-hidden data-icon="inline-start" />
+            )}
             {submitting ? t("image_edit_submitting") : t("image_edit_submit")}
           </Button>
         </DialogFooter>

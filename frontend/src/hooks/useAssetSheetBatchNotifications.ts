@@ -47,7 +47,9 @@ export function useAssetSheetBatchNotifications(projectName?: string | null): vo
         setMissingTasks(Object.fromEntries(rows.filter((row) => row !== null).map((row) => [row.task_id, row])));
       }
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [batches, tasks, projectName]);
 
   useEffect(() => {

@@ -375,15 +375,15 @@ function ModelFields({ row, protocol, baseUrl, onUpdate, onRemove }: ModelFields
         />
         <div className="flex flex-wrap items-center gap-x-4">
           {row.endpoint && (
-            <Link
-              href={endpointSettingsPath(row.endpoint)}
-              className={buttonVariants({ variant: "link", size: "sm" })}
-            >
+            <Link href={endpointSettingsPath(row.endpoint)} className={buttonVariants({ variant: "link", size: "sm" })}>
               <ExternalLink aria-hidden data-icon="inline-start" />
               {t("cp_open_endpoint")}
             </Link>
           )}
-          <Link href={marketSettingsPath("browse", { media })} className={buttonVariants({ variant: "link", size: "sm" })}>
+          <Link
+            href={marketSettingsPath("browse", { media })}
+            className={buttonVariants({ variant: "link", size: "sm" })}
+          >
             <Store aria-hidden data-icon="inline-start" />
             {t("cp_endpoint_from_market")}
           </Link>
@@ -484,7 +484,9 @@ function ModelFields({ row, protocol, baseUrl, onUpdate, onRemove }: ModelFields
             // 系统判定要后端按 (endpoint, model_id) 算，新建的行还没有
             systemValue={null}
             endImageCapable={endImageCapable}
-            onChange={(next) => onUpdate({ capability_overrides: withLastFrameOverride(row.capability_overrides, next) })}
+            onChange={(next) =>
+              onUpdate({ capability_overrides: withLastFrameOverride(row.capability_overrides, next) })
+            }
           />
         </FieldRow>
       )}

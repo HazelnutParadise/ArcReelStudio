@@ -79,7 +79,12 @@ function SubTimeline({ blocks, announced }: { blocks: ContentBlock[]; announced:
         work ? (
           <div key={items[0].index} className="flex min-w-0 flex-col">
             {items.map(({ block, index }) => (
-              <ContentBlockRenderer key={block.id ?? index} block={block} index={index} announce={announced.has(block)} />
+              <ContentBlockRenderer
+                key={block.id ?? index}
+                block={block}
+                index={index}
+                announce={announced.has(block)}
+              />
             ))}
           </div>
         ) : items[0].block.type === "text" ? (

@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from "vite-plus/test";
 import { createDeferred } from "./deferred";
 
 /** 一次 `canvas.toDataURL` 调用：画布尺寸即重编码后的像素尺寸。 */

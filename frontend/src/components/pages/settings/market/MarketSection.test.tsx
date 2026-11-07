@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import "@/i18n";
@@ -361,7 +361,9 @@ describe("MarketSection", () => {
 
       const banner = await screen.findByRole("status");
       expect(within(banner).getByText("部分市场源刷新失败")).toBeInTheDocument();
-      expect(within(banner).getByText("团队市场：无法访问 · HTTP 404，显示上次成功刷新（13分钟前）的快照")).toBeInTheDocument();
+      expect(
+        within(banner).getByText("团队市场：无法访问 · HTTP 404，显示上次成功刷新（13分钟前）的快照"),
+      ).toBeInTheDocument();
       expect(within(banner).getByText("坏索引：索引无效")).toBeInTheDocument();
       expect(banner).not.toHaveTextContent("停用且失败");
     });
@@ -382,7 +384,11 @@ describe("MarketSection", () => {
     });
 
     it("hides entries of a source disabled in settings, even when reloading entries fails", async () => {
-      vi.spyOn(API, "updateMarketSource").mockResolvedValue({ ...TEAM, is_enabled: false, updated_at: new Date().toISOString() });
+      vi.spyOn(API, "updateMarketSource").mockResolvedValue({
+        ...TEAM,
+        is_enabled: false,
+        updated_at: new Date().toISOString(),
+      });
       renderMarket();
       await screen.findAllByRole("article");
       vi.mocked(API.listMarketEntries).mockRejectedValue(new Error("reload failed"));
@@ -567,7 +573,10 @@ describe("MarketSection", () => {
     it("sends repeated toggles of one source in order and keeps the last intent", async () => {
       const off = createDeferred<MarketSourceInfo>();
       const on = createDeferred<MarketSourceInfo>();
-      const update = vi.spyOn(API, "updateMarketSource").mockReturnValueOnce(off.promise).mockReturnValueOnce(on.promise);
+      const update = vi
+        .spyOn(API, "updateMarketSource")
+        .mockReturnValueOnce(off.promise)
+        .mockReturnValueOnce(on.promise);
       renderMarket("settings");
       await sourcesLoaded();
 
@@ -920,7 +929,9 @@ describe("MarketSection", () => {
       expect(within(alpha).getByText("平均 4.3 星，5 人评分")).toBeInTheDocument();
       const zeta = screen.getByRole("article", { name: "Zeta Gateway" });
       expect(within(zeta).getByText("2 人评分，人数足够后显示平均分")).toBeInTheDocument();
-      expect(within(screen.getByRole("article", { name: "Alpha 团队版" })).queryByText("安装量")).not.toBeInTheDocument();
+      expect(
+        within(screen.getByRole("article", { name: "Alpha 团队版" })).queryByText("安装量"),
+      ).not.toBeInTheDocument();
 
       const notice = screen.getByRole("region", { name: "安装量与评分来自 ArcReel 官方服务" });
       expect(within(notice).getByRole("link", { name: "设置" })).toHaveAttribute(

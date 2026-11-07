@@ -9,10 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InlineWarning } from "@/components/shared/InlineWarning";
 import { TruncatedText } from "@/components/shared/TruncatedText";
-import {
-  durationOutOfRangeReason,
-  useModelCapabilities,
-} from "@/hooks/useModelCapabilities";
+import { durationOutOfRangeReason, useModelCapabilities } from "@/hooks/useModelCapabilities";
 import {
   catalogDurations,
   lookupCatalogVideoAudio,
@@ -243,57 +240,63 @@ export function ModelConfigSection({
   };
 
   const videoSubFields: LayeredSubField[] | undefined = showSubFields
-    ? degradeSubFieldsToSaved([
-        {
-          key: "i2v",
-          ...bucketLabels.i2v,
-          bucket: "i2v",
-          value: value.videoProviderI2V,
-          options: mediaCandidates?.video.buckets.i2v ?? [],
-          filtered: mediaCandidates?.video.filtered.i2v,
-          effective: effectiveModel(value.videoBackend, globalDefaults.videoI2V, globalDefaults.video),
-          auto: globalDefaults.auto?.i2v,
-          onChange: (next: string) => applyVideoLayer({ videoProviderI2V: next }),
-        },
-        {
-          key: "r2v",
-          ...bucketLabels.r2v,
-          bucket: "r2v",
-          value: value.videoProviderR2V,
-          options: mediaCandidates?.video.buckets.r2v ?? [],
-          filtered: mediaCandidates?.video.filtered.r2v,
-          effective: effectiveModel(value.videoBackend, globalDefaults.videoR2V, globalDefaults.video),
-          auto: globalDefaults.auto?.r2v,
-          onChange: (next: string) => applyVideoLayer({ videoProviderR2V: next }),
-        },
-      ], !!mediaCandidates)
+    ? degradeSubFieldsToSaved(
+        [
+          {
+            key: "i2v",
+            ...bucketLabels.i2v,
+            bucket: "i2v",
+            value: value.videoProviderI2V,
+            options: mediaCandidates?.video.buckets.i2v ?? [],
+            filtered: mediaCandidates?.video.filtered.i2v,
+            effective: effectiveModel(value.videoBackend, globalDefaults.videoI2V, globalDefaults.video),
+            auto: globalDefaults.auto?.i2v,
+            onChange: (next: string) => applyVideoLayer({ videoProviderI2V: next }),
+          },
+          {
+            key: "r2v",
+            ...bucketLabels.r2v,
+            bucket: "r2v",
+            value: value.videoProviderR2V,
+            options: mediaCandidates?.video.buckets.r2v ?? [],
+            filtered: mediaCandidates?.video.filtered.r2v,
+            effective: effectiveModel(value.videoBackend, globalDefaults.videoR2V, globalDefaults.video),
+            auto: globalDefaults.auto?.r2v,
+            onChange: (next: string) => applyVideoLayer({ videoProviderR2V: next }),
+          },
+        ],
+        !!mediaCandidates,
+      )
     : undefined;
 
   const imageSubFields: LayeredSubField[] | undefined = showSubFields
-    ? degradeSubFieldsToSaved([
-        {
-          key: "t2i",
-          ...bucketLabels.t2i,
-          bucket: "t2i",
-          value: value.imageBackendT2I,
-          options: mediaCandidates?.image.buckets.t2i ?? [],
-          filtered: mediaCandidates?.image.filtered.t2i,
-          effective: effectiveModel(value.imageBackendDefault, globalDefaults.imageT2I, globalDefaults.image),
-          auto: globalDefaults.auto?.t2i,
-          onChange: (next: string) => applyImageLayer({ imageBackendT2I: next }),
-        },
-        {
-          key: "i2i",
-          ...bucketLabels.i2i,
-          bucket: "i2i",
-          value: value.imageBackendI2I,
-          options: mediaCandidates?.image.buckets.i2i ?? [],
-          filtered: mediaCandidates?.image.filtered.i2i,
-          effective: effectiveModel(value.imageBackendDefault, globalDefaults.imageI2I, globalDefaults.image),
-          auto: globalDefaults.auto?.i2i,
-          onChange: (next: string) => applyImageLayer({ imageBackendI2I: next }),
-        },
-      ], !!mediaCandidates)
+    ? degradeSubFieldsToSaved(
+        [
+          {
+            key: "t2i",
+            ...bucketLabels.t2i,
+            bucket: "t2i",
+            value: value.imageBackendT2I,
+            options: mediaCandidates?.image.buckets.t2i ?? [],
+            filtered: mediaCandidates?.image.filtered.t2i,
+            effective: effectiveModel(value.imageBackendDefault, globalDefaults.imageT2I, globalDefaults.image),
+            auto: globalDefaults.auto?.t2i,
+            onChange: (next: string) => applyImageLayer({ imageBackendT2I: next }),
+          },
+          {
+            key: "i2i",
+            ...bucketLabels.i2i,
+            bucket: "i2i",
+            value: value.imageBackendI2I,
+            options: mediaCandidates?.image.buckets.i2i ?? [],
+            filtered: mediaCandidates?.image.filtered.i2i,
+            effective: effectiveModel(value.imageBackendDefault, globalDefaults.imageI2I, globalDefaults.image),
+            auto: globalDefaults.auto?.i2i,
+            onChange: (next: string) => applyImageLayer({ imageBackendI2I: next }),
+          },
+        ],
+        !!mediaCandidates,
+      )
     : undefined;
 
   // 能力统一经 useModelCapabilities 取得（见该模块的真相源规则），本组件不自行查表。
@@ -344,9 +347,7 @@ export function ModelConfigSection({
   // 执行期必然被丢弃的开关。
   const audioControl = lookupVideoAudioControl(providers, executingVideo, usesReferenceImages ? "r2v" : "i2v");
   const audioLocked = audioControl === "always_on" || audioControl === "always_off";
-  const audioDisplayValue = audioLocked
-    ? audioControl === "always_on"
-    : (videoGenerateAudio ?? null);
+  const audioDisplayValue = audioLocked ? audioControl === "always_on" : (videoGenerateAudio ?? null);
   const audioLockedHint = audioLocked
     ? t(
         audioControl === "always_on"
@@ -355,8 +356,7 @@ export function ModelConfigSection({
       )
     : null;
   // 按生效值判矛盾：项目级 null 表示跟随全局，全局为「关闭」时同样落在恒有声模型上。
-  const audioConflict =
-    audioControl === "always_on" && (videoGenerateAudio ?? globalVideoGenerateAudio) === false;
+  const audioConflict = audioControl === "always_on" && (videoGenerateAudio ?? globalVideoGenerateAudio) === false;
 
   // 该端点给不出任何时长档位时，档位空集是如实声明而非配置缺陷（docs/adr/0082）。判据取
   // durationTierEmpty 而非 durationFixed：frames 绑了却读不到帧率来源的那一支档位同样是空集，
@@ -450,7 +450,10 @@ export function ModelConfigSection({
   };
   // 跟随全局时实际生效的全局模型：视频按本项目走的路径取细分项，图片取文生图，文本取默认档。
   const globalChannelModel: Record<ModelChannel, string | undefined> = {
-    video: effectiveModel(usesReferenceImages ? globalDefaults.videoR2V : globalDefaults.videoI2V, globalDefaults.video),
+    video: effectiveModel(
+      usesReferenceImages ? globalDefaults.videoR2V : globalDefaults.videoI2V,
+      globalDefaults.video,
+    ),
     image: effectiveModel(globalDefaults.imageT2I, globalDefaults.image),
     text: effectiveModel(globalDefaults.textDefault),
   };
@@ -522,11 +525,7 @@ export function ModelConfigSection({
             defaultOptions={options.videoBackends}
             onDefaultChange={handleVideoChange}
             emptyLabel={t("use_global_default")}
-            emptyHint={
-              globalDefaults.video
-                ? t("current_global_default", { value: globalDefaults.video })
-                : undefined
-            }
+            emptyHint={globalDefaults.video ? t("current_global_default", { value: globalDefaults.video }) : undefined}
             defaultEffective={globalDefaults.video || undefined}
             defaultAuto={channelAuto.video}
             providerNames={options.providerNames}
@@ -536,111 +535,112 @@ export function ModelConfigSection({
             subFieldsError={mediaCandidatesError}
             lifecycle={candidates?.lifecycle}
           >
-          {executingVideo && (
-            <VideoModelSpecBar
-              durations={rawDurations}
-              resolutions={videoResolutionOptions}
-              tier={videoSpecTier}
-            />
-          )}
+            {executingVideo && (
+              <VideoModelSpecBar durations={rawDurations} resolutions={videoResolutionOptions} tier={videoSpecTier} />
+            )}
 
-          {usesReferenceImages && value.videoResolutions && renderResolutionField(
-            executingI2V,
-            value.videoResolutions[executingI2V] ?? null,
-            (v) => onChange({ ...value, videoResolutions: { ...value.videoResolutions, [executingI2V]: v } }),
-            `${bucketLabels.i2v.label} · ${t("resolution_label")}`,
-          )}
-          {usesReferenceImages && executingI2VError && <InlineWarning message={executingI2VError} />}
-          {renderResolutionField(
-            executingVideo,
-            value.videoResolution,
-            (v) => onChange(value.videoResolutions
-              ? { ...value, videoResolutions: { ...value.videoResolutions, [executingVideo]: v } }
-              : { ...value, videoResolution: v }),
-            usesReferenceImages && value.videoResolutions
-              ? `${bucketLabels.r2v.label} · ${t("resolution_label")}`
-              : t("resolution_label"),
-          )}
-          {executingVideoError && <InlineWarning message={executingVideoError} />}
+            {usesReferenceImages &&
+              value.videoResolutions &&
+              renderResolutionField(
+                executingI2V,
+                value.videoResolutions[executingI2V] ?? null,
+                (v) => onChange({ ...value, videoResolutions: { ...value.videoResolutions, [executingI2V]: v } }),
+                `${bucketLabels.i2v.label} · ${t("resolution_label")}`,
+              )}
+            {usesReferenceImages && executingI2VError && <InlineWarning message={executingI2VError} />}
+            {renderResolutionField(
+              executingVideo,
+              value.videoResolution,
+              (v) =>
+                onChange(
+                  value.videoResolutions
+                    ? { ...value, videoResolutions: { ...value.videoResolutions, [executingVideo]: v } }
+                    : { ...value, videoResolution: v },
+                ),
+              usesReferenceImages && value.videoResolutions
+                ? `${bucketLabels.r2v.label} · ${t("resolution_label")}`
+                : t("resolution_label"),
+            )}
+            {executingVideoError && <InlineWarning message={executingVideoError} />}
 
-          {/* 档位空集且该模型的时长本就不由 ArcReel 驱动：控件无从渲染，但要说清为什么没有，
+            {/* 档位空集且该模型的时长本就不由 ArcReel 驱动：控件无从渲染，但要说清为什么没有，
               否则用户只会看见时长这一节凭空消失。 */}
-          {showDuration && supportedDurations?.length === 0 && videoDurationNotDriven && (
-            <div className="flex flex-col gap-2">
-              <FieldTitle>{t("duration_label")}</FieldTitle>
-              <p className="text-xs text-muted-foreground">{t("duration_not_driven_notice")}</p>
-            </div>
-          )}
+            {showDuration && supportedDurations?.length === 0 && videoDurationNotDriven && (
+              <div className="flex flex-col gap-2">
+                <FieldTitle>{t("duration_label")}</FieldTitle>
+                <p className="text-xs text-muted-foreground">{t("duration_not_driven_notice")}</p>
+              </div>
+            )}
 
-          {showDuration && supportedDurations && supportedDurations.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <FieldTitle>{t("duration_label")}</FieldTitle>
-              {isContinuousIntegerRange(supportedDurations) && supportedDurations.length >= 5 ? (
-                <DurationSlider
-                  options={supportedDurations}
-                  value={value.defaultDuration}
-                  onChange={handleDurationClick}
-                  ariaLabel={t("duration_label")}
-                  autoLabel={t("duration_auto")}
-                  disabled={durationStale}
-                />
-              ) : (
-                <DurationButtonGroup
-                  options={supportedDurations}
-                  value={value.defaultDuration}
-                  onChange={handleDurationClick}
-                  ariaLabel={t("duration_label")}
-                  autoLabel={t("duration_auto")}
-                  disabled={durationStale}
-                />
-              )}
-              {durationNoticeKey && (
-                <InlineWarning
-                  message={t(durationNoticeKey, { value: value.defaultDuration })}
-                  action={{
-                    label: t("duration_reset_auto"),
-                    onClick: () => handleDurationClick(null),
-                  }}
-                />
-              )}
-            </div>
-          )}
+            {showDuration && supportedDurations && supportedDurations.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <FieldTitle>{t("duration_label")}</FieldTitle>
+                {isContinuousIntegerRange(supportedDurations) && supportedDurations.length >= 5 ? (
+                  <DurationSlider
+                    options={supportedDurations}
+                    value={value.defaultDuration}
+                    onChange={handleDurationClick}
+                    ariaLabel={t("duration_label")}
+                    autoLabel={t("duration_auto")}
+                    disabled={durationStale}
+                  />
+                ) : (
+                  <DurationButtonGroup
+                    options={supportedDurations}
+                    value={value.defaultDuration}
+                    onChange={handleDurationClick}
+                    ariaLabel={t("duration_label")}
+                    autoLabel={t("duration_auto")}
+                    disabled={durationStale}
+                  />
+                )}
+                {durationNoticeKey && (
+                  <InlineWarning
+                    message={t(durationNoticeKey, { value: value.defaultDuration })}
+                    action={{
+                      label: t("duration_reset_auto"),
+                      onClick: () => handleDurationClick(null),
+                    }}
+                  />
+                )}
+              </div>
+            )}
 
-          {onVideoGenerateAudioChange && (
-            <div className="flex flex-col gap-2">
-              <FieldTitle>{t("dashboard:generate_audio_label")}</FieldTitle>
-              <RadioGroup
-                aria-label={t("dashboard:audio_settings_sr_label")}
-                // 三态值映射成字符串：RadioGroup 的值不能是 null
-                value={String(audioDisplayValue)}
-                onValueChange={(next) => onVideoGenerateAudioChange(next === "null" ? null : next === "true")}
-                disabled={audioLocked}
-              >
-                {(
-                  [
-                    [null, t("dashboard:follow_global_default")],
-                    [true, t("dashboard:enabled_label")],
-                    [false, t("dashboard:disabled_label")],
-                  ] as const
-                ).map(([val, label]) => (
-                  <Label key={String(val)}>
-                    <RadioGroupItem value={String(val)} />
-                    {label}
-                  </Label>
-                ))}
-              </RadioGroup>
-              {audioLockedHint && <p className="text-xs text-muted-foreground">{audioLockedHint}</p>}
-              {audioConflict && (
-                <InlineWarning
-                  message={t("dashboard:audio_switch_conflict_notice")}
-                  action={{
-                    label: t("dashboard:audio_switch_conflict_action"),
-                    onClick: () => onVideoGenerateAudioChange(true),
-                  }}
-                />
-              )}
-            </div>
-          )}
+            {onVideoGenerateAudioChange && (
+              <div className="flex flex-col gap-2">
+                <FieldTitle>{t("dashboard:generate_audio_label")}</FieldTitle>
+                <RadioGroup
+                  aria-label={t("dashboard:audio_settings_sr_label")}
+                  // 三态值映射成字符串：RadioGroup 的值不能是 null
+                  value={String(audioDisplayValue)}
+                  onValueChange={(next) => onVideoGenerateAudioChange(next === "null" ? null : next === "true")}
+                  disabled={audioLocked}
+                >
+                  {(
+                    [
+                      [null, t("dashboard:follow_global_default")],
+                      [true, t("dashboard:enabled_label")],
+                      [false, t("dashboard:disabled_label")],
+                    ] as const
+                  ).map(([val, label]) => (
+                    <Label key={String(val)}>
+                      <RadioGroupItem value={String(val)} />
+                      {label}
+                    </Label>
+                  ))}
+                </RadioGroup>
+                {audioLockedHint && <p className="text-xs text-muted-foreground">{audioLockedHint}</p>}
+                {audioConflict && (
+                  <InlineWarning
+                    message={t("dashboard:audio_switch_conflict_notice")}
+                    action={{
+                      label: t("dashboard:audio_switch_conflict_action"),
+                      onClick: () => onVideoGenerateAudioChange(true),
+                    }}
+                  />
+                )}
+              </div>
+            )}
           </LayeredModelFields>
         </ChannelCard>
       )}
@@ -653,11 +653,7 @@ export function ModelConfigSection({
             defaultOptions={options.imageBackends}
             onDefaultChange={handleImageChange}
             emptyLabel={t("use_global_default")}
-            emptyHint={
-              globalDefaults.image
-                ? t("current_global_default", { value: globalDefaults.image })
-                : undefined
-            }
+            emptyHint={globalDefaults.image ? t("current_global_default", { value: globalDefaults.image }) : undefined}
             defaultEffective={globalDefaults.image || undefined}
             defaultAuto={channelAuto.image}
             providerNames={options.providerNames}
@@ -698,16 +694,8 @@ export function ModelConfigSection({
               // default 档回退全局默认模型；simple/complex 先看本表单的项目默认模型，
               // 再全局对应档，最后全局默认模型。
               default: effectiveModel(globalDefaults.textDefault),
-              simple: effectiveModel(
-                value.textBackendDefault,
-                globalDefaults.textSimple,
-                globalDefaults.textDefault,
-              ),
-              complex: effectiveModel(
-                value.textBackendDefault,
-                globalDefaults.textComplex,
-                globalDefaults.textDefault,
-              ),
+              simple: effectiveModel(value.textBackendDefault, globalDefaults.textSimple, globalDefaults.textDefault),
+              complex: effectiveModel(value.textBackendDefault, globalDefaults.textComplex, globalDefaults.textDefault),
             }}
             auto={globalDefaults.auto?.text}
             showTiers={showSubFields}
@@ -862,9 +850,7 @@ function DurationSlider({
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
         className="min-w-30 flex-1 accent-primary"
       />
-      <span className="min-w-10 text-right text-xs tabular-nums text-subtle-foreground">
-        {valueText}
-      </span>
+      <span className="min-w-10 text-right text-xs tabular-nums text-subtle-foreground">{valueText}</span>
     </div>
   );
 }

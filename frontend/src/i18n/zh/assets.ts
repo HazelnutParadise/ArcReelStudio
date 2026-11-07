@@ -1,4 +1,4 @@
-import type enAssets from '../en/assets';
+import type enAssets from "../en/assets";
 
 export default {
   prompt_preview_title: "资产图提示词 · {{name}}",
@@ -34,7 +34,8 @@ export default {
   "merge_mode_asset": "并为本体",
   "merge_mode_asset_hint": "「{{name}}」和它的别名记为保留方的别名。",
   "merge_mode_derivative": "并为衍生",
-  "merge_mode_derivative_hint": "「{{name}}」成为保留方的一个衍生，沿用它的描述，衍生资产图待生成；台词仍归保留方本人。",
+  "merge_mode_derivative_hint":
+    "「{{name}}」成为保留方的一个衍生，沿用它的描述，衍生资产图待生成；台词仍归保留方本人。",
   "merge_source_description": "「{{name}}」的描述",
   "merge_copy_description": "复制描述",
   "merge_source_description_empty": "没有描述。",
@@ -56,7 +57,8 @@ export default {
   "merge_derivative_existing": "保留方已有名为「{{name}}」的衍生，并入这个衍生，被并方的描述不保留。",
   "merge_derivatives_moved": "迁到保留方名下的衍生：{{names}}",
   "merge_derivatives_folded": "并入保留方已有同名衍生的：{{names}}",
-  "merge_discarded": "「{{name}}」的描述、资产图及版本历史、声音设置、原图和参考音频不并入保留方，将移入项目回收站，保留 30 天。剧本里改指保留方的引用不会随恢复改回。",
+  "merge_discarded":
+    "「{{name}}」的描述、资产图及版本历史、声音设置、原图和参考音频不并入保留方，将移入项目回收站，保留 30 天。剧本里改指保留方的引用不会随恢复改回。",
   "merge_confirm": "并入",
   "merging": "正在合并…",
   "merge_failed": "合并失败：{{message}}",
@@ -100,7 +102,8 @@ export default {
   "delete": "删除",
   "derivatives": "衍生",
   "derivatives_with_count": "衍生（{{n}}）",
-  "derivative_hint": "衍生是这个角色的另一套持续外观，如换装、变身，只写相对本体的变化。在脚本里用 @[角色/衍生] 引用它。",
+  "derivative_hint":
+    "衍生是这个角色的另一套持续外观，如换装、变身，只写相对本体的变化。在脚本里用 @[角色/衍生] 引用它。",
   "derivative_name": "衍生名",
   "derivative_name_placeholder": "如「战斗装」",
   "derivative_description": "外观变化",
@@ -178,8 +181,10 @@ export default {
   "reference_audio_included": "附带参考音频",
   "derivatives_count_one": "{{count}} 个衍生",
   "derivatives_count_other": "{{count}} 个衍生",
-  "library_derivatives_edit_note_one": "这个角色有 {{count}} 个衍生，随角色一起进出资产库；衍生在项目的角色详情里编辑。",
-  "library_derivatives_edit_note_other": "这个角色有 {{count}} 个衍生，随角色一起进出资产库；衍生在项目的角色详情里编辑。",
+  "library_derivatives_edit_note_one":
+    "这个角色有 {{count}} 个衍生，随角色一起进出资产库；衍生在项目的角色详情里编辑。",
+  "library_derivatives_edit_note_other":
+    "这个角色有 {{count}} 个衍生，随角色一起进出资产库；衍生在项目的角色详情里编辑。",
   "back_to_details": "返回详情",
   "edit_leave_title": "「{{name}}」有未保存的修改",
   "create_failed": "创建失败：{{message}}",
@@ -192,7 +197,8 @@ export default {
   "load_more_failed": "加载更多失败：{{message}}",
   "delete_title": "删除{{type}}「{{name}}」？",
   "delete_description": "只从资产库删除，已应用到项目里的副本不受影响。资产图会一并删除，删除后无法恢复。",
-  "delete_description_with_audio": "只从资产库删除，已应用到项目里的副本不受影响。资产图与参考音频会一并删除，删除后无法恢复。",
+  "delete_description_with_audio":
+    "只从资产库删除，已应用到项目里的副本不受影响。资产图与参考音频会一并删除，删除后无法恢复。",
   "delete_failed": "删除失败：{{message}}",
   "apply_to_project": "应用到项目…",
   "apply_title": "把「{{name}}」应用到项目",
@@ -255,13 +261,20 @@ export default {
   "gallery_delete_title.product": "删除商品「{{name}}」？",
   "gallery_delete_checking": "正在检查脚本里的引用…",
   "gallery_delete_check_failed": "无法检查引用：{{message}}",
-  "gallery_delete_moves_to_trash": "资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
-  "gallery_delete_impact_single_one": "被「{{episode}}」中的 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
-  "gallery_delete_impact_single_other": "被「{{episode}}」中的 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
-  "gallery_delete_impact_many_one": "被「{{episode}}」等 {{episodes}} 集共 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
-  "gallery_delete_impact_many_other": "被「{{episode}}」等 {{episodes}} 集共 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
-  "gallery_delete_impact_unattributed_one": "被 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
-  "gallery_delete_impact_unattributed_other": "被 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+  "gallery_delete_moves_to_trash":
+    "资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+  "gallery_delete_impact_single_one":
+    "被「{{episode}}」中的 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+  "gallery_delete_impact_single_other":
+    "被「{{episode}}」中的 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+  "gallery_delete_impact_many_one":
+    "被「{{episode}}」等 {{episodes}} 集共 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+  "gallery_delete_impact_many_other":
+    "被「{{episode}}」等 {{episodes}} 集共 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+  "gallery_delete_impact_unattributed_one":
+    "被 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
+  "gallery_delete_impact_unattributed_other":
+    "被 {{count}} 处引用，删除后这些分镜在生成时会被拦下。资产将连同资产图、版本历史与衍生移入项目回收站，保留 30 天，期间可以在「文件」视图的项目回收站里恢复。",
   "gallery_delete_episode_count_one": "{{count}} 处",
   "gallery_delete_episode_count_other": "{{count}} 处",
   "gallery_delete_merge_instead": "改为并入…",
@@ -298,7 +311,8 @@ export default {
   "viewer_image_alt_version": "「{{name}}」的资产图，第 {{version}} 版",
   "viewer_restore": "还原到此版本",
   "viewer_restore_title": "还原到第 {{version}} 版？",
-  "viewer_restore_description": "「{{name}}」的资产图会换成第 {{version}} 版。其他版本仍保留在版本记录里，之后可以再还原。",
+  "viewer_restore_description":
+    "「{{name}}」的资产图会换成第 {{version}} 版。其他版本仍保留在版本记录里，之后可以再还原。",
   "viewer_restore_confirm": "还原",
   "viewer_restore_busy_hint": "资产图正在生成、上传或修改，完成后才能还原版本。",
   "viewer_restore_failed": "还原失败：{{message}}",
@@ -308,11 +322,13 @@ export default {
   "derivative_copy_token": "复制引用记号 {{token}}",
   "derivative_delete_title": "删除衍生「{{name}}」？",
   "derivative_delete_description": "外观变化描述与衍生图将一起移入项目回收站，保留 30 天。",
-  "derivative_delete_description_referenced": "脚本中仍在用 {{token}} 引用它。外观变化描述与衍生图将一起移入项目回收站，保留 30 天。",
+  "derivative_delete_description_referenced":
+    "脚本中仍在用 {{token}} 引用它。外观变化描述与衍生图将一起移入项目回收站，保留 30 天。",
   editor_derivative_removed: "此衍生已被删除或改名。未保存的修改仍保留，保存或放弃后采用当前状态。",
   "provider_asset_select_from_library": "从供应商素材库选择",
   "provider_asset_dialog_title": "从供应商素材库选择",
-  "provider_asset_dialog_desc": "选择一张可用的图片素材。ArcReel 取回原图，保存为这张图片的新版本，并与该素材建立关联。",
+  "provider_asset_dialog_desc":
+    "选择一张可用的图片素材。ArcReel 取回原图，保存为这张图片的新版本，并与该素材建立关联。",
   "provider_asset_account": "素材库账号",
   "provider_asset_no_account": "还没有素材库账号。在设置的「素材库与存储」中添加账号后再选择。",
   "provider_asset_open_settings": "前往设置",
@@ -338,10 +354,12 @@ export default {
   "provider_asset_import_done": "已导入为第 {{version}} 版",
   "provider_asset_import_done_left": "供应商素材已导入项目「{{project}}」，成为第 {{version}} 版",
   "provider_asset_import_failed_left": "供应商素材未导入项目「{{project}}」，原选中的图片不变：{{message}}",
-  "provider_asset_import_unknown_left": "无法确认供应商素材是否已导入项目「{{project}}」：导入期间没有收到服务端的确定结果。回到该项目查看版本历史，确认没有新版本后再重新选择。",
+  "provider_asset_import_unknown_left":
+    "无法确认供应商素材是否已导入项目「{{project}}」：导入期间没有收到服务端的确定结果。回到该项目查看版本历史，确认没有新版本后再重新选择。",
   "provider_asset_upload": "上传到供应商素材库",
   "provider_asset_upload_title": "上传到供应商素材库",
-  "provider_asset_upload_desc": "上传这张图片当前选中的版本，经你的对象存储中转后提交入库。供应商审核期间可以关闭窗口，只有可用的关联会用于生成。",
+  "provider_asset_upload_desc":
+    "上传这张图片当前选中的版本，经你的对象存储中转后提交入库。供应商审核期间可以关闭窗口，只有可用的关联会用于生成。",
   "provider_asset_upload_version": "当前版本：第 {{version}} 版",
   "provider_asset_upload_no_image": "这张图片还没有可上传的版本。先生成或上传图片。",
   "provider_asset_upload_no_account": "还没有素材库账号。在设置的「素材库与存储」中添加账号后再上传。",
@@ -361,14 +379,17 @@ export default {
   "provider_asset_link_state_active": "可用",
   "provider_asset_link_state_failed": "失败",
   "provider_asset_link_state_uncertain": "结果待确认",
-  "provider_asset_link_hint_uncertain": "提交结果不确定，正在按提交记录查找素材，不会重复创建。长时间没有结果时，解除关联后重新上传。",
+  "provider_asset_link_hint_uncertain":
+    "提交结果不确定，正在按提交记录查找素材，不会重复创建。长时间没有结果时，解除关联后重新上传。",
   "provider_asset_link_hint_stalled": "已停止自动查询。点「刷新状态」重新查询。",
   "provider_asset_link_failure_provider": "供应商未完成入库。解除关联后可以重新上传。",
   "provider_asset_link_failure_unlinked_before_submit": "上传前已解除关联，没有提交入库。",
   "provider_asset_link_failure_account_missing": "素材库账号已删除，没有提交入库。",
-  "provider_asset_link_failure_account_scope_changed": "素材库账号的 Access Key、站点、区域或项目已修改，没有提交入库。",
+  "provider_asset_link_failure_account_scope_changed":
+    "素材库账号的 Access Key、站点、区域或项目已修改，没有提交入库。",
   "provider_asset_link_failure_object_storage_missing": "对象存储连接已删除，没有提交入库。",
   "provider_asset_link_failure_content_unavailable": "图片版本文件不存在，没有提交入库。",
   "provider_asset_link_failure_content_changed": "图片版本文件与记录不一致，没有提交入库。",
-  "provider_asset_link_failure_relay_upload_failed": "上传到对象存储失败，没有提交入库。检查对象存储连接后，解除关联并重新上传。",
+  "provider_asset_link_failure_relay_upload_failed":
+    "上传到对象存储失败，没有提交入库。检查对象存储连接后，解除关联并重新上传。",
 } satisfies Record<keyof typeof enAssets, string>;

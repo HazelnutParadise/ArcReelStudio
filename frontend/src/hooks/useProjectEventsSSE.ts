@@ -36,7 +36,6 @@ import {
   type GroupedProjectChange,
 } from "@/utils/project-changes";
 
-
 /** 可作视频单元参考图的资产实体：它们的增删改会改变单元的可用参考图与所落的桶。 */
 const REFERENCE_ASSET_ENTITY_TYPES: ReadonlySet<ProjectChange["entity_type"]> = new Set([
   "character",
@@ -106,8 +105,7 @@ const PANE_ROUTES: Record<ProjectChangePane, (focus: ProjectChangeFocus) => stri
   scenes: () => `/${WORKSPACE_ROUTE_SCENES}`,
   props: () => `/${WORKSPACE_ROUTE_PROPS}`,
   products: () => `/${WORKSPACE_ROUTE_PRODUCTS}`,
-  episode: (focus) =>
-    typeof focus.episode === "number" ? `/${WORKSPACE_ROUTE_EPISODES}/${focus.episode}` : null,
+  episode: (focus) => (typeof focus.episode === "number" ? `/${WORKSPACE_ROUTE_EPISODES}/${focus.episode}` : null),
 };
 
 /** 草稿视图订阅的实体 ID 后缀：`draft:episode_N_<kind>`。 */
@@ -129,28 +127,19 @@ function buildNotificationTarget(change: ProjectChange): WorkspaceNotificationTa
 }
 
 function getGroupPriority(group: GroupedProjectChange): number {
-  return Math.min(
-    ...group.changes.map((change) => getChangePriority(change)),
-  );
+  return Math.min(...group.changes.map((change) => getChangePriority(change)));
 }
 
-function sortGroupedChanges(
-  groups: GroupedProjectChange[],
-): GroupedProjectChange[] {
-  return [...groups].sort(
-    (left, right) => getGroupPriority(left) - getGroupPriority(right),
-  );
+function sortGroupedChanges(groups: GroupedProjectChange[]): GroupedProjectChange[] {
+  return [...groups].sort((left, right) => getGroupPriority(left) - getGroupPriority(right));
 }
 
 function hasImportantChanges(group: GroupedProjectChange): boolean {
   return group.changes.some((change) => change.important);
 }
 
-function getPrimaryGroupTarget(
-  group: GroupedProjectChange,
-): WorkspaceNotificationTarget | null {
-  const primaryChange =
-    group.changes.find((change) => isNavigableChange(change)) ?? null;
+function getPrimaryGroupTarget(group: GroupedProjectChange): WorkspaceNotificationTarget | null {
+  const primaryChange = group.changes.find((change) => isNavigableChange(change)) ?? null;
   return primaryChange ? buildNotificationTarget(primaryChange) : null;
 }
 
@@ -193,9 +182,7 @@ export function useProjectEventsSSE(projectName?: string | null): void {
   const pushNotification = useAppStore((s) => s.pushNotification);
   const pushWorkspaceNotification = useAppStore((s) => s.pushWorkspaceNotification);
   const clearWorkspaceNotifications = useAppStore((s) => s.clearWorkspaceNotifications);
-  const setAssistantToolActivitySuppressed = useAppStore(
-    (s) => s.setAssistantToolActivitySuppressed
-  );
+  const setAssistantToolActivitySuppressed = useAppStore((s) => s.setAssistantToolActivitySuppressed);
 
   const hasUnsavedChanges = useHasUnsavedChanges();
 
@@ -246,8 +233,7 @@ export function useProjectEventsSSE(projectName?: string | null): void {
     // 交由改写它的那次调用在自己对应轮次落定后消费。
     const focusSnapshot = queuedFocusRef.current;
     const result = await useProjectsStore.getState().refreshProject(projectName, {
-      onError: (err) =>
-        pushNotification(tRef.current("project_sync_failed", { message: errMsg(err) }), "warning"),
+      onError: (err) => pushNotification(tRef.current("project_sync_failed", { message: errMsg(err) }), "warning"),
     });
     if (queuedFocusRef.current === focusSnapshot) {
       flushQueuedFocus();
@@ -365,9 +351,7 @@ export function useProjectEventsSSE(projectName?: string | null): void {
           invalidateEntities(invalidationKeys);
         }
 
-        const groupedChanges = sortGroupedChanges(
-          groupChangesByType(entityChanges),
-        );
+        const groupedChanges = sortGroupedChanges(groupChangesByType(entityChanges));
 
         // Web 端修改里只有其他成员的才提示；自己的修改不提示。其他成员的修改不自动跳转与聚焦：
         // 对方在别处编辑，不该把我从正在看的地方带走。
@@ -380,8 +364,10 @@ export function useProjectEventsSSE(projectName?: string | null): void {
         const followChanges = notifyChanges && payload.source !== "webui";
         const byMember = (text: string) =>
           otherMember ? tEventsRef.current("change_by_member", { name: otherMember.username, text }) : text;
-        const workspaceNotifications: { group: (typeof groupedChanges)[number]; target: WorkspaceNotificationTarget }[] =
-          [];
+        const workspaceNotifications: {
+          group: (typeof groupedChanges)[number];
+          target: WorkspaceNotificationTarget;
+        }[] = [];
 
         if (notifyChanges) {
           // Draft 事件 — 自动导航到剧集脚本规划 Tab
@@ -432,9 +418,7 @@ export function useProjectEventsSSE(projectName?: string | null): void {
           entityChanges.some(
             (c) => c.entity_type === "reference_unit" || REFERENCE_ASSET_ENTITY_TYPES.has(c.entity_type),
           ) ||
-          taskChanges.some(
-            (c) => c.action === "task_succeeded" && c.task_type === "reference_video",
-          )
+          taskChanges.some((c) => c.action === "task_succeeded" && c.task_type === "reference_video")
         ) {
           useAppStore.getState().invalidateReferenceVideoUnits();
         }
@@ -468,18 +452,14 @@ export function useProjectEventsSSE(projectName?: string | null): void {
         }
 
         // Refresh cost data when generation completes
-        const hasCompletionEvent = entityChanges.some((c) =>
-          COMPLETION_ACTIONS.has(c.action),
-        );
+        const hasCompletionEvent = entityChanges.some((c) => COMPLETION_ACTIONS.has(c.action));
         // voice_sample 的计费发生在合成成功之后、时长/大小校验（或用户取消）之前：
         // 校验不通过落 failed、执行期间被取消落 cancelled，两种情形都不会触发上面的
         // voice_sample_ready（只在 emit_generation_success_batch 里跟着执行器成功返回
         // 一起发），但供应商费用已经产生——非成功终态同样要刷新成本，否则用户会看到
         // 一个已经真实花费但成本面板未更新的任务。
         const hasBilledVoiceSampleTerminal = taskChanges.some(
-          (c) =>
-            (c.action === "task_failed" || c.action === "task_cancelled") &&
-            c.task_type === "voice_sample",
+          (c) => (c.action === "task_failed" || c.action === "task_cancelled") && c.task_type === "voice_sample",
         );
         // 切分本身不计费，但它把各分镜的 generated_assets.grid_id 写回，宫格已发生的
         // 成本随之从「未归属」桶转入本集均摊（ADR 0053）。归属变了就要重拉，否则成本面板
@@ -493,10 +473,7 @@ export function useProjectEventsSSE(projectName?: string | null): void {
         if (hasUsageRecord || taskChanges.length > 0) {
           void useUsageHeaderStore.getState().refresh();
         }
-        if (
-          (hasCompletionEvent || hasBilledVoiceSampleTerminal || hasGridSplit || hasUsageRecord) &&
-          projectName
-        ) {
+        if ((hasCompletionEvent || hasBilledVoiceSampleTerminal || hasGridSplit || hasUsageRecord) && projectName) {
           useCostStore.getState().debouncedFetch(projectName);
         }
 

@@ -80,8 +80,7 @@ export function episodeViewTabs(facts: EpisodeViewFacts): EpisodeViewTab[] {
   if (plan) tabs.push({ view: "plan", disabled: false });
   if (facts.grid) tabs.push({ view: "grid", disabled: facts.sourceReview });
   // 参考生视频的单元列表在中间稿阶段就可查看；分镜图生视频要等正式剧本。没有脚本规划时分镜是唯一视图。
-  const boardEnabled =
-    facts.hasScript || !plan || (facts.route === "reference_video" && !facts.sourceReview);
+  const boardEnabled = facts.hasScript || !plan || (facts.route === "reference_video" && !facts.sourceReview);
   tabs.push({ view: "board", disabled: !boardEnabled });
   if (facts.hasScript && !facts.demo) tabs.push({ view: EPISODE_VIEW_EDIT, disabled: false });
   return tabs;

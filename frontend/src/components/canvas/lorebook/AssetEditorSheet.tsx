@@ -60,8 +60,7 @@ export function AssetEditorSheet({
   const targetKey = target === null ? null : target.mode === "create" ? "create" : `edit:${target.name}`;
   const [session, setSession] = useState({ key: targetKey, id: 0 });
   if (session.key !== targetKey) {
-    const selfRename =
-      renamed !== null && targetKey === `edit:${renamed.to}` && session.key === `edit:${renamed.from}`;
+    const selfRename = renamed !== null && targetKey === `edit:${renamed.to}` && session.key === `edit:${renamed.from}`;
     // 关闭时不换：关闭动画期间仍是原来的编辑器
     setSession({ key: targetKey, id: selfRename || targetKey === null ? session.id : session.id + 1 });
     if (!selfRename && renamed !== null) setRenamed(null);
@@ -70,8 +69,7 @@ export function AssetEditorSheet({
   if (renamed !== null && session.key === `edit:${renamed.to}` && assets[renamed.to]) setRenamed(null);
 
   const name = target?.mode === "edit" ? target.name : null;
-  const live =
-    name === null ? undefined : (assets[name] ?? (renamed?.to === name ? assets[renamed.from] : undefined));
+  const live = name === null ? undefined : (assets[name] ?? (renamed?.to === name ? assets[renamed.from] : undefined));
   // 外部删除或改名后 live 为空，保留期间与关闭动画期间沿用最后一次的内容
   const [last, setLast] = useState<{ name: string; asset: GalleryAssetSource } | null>(null);
   if (name !== null && live && (last?.name !== name || last.asset !== live)) setLast({ name, asset: live });
@@ -102,7 +100,10 @@ export function AssetEditorSheet({
     },
     [onTargetChange],
   );
-  const handleCreated = useCallback((created: string) => onTargetChange({ mode: "edit", name: created }), [onTargetChange]);
+  const handleCreated = useCallback(
+    (created: string) => onTargetChange({ mode: "edit", name: created }),
+    [onTargetChange],
+  );
   const close = useCallback(() => onTargetChange(null), [onTargetChange]);
 
   const navigation =

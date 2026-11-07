@@ -398,9 +398,7 @@ function CredentialDialog({
   // 只有单一必填组时组内字段才是无条件必填；多组二选一时不标必填，由组合提示说明。
   const fieldsRequired = !editing && groups.length <= 1;
   const orHint =
-    !editing && groups.length > 1
-      ? groups.map((g) => g.map(labelForKey).join(" + ")).join(` ${t("or_label")} `)
-      : null;
+    !editing && groups.length > 1 ? groups.map((g) => g.map(labelForKey).join(" + ")).join(` ${t("or_label")} `) : null;
 
   const submitAdd = async () => {
     if (isVertex) {
@@ -622,7 +620,11 @@ function DeleteCredentialDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{t("credential_delete_title", { name: shown?.name ?? "" })}</AlertDialogTitle>
         </AlertDialogHeader>
-        <AlertDialogBody tabIndex={0} role="region" aria-label={t("credential_delete_title", { name: shown?.name ?? "" })}>
+        <AlertDialogBody
+          tabIndex={0}
+          role="region"
+          aria-label={t("credential_delete_title", { name: shown?.name ?? "" })}
+        >
           <div className="flex flex-col gap-2">
             <AlertDialogDescription>
               {shown?.is_active ? t("credential_delete_active_description") : t("credential_delete_description")}

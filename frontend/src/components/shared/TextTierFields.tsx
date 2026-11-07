@@ -88,9 +88,7 @@ export function TextTierFields({
       subFields={showTiers ? subFields : undefined}
       lifecycle={lifecycle}
       footnote={
-        <p className="border-t border-border pt-3 text-xs text-muted-foreground">
-          {t("text_tier_agent_boundary")}
-        </p>
+        <p className="border-t border-border pt-3 text-xs text-muted-foreground">{t("text_tier_agent_boundary")}</p>
       }
     />
   );

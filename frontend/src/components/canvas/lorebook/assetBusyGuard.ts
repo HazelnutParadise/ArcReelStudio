@@ -1,6 +1,12 @@
 import type { TFunction } from "i18next";
 import { useAppStore } from "@/stores/app-store";
-import { isResourceBusy, selectActiveResourceIds, useActiveResourceIds, useTasksStore, type ResourceKind } from "@/stores/tasks-store";
+import {
+  isResourceBusy,
+  selectActiveResourceIds,
+  useActiveResourceIds,
+  useTasksStore,
+  type ResourceKind,
+} from "@/stores/tasks-store";
 
 /**
  * 角色写入可能搬动衍生文件，本体与衍生任务共同占用这个资产；
@@ -14,8 +20,9 @@ export function isAssetBusy(kind: ResourceKind, projectName: string, name: strin
   }
   if (kind !== "character") return false;
   const { tasks, optimisticActive } = useTasksStore.getState();
-  return [...selectActiveResourceIds(tasks, "character_derivative", projectName, optimisticActive)]
-    .some((id) => id.startsWith(`${name}/`));
+  return [...selectActiveResourceIds(tasks, "character_derivative", projectName, optimisticActive)].some((id) =>
+    id.startsWith(`${name}/`),
+  );
 }
 
 /** 响应式占用判定与提交时的新鲜读使用同一角色/衍生归属口径。 */

@@ -200,7 +200,10 @@ export function AgentComposer({
 
   const moveSlashActive = (step: number) => {
     // 还没移动过时菜单高亮的是第一项
-    const from = Math.max(0, slashSkills.findIndex((skill) => skill.name === slashActive));
+    const from = Math.max(
+      0,
+      slashSkills.findIndex((skill) => skill.name === slashActive),
+    );
     setSlashActive(slashSkills[(from + step + slashSkills.length) % slashSkills.length].name);
   };
 
@@ -361,11 +364,23 @@ export function AgentComposer({
                   <Loader2 aria-hidden className="animate-spin" />
                 </Button>
               ) : running && !hasContent ? (
-                <Button variant="outline" size="icon-sm" className="ml-auto" onClick={onInterrupt} aria-label={t("stop_session")}>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  className="ml-auto"
+                  onClick={onInterrupt}
+                  aria-label={t("stop_session")}
+                >
                   <Square aria-hidden />
                 </Button>
               ) : (
-                <Button size="icon-sm" className="ml-auto" onClick={send} disabled={!canSend} aria-label={t("send_message")}>
+                <Button
+                  size="icon-sm"
+                  className="ml-auto"
+                  onClick={send}
+                  disabled={!canSend}
+                  aria-label={t("send_message")}
+                >
                   <ArrowUp aria-hidden />
                 </Button>
               )}
@@ -404,8 +419,14 @@ export function AgentComposer({
             <DialogTitle>{t("chat_image_attachment", { index: (previewIndex ?? 0) + 1 })}</DialogTitle>
           </DialogHeader>
           {/* 原图超高时只有这里滚动，内部没有可聚焦元素，键盘靠它自身聚焦后滚动 */}
-          <DialogBody tabIndex={0} role="region" aria-label={t("chat_image_attachment", { index: (previewIndex ?? 0) + 1 })}>
-            {previewImage && <img src={previewImage.dataUrl} alt="" className="mx-auto block h-auto max-w-full rounded-md" />}
+          <DialogBody
+            tabIndex={0}
+            role="region"
+            aria-label={t("chat_image_attachment", { index: (previewIndex ?? 0) + 1 })}
+          >
+            {previewImage && (
+              <img src={previewImage.dataUrl} alt="" className="mx-auto block h-auto max-w-full rounded-md" />
+            )}
           </DialogBody>
         </DialogContent>
       </Dialog>

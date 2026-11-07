@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, expect, it, onTestFinished, vi } from "vitest";
+import { afterEach, expect, it, onTestFinished, vi } from "vite-plus/test";
 
 import { useAppStore, type Toast } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -11,14 +11,22 @@ import { FileView } from "./FileView";
 afterEach(() => vi.unstubAllGlobals());
 
 function restoreResult(
-  object: TrashRecord["object"], restored: RestoredFile[], download_only: string[] = [], degraded = false,
+  object: TrashRecord["object"],
+  restored: RestoredFile[],
+  download_only: string[] = [],
+  degraded = false,
 ): RestoreResult {
   return { object, restored, degraded, download_only };
 }
 
 it("deletes checked files individually, retains a failed selection and restores one record", async () => {
   const entry = (name: string, role: FileViewEntry["role"] = "unreferenced"): FileViewEntry => ({
-    name, path: name, type: "file", size: 10, modified_at: "2026-01-01T00:00:00Z", role,
+    name,
+    path: name,
+    type: "file",
+    size: 10,
+    modified_at: "2026-01-01T00:00:00Z",
+    role,
   });
   const files = new Map([
     ...["a.txt", "b.txt", "c.txt"].map((name) => [name, entry(name)] as const),
@@ -28,9 +36,11 @@ it("deletes checked files individually, retains a failed selection and restores 
   const deleted: string[] = [];
   const restored: string[] = [];
   const toasts: Toast[] = [];
-  onTestFinished(useAppStore.subscribe((state, previous) => {
-    if (state.toast && state.toast !== previous.toast) toasts.push(state.toast);
-  }));
+  onTestFinished(
+    useAppStore.subscribe((state, previous) => {
+      if (state.toast && state.toast !== previous.toast) toasts.push(state.toast);
+    }),
+  );
   vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), "http://localhost");
     const path = url.searchParams.get("path") ?? "";
@@ -43,7 +53,9 @@ it("deletes checked files individually, retains a failed selection and restores 
     if (init?.method === "POST") {
       restored.push(url.pathname);
       files.set("c.txt", entry("c.txt"));
-      return Response.json(restoreResult({ kind: "file", path: "c.txt" }, [{ original: "c.txt", path: "c.txt", as_history: false }]));
+      return Response.json(
+        restoreResult({ kind: "file", path: "c.txt" }, [{ original: "c.txt", path: "c.txt", as_history: false }]),
+      );
     }
     return Response.json({ path: "", entries: [...files.values()] });
   });
@@ -72,8 +84,13 @@ it("deletes checked files individually, retains a failed selection and restores 
 
 it("marks a remote version whose local cache was cleared and still offers to move it to the trash", async () => {
   const remote: FileViewEntry = {
-    name: "v2.png", path: "v2.png", type: "file", size: 2048, modified_at: "2026-01-01T00:00:00Z",
-    role: "history", remote_only: true,
+    name: "v2.png",
+    path: "v2.png",
+    type: "file",
+    size: 2048,
+    modified_at: "2026-01-01T00:00:00Z",
+    role: "history",
+    remote_only: true,
   };
   const local: FileViewEntry = { ...remote, name: "v1.png", path: "v1.png", remote_only: undefined };
   vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
@@ -101,10 +118,21 @@ it("removes a deleted file from the tree at once instead of waiting for a slow r
     listCalls++;
     // 首次之后的重拉一直不返回，模拟慢刷新
     if (listCalls > 1) return new Promise<Response>(() => {});
-    return Promise.resolve(Response.json({
-      path: "",
-      entries: [{ name: "a.txt", path: "a.txt", type: "file", size: 1, modified_at: "2026-01-01T00:00:00Z", role: "unreferenced" }],
-    }));
+    return Promise.resolve(
+      Response.json({
+        path: "",
+        entries: [
+          {
+            name: "a.txt",
+            path: "a.txt",
+            type: "file",
+            size: 1,
+            modified_at: "2026-01-01T00:00:00Z",
+            role: "unreferenced",
+          },
+        ],
+      }),
+    );
   });
   render(<FileView projectName="demo" />);
   const user = userEvent.setup();
@@ -122,7 +150,9 @@ it("ignores an older directory response after refresh has taken over", async () 
     calls++;
     if (calls === 1) {
       oldSignal = init?.signal;
-      return new Promise<Response>((resolve) => { finishOld = resolve; });
+      return new Promise<Response>((resolve) => {
+        finishOld = resolve;
+      });
     }
     return Promise.resolve(Response.json({ path: "", entries: [] }));
   });
@@ -132,9 +162,12 @@ it("ignores an older directory response after refresh has taken over", async () 
   expect(oldSignal?.aborted).toBe(true);
 
   await act(async () => {
-    finishOld(Response.json({
-      path: "", entries: [{ name: "old.txt", path: "old.txt", type: "file", role: "unreferenced", size: 1 }],
-    }));
+    finishOld(
+      Response.json({
+        path: "",
+        entries: [{ name: "old.txt", path: "old.txt", type: "file", role: "unreferenced", size: 1 }],
+      }),
+    );
   });
 
   expect(screen.queryByRole("button", { name: /old\.txt/ })).not.toBeInTheDocument();
@@ -142,7 +175,12 @@ it("ignores an older directory response after refresh has taken over", async () 
 
 it("refreshes the selected file's details and preview when it changed on disk", async () => {
   let file: FileViewEntry = {
-    name: "note.txt", path: "note.txt", type: "file", size: 3, modified_at: "2026-01-01T00:00:00Z", role: "unreferenced",
+    name: "note.txt",
+    path: "note.txt",
+    type: "file",
+    size: 3,
+    modified_at: "2026-01-01T00:00:00Z",
+    role: "unreferenced",
   };
   let content = "old";
   vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
@@ -164,8 +202,15 @@ it("refreshes the selected file's details and preview when it changed on disk", 
 
 it("keeps each in-flight restore protected until its own request finishes", async () => {
   const record = (id: string) => ({
-    id, object: { kind: "file", path: `${id}.txt` }, files: [`${id}.txt`], schema_version: 1,
-    deleted_at: "2026-01-01T00:00:00Z", origin: "user", size: 1, has_snapshot: false, download_only: false,
+    id,
+    object: { kind: "file", path: `${id}.txt` },
+    files: [`${id}.txt`],
+    schema_version: 1,
+    deleted_at: "2026-01-01T00:00:00Z",
+    origin: "user",
+    size: 1,
+    has_snapshot: false,
+    download_only: false,
   });
   const pending = new Map<string, () => void>();
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
@@ -173,7 +218,15 @@ it("keeps each in-flight restore protected until its own request finishes", asyn
     if (init?.method === "POST") {
       const id = url.pathname.split("/").at(-2) ?? "";
       return new Promise<Response>((resolve) => {
-        pending.set(id, () => resolve(Response.json(restoreResult({ kind: "file", path: `${id}.txt` }, [{ original: `${id}.txt`, path: `${id}.txt`, as_history: false }]))));
+        pending.set(id, () =>
+          resolve(
+            Response.json(
+              restoreResult({ kind: "file", path: `${id}.txt` }, [
+                { original: `${id}.txt`, path: `${id}.txt`, as_history: false },
+              ]),
+            ),
+          ),
+        );
       });
     }
     if (url.pathname.endsWith("/trash")) {
@@ -203,14 +256,25 @@ it("keeps each in-flight restore protected until its own request finishes", asyn
 
 it("removes a restored record at once instead of waiting for a slow listing refresh", async () => {
   const record = {
-    id: "a", object: { kind: "file", path: "a.txt" }, files: ["a.txt"], schema_version: 1,
-    deleted_at: "2026-01-01T00:00:00Z", origin: "user", size: 2048, has_snapshot: false, download_only: false,
+    id: "a",
+    object: { kind: "file", path: "a.txt" },
+    files: ["a.txt"],
+    schema_version: 1,
+    deleted_at: "2026-01-01T00:00:00Z",
+    origin: "user",
+    size: 2048,
+    has_snapshot: false,
+    download_only: false,
   };
   let trashCalls = 0;
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), "http://localhost");
     if (init?.method === "POST") {
-      return Promise.resolve(Response.json(restoreResult({ kind: "file", path: "a.txt" }, [{ original: "a.txt", path: "a.txt", as_history: false }])));
+      return Promise.resolve(
+        Response.json(
+          restoreResult({ kind: "file", path: "a.txt" }, [{ original: "a.txt", path: "a.txt", as_history: false }]),
+        ),
+      );
     }
     if (!url.pathname.endsWith("/trash")) return Promise.resolve(Response.json({ path: "", entries: [] }));
     trashCalls++;
@@ -231,10 +295,19 @@ it("removes a restored record at once instead of waiting for a slow listing refr
 
 it("drops a retried trash listing once a newer load has started", async () => {
   const listing = (path: string) => ({
-    records: [{
-      id: path, object: { kind: "file", path }, files: [path], schema_version: 1,
-      deleted_at: "2026-01-01T00:00:00Z", origin: "user", size: 1, has_snapshot: false, download_only: false,
-    }],
+    records: [
+      {
+        id: path,
+        object: { kind: "file", path },
+        files: [path],
+        schema_version: 1,
+        deleted_at: "2026-01-01T00:00:00Z",
+        origin: "user",
+        size: 1,
+        has_snapshot: false,
+        download_only: false,
+      },
+    ],
     total_size: 1,
     retention_days: 30,
   });
@@ -245,7 +318,10 @@ it("drops a retried trash listing once a newer load has started", async () => {
     if (!url.pathname.endsWith("/trash")) return Promise.resolve(Response.json({ path: "", entries: [] }));
     trashCalls++;
     if (trashCalls === 1) return Promise.resolve(Response.json({ detail: "boom" }, { status: 500 }));
-    if (trashCalls === 2) return new Promise<Response>((resolve) => { finishRetry = resolve; });
+    if (trashCalls === 2)
+      return new Promise<Response>((resolve) => {
+        finishRetry = resolve;
+      });
     return Promise.resolve(Response.json(listing("new.txt")));
   });
   render(<FileView projectName="demo" />);
@@ -263,8 +339,15 @@ it("drops a retried trash listing once a newer load has started", async () => {
 
 it("keeps in-flight writes protected when switching between sections", async () => {
   const record = {
-    id: "r", object: { kind: "file", path: "r.txt" }, files: ["r.txt"], schema_version: 1,
-    deleted_at: "2026-01-01T00:00:00Z", origin: "user", size: 1, has_snapshot: false, download_only: false,
+    id: "r",
+    object: { kind: "file", path: "r.txt" },
+    files: ["r.txt"],
+    schema_version: 1,
+    deleted_at: "2026-01-01T00:00:00Z",
+    origin: "user",
+    size: 1,
+    has_snapshot: false,
+    download_only: false,
   };
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), "http://localhost");
@@ -273,10 +356,21 @@ it("keeps in-flight writes protected when switching between sections", async () 
     if (url.pathname.endsWith("/trash")) {
       return Promise.resolve(Response.json({ records: [record], total_size: 1, retention_days: 30 }));
     }
-    return Promise.resolve(Response.json({
-      path: "",
-      entries: [{ name: "a.txt", path: "a.txt", type: "file", size: 1, modified_at: "2026-01-01T00:00:00Z", role: "unreferenced" }],
-    }));
+    return Promise.resolve(
+      Response.json({
+        path: "",
+        entries: [
+          {
+            name: "a.txt",
+            path: "a.txt",
+            type: "file",
+            size: 1,
+            modified_at: "2026-01-01T00:00:00Z",
+            role: "unreferenced",
+          },
+        ],
+      }),
+    );
   });
   render(<FileView projectName="demo" />);
   const user = userEvent.setup();
@@ -288,7 +382,9 @@ it("keeps in-flight writes protected when switching between sections", async () 
   await user.click(screen.getByRole("tab", { name: "文件" }));
   expect(screen.getByRole("button", { name: "移入项目回收站（1）" })).toBeDisabled();
   await user.click(screen.getByRole("tab", { name: "项目回收站" }));
-  expect(screen.getByRole("tabpanel", { name: "项目回收站" })).toContainElement(screen.getByRole("button", { name: "恢复" }));
+  expect(screen.getByRole("tabpanel", { name: "项目回收站" })).toContainElement(
+    screen.getByRole("button", { name: "恢复" }),
+  );
   expect(screen.getByRole("button", { name: "恢复" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "彻底删除" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "清空项目回收站" })).toBeDisabled();
@@ -298,8 +394,13 @@ it("labels a generation result whose target was deleted instead of naming who de
   const record = {
     id: "g",
     object: { kind: "generation_result", path: "characters/阿岚.png", note: "target_deleted_during_generation" },
-    files: ["characters/阿岚.png"], schema_version: 1,
-    deleted_at: "2026-01-01T00:00:00Z", origin: "agent", size: 1, has_snapshot: false, download_only: false,
+    files: ["characters/阿岚.png"],
+    schema_version: 1,
+    deleted_at: "2026-01-01T00:00:00Z",
+    origin: "agent",
+    size: 1,
+    has_snapshot: false,
+    download_only: false,
   };
   vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
     const url = new URL(String(input), "http://localhost");
@@ -317,18 +418,26 @@ const TIMELINE_DOCUMENT = "edit_timelines/episode_1/tl-1.json";
 
 function timelineRecord(overrides: Partial<TrashRecord> = {}): TrashRecord {
   return {
-    id: "tl", object: { kind: "edit_timeline", id: "tl-1", episode: 1, name: "初剪" },
-    files: [TIMELINE_DOCUMENT, "renders/episode_1/tl-1/final.mp4"], schema_version: 17,
-    deleted_at: "2026-01-01T00:00:00Z", origin: "user", size: 10, has_snapshot: true, download_only: false,
+    id: "tl",
+    object: { kind: "edit_timeline", id: "tl-1", episode: 1, name: "初剪" },
+    files: [TIMELINE_DOCUMENT, "renders/episode_1/tl-1/final.mp4"],
+    schema_version: 17,
+    deleted_at: "2026-01-01T00:00:00Z",
+    origin: "user",
+    size: 10,
+    has_snapshot: true,
+    download_only: false,
     ...overrides,
   };
 }
 
 function collectToasts(): Toast[] {
   const toasts: Toast[] = [];
-  onTestFinished(useAppStore.subscribe((state, previous) => {
-    if (state.toast && state.toast !== previous.toast) toasts.push(state.toast);
-  }));
+  onTestFinished(
+    useAppStore.subscribe((state, previous) => {
+      if (state.toast && state.toast !== previous.toast) toasts.push(state.toast);
+    }),
+  );
   return toasts;
 }
 
@@ -337,10 +446,13 @@ it("names a timeline record by its object and reports the name it was restored u
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), "http://localhost");
     if (init?.method === "POST") {
-      return Promise.resolve(Response.json(restoreResult(
-        { kind: "edit_timeline", id: "tl-1", episode: 1, name: "初剪 (1)" },
-        [{ original: TIMELINE_DOCUMENT, path: TIMELINE_DOCUMENT, as_history: false }],
-      )));
+      return Promise.resolve(
+        Response.json(
+          restoreResult({ kind: "edit_timeline", id: "tl-1", episode: 1, name: "初剪 (1)" }, [
+            { original: TIMELINE_DOCUMENT, path: TIMELINE_DOCUMENT, as_history: false },
+          ]),
+        ),
+      );
     }
     if (url.pathname.endsWith("/trash")) {
       return Promise.resolve(Response.json({ records: [timelineRecord()], total_size: 10, retention_days: 30 }));
@@ -354,22 +466,27 @@ it("names a timeline record by its object and reports the name it was restored u
 
   await user.click(screen.getByRole("button", { name: "恢复" }));
 
-  await waitFor(() => expect(toasts.at(-1)?.text).toBe("原名已被占用，剪辑时间线「初剪」（第 1 集） 已改名为「初剪 (1)」恢复"));
+  await waitFor(() =>
+    expect(toasts.at(-1)?.text).toBe("原名已被占用，剪辑时间线「初剪」（第 1 集） 已改名为「初剪 (1)」恢复"),
+  );
 });
 
 it("names source file and planning draft records by their object", async () => {
-  const record = (id: string, object: TrashRecord["object"]) => timelineRecord({ id, object, files: [String(object.path)] });
+  const record = (id: string, object: TrashRecord["object"]) =>
+    timelineRecord({ id, object, files: [String(object.path)] });
   vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
     const url = new URL(String(input), "http://localhost");
     if (url.pathname.endsWith("/trash")) {
-      return Promise.resolve(Response.json({
-        records: [
-          record("s", { kind: "source_file", path: "source/第一章.txt", raw: [] }),
-          record("p", { kind: "planning_draft", path: "drafts/episode_2/plan.json", episode: 2 }),
-        ],
-        total_size: 20,
-        retention_days: 30,
-      }));
+      return Promise.resolve(
+        Response.json({
+          records: [
+            record("s", { kind: "source_file", path: "source/第一章.txt", raw: [] }),
+            record("p", { kind: "planning_draft", path: "drafts/episode_2/plan.json", episode: 2 }),
+          ],
+          total_size: 20,
+          retention_days: 30,
+        }),
+      );
     }
     return Promise.resolve(Response.json({ path: "", entries: [] }));
   });
@@ -385,9 +502,13 @@ it("names an episode record by its title and says the restored episode goes to t
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), "http://localhost");
     if (init?.method === "POST") {
-      return Promise.resolve(Response.json(restoreResult(episode, [
-        { original: "scripts/episode_3.json", path: "scripts/episode_3.json", as_history: false },
-      ])));
+      return Promise.resolve(
+        Response.json(
+          restoreResult(episode, [
+            { original: "scripts/episode_3.json", path: "scripts/episode_3.json", as_history: false },
+          ]),
+        ),
+      );
     }
     if (url.pathname.endsWith("/trash")) {
       const records = [
@@ -414,14 +535,20 @@ it("names asset and derivative records by their objects", async () => {
     const url = new URL(String(input), "http://localhost");
     if (url.pathname.endsWith("/trash")) {
       const base = { ...timelineRecord(), has_snapshot: true, files: [] };
-      return Promise.resolve(Response.json({
-        records: [
-          { ...base, id: "a", object: { kind: "asset", asset_type: "scene", name: "茶楼" } },
-          { ...base, id: "b", object: { kind: "asset_derivative", asset_type: "character", owner: "阿岚", name: "战甲" } },
-        ],
-        total_size: 10,
-        retention_days: 30,
-      }));
+      return Promise.resolve(
+        Response.json({
+          records: [
+            { ...base, id: "a", object: { kind: "asset", asset_type: "scene", name: "茶楼" } },
+            {
+              ...base,
+              id: "b",
+              object: { kind: "asset_derivative", asset_type: "character", owner: "阿岚", name: "战甲" },
+            },
+          ],
+          total_size: 10,
+          retention_days: 30,
+        }),
+      );
     }
     return Promise.resolve(Response.json({ path: "", entries: [] }));
   });
@@ -441,12 +568,22 @@ it("tells what a degraded restore recovered and offers the remaining structure f
     const url = new URL(String(input), "http://localhost");
     if (init?.method === "POST") {
       restoredOnce = true;
-      return Promise.resolve(Response.json(restoreResult(
-        timelineRecord().object,
-        [{ original: "renders/episode_1/tl-1/final.mp4", path: "renders/episode_1/tl-1/final.mp4", as_history: false }],
-        [TIMELINE_DOCUMENT],
-        true,
-      )));
+      return Promise.resolve(
+        Response.json(
+          restoreResult(
+            timelineRecord().object,
+            [
+              {
+                original: "renders/episode_1/tl-1/final.mp4",
+                path: "renders/episode_1/tl-1/final.mp4",
+                as_history: false,
+              },
+            ],
+            [TIMELINE_DOCUMENT],
+            true,
+          ),
+        ),
+      );
     }
     if (url.pathname.endsWith("/files")) {
       downloads.push(url.searchParams.get("path") ?? "");
@@ -478,7 +615,10 @@ it("tells what a degraded restore recovered and offers the remaining structure f
 
 it("names shot, unit and end frame records by their position and text when deleted", async () => {
   const project: ProjectData = {
-    title: "演示", content_mode: "narration", style: "Anime", characters: {},
+    title: "演示",
+    content_mode: "narration",
+    style: "Anime",
+    characters: {},
     episodes: [{ episode: 1, title: "雨夜", script_file: "scripts/episode_1.json" }],
   };
   useProjectsStore.getState().setCurrentProject("demo", project, {}, {});
@@ -497,8 +637,13 @@ it("names shot, unit and end frame records by their position and text when delet
         timelineRecord({
           id: "d",
           object: {
-            kind: "end_frame", shot_id: "E1S07", script_file: "episode_1.json", path: "end_frames/scene_E1S07.png",
-            episode: 1, item_position: 5, item_excerpt: "他推开门…",
+            kind: "end_frame",
+            shot_id: "E1S07",
+            script_file: "episode_1.json",
+            path: "end_frames/scene_E1S07.png",
+            episode: 1,
+            item_position: 5,
+            item_excerpt: "他推开门…",
           },
         }),
       ];
@@ -521,7 +666,10 @@ it("uses the current position after restoring a shot under a new ID", async () =
   const toasts = collectToasts();
   const shot = { kind: "script_entry", id: "E1S03", episode: 1, item_kind: "segments" };
   const project: ProjectData = {
-    title: "演示", content_mode: "narration", style: "Anime", characters: {},
+    title: "演示",
+    content_mode: "narration",
+    style: "Anime",
+    characters: {},
     episodes: [{ episode: 1, title: "雨夜", script_file: "scripts/episode_1.json" }],
   };
   useProjectsStore.getState().setCurrentProject("demo", project, {}, {});
@@ -529,9 +677,13 @@ it("uses the current position after restoring a shot under a new ID", async () =
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), "http://localhost");
     if (init?.method === "POST") {
-      return Promise.resolve(Response.json(restoreResult({ ...shot, id: "E1S04" }, [
-        { original: "storyboards/scene_E1S03.png", path: "storyboards/scene_E1S04.png", as_history: false },
-      ])));
+      return Promise.resolve(
+        Response.json(
+          restoreResult({ ...shot, id: "E1S04" }, [
+            { original: "storyboards/scene_E1S03.png", path: "storyboards/scene_E1S04.png", as_history: false },
+          ]),
+        ),
+      );
     }
     if (url.pathname.endsWith("/trash")) {
       const records = [
@@ -545,14 +697,18 @@ it("uses the current position after restoring a shot under a new ID", async () =
       return Promise.resolve(Response.json({ records, total_size: 20, retention_days: 30 }));
     }
     if (url.pathname.endsWith("/projects/demo")) {
-      return Promise.resolve(Response.json({
-        project,
-        scripts: { "episode_1.json": {
-          episode: 1,
-          segments: [{ segment_id: "E1S01" }, { segment_id: "E1S04" }, { segment_id: "E1S02" }],
-        } },
-        asset_fingerprints: {},
-      }));
+      return Promise.resolve(
+        Response.json({
+          project,
+          scripts: {
+            "episode_1.json": {
+              episode: 1,
+              segments: [{ segment_id: "E1S01" }, { segment_id: "E1S04" }, { segment_id: "E1S02" }],
+            },
+          },
+          asset_fingerprints: {},
+        }),
+      );
     }
     return Promise.resolve(Response.json({ path: "", entries: [] }));
   });

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { beforeEach, describe, expect, it, vi, type MockInstance } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -109,9 +109,7 @@ describe("SourceFileActions", () => {
   });
 
   it("confirms locally before deleting a file that holds no episode", async () => {
-    const remove = vi
-      .spyOn(API, "deleteWholeSourceFile")
-      .mockResolvedValue({ status: "applied", impact: NO_IMPACT });
+    const remove = vi.spyOn(API, "deleteWholeSourceFile").mockResolvedValue({ status: "applied", impact: NO_IMPACT });
     render(<SourceFileActions projectName="demo" file={file(false)} index={0} total={1} />);
 
     openMenuItem("删除文件");

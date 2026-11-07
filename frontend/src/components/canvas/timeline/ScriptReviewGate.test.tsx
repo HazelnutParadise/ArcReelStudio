@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, onTestFinished, type MockInstance } from "vitest";
+import { describe, it, expect, vi, afterEach, onTestFinished, type MockInstance } from "vite-plus/test";
 import { render, screen, fireEvent, waitFor, act, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ScriptReviewGate } from "./ScriptReviewGate";
@@ -44,7 +44,11 @@ const CONFIRMED: Partial<ScriptReviewState> = {
 function seedFormalScenes(sceneIds: string[]) {
   useProjectsStore.setState({
     currentScripts: {
-      "episode_1.json": { episode: 1, content_mode: "drama", scenes: sceneIds.map((scene_id) => ({ scene_id })) } as never,
+      "episode_1.json": {
+        episode: 1,
+        content_mode: "drama",
+        scenes: sceneIds.map((scene_id) => ({ scene_id })),
+      } as never,
     },
   });
   onTestFinished(() => useProjectsStore.setState({ currentScripts: {} }));
@@ -153,9 +157,7 @@ describe("ScriptReviewGate", () => {
 
   it("confirms and reflects the unlocked state", async () => {
     vi.spyOn(API, "getScriptReview").mockResolvedValue(dramaState());
-    const confirm = vi
-      .spyOn(API, "confirmScriptReview")
-      .mockResolvedValue(dramaState(CONFIRMED));
+    const confirm = vi.spyOn(API, "confirmScriptReview").mockResolvedValue(dramaState(CONFIRMED));
 
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="drama" />);
     await waitFor(() => expect(screen.getByText("确认并继续")).toBeInTheDocument());
@@ -164,15 +166,15 @@ describe("ScriptReviewGate", () => {
 
     await waitFor(() => expect(confirm).toHaveBeenCalledWith("p", 1, {}));
     await waitFor(() =>
-      expect(screen.getByText("内容已确认，此处只读。请在时间线上修改；要整集重做，请重跑脚本规划后再确认。")).toBeInTheDocument(),
+      expect(
+        screen.getByText("内容已确认，此处只读。请在时间线上修改；要整集重做，请重跑脚本规划后再确认。"),
+      ).toBeInTheDocument(),
     );
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
   it("renders confirmed drama content without edit controls and offers the timeline", async () => {
-    vi.spyOn(API, "getScriptReview").mockResolvedValue(
-      dramaState(CONFIRMED),
-    );
+    vi.spyOn(API, "getScriptReview").mockResolvedValue(dramaState(CONFIRMED));
     const openTimeline = vi.fn();
 
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="drama" onOpenTimeline={openTimeline} />);
@@ -181,16 +183,16 @@ describe("ScriptReviewGate", () => {
     expect(screen.getByText("三年后，阿离立于屋檐下：你终于回来了。")).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "删除发声" })).not.toBeInTheDocument();
-    expect(screen.getByText("内容已确认，此处只读。请在时间线上修改；要整集重做，请重跑脚本规划后再确认。")).toBeInTheDocument();
+    expect(
+      screen.getByText("内容已确认，此处只读。请在时间线上修改；要整集重做，请重跑脚本规划后再确认。"),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "去时间线修改" }));
     expect(openTimeline).toHaveBeenCalledTimes(1);
   });
 
   it("renders confirmed narration text read-only", async () => {
-    vi.spyOn(API, "getScriptReview").mockResolvedValue(
-      narrationState(CONFIRMED),
-    );
+    vi.spyOn(API, "getScriptReview").mockResolvedValue(narrationState(CONFIRMED));
 
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="narration" />);
 
@@ -200,9 +202,7 @@ describe("ScriptReviewGate", () => {
   });
 
   it("turns read-only when a save is refused because the episode was confirmed meanwhile", async () => {
-    vi.spyOn(API, "getScriptReview")
-      .mockResolvedValueOnce(dramaState())
-      .mockResolvedValue(dramaState(CONFIRMED));
+    vi.spyOn(API, "getScriptReview").mockResolvedValueOnce(dramaState()).mockResolvedValue(dramaState(CONFIRMED));
     vi.spyOn(API, "saveScriptReviewContent").mockRejectedValue(
       new ApiRequestError("脚本规划已确认，不能再修改", { code: "script_plan_confirmed" }, 409),
     );
@@ -240,7 +240,9 @@ describe("ScriptReviewGate", () => {
 
     const button = await screen.findByRole("button", { name: "重新确认并生成正式脚本" });
     expect(button).toBeEnabled();
-    expect(screen.getByText("内容已确认，但本集还没有正式脚本。重新确认即按脚本规划转出正式脚本。")).toBeInTheDocument();
+    expect(
+      screen.getByText("内容已确认，但本集还没有正式脚本。重新确认即按脚本规划转出正式脚本。"),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
 
     fireEvent.click(button);
@@ -281,9 +283,7 @@ describe("ScriptReviewGate", () => {
     });
     seedFormalScenes(["E1S01", "E1S09"]);
     vi.spyOn(API, "getScriptReview").mockResolvedValue(dramaState({ script_overwrite: overwrite }));
-    const confirm = vi
-      .spyOn(API, "confirmScriptReview")
-      .mockResolvedValue(dramaState(CONFIRMED));
+    const confirm = vi.spyOn(API, "confirmScriptReview").mockResolvedValue(dramaState(CONFIRMED));
 
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="drama" />);
 
@@ -364,7 +364,10 @@ describe("ScriptReviewGate", () => {
 
     const notice = await screen.findByRole("alert");
     expect(notice).toHaveTextContent("尚未配置可用的视频模型");
-    expect(screen.getByRole("link", { name: "前往项目设置" })).toHaveAttribute("href", "/app/projects/p/settings?tab=models");
+    expect(screen.getByRole("link", { name: "前往项目设置" })).toHaveAttribute(
+      "href",
+      "/app/projects/p/settings?tab=models",
+    );
     const button = screen.getByRole("button", { name: "确认并继续" });
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute("title", expect.stringContaining("尚未配置可用的视频模型"));
@@ -462,9 +465,7 @@ describe("ScriptReviewGate", () => {
     vi.spyOn(API, "getScriptReview").mockResolvedValue(dramaState({ episode_target_duration: 5 }));
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="drama" />);
 
-    await waitFor(() =>
-      expect(screen.getByText(/本集合计 8 秒，比目标 5 秒多 3 秒/)).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText(/本集合计 8 秒，比目标 5 秒多 3 秒/)).toBeInTheDocument());
     expect(screen.getByRole("button", { name: "确认并继续" })).toBeEnabled();
   });
 
@@ -491,7 +492,13 @@ describe("ScriptReviewGate", () => {
         quarantine: draftView({
           content: { segments: [draftSegment] },
           violations: [
-            { code: "blank_novel_text", label: "segment E1S01", message: "segment E1S01 的原文为空", line: null, item_index: 0 },
+            {
+              code: "blank_novel_text",
+              label: "segment E1S01",
+              message: "segment E1S01 的原文为空",
+              line: null,
+              item_index: 0,
+            },
             { code: "coverage_gap", label: "", message: "源文末尾有一段未被任何分镜覆盖", line: null },
           ],
         }),
@@ -578,7 +585,13 @@ describe("ScriptReviewGate", () => {
         quarantine: draftView({
           content: { segments: [NARRATION_SEGMENT] },
           violations: [
-            { code: "duration_off_tier", label: "segment E1S01", message: "segment E1S01 的时长 5 不在模型档位内", line: null, item_index: 0 },
+            {
+              code: "duration_off_tier",
+              label: "segment E1S01",
+              message: "segment E1S01 的时长 5 不在模型档位内",
+              line: null,
+              item_index: 0,
+            },
           ],
         }),
       }),
@@ -631,7 +644,13 @@ describe("ScriptReviewGate", () => {
         quarantine: draftView({
           content: { segments: [NARRATION_SEGMENT] },
           violations: [
-            { code: "duration_off_tier", label: "segment E1S01", message: "segment E1S01 的时长 5 不在模型档位内", line: null, item_index: 0 },
+            {
+              code: "duration_off_tier",
+              label: "segment E1S01",
+              message: "segment E1S01 的时长 5 不在模型档位内",
+              line: null,
+              item_index: 0,
+            },
           ],
         }),
       }),
@@ -664,7 +683,13 @@ describe("ScriptReviewGate", () => {
         quarantine: draftView({
           content: { segments: [NARRATION_SEGMENT] },
           violations: [
-            { code: "duration_off_tier", label: "segment E1S01", message: "segment E1S01 的时长 5 不在模型档位内", line: null, item_index: 0 },
+            {
+              code: "duration_off_tier",
+              label: "segment E1S01",
+              message: "segment E1S01 的时长 5 不在模型档位内",
+              line: null,
+              item_index: 0,
+            },
           ],
         }),
       }),
@@ -680,7 +705,11 @@ describe("ScriptReviewGate", () => {
     expect(useAppStore.getState().assistantPanelOpen).toBe(true);
     unmount();
 
-    get.mockResolvedValue(dramaState({ quarantine: draftView({ doc_type: "drama_script_plan", content: { title: "第一集", scenes: [] } }) }));
+    get.mockResolvedValue(
+      dramaState({
+        quarantine: draftView({ doc_type: "drama_script_plan", content: { title: "第一集", scenes: [] } }),
+      }),
+    );
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="drama" />);
     fireEvent.click(await screen.findByRole("button", { name: /交给 Agent 修复/ }));
     const promote = useAssistantStore.getState().input;
@@ -747,10 +776,7 @@ describe("ScriptReviewGate", () => {
     const edited = dramaState();
     (edited.content as { scenes: { utterances: { text: string }[] }[] }).scenes[0].utterances[1].text =
       "agent 改写后的台词";
-    const get = vi
-      .spyOn(API, "getScriptReview")
-      .mockResolvedValueOnce(dramaState())
-      .mockResolvedValueOnce(edited);
+    const get = vi.spyOn(API, "getScriptReview").mockResolvedValueOnce(dramaState()).mockResolvedValueOnce(edited);
 
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="drama" />);
     await waitFor(() => expect(screen.getByDisplayValue("你终于回来了。")).toBeInTheDocument());
@@ -811,7 +837,12 @@ describe("ScriptReviewGate", () => {
   it("offers AI script planning from the empty state, replacing an existing formal script only after confirmation", async () => {
     useScriptPlanStore.getState().close();
     vi.spyOn(API, "getScriptReview").mockResolvedValue(
-      dramaState({ status: "no_script_plan", content: null, fingerprint: null, script_overwrite: makeScriptOverwrite() }),
+      dramaState({
+        status: "no_script_plan",
+        content: null,
+        fingerprint: null,
+        script_overwrite: makeScriptOverwrite(),
+      }),
     );
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="drama" />);
     fireEvent.click(await screen.findByRole("button", { name: "AI 规划脚本" }));
@@ -960,9 +991,7 @@ describe("ScriptReviewGate new assets", () => {
     "explains that a new asset named like a registered one merges into it (%s)",
     async (decision) => {
       withRegistered({ 将军: { description: "银甲" } });
-      vi.spyOn(API, "getScriptReview").mockResolvedValue(
-        stateWithNewAssets([newAsset({ name: " 将军", decision })]),
-      );
+      vi.spyOn(API, "getScriptReview").mockResolvedValue(stateWithNewAssets([newAsset({ name: " 将军", decision })]));
 
       render(<ScriptReviewGate projectName="p" episode={1} contentMode="narration" />);
 
@@ -1083,7 +1112,13 @@ describe("ScriptReviewGate item fields", () => {
       ...VIDEO_CAPS,
       supported_durations: [],
       duration_endpoint_fixed: true,
-      duration_constraints: { resolution: null, uses_reference_images: false, allowed: [], excluded: {}, planning: [4, 8] },
+      duration_constraints: {
+        resolution: null,
+        uses_reference_images: false,
+        allowed: [],
+        excluded: {},
+        planning: [4, 8],
+      },
     });
 
     render(<ScriptReviewGate projectName="p" episode={1} contentMode="narration" />);
@@ -1144,7 +1179,9 @@ describe("ScriptReviewGate item fields", () => {
   it("suggests registered and new characters as speakers but still accepts other names", async () => {
     withProject({ characters: { 阿离: { description: "少女" } } } as Partial<ProjectData>);
     const state = dramaState();
-    const content = state.content as NonNullable<ReturnType<typeof dramaState>["content"]> & { new_assets?: PlanNewAsset[] };
+    const content = state.content as NonNullable<ReturnType<typeof dramaState>["content"]> & {
+      new_assets?: PlanNewAsset[];
+    };
     vi.spyOn(API, "getScriptReview").mockResolvedValue({
       ...state,
       content: {

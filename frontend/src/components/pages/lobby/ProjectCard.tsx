@@ -48,9 +48,7 @@ export function ProjectCard({ project, readOnly, actions }: ProjectCardProps) {
   const repairReason = repairReasonOf(status);
 
   return (
-    <article
-      className="group relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors duration-fast hover:border-primary/40 has-focus-visible:border-ring"
-    >
+    <article className="group relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors duration-fast hover:border-primary/40 has-focus-visible:border-ring">
       <Link
         href={`/app/projects/${project.name}`}
         className="flex flex-1 flex-col text-foreground no-underline outline-none"
@@ -69,9 +67,7 @@ export function ProjectCard({ project, readOnly, actions }: ProjectCardProps) {
               <span className="rounded-full bg-warn/15 px-1.5 text-warn">{t("dashboard:lobby_card_needs_repair")}</span>
             )}
           </div>
-          {repairReason && (
-            <p className="line-clamp-2 text-xs break-words text-muted-foreground">{repairReason}</p>
-          )}
+          {repairReason && <p className="line-clamp-2 text-xs break-words text-muted-foreground">{repairReason}</p>}
           <EpisodeStrip summary={status?.episodes_summary} />
           <p className="mt-auto text-xs text-muted-foreground">
             {[episodesText(status, progress, t), updatedText(project.last_activity_at, i18n.language, t)]

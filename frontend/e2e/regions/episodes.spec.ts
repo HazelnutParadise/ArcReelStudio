@@ -19,9 +19,8 @@ interface RecordedProject {
   project: { episodes: Record<string, unknown>[] };
 }
 
-const recordedProject = (
-  JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse
-).body as RecordedProject;
+const recordedProject = (JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse)
+  .body as RecordedProject;
 const [firstEpisode] = recordedProject.project.episodes;
 
 // ---------------------------------------------------------------------------
@@ -87,7 +86,17 @@ const files = FILES.map((spec) => {
   let cutUnits = 0;
   const push = (kind: Segment["kind"], text: string, episode: number | null, gap: boolean) => {
     const units = length(text);
-    segments.push({ kind, start: offset, end: offset + units, text, episode, gap, units, continued: false, continues: false });
+    segments.push({
+      kind,
+      start: offset,
+      end: offset + units,
+      text,
+      episode,
+      gap,
+      units,
+      continued: false,
+      continues: false,
+    });
     offset += units;
     return units;
   };
@@ -240,7 +249,8 @@ const WITH_REPLAN: ApiOverrides = {
 const canvas = (page: Page) => page.getByRole("main");
 const outline = (page: Page) => page.getByRole("navigation", { name: "集目录" });
 const manuscript = (page: Page) => page.getByRole("region", { name: "整本源文" });
-const outlineRow = (page: Page, episode: number) => outline(page).locator(`[data-outline-episode="${episode}"] > :first-child`);
+const outlineRow = (page: Page, episode: number) =>
+  outline(page).locator(`[data-outline-episode="${episode}"] > :first-child`);
 const agentToggle = (page: Page) => page.getByRole("button", { name: "Agent", exact: true });
 
 function viewport(page: Page) {
@@ -333,7 +343,10 @@ defineRegionScenarios("分集视图", [
     api: POPULATED,
     ready: populatedReady,
     act: async (page) => {
-      await outline(page).locator('[data-outline-episode="3"]').getByRole("button", { name: /的操作$/ }).click();
+      await outline(page)
+        .locator('[data-outline-episode="3"]')
+        .getByRole("button", { name: /的操作$/ })
+        .click();
       const menu = page.getByRole("menu");
       await expect(menu.getByRole("menuitem", { name: "从这一集开始重新规划" })).toBeVisible();
     },

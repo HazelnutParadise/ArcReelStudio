@@ -4,14 +4,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { API } from "@/api";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -20,11 +13,7 @@ import { type AssetKind, SHEET_FIELD } from "@/types/reference-video";
 
 type SegmentAssetKind = Exclude<AssetKind, "product">;
 import { colorForName } from "@/utils/color";
-import {
-  characterReferenceForms,
-  formatReferenceName,
-  referenceInitial,
-} from "@/utils/reference-mentions";
+import { characterReferenceForms, formatReferenceName, referenceInitial } from "@/utils/reference-mentions";
 
 type Asset = Character | Scene | Prop;
 
@@ -186,10 +175,7 @@ export function SegmentRefsEditModal({
   const filtered = useMemo(() => {
     const filterRows = (rows: RefRow[]) =>
       q
-        ? rows.filter(
-            (r) =>
-              r.name.toLowerCase().includes(q) || formatReferenceName(r.name).toLowerCase().includes(q),
-          )
+        ? rows.filter((r) => r.name.toLowerCase().includes(q) || formatReferenceName(r.name).toLowerCase().includes(q))
         : rows;
     return {
       character: filterRows(charRows),
@@ -213,9 +199,7 @@ export function SegmentRefsEditModal({
     prop: setTempProps,
   };
   const toggle = (kind: SegmentAssetKind, name: string) => {
-    setterByKind[kind]((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
-    );
+    setterByKind[kind]((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   };
 
   const charChanged = !arraysEqualUnordered(tempChars, initialCharacters);
@@ -298,7 +282,10 @@ export function SegmentRefsEditModal({
         </DialogBody>
 
         <DialogFooter>
-          <span role="status" className={cn("flex-1 text-xs", hasChanges ? "text-foreground" : "text-muted-foreground")}>
+          <span
+            role="status"
+            className={cn("flex-1 text-xs", hasChanges ? "text-foreground" : "text-muted-foreground")}
+          >
             {hasChanges ? t("segment_refs_changes_pending") : t("segment_refs_no_changes")}
           </span>
           <Button variant="outline" onClick={onClose} disabled={saving}>
@@ -402,9 +389,7 @@ interface RowProps {
 /** 一条候选：整行是一个切换按钮，按下即选中。失效引用与「不登记」的新增项在第二行说明。 */
 function Row({ row, selected, onToggle, projectName }: RowProps) {
   const { t } = useTranslation("dashboard");
-  const sheetFp = useProjectsStore((s) =>
-    row.thumbPath ? s.getAssetFingerprint(row.thumbPath) : null,
-  );
+  const sheetFp = useProjectsStore((s) => (row.thumbPath ? s.getAssetFingerprint(row.thumbPath) : null));
   const thumbShape = row.kind === "character" ? "rounded-full" : "rounded-md";
   const showImage = !!row.thumbPath && !row.isStale;
   const displayName = formatReferenceName(row.name);
@@ -451,7 +436,13 @@ function Row({ row, selected, onToggle, projectName }: RowProps) {
         </span>
       )}
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className={cn("flex min-w-0 items-center gap-1.5 text-sm", selected ? "font-semibold" : "font-medium", row.isStale ? "text-warn" : "text-foreground")}>
+        <span
+          className={cn(
+            "flex min-w-0 items-center gap-1.5 text-sm",
+            selected ? "font-semibold" : "font-medium",
+            row.isStale ? "text-warn" : "text-foreground",
+          )}
+        >
           <TruncatedText text={displayName} focusable={false} className="min-w-0" />
           {row.isNew && (
             <span className="shrink-0 rounded-sm border border-border px-1 text-xs font-normal text-subtle-foreground">
@@ -460,7 +451,9 @@ function Row({ row, selected, onToggle, projectName }: RowProps) {
           )}
         </span>
         {secondLine ? (
-          <span className={cn("truncate text-xs", row.isStale ? "text-warn" : "text-subtle-foreground")}>{secondLine}</span>
+          <span className={cn("truncate text-xs", row.isStale ? "text-warn" : "text-subtle-foreground")}>
+            {secondLine}
+          </span>
         ) : null}
       </span>
       <span

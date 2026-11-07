@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach, vi } from "vitest";
+import { afterEach, vi } from "vite-plus/test";
 import { cleanup } from "@testing-library/react";
 
 // i18n 走 lazy backend，测试运行前必须 await 资源加载完，否则首次 t() 返回 key 字符串而不是
@@ -28,12 +28,10 @@ if (typeof Element !== "undefined" && typeof Element.prototype.scrollIntoView !=
 }
 
 if (
-  typeof window !== "undefined"
-  && (
-    typeof window.localStorage?.getItem !== "function"
-    || typeof window.localStorage?.setItem !== "function"
-    || typeof window.localStorage?.clear !== "function"
-  )
+  typeof window !== "undefined" &&
+  (typeof window.localStorage?.getItem !== "function" ||
+    typeof window.localStorage?.setItem !== "function" ||
+    typeof window.localStorage?.clear !== "function")
 ) {
   const storage = new Map<string, string>();
   const localStorageMock: Storage = {

@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -151,7 +151,10 @@ describe("RenderDialog", () => {
     await userEvent.click(await screen.findByRole("button", { name: "渲染成片" }));
 
     expect(await screen.findByText("正在渲染成片…")).toBeInTheDocument();
-    expect(submit).toHaveBeenCalledWith("demo", "tl-1", { narration: "without_narration", subtitles: "burned_subtitles" });
+    expect(submit).toHaveBeenCalledWith("demo", "tl-1", {
+      narration: "without_narration",
+      subtitles: "burned_subtitles",
+    });
     expect(API.getTask).toHaveBeenCalledWith("task-1");
     expect(screen.getByRole("button", { name: "渲染成片" })).toBeDisabled();
   });
@@ -179,7 +182,7 @@ describe("RenderDialog", () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
-    it("任务完成后刷新产物现状并可以下载", async () => {
+  it("任务完成后刷新产物现状并可以下载", async () => {
     const status = vi
       .spyOn(API, "getFinalCutStatus")
       .mockResolvedValueOnce(finalCut())
@@ -239,9 +242,11 @@ describe("RenderDialog", () => {
   it("剪映草稿按本机目录与剪映版本下载，并记住目录", async () => {
     vi.spyOn(API, "getFinalCutStatus").mockResolvedValue(finalCut());
     vi.spyOn(API, "getJianyingDraftStatus").mockResolvedValue(draft({ status: "current", version: 4 }));
-    const token = vi
-      .spyOn(API, "requestExportToken")
-      .mockResolvedValue({ download_token: "tok", expires_in: 300, diagnostics: { blocking: [], auto_fixed: [], warnings: [] } });
+    const token = vi.spyOn(API, "requestExportToken").mockResolvedValue({
+      download_token: "tok",
+      expires_in: 300,
+      diagnostics: { blocking: [], auto_fixed: [], warnings: [] },
+    });
 
     renderDialog();
     await userEvent.click(screen.getByRole("radio", { name: /剪映草稿/ }));
@@ -358,7 +363,9 @@ describe("RenderDialog", () => {
 
     renderDialog({ issues: [NARRATION_MISSING], narrationAvailable: true });
 
-    expect(within(screen.getByRole("radiogroup", { name: "旁白版本" })).getByRole("radio", { name: "带旁白" })).toBeChecked();
+    expect(
+      within(screen.getByRole("radiogroup", { name: "旁白版本" })).getByRole("radio", { name: "带旁白" }),
+    ).toBeChecked();
     expect(await screen.findByRole("button", { name: "渲染成片" })).toBeDisabled();
     expect(screen.getByText("当前剪辑时间线有 1 个问题阻断出片，涉及 分镜 3，处理后才能出片")).toBeInTheDocument();
     expect(API.getFinalCutStatus).toHaveBeenCalledWith(

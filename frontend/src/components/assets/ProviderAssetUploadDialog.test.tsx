@@ -1,6 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { PROVIDER_ASSET_LOCAL_FAILURES } from "@/components/pages/settings/asset-library/asset-library-labels";
@@ -41,7 +41,9 @@ function panel(links: ProviderAssetLink[], overrides: Partial<ProviderAssetLinkP
   return {
     content_version: { id: "cv-a", version: 2, digest: "d" },
     object_storage_configured: true,
-    accounts: [{ id: 7, scope_key: "scope-7", name: "主账号", site: "volcengine", region: "cn-beijing", project_name: "film" }],
+    accounts: [
+      { id: 7, scope_key: "scope-7", name: "主账号", site: "volcengine", region: "cn-beijing", project_name: "film" },
+    ],
     links,
     ...overrides,
   };
@@ -49,7 +51,13 @@ function panel(links: ProviderAssetLink[], overrides: Partial<ProviderAssetLinkP
 
 function renderDialog() {
   return render(
-    <ProviderAssetUploadDialog open onOpenChange={() => {}} projectName="demo" resourceType="characters" resourceId="Alice" />,
+    <ProviderAssetUploadDialog
+      open
+      onOpenChange={() => {}}
+      projectName="demo"
+      resourceType="characters"
+      resourceId="Alice"
+    />,
   );
 }
 
@@ -68,7 +76,9 @@ describe("ProviderAssetUploadDialog", () => {
       .spyOn(API, "getProviderAssetLinks")
       .mockResolvedValueOnce(panel([]))
       .mockResolvedValueOnce(panel([link({ state: "processing", provider_asset_id: "asset-1" })]))
-      .mockResolvedValue(panel([link({ state: "active", usable: true, provider_asset_id: "asset-1", polling: false })]));
+      .mockResolvedValue(
+        panel([link({ state: "active", usable: true, provider_asset_id: "asset-1", polling: false })]),
+      );
     const upload = vi.spyOn(API, "uploadToProviderAssetLibrary").mockResolvedValue(link());
 
     renderDialog();
@@ -95,7 +105,9 @@ describe("ProviderAssetUploadDialog", () => {
   it("解除关联先在行内确认，只解除关系", async () => {
     const user = userEvent.setup();
     vi.spyOn(API, "getProviderAssetLinks")
-      .mockResolvedValueOnce(panel([link({ state: "active", usable: true, provider_asset_id: "asset-1", polling: false })]))
+      .mockResolvedValueOnce(
+        panel([link({ state: "active", usable: true, provider_asset_id: "asset-1", polling: false })]),
+      )
       .mockResolvedValue(panel([]));
     const unlink = vi.spyOn(API, "unlinkProviderAsset").mockResolvedValue(undefined);
 
@@ -115,7 +127,9 @@ describe("ProviderAssetUploadDialog", () => {
     vi.spyOn(API, "getProviderAssetLinks")
       .mockResolvedValueOnce(panel([link({ state: "processing" })]))
       .mockRejectedValueOnce(new Error("temporary network failure"))
-      .mockResolvedValue(panel([link({ state: "active", usable: true, provider_asset_id: "asset-1", polling: false })]));
+      .mockResolvedValue(
+        panel([link({ state: "active", usable: true, provider_asset_id: "asset-1", polling: false })]),
+      );
     renderDialog();
     expect(await screen.findByText("供应商处理中")).toBeInTheDocument();
     await act(async () => vi.advanceTimersByTimeAsync(LINK_POLL_INTERVAL_MS));
@@ -138,8 +152,22 @@ describe("ProviderAssetUploadDialog", () => {
         {
           object_storage_configured: false,
           accounts: [
-            { id: 7, scope_key: "scope-7", name: "主账号", site: "volcengine", region: "cn-beijing", project_name: "film" },
-            { id: 8, scope_key: "scope-8", name: "海外账号", site: "byteplus", region: "ap-southeast-1", project_name: "default" },
+            {
+              id: 7,
+              scope_key: "scope-7",
+              name: "主账号",
+              site: "volcengine",
+              region: "cn-beijing",
+              project_name: "film",
+            },
+            {
+              id: 8,
+              scope_key: "scope-8",
+              name: "海外账号",
+              site: "byteplus",
+              region: "ap-southeast-1",
+              project_name: "default",
+            },
           ],
         },
       ),
@@ -158,7 +186,16 @@ describe("ProviderAssetUploadDialog", () => {
   it("账号换成另一个云账号的 Access Key 后，旧关联单列为历史范围，账号行可以重新上传", async () => {
     vi.spyOn(API, "getProviderAssetLinks").mockResolvedValue(
       panel([link({ state: "active", usable: true, polling: false, provider_asset_id: "TEST-asset-a" })], {
-        accounts: [{ id: 7, scope_key: "scope-7-new-key", name: "主账号", site: "volcengine", region: "cn-beijing", project_name: "film" }],
+        accounts: [
+          {
+            id: 7,
+            scope_key: "scope-7-new-key",
+            name: "主账号",
+            site: "volcengine",
+            region: "cn-beijing",
+            project_name: "film",
+          },
+        ],
       }),
     );
 

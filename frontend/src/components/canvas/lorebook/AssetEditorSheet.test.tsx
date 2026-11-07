@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API, type AssetRenameResult } from "@/api";
@@ -140,8 +140,18 @@ describe("资产详情 Sheet", () => {
   it("keeps sibling writes disabled while the rename is in flight", async () => {
     const user = userEvent.setup();
     const pending = createDeferred<AssetRenameResult>();
-    const result: AssetRenameResult = { success: true, dry_run: false, old_name: "林夕", new_name: "林汐", episodes: 0, references: 0, files: 1 };
-    vi.spyOn(API, "renameProjectAsset").mockResolvedValueOnce({ ...result, dry_run: true }).mockReturnValueOnce(pending.promise);
+    const result: AssetRenameResult = {
+      success: true,
+      dry_run: false,
+      old_name: "林夕",
+      new_name: "林汐",
+      episodes: 0,
+      references: 0,
+      files: 1,
+    };
+    vi.spyOn(API, "renameProjectAsset")
+      .mockResolvedValueOnce({ ...result, dry_run: true })
+      .mockReturnValueOnce(pending.promise);
     renderGallery();
     const sheet = await openAsset(user, "林夕");
     await user.click(within(sheet).getByRole("button", { name: "重命名" }));
@@ -163,7 +173,18 @@ describe("资产详情 Sheet", () => {
     const user = userEvent.setup();
     renderGallery();
     const sheet = await openAsset(user, "林夕");
-    act(() => useTasksStore.setState({ tasks: [makeTask({ project_name: "demo", task_type: "character_derivative", resource_id: "林夕/战斗装", status: "running" })] }));
+    act(() =>
+      useTasksStore.setState({
+        tasks: [
+          makeTask({
+            project_name: "demo",
+            task_type: "character_derivative",
+            resource_id: "林夕/战斗装",
+            status: "running",
+          }),
+        ],
+      }),
+    );
     expect(within(sheet).getByRole("button", { name: "重命名" })).toBeDisabled();
     expect(within(sheet).getByRole("button", { name: "重新生成资产图" })).toBeDisabled();
     expect(within(sheet).getByRole("button", { name: "上传原图", hidden: true })).toBeDisabled();
@@ -173,8 +194,18 @@ describe("资产详情 Sheet", () => {
     const user = userEvent.setup();
     const pending = createDeferred<{ success: boolean; path: string; url: string }>();
     useConfigStatusStore.setState({ availableMediaTypes: ["audio"] });
-    vi.spyOn(API, "getAudioBackendVoices").mockResolvedValue({ configured: true, provider_id: "dashscope", model: "tts", voices: [{ id: "Cherry", label: "芊悦" }] });
-    vi.spyOn(API, "generateCharacterVoiceSample").mockResolvedValue({ success: true, task_id: "sample-1", deduped: false, message: "" });
+    vi.spyOn(API, "getAudioBackendVoices").mockResolvedValue({
+      configured: true,
+      provider_id: "dashscope",
+      model: "tts",
+      voices: [{ id: "Cherry", label: "芊悦" }],
+    });
+    vi.spyOn(API, "generateCharacterVoiceSample").mockResolvedValue({
+      success: true,
+      task_id: "sample-1",
+      deduped: false,
+      message: "",
+    });
     const confirmSample = vi.spyOn(API, "confirmCharacterVoiceSample").mockReturnValue(pending.promise);
     renderGallery();
     const sheet = await openAsset(user, "林夕");
@@ -184,7 +215,14 @@ describe("资产详情 Sheet", () => {
     await waitFor(() => expect(within(dialog).getByRole("combobox", { name: "音色" })).toHaveTextContent("芊悦"));
     await user.click(within(dialog).getByRole("button", { name: "生成" }));
     await waitFor(() => expect(API.generateCharacterVoiceSample).toHaveBeenCalled());
-    const succeeded = makeTask({ task_id: "sample-1", project_name: "demo", task_type: "voice_sample", resource_id: "林夕", status: "succeeded", result: { file_path: "audio/sample.wav" } });
+    const succeeded = makeTask({
+      task_id: "sample-1",
+      project_name: "demo",
+      task_type: "voice_sample",
+      resource_id: "林夕",
+      status: "succeeded",
+      result: { file_path: "audio/sample.wav" },
+    });
     act(() => useTasksStore.getState().setTasks([succeeded]));
     const confirm = await within(dialog).findByRole("button", { name: "确认并保存" });
     const running = makeTask({ project_name: "demo", task_type: "character", resource_id: "林夕", status: "running" });
@@ -248,7 +286,9 @@ describe("资产详情 Sheet", () => {
 
     await user.click(within(sheet).getByRole("button", { name: "保存并生成" }));
     let confirm = await screen.findByRole("alertdialog", { name: "重新生成这张资产图？" });
-    expect(await within(confirm).findByText("重新生成后，用到它的 2 张分镜图、1 段视频会转为过期。")).toBeInTheDocument();
+    expect(
+      await within(confirm).findByText("重新生成后，用到它的 2 张分镜图、1 段视频会转为过期。"),
+    ).toBeInTheDocument();
     await user.click(within(confirm).getByRole("button", { name: "取消" }));
     expect(API.updateCharacter).not.toHaveBeenCalled();
     expect(onGenerate).not.toHaveBeenCalled();
@@ -268,7 +308,12 @@ describe("资产详情 Sheet", () => {
     const user = userEvent.setup();
     const saving = createDeferred<{ success: boolean }>();
     vi.mocked(API.updateCharacter).mockReturnValue(saving.promise);
-    vi.spyOn(API, "getAssetRegenerationImpact").mockResolvedValue({ stale: false, storyboards: 0, videos: 0, derivatives: 0 });
+    vi.spyOn(API, "getAssetRegenerationImpact").mockResolvedValue({
+      stale: false,
+      storyboards: 0,
+      videos: 0,
+      derivatives: 0,
+    });
     const { onGenerate } = renderGallery();
     const sheet = await openAsset(user, "林夕");
     await user.type(within(sheet).getByRole("textbox", { name: "描述" }), "，佩剑");
@@ -276,9 +321,11 @@ describe("资产详情 Sheet", () => {
     const confirm = await screen.findByRole("alertdialog", { name: "重新生成这张资产图？" });
     await user.click(await within(confirm).findByRole("button", { name: "重新生成" }));
     await waitFor(() => expect(API.updateCharacter).toHaveBeenCalled());
-    act(() => useTasksStore.getState().setTasks([
-      makeTask({ project_name: "demo", task_type: "character", resource_id: "林夕", status: "running" }),
-    ]));
+    act(() =>
+      useTasksStore
+        .getState()
+        .setTasks([makeTask({ project_name: "demo", task_type: "character", resource_id: "林夕", status: "running" })]),
+    );
     await act(() => saving.resolve({ success: true }));
     expect(await within(sheet).findByText("已保存")).toBeInTheDocument();
     expect(onGenerate).not.toHaveBeenCalled();
@@ -447,7 +494,9 @@ describe("资产详情 Sheet", () => {
     await user.click(within(form).getByRole("button", { name: "创建" }));
 
     await waitFor(() =>
-      expect(useAppStore.getState().toast?.text).toBe("项目回收站里有之前删除的「阿青」，恢复可以找回它的资产图与版本历史。"),
+      expect(useAppStore.getState().toast?.text).toBe(
+        "项目回收站里有之前删除的「阿青」，恢复可以找回它的资产图与版本历史。",
+      ),
     );
     useAppStore.getState().toast?.action?.onClick();
 
@@ -690,7 +739,12 @@ describe("资产详情 Sheet", () => {
 
     await user.upload(within(sheet).getByLabelText("上传原图"), new File(["png"], "ref.png", { type: "image/png" }));
 
-    await waitFor(() => expect(useAppStore.getState().toast).toMatchObject({ text: "操作已完成，但页面数据刷新失败，请手动刷新查看最新状态", tone: "warning" }));
+    await waitFor(() =>
+      expect(useAppStore.getState().toast).toMatchObject({
+        text: "操作已完成，但页面数据刷新失败，请手动刷新查看最新状态",
+        tone: "warning",
+      }),
+    );
   });
 
   it("reports the upload error without refreshing when no image went through", async () => {
@@ -731,7 +785,15 @@ describe("资产详情 Sheet", () => {
     // 打开确认框之后，角色被 Agent 入队占用
     act(() =>
       useTasksStore.setState({
-        tasks: [makeTask({ project_name: "demo", task_type: "character", media_type: "image", resource_id: "林夕", status: "running" })],
+        tasks: [
+          makeTask({
+            project_name: "demo",
+            task_type: "character",
+            media_type: "image",
+            resource_id: "林夕",
+            status: "running",
+          }),
+        ],
       }),
     );
     expect(within(confirm).getByRole("button", { name: "删除" })).toBeDisabled();
@@ -761,6 +823,8 @@ describe("资产详情 Sheet", () => {
 
     expect(within(sheet).getByRole("textbox", { name: "描述" })).toHaveAttribute("readonly");
     expect(within(sheet).getByRole("textbox", { name: "声音风格" })).toHaveAttribute("readonly");
-    expect(within(sheet).queryByRole("button", { name: /生成|上传|重命名|保存|预览|添加|衍生/ })).not.toBeInTheDocument();
+    expect(
+      within(sheet).queryByRole("button", { name: /生成|上传|重命名|保存|预览|添加|衍生/ }),
+    ).not.toBeInTheDocument();
   });
 });

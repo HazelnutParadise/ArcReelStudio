@@ -96,7 +96,13 @@ export function InvalidDraftBar({
   const saveLabel = saving ? t("draft_saving") : t("draft_save_action");
   const jumps = [
     ...(episodeLevelCount > 0
-      ? [{ key: "episode", label: t("draft_episode_level_count", { count: episodeLevelCount }), onClick: onJumpEpisodeLevel }]
+      ? [
+          {
+            key: "episode",
+            label: t("draft_episode_level_count", { count: episodeLevelCount }),
+            onClick: onJumpEpisodeLevel,
+          },
+        ]
       : []),
     ...itemJumps.map((jump) => ({
       key: `item-${String(jump.index)}`,
@@ -120,7 +126,9 @@ export function InvalidDraftBar({
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-sm font-medium text-foreground">
               {title ?? t("draft_status_invalid")}
-              {!clean && <span className="ml-1.5 text-destructive">{t("draft_violation_count", { count: violationCount })}</span>}
+              {!clean && (
+                <span className="ml-1.5 text-destructive">{t("draft_violation_count", { count: violationCount })}</span>
+              )}
             </span>
             <span className="text-xs text-muted-foreground">
               {clean ? (
@@ -312,7 +320,13 @@ export function DraftEpisodeViolations({
 }
 
 /** 逐条违约（红）。 */
-export function DraftViolationList({ violations, position }: { violations: ScriptReviewViolation[]; position?: number | null }) {
+export function DraftViolationList({
+  violations,
+  position,
+}: {
+  violations: ScriptReviewViolation[];
+  position?: number | null;
+}) {
   const { t } = useTranslation();
   if (violations.length === 0) return null;
   return (
@@ -329,7 +343,13 @@ export function DraftViolationList({ violations, position }: { violations: Scrip
 }
 
 /** 逐条降级提示（琥珀）：只提示、不阻断。 */
-export function DraftSoftViolationList({ softViolations, position }: { softViolations: DraftSoftViolation[]; position?: number | null }) {
+export function DraftSoftViolationList({
+  softViolations,
+  position,
+}: {
+  softViolations: DraftSoftViolation[];
+  position?: number | null;
+}) {
   const { t } = useTranslation();
   if (softViolations.length === 0) return null;
   return (
@@ -357,7 +377,14 @@ interface DiscardDraftDialogProps {
 }
 
 /** 丢弃草稿的确认：写明丢弃后回到哪份内容。丢弃中忽略关闭请求。 */
-export function DiscardDraftDialog({ open, agentOwned, fallbackText, loading, onConfirm, onCancel }: DiscardDraftDialogProps) {
+export function DiscardDraftDialog({
+  open,
+  agentOwned,
+  fallbackText,
+  loading,
+  onConfirm,
+  onCancel,
+}: DiscardDraftDialogProps) {
   const { t } = useTranslation("dashboard");
   const confirmLabel = agentOwned ? t("draft_agent_discard") : t("draft_discard_action");
   return (
@@ -371,7 +398,11 @@ export function DiscardDraftDialog({ open, agentOwned, fallbackText, loading, on
         <AlertDialogHeader>
           <AlertDialogTitle>{agentOwned ? t("draft_agent_discard_title") : t("draft_discard_title")}</AlertDialogTitle>
         </AlertDialogHeader>
-        <AlertDialogBody tabIndex={0} role="region" aria-label={agentOwned ? t("draft_agent_discard_title") : t("draft_discard_title")}>
+        <AlertDialogBody
+          tabIndex={0}
+          role="region"
+          aria-label={agentOwned ? t("draft_agent_discard_title") : t("draft_discard_title")}
+        >
           <AlertDialogDescription>{fallbackText}</AlertDialogDescription>
         </AlertDialogBody>
         <AlertDialogFooter>

@@ -18,16 +18,17 @@ interface RecordedProject {
   project: Record<string, unknown> & { episodes: Record<string, unknown>[]; status: Record<string, unknown> };
 }
 
-const recordedProject = (
-  JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse
-).body as RecordedProject;
+const recordedProject = (JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse)
+  .body as RecordedProject;
 const recordedCost = (
   JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo-cost-estimate.json"), "utf8")) as RecordedResponse
 ).body as Record<string, unknown>;
 const [firstEpisode] = recordedProject.project.episodes;
 
 function withProject(project: Record<string, unknown>): ApiOverrides {
-  return { [PROJECT]: { status: 200, body: { ...recordedProject, project: { ...recordedProject.project, ...project } } } };
+  return {
+    [PROJECT]: { status: 200, body: { ...recordedProject, project: { ...recordedProject.project, ...project } } },
+  };
 }
 
 const repeat = (text: string, times: number) => Array.from({ length: times }, () => text).join("");

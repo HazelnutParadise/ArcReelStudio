@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { FailureObservation } from "@/types";
 import { copyText } from "@/utils/clipboard";
 import { AgentFailureCard } from "./AgentFailureCard";
@@ -75,7 +75,11 @@ describe("AgentFailureCard", () => {
     );
     unmount();
 
-    render(<AgentFailureCard failure={{ ...turnFailure, phase: "startup", summary: { ...summary, key: "invalid_request" } }} />);
+    render(
+      <AgentFailureCard
+        failure={{ ...turnFailure, phase: "startup", summary: { ...summary, key: "invalid_request" } }}
+      />,
+    );
     expect(screen.getByRole("region", { name: "Agent 没能启动" })).toHaveTextContent(
       "启动过程中出错，原始信息见「详情」。",
     );

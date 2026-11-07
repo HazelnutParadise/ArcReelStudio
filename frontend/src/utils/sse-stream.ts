@@ -174,7 +174,12 @@ export function openSseStream(options: SseStreamOptions): SseStreamHandle {
       // 每次留一条未消费的流会把连接占住直到 GC。
       void response.body?.cancel().catch(() => {});
       const retryable = !NON_RETRYABLE_STATUSES.has(response.status);
-      fail(new SseStreamError(i18n.t("errors:event_stream_rejected", { status: response.status }), { status: response.status, retryable }));
+      fail(
+        new SseStreamError(i18n.t("errors:event_stream_rejected", { status: response.status }), {
+          status: response.status,
+          retryable,
+        }),
+      );
       return;
     }
 

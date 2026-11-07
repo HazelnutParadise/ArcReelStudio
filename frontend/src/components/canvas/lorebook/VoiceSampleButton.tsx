@@ -48,12 +48,7 @@ interface VoiceSampleButtonProps {
  * 角色详情「声音」区块的 TTS 试听样本入口：选音色 → 编辑默认文案 → 生成 → 试听 → 确认落资产。
  * 取消/关闭弹窗不落资产——只有点击「确认并保存」才把已生成样本提升为角色 reference_audio。
  */
-export function VoiceSampleButton({
-  projectName,
-  characterName,
-  busy = false,
-  onSaved,
-}: VoiceSampleButtonProps) {
+export function VoiceSampleButton({ projectName, characterName, busy = false, onSaved }: VoiceSampleButtonProps) {
   const { t } = useTranslation("dashboard");
   const track = useTrackWrite();
   const occupied = useAssetBusyNames("character", projectName).has(characterName);
@@ -100,8 +95,7 @@ export function VoiceSampleButton({
   const task = liveTask ?? (lastSeenTask?.task_id === taskId ? lastSeenTask : undefined);
 
   const generating =
-    localSubmitting ||
-    (taskId != null && (task == null || task.status === "queued" || task.status === "running"));
+    localSubmitting || (taskId != null && (task == null || task.status === "queued" || task.status === "running"));
   const failed = task?.status === "failed";
   const succeeded = task?.status === "succeeded";
   const previewFilePath =
@@ -223,7 +217,10 @@ export function VoiceSampleButton({
     ? [{ value: null, label: t("voice_sample_voice_loading") }]
     : voices.length === 0
       ? [{ value: null, label: t("voice_sample_no_voices") }]
-      : [{ value: null, label: t("voice_sample_voice_placeholder") }, ...voices.map((v) => ({ value: v.id, label: v.label }))];
+      : [
+          { value: null, label: t("voice_sample_voice_placeholder") },
+          ...voices.map((v) => ({ value: v.id, label: v.label })),
+        ];
   const locked = generating || confirming;
 
   return (

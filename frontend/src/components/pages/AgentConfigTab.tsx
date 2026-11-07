@@ -69,7 +69,12 @@ export function AgentConfigTab() {
             t={t}
             i18nKey="arcreel_agent_external_hint"
             components={{
-              guide: <Link href={settingsSectionPath("external-agent")} className="text-primary underline-offset-4 hover:underline" />,
+              guide: (
+                <Link
+                  href={settingsSectionPath("external-agent")}
+                  className="text-primary underline-offset-4 hover:underline"
+                />
+              ),
             }}
           />
         </p>

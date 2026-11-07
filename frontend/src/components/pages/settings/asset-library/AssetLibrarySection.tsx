@@ -11,7 +11,10 @@ import { AssetLibraryAccountsBlock } from "./AssetLibraryAccountsBlock";
 import { AssetLibraryBindingsBlock } from "./AssetLibraryBindingsBlock";
 import { ObjectStorageBlock } from "./ObjectStorageBlock";
 
-type LoadState = { status: "loading" } | { status: "error"; error: unknown } | { status: "ready"; data: AssetLibraryAccountList };
+type LoadState =
+  | { status: "loading" }
+  | { status: "error"; error: unknown }
+  | { status: "ready"; data: AssetLibraryAccountList };
 
 /**
  * 全局设置「素材库与存储」：用户自有对象存储、供应商素材库账号，以及推理凭证与账号的绑定。

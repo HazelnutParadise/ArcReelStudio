@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
@@ -51,7 +51,12 @@ const SHEET_DETAIL: PromptTemplateDetail = {
   template: ASSET_SHEET,
   source: '{{ variant("asset/sheet/title", asset_type) }}\n\n{{ description }}',
   partials: [
-    { name: "asset/sheet/title/character", source: "角色设定图，三视图", protected: false, referenced_by: ["asset/sheet"] },
+    {
+      name: "asset/sheet/title/character",
+      source: "角色设定图，三视图",
+      protected: false,
+      referenced_by: ["asset/sheet"],
+    },
     { name: "asset/sheet/title/scene", source: "", protected: false, referenced_by: ["asset/sheet"] },
   ],
 };

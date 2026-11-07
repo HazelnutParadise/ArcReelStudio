@@ -91,7 +91,9 @@ export function ClipInspector({ projectName, clip, trimIgnored, thumbnail, posit
               {clip.hold > 0 && (
                 <>
                   <dt className="text-muted-foreground">{t("edit_view_field_hold")}</dt>
-                  <dd className="text-subtle-foreground">{t("edit_view_hold_value", { duration: formatSeconds(clip.hold) })}</dd>
+                  <dd className="text-subtle-foreground">
+                    {t("edit_view_hold_value", { duration: formatSeconds(clip.hold) })}
+                  </dd>
                 </>
               )}
               <dt className="text-muted-foreground">{t("edit_view_field_transition")}</dt>
@@ -159,7 +161,12 @@ export function IssueList({ issues, clipIds, positions, onSelectClip }: IssueLis
               ...params,
               defaultValue: t("edit_view_issue_other", params),
             });
-            const dot = <span aria-hidden className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", ISSUE_DOT[issue.code] ?? "bg-muted-foreground")} />;
+            const dot = (
+              <span
+                aria-hidden
+                className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", ISSUE_DOT[issue.code] ?? "bg-muted-foreground")}
+              />
+            );
             return (
               // react-doctor-disable-next-line react-doctor/no-array-index-as-key -- issue 由服务端按修订整表算出、没有 ID，同一 code 可重复出现；行内无状态，位置即身份
               <li key={`${issue.code}-${index}`}>

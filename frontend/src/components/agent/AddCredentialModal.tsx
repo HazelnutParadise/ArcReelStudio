@@ -24,17 +24,9 @@ import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCredentialForm } from "@/hooks/useCredentialForm";
 import { useAppStore } from "@/stores/app-store";
-import type {
-  CreateAgentCredentialRequest,
-  PresetProvider,
-  TestConnectionResponse,
-} from "@/types/agent-credential";
+import type { CreateAgentCredentialRequest, PresetProvider, TestConnectionResponse } from "@/types/agent-credential";
 import type { CustomProviderInfo } from "@/types/custom-provider";
-import {
-  anthropicMessagesUrl,
-  hasUnsupportedUrlComponents,
-  normalizeAnthropicBaseUrl,
-} from "@/utils/anthropic-url";
+import { anthropicMessagesUrl, hasUnsupportedUrlComponents, normalizeAnthropicBaseUrl } from "@/utils/anthropic-url";
 import { errMsg } from "@/utils/async";
 
 import { ModelIdField } from "./ModelIdField";
@@ -74,9 +66,7 @@ export function AddCredentialModal({
   const [discoverError, setDiscoverError] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(
     mode === "edit" &&
-      Boolean(
-        initial?.haiku_model || initial?.sonnet_model || initial?.opus_model || initial?.subagent_model,
-      ),
+      Boolean(initial?.haiku_model || initial?.sonnet_model || initial?.opus_model || initial?.subagent_model),
   );
   // 从自定义供应商导入：列出已配置 api_key 的 providers，选中后预填 baseUrl，
   // 提交时只带供应商 id，密钥由服务端从该供应商复制，前端不经手明文。
@@ -217,9 +207,7 @@ export function AddCredentialModal({
     setImportSource(provider);
     invalidateDiscoveredModels();
     invalidateDraftTest();
-    useAppStore
-      .getState()
-      .pushToast(t("import_provider_success", { name: provider.display_name }), "success");
+    useAppStore.getState().pushToast(t("import_provider_success", { name: provider.display_name }), "success");
   };
 
   const handleManualKeyEntry = () => {
@@ -267,8 +255,7 @@ export function AddCredentialModal({
     try {
       const req = form.buildRequest();
       // 预填地址未改动时不带 base_url，由服务端取供应商提交时的地址；用户改过才作为覆盖提交
-      const baseUrlOverride =
-        importSource && form.baseUrl.trim() !== importSource.base_url ? req.base_url : undefined;
+      const baseUrlOverride = importSource && form.baseUrl.trim() !== importSource.base_url ? req.base_url : undefined;
       await onSubmit(
         importSource
           ? {

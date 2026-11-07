@@ -40,8 +40,7 @@ export function groupDraftViolations(
   const episodeLevel: ScriptReviewViolation[] = [];
   const byItem = new Map<number, ScriptReviewViolation[]>();
   for (const violation of violations) {
-    const index =
-      violation.item_index ?? (violation.item_id != null ? itemIds.indexOf(violation.item_id) : -1);
+    const index = violation.item_index ?? (violation.item_id != null ? itemIds.indexOf(violation.item_id) : -1);
     if (index < 0 || index >= itemIds.length) episodeLevel.push(violation);
     else pushTo(byItem, index, violation);
   }

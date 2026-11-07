@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ResolutionPicker } from "./ResolutionPicker";
@@ -14,7 +14,7 @@ describe("ResolutionPicker", () => {
         value={null}
         onChange={onChange}
         placeholder="默认（不传）"
-      />
+      />,
     );
     const select = screen.getByRole("combobox");
     expect(select).toHaveTextContent("默认（不传）");
@@ -27,14 +27,7 @@ describe("ResolutionPicker", () => {
   });
 
   it("empty options not rendered", () => {
-    const { container } = render(
-      <ResolutionPicker
-        mode="select"
-        options={[]}
-        value={null}
-        onChange={() => {}}
-      />
-    );
+    const { container } = render(<ResolutionPicker mode="select" options={[]} value={null} onChange={() => {}} />);
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -47,7 +40,7 @@ describe("ResolutionPicker", () => {
         value={null}
         onChange={onChange}
         placeholder="默认（不传）"
-      />
+      />,
     );
     const input = screen.getByRole("combobox");
     fireEvent.change(input, { target: { value: "1024x1024" } });

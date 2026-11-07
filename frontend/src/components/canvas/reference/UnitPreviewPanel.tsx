@@ -118,10 +118,7 @@ export function UnitPreviewPanel({
   const ready = effectiveStatus === "ready" && Boolean(videoUrl);
   const failed = effectiveStatus === "failed";
   // busy 一并计入，使重试/重新生成在乐观窗口内也占位。
-  const inFlight =
-    busy ||
-    effectiveStatus === "running" ||
-    (effectiveStatus === "ready" && !videoUrl);
+  const inFlight = busy || effectiveStatus === "running" || (effectiveStatus === "ready" && !videoUrl);
   const generateDisabled = inFlight || busy || restoring || generationBlocked || saving;
 
   const ctaLabel = saveFirst
@@ -252,20 +249,14 @@ export function UnitPreviewPanel({
                 <Sparkles aria-hidden="true" data-icon="inline-start" />
               )}
               {ctaLabel}
-              {hasCost(estimatedCost) && (
-                <span className="font-mono tabular-nums">≈ {formatCost(estimatedCost)}</span>
-              )}
+              {hasCost(estimatedCost) && <span className="font-mono tabular-nums">≈ {formatCost(estimatedCost)}</span>}
             </>
           )}
         </Button>
       )}
 
       {/* 单元头部已用 alert 播报这一状态；这里只在生成按钮旁说明它为何不可用 */}
-      {generationBlocked && (
-        <p className="text-xs text-warn">
-          {t("reference_needs_replan")}
-        </p>
-      )}
+      {generationBlocked && <p className="text-xs text-warn">{t("reference_needs_replan")}</p>}
 
       {(hasNarrationText || narrationAudio) && projectName && (
         <NarrationAudioCard

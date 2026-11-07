@@ -62,7 +62,11 @@ function AudioPlayer({ src }: { src: string }) {
       >
         {playing ? <Pause aria-hidden /> : <Play aria-hidden />}
       </Button>
-      <Progress value={Math.round(progress * 100)} aria-label={t("assets:reference_audio")} className="min-w-0 flex-1" />
+      <Progress
+        value={Math.round(progress * 100)}
+        aria-label={t("assets:reference_audio")}
+        className="min-w-0 flex-1"
+      />
       <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{formatAudioDuration(duration)}</span>
       {/* eslint-disable-next-line jsx-a11y/media-has-caption -- 角色参考音频样本，无对白内容，无字幕源 */}
       <audio
@@ -207,7 +211,11 @@ export function CharacterVoiceField({
             disabled={disabled}
             className="focus-ring flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border px-3 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {uploading ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <Upload aria-hidden className="size-4" />}
+            {uploading ? (
+              <Loader2 aria-hidden className="size-4 animate-spin" />
+            ) : (
+              <Upload aria-hidden className="size-4" />
+            )}
             {t("dashboard:upload_reference_audio")}
           </button>
           <p className="text-xs text-muted-foreground">{t("dashboard:reference_audio_hint")}</p>
@@ -247,7 +255,11 @@ export function CharacterVoiceField({
         <Collapsible>
           <CollapsibleTrigger render={<Button variant="ghost" size="sm" className="-ml-2" />}>
             {t("dashboard:character_voice_binding_optional_summary")}
-            <ChevronRight aria-hidden data-icon="inline-end" className="transition-transform group-aria-expanded/button:rotate-90" />
+            <ChevronRight
+              aria-hidden
+              data-icon="inline-end"
+              className="transition-transform group-aria-expanded/button:rotate-90"
+            />
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="flex flex-col gap-1.5 pt-1.5">

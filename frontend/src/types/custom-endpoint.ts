@@ -6,11 +6,7 @@ import type { EndpointInstallation } from "./market";
 // 这里只描述 UI 需要读写的形状。
 
 /** 素材在 ArcReel 侧的来源槽位。 */
-export type EndpointInputSource =
-  | "start_image"
-  | "end_image"
-  | "reference_images"
-  | "reference_audio_files";
+export type EndpointInputSource = "start_image" | "end_image" | "reference_images" | "reference_audio_files";
 
 /** 素材发送到供应商时的编码形态。 */
 export type EndpointInputEncoding = "data_uri" | "base64";
@@ -25,14 +21,10 @@ export interface EndpointInputSpec {
 }
 
 /** 取值路径项：JSONPath 串，或带 json_decode 的 JSON-in-string 后缀形态。 */
-export type EndpointPathItem =
-  | string
-  | { path: string; json_decode?: boolean; then?: string[] };
+export type EndpointPathItem = string | { path: string; json_decode?: boolean; then?: string[] };
 
 /** 取值声明：简写为路径优先级数组，全写可另带 accept。 */
-export type EndpointExtractSpec =
-  | EndpointPathItem[]
-  | { paths: EndpointPathItem[]; accept?: "string" | "scalar" };
+export type EndpointExtractSpec = EndpointPathItem[] | { paths: EndpointPathItem[]; accept?: "string" | "scalar" };
 
 export interface EndpointMetaHints {
   base_url?: string;
@@ -233,12 +225,7 @@ export interface ComfyuiWorkflowNode {
  * 一个语义键的推断状态。`needs_confirmation` 是重导入专属：既有条目有丢失的，该键重跑了
  * 推断，保存前必须由用户确认。
  */
-export type ComfyuiBindingState =
-  | "auto_selected"
-  | "ambiguous"
-  | "not_found"
-  | "unsupported"
-  | "needs_confirmation";
+export type ComfyuiBindingState = "auto_selected" | "ambiguous" | "not_found" | "unsupported" | "needs_confirmation";
 
 /** 候选是怎么来的：本轮推断、原样沿用已保存的条目、或按类型加标题重匹配到新节点 id。 */
 export type ComfyuiMatchOrigin = "inferred" | "kept" | "rematched";

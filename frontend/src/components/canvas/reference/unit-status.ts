@@ -32,10 +32,7 @@ export const STATUS_CONF: Record<UnitStatus, UnitStatusConf> = {
 };
 
 /** 从画布传下来的 statusMap 取该单元状态；未提供时按有无成片退化为 ready/pending。 */
-export function resolveUnitStatus(
-  unit: ReferenceVideoUnit,
-  statusMap?: Record<string, UnitStatus>,
-): UnitStatus {
+export function resolveUnitStatus(unit: ReferenceVideoUnit, statusMap?: Record<string, UnitStatus>): UnitStatus {
   return statusMap?.[unit.unit_id] ?? (unit.generated_assets?.video_clip ? "ready" : "pending");
 }
 

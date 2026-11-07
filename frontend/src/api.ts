@@ -158,11 +158,7 @@ import type {
   EpisodeItemRef,
 } from "@/types";
 import type { GridCapability, GridGeneration } from "@/types/grid";
-import type {
-  PresentationReadModel,
-  PresentationRequestOptions,
-  PresentationResourceType,
-} from "@/types/presentation";
+import type { PresentationReadModel, PresentationRequestOptions, PresentationResourceType } from "@/types/presentation";
 import type { Asset, AssetType, AssetCreatePayload, AssetListPage, AssetUpdatePayload } from "@/types/asset";
 import type { AgentMemoryOverview, AgentMemoryScope } from "@/types/agent-memory";
 import type {
@@ -212,11 +208,7 @@ import type {
   AssetSheetStatusRow,
   AssetSheetType,
 } from "@/types/asset-sheet";
-import type {
-  StoryboardBatchKind,
-  StoryboardBatchPreview,
-  StoryboardBatchSubmitted,
-} from "@/types/storyboard-batch";
+import type { StoryboardBatchKind, StoryboardBatchPreview, StoryboardBatchSubmitted } from "@/types/storyboard-batch";
 import type {
   AgentCredential,
   AgentCredentialTier,
@@ -238,11 +230,7 @@ import {
   throwIfNotOk,
   withAuth,
 } from "./api/transport";
-import {
-  ConflictError,
-  type ImportErrorPayload,
-  type ScriptEditResult,
-} from "./api/errors";
+import { ConflictError, type ImportErrorPayload, type ScriptEditResult } from "./api/errors";
 import type {
   AgentProfileStatus,
   AssetCreateResult,
@@ -364,10 +352,10 @@ function normalizeDiagnosticsBucket(value: unknown): { code: string; message: st
   return value
     .filter(
       (item): item is { code: string; message: string; location?: string } =>
-        Boolean(item)
-        && typeof item === "object"
-        && typeof (item as { code?: unknown }).code === "string"
-        && typeof (item as { message?: unknown }).message === "string"
+        Boolean(item) &&
+        typeof item === "object" &&
+        typeof (item as { code?: unknown }).code === "string" &&
+        typeof (item as { message?: unknown }).message === "string",
     )
     .map((item) => ({
       code: item.code,
@@ -377,7 +365,7 @@ function normalizeDiagnosticsBucket(value: unknown): { code: string; message: st
 }
 
 function normalizeImportFailureDiagnostics(value: unknown): ImportFailureDiagnostics {
-  const payload = (value && typeof value === "object") ? value as Record<string, unknown> : {};
+  const payload = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
   return {
     blocking: normalizeDiagnosticsBucket(payload.blocking),
     auto_fixable: normalizeDiagnosticsBucket(payload.auto_fixable),
@@ -386,7 +374,7 @@ function normalizeImportFailureDiagnostics(value: unknown): ImportFailureDiagnos
 }
 
 function normalizeExportDiagnostics(value: unknown): ExportDiagnostics {
-  const payload = (value && typeof value === "object") ? value as Record<string, unknown> : {};
+  const payload = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
   return {
     blocking: normalizeDiagnosticsBucket(payload.blocking),
     auto_fixed: normalizeDiagnosticsBucket(payload.auto_fixed),
@@ -394,11 +382,7 @@ function normalizeExportDiagnostics(value: unknown): ExportDiagnostics {
   };
 }
 
-function endpointTestRequest(
-  body: unknown,
-  assets: EndpointTestAssets = {},
-  signal?: AbortSignal,
-): RequestInit {
+function endpointTestRequest(body: unknown, assets: EndpointTestAssets = {}, signal?: AbortSignal): RequestInit {
   const files = Object.entries(assets).flatMap(([source, items]) =>
     (items ?? []).map((file) => [source, file] as const),
   );
@@ -421,9 +405,7 @@ function videoCapabilitiesQuery(options: VideoCapabilitiesQuery): string {
 
 /** 记忆接口的路径前缀：用户记忆不带 user_id（服务端从当前登录用户派生）。 */
 function agentMemoryBase(scope: AgentMemoryScope): string {
-  return scope.level === "user"
-    ? "/agent/memory"
-    : `/projects/${encodeURIComponent(scope.projectName)}/agent-memory`;
+  return scope.level === "user" ? "/agent/memory" : `/projects/${encodeURIComponent(scope.projectName)}/agent-memory`;
 }
 
 // ==================== API class ====================
@@ -432,10 +414,7 @@ class API {
   /**
    * 通用请求方法
    */
-  static async request<T = unknown>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  static async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
     return requestJson<T>(endpoint, options);
   }
 
@@ -449,9 +428,7 @@ class API {
    * 任务类型桶下拉的候选数据源（docs/adr/0054）：默认层全量 + 每个桶按能力过滤后的模型列表。
    * 与 getSystemConfig 的 options 同口径（同样剔除 hidden 模型），过滤只加在桶层。
    */
-  static async getModelCandidates(
-    options: { signal?: AbortSignal } = {}
-  ): Promise<ModelCandidatesResponse> {
+  static async getModelCandidates(options: { signal?: AbortSignal } = {}): Promise<ModelCandidatesResponse> {
     return this.request("/system/config/model-candidates", { signal: options.signal });
   }
 
@@ -461,9 +438,7 @@ class API {
   }
 
   /** 新建 TTS 项目的预填值（全局默认的 TTS 模型、音色与语速）。 */
-  static async getNarrationDefaults(
-    options: { signal?: AbortSignal } = {},
-  ): Promise<NarrationDefaultsResponse> {
+  static async getNarrationDefaults(options: { signal?: AbortSignal } = {}): Promise<NarrationDefaultsResponse> {
     return this.request("/system/narration-defaults", { signal: options.signal });
   }
 
@@ -483,35 +458,28 @@ class API {
 
   // ==================== 提示词模版 ====================
 
-  static async listPromptTemplates(
-    options: { signal?: AbortSignal } = {}
-  ): Promise<PromptTemplateListResponse> {
+  static async listPromptTemplates(options: { signal?: AbortSignal } = {}): Promise<PromptTemplateListResponse> {
     return this.request("/prompt-templates", { signal: options.signal });
   }
 
   /** 模版 id 自带 `/` 分层，逐段编码后保留分隔符。 */
   static async getPromptTemplate(
     templateId: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<PromptTemplateDetail> {
     const path = templateId.split("/").map(encodeURIComponent).join("/");
     return this.request(`/prompt-templates/${path}`, { signal: options.signal });
   }
 
   /** 片段名同样按 `/` 分层，编码方式与模版 id 一致。 */
-  static async getPromptPartial(
-    name: string,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<PromptTemplatePartial> {
+  static async getPromptPartial(name: string, options: { signal?: AbortSignal } = {}): Promise<PromptTemplatePartial> {
     const path = name.split("/").map(encodeURIComponent).join("/");
     return this.request(`/prompt-templates/partials/${path}`, { signal: options.signal });
   }
 
   // ==================== 首次使用引导 ====================
 
-  static async getOnboardingStatus(
-    options: { signal?: AbortSignal } = {}
-  ): Promise<OnboardingStatus> {
+  static async getOnboardingStatus(options: { signal?: AbortSignal } = {}): Promise<OnboardingStatus> {
     return this.request("/onboarding/status", { signal: options.signal });
   }
 
@@ -532,9 +500,7 @@ class API {
     return { blob, filename };
   }
 
-  static async updateSystemConfig(
-    patch: SystemConfigPatch,
-  ): Promise<GetSystemConfigResponse> {
+  static async updateSystemConfig(patch: SystemConfigPatch): Promise<GetSystemConfigResponse> {
     return this.request("/system/config", {
       method: "PATCH",
       body: JSON.stringify(patch),
@@ -558,7 +524,7 @@ class API {
 
   static async getProject(
     name: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<{
     project: ProjectData;
     scripts: Record<string, EpisodeScript>;
@@ -569,7 +535,7 @@ class API {
 
   static async updateProject(
     name: string,
-    updates: Partial<ProjectData> & { clear_style_image?: boolean }
+    updates: Partial<ProjectData> & { clear_style_image?: boolean },
   ): Promise<{ success: boolean; project: ProjectData }> {
     if ("content_mode" in updates) {
       throw new Error(i18n.t("errors:content_mode_immutable"));
@@ -582,7 +548,7 @@ class API {
 
   static async getAgentProfileStatus(
     name: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<AgentProfileStatus> {
     return this.request(`/projects/${encodeURIComponent(name)}/agent-profile`, { signal: options.signal });
   }
@@ -601,7 +567,7 @@ class API {
   static async getFileView(
     projectName: string,
     path: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<FileViewListing> {
     const query = new URLSearchParams({ path }).toString();
     return this.request(`/projects/${encodeURIComponent(projectName)}/file-view?${query}`, { signal: options.signal });
@@ -611,7 +577,7 @@ class API {
   static async getFileViewContent(
     projectName: string,
     path: string,
-    options: { download?: boolean; signal?: AbortSignal } = {}
+    options: { download?: boolean; signal?: AbortSignal } = {},
   ): Promise<Blob> {
     const query = new URLSearchParams({ path, ...(options.download ? { download: "true" } : {}) }).toString();
     const url = `/projects/${encodeURIComponent(projectName)}/file-view/content?${query}`;
@@ -633,10 +599,9 @@ class API {
   }
 
   static async restoreTrashRecord(projectName: string, recordId: string): Promise<RestoreResult> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/trash/${encodeURIComponent(recordId)}/restore`,
-      { method: "POST" },
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/trash/${encodeURIComponent(recordId)}/restore`, {
+      method: "POST",
+    });
   }
 
   /** 下载删除记录里的一个被删文件（降级恢复后只能下载的结构文件）。 */
@@ -664,7 +629,7 @@ class API {
    */
   static async getAgentMemory(
     scope: AgentMemoryScope,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<AgentMemoryOverview> {
     return this.request(agentMemoryBase(scope), { signal: options.signal });
   }
@@ -673,7 +638,7 @@ class API {
   static async getAgentMemoryFile(
     scope: AgentMemoryScope,
     filename: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<string> {
     const url = `${agentMemoryBase(scope)}/files/${encodeURIComponent(filename)}`;
     const response = await fetch(`${API_BASE}${url}`, withAuth(url, { signal: options.signal }));
@@ -685,7 +650,7 @@ class API {
   static async saveAgentMemoryFile(
     scope: AgentMemoryScope,
     filename: string,
-    content: string
+    content: string,
   ): Promise<{ name: string }> {
     const url = `${agentMemoryBase(scope)}/files/${encodeURIComponent(filename)}`;
     const response = await fetch(
@@ -694,16 +659,13 @@ class API {
         method: "PUT",
         headers: { "Content-Type": "text/plain" },
         body: content,
-      })
+      }),
     );
     await throwIfNotOk(response, i18n.t("errors:memory_file_save_failed"));
     return response.json() as Promise<{ name: string }>;
   }
 
-  static async deleteAgentMemoryFile(
-    scope: AgentMemoryScope,
-    filename: string
-  ): Promise<{ name: string }> {
+  static async deleteAgentMemoryFile(scope: AgentMemoryScope, filename: string): Promise<{ name: string }> {
     return this.request(`${agentMemoryBase(scope)}/files/${encodeURIComponent(filename)}`, {
       method: "DELETE",
     });
@@ -738,20 +700,16 @@ class API {
    * 按项目已保存档位与生成模式求值，`resolution: null` 表示表单里显式选了「自动」（发空串，
    * 服务端不回退到已保存档位）。收窄规则只在服务端，响应的 `duration_constraints` 已算好。
    */
-  static async getVideoCapabilities(
-    name: string,
-    options: VideoCapabilitiesQuery = {}
-  ): Promise<VideoCapabilities> {
-    return this.request(
-      `/projects/${encodeURIComponent(name)}/video-capabilities${videoCapabilitiesQuery(options)}`,
-      { signal: options.signal },
-    );
+  static async getVideoCapabilities(name: string, options: VideoCapabilitiesQuery = {}): Promise<VideoCapabilities> {
+    return this.request(`/projects/${encodeURIComponent(name)}/video-capabilities${videoCapabilitiesQuery(options)}`, {
+      signal: options.signal,
+    });
   }
 
   /** 无项目上下文（创建向导）的视频模型能力，按候选模型解析；参数语义同 getVideoCapabilities。 */
   static async getModelVideoCapabilities(
     videoBackend: string,
-    options: Omit<VideoCapabilitiesQuery, "videoBackend"> = {}
+    options: Omit<VideoCapabilitiesQuery, "videoBackend"> = {},
   ): Promise<VideoCapabilities> {
     return this.request(`/providers/video-capabilities${videoCapabilitiesQuery({ ...options, videoBackend })}`, {
       signal: options.signal,
@@ -760,18 +718,15 @@ class API {
 
   static async requestExportToken(
     projectName: string,
-    scope: "full" | "current" = "full"
+    scope: "full" | "current" = "full",
   ): Promise<{ download_token: string; expires_in: number; diagnostics: ExportDiagnostics }> {
     const payload = await this.request<{
       download_token: string;
       expires_in: number;
       diagnostics?: unknown;
-    }>(
-      `/projects/${encodeURIComponent(projectName)}/export/token?scope=${encodeURIComponent(scope)}`,
-      {
-        method: "POST",
-      }
-    );
+    }>(`/projects/${encodeURIComponent(projectName)}/export/token?scope=${encodeURIComponent(scope)}`, {
+      method: "POST",
+    });
     return {
       download_token: payload.download_token,
       expires_in: payload.expires_in,
@@ -779,11 +734,7 @@ class API {
     };
   }
 
-  static getExportDownloadUrl(
-    projectName: string,
-    downloadToken: string,
-    scope: "full" | "current" = "full"
-  ): string {
+  static getExportDownloadUrl(projectName: string, downloadToken: string, scope: "full" | "current" = "full"): string {
     return `${API_BASE}/projects/${encodeURIComponent(projectName)}/export?download_token=${encodeURIComponent(downloadToken)}&scope=${encodeURIComponent(scope)}`;
   }
 
@@ -805,7 +756,7 @@ class API {
   static async getFinalCutStatus(
     projectName: string,
     timelineId: string,
-    options: { narration?: TimelineNarration; subtitles?: SubtitleMode; signal?: AbortSignal } = {}
+    options: { narration?: TimelineNarration; subtitles?: SubtitleMode; signal?: AbortSignal } = {},
   ): Promise<FinalCutStatus> {
     const query = new URLSearchParams();
     if (options.narration) query.set("narration", options.narration);
@@ -823,7 +774,7 @@ class API {
   static async renderFinalCut(
     projectName: string,
     timelineId: string,
-    options: Partial<RenderOptions> = {}
+    options: Partial<RenderOptions> = {},
   ): Promise<RenderSubmission> {
     return this.request(`${this.editTimelinePath(projectName, timelineId)}/final-cut`, {
       method: "POST",
@@ -835,7 +786,7 @@ class API {
   static async getJianyingDraftStatus(
     projectName: string,
     timelineId: string,
-    options: { narration?: TimelineNarration; signal?: AbortSignal } = {}
+    options: { narration?: TimelineNarration; signal?: AbortSignal } = {},
   ): Promise<JianyingDraftStatus> {
     const suffix = options.narration ? `?${new URLSearchParams({ narration: options.narration }).toString()}` : "";
     return this.request(`${this.editTimelinePath(projectName, timelineId)}/jianying-draft${suffix}`, {
@@ -850,7 +801,7 @@ class API {
   static async exportJianyingDraft(
     projectName: string,
     timelineId: string,
-    options: { narration?: TimelineNarration } = {}
+    options: { narration?: TimelineNarration } = {},
   ): Promise<RenderSubmission> {
     return this.request(`${this.editTimelinePath(projectName, timelineId)}/jianying-draft`, {
       method: "POST",
@@ -865,7 +816,7 @@ class API {
     draftPath: string,
     downloadToken: string,
     jianyingVersion: JianyingVersion,
-    narration?: TimelineNarration
+    narration?: TimelineNarration,
   ): string {
     const query = new URLSearchParams({
       draft_path: draftPath,
@@ -906,10 +857,9 @@ class API {
     episode: number,
     options: { signal?: AbortSignal } = {},
   ): Promise<{ timelines: EditTimelineSummary[] }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/edit-timelines?episode=${episode}`,
-      { signal: options.signal },
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/edit-timelines?episode=${episode}`, {
+      signal: options.signal,
+    });
   }
 
   /** 剪辑时间线最新修订的读取结果。 */
@@ -918,30 +868,20 @@ class API {
     timelineId: string,
     options: { signal?: AbortSignal } = {},
   ): Promise<EditTimelineReadout> {
-    return this.request(
-      this.editTimelinePath(projectName, timelineId),
-      { signal: options.signal },
-    );
+    return this.request(this.editTimelinePath(projectName, timelineId), { signal: options.signal });
   }
 
   /** 重命名剪辑时间线：只改显示名，不产生修订。 */
-  static async renameEditTimeline(
-    projectName: string,
-    timelineId: string,
-    name: string,
-  ): Promise<EditTimelineSummary> {
-    return this.request(
-      this.editTimelinePath(projectName, timelineId),
-      { method: "PATCH", body: JSON.stringify({ name }) },
-    );
+  static async renameEditTimeline(projectName: string, timelineId: string, name: string): Promise<EditTimelineSummary> {
+    return this.request(this.editTimelinePath(projectName, timelineId), {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    });
   }
 
   /** 删除剪辑时间线及其成片与剪映草稿；仍有渲染任务在排队或执行时服务端拒绝。 */
   static async deleteEditTimeline(projectName: string, timelineId: string): Promise<void> {
-    await this.request(
-      this.editTimelinePath(projectName, timelineId),
-      { method: "DELETE" },
-    );
+    await this.request(this.editTimelinePath(projectName, timelineId), { method: "DELETE" });
   }
 
   /** 剪辑时间线最新修订的预览素材层：各视频单元的旁白配音与字幕条目。 */
@@ -950,10 +890,7 @@ class API {
     timelineId: string,
     options: { signal?: AbortSignal } = {},
   ): Promise<EditTimelinePreviewMedia> {
-    return this.request(
-      `${this.editTimelinePath(projectName, timelineId)}/preview-media`,
-      { signal: options.signal },
-    );
+    return this.request(`${this.editTimelinePath(projectName, timelineId)}/preview-media`, { signal: options.signal });
   }
 
   /** 上传一首 BGM：服务端实测响度并登记为项目级素材，各集的剪辑时间线都能用。 */
@@ -981,15 +918,15 @@ class API {
       withAuth("/projects/import", {
         method: "POST",
         body: formData,
-      })
+      }),
     );
 
     if (!response.ok) {
       handleUnauthorized(response);
 
-      const payload = await response
+      const payload = (await response
         .json()
-        .catch(() => ({ detail: response.statusText, errors: [], warnings: [] })) as ImportErrorPayload;
+        .catch(() => ({ detail: response.statusText, errors: [], warnings: [] }))) as ImportErrorPayload;
       const detail = typeof payload.detail === "string" ? payload.detail : i18n.t("errors:import_failed");
       const error = new Error(detail) as Error & {
         status?: number;
@@ -1020,7 +957,9 @@ class API {
       throw error;
     }
 
-    const payload = await response.json() as ImportProjectResponse & { diagnostics?: { auto_fixed?: unknown[]; warnings?: unknown[] } };
+    const payload = (await response.json()) as ImportProjectResponse & {
+      diagnostics?: { auto_fixed?: unknown[]; warnings?: unknown[] };
+    };
     return {
       ...payload,
       diagnostics: {
@@ -1036,33 +975,27 @@ class API {
     projectName: string,
     name: string,
     description: string,
-    voiceStyle: string = ""
+    voiceStyle: string = "",
   ): Promise<AssetCreateResult> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/characters`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          name,
-          description,
-          voice_style: voiceStyle,
-        }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/characters`, {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        description,
+        voice_style: voiceStyle,
+      }),
+    });
   }
 
   static async updateCharacter(
     projectName: string,
     charName: string,
-    updates: Record<string, unknown>
+    updates: Record<string, unknown>,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/characters/${encodeURIComponent(charName)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/characters/${encodeURIComponent(charName)}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
   }
 
   // ==================== 角色衍生管理 ====================
@@ -1076,58 +1009,46 @@ class API {
     projectName: string,
     charName: string,
     name: string,
-    description: string
+    description: string,
   ): Promise<SuccessResponse> {
-    return this.request(
-      derivativesPath(projectName, charName),
-      {
-        method: "POST",
-        body: JSON.stringify({ name, description }),
-      }
-    );
+    return this.request(derivativesPath(projectName, charName), {
+      method: "POST",
+      body: JSON.stringify({ name, description }),
+    });
   }
 
   static async updateCharacterDerivative(
     projectName: string,
     charName: string,
     derivativeName: string,
-    description: string
+    description: string,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `${derivativesPath(projectName, charName)}/${encodeURIComponent(derivativeName)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ description }),
-      }
-    );
+    return this.request(`${derivativesPath(projectName, charName)}/${encodeURIComponent(derivativeName)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ description }),
+    });
   }
 
   static async renameCharacterDerivative(
     projectName: string,
     charName: string,
     derivativeName: string,
-    newName: string
+    newName: string,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `${derivativesPath(projectName, charName)}/${encodeURIComponent(derivativeName)}/rename`,
-      {
-        method: "POST",
-        body: JSON.stringify({ new_name: newName }),
-      }
-    );
+    return this.request(`${derivativesPath(projectName, charName)}/${encodeURIComponent(derivativeName)}/rename`, {
+      method: "POST",
+      body: JSON.stringify({ new_name: newName }),
+    });
   }
 
   static async deleteCharacterDerivative(
     projectName: string,
     charName: string,
-    derivativeName: string
+    derivativeName: string,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `${derivativesPath(projectName, charName)}/${encodeURIComponent(derivativeName)}`,
-      {
-        method: "DELETE",
-      }
-    );
+    return this.request(`${derivativesPath(projectName, charName)}/${encodeURIComponent(derivativeName)}`, {
+      method: "DELETE",
+    });
   }
 
   /**
@@ -1137,7 +1058,7 @@ class API {
   static async getCharacterDerivativeSheets(
     projectName: string,
     charName: string,
-    options?: { signal?: AbortSignal }
+    options?: { signal?: AbortSignal },
   ): Promise<{ success: boolean; derivatives: Record<string, CharacterDerivativeStatus> }> {
     return this.request(derivativesPath(projectName, charName), { signal: options?.signal });
   }
@@ -1149,11 +1070,11 @@ class API {
   static async generateCharacterDerivative(
     projectName: string,
     charName: string,
-    derivativeName: string
+    derivativeName: string,
   ): Promise<{ success: boolean; task_id: string; deduped: boolean; message: string }> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/generate/character/${encodeURIComponent(charName)}/derivatives/${encodeURIComponent(derivativeName)}`,
-      { method: "POST" }
+      { method: "POST" },
     );
   }
 
@@ -1165,11 +1086,11 @@ class API {
     projectName: string,
     charName: string,
     derivativeName: string,
-    file: File
+    file: File,
   ): Promise<ShotUploadResult> {
     return API.postFileUpload<ShotUploadResult>(
       `${derivativesPath(projectName, charName)}/${encodeURIComponent(derivativeName)}/upload`,
-      file
+      file,
     );
   }
 
@@ -1178,7 +1099,7 @@ class API {
   /** 项目里每张资产图（含衍生）按产物清单判定的状态与是否缺描述。 */
   static async getAssetSheetStatus(
     projectName: string,
-    options?: { signal?: AbortSignal }
+    options?: { signal?: AbortSignal },
   ): Promise<{ assets: AssetSheetStatusRow[] }> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/asset-sheets/status`, {
       signal: options?.signal,
@@ -1189,7 +1110,7 @@ class API {
   static async previewAssetSheetBatch(
     projectName: string,
     scope: AssetSheetBatchScope,
-    options?: { signal?: AbortSignal }
+    options?: { signal?: AbortSignal },
   ): Promise<AssetSheetBatchPreview> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/asset-sheets/batch/preview`, {
       method: "POST",
@@ -1204,7 +1125,7 @@ class API {
    */
   static async submitAssetSheetBatch(
     projectName: string,
-    scope: AssetSheetBatchScope
+    scope: AssetSheetBatchScope,
   ): Promise<AssetSheetBatchSubmitted> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/asset-sheets/batch`, {
       method: "POST",
@@ -1217,12 +1138,12 @@ class API {
     projectName: string,
     episode: number,
     kind: StoryboardBatchKind,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<StoryboardBatchPreview> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/${kind}/batch/preview`,
-      { method: "POST", signal: options.signal }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/${kind}/batch/preview`, {
+      method: "POST",
+      signal: options.signal,
+    });
   }
 
   /**
@@ -1232,7 +1153,7 @@ class API {
   static async submitStoryboardBatch(
     projectName: string,
     episode: number,
-    kind: StoryboardBatchKind
+    kind: StoryboardBatchKind,
   ): Promise<StoryboardBatchSubmitted> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/${kind}/batch`, {
       method: "POST",
@@ -1256,62 +1177,42 @@ class API {
 
   // ==================== 项目场景管理 ====================
 
-  static async addProjectScene(
-    projectName: string,
-    name: string,
-    description: string
-  ): Promise<AssetCreateResult> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/scenes`,
-      {
-        method: "POST",
-        body: JSON.stringify({ name, description }),
-      }
-    );
+  static async addProjectScene(projectName: string, name: string, description: string): Promise<AssetCreateResult> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/scenes`, {
+      method: "POST",
+      body: JSON.stringify({ name, description }),
+    });
   }
 
   static async updateProjectScene(
     projectName: string,
     sceneName: string,
-    updates: Record<string, unknown>
+    updates: Record<string, unknown>,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/scenes/${encodeURIComponent(sceneName)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/scenes/${encodeURIComponent(sceneName)}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
   }
 
   // ==================== 项目道具管理 ====================
 
-  static async addProjectProp(
-    projectName: string,
-    name: string,
-    description: string
-  ): Promise<AssetCreateResult> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/props`,
-      {
-        method: "POST",
-        body: JSON.stringify({ name, description }),
-      }
-    );
+  static async addProjectProp(projectName: string, name: string, description: string): Promise<AssetCreateResult> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/props`, {
+      method: "POST",
+      body: JSON.stringify({ name, description }),
+    });
   }
 
   static async updateProjectProp(
     projectName: string,
     propName: string,
-    updates: Record<string, unknown>
+    updates: Record<string, unknown>,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/props/${encodeURIComponent(propName)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/props/${encodeURIComponent(propName)}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
   }
 
   // ==================== 项目商品管理 ====================
@@ -1321,34 +1222,28 @@ class API {
     name: string,
     description: string,
     brand?: string,
-    sellingPoints?: string[]
+    sellingPoints?: string[],
   ): Promise<AssetCreateResult> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/products`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          name,
-          description,
-          ...(brand ? { brand } : {}),
-          ...(sellingPoints?.length ? { selling_points: sellingPoints } : {}),
-        }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/products`, {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        description,
+        ...(brand ? { brand } : {}),
+        ...(sellingPoints?.length ? { selling_points: sellingPoints } : {}),
+      }),
+    });
   }
 
   static async updateProjectProduct(
     projectName: string,
     productName: string,
-    updates: Record<string, unknown>
+    updates: Record<string, unknown>,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/products/${encodeURIComponent(productName)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/products/${encodeURIComponent(productName)}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
   }
 
   // ==================== 项目资产重命名 ====================
@@ -1362,7 +1257,7 @@ class API {
     assetType: ProjectAssetType,
     name: string,
     newName: string,
-    options: { dryRun?: boolean; signal?: AbortSignal } = {}
+    options: { dryRun?: boolean; signal?: AbortSignal } = {},
   ): Promise<AssetRenameResult> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/${ASSET_TYPE_PATH[assetType]}/${encodeURIComponent(name)}/rename`,
@@ -1370,7 +1265,7 @@ class API {
         method: "POST",
         body: JSON.stringify({ new_name: newName, dry_run: options.dryRun ?? false }),
         signal: options.signal,
-      }
+      },
     );
   }
 
@@ -1383,7 +1278,7 @@ class API {
     assetType: MergeableAssetType,
     name: string,
     target: string,
-    options: { asDerivative?: boolean; dryRun?: boolean; signal?: AbortSignal } = {}
+    options: { asDerivative?: boolean; dryRun?: boolean; signal?: AbortSignal } = {},
   ): Promise<AssetMergeResult> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/${ASSET_TYPE_PATH[assetType]}/${encodeURIComponent(name)}/merge`,
@@ -1395,7 +1290,7 @@ class API {
           dry_run: options.dryRun ?? false,
         }),
         signal: options.signal,
-      }
+      },
     );
   }
 
@@ -1407,41 +1302,33 @@ class API {
     projectName: string,
     assetType: ProjectAssetType,
     name: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<AssetDeletionPreview> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/${ASSET_TYPE_PATH[assetType]}/${encodeURIComponent(name)}?dry_run=true`,
-      { method: "DELETE", signal: options.signal }
+      { method: "DELETE", signal: options.signal },
     );
   }
 
   static async deleteProjectAsset(
     projectName: string,
     assetType: ProjectAssetType,
-    name: string
+    name: string,
   ): Promise<SuccessResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/${ASSET_TYPE_PATH[assetType]}/${encodeURIComponent(name)}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
   }
 
   // ==================== 场景管理 ====================
 
-  static async getScript(
-    projectName: string,
-    scriptFile: string
-  ): Promise<EpisodeScriptSnapshot> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/scripts/${encodeURIComponent(scriptFile)}`
-    );
+  static async getScript(projectName: string, scriptFile: string): Promise<EpisodeScriptSnapshot> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/scripts/${encodeURIComponent(scriptFile)}`);
   }
 
   /** Revisioned, ordered, all-or-nothing episode-script edit command. */
-  static async editScriptBatch(
-    projectName: string,
-    command: ScriptEditCommand
-  ): Promise<ScriptEditResult> {
+  static async editScriptBatch(projectName: string, command: ScriptEditCommand): Promise<ScriptEditResult> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/script-edits`, {
       method: "POST",
       body: JSON.stringify(command),
@@ -1459,13 +1346,10 @@ class API {
     updates: Record<string, unknown>,
     base?: Record<string, unknown>,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/script-scenes/${encodeURIComponent(sceneId)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ script_file: scriptFile, updates, base }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/script-scenes/${encodeURIComponent(sceneId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ script_file: scriptFile, updates, base }),
+    });
   }
 
   /** 预览当前资产描述草稿，不保存；衍生按本体与衍生名共同定位。 */
@@ -1476,9 +1360,8 @@ class API {
     description: string,
     options?: { signal?: AbortSignal; derivativeName?: string },
   ): Promise<RenderedPromptPreview> {
-    const derivativePath = options?.derivativeName === undefined
-      ? ""
-      : `/derivatives/${encodeURIComponent(options.derivativeName)}`;
+    const derivativePath =
+      options?.derivativeName === undefined ? "" : `/derivatives/${encodeURIComponent(options.derivativeName)}`;
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/${ASSET_TYPE_PATH[assetType]}/${encodeURIComponent(name)}${derivativePath}/prompt-preview`,
       { method: "POST", body: JSON.stringify({ description }), signal: options?.signal },
@@ -1508,15 +1391,12 @@ class API {
   static async updateEpisode(
     projectName: string,
     episode: number,
-    updates: { title: string }
+    updates: { title: string },
   ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
   }
 
   /**
@@ -1529,15 +1409,12 @@ class API {
     episode: number,
     text: string,
     sourceKind?: SourceKind,
-    confirm = false
+    confirm = false,
   ): Promise<EpisodeSourceWriteResult> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/source`,
-      {
-        method: "PUT",
-        body: JSON.stringify(sourceKind ? { text, source_kind: sourceKind, confirm } : { text, confirm }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/source`, {
+      method: "PUT",
+      body: JSON.stringify(sourceKind ? { text, source_kind: sourceKind, confirm } : { text, confirm }),
+    });
   }
 
   // ==================== script_plan → prompt_authoring 内容确认 ====================
@@ -1546,12 +1423,11 @@ class API {
   static async getScriptReview(
     projectName: string,
     episode: number,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<ScriptReviewState> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-review`,
-      { signal: options.signal }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-review`, {
+      signal: options.signal,
+    });
   }
 
   /** 保存手动 / Agent 编辑后的结构化中间态，返回最新状态（重新等待确认）。
@@ -1562,17 +1438,15 @@ class API {
     projectName: string,
     episode: number,
     content: DramaNormalizedScript | NarrationScriptPlanDraft | ReferenceScriptPlanDraft,
-    baseFingerprint?: string | null
+    baseFingerprint?: string | null,
   ): Promise<ScriptReviewState> {
-    const query = baseFingerprint
-      ? `?base_fingerprint=${encodeURIComponent(baseFingerprint)}`
-      : "";
+    const query = baseFingerprint ? `?base_fingerprint=${encodeURIComponent(baseFingerprint)}` : "";
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-review/content${query}`,
       {
         method: "PUT",
         body: JSON.stringify(content),
-      }
+      },
     );
   }
 
@@ -1585,23 +1459,23 @@ class API {
   static async authorPrompts(
     projectName: string,
     episode: number,
-    body: AuthorPromptsRequest
+    body: AuthorPromptsRequest,
   ): Promise<AuthorPromptsResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/prompt-authoring`,
-      { method: "POST", body: JSON.stringify(body) }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/prompt-authoring`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   }
 
   /** 只保存本集提示词编写的附加指令（「交给 Agent」路径），不提交生成。 */
   static async savePromptAuthoringInstructions(
     projectName: string,
     episode: number,
-    instructions: string
+    instructions: string,
   ): Promise<{ success: boolean }> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/prompt-authoring/instructions`,
-      { method: "PUT", body: JSON.stringify({ instructions }) }
+      { method: "PUT", body: JSON.stringify({ instructions }) },
     );
   }
 
@@ -1610,15 +1484,11 @@ class API {
    * 新的脚本规划整份替换本集现有的规划与草稿，替换前的确认由调用方负责。附加指令随请求按集保存。
    * @enqueue
    */
-  static async planScript(
-    projectName: string,
-    episode: number,
-    body: PlanScriptRequest
-  ): Promise<PlanScriptResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-plan`,
-      { method: "POST", body: JSON.stringify(body) }
-    );
+  static async planScript(projectName: string, episode: number, body: PlanScriptRequest): Promise<PlanScriptResponse> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-plan`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   }
 
   /**
@@ -1629,24 +1499,24 @@ class API {
   static async generateAdScript(
     projectName: string,
     episode: number,
-    body: GenerateAdScriptRequest
+    body: GenerateAdScriptRequest,
   ): Promise<PlanScriptResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/ad-script`,
-      { method: "POST", body: JSON.stringify(body) }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/ad-script`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   }
 
   /** 只保存本集 AI 规划脚本的附加指令（「交给 Agent」路径），不提交生成。 */
   static async saveScriptPlanInstructions(
     projectName: string,
     episode: number,
-    instructions: string
+    instructions: string,
   ): Promise<{ success: boolean }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-plan/instructions`,
-      { method: "PUT", body: JSON.stringify({ instructions }) }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-plan/instructions`, {
+      method: "PUT",
+      body: JSON.stringify({ instructions }),
+    });
   }
 
   /**
@@ -1657,15 +1527,12 @@ class API {
   static async confirmScriptReview(
     projectName: string,
     episode: number,
-    options: { overwriteRevision?: string } = {}
+    options: { overwriteRevision?: string } = {},
   ): Promise<ScriptReviewState> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-review/confirm`,
-      {
-        method: "POST",
-        body: JSON.stringify({ overwrite_revision: options.overwriteRevision ?? null }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/script-review/confirm`, {
+      method: "POST",
+      body: JSON.stringify({ overwrite_revision: options.overwriteRevision ?? null }),
+    });
   }
 
   // ==================== 草稿（待修复草稿 / Agent 的可编辑草稿） ====================
@@ -1674,12 +1541,11 @@ class API {
   static async listEpisodeDrafts(
     projectName: string,
     episode: number,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<{ episode: number; drafts: EpisodeDraftSummary[] }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts`,
-      { signal: options.signal }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts`, {
+      signal: options.signal,
+    });
   }
 
   /** 一份草稿的呈现视图：违约与降级提示逐条目定位；Agent 的可编辑草稿不带正文。 */
@@ -1687,12 +1553,11 @@ class API {
     projectName: string,
     episode: number,
     docType: DraftDocType,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<EpisodeDraftView> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts/${docType}`,
-      { signal: options.signal }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts/${docType}`, {
+      signal: options.signal,
+    });
   }
 
   /** 手修保存：服务端全量重判，违约清零即采用为正式内容，否则返回刷新后的草稿视图。 */
@@ -1701,15 +1566,12 @@ class API {
     episode: number,
     docType: DraftDocType,
     content: Record<string, unknown>,
-    baseRevision: string
+    baseRevision: string,
   ): Promise<SaveEpisodeDraftResult> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts/${docType}`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ content, base_revision: baseRevision }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts/${docType}`, {
+      method: "PUT",
+      body: JSON.stringify({ content, base_revision: baseRevision }),
+    });
   }
 
   /**
@@ -1722,15 +1584,12 @@ class API {
     episode: number,
     docType: DraftDocType,
     baseRevision: string,
-    instructions: string | null
+    instructions: string | null,
   ): Promise<DraftRepairResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts/${docType}/repair`,
-      {
-        method: "POST",
-        body: JSON.stringify({ base_revision: baseRevision, instructions }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts/${docType}/repair`, {
+      method: "POST",
+      body: JSON.stringify({ base_revision: baseRevision, instructions }),
+    });
   }
 
   /** 丢弃草稿，回到正式内容。 */
@@ -1738,13 +1597,12 @@ class API {
     projectName: string,
     episode: number,
     docType: DraftDocType,
-    baseRevision: string | null
+    baseRevision: string | null,
   ): Promise<{ episode: number; doc_type: DraftDocType; discarded: boolean }> {
     const query = `?base_revision=${encodeURIComponent(baseRevision ?? "")}`;
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts/${docType}${query}`,
-      { method: "DELETE" }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/drafts/${docType}${query}`, {
+      method: "DELETE",
+    });
   }
 
   // ==================== 分镜管理（旁白/解说） ====================
@@ -1760,15 +1618,12 @@ class API {
   static async updateSegment(
     projectName: string,
     segmentId: string,
-    updates: Record<string, unknown>
+    updates: Record<string, unknown>,
   ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/segments/${encodeURIComponent(segmentId)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/segments/${encodeURIComponent(segmentId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
   }
 
   // ==================== 分镜管理（广告/短片） ====================
@@ -1784,13 +1639,10 @@ class API {
     updates: Record<string, unknown>,
     base?: Record<string, unknown>,
   ): Promise<SuccessResponse & { shot?: AdShot }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/script-shots/${encodeURIComponent(shotId)}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({ script_file: scriptFile, updates, base }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/script-shots/${encodeURIComponent(shotId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ script_file: scriptFile, updates, base }),
+    });
   }
 
   /**
@@ -1801,14 +1653,14 @@ class API {
     projectName: string,
     scriptFile: string,
     itemId: string,
-    afterId: string | null
+    afterId: string | null,
   ): Promise<SuccessResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/script-items/${encodeURIComponent(itemId)}/move`,
       {
         method: "POST",
         body: JSON.stringify({ script_file: scriptFile, after_id: afterId }),
-      }
+      },
     );
   }
 
@@ -1820,7 +1672,7 @@ class API {
   static async insertScriptItem(
     projectName: string,
     scriptFile: string,
-    options: { afterId?: string; novelText?: string } = {}
+    options: { afterId?: string; novelText?: string } = {},
   ): Promise<SuccessResponse & { item: NarrationSegment | DramaScene | AdShot | null }> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/script-items`, {
       method: "POST",
@@ -1833,21 +1685,20 @@ class API {
   }
 
   /** 从空白开始：本集没有正式脚本时建出空的正式脚本，未确认的脚本规划随之弃置。 */
-  static async startBlankScript(projectName: string, episode: number): Promise<SuccessResponse & { script_file: string }> {
+  static async startBlankScript(
+    projectName: string,
+    episode: number,
+  ): Promise<SuccessResponse & { script_file: string }> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/blank-script`, {
       method: "POST",
     });
   }
 
   /** 移除分镜 `itemId`，其产物随分镜一并移除；服务端按当前剧本 revision 执行。 */
-  static async removeScriptItem(
-    projectName: string,
-    itemId: string,
-    scriptFile: string
-  ): Promise<SuccessResponse> {
+  static async removeScriptItem(projectName: string, itemId: string, scriptFile: string): Promise<SuccessResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/script-items/${encodeURIComponent(itemId)}?script_file=${encodeURIComponent(scriptFile)}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
   }
 
@@ -1872,7 +1723,7 @@ class API {
        */
       revision?: string;
       signal?: AbortSignal;
-    } = {}
+    } = {},
   ): Promise<{
     success: boolean;
     path?: string;
@@ -1913,16 +1764,21 @@ class API {
     const qs = qsParts.join("&");
     const url = `/projects/${encodeURIComponent(projectName)}/upload/${uploadType}${qs ? "?" + qs : ""}`;
 
-    const response = await fetch(`${API_BASE}${url}`, withAuth(url, {
-      method: "POST",
-      body: formData,
-      signal: options.signal,
-    }));
+    const response = await fetch(
+      `${API_BASE}${url}`,
+      withAuth(url, {
+        method: "POST",
+        body: formData,
+        signal: options.signal,
+      }),
+    );
 
     if (response.status === 409) {
       let detail: { existing?: string; suggested_name?: string; message?: string } | null = null;
       try {
-        const body = (await response.json()) as { detail?: { existing?: string; suggested_name?: string; message?: string } };
+        const body = (await response.json()) as {
+          detail?: { existing?: string; suggested_name?: string; message?: string };
+        };
         detail = body?.detail ?? null;
       } catch {
         /* ignore */
@@ -1933,11 +1789,7 @@ class API {
       if (!detail?.existing || !detail?.suggested_name) {
         throw new Error(i18n.t("errors:upload_conflict_incomplete", { filename: file.name }));
       }
-      throw new ConflictError(
-        detail.existing,
-        detail.suggested_name,
-        detail.message ?? "conflict",
-      );
+      throw new ConflictError(detail.existing, detail.suggested_name, detail.message ?? "conflict");
     }
 
     await throwIfNotOk(response, i18n.t("errors:upload_failed"));
@@ -1972,7 +1824,7 @@ class API {
     scriptFile: string,
     shotId: string,
     kind: "storyboard" | "video",
-    file: File
+    file: File,
   ): Promise<ShotUploadResult> {
     const url =
       `/projects/${encodeURIComponent(projectName)}/shots/${encodeURIComponent(shotId)}` +
@@ -1991,7 +1843,7 @@ class API {
     projectName: string,
     shotId: string,
     scriptFile: string,
-    file: File
+    file: File,
   ): Promise<{ success: boolean; end_frame_image: string }> {
     const url =
       `/projects/${encodeURIComponent(projectName)}/shots/${encodeURIComponent(shotId)}` +
@@ -2004,11 +1856,10 @@ class API {
     projectName: string,
     shotId: string,
     scriptFile: string,
-    sourcePath: string
+    sourcePath: string,
   ): Promise<{ success: boolean; end_frame_image: string }> {
     const url =
-      `/projects/${encodeURIComponent(projectName)}/shots/${encodeURIComponent(shotId)}` +
-      `/end-frame/select`;
+      `/projects/${encodeURIComponent(projectName)}/shots/${encodeURIComponent(shotId)}` + `/end-frame/select`;
     return this.request(url, {
       method: "POST",
       body: JSON.stringify({ script_file: scriptFile, source_path: sourcePath }),
@@ -2016,11 +1867,7 @@ class API {
   }
 
   /** 清除该分镜的尾帧。 */
-  static async clearEndFrame(
-    projectName: string,
-    shotId: string,
-    scriptFile: string
-  ): Promise<SuccessResponse> {
+  static async clearEndFrame(projectName: string, shotId: string, scriptFile: string): Promise<SuccessResponse> {
     const url =
       `/projects/${encodeURIComponent(projectName)}/shots/${encodeURIComponent(shotId)}` +
       `/end-frame?script_file=${encodeURIComponent(scriptFile)}`;
@@ -2032,7 +1879,7 @@ class API {
     projectName: string,
     episode: number,
     unitId: string,
-    file: File
+    file: File,
   ): Promise<ShotUploadResult> {
     const url =
       `/projects/${encodeURIComponent(projectName)}/reference-videos/episodes/${episode}` +
@@ -2047,7 +1894,7 @@ class API {
   static async getWorkflowPlan(
     projectName: string,
     request: WorkflowPlanRequest = {},
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<WorkflowPlan> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/workflow-plan`, {
       method: "POST",
@@ -2057,10 +1904,7 @@ class API {
   }
 
   /** 项目层的制作状态：不指定集时，下一步取账本顺序中第一个未完成的集或项目层动作。 */
-  static async getWorkflowStatus(
-    projectName: string,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<WorkflowStatus> {
+  static async getWorkflowStatus(projectName: string, options: { signal?: AbortSignal } = {}): Promise<WorkflowStatus> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/workflow-status`, {
       signal: options.signal,
     });
@@ -2069,7 +1913,7 @@ class API {
   /** 账本顺序中每一集建议的下一步。 */
   static async getEpisodeNextSteps(
     projectName: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<{ episodes: EpisodeNextStep[] }> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/workflow-status/episodes`, {
       signal: options.signal,
@@ -2080,7 +1924,7 @@ class API {
   static async getEpisodeEditOverview(
     projectName: string,
     episode: number,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<EpisodeEditOverview> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/edit-overview`, {
       signal: options.signal,
@@ -2122,7 +1966,7 @@ class API {
     projectName: string,
     path: string,
     cacheBust: number | string | null,
-    options: FileUrlOptions = {}
+    options: FileUrlOptions = {},
   ): string {
     // 引导演示的占位图是现算的内联 SVG（data: URI），直接用，不要再包一层项目路径。
     // 只放行 data: —— 目前没有第二种自带协议的图源，多放行的协议只是没人用的入口。
@@ -2148,22 +1992,16 @@ class API {
   static async getSourceContent(
     projectName: string,
     filename: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<string> {
     const url = `/projects/${encodeURIComponent(projectName)}/source/${encodeURIComponent(filename)}`;
-    const response = await fetch(
-      `${API_BASE}${url}`,
-      withAuth(url, { signal: options.signal })
-    );
+    const response = await fetch(`${API_BASE}${url}`, withAuth(url, { signal: options.signal }));
     await throwIfNotOk(response, i18n.t("errors:file_content_load_failed"));
     return response.text();
   }
 
   /** 「分集」视图：整本源文按集分段、每集体量与首尾句、source/ 里没有登记的文件。 */
-  static async getEpisodesView(
-    projectName: string,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<EpisodesView> {
+  static async getEpisodesView(projectName: string, options: { signal?: AbortSignal } = {}): Promise<EpisodesView> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episodes-view`, {
       signal: options.signal,
     });
@@ -2176,7 +2014,7 @@ class API {
   static async manualSplit(
     projectName: string,
     action: ManualSplitAction,
-    options: { confirmEpisodes?: number[]; confirmMergedUnits?: number; dryRun?: boolean } = {}
+    options: { confirmEpisodes?: number[]; confirmMergedUnits?: number; dryRun?: boolean } = {},
   ): Promise<ManualSplitResponse> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episodes-view/manual-split`, {
       method: "POST",
@@ -2197,7 +2035,7 @@ class API {
   static async planEpisodes(
     projectName: string,
     instructions: string | null,
-    gap: PlanningGap | null = null
+    gap: PlanningGap | null = null,
   ): Promise<EpisodePlanningResponse> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episode-planning`, {
       method: "POST",
@@ -2221,7 +2059,7 @@ class API {
   static async startEpisodeReplan(
     projectName: string,
     episode: number,
-    instructions: string | null
+    instructions: string | null,
   ): Promise<EpisodePlanningResponse> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episode-replan`, {
       method: "POST",
@@ -2248,7 +2086,7 @@ class API {
   static async adoptEpisodeReplan(
     projectName: string,
     candidateId: string,
-    options: { revision?: string | null; deleteRetired?: boolean } = {}
+    options: { revision?: string | null; deleteRetired?: boolean } = {},
   ): Promise<ReplanAdoptionResponse> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episode-replan/adopt`, {
       method: "POST",
@@ -2291,7 +2129,7 @@ class API {
   static async deleteEpisode(
     projectName: string,
     episode: number,
-    revision: string | null = null
+    revision: string | null = null,
   ): Promise<EpisodeDeletionResponse> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episodes/${episode}/delete`, {
       method: "POST",
@@ -2308,11 +2146,11 @@ class API {
   static async adoptSourceFile(
     projectName: string,
     filename: string,
-    target: AdoptSourceFileTarget
+    target: AdoptSourceFileTarget,
   ): Promise<{ success: boolean; target: string; episode?: number }> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/source-files/${encodeURIComponent(filename)}/adopt`,
-      { method: "POST", body: JSON.stringify(target) }
+      { method: "POST", body: JSON.stringify(target) },
     );
   }
 
@@ -2324,11 +2162,11 @@ class API {
     projectName: string,
     filename: string,
     sourceKind: SourceKind,
-    confirm = false
+    confirm = false,
   ): Promise<SourceKindChangeResult> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/source-files/${encodeURIComponent(filename)}/source-kind`,
-      { method: "PUT", body: JSON.stringify({ source_kind: sourceKind, confirm }) }
+      { method: "PUT", body: JSON.stringify({ source_kind: sourceKind, confirm }) },
     );
   }
 
@@ -2340,11 +2178,11 @@ class API {
     projectName: string,
     filename: string,
     text: string,
-    revision: string | null = null
+    revision: string | null = null,
   ): Promise<SourceFileChangeResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/source-files/${encodeURIComponent(filename)}/text`,
-      { method: "PUT", body: JSON.stringify({ text, revision }) }
+      { method: "PUT", body: JSON.stringify({ text, revision }) },
     );
   }
 
@@ -2353,7 +2191,7 @@ class API {
     projectName: string,
     filename: string,
     file: File,
-    options: { sourceKind?: SourceKind; revision?: string | null } = {}
+    options: { sourceKind?: SourceKind; revision?: string | null } = {},
   ): Promise<SourceFileChangeResponse> {
     const formData = new FormData();
     formData.append("file", file);
@@ -2370,11 +2208,11 @@ class API {
     projectName: string,
     filename: string,
     direction: "up" | "down",
-    revision: string | null = null
+    revision: string | null = null,
   ): Promise<SourceFileChangeResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/source-files/${encodeURIComponent(filename)}/move`,
-      { method: "POST", body: JSON.stringify({ direction, revision }) }
+      { method: "POST", body: JSON.stringify({ direction, revision }) },
     );
   }
 
@@ -2382,11 +2220,11 @@ class API {
   static async acceptExternalSourceChange(
     projectName: string,
     filename: string,
-    revision: string | null = null
+    revision: string | null = null,
   ): Promise<SourceFileChangeResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/source-files/${encodeURIComponent(filename)}/accept-external`,
-      { method: "POST", body: JSON.stringify({ revision }) }
+      { method: "POST", body: JSON.stringify({ revision }) },
     );
   }
 
@@ -2394,27 +2232,24 @@ class API {
   static async deleteWholeSourceFile(
     projectName: string,
     filename: string,
-    revision: string | null = null
+    revision: string | null = null,
   ): Promise<SourceFileChangeResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/source-files/${encodeURIComponent(filename)}/delete`,
-      { method: "POST", body: JSON.stringify({ revision }) }
+      { method: "POST", body: JSON.stringify({ revision }) },
     );
   }
 
   /**
    * 删除 source 文件
    */
-  static async deleteSourceFile(
-    projectName: string,
-    filename: string
-  ): Promise<SuccessResponse> {
+  static async deleteSourceFile(projectName: string, filename: string): Promise<SuccessResponse> {
     const url = `/projects/${encodeURIComponent(projectName)}/source/${encodeURIComponent(filename)}`;
     const response = await fetch(
       `${API_BASE}${url}`,
       withAuth(url, {
         method: "DELETE",
-      })
+      }),
     );
     await throwIfNotOk(response, i18n.t("errors:file_delete_failed"));
     return response.json() as Promise<SuccessResponse>;
@@ -2423,13 +2258,10 @@ class API {
   /**
    * 删除角色参考音频样本（清空字段并移除文件）
    */
-  static async deleteCharacterReferenceAudio(
-    projectName: string,
-    characterName: string
-  ): Promise<SuccessResponse> {
+  static async deleteCharacterReferenceAudio(projectName: string, characterName: string): Promise<SuccessResponse> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/characters/${encodeURIComponent(characterName)}/reference-audio`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
   }
 
@@ -2438,16 +2270,9 @@ class API {
   /**
    * 获取草稿内容
    */
-  static async getDraftContent(
-    projectName: string,
-    episode: number,
-    stage: string
-  ): Promise<string> {
+  static async getDraftContent(projectName: string, episode: number, stage: string): Promise<string> {
     const url = `/projects/${encodeURIComponent(projectName)}/drafts/${episode}/${stage}`;
-    const response = await fetch(
-      `${API_BASE}${url}`,
-      withAuth(url)
-    );
+    const response = await fetch(`${API_BASE}${url}`, withAuth(url));
     await throwIfNotOk(response, i18n.t("errors:stage_file_load_failed"));
     return response.text();
   }
@@ -2459,7 +2284,7 @@ class API {
     projectName: string,
     episode: number,
     stage: string,
-    content: string
+    content: string,
   ): Promise<SuccessResponse> {
     const url = `/projects/${encodeURIComponent(projectName)}/drafts/${episode}/${stage}`;
     const response = await fetch(
@@ -2468,7 +2293,7 @@ class API {
         method: "PUT",
         headers: { "Content-Type": "text/plain" },
         body: content,
-      })
+      }),
     );
     await throwIfNotOk(response, i18n.t("errors:stage_file_save_failed"));
     return response.json() as Promise<SuccessResponse>;
@@ -2477,15 +2302,10 @@ class API {
   /**
    * 删除草稿
    */
-  static async deleteDraft(
-    projectName: string,
-    episode: number,
-    stage: string
-  ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/drafts/${episode}/${stage}`,
-      { method: "DELETE" }
-    );
+  static async deleteDraft(projectName: string, episode: number, stage: string): Promise<SuccessResponse> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/drafts/${episode}/${stage}`, {
+      method: "DELETE",
+    });
   }
 
   // ==================== 项目概述管理 ====================
@@ -2493,31 +2313,20 @@ class API {
   /**
    * 使用 AI 生成项目概述
    */
-  static async generateOverview(
-    projectName: string
-  ): Promise<{ success: boolean; overview: ProjectOverview }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/generate-overview`,
-      {
-        method: "POST",
-      }
-    );
+  static async generateOverview(projectName: string): Promise<{ success: boolean; overview: ProjectOverview }> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/generate-overview`, {
+      method: "POST",
+    });
   }
 
   /**
    * 更新项目概述（手动编辑）
    */
-  static async updateOverview(
-    projectName: string,
-    updates: Partial<ProjectOverview>
-  ): Promise<SuccessResponse> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/overview`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(updates),
-      }
-    );
+  static async updateOverview(projectName: string, updates: Partial<ProjectOverview>): Promise<SuccessResponse> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/overview`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
   }
 
   // ==================== 生成 API ====================
@@ -2534,14 +2343,14 @@ class API {
     projectName: string,
     segmentId: string,
     prompt: string | Record<string, unknown>,
-    scriptFile: string
+    scriptFile: string,
   ): Promise<{ success: boolean; task_id: string; deduped: boolean; message: string }> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/generate/storyboard/${encodeURIComponent(segmentId)}`,
       {
         method: "POST",
         body: JSON.stringify({ prompt, script_file: scriptFile }),
-      }
+      },
     );
   }
 
@@ -2570,7 +2379,7 @@ class API {
           script_file: scriptFile,
           duration_seconds: durationSeconds,
         }),
-      }
+      },
     );
   }
 
@@ -2584,15 +2393,12 @@ class API {
   static async generateNarrationAudio(
     projectName: string,
     segmentId: string,
-    scriptFile: string
+    scriptFile: string,
   ): Promise<{ success: boolean; task_id: string; deduped: boolean; message: string }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/generate/tts/${encodeURIComponent(segmentId)}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ script_file: scriptFile }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/generate/tts/${encodeURIComponent(segmentId)}`, {
+      method: "POST",
+      body: JSON.stringify({ script_file: scriptFile }),
+    });
   }
 
   /**
@@ -2603,7 +2409,7 @@ class API {
    */
   static async generateEpisodeNarrationAudio(
     projectName: string,
-    scriptFile: string
+    scriptFile: string,
   ): Promise<{
     success: boolean;
     task_ids: string[];
@@ -2612,13 +2418,10 @@ class API {
     deduped: boolean;
     message: string;
   }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/generate/tts`,
-      {
-        method: "POST",
-        body: JSON.stringify({ script_file: scriptFile }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/generate/tts`, {
+      method: "POST",
+      body: JSON.stringify({ script_file: scriptFile }),
+    });
   }
 
   /**
@@ -2628,7 +2431,7 @@ class API {
    */
   static async getAudioBackendVoices(
     projectName: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<{
     configured: boolean;
     provider_id: string | null;
@@ -2652,14 +2455,14 @@ class API {
     projectName: string,
     charName: string,
     text: string,
-    voice: string
+    voice: string,
   ): Promise<{ success: boolean; task_id: string; deduped: boolean; message: string }> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/characters/${encodeURIComponent(charName)}/voice-sample`,
       {
         method: "POST",
         body: JSON.stringify({ text, voice }),
-      }
+      },
     );
   }
 
@@ -2672,14 +2475,14 @@ class API {
   static async confirmCharacterVoiceSample(
     projectName: string,
     charName: string,
-    taskId: string
+    taskId: string,
   ): Promise<{ success: boolean; path: string; url: string }> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/characters/${encodeURIComponent(charName)}/voice-sample/confirm`,
       {
         method: "POST",
         body: JSON.stringify({ task_id: taskId }),
-      }
+      },
     );
   }
 
@@ -2693,7 +2496,7 @@ class API {
    */
   static async generateCharacter(
     projectName: string,
-    charName: string
+    charName: string,
   ): Promise<{
     success: boolean;
     task_id: string;
@@ -2704,7 +2507,7 @@ class API {
       `/projects/${encodeURIComponent(projectName)}/generate/character/${encodeURIComponent(charName)}`,
       {
         method: "POST",
-      }
+      },
     );
   }
 
@@ -2718,7 +2521,7 @@ class API {
    */
   static async generateProjectScene(
     projectName: string,
-    sceneName: string
+    sceneName: string,
   ): Promise<{
     success: boolean;
     task_id: string;
@@ -2729,7 +2532,7 @@ class API {
       `/projects/${encodeURIComponent(projectName)}/generate/scene/${encodeURIComponent(sceneName)}`,
       {
         method: "POST",
-      }
+      },
     );
   }
 
@@ -2743,19 +2546,16 @@ class API {
    */
   static async generateProjectProp(
     projectName: string,
-    propName: string
+    propName: string,
   ): Promise<{
     success: boolean;
     task_id: string;
     deduped: boolean;
     message: string;
   }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/generate/prop/${encodeURIComponent(propName)}`,
-      {
-        method: "POST",
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/generate/prop/${encodeURIComponent(propName)}`, {
+      method: "POST",
+    });
   }
 
   /**
@@ -2768,7 +2568,7 @@ class API {
    */
   static async generateProjectProduct(
     projectName: string,
-    productName: string
+    productName: string,
   ): Promise<{
     success: boolean;
     task_id: string;
@@ -2779,7 +2579,7 @@ class API {
       `/projects/${encodeURIComponent(projectName)}/generate/product/${encodeURIComponent(productName)}`,
       {
         method: "POST",
-      }
+      },
     );
   }
 
@@ -2795,25 +2595,22 @@ class API {
       resourceId: string;
       instruction: string;
       scriptFile?: string | null;
-    }
+    },
   ): Promise<{
     success: boolean;
     task_id: string;
     deduped: boolean;
     message: string;
   }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/edit/image`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          resource_type: params.resourceType,
-          resource_id: params.resourceId,
-          instruction: params.instruction,
-          script_file: params.scriptFile ?? null,
-        }),
-      }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/edit/image`, {
+      method: "POST",
+      body: JSON.stringify({
+        resource_type: params.resourceType,
+        resource_id: params.resourceId,
+        instruction: params.instruction,
+        script_file: params.scriptFile ?? null,
+      }),
+    });
   }
 
   // ==================== 任务队列 API ====================
@@ -2824,7 +2621,7 @@ class API {
   }
 
   static async listTasks(
-    filters: TaskListFilters = {}
+    filters: TaskListFilters = {},
   ): Promise<{ items: TaskItem[]; total: number; page: number; page_size: number }> {
     const params = new URLSearchParams();
     if (filters.projectName) params.append("project_name", filters.projectName);
@@ -2839,7 +2636,7 @@ class API {
 
   static async listProjectTasks(
     projectName: string,
-    filters: Omit<TaskListFilters, "projectName"> = {}
+    filters: Omit<TaskListFilters, "projectName"> = {},
   ): Promise<{ items: TaskItem[]; total: number; page: number; page_size: number }> {
     const params = new URLSearchParams();
     if (filters.status) params.append("status", filters.status);
@@ -2848,14 +2645,10 @@ class API {
     if (filters.page) params.append("page", String(filters.page));
     if (filters.pageSize) params.append("page_size", String(filters.pageSize));
     const query = params.toString();
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/tasks${query ? "?" + query : ""}`
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/tasks${query ? "?" + query : ""}`);
   }
 
-  static async getTaskStats(
-    projectName: string | null = null
-  ): Promise<{ stats: TaskStats }> {
+  static async getTaskStats(projectName: string | null = null): Promise<{ stats: TaskStats }> {
     const params = new URLSearchParams();
     if (projectName) params.append("project_name", projectName);
     const query = params.toString();
@@ -2882,9 +2675,7 @@ class API {
     });
   }
 
-  static async cancelTask(
-    taskId: string
-  ): Promise<{
+  static async cancelTask(taskId: string): Promise<{
     cancelled: TaskItem[];
     skipped_terminal: TaskItem[];
   }> {
@@ -2909,12 +2700,9 @@ class API {
   }
 
   static async cancelAllQueued(
-    projectName: string
+    projectName: string,
   ): Promise<{ cancelled_count: number; skipped_running_count: number }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/tasks/cancel-all`,
-      { method: "POST" }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/tasks/cancel-all`, { method: "POST" });
   }
 
   /** 标签页报到在线，`view` 是正在看的工作区位置；返回项目当前的在线成员名单。 */
@@ -2931,10 +2719,10 @@ class API {
 
   /** 标签页离开项目；`keepalive` 让页面关闭时请求仍能送出。 */
   static async leavePresence(projectName: string, clientId: string): Promise<void> {
-    await this.request(
-      `/projects/${encodeURIComponent(projectName)}/presence/${encodeURIComponent(clientId)}`,
-      { method: "DELETE", keepalive: true },
-    );
+    await this.request(`/projects/${encodeURIComponent(projectName)}/presence/${encodeURIComponent(clientId)}`, {
+      method: "DELETE",
+      keepalive: true,
+    });
   }
 
   /** 订阅项目事件流；断线后自动重建，重建后服务端重新下发 snapshot。 */
@@ -3003,14 +2791,11 @@ class API {
     projectName: string,
     resourceType: string,
     resourceId: string,
-    version: number
+    version: number,
   ): Promise<SuccessResponse & { file_path?: string; asset_fingerprints?: Record<string, number> }> {
-    return this.request(
-      `${versionsResourcePath(projectName, resourceType, resourceId)}/restore/${version}`,
-      {
-        method: "POST",
-      }
-    );
+    return this.request(`${versionsResourcePath(projectName, resourceType, resourceId)}/restore/${version}`, {
+      method: "POST",
+    });
   }
 
   // ==================== 风格参考图 API ====================
@@ -3023,7 +2808,7 @@ class API {
    */
   static async uploadStyleImage(
     projectName: string,
-    file: File
+    file: File,
   ): Promise<{
     success: boolean;
     style_image: string;
@@ -3039,12 +2824,17 @@ class API {
       withAuth(url, {
         method: "POST",
         body: formData,
-      })
+      }),
     );
 
     await throwIfNotOk(response, i18n.t("errors:upload_failed"));
 
-    return response.json() as Promise<{ success: boolean; style_image: string; style_description: string; url: string }>;
+    return response.json() as Promise<{
+      success: boolean;
+      style_image: string;
+      style_description: string;
+      url: string;
+    }>;
   }
 
   // ==================== Agent 会话 API ====================
@@ -3057,26 +2847,24 @@ class API {
   static async listAssistantSessions(
     projectName: string,
     status: string | null = null,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<{ sessions: SessionMeta[] }> {
     const params = new URLSearchParams();
     if (status) params.append("status", status);
     const query = params.toString();
-    return this.request(
-      `${this.assistantBase(projectName)}/sessions${query ? "?" + query : ""}`,
-      { signal: options.signal }
-    );
+    return this.request(`${this.assistantBase(projectName)}/sessions${query ? "?" + query : ""}`, {
+      signal: options.signal,
+    });
   }
 
   static async getAssistantSession(
     projectName: string,
     sessionId: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<{ session: SessionMeta }> {
-    return this.request(
-      `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}`,
-      { signal: options.signal }
-    );
+    return this.request(`${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}`, {
+      signal: options.signal,
+    });
   }
 
   /** 冷读会话事件日志（after 为 seq 游标，-1 表示从头）。 */
@@ -3084,12 +2872,12 @@ class API {
     projectName: string,
     sessionId: string,
     after: number = -1,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<EntriesResponse> {
     const query = after >= 0 ? `?after=${after}` : "";
     return this.request(
       `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/entries${query}`,
-      { signal: options.signal }
+      { signal: options.signal },
     );
   }
 
@@ -3098,7 +2886,7 @@ class API {
     content: string,
     sessionId?: string | null,
     images?: ImagePayload[],
-    clientKey?: string
+    clientKey?: string,
   ): Promise<AcceptedMessageResponse> {
     return this.request(`${this.assistantBase(projectName)}/sessions/send`, {
       method: "POST",
@@ -3126,20 +2914,17 @@ class API {
     anchorEntryUuid: string,
     content: string,
     images?: ImagePayload[],
-    clientKey?: string
+    clientKey?: string,
   ): Promise<AcceptedMessageResponse & { origin_session_id: string | null }> {
-    return this.request(
-      `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/rewrite`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          anchor_entry_uuid: anchorEntryUuid,
-          content,
-          images: images || [],
-          client_key: clientKey || undefined,
-        }),
-      }
-    );
+    return this.request(`${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/rewrite`, {
+      method: "POST",
+      body: JSON.stringify({
+        anchor_entry_uuid: anchorEntryUuid,
+        content,
+        images: images || [],
+        client_key: clientKey || undefined,
+      }),
+    });
   }
 
   /**
@@ -3150,7 +2935,7 @@ class API {
     projectName: string,
     sessionId: string,
     messageId: string,
-    intent: QueuedMessageWithdrawal
+    intent: QueuedMessageWithdrawal,
   ): Promise<QueuedMessageWithdrawalResponse> {
     const path = `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/queued-messages/${encodeURIComponent(messageId)}`;
     return intent === "edit"
@@ -3161,11 +2946,11 @@ class API {
   static async resendQueuedMessage(
     projectName: string,
     sessionId: string,
-    messageId: string
+    messageId: string,
   ): Promise<QueuedMessageResendResponse> {
     return this.request(
       `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/queued-messages/${encodeURIComponent(messageId)}/resend`,
-      { method: "POST" }
+      { method: "POST" },
     );
   }
 
@@ -3176,47 +2961,37 @@ class API {
   static async sendQueuedMessageNow(
     projectName: string,
     sessionId: string,
-    messageId: string
+    messageId: string,
   ): Promise<QueuedMessageSendNowResponse> {
     return this.request(
       `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/queued-messages/${encodeURIComponent(messageId)}/send-now`,
-      { method: "POST" }
+      { method: "POST" },
     );
   }
 
-  static async interruptAssistantSession(
-    projectName: string,
-    sessionId: string
-  ): Promise<SuccessResponse> {
-    return this.request(
-      `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/interrupt`,
-      {
-        method: "POST",
-      }
-    );
+  static async interruptAssistantSession(projectName: string, sessionId: string): Promise<SuccessResponse> {
+    return this.request(`${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/interrupt`, {
+      method: "POST",
+    });
   }
 
   static async answerAssistantQuestion(
     projectName: string,
     sessionId: string,
     questionId: string,
-    answers: Record<string, string>
+    answers: Record<string, string>,
   ): Promise<SuccessResponse> {
     return this.request(
       `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/questions/${encodeURIComponent(questionId)}/answer`,
       {
         method: "POST",
         body: JSON.stringify({ answers }),
-      }
+      },
     );
   }
 
   /** entry 流 SSE URL（after 为 seq 游标；断线续传由流式客户端的 Last-Event-ID 承担）。 */
-  static getAssistantEntriesStreamUrl(
-    projectName: string,
-    sessionId: string,
-    after: number = -1
-  ): string {
+  static getAssistantEntriesStreamUrl(projectName: string, sessionId: string, after: number = -1): string {
     const base = `${API_BASE}${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}/entries/stream`;
     return after >= 0 ? `${base}?after=${after}` : base;
   }
@@ -3236,24 +3011,15 @@ class API {
 
   static async listAssistantSkills(
     projectName: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<{ skills: SkillInfo[] }> {
-    return this.request(
-      `${this.assistantBase(projectName)}/skills`,
-      { signal: options.signal }
-    );
+    return this.request(`${this.assistantBase(projectName)}/skills`, { signal: options.signal });
   }
 
-  static async deleteAssistantSession(
-    projectName: string,
-    sessionId: string
-  ): Promise<SuccessResponse> {
-    return this.request(
-      `${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}`,
-      {
-        method: "DELETE",
-      }
-    );
+  static async deleteAssistantSession(projectName: string, sessionId: string): Promise<SuccessResponse> {
+    return this.request(`${this.assistantBase(projectName)}/sessions/${encodeURIComponent(sessionId)}`, {
+      method: "DELETE",
+    });
   }
 
   // ==================== 使用记录读接口 ====================
@@ -3264,7 +3030,7 @@ class API {
    */
   static async getUsageRecords(
     query: UsageRecordsQuery = {},
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<UsageRecordPage> {
     const params = new URLSearchParams();
     // 端点试跑记录的 project_name 是空串，不能按真值判断。
@@ -3291,7 +3057,7 @@ class API {
    */
   static async getUsageSessions(
     query: UsageSessionsQuery = {},
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<UsageAgentSessionPage> {
     const params = new URLSearchParams();
     if (query.projectName !== undefined) params.append("project_name", query.projectName);
@@ -3310,7 +3076,7 @@ class API {
   /** 获取一个 Agent 会话的明细：按时间每条记录一行。 */
   static async getUsageSession(
     sessionId: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<UsageAgentSessionDetail> {
     return this.request(`/usage/sessions/${encodeURIComponent(sessionId)}`, {
       signal: options.signal,
@@ -3318,17 +3084,14 @@ class API {
   }
 
   /** 获取单条使用记录的详情（比列表多 prompt、inputs、供应商原始响应）。 */
-  static async getUsageRecord(
-    recordId: number,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<UsageRecordDetail> {
+  static async getUsageRecord(recordId: number, options: { signal?: AbortSignal } = {}): Promise<UsageRecordDetail> {
     return this.request(`/usage/records/${recordId}`, { signal: options.signal });
   }
 
   /** 一次取回总览所需的全部聚合：KPI、日桶趋势、三维构成、需要关注与筛选候选值。 */
   static async getUsageSummary(
     query: UsageSummaryQuery = {},
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<UsageSummary> {
     const params = new URLSearchParams();
     if (query.projectName !== undefined) params.append("project_name", query.projectName);
@@ -3400,7 +3163,7 @@ class API {
   /** 按名称与媒体类型搜索模型目录中的条目；名称留空列出全部。 */
   static async searchCatalogEntries(
     query: { q?: string; mediaType?: MediaType } = {},
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<CatalogSearchResponse> {
     const params = new URLSearchParams();
     if (query.q) params.set("q", query.q);
@@ -3412,7 +3175,7 @@ class API {
   /** 手动填写新条目前的提示：目录里是否已有同名模型，以及视频模型按名字预设预填的可选时长。 */
   static async getNewEntryHints(
     query: { name: string; mediaType: MediaType },
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<NewEntryHints> {
     const params = new URLSearchParams({ name: query.name, media_type: query.mediaType });
     return this.request(`/catalog/new-entry-hints?${params}`, { signal: options.signal });
@@ -3426,25 +3189,17 @@ class API {
   // ==================== Provider 管理 API ====================
 
   /** 获取所有 provider 列表及状态。 */
-  static async getProviders(
-    options: { signal?: AbortSignal } = {}
-  ): Promise<{ providers: ProviderInfo[] }> {
+  static async getProviders(options: { signal?: AbortSignal } = {}): Promise<{ providers: ProviderInfo[] }> {
     return this.request("/providers", { signal: options.signal });
   }
 
   /** 获取指定 provider 的配置详情（含字段列表）。 */
-  static async getProviderConfig(
-    id: string,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<ProviderConfigDetail> {
+  static async getProviderConfig(id: string, options: { signal?: AbortSignal } = {}): Promise<ProviderConfigDetail> {
     return this.request(`/providers/${encodeURIComponent(id)}/config`, { signal: options.signal });
   }
 
   /** 更新指定 provider 的配置字段。 */
-  static async patchProviderConfig(
-    id: string,
-    patch: Record<string, string | null>
-  ): Promise<void> {
+  static async patchProviderConfig(id: string, patch: Record<string, string | null>): Promise<void> {
     return this.request(`/providers/${encodeURIComponent(id)}/config`, {
       method: "PATCH",
       body: JSON.stringify(patch),
@@ -3454,7 +3209,7 @@ class API {
   /** 读取供应商倍率。自定义供应商的 id 写作 `custom-<数据库 id>`。 */
   static async getProviderMultiplier(
     id: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<ProviderMultiplierInfo> {
     return this.request(`/providers/${encodeURIComponent(id)}/multiplier`, { signal: options.signal });
   }
@@ -3468,17 +3223,14 @@ class API {
   }
 
   /** 供应商的全部供应商模型，带启用状态、状态标记与价格摘要；内置与自定义供应商共用。 */
-  static async listProviderModels(
-    id: string,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<ProviderModelsResponse> {
+  static async listProviderModels(id: string, options: { signal?: AbortSignal } = {}): Promise<ProviderModelsResponse> {
     return this.request(`/providers/${encodeURIComponent(id)}/models`, { signal: options.signal });
   }
 
   /** 获取模型：调用供应商的模型列表接口，返回全部模型与对应结果；已添加的模型由界面排除。 */
   static async discoverProviderModels(
     id: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<FetchProviderModelsResponse> {
     return this.request(`/providers/${encodeURIComponent(id)}/models/discover`, {
       method: "POST",
@@ -3506,7 +3258,7 @@ class API {
   static async getProviderModel(
     id: string,
     modelId: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<ProviderModelDetail> {
     return this.request(`/providers/${encodeURIComponent(id)}/models/${encodePath(modelId)}`, {
       signal: options.signal,
@@ -3517,7 +3269,7 @@ class API {
   static async updateProviderModel(
     id: string,
     modelId: string,
-    settings: ProviderModelSettingsUpdate
+    settings: ProviderModelSettingsUpdate,
   ): Promise<ProviderModelDetail> {
     return this.request(`/providers/${encodeURIComponent(id)}/models/${encodePath(modelId)}`, {
       method: "PATCH",
@@ -3539,7 +3291,7 @@ class API {
   static async getProviderModelReferences(
     id: string,
     modelId: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<ProviderModelReferences> {
     const params = new URLSearchParams({ model_id: modelId });
     return this.request(`/providers/${encodeURIComponent(id)}/model-references?${params}`, { signal: options.signal });
@@ -3612,7 +3364,10 @@ class API {
     });
   }
 
-  static async deleteAssetLibraryBinding(credentialType: AssetLibraryCredentialType, credentialId: number): Promise<void> {
+  static async deleteAssetLibraryBinding(
+    credentialType: AssetLibraryCredentialType,
+    credentialId: number,
+  ): Promise<void> {
     return this.request(`/asset-library/bindings/${credentialType}/${credentialId}`, { method: "DELETE" });
   }
 
@@ -3675,7 +3430,10 @@ class API {
 
   // ==================== Provider 凭证管理 API ====================
 
-  static async listCredentials(providerId: string, options: { signal?: AbortSignal } = {}): Promise<{ credentials: ProviderCredential[] }> {
+  static async listCredentials(
+    providerId: string,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<{ credentials: ProviderCredential[] }> {
     return this.request(`/providers/${encodeURIComponent(providerId)}/credentials`, { signal: options.signal });
   }
 
@@ -3694,34 +3452,27 @@ class API {
     credId: number,
     data: { name?: string; api_key?: string; base_url?: string; access_key?: string; secret_key?: string },
   ): Promise<void> {
-    return this.request(
-      `/providers/${encodeURIComponent(providerId)}/credentials/${credId}`,
-      { method: "PATCH", body: JSON.stringify(data) },
-    );
+    return this.request(`/providers/${encodeURIComponent(providerId)}/credentials/${credId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
   }
 
   static async deleteCredential(providerId: string, credId: number): Promise<void> {
-    return this.request(
-      `/providers/${encodeURIComponent(providerId)}/credentials/${credId}`,
-      { method: "DELETE" },
-    );
+    return this.request(`/providers/${encodeURIComponent(providerId)}/credentials/${credId}`, { method: "DELETE" });
   }
 
   static async activateCredential(providerId: string, credId: number): Promise<void> {
-    return this.request(
-      `/providers/${encodeURIComponent(providerId)}/credentials/${credId}/activate`,
-      { method: "POST" },
-    );
+    return this.request(`/providers/${encodeURIComponent(providerId)}/credentials/${credId}/activate`, {
+      method: "POST",
+    });
   }
 
   static async uploadVertexCredential(name: string, file: File): Promise<ProviderCredential> {
     const formData = new FormData();
     formData.append("file", file);
     const url = `/providers/gemini-vertex/credentials/upload?name=${encodeURIComponent(name)}`;
-    const response = await fetch(
-      `${API_BASE}${url}`,
-      withAuth(url, { method: "POST", body: formData }),
-    );
+    const response = await fetch(`${API_BASE}${url}`, withAuth(url, { method: "POST", body: formData }));
     await throwIfNotOk(response, i18n.t("errors:credential_upload_failed"));
     return response.json() as Promise<ProviderCredential>;
   }
@@ -3732,23 +3483,20 @@ class API {
     return this.request("/agent/preset-providers", { signal: options.signal });
   }
 
-  static async listAgentCredentials(options: { signal?: AbortSignal } = {}): Promise<{ credentials: AgentCredential[] }> {
+  static async listAgentCredentials(
+    options: { signal?: AbortSignal } = {},
+  ): Promise<{ credentials: AgentCredential[] }> {
     return this.request("/agent/credentials", { signal: options.signal });
   }
 
-  static async createAgentCredential(
-    data: CreateAgentCredentialRequest,
-  ): Promise<AgentCredential> {
+  static async createAgentCredential(data: CreateAgentCredentialRequest): Promise<AgentCredential> {
     return this.request("/agent/credentials", {
       method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  static async updateAgentCredential(
-    id: number,
-    data: UpdateAgentCredentialRequest,
-  ): Promise<AgentCredential> {
+  static async updateAgentCredential(id: number, data: UpdateAgentCredentialRequest): Promise<AgentCredential> {
     return this.request(`/agent/credentials/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -3784,9 +3532,7 @@ class API {
     return this.request(`/agent/credentials/${id}/test`, { method: "POST" });
   }
 
-  static async testAgentConnectionDraft(
-    data: TestConnectionRequest,
-  ): Promise<TestConnectionResponse> {
+  static async testAgentConnectionDraft(data: TestConnectionRequest): Promise<TestConnectionResponse> {
     return this.request("/agent/test-connection", {
       method: "POST",
       body: JSON.stringify(data),
@@ -3796,7 +3542,7 @@ class API {
   // ==================== 自定义供应商 API ====================
 
   static async listCustomProviders(
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<{ providers: CustomProviderInfo[] }> {
     return this.request("/custom-providers", { signal: options.signal });
   }
@@ -3813,11 +3559,22 @@ class API {
     return this.request(`/custom-providers/${id}`, { signal: options.signal });
   }
 
-  static async updateCustomProvider(id: number, data: Partial<Omit<CustomProviderCreateRequest, "discovery_format" | "models" | "image_max_workers" | "video_max_workers" | "audio_max_workers">>): Promise<void> {
+  static async updateCustomProvider(
+    id: number,
+    data: Partial<
+      Omit<
+        CustomProviderCreateRequest,
+        "discovery_format" | "models" | "image_max_workers" | "video_max_workers" | "audio_max_workers"
+      >
+    >,
+  ): Promise<void> {
     return this.request(`/custom-providers/${id}`, { method: "PATCH", body: JSON.stringify(data) });
   }
 
-  static async fullUpdateCustomProvider(id: number, data: CustomProviderFullUpdateRequest): Promise<CustomProviderInfo> {
+  static async fullUpdateCustomProvider(
+    id: number,
+    data: CustomProviderFullUpdateRequest,
+  ): Promise<CustomProviderInfo> {
     return this.request(`/custom-providers/${id}`, { method: "PUT", body: JSON.stringify(data) });
   }
 
@@ -3827,7 +3584,7 @@ class API {
 
   static async discoverModels(
     data: { discovery_format: string; base_url: string; api_key: string },
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<DiscoverModelsResponse> {
     return this.request("/custom-providers/discover", {
       method: "POST",
@@ -3836,7 +3593,11 @@ class API {
     });
   }
 
-  static async checkCustomConnectivity(data: { discovery_format: string; base_url: string; api_key: string }): Promise<{ success: boolean; message: string }> {
+  static async checkCustomConnectivity(data: {
+    discovery_format: string;
+    base_url: string;
+    api_key: string;
+  }): Promise<{ success: boolean; message: string }> {
     return this.request("/custom-providers/test", { method: "POST", body: JSON.stringify(data) });
   }
 
@@ -3857,17 +3618,12 @@ class API {
 
   // ==================== 市场 API ====================
 
-  static async listMarketSources(
-    options: { signal?: AbortSignal } = {},
-  ): Promise<MarketSourceListResponse> {
+  static async listMarketSources(options: { signal?: AbortSignal } = {}): Promise<MarketSourceListResponse> {
     return this.request("/market/sources", { signal: options.signal });
   }
 
   /** 添加即抓取一次；地址不被接受、已添加或抓取失败时抛错，不落库。 */
-  static async addMarketSource(body: {
-    address: string;
-    display_name?: string;
-  }): Promise<MarketSourceInfo> {
+  static async addMarketSource(body: { address: string; display_name?: string }): Promise<MarketSourceInfo> {
     return this.request("/market/sources", { method: "POST", body: JSON.stringify(body) });
   }
 
@@ -3912,18 +3668,32 @@ class API {
     return this.request(`/market/entries?${query}`, { signal: options.signal });
   }
 
-  static async getMarketEntry(sourceId: number, slug: string, options: { signal?: AbortSignal } = {}): Promise<MarketEntryDetail> {
+  static async getMarketEntry(
+    sourceId: number,
+    slug: string,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<MarketEntryDetail> {
     return this.request(`/market/sources/${sourceId}/entries/${encodeURIComponent(slug)}`, options);
   }
 
-  static async getMarketEntryDefinition(sourceId: number, slug: string, options: { signal?: AbortSignal } = {}): Promise<{ definition: unknown; entry_matches_definition: boolean; definition_digest: string | null }> {
+  static async getMarketEntryDefinition(
+    sourceId: number,
+    slug: string,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<{ definition: unknown; entry_matches_definition: boolean; definition_digest: string | null }> {
     return this.request(`/market/sources/${sourceId}/entries/${encodeURIComponent(slug)}/definition`, options);
   }
 
   /** `definitionDigest` 取自确认页加载的定义；服务端重新抓取后内容不同即 409 拒装。 */
-  static async installMarketEntry(sourceId: number, slug: string, definitionDigest: string, overwriteEndpointId?: number): Promise<{ endpoint: CustomEndpointInfo; installation: MarketEntryInstallation }> {
+  static async installMarketEntry(
+    sourceId: number,
+    slug: string,
+    definitionDigest: string,
+    overwriteEndpointId?: number,
+  ): Promise<{ endpoint: CustomEndpointInfo; installation: MarketEntryInstallation }> {
     return this.request(`/market/sources/${sourceId}/entries/${encodeURIComponent(slug)}/install`, {
-      method: "POST", body: JSON.stringify({ definition_digest: definitionDigest, overwrite_endpoint_id: overwriteEndpointId }),
+      method: "POST",
+      body: JSON.stringify({ definition_digest: definitionDigest, overwrite_endpoint_id: overwriteEndpointId }),
     });
   }
 
@@ -4063,8 +3833,13 @@ class API {
   }
 
   /** 内置声明式端点的定义原样 JSON，供「复制为我的」；Python 实现的内置端点 404。 */
-  static async getBuiltinEndpointDefinition(key: string, options: { signal?: AbortSignal } = {}): Promise<EndpointDefinition> {
-    return this.request(`/custom-providers/endpoints/${encodeURIComponent(key)}/definition`, { signal: options.signal });
+  static async getBuiltinEndpointDefinition(
+    key: string,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<EndpointDefinition> {
+    return this.request(`/custom-providers/endpoints/${encodeURIComponent(key)}/definition`, {
+      signal: options.signal,
+    });
   }
 
   static async previewEndpointRequest(
@@ -4075,10 +3850,7 @@ class API {
     },
     options: { signal?: AbortSignal; assets?: EndpointTestAssets } = {},
   ): Promise<EndpointPreviewResponse> {
-    return this.request(
-      "/custom-endpoints/preview-request",
-      endpointTestRequest(body, options.assets, options.signal),
-    );
+    return this.request("/custom-endpoints/preview-request", endpointTestRequest(body, options.assets, options.signal));
   }
 
   static async checkEndpointResponse(
@@ -4093,28 +3865,25 @@ class API {
   }
 
   /** 测试连接：真实调用一次生成，产生费用。definition 与 model_ref 互斥且必居其一。 */
-  static async createTrialRun(body: {
-    definition?: unknown;
-    model_ref?: TrialRunModelRef;
-    parameters: EndpointTestParameters;
-    credentials?: EndpointTestCredentials;
-  }, assets: EndpointTestAssets = {}): Promise<TrialRunInfo> {
+  static async createTrialRun(
+    body: {
+      definition?: unknown;
+      model_ref?: TrialRunModelRef;
+      parameters: EndpointTestParameters;
+      credentials?: EndpointTestCredentials;
+    },
+    assets: EndpointTestAssets = {},
+  ): Promise<TrialRunInfo> {
     return this.request("/custom-endpoints/trial-runs", endpointTestRequest(body, assets));
   }
 
-  static async getTrialRun(
-    runId: string,
-    options: { signal?: AbortSignal } = {},
-  ): Promise<TrialRunInfo> {
+  static async getTrialRun(runId: string, options: { signal?: AbortSignal } = {}): Promise<TrialRunInfo> {
     return this.request(`/custom-endpoints/trial-runs/${encodeURIComponent(runId)}`, {
       signal: options.signal,
     });
   }
 
-  static async getTrialRunArtifact(
-    runId: string,
-    options: { signal?: AbortSignal } = {},
-  ): Promise<Blob> {
+  static async getTrialRunArtifact(runId: string, options: { signal?: AbortSignal } = {}): Promise<Blob> {
     const endpoint = `/custom-endpoints/trial-runs/${encodeURIComponent(runId)}/artifact`;
     const response = await fetch(`${API_BASE}${endpoint}`, withAuth(endpoint, { signal: options.signal }));
     await throwIfNotOk(response, `HTTP ${response.status}`);
@@ -4135,7 +3904,7 @@ class API {
    */
   static async getCostEstimate(
     projectName: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<CostEstimateResponse> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/cost-estimate`, {
       signal: options.signal,
@@ -4156,7 +3925,7 @@ class API {
     projectName: string,
     episode: number,
     scriptFile: string,
-    sceneIds?: string[]
+    sceneIds?: string[],
   ): Promise<{
     success: boolean;
     grid_ids: string[];
@@ -4168,20 +3937,17 @@ class API {
     deduped: boolean;
     message: string;
   }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/generate/grid/${episode}`,
-      { method: "POST", body: JSON.stringify({ script_file: scriptFile, scene_ids: sceneIds }) }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/generate/grid/${episode}`, {
+      method: "POST",
+      body: JSON.stringify({ script_file: scriptFile, scene_ids: sceneIds }),
+    });
   }
 
   /**
    * 列出项目所有 Grid 记录
    * @param projectName - 项目名称
    */
-  static async listGrids(
-    projectName: string,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<GridGeneration[]> {
+  static async listGrids(projectName: string, options: { signal?: AbortSignal } = {}): Promise<GridGeneration[]> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/grids`, {
       signal: options.signal,
     });
@@ -4191,10 +3957,7 @@ class API {
    * 获取项目的宫格档位能力（4×4/5×5 是否可用、单张格数上限）
    * @param projectName - 项目名称
    */
-  static async getGridCapability(
-    projectName: string,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<GridCapability> {
+  static async getGridCapability(projectName: string, options: { signal?: AbortSignal } = {}): Promise<GridCapability> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/grid-capability`, {
       signal: options.signal,
     });
@@ -4208,7 +3971,7 @@ class API {
   static async getGrid(
     projectName: string,
     gridId: string,
-    options: { signal?: AbortSignal } = {}
+    options: { signal?: AbortSignal } = {},
   ): Promise<GridGeneration> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/grids/${encodeURIComponent(gridId)}`, {
       signal: options.signal,
@@ -4223,12 +3986,11 @@ class API {
    */
   static async regenerateGrid(
     projectName: string,
-    gridId: string
+    gridId: string,
   ): Promise<{ success: boolean; task_id: string; deduped: boolean }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/grids/${encodeURIComponent(gridId)}/regenerate`,
-      { method: "POST" }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/grids/${encodeURIComponent(gridId)}/regenerate`, {
+      method: "POST",
+    });
   }
 
   /**
@@ -4238,7 +4000,7 @@ class API {
    */
   static async splitGrid(
     projectName: string,
-    gridId: string
+    gridId: string,
   ): Promise<{
     success: boolean;
     split_at: string | null;
@@ -4246,10 +4008,9 @@ class API {
     missing_scene_ids: string[];
     asset_fingerprints: Record<string, number>;
   }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/grids/${encodeURIComponent(gridId)}/split`,
-      { method: "POST" }
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/grids/${encodeURIComponent(gridId)}/split`, {
+      method: "POST",
+    });
   }
 
   /**
@@ -4261,7 +4022,7 @@ class API {
   static async uploadGridImage(
     projectName: string,
     gridId: string,
-    file: File
+    file: File,
   ): Promise<{ success: boolean; path: string; version: number; asset_fingerprints: Record<string, number> }> {
     const url = `/projects/${encodeURIComponent(projectName)}/grids/${encodeURIComponent(gridId)}/upload`;
     return API.postFileUpload(url, file);
@@ -4377,9 +4138,7 @@ class API {
     projectName: string,
     episode: number,
   ): Promise<{ units: ReferenceVideoUnit[]; unit_capabilities: ReferenceUnitCapabilityMap }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/reference-videos/episodes/${episode}/units`,
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/reference-videos/episodes/${episode}/units`);
   }
 
   /** Create a new video unit on the reference-to-video path. */
@@ -4394,10 +4153,10 @@ class API {
       after_unit_id?: string;
     },
   ): Promise<{ unit: ReferenceVideoUnit; unit_capability: ReferenceUnitCapability }> {
-    return this.request(
-      `/projects/${encodeURIComponent(projectName)}/reference-videos/episodes/${episode}/units`,
-      { method: "POST", body: JSON.stringify(payload) },
-    );
+    return this.request(`/projects/${encodeURIComponent(projectName)}/reference-videos/episodes/${episode}/units`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 
   /** Patch body/duration/note on an existing unit. */
@@ -4418,11 +4177,7 @@ class API {
   }
 
   /** Delete a unit. Returns void on 204. */
-  static async deleteReferenceVideoUnit(
-    projectName: string,
-    episode: number,
-    unitId: string,
-  ): Promise<void> {
+  static async deleteReferenceVideoUnit(projectName: string, episode: number, unitId: string): Promise<void> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/reference-videos/episodes/${episode}/units/${encodeURIComponent(unitId)}`,
       { method: "DELETE" },
@@ -4536,7 +4291,6 @@ class API {
       { method: "POST", body: JSON.stringify(payload) },
     );
   }
-
 }
 
 export { API };

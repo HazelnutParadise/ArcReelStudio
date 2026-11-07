@@ -164,7 +164,10 @@ const DETAIL = {
   ...record(6),
   status: "failed",
   error_code: "content_policy",
-  prompt: Array.from({ length: 30 }, (_, i) => `第 ${i + 1} 段：夜雨中的码头，镜头缓慢推近灯塔，雾气在探照灯里翻涌。`).join("\n"),
+  prompt: Array.from(
+    { length: 30 },
+    (_, i) => `第 ${i + 1} 段：夜雨中的码头，镜头缓慢推近灯塔，雾气在探照灯里翻涌。`,
+  ).join("\n"),
   inputs: { parameters: { seed: 42, negative_prompt: "blurry, low quality", camera: "dolly-in" } },
   last_provider_response: { error: { code: 400, message: "content policy violation" } },
   provider_in_settings: true,
@@ -172,7 +175,10 @@ const DETAIL = {
 
 const STRESS: ApiOverrides = {
   [SUMMARY_KEY]: { status: 200, body: SUMMARY },
-  [RECORDS_KEY]: { status: 200, body: { items: Array.from({ length: 20 }, (_, i) => record(i)), next_cursor: "next", total: 73 } },
+  [RECORDS_KEY]: {
+    status: 200,
+    body: { items: Array.from({ length: 20 }, (_, i) => record(i)), next_cursor: "next", total: 73 },
+  },
   [DETAIL_KEY]: { status: 200, body: DETAIL },
 };
 
@@ -344,7 +350,11 @@ defineRegionScenarios("使用记录", [
     },
     act: async (page) => {
       await page.getByRole("button", { name: /^展开「.*第 1 次分镜讨论/ }).click();
-      await page.getByRole("table", { name: /第 1 次分镜讨论/ }).getByText("第 6 轮", { exact: false }).first().waitFor();
+      await page
+        .getByRole("table", { name: /第 1 次分镜讨论/ })
+        .getByText("第 6 轮", { exact: false })
+        .first()
+        .waitFor();
       // 指针移出表格：停在截断的会话名上会弹出完整名称的悬停提示。
       await page.mouse.move(0, 0);
       const main = page.getByRole("main");
@@ -352,7 +362,10 @@ defineRegionScenarios("使用记录", [
       await expect(page.getByRole("button", { name: "下一页" })).toBeInViewport();
     },
     // 截展开的明细表：栏宽最紧的是这一张。
-    screenshot: { name: "usage-agent-session-detail", target: (page) => page.getByRole("table", { name: /第 1 次分镜讨论/ }) },
+    screenshot: {
+      name: "usage-agent-session-detail",
+      target: (page) => page.getByRole("table", { name: /第 1 次分镜讨论/ }),
+    },
   },
   {
     name: "顶栏使用记录弹层在进行中与已结束都很多时，两栏各自滚动、底部链接可见",

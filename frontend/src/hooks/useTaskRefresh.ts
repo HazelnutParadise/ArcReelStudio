@@ -1,9 +1,5 @@
 import { useEffect, useRef } from "react";
-import {
-  defaultTaskStats,
-  selectNeedsFastPolling,
-  useTasksStore,
-} from "@/stores/tasks-store";
+import { defaultTaskStats, selectNeedsFastPolling, useTasksStore } from "@/stores/tasks-store";
 import { voidCall } from "@/utils/async";
 
 /** 有任务在途（或上轮拉取失败）时的轮询间隔——此间隔决定 queued→running 等中间态的可见延迟。 */

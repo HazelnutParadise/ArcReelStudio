@@ -236,8 +236,7 @@ export function EpisodesView({ projectName }: { projectName: string }) {
 
   const menuActions: EpisodeMenuActions = {
     splitBusy: split.busy,
-    planBlocked:
-      view.replan !== null ? t("replan_pending_hint") : planning ? t("episode_planning_busy") : null,
+    planBlocked: view.replan !== null ? t("replan_pending_hint") : planning ? t("episode_planning_busy") : null,
     onCreateAfter: setCreateAfter,
     onMergeWithNext: split.mergeWithNext,
     onClearAfter: split.clearAfter,

@@ -44,7 +44,11 @@ const DASH = "—";
 function HintedText({ hint, children }: { hint: string; children: ReactNode }) {
   return (
     <InfoTip>
-      <InfoTipTrigger render={<button type="button" className="cursor-help underline decoration-dotted underline-offset-4" />}>{children}</InfoTipTrigger>
+      <InfoTipTrigger
+        render={<button type="button" className="cursor-help underline decoration-dotted underline-offset-4" />}
+      >
+        {children}
+      </InfoTipTrigger>
       <InfoTipContent title={children}>{hint}</InfoTipContent>
     </InfoTip>
   );
@@ -54,7 +58,9 @@ function HintedText({ hint, children }: { hint: string; children: ReactNode }) {
 function costText(cost: Record<string, number>): string {
   const entries = costEntries(cost);
   if (entries.length > 0) {
-    return entries.map(([currency, amount]) => formatCurrencyAmount(currency, amount, { maximumFractionDigits: 4 })).join(" + ");
+    return entries
+      .map(([currency, amount]) => formatCurrencyAmount(currency, amount, { maximumFractionDigits: 4 }))
+      .join(" + ");
   }
   const [currency] = Object.keys(cost);
   return currency ? formatCurrencyAmount(currency, 0, { maximumFractionDigits: 4 }) : DASH;
@@ -156,7 +162,10 @@ export function UsageSessionsCard({
                         >
                           <ChevronRight
                             aria-hidden="true"
-                            className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-90")}
+                            className={cn(
+                              "size-3.5 shrink-0 text-muted-foreground transition-transform",
+                              open && "rotate-90",
+                            )}
                           />
                           <TruncatedText
                             text={title}
@@ -203,11 +212,7 @@ export function UsageSessionsCard({
                       <tr id={detailId} className="bg-muted/20">
                         <td colSpan={columns} className="px-3 pb-3">
                           {/* 列表刷新后最近一轮的时间变了，明细随之重取 */}
-                          <SessionDetail
-                            key={session.last_started_at}
-                            sessionId={session.session_id}
-                            title={title}
-                          />
+                          <SessionDetail key={session.last_started_at} sessionId={session.session_id} title={title} />
                         </td>
                       </tr>
                     )}
@@ -226,10 +231,7 @@ export function UsageSessionsCard({
   );
 }
 
-type DetailState =
-  | { status: "loading" }
-  | { status: "failed" }
-  | { status: "ready"; items: UsageAgentSessionRecord[] };
+type DetailState = { status: "loading" } | { status: "failed" } | { status: "ready"; items: UsageAgentSessionRecord[] };
 
 /** 展开的会话明细：按时间每条记录一行，同一轮的几条记录自然排在一起。 */
 function SessionDetail({ sessionId, title }: { sessionId: string; title: string }) {
@@ -357,12 +359,7 @@ function SessionDetail({ sessionId, title }: { sessionId: string; title: string 
                   )}
                 </td>
                 <td className="px-2 py-1.5 text-right">
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    aria-expanded={open}
-                    onClick={() => toggleRow(record.id)}
-                  >
+                  <Button variant="ghost" size="xs" aria-expanded={open} onClick={() => toggleRow(record.id)}>
                     {t("usage_row_detail")}
                   </Button>
                 </td>

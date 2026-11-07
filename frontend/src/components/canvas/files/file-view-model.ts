@@ -8,7 +8,9 @@ export type FilePreviewKind = "image" | "video" | "audio" | "text";
 export function canDeleteFile(entry: FileViewEntry): boolean {
   if (entry.type !== "file") return false;
   // 当前版本快照由服务端标出，删除会被拒绝
-  return (entry.role === "history" && !entry.is_current) || (entry.role === "unreferenced" && entry.owner?.kind !== "source");
+  return (
+    (entry.role === "history" && !entry.is_current) || (entry.role === "unreferenced" && entry.owner?.kind !== "source")
+  );
 }
 
 const PREVIEW_KINDS: Record<string, FilePreviewKind> = {

@@ -15,7 +15,9 @@ const FIELD_LABEL_CLS = "text-xs font-medium text-muted-foreground";
 function deliveryCardClass(selected: boolean): string {
   return cn(
     "flex flex-1 cursor-pointer items-center justify-center rounded-lg border px-3 py-2.5 text-sm transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
-    selected ? "border-primary/50 bg-primary/10 text-foreground" : "border-border text-subtle-foreground hover:text-foreground",
+    selected
+      ? "border-primary/50 bg-primary/10 text-foreground"
+      : "border-border text-subtle-foreground hover:text-foreground",
   );
 }
 
@@ -29,7 +31,14 @@ interface Props {
   lifecycle?: ModelLifecycleNotices;
 }
 
-export function NarrationDeliveryFields({ value, onChange, audioBackends, providerNames, modelNames, lifecycle }: Props) {
+export function NarrationDeliveryFields({
+  value,
+  onChange,
+  audioBackends,
+  providerNames,
+  modelNames,
+  lifecycle,
+}: Props) {
   const { t } = useTranslation("dashboard");
   const idBase = useId();
   const voiceId = `${idBase}-voice`;

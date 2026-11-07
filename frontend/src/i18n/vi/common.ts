@@ -1,4 +1,4 @@
-import type enCommon from "@/i18n/en/common";
+import type enCommon from '@/i18n/en/common';
 
 export default {
   'language': 'Ngôn ngữ',
@@ -58,7 +58,8 @@ export default {
   'adopt_new_content': 'Dùng nội dung mới',
   'leave_dialog_description': 'Không thể khôi phục các thay đổi đã hủy.',
   'undo': 'Hoàn tác',
-  'sortable_instructions': 'Nhấn Space hoặc Enter để nhấc lên, dùng phím mũi tên để di chuyển, rồi nhấn Space hoặc Enter để thả. Nhấn Esc để hủy.',
+  'sortable_instructions':
+    'Nhấn Space hoặc Enter để nhấc lên, dùng phím mũi tên để di chuyển, rồi nhấn Space hoặc Enter để thả. Nhấn Esc để hủy.',
   'sortable_role_description': 'mục có thể sắp xếp',
   'sortable_picked_up': 'Đã nhấc “{{name}}”, ở vị trí {{position}} trên {{total}}.',
   'sortable_moved': '“{{name}}” đã chuyển đến vị trí {{position}} trên {{total}}.',
@@ -87,5 +88,5 @@ export default {
   'item_position_of_total': '{{position}} / {{total}}',
   'item_internal_id': 'Mã nội bộ {{id}}',
   'item_agent_ref': '{{label}} (ID {{id}})',
-  "error_details": "Chi tiết",
+  'error_details': 'Chi tiết',
 } satisfies Record<keyof typeof enCommon, string>;

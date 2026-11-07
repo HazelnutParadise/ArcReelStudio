@@ -6,11 +6,7 @@ import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DEFAULT_TEMPLATE_ID,
-  getTemplatesByCategory,
-  type StyleCategory,
-} from "@/data/style-templates";
+import { DEFAULT_TEMPLATE_ID, getTemplatesByCategory, type StyleCategory } from "@/data/style-templates";
 
 export interface StylePickerValue {
   mode: "template" | "custom";
@@ -160,8 +156,12 @@ export function StylePicker({ value, onChange }: StylePickerProps) {
         <TabsTrigger value="custom">{t("templates:category.custom")}</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="live" className="mt-2">{templateGrid("live")}</TabsContent>
-      <TabsContent value="anim" className="mt-2">{templateGrid("anim")}</TabsContent>
+      <TabsContent value="live" className="mt-2">
+        {templateGrid("live")}
+      </TabsContent>
+      <TabsContent value="anim" className="mt-2">
+        {templateGrid("anim")}
+      </TabsContent>
       <TabsContent value="custom" className="mt-2">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">{t("templates:tab_custom_desc")}</p>

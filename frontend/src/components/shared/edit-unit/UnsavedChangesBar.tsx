@@ -29,7 +29,9 @@ export function UnsavedChangesBar({
       <div className="min-w-0 flex-1">
         <SaveStatus unit={unit} />
         {unit.externalChangeMessage ? (
-          <p role="status" className="text-sm text-subtle-foreground">{unit.externalChangeMessage}</p>
+          <p role="status" className="text-sm text-subtle-foreground">
+            {unit.externalChangeMessage}
+          </p>
         ) : null}
       </div>
       {unit.dirty ? (

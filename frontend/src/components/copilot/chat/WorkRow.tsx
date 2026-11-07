@@ -66,7 +66,11 @@ export function WorkRow({ icon: Icon, name, summary, status, children }: WorkRow
     <Collapsible render={<div className="min-w-0 text-muted-foreground" />}>
       <CollapsibleTrigger render={<Button variant="ghost" size="xs" className="-ml-2 max-w-full" />}>
         {head}
-        <ChevronRight data-icon="inline-end" aria-hidden className="transition-transform group-aria-expanded/button:rotate-90" />
+        <ChevronRight
+          data-icon="inline-end"
+          aria-hidden
+          className="transition-transform group-aria-expanded/button:rotate-90"
+        />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="mt-1 mb-1.5 ml-1.5 flex max-w-[40em] min-w-0 flex-col gap-2 border-l border-border pl-3">

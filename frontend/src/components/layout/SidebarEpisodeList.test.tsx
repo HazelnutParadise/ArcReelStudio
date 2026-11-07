@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import type { EpisodeMeta } from "@/types";
 import { SidebarEpisodeList } from "./SidebarEpisodeList";
 
@@ -15,7 +15,10 @@ const FILES = [{ source_file: "source/novel.txt" }];
 const EPISODES = [
   episode(1, "番外"),
   episode(2, "第二章", { source_origin: "whole_source", source_range: { source_file: "source/novel.txt", start: 0 } }),
-  episode(3, "第三章", { source_origin: "whole_source", source_range: { source_file: "source/novel.txt", start: 500 } }),
+  episode(3, "第三章", {
+    source_origin: "whole_source",
+    source_range: { source_file: "source/novel.txt", start: 500 },
+  }),
 ] as EpisodeMeta[];
 
 function renderList(onMove = vi.fn(() => Promise.resolve())) {
@@ -66,7 +69,9 @@ describe("SidebarEpisodeList", () => {
 
     // 「番外」移到「第二章」之后
     await waitFor(() => expect(onMove).toHaveBeenCalledWith(1, 2));
-    const titles = within(screen.getByRole("list")).getAllByRole("listitem").map((item) => item.textContent);
+    const titles = within(screen.getByRole("list"))
+      .getAllByRole("listitem")
+      .map((item) => item.textContent);
     expect(titles[0]).toContain("第二章");
     expect(titles[1]).toContain("番外");
     finish();

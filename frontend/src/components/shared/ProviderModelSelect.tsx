@@ -136,7 +136,8 @@ export function ProviderModelSelect({
     [unavailable],
   );
   const unavailableGroup = useMemo<OptionGroup[]>(
-    () => (unavailableReasons.size > 0 ? [{ provider: null, items: [...unavailableReasons.keys()], unavailable: true }] : []),
+    () =>
+      unavailableReasons.size > 0 ? [{ provider: null, items: [...unavailableReasons.keys()], unavailable: true }] : [],
     [unavailableReasons],
   );
 
@@ -147,7 +148,8 @@ export function ProviderModelSelect({
   const filteredGroups = useMemo(() => {
     const defaultGroup: OptionGroup[] = allowDefault && !activeQuery ? [{ provider: null, items: [""] }] : [];
     if (!activeQuery) return [...defaultGroup, ...groups, ...unavailableGroup];
-    const providerMatches = (provider: string) => (providerNames[provider] || provider).toLowerCase().includes(activeQuery);
+    const providerMatches = (provider: string) =>
+      (providerNames[provider] || provider).toLowerCase().includes(activeQuery);
     const modelMatches = (item: string) => {
       if (modelIdOf(item).toLowerCase().includes(activeQuery)) return true;
       const label = modelNames?.[item];

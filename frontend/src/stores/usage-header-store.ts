@@ -94,10 +94,9 @@ export const useUsageHeaderStore = create<UsageHeaderState>((set, get) => {
     if (projectName === null) return;
     const [summary, recent, pending] = await Promise.all([
       API.getUsageSummary({ projectName }, { signal }).catch(() => null),
-      API.getUsageRecords(
-        { projectName, statuses: FINISHED_STATUSES, limit: HEADER_RECENT_LIMIT },
-        { signal },
-      ).catch(() => null),
+      API.getUsageRecords({ projectName, statuses: FINISHED_STATUSES, limit: HEADER_RECENT_LIMIT }, { signal }).catch(
+        () => null,
+      ),
       API.getUsageRecords({ projectName, statuses: ["pending"] }, { signal }).catch(() => null),
     ]);
     // 被接管方作废时不写回：这一轮的结果属于上一个项目，或已有更新的一轮在跑。

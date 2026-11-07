@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { DraftDeltaPayload, DraftState, TimelineEntry } from "@/types";
 import {
   applyDraftDelta,
@@ -457,7 +457,12 @@ describe("projectEntriesToTurns", () => {
     const orphan = (status: string, summary: string | null) =>
       projectEntriesToTurns([
         userEntry("主线消息"),
-        entry({ type: "assistant", content: [{ type: "text", text: "审完了" }], uuid: "a-1", parent_tool_use_id: "tu-ghost" }),
+        entry({
+          type: "assistant",
+          content: [{ type: "text", text: "审完了" }],
+          uuid: "a-1",
+          parent_tool_use_id: "tu-ghost",
+        }),
         entry({
           type: "system",
           subtype: "subagent_outcome",
@@ -472,7 +477,11 @@ describe("projectEntriesToTurns", () => {
     const completed = orphan("completed", "审完了");
     expect(completed).toHaveLength(2);
     const card = completed[1].content[0];
-    expect(card.task_info).toMatchObject({ task_status: "completed", description: "审片：检查第 8 集", summary: "审完了" });
+    expect(card.task_info).toMatchObject({
+      task_status: "completed",
+      description: "审片：检查第 8 集",
+      summary: "审完了",
+    });
     expect(card.sub_turns?.[0].content[0].text).toBe("审完了");
 
     expect(orphan("stopped", null)[1].content[0].task_info?.task_status).toBe("stopped");
@@ -921,7 +930,14 @@ describe("createTimelineProjector", () => {
       e({ type: "assistant", content: [{ type: "text", text: "孤儿" }], uuid: "sa-1", parent_tool_use_id: "tu-late" }),
       // 锚点补到 → 合成卡片应并回主时间线
       e({ type: "assistant", content: [{ type: "tool_use", id: "tu-late", name: "Agent", input: {} }], uuid: "a-1" }),
-      e({ type: "system", subtype: "task_started", task_id: "t1", tool_use_id: "tu-late", description: "外层", uuid: "s-1" }),
+      e({
+        type: "system",
+        subtype: "task_started",
+        task_id: "t1",
+        tool_use_id: "tu-late",
+        description: "外层",
+        uuid: "s-1",
+      }),
       // 嵌套 subagent：内层锚点在外层子时间线内
       e({
         type: "assistant",
@@ -929,7 +945,12 @@ describe("createTimelineProjector", () => {
         uuid: "sa-2",
         parent_tool_use_id: "tu-late",
       }),
-      e({ type: "assistant", content: [{ type: "text", text: "内层回复" }], uuid: "sa-3", parent_tool_use_id: "tu-inner" }),
+      e({
+        type: "assistant",
+        content: [{ type: "text", text: "内层回复" }],
+        uuid: "sa-3",
+        parent_tool_use_id: "tu-inner",
+      }),
       // 提问 → 中断把 turn 提前 flush → 答复跨 turn 回填
       e({
         type: "assistant",
@@ -989,8 +1010,18 @@ describe("createTimelineProjector", () => {
     // entry0 属于 tu-A 的子时间线、自身携带 tool_use tu-B；entry1 属于 tu-B
     // 的子时间线、自身携带 tool_use tu-A —— 两组互相锚定成环，main 为空。
     const entries: TimelineEntry[] = [
-      e({ type: "assistant", content: [{ type: "tool_use", id: "tu-b", name: "Agent", input: {} }], uuid: "a-1", parent_tool_use_id: "tu-a" }),
-      e({ type: "assistant", content: [{ type: "tool_use", id: "tu-a", name: "Agent", input: {} }], uuid: "a-2", parent_tool_use_id: "tu-b" }),
+      e({
+        type: "assistant",
+        content: [{ type: "tool_use", id: "tu-b", name: "Agent", input: {} }],
+        uuid: "a-1",
+        parent_tool_use_id: "tu-a",
+      }),
+      e({
+        type: "assistant",
+        content: [{ type: "tool_use", id: "tu-a", name: "Agent", input: {} }],
+        uuid: "a-2",
+        parent_tool_use_id: "tu-b",
+      }),
     ];
     const turns = projectEntriesToTurns(entries);
     expect(turns.length).toBeGreaterThan(0);
@@ -1007,8 +1038,17 @@ describe("createTimelineProjector", () => {
     const projector = createTimelineProjector();
     for (let i = 0; i < 50; i++) {
       const toolId = `tu-${i}`;
-      entries.push(e({ type: "assistant", content: [{ type: "tool_use", id: toolId, name: "Agent", input: {} }], uuid: `a-${i}` }));
-      entries.push(e({ type: "assistant", content: [{ type: "text", text: `子回复${i}` }], uuid: `sa-${i}`, parent_tool_use_id: toolId }));
+      entries.push(
+        e({ type: "assistant", content: [{ type: "tool_use", id: toolId, name: "Agent", input: {} }], uuid: `a-${i}` }),
+      );
+      entries.push(
+        e({
+          type: "assistant",
+          content: [{ type: "text", text: `子回复${i}` }],
+          uuid: `sa-${i}`,
+          parent_tool_use_id: toolId,
+        }),
+      );
       entries.push(e({ type: "tool_result", tool_use_id: toolId, content: "done", is_error: false, uuid: `tr-${i}` }));
     }
     entries.push(e({ type: "assistant", content: [{ type: "text", text: "主时间线消息" }], uuid: "a-final" }));
@@ -1030,7 +1070,7 @@ function generateEntryStream(seed: number, length: number): TimelineEntry[] {
     state = (state * 1664525 + 1013904223) >>> 0;
     return state / 4294967296;
   };
-  const pick = <T,>(items: T[]): T => items[Math.floor(rng() * items.length)];
+  const pick = <T>(items: T[]): T => items[Math.floor(rng() * items.length)];
   const chance = (p: number): boolean => rng() < p;
 
   const entries: TimelineEntry[] = [];
@@ -1058,7 +1098,9 @@ function generateEntryStream(seed: number, length: number): TimelineEntry[] {
           seq,
           type: "assistant",
           uuid: `a-${seq}`,
-          content: [{ type: "tool_use", id, name: pick(["Read", "Agent", "Skill", "AskUserQuestion"]), input: { n: seq } }],
+          content: [
+            { type: "tool_use", id, name: pick(["Read", "Agent", "Skill", "AskUserQuestion"]), input: { n: seq } },
+          ],
         };
       }
     } else if (roll < 0.5) {

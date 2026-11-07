@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import type { AssetSheetStatusRow } from "@/types";
 import { pendingSheetCounts, useAssetSheetStatus } from "./useAssetSheetStatus";
@@ -32,13 +32,9 @@ describe("pendingSheetCounts", () => {
   });
 });
 
-
 describe("pendingSheetCounts while generating", () => {
   it("leaves sheets that are already generating out of the batch count", () => {
-    const rows = [
-      row({ unit_id: "scene/庭院", name: "庭院" }),
-      row({ unit_id: "scene/长街", name: "长街" }),
-    ];
+    const rows = [row({ unit_id: "scene/庭院", name: "庭院" }), row({ unit_id: "scene/长街", name: "长街" })];
 
     expect(pendingSheetCounts(rows, "scene", (candidate) => candidate.name === "长街")).toEqual({
       generatable: 1,

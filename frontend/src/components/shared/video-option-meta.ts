@@ -1,6 +1,11 @@
 import type { TFunction } from "i18next";
 import { formatDurationsLabel } from "@/utils/duration_format";
-import { catalogDurations, lookupCatalogVideoAudio, lookupResolutions, lookupVideoAudioControl } from "@/utils/provider-models";
+import {
+  catalogDurations,
+  lookupCatalogVideoAudio,
+  lookupResolutions,
+  lookupVideoAudioControl,
+} from "@/utils/provider-models";
 import type { CustomProviderInfo } from "@/types/custom-provider";
 import type { MediaType, ProviderInfo, VideoRoute } from "@/types";
 
@@ -32,16 +37,13 @@ export function videoOptionMetaRenderer({
     // 共用一条会让「图生视频」那一格按参考生的口径标注（或反之）。
     const route = asVideoRoute(subFieldKey) ?? defaultRoute;
     const durations = catalogDurations(providers, customProviders, fullValue);
-    const resolutions = lookupResolutions(
-      providers,
-      fullValue,
-      customProviders,
-      endpointToMediaType,
-    ).options;
+    const resolutions = lookupResolutions(providers, fullValue, customProviders, endpointToMediaType).options;
     // 查不到模型时为 null，音轨格整格不渲染——两条分支都不臆造一个答案。
     const audioControl = route ? lookupVideoAudioControl(providers, fullValue, route) : null;
     const hasAudioTrack = route
-      ? (audioControl === null ? null : audioControl !== "always_off")
+      ? audioControl === null
+        ? null
+        : audioControl !== "always_off"
       : (lookupCatalogVideoAudio(providers, fullValue)?.hasAudioTrack ?? null);
     const parts: string[] = [];
     if (durations?.length) parts.push(formatDurationsLabel(durations));

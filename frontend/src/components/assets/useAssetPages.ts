@@ -101,7 +101,15 @@ export function useAssetPages({ type, q }: { type?: AssetType; q: string }): Ass
       (page) => {
         if (controller.signal.aborted) return;
         firstRef.current = null;
-        setState({ ...INITIAL, key, query: { type, q }, items: page.items, nextOffset: page.items.length, total: page.total, counts: page.counts });
+        setState({
+          ...INITIAL,
+          key,
+          query: { type, q },
+          items: page.items,
+          nextOffset: page.items.length,
+          total: page.total,
+          counts: page.counts,
+        });
       },
       (err: unknown) => {
         if (controller.signal.aborted) return;
@@ -180,7 +188,13 @@ export function useAssetPages({ type, q }: { type?: AssetType; q: string }): Ass
         if (!prev.query || !matchesQuery(asset, { q: prev.query.q })) return prev;
         const counts = bump(prev.counts, asset.type, 1);
         if (!matchesQuery(asset, prev.query)) return { ...prev, counts };
-        return { ...prev, counts, items: [asset, ...prev.items], nextOffset: prev.nextOffset + 1, total: prev.total + 1 };
+        return {
+          ...prev,
+          counts,
+          items: [asset, ...prev.items],
+          nextOffset: prev.nextOffset + 1,
+          total: prev.total + 1,
+        };
       }),
     [settleLocalChange],
   );

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
@@ -36,7 +36,13 @@ function makeEpisode(overrides: Partial<EpisodeMeta> = {}): EpisodeMeta {
 }
 
 const NO_SOURCE = makeEpisode({ episode: 4, source_origin: "none", source_range: undefined });
-const OWN = makeEpisode({ episode: 6, title: "番外", source_origin: "own", source_range: undefined, source_kind: "novel" });
+const OWN = makeEpisode({
+  episode: 6,
+  title: "番外",
+  source_origin: "own",
+  source_range: undefined,
+  source_kind: "novel",
+});
 
 function useDramaProject() {
   useProjectsStore.setState({
@@ -172,7 +178,12 @@ describe("EpisodeSourceReview", () => {
     vi.spyOn(API, "getSourceContent").mockResolvedValue("自带的原文");
     vi.spyOn(useProjectsStore.getState(), "refreshProject").mockResolvedValue("success");
     let finishSave: (result: EpisodeSourceWriteResult) => void = () => {};
-    vi.spyOn(API, "updateEpisodeSource").mockImplementation(() => new Promise((resolve) => { finishSave = resolve; }));
+    vi.spyOn(API, "updateEpisodeSource").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishSave = resolve;
+        }),
+    );
     const plan = vi
       .spyOn(API, "planScript")
       .mockResolvedValue({ batch: { members: [] } } as unknown as Awaited<ReturnType<typeof API.planScript>>);
@@ -311,7 +322,11 @@ describe("EpisodeSourceReview", () => {
     const { rerender } = render(<EpisodeSourceReview projectName="demo" episode={1} episodes={[makeEpisode()]} />);
 
     const rail = screen.getByRole("complementary", { name: "本集导览" });
-    expect(within(rail).getAllByRole("listitem").map((item) => item.textContent)).toEqual(["1主角登场", "2遭遇冲突"]);
+    expect(
+      within(rail)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(["1主角登场", "2遭遇冲突"]);
     expect(within(rail).getByText("反派现身")).toBeInTheDocument();
 
     const bare = makeEpisode({ episode: 3, outline: undefined, hook: undefined });

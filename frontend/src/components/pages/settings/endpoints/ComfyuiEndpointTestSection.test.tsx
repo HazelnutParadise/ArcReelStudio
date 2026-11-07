@@ -1,13 +1,9 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import "@/i18n";
 import { API } from "@/api";
-import type {
-  ComfyuiEndpointDefinition,
-  EndpointPreviewResponse,
-  TrialRunInfo,
-} from "@/types";
+import type { ComfyuiEndpointDefinition, EndpointPreviewResponse, TrialRunInfo } from "@/types";
 import { ComfyuiEndpointTestSection } from "./ComfyuiEndpointTestSection";
 
 globalThis.URL.createObjectURL ??= vi.fn();
@@ -196,9 +192,7 @@ describe("ComfyuiEndpointTestSection", () => {
     await userEvent.upload(screen.getByLabelText("首帧"), file);
     await userEvent.click(screen.getByRole("button", { name: "渲染 /prompt 请求体" }));
 
-    await waitFor(() =>
-      expect(preview).toHaveBeenCalledWith(expect.anything(), { assets: { start_image: [file] } }),
-    );
+    await waitFor(() => expect(preview).toHaveBeenCalledWith(expect.anything(), { assets: { start_image: [file] } }));
   });
 
   it("walks the four stages, names the prompt_id and plays the artifact back", async () => {

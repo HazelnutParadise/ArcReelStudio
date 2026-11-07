@@ -1,11 +1,13 @@
-import type enDashboard from "@/i18n/en/dashboard";
+import type enDashboard from '@/i18n/en/dashboard';
 
 export default {
-  reference_prompt_draft_replaced: "Tập này có bản nháp lời nhắc mới. Lưu hoặc bỏ thay đổi để xem bản nháp.",
-  episode_externally_removed: "Tập này đã bị xóa. Việc lưu sẽ thất bại; hãy sao chép nội dung trước khi bỏ thay đổi.",
-  episode_script_removed: "Kịch bản của tập đã bị xóa. Việc lưu sẽ thất bại; hãy sao chép nội dung trước khi bỏ thay đổi.",
+  reference_prompt_draft_replaced: 'Tập này có bản nháp lời nhắc mới. Lưu hoặc bỏ thay đổi để xem bản nháp.',
+  episode_externally_removed: 'Tập này đã bị xóa. Việc lưu sẽ thất bại; hãy sao chép nội dung trước khi bỏ thay đổi.',
+  episode_script_removed:
+    'Kịch bản của tập đã bị xóa. Việc lưu sẽ thất bại; hãy sao chép nội dung trước khi bỏ thay đổi.',
   shot_externally_removed: 'Phân cảnh này đã bị xóa. Lưu sẽ thất bại; hãy sao chép nội dung trước khi bỏ thay đổi.',
-  reference_unit_externally_removed: 'Đơn vị video này đã bị xóa. Lưu sẽ thất bại; hãy sao chép nội dung trước khi bỏ thay đổi.',
+  reference_unit_externally_removed:
+    'Đơn vị video này đã bị xóa. Lưu sẽ thất bại; hãy sao chép nội dung trước khi bỏ thay đổi.',
   episode_source_replaced: 'Tập này có nội dung kịch bản mới. Lưu hoặc bỏ thay đổi để mở bảng phân cảnh.',
   prompt_preview_save_first: 'Lưu và xem trước',
   'app_title': '[[brand]]',
@@ -32,24 +34,30 @@ export default {
   'narration_visuals': 'Thuyết minh/Bình luận',
   'drama_animation': 'Phim truyện',
   'ad_short_video': 'Quảng cáo / Video ngắn',
-  'content_mode_ad_desc': 'Một video duy nhất. Các cảnh được lên kế hoạch theo tổng thời lượng mục tiêu, mỗi cảnh kèm lời thoại. Phù hợp cho video bán hàng và video sáng tạo ngắn.',
+  'content_mode_ad_desc':
+    'Một video duy nhất. Các cảnh được lên kế hoạch theo tổng thời lượng mục tiêu, mỗi cảnh kèm lời thoại. Phù hợp cho video bán hàng và video sáng tạo ngắn.',
   'target_duration_label': 'Tổng thời lượng mục tiêu',
-  'content_mode_narration_desc': 'Một giọng thuyết minh xuyên suốt tập, hình ảnh đi theo lời thuyết minh. Phù hợp cho video giải thích, tài liệu và kiến thức.',
-  'content_mode_drama_desc': 'Đối thoại nhân vật và cốt truyện dẫn dắt hình ảnh. Phù hợp cho chuyển thể tiểu thuyết và nội dung kể chuyện.',
+  'content_mode_narration_desc':
+    'Một giọng thuyết minh xuyên suốt tập, hình ảnh đi theo lời thuyết minh. Phù hợp cho video giải thích, tài liệu và kiến thức.',
+  'content_mode_drama_desc':
+    'Đối thoại nhân vật và cốt truyện dẫn dắt hình ảnh. Phù hợp cho chuyển thể tiểu thuyết và nội dung kể chuyện.',
   'source_kind': 'Loại tệp nguồn',
   'source_kind_novel': 'Tiểu thuyết',
   'source_kind_screenplay': 'Kịch bản gốc',
   'source_kind_novel_desc': 'Tải lên tiểu thuyết; AI sẽ chuyển thể thành kịch bản.',
-  'source_kind_screenplay_desc': 'Tải lên kịch bản gốc hoàn chỉnh; lời thoại và lời dẫn được giữ nguyên từng chữ, không chuyển thể.',
+  'source_kind_screenplay_desc':
+    'Tải lên kịch bản gốc hoàn chỉnh; lời thoại và lời dẫn được giữ nguyên từng chữ, không chuyển thể.',
   'source_kind_of': 'Loại tệp nguồn của {{name}}',
   'source_upload_batch_kind': 'Loại tệp nguồn cho các tệp này',
   'source_upload_existing_kind': 'Đã có · {{kind}}',
   'source_kind_change_title': 'Đổi loại tệp nguồn của {{name}}?',
-  'source_kind_change_desc': 'Các tập dưới đây đã có kế hoạch kịch bản. Sau khi đổi loại, những kế hoạch được tạo theo loại cũ sẽ lỗi thời; kịch bản chính thức không bị ảnh hưởng, nguyên văn và cách phân tập cũng giữ nguyên.',
+  'source_kind_change_desc':
+    'Các tập dưới đây đã có kế hoạch kịch bản. Sau khi đổi loại, những kế hoạch được tạo theo loại cũ sẽ lỗi thời; kịch bản chính thức không bị ảnh hưởng, nguyên văn và cách phân tập cũng giữ nguyên.',
   'source_kind_change_episode': 'Tập {{position}}: {{name}}',
   'source_kind_change_confirm': 'Đổi loại',
   'source_kind_change_episode_title': 'Đổi loại tệp nguồn của tập này?',
-  'source_kind_change_episode_desc': 'Tập dưới đây đã có kế hoạch kịch bản. Sau khi lưu, kế hoạch được tạo theo loại cũ sẽ lỗi thời; kịch bản chính thức không bị ảnh hưởng.',
+  'source_kind_change_episode_desc':
+    'Tập dưới đây đã có kế hoạch kịch bản. Sau khi lưu, kế hoạch được tạo theo loại cũ sẽ lỗi thời; kịch bản chính thức không bị ảnh hưởng.',
   'source_kind_change_episode_confirm': 'Lưu và đổi loại',
   'source_kind_change_failed': 'Không đổi được loại tệp nguồn: {{message}}',
   'optional': 'Tùy chọn',
@@ -71,7 +79,8 @@ export default {
   'duplicate_project_id': 'Phát hiện ID dự án trùng lặp',
   'overwrite_existing': 'Ghi đè dự án hiện có',
   'auto_rename_import': 'Tự đổi tên và nhập',
-  'overwrite_hint': 'Tương đương xóa dự án hiện có rồi nhập: các tác vụ đang chờ của dự án hiện có bị hủy; tác vụ, bản ghi sử dụng, phiên Agent và bộ nhớ dự án được giữ lại trong dự án đã xóa, không chuyển sang dự án nhập vào, và có thể khôi phục toàn bộ trong 30 ngày',
+  'overwrite_hint':
+    'Tương đương xóa dự án hiện có rồi nhập: các tác vụ đang chờ của dự án hiện có bị hủy; tác vụ, bản ghi sử dụng, phiên Agent và bộ nhớ dự án được giữ lại trong dự án đã xóa, không chuyển sang dự án nhập vào, và có thể khôi phục toàn bộ trong 30 ngày',
   'rename_hint': 'Giữ dự án hiện có và tự sinh ID mới cho dự án nhập',
   'project_overview': 'Tổng quan dự án',
   'no_files_yet': 'Chưa có tệp nào',
@@ -95,11 +104,14 @@ export default {
   'settings_theme_light': 'Sáng',
   'settings_theme_dark': 'Tối',
   'settings_gpu_encoding': 'Mã hóa bằng GPU',
-  'settings_gpu_encoding_desc_available': 'Đã phát hiện GPU NVIDIA. Video thành phẩm được mã hóa bằng GPU. Tắt để mã hóa bằng CPU.',
-  'settings_gpu_encoding_desc_unavailable': 'Không phát hiện GPU NVIDIA khả dụng. Video thành phẩm được mã hóa bằng CPU.',
+  'settings_gpu_encoding_desc_available':
+    'Đã phát hiện GPU NVIDIA. Video thành phẩm được mã hóa bằng GPU. Tắt để mã hóa bằng CPU.',
+  'settings_gpu_encoding_desc_unavailable':
+    'Không phát hiện GPU NVIDIA khả dụng. Video thành phẩm được mã hóa bằng CPU.',
   'settings_gpu_encoding_save_failed': 'Không thể lưu cài đặt mã hóa GPU: {{message}}',
   'settings_account': 'Tài khoản và thành viên',
-  'account_desc': 'Xem tài khoản của bạn và đổi mật khẩu. Quản trị viên còn có thể thêm thành viên, đổi vai trò hoặc vô hiệu hóa tài khoản. Mọi thành viên dùng chung một không gian làm việc và thấy tất cả dự án.',
+  'account_desc':
+    'Xem tài khoản của bạn và đổi mật khẩu. Quản trị viên còn có thể thêm thành viên, đổi vai trò hoặc vô hiệu hóa tài khoản. Mọi thành viên dùng chung một không gian làm việc và thấy tất cả dự án.',
   'account_mine_title': 'Tài khoản của tôi',
   'account_role_admin': 'Quản trị viên',
   'account_role_user': 'Thành viên',
@@ -107,7 +119,8 @@ export default {
   'account_current_password': 'Mật khẩu hiện tại',
   'account_new_password': 'Mật khẩu mới',
   'account_confirm_password': 'Xác nhận mật khẩu mới',
-  'account_password_hint': 'Ít nhất {{min}} ký tự. Sau khi đổi, các phiên đăng nhập trên thiết bị khác sẽ hết hiệu lực.',
+  'account_password_hint':
+    'Ít nhất {{min}} ký tự. Sau khi đổi, các phiên đăng nhập trên thiết bị khác sẽ hết hiệu lực.',
   'account_password_mismatch': 'Hai mật khẩu mới không khớp',
   'account_password_changed': 'Đã đổi mật khẩu',
   'account_password_change_failed': 'Không thể đổi mật khẩu: {{message}}',
@@ -125,7 +138,8 @@ export default {
   'members_role_select': 'Vai trò của {{name}}',
   'members_reset_password_named': 'Đặt lại mật khẩu cho {{name}}',
   'members_reset_password_title': 'Đặt lại mật khẩu cho {{name}}',
-  'members_reset_password_desc': 'Sau khi đặt lại, các phiên đăng nhập hiện có của {{name}} sẽ hết hiệu lực và cần đăng nhập lại bằng mật khẩu mới.',
+  'members_reset_password_desc':
+    'Sau khi đặt lại, các phiên đăng nhập hiện có của {{name}} sẽ hết hiệu lực và cần đăng nhập lại bằng mật khẩu mới.',
   'members_reset_password_submit': 'Đặt lại mật khẩu',
   'members_username': 'Tên người dùng',
   'members_username_hint': 'Chữ thường, chữ số và . _ @ -; đăng nhập không phân biệt hoa thường',
@@ -142,7 +156,8 @@ export default {
   'usage': 'Bản ghi sử dụng',
   'about': 'Giới thiệu',
   'prompt_templates': 'Mẫu prompt',
-  'prompt_templates_desc': 'Toàn bộ prompt mà mỗi bước tạo gửi tới mô hình. Được tích hợp sẵn theo phiên bản và chỉ đọc; các vị trí được đánh dấu sẽ điền dữ liệu dự án khi tạo.',
+  'prompt_templates_desc':
+    'Toàn bộ prompt mà mỗi bước tạo gửi tới mô hình. Được tích hợp sẵn theo phiên bản và chỉ đọc; các vị trí được đánh dấu sẽ điền dữ liệu dự án khi tạo.',
   'prompt_templates_loading': 'Đang tải mẫu prompt…',
   'prompt_templates_load_failed': 'Không tải được mẫu prompt',
   'prompt_templates_detail_load_failed': 'Không tải được chi tiết mẫu',
@@ -187,7 +202,8 @@ export default {
   'prompt_templates_slots_desc': 'Được điền bằng dữ liệu dự án khi tạo.',
   'prompt_templates_slots_empty': 'Không có vị trí dữ liệu; nội dung cố định.',
   'prompt_templates_source': 'Nội dung mẫu',
-  'prompt_templates_source_desc': 'Nhấp vào tham chiếu đoạn để mở rộng tại chỗ; di chuột lên vị trí dữ liệu để xem mô tả.',
+  'prompt_templates_source_desc':
+    'Nhấp vào tham chiếu đoạn để mở rộng tại chỗ; di chuột lên vị trí dữ liệu để xem mô tả.',
   'prompt_templates_optional_slot': 'Chỉ khi có {{slot}}',
   'prompt_templates_optional_condition': 'Chỉ khi {{condition}}',
   'prompt_templates_partial_blank': 'Trống: không thêm nội dung cho giá trị này.',
@@ -199,7 +215,8 @@ export default {
   'prompt_templates_partial': 'Đoạn',
   'prompt_templates_partial_source': 'Nội dung đoạn',
   'prompt_templates_referenced_by': 'Các mẫu sử dụng đoạn này',
-  'prompt_templates_referenced_by_desc': 'Thay đổi đoạn này sẽ ảnh hưởng đến các mẫu bên dưới. Nhấp vào một mẫu để xem chi tiết.',
+  'prompt_templates_referenced_by_desc':
+    'Thay đổi đoạn này sẽ ảnh hưởng đến các mẫu bên dưới. Nhấp vào một mẫu để xem chi tiết.',
   'prompt_templates_partial_load_failed': 'Không tải được chi tiết đoạn',
   'prompt_templates_back_to_template': 'Quay lại chi tiết mẫu',
   'prompt_templates_output_schema': 'Cấu trúc đầu ra',
@@ -262,7 +279,8 @@ export default {
   'subagent_tokens': '{{count}} tokens',
   'task_in_progress_default': 'Đang xử lý',
   // Gợi ý tại chỗ một lần sau khi trích xuất xong thiết lập câu chuyện
-  'overview_handoff_tip': 'Đã trích xuất xong thiết lập câu chuyện. Tiếp theo, gửi "Bắt đầu sản xuất" cho Agent ở bên phải.',
+  'overview_handoff_tip':
+    'Đã trích xuất xong thiết lập câu chuyện. Tiếp theo, gửi "Bắt đầu sản xuất" cho Agent ở bên phải.',
   'overview_handoff_dismiss': 'Đã hiểu',
   // Tổng quan dự án và trang chào mừng của dự án trống
   'overview_meta_episodes_one': '{{count}} tập',
@@ -285,9 +303,12 @@ export default {
   'overview_cost_actual_column': 'Thực tế',
   'overview_cost_total': 'Tổng',
   'overview_cost_usage_link': 'Xem nhật ký sử dụng',
-  'overview_cost_no_local_calls': 'Máy này không có nhật ký tạo nội dung của dự án (ví dụ dự án được nhập), nên không thể thống kê chi phí đã chi.',
-  'overview_cost_unpriced_estimate_one': 'Có {{count}} mục dự tính dùng mô hình chưa có giá, chưa được tính vào dự tính.',
-  'overview_cost_unpriced_estimate_other': 'Có {{count}} mục dự tính dùng mô hình chưa có giá, chưa được tính vào dự tính.',
+  'overview_cost_no_local_calls':
+    'Máy này không có nhật ký tạo nội dung của dự án (ví dụ dự án được nhập), nên không thể thống kê chi phí đã chi.',
+  'overview_cost_unpriced_estimate_one':
+    'Có {{count}} mục dự tính dùng mô hình chưa có giá, chưa được tính vào dự tính.',
+  'overview_cost_unpriced_estimate_other':
+    'Có {{count}} mục dự tính dùng mô hình chưa có giá, chưa được tính vào dự tính.',
   'overview_cost_unpriced_actual_one': 'Có {{count}} lần gọi dùng mô hình chưa có giá, chưa được tính vào đã chi.',
   'overview_cost_unpriced_actual_other': 'Có {{count}} lần gọi dùng mô hình chưa có giá, chưa được tính vào đã chi.',
   'overview_cost_set_price': 'Đặt giá:',
@@ -306,16 +327,20 @@ export default {
   'overview_regenerate': 'Tạo lại từ nguyên văn',
   'overview_discard_and_regenerate': 'Bỏ thay đổi và tạo lại',
   'overview_regenerate_confirm_title': 'Tạo lại thiết lập câu chuyện từ nguyên văn?',
-  'overview_regenerate_confirm_desc': 'Tóm tắt, thể loại, chủ đề và thế giới quan sẽ bị thay thế toàn bộ. Không thể hoàn tác.',
-  'overview_regenerate_confirm_desc_dirty': 'Tóm tắt, thể loại, chủ đề và thế giới quan sẽ bị thay thế toàn bộ, các thay đổi chưa lưu cũng sẽ mất. Không thể hoàn tác.',
+  'overview_regenerate_confirm_desc':
+    'Tóm tắt, thể loại, chủ đề và thế giới quan sẽ bị thay thế toàn bộ. Không thể hoàn tác.',
+  'overview_regenerate_confirm_desc_dirty':
+    'Tóm tắt, thể loại, chủ đề và thế giới quan sẽ bị thay thế toàn bộ, các thay đổi chưa lưu cũng sẽ mất. Không thể hoàn tác.',
   'overview_regenerate_confirm': 'Tạo lại',
   'overview_generate_failed': 'Không tạo được thiết lập câu chuyện: {{message}}',
-  'overview_generate_refresh_failed': 'Đã tạo thiết lập câu chuyện, nhưng làm mới trang thất bại — hãy tải lại trang để xem kết quả mới nhất.',
+  'overview_generate_refresh_failed':
+    'Đã tạo thiết lập câu chuyện, nhưng làm mới trang thất bại — hãy tải lại trang để xem kết quả mới nhất.',
   'welcome_title': 'Bắt đầu thực hiện «{{title}}»',
   'welcome_desc': 'Thêm tiểu thuyết hoặc kịch bản, AI sẽ đọc ra tóm tắt, thể loại, chủ đề và thế giới quan trước.',
   'welcome_drop': 'Kéo nguyên văn vào đây hoặc nhấp để chọn tệp',
   'welcome_formats': '{{formats}}, có thể thêm nhiều tệp cùng lúc',
-  'welcome_blank_hint': 'Chưa có nguyên văn? Tạo một tập trong «Tập» để viết từ đầu, hoặc kể ý tưởng cho Agent ở bên phải.',
+  'welcome_blank_hint':
+    'Chưa có nguyên văn? Tạo một tập trong «Tập» để viết từ đầu, hoặc kể ý tưởng cho Agent ở bên phải.',
   'project_sync_failed': 'Đồng bộ thay đổi dự án thất bại: {{message}}',
   'project_load_failed': 'Tải dự án thất bại: {{message}}',
   'synopsis': 'Tóm tắt',
@@ -342,9 +367,12 @@ export default {
   'character_voice_binding_optional_summary': 'Tùy chọn: âm thanh tham chiếu',
   'character_voice_binding_prompt_label': 'Ràng buộc bằng lời nhắc',
   'character_voice_binding_reference_audio_label': 'Âm thanh tham chiếu',
-  'character_voice_binding_prompt_desc': 'Đưa mô tả giọng của nhân vật vào lời nhắc để mô hình video lồng tiếng theo mô tả. Không cần âm thanh tham chiếu, nhưng giọng giữa các đoạn chỉ tương đối giống nhau.',
-  'character_voice_binding_reference_audio_desc': 'Gửi kèm âm thanh tham chiếu của nhân vật trong yêu cầu tạo video để mô hình dùng lại đúng giọng đó, nhất quán nhất giữa các đoạn. Mọi nhân vật có thoại đều cần âm thanh tham chiếu và bị giới hạn bởi số âm thanh tham chiếu mô hình hỗ trợ.',
-  'character_voice_binding_optional_hint': 'Dự án này ràng buộc giọng nhân vật bằng lời nhắc nên âm thanh tham chiếu không có tác dụng. Để bật, hãy đổi «Cách ràng buộc giọng nhân vật» thành «Âm thanh tham chiếu» trong cài đặt dự án.',
+  'character_voice_binding_prompt_desc':
+    'Đưa mô tả giọng của nhân vật vào lời nhắc để mô hình video lồng tiếng theo mô tả. Không cần âm thanh tham chiếu, nhưng giọng giữa các đoạn chỉ tương đối giống nhau.',
+  'character_voice_binding_reference_audio_desc':
+    'Gửi kèm âm thanh tham chiếu của nhân vật trong yêu cầu tạo video để mô hình dùng lại đúng giọng đó, nhất quán nhất giữa các đoạn. Mọi nhân vật có thoại đều cần âm thanh tham chiếu và bị giới hạn bởi số âm thanh tham chiếu mô hình hỗ trợ.',
+  'character_voice_binding_optional_hint':
+    'Dự án này ràng buộc giọng nhân vật bằng lời nhắc nên âm thanh tham chiếu không có tác dụng. Để bật, hãy đổi «Cách ràng buộc giọng nhân vật» thành «Âm thanh tham chiếu» trong cài đặt dự án.',
   'upload_reference_audio': 'Tải lên âm thanh tham chiếu',
   'reference_audio_hint': 'wav / mp3 · 2–10 giây · ≤15MB',
   'play_audio_sample': 'Phát',
@@ -364,8 +392,7 @@ export default {
   'voice_sample_text_label': 'Văn bản mẫu',
   'voice_sample_text_default':
     'Xin chào, đây là một đoạn mẫu giọng đọc sẽ được dùng làm âm thanh tham chiếu của nhân vật, giúp giữ giọng nói nhất quán.',
-  'voice_sample_text_hint':
-    'Mẫu âm thanh phải dài 2-10 giây; văn bản quá dài sẽ khiến việc tạo thất bại.',
+  'voice_sample_text_hint': 'Mẫu âm thanh phải dài 2-10 giây; văn bản quá dài sẽ khiến việc tạo thất bại.',
   'voice_sample_generate': 'Tạo',
   'voice_sample_generating': 'Đang tạo…',
   'voice_sample_regenerate': 'Tạo lại',
@@ -389,7 +416,8 @@ export default {
   'image_edit_action': 'Chỉnh sửa cục bộ',
   'image_edit_no_image_hint': 'Hãy tạo hoặc tải ảnh lên trước rồi mới chỉnh sửa',
   'image_edit_modal_title': 'Chỉnh sửa cục bộ',
-  'image_edit_modal_desc': 'Mô tả trong một câu điều cần thay đổi ở "{{name}}". Chỉ phần đó được điều chỉnh; mọi thứ khác giữ nguyên.',
+  'image_edit_modal_desc':
+    'Mô tả trong một câu điều cần thay đổi ở "{{name}}". Chỉ phần đó được điều chỉnh; mọi thứ khác giữ nguyên.',
   'image_edit_instruction_label': 'Chỉ dẫn chỉnh sửa',
   'image_edit_instruction_placeholder': 'ví dụ: đổi tóc thành màu đỏ, xóa người qua đường ở hậu cảnh',
   'image_edit_submit': 'Gửi chỉnh sửa',
@@ -422,33 +450,43 @@ export default {
   'default_audio_model': 'Mô hình âm thanh thuyết minh mặc định',
   'narration_voice_label': 'ID giọng thuyết minh',
   'narration_voice_hint': 'Điền id giọng theo tài liệu nhà cung cấp; để trống để dùng giọng mặc định',
-  'narration_voice_hint_with_voices': 'Chọn giọng trong danh sách hoặc điền id giọng theo tài liệu nhà cung cấp; để trống để dùng giọng mặc định',
+  'narration_voice_hint_with_voices':
+    'Chọn giọng trong danh sách hoặc điền id giọng theo tài liệu nhà cung cấp; để trống để dùng giọng mặc định',
   'narration_speed_label': 'Tốc độ giọng đọc (tùy chọn)',
   'narration_speed_hint': 'Để trống để dùng tốc độ mặc định; một số mô hình không hỗ trợ điều chỉnh tốc độ',
   'project_narration_delivery_title': 'Cách lồng tiếng lời dẫn',
   'project_narration_delivery_use_tts': 'Lồng tiếng TTS',
   'project_narration_delivery_post_production': 'Lồng tiếng hậu kỳ',
-  'project_narration_delivery_use_tts_desc': 'ArcReel lồng tiếng lời dẫn bằng mô hình TTS đã chọn. Mô hình, giọng và tốc độ được lưu trong dự án; thay đổi mặc định chung sau này không ảnh hưởng đến dự án.',
-  'project_narration_delivery_post_production_desc': 'ArcReel không tạo âm thanh lời dẫn; bạn tự lồng tiếng khi dựng phim.',
+  'project_narration_delivery_use_tts_desc':
+    'ArcReel lồng tiếng lời dẫn bằng mô hình TTS đã chọn. Mô hình, giọng và tốc độ được lưu trong dự án; thay đổi mặc định chung sau này không ảnh hưởng đến dự án.',
+  'project_narration_delivery_post_production_desc':
+    'ArcReel không tạo âm thanh lời dẫn; bạn tự lồng tiếng khi dựng phim.',
   'project_narration_delivery_switch_hint': 'Có thể chuyển bất cứ lúc nào; nội dung đã tạo không bị lỗi thời.',
   'project_tts_model_label': 'Mô hình TTS',
   'project_tts_model_required': 'Hãy chọn mô hình TTS khi dùng lồng tiếng TTS',
   'project_tts_no_models': 'Chưa có mô hình TTS khả dụng; hãy cấu hình nhà cung cấp âm thanh tại "Nhà cung cấp" trước',
   'project_narration_voice_hint': 'Điền id giọng theo tài liệu nhà cung cấp',
-  'project_narration_voice_hint_with_voices': 'Chọn giọng trong danh sách hoặc điền id giọng theo tài liệu nhà cung cấp',
+  'project_narration_voice_hint_with_voices':
+    'Chọn giọng trong danh sách hoặc điền id giọng theo tài liệu nhà cung cấp',
   'project_narration_voice_required': 'Hãy nhập giọng khi dùng lồng tiếng TTS',
-  'project_narration_speed_unsupported': 'Mô hình TTS đã chọn không hỗ trợ điều chỉnh tốc độ nên cài đặt này không có tác dụng',
-  'global_tts_defaults_prefill_hint': 'Mô hình TTS, giọng và tốc độ ở đây chỉ dùng để điền sẵn cho dự án lồng tiếng TTS mới; các dự án hiện có giữ cài đặt đã lưu của riêng mình.',
+  'project_narration_speed_unsupported':
+    'Mô hình TTS đã chọn không hỗ trợ điều chỉnh tốc độ nên cài đặt này không có tác dụng',
+  'global_tts_defaults_prefill_hint':
+    'Mô hình TTS, giọng và tốc độ ở đây chỉ dùng để điền sẵn cho dự án lồng tiếng TTS mới; các dự án hiện có giữ cài đặt đã lưu của riêng mình.',
   'speech_rate_label': 'Nhịp đọc (tùy chọn)',
-  'speech_rate_hint_language_pending': 'Ngôn ngữ dự án chưa được xác định: dự án tiếng Trung tính ký tự mỗi giây, dự án tiếng Anh và tiếng Việt tính từ mỗi giây. Bạn có thể điều chỉnh trong cài đặt dự án sau khi ngôn ngữ được xác định.',
-  'speech_rate_hint': 'Ước tính thời lượng đọc lời thoại và lời dẫn, ảnh hưởng đến gợi ý thời lượng và cảnh báo lượng thoại. Để trống để ước tính theo nhịp mặc định của ngôn ngữ dự án. Không thay đổi tốc độ giọng đọc thực tế.',
+  'speech_rate_hint_language_pending':
+    'Ngôn ngữ dự án chưa được xác định: dự án tiếng Trung tính ký tự mỗi giây, dự án tiếng Anh và tiếng Việt tính từ mỗi giây. Bạn có thể điều chỉnh trong cài đặt dự án sau khi ngôn ngữ được xác định.',
+  'speech_rate_hint':
+    'Ước tính thời lượng đọc lời thoại và lời dẫn, ảnh hưởng đến gợi ý thời lượng và cảnh báo lượng thoại. Để trống để ước tính theo nhịp mặc định của ngôn ngữ dự án. Không thay đổi tốc độ giọng đọc thực tế.',
   'speech_rate_out_of_range': 'Vui lòng nhập giá trị từ {{min}} đến {{max}}',
   'episode_target_duration_label': 'Thời lượng mục tiêu mỗi tập (tùy chọn)',
   'episode_target_duration_unit': 'giây',
-  'episode_target_duration_hint': 'Độ dài mong muốn của tập hoàn chỉnh. AI dựa vào đó để quyết định mỗi tập bao gồm bao nhiêu nội dung gốc và chia tập thành bao nhiêu cảnh quay hoặc đơn vị video. Đây là mục tiêu mềm: chia ít hơn khi nội dung không đủ, và có thể vượt khi nội dung cần. Để trống để AI tự cân nhắc theo nội dung.',
+  'episode_target_duration_hint':
+    'Độ dài mong muốn của tập hoàn chỉnh. AI dựa vào đó để quyết định mỗi tập bao gồm bao nhiêu nội dung gốc và chia tập thành bao nhiêu cảnh quay hoặc đơn vị video. Đây là mục tiêu mềm: chia ít hơn khi nội dung không đủ, và có thể vượt khi nội dung cần. Để trống để AI tự cân nhắc theo nội dung.',
   'episode_target_duration_out_of_range': 'Vui lòng nhập số giây nguyên từ {{min}} đến {{max}}',
   'episode_duration_vs_target': 'Tổng tập {{total}} giây / mục tiêu {{target}} giây',
-  'episode_duration_over_target': 'Tổng tập {{total}} giây, vượt {{over}} giây so với mục tiêu {{target}} giây (chỉ là thông báo, không chặn xác nhận)',
+  'episode_duration_over_target':
+    'Tổng tập {{total}} giây, vượt {{over}} giây so với mục tiêu {{target}} giây (chỉ là thông báo, không chặn xác nhận)',
   'reading_unit_char_per_second': 'ký tự/giây',
   'reading_unit_generic_per_second': 'ký tự hoặc từ/giây',
   'reading_unit_word_per_second': 'từ/giây',
@@ -477,11 +515,14 @@ export default {
   'export_renders_moved_hint': 'Video thành phẩm và bản nháp Jianying được xuất trong chế độ dựng của từng tập.',
   'export_open_edit_view': "Mở chế độ dựng của '{{name}}'",
   'edit_view_empty_title': 'Tập này chưa có dòng thời gian dựng',
-  'edit_view_empty_description': 'Có thể giao cho Agent dựng một bản, hoặc tạo từ kịch bản: mỗi đơn vị video dùng trọn vẹn, các đoạn nối bằng cắt thẳng.',
+  'edit_view_empty_description':
+    'Có thể giao cho Agent dựng một bản, hoặc tạo từ kịch bản: mỗi đơn vị video dùng trọn vẹn, các đoạn nối bằng cắt thẳng.',
   'edit_timeline_create_failed': 'Không tạo được dòng thời gian dựng: {{message}}',
   'edit_render_button': 'Xuất phim',
-  'edit_render_blocked_reason': 'Dòng thời gian dựng này có {{count}} vấn đề chặn việc xuất phim. Hãy xử lý trước khi xuất.',
-  'edit_render_blocked_reason_units': 'Dòng thời gian dựng này có {{count}} vấn đề chặn việc xuất phim ở {{units}}. Hãy xử lý trước khi xuất.',
+  'edit_render_blocked_reason':
+    'Dòng thời gian dựng này có {{count}} vấn đề chặn việc xuất phim. Hãy xử lý trước khi xuất.',
+  'edit_render_blocked_reason_units':
+    'Dòng thời gian dựng này có {{count}} vấn đề chặn việc xuất phim ở {{units}}. Hãy xử lý trước khi xuất.',
   'edit_render_blocked_view_issues': 'Xem vấn đề ({{count}})',
   'edit_render_dialog_title': 'Xuất phim · {{name}}',
   'edit_render_kind_label': 'Sản phẩm bàn giao',
@@ -505,7 +546,8 @@ export default {
   'edit_render_export_draft': 'Xuất bản nháp Jianying',
   'edit_render_reexport_draft': 'Xuất lại',
   'edit_render_draft_path_required': 'Hãy nhập thư mục bản nháp Jianying trước',
-  'edit_render_draft_fields_hint': 'Bản nháp được tạo theo thư mục và phiên bản Jianying ở đây khi tải xuống, nên cùng một bản nháp vẫn dùng được trên máy khác. Xem thư mục trong Jianying tại Cài đặt → Vị trí bản nháp.',
+  'edit_render_draft_fields_hint':
+    'Bản nháp được tạo theo thư mục và phiên bản Jianying ở đây khi tải xuống, nên cùng một bản nháp vẫn dùng được trên máy khác. Xem thư mục trong Jianying tại Cài đặt → Vị trí bản nháp.',
   'edit_render_task_queued': 'Đã gửi, đang xếp hàng…',
   'edit_render_task_running_final_cut': 'Đang kết xuất video thành phẩm…',
   'edit_render_task_running_draft': 'Đang xuất bản nháp Jianying…',
@@ -522,7 +564,8 @@ export default {
   'edit_render_burn_subtitles_hint': 'Phụ đề được vẽ thẳng vào khung hình video, không thể tắt khi phát.',
   'config_incomplete': 'Cấu hình chưa đầy đủ',
   'export_diagnostics_title': 'Chẩn đoán xuất',
-  'export_diagnostics_description': 'Hoàn tất kiểm tra trước xuất và đã tạo ZIP. Phát hiện các vấn đề sau trong gói xuất.',
+  'export_diagnostics_description':
+    'Hoàn tất kiểm tra trước xuất và đã tạo ZIP. Phát hiện các vấn đề sau trong gói xuất.',
   'diagnostics_blocking': 'Vấn đề nghiêm trọng',
   'diagnostics_auto_fixed': 'Đã tự sửa',
   'diagnostics_warnings': 'Cảnh báo',
@@ -535,7 +578,8 @@ export default {
   'wizard_content_mode_hint': 'Quyết định cách viết kịch bản. Không có giá trị mặc định.',
   'wizard_duration_title': 'Thời lượng',
   'wizard_duration_ad_desc': 'Độ dài mục tiêu của video thành phẩm. Các cảnh được lên kế hoạch theo đó.',
-  'wizard_duration_desc': 'Đều có thể bỏ trống. Không đặt mục tiêu thì AI tự cân theo nội dung; tốc độ nói dùng mặc định theo ngôn ngữ dự án.',
+  'wizard_duration_desc':
+    'Đều có thể bỏ trống. Không đặt mục tiêu thì AI tự cân theo nội dung; tốc độ nói dùng mặc định theo ngôn ngữ dự án.',
   'wizard_item_episode_target_duration': 'thời lượng mục tiêu mỗi tập',
   'wizard_item_speech_rate': 'tốc độ nói',
   'wizard_models_title': 'Mô hình',
@@ -631,7 +675,8 @@ export default {
   'generating_queue_hint': 'Agent đang trả lời, tin nhắn gửi lúc này sẽ được xếp hàng',
   'input_placeholder': 'Nhập tin nhắn, gõ / để xem các skill khả dụng',
   'image_too_large_hint': 'Ảnh "{{name}}" vượt 5MB và đã bị bỏ qua',
-  'image_gif_unsupported_hint': 'Hiện chưa hỗ trợ GIF. Ảnh "{{name}}" đã bị bỏ qua, hãy chuyển sang PNG hoặc JPEG rồi tải lên lại',
+  'image_gif_unsupported_hint':
+    'Hiện chưa hỗ trợ GIF. Ảnh "{{name}}" đã bị bỏ qua, hãy chuyển sang PNG hoặc JPEG rồi tải lên lại',
   'image_still_too_large_hint': 'Ảnh "{{name}}" vẫn quá lớn sau khi nén và đã bị bỏ qua',
   'image_unreadable_hint': 'Không đọc được ảnh "{{name}}" và đã bị bỏ qua',
   'collapse_panel': 'Thu gọn bảng Agent',
@@ -674,7 +719,8 @@ export default {
   'session_status_idle': 'Không hoạt động',
   'delete_session_named': 'Xóa phiên "{{title}}"',
   'delete_session_title': 'Xóa phiên "{{title}}"?',
-  'delete_session_desc': 'Nội dung trò chuyện của phiên này sẽ bị xóa và không thể khôi phục. Phân cảnh, video và các nội dung đã tạo khác không bị ảnh hưởng.',
+  'delete_session_desc':
+    'Nội dung trò chuyện của phiên này sẽ bị xóa và không thể khôi phục. Phân cảnh, video và các nội dung đã tạo khác không bị ảnh hưởng.',
   'delete_session_failed': 'Chưa xóa được phiên. Hãy thử lại.',
   'composer_remove_image': 'Bỏ ảnh đính kèm {{index}}',
   'slash_menu_label': 'Lệnh skill',
@@ -703,7 +749,8 @@ export default {
   'prompt_form_switch_needs_save': 'Hãy lưu thay đổi trước khi chuyển dạng lời nhắc',
   'prompt_form_switch_unavailable': 'Hiện không dựng được lời nhắc cuối cùng nên không thể chuyển sang dạng văn bản.',
   'prompt_form_to_structured_title': 'Chuyển lại lời nhắc có cấu trúc?',
-  'prompt_form_to_structured_desc': 'Lời nhắc dạng văn bản sẽ bị bỏ và không được phân tích ngược thành các trường có cấu trúc, bạn cần nhập lại.',
+  'prompt_form_to_structured_desc':
+    'Lời nhắc dạng văn bản sẽ bị bỏ và không được phân tích ngược thành các trường có cấu trúc, bạn cần nhập lại.',
   'prompt_form_to_structured_confirm': 'Bỏ và chuyển',
   'reference_prompt_preview_title': 'Lời nhắc video tham chiếu',
   'reference_prompt_preview_images': 'Ảnh tham chiếu gửi cùng yêu cầu',
@@ -719,11 +766,15 @@ export default {
   'message_edit': 'Sửa tin nhắn này và gửi lại từ đây',
   'message_edit_attachment': 'Tệp đính kèm {{index}}/{{total}} đang chỉnh sửa',
   'message_edit_remove_attachment': 'Bỏ ảnh {{index}}/{{total}} đang chỉnh sửa',
-  'message_edit_historical_attachment_gif_hint': 'Ảnh đính kèm lịch sử {{index}} là GIF nên đã bị xóa; hãy tải lại dưới dạng PNG hoặc JPEG nếu cần',
-  'message_edit_historical_attachment_unreadable_hint': 'Không đọc được ảnh đính kèm lịch sử {{index}} nên ảnh đã bị xóa; hãy tải lại nếu cần',
-  'message_edit_historical_attachment_oversized_hint': 'Ảnh đính kèm lịch sử {{index}} vẫn quá lớn sau khi nén nên đã bị xóa; hãy tải lại nếu cần',
+  'message_edit_historical_attachment_gif_hint':
+    'Ảnh đính kèm lịch sử {{index}} là GIF nên đã bị xóa; hãy tải lại dưới dạng PNG hoặc JPEG nếu cần',
+  'message_edit_historical_attachment_unreadable_hint':
+    'Không đọc được ảnh đính kèm lịch sử {{index}} nên ảnh đã bị xóa; hãy tải lại nếu cần',
+  'message_edit_historical_attachment_oversized_hint':
+    'Ảnh đính kèm lịch sử {{index}} vẫn quá lớn sau khi nén nên đã bị xóa; hãy tải lại nếu cần',
   'message_edit_textarea_label': 'Viết lại nội dung tin nhắn',
-  'message_edit_consequence': 'Cuộc trò chuyện sau tin nhắn này sẽ bị loại bỏ. Các thay đổi tệp đã tạo ra sẽ không được hoàn tác.',
+  'message_edit_consequence':
+    'Cuộc trò chuyện sau tin nhắn này sẽ bị loại bỏ. Các thay đổi tệp đã tạo ra sẽ không được hoàn tác.',
   'message_edit_cancel': 'Hủy',
   'message_edit_resend': 'Gửi lại',
   'message_edit_resending': 'Đang gửi…',
@@ -732,7 +783,8 @@ export default {
   'session_load_failed': 'Không tải được nội dung phiên trò chuyện, hãy chọn lại phiên để thử lại',
   'agent_failure_startup_title': 'Agent chưa khởi động được',
   'agent_failure_turn_title': 'Lượt này chưa hoàn tất',
-  'agent_failure_observation_note': 'Đây là dữ liệu hệ thống thực sự quan sát được; không phải kết luận về nguyên nhân gốc.',
+  'agent_failure_observation_note':
+    'Đây là dữ liệu hệ thống thực sự quan sát được; không phải kết luận về nguyên nhân gốc.',
   'agent_failure_source_label': 'Nguồn',
   'agent_failure_type_label': 'Loại',
   'agent_failure_status_label': 'Trạng thái',
@@ -756,7 +808,8 @@ export default {
   'agent_failure_conclusion_cli_connection_failed': 'Không kết nối được với chương trình dòng lệnh Claude Code.',
   'agent_failure_conclusion_process_failed': 'Tiến trình Claude Code đã thoát bất thường.',
   'agent_failure_conclusion_startup_timeout': 'Hết thời gian chờ Agent khởi động.',
-  'agent_failure_conclusion_subprocess_unsupported': 'Vòng lặp sự kiện của backend không hỗ trợ tạo tiến trình con nên không khởi chạy được Claude Code. Trên Windows, lỗi này xảy ra khi khởi động backend với --reload; hãy khởi động lại backend mà không dùng --reload.',
+  'agent_failure_conclusion_subprocess_unsupported':
+    'Vòng lặp sự kiện của backend không hỗ trợ tạo tiến trình con nên không khởi chạy được Claude Code. Trên Windows, lỗi này xảy ra khi khởi động backend với --reload; hãy khởi động lại backend mà không dùng --reload.',
   'agent_failure_conclusion_startup_failed': 'Đã xảy ra lỗi khi khởi động. Thông tin gốc nằm trong Chi tiết.',
 
   // StudioCanvasRouter & Toasts
@@ -769,7 +822,8 @@ export default {
   'narration_batch_submitted_toast': 'Đã gửi {{count}} tác vụ tạo âm thanh thuyết minh',
   'narration_batch_none_missing_toast': 'Tất cả phân cảnh đã có âm thanh thuyết minh',
   'generate_narration_failed': 'Tạo âm thanh thuyết minh thất bại: {{message}}',
-  'audio_provider_not_configured_toast': 'Vui lòng cấu hình nhà cung cấp âm thanh trước: thêm nhà cung cấp hỗ trợ chuyển văn bản thành giọng nói trong Cài đặt → Nhà cung cấp',
+  'audio_provider_not_configured_toast':
+    'Vui lòng cấu hình nhà cung cấp âm thanh trước: thêm nhà cung cấp hỗ trợ chuyển văn bản thành giọng nói trong Cài đặt → Nhà cung cấp',
   'character_task_submitted_toast': 'Đã gửi tác vụ tạo nhân vật cho "{{name}}"',
   'submit_failed': 'Gửi thất bại: {{message}}',
   'generate_scene_failed': 'Tạo hình tài sản cảnh thất bại: {{message}}',
@@ -811,14 +865,18 @@ export default {
   'env_anthropic_model': 'Ánh xạ tới ANTHROPIC_MODEL, ghi đè mô hình mặc định',
   'clear_saved_model': 'Xóa cấu hình mô hình đã lưu',
   'advanced_model_routing': 'Định tuyến mô hình nâng cao',
-  'model_routing_hint': 'Claude Agent SDK hỗ trợ định tuyến tới các mô hình khác nhau theo cấp năng lực. Để trống để dùng mô hình mặc định ở trên.',
-  'model_routing_hint_official': 'Claude Agent SDK hỗ trợ định tuyến tới các mô hình khác nhau theo cấp năng lực. Để trống một cấp để Claude Code tự chọn mô hình cho cấp đó.',
+  'model_routing_hint':
+    'Claude Agent SDK hỗ trợ định tuyến tới các mô hình khác nhau theo cấp năng lực. Để trống để dùng mô hình mặc định ở trên.',
+  'model_routing_hint_official':
+    'Claude Agent SDK hỗ trợ định tuyến tới các mô hình khác nhau theo cấp năng lực. Để trống một cấp để Claude Code tự chọn mô hình cho cấp đó.',
   'clear_saved_field': 'Xóa giá trị đã lưu cho {{label}}',
   'clear_field_input': 'Xóa nhập liệu {{label}}',
   'session_cleanup_delay_label': 'Thời gian dọn dẹp phiên (giây)',
-  'session_cleanup_delay_desc': 'Sau khi phiên kết thúc, chờ khoảng này trước khi giải phóng tài nguyên. Phiên sẽ tự khôi phục ở lượt trò chuyện kế tiếp.',
+  'session_cleanup_delay_desc':
+    'Sau khi phiên kết thúc, chờ khoảng này trước khi giải phóng tài nguyên. Phiên sẽ tự khôi phục ở lượt trò chuyện kế tiếp.',
   'max_concurrent_sessions_label': 'Số phiên tối đa đồng thời',
-  'max_concurrent_sessions_desc': 'Số phiên Agent hoạt động tối đa. Phiên vượt quá sẽ tự giải phóng các phiên ít dùng nhất (phiên đã dọn dẹp được lưu trữ và khôi phục ở lượt trò chuyện kế tiếp).',
+  'max_concurrent_sessions_desc':
+    'Số phiên Agent hoạt động tối đa. Phiên vượt quá sẽ tự giải phóng các phiên ít dùng nhất (phiên đã dọn dẹp được lưu trữ và khôi phục ở lượt trò chuyện kế tiếp).',
   'clear_failed': 'Xóa thất bại: {{message}}',
   'clear_input': 'Xóa nội dung nhập',
   'hide_key': 'Ẩn khóa',
@@ -951,7 +1009,8 @@ export default {
   'usage_unpriced_reason_no_entry': 'Mô hình của nhà cung cấp này không có mục mô hình tương ứng',
   'usage_unpriced_reason_no_price_table': 'Mục mô hình chưa có bảng giá',
   'usage_unpriced_reason_missing_rate': 'Bảng giá không có đơn giá cho lần gọi này',
-  'usage_unpriced_reason_unrecognized_terms': 'Bảng giá dùng loại tiền, hạng mục tính hoặc tùy chọn mà phiên bản hiện tại không nhận ra',
+  'usage_unpriced_reason_unrecognized_terms':
+    'Bảng giá dùng loại tiền, hạng mục tính hoặc tùy chọn mà phiên bản hiện tại không nhận ra',
   'usage_unpriced_reason_no_usage_estimate': 'Không thể ước tính mức dùng này từ yêu cầu',
   'usage_unpriced_reason_unknown': 'Không rõ lý do',
   'usage_image_missing': 'Không tìm thấy tệp',
@@ -1036,13 +1095,15 @@ export default {
   // ProjectSettingsPage
   'project_settings': 'Cài đặt dự án',
   'agent_profile_title': 'Hồ sơ Agent',
-  'agent_profile_description': 'Chỉ dẫn Agent trong dự án được nâng cấp an toàn theo cấu hình tích hợp và vẫn giữ các tùy chỉnh cục bộ.',
+  'agent_profile_description':
+    'Chỉ dẫn Agent trong dự án được nâng cấp an toàn theo cấu hình tích hợp và vẫn giữ các tùy chỉnh cục bộ.',
   'agent_profile_customized': 'Đã phát hiện hồ sơ dự án tùy chỉnh',
   'agent_profile_builtin': 'Đang dùng cấu hình tích hợp',
   'agent_profile_affected_files': 'Các tệp hồ sơ bị ảnh hưởng',
   'agent_profile_reset': 'Đặt lại về tích hợp',
   'agent_profile_reset_confirm_title': 'Đặt lại hồ sơ Agent?',
-  'agent_profile_reset_confirm_description': "Các tệp tùy chỉnh sau sẽ được chuyển vào thùng rác dự án, có thể khôi phục trong 30 ngày, và được thay bằng hồ sơ tích hợp hiện tại. Các phiên Agent đang mở vẫn dùng cấu hình hiện tại cho đến khi kết nối lại.",
+  'agent_profile_reset_confirm_description':
+    'Các tệp tùy chỉnh sau sẽ được chuyển vào thùng rác dự án, có thể khôi phục trong 30 ngày, và được thay bằng hồ sơ tích hợp hiện tại. Các phiên Agent đang mở vẫn dùng cấu hình hiện tại cho đến khi kết nối lại.',
   'agent_profile_reset_confirm': 'Xác nhận đặt lại',
   'agent_profile_resetting': 'Đang đặt lại…',
   'agent_profile_reset_failed': 'Không thể đặt lại hồ sơ Agent: {{message}}',
@@ -1058,8 +1119,10 @@ export default {
   'project_settings_pacing_title': 'Thời lượng và nhịp đọc',
   'project_settings_load_failed': 'Không thể tải cài đặt dự án: {{message}}',
   'project_settings_invalid_fields': 'Có trường chưa hợp lệ trong mục {{tab}}. Hãy sửa rồi lưu lại.',
-  'project_settings_style_upload_failed': 'Các thay đổi khác đã được lưu, nhưng không thể tải lên ảnh tham chiếu phong cách: {{message}}. Lưu lại để thử tải lên lần nữa.',
-  'project_style_desc': 'Chọn một mẫu phong cách hoặc tải lên một ảnh tham chiếu phong cách. Mỗi dự án chỉ dùng một trong hai.',
+  'project_settings_style_upload_failed':
+    'Các thay đổi khác đã được lưu, nhưng không thể tải lên ảnh tham chiếu phong cách: {{message}}. Lưu lại để thử tải lên lần nữa.',
+  'project_style_desc':
+    'Chọn một mẫu phong cách hoặc tải lên một ảnh tham chiếu phong cách. Mỗi dự án chỉ dùng một trong hai.',
   'style_not_set_desc': 'Không thêm mô tả phong cách khi tạo nội dung.',
   'style_pending_upload_desc': 'Ảnh tham chiếu này sẽ được tải lên và phân tích phong cách khi bạn lưu.',
   'style_change': 'Đổi',
@@ -1075,27 +1138,36 @@ export default {
   'model_overrides_notice_one': 'Dự án này ghi đè {{count}} mặc định toàn cục, phần còn lại theo toàn cục.',
   'model_overrides_notice_other': 'Dự án này ghi đè {{count}} mặc định toàn cục, phần còn lại theo toàn cục.',
   'model_overrides_reset_all': 'Khôi phục toàn bộ về mặc định toàn cục',
-  'agent_memory_user_desc': 'Bộ nhớ Agent có hiệu lực trên mọi dự án, ghi lại sở thích và thói quen của bạn. Chỉ mục bộ nhớ được nạp khi bắt đầu phiên, các tệp bộ nhớ được đọc khi cần.',
+  'agent_memory_user_desc':
+    'Bộ nhớ Agent có hiệu lực trên mọi dự án, ghi lại sở thích và thói quen của bạn. Chỉ mục bộ nhớ được nạp khi bắt đầu phiên, các tệp bộ nhớ được đọc khi cần.',
   'agent_memory_project_title': 'Bộ nhớ dự án',
-  'agent_memory_project_desc': 'Bộ nhớ Agent chỉ có hiệu lực trong các phiên của dự án này, ghi lại thiết lập và yêu cầu chỉnh sửa của dự án. Nó được lưu cùng thư mục dự án.',
+  'agent_memory_project_desc':
+    'Bộ nhớ Agent chỉ có hiệu lực trong các phiên của dự án này, ghi lại thiết lập và yêu cầu chỉnh sửa của dự án. Nó được lưu cùng thư mục dự án.',
   'agent_memory_clear': 'Xoá sạch',
   'agent_memory_clear_user_confirm_title': 'Xoá sạch bộ nhớ người dùng?',
   'agent_memory_clear_project_confirm_title': 'Xoá sạch bộ nhớ dự án?',
   'agent_memory_clear_confirm_desc': 'Toàn bộ {{count}} tệp bộ nhớ sẽ bị xoá. Không thể hoàn tác.',
-  'agent_memory_clear_project_confirm_desc': "Toàn bộ {{count}} tệp bộ nhớ sẽ được chuyển vào thùng rác dự án. Có thể khôi phục trong 30 ngày.",
+  'agent_memory_clear_project_confirm_desc':
+    'Toàn bộ {{count}} tệp bộ nhớ sẽ được chuyển vào thùng rác dự án. Có thể khôi phục trong 30 ngày.',
   'agent_memory_session_notice': 'Các phiên đang chạy không bị ảnh hưởng; thay đổi có hiệu lực từ phiên kế tiếp.',
   'agent_memory_delete_confirm_title': 'Xoá {{name}}?',
-  'agent_memory_delete_confirm_desc': 'Không thể hoàn tác. Các mục trong chỉ mục trỏ tới tệp này sẽ không tự động bị gỡ.',
-  'agent_memory_delete_index_confirm_desc': 'Không còn chỉ mục bộ nhớ, Agent sẽ không nạp được các mục bộ nhớ khi bắt đầu phiên. Không thể hoàn tác.',
-  'agent_memory_delete_project_confirm_desc': "Tệp sẽ được chuyển vào thùng rác dự án. Có thể khôi phục trong 30 ngày. Các mục trong chỉ mục trỏ tới tệp này sẽ không tự động bị gỡ.",
-  'agent_memory_delete_index_project_confirm_desc': "Không còn chỉ mục bộ nhớ, Agent sẽ không nạp được các mục bộ nhớ khi bắt đầu phiên. Chỉ mục sẽ được chuyển vào thùng rác dự án. Có thể khôi phục trong 30 ngày.",
+  'agent_memory_delete_confirm_desc':
+    'Không thể hoàn tác. Các mục trong chỉ mục trỏ tới tệp này sẽ không tự động bị gỡ.',
+  'agent_memory_delete_index_confirm_desc':
+    'Không còn chỉ mục bộ nhớ, Agent sẽ không nạp được các mục bộ nhớ khi bắt đầu phiên. Không thể hoàn tác.',
+  'agent_memory_delete_project_confirm_desc':
+    'Tệp sẽ được chuyển vào thùng rác dự án. Có thể khôi phục trong 30 ngày. Các mục trong chỉ mục trỏ tới tệp này sẽ không tự động bị gỡ.',
+  'agent_memory_delete_index_project_confirm_desc':
+    'Không còn chỉ mục bộ nhớ, Agent sẽ không nạp được các mục bộ nhớ khi bắt đầu phiên. Chỉ mục sẽ được chuyển vào thùng rác dự án. Có thể khôi phục trong 30 ngày.',
   'agent_memory_index_stats': 'Chỉ mục {{count}}/{{limit}} dòng',
   'agent_memory_new_file': 'Tệp bộ nhớ mới',
   'agent_memory_create': 'Tạo',
   'agent_memory_new_file_placeholder': 'ví dụ tone.md',
-  'agent_memory_name_invalid': 'Tên tệp phải bắt đầu bằng chữ cái hoặc chữ số, chỉ gồm chữ cái, chữ số, dấu cách, dấu ngoặc đơn, dấu chấm, gạch dưới hoặc gạch nối, và kết thúc bằng .md',
+  'agent_memory_name_invalid':
+    'Tên tệp phải bắt đầu bằng chữ cái hoặc chữ số, chỉ gồm chữ cái, chữ số, dấu cách, dấu ngoặc đơn, dấu chấm, gạch dưới hoặc gạch nối, và kết thúc bằng .md',
   'agent_memory_name_duplicate': 'Đã có tệp trùng tên',
-  'agent_memory_empty_hint': 'Chưa có bộ nhớ nào. Agent sẽ tự ghi lại trong quá trình sáng tác, bạn cũng có thể tự tạo tệp.',
+  'agent_memory_empty_hint':
+    'Chưa có bộ nhớ nào. Agent sẽ tự ghi lại trong quá trình sáng tác, bạn cũng có thể tự tạo tệp.',
   'agent_memory_no_description': 'Không có mô tả',
   'agent_memory_type_user': 'Người dùng',
   'agent_memory_type_feedback': 'Phản hồi',
@@ -1121,9 +1193,11 @@ export default {
   'route_storyboard': 'Phân cảnh sang video',
   'route_storyboard_desc': 'Tạo ảnh phân cảnh cho từng cảnh trước, xác nhận khung hình rồi mới tạo video',
   'route_reference_video': 'Tham chiếu sang video',
-  'route_reference_video_desc': 'Bỏ qua ảnh phân cảnh, tạo video trực tiếp từ ảnh nhân vật, cảnh và đạo cụ làm tham chiếu',
+  'route_reference_video_desc':
+    'Bỏ qua ảnh phân cảnh, tạo video trực tiếp từ ảnh nhân vật, cảnh và đạo cụ làm tham chiếu',
   'grid_storyboard_label': 'Phân cảnh đa lưới sang video',
-  'grid_storyboard_desc': 'Ghép nhiều cảnh vào một ảnh phân cảnh đa lưới và tạo trong một lần, phong cách và nhân vật nhất quán hơn; có thể bật tắt bất cứ lúc nào sau khi tạo',
+  'grid_storyboard_desc':
+    'Ghép nhiều cảnh vào một ảnh phân cảnh đa lưới và tạo trong một lần, phong cách và nhân vật nhất quán hơn; có thể bật tắt bất cứ lúc nào sau khi tạo',
   'reference_tab_dirty_aria': 'Có thay đổi chưa lưu',
   'reference_video_status_pending': 'Chưa tạo video',
   'reference_video_status_running': 'Đang tạo video',
@@ -1148,7 +1222,8 @@ export default {
   'enqueue_deduped_toast': 'Đã có tác vụ cho tài nguyên này đang xử lý; không tạo tác vụ mới.',
   'reference_generate_request_failed': 'Yêu cầu tạo thất bại: {{error}}; vui lòng thử lại.',
   'reference_generation_task_failed': 'Tạo đơn vị {{unitId}} thất bại: {{reason}}; vui lòng thử lại.',
-  'task_target_deleted': 'Đối tượng đã bị xóa trong khi tạo. Kết quả nằm trong thùng rác dự án và có thể khôi phục từ Tệp.',
+  'task_target_deleted':
+    'Đối tượng đã bị xóa trong khi tạo. Kết quả nằm trong thùng rác dự án và có thể khôi phục từ Tệp.',
   'storyboard_task_failed': 'Tạo phân cảnh "{{id}}" thất bại: {{reason}}',
   'video_task_failed': 'Tạo video "{{id}}" thất bại: {{reason}}',
   'character_task_failed': 'Tạo nhân vật "{{id}}" thất bại: {{reason}}',
@@ -1172,7 +1247,8 @@ export default {
   'script_preview_utterances': 'Lời thoại',
   'script_preview_utterances_value': '{{dialogue}} câu thoại · {{voiceover}} lời dẫn',
   'script_preview_none': 'Không có',
-  'reference_editor_placeholder': 'Mô tả đơn vị video này. Dùng @ để tham chiếu hàng hóa / nhân vật / cảnh / đạo cụ và {} cho lời thoại.',
+  'reference_editor_placeholder':
+    'Mô tả đơn vị video này. Dùng @ để tham chiếu hàng hóa / nhân vật / cảnh / đạo cụ và {} cho lời thoại.',
   'reference_editor_aria_name': 'Prompt đơn vị',
   'reference_editor_unknown_mentions_label': 'Mention chưa đăng ký',
   'reference_editor_unknown_mention': 'Chưa đăng ký: @{{name}} (không có trong hàng hóa/nhân vật/cảnh/đạo cụ)',
@@ -1203,10 +1279,14 @@ export default {
   'segment_refs_badge_scene': 'Cảnh',
   'segment_refs_badge_prop': 'Đạo cụ',
   'new_assets_title': 'Tài sản mới trong tập này',
-  'new_assets_description': 'Các tài sản chưa đăng ký mà AI phát hiện khi lập kế hoạch tập này, kèm cách xử lý từng mục. Khi xác nhận, chúng được đăng ký cùng kịch bản chính thức. Bạn có thể sửa bất kỳ mục nào.',
-  'new_assets_readonly_description': 'Các tài sản chưa đăng ký mà AI phát hiện khi lập kế hoạch tập này, kèm cách xử lý từng mục.',
-  'new_assets_auto_merged_notice_one': '{{count}} mục trùng tên với tài sản cùng loại đã đăng ký; khi xác nhận sẽ tự gộp vào tài sản đó, không tạo tài sản mới.',
-  'new_assets_auto_merged_notice_other': '{{count}} mục trùng tên với tài sản cùng loại đã đăng ký; khi xác nhận sẽ tự gộp vào tài sản đó, không tạo tài sản mới.',
+  'new_assets_description':
+    'Các tài sản chưa đăng ký mà AI phát hiện khi lập kế hoạch tập này, kèm cách xử lý từng mục. Khi xác nhận, chúng được đăng ký cùng kịch bản chính thức. Bạn có thể sửa bất kỳ mục nào.',
+  'new_assets_readonly_description':
+    'Các tài sản chưa đăng ký mà AI phát hiện khi lập kế hoạch tập này, kèm cách xử lý từng mục.',
+  'new_assets_auto_merged_notice_one':
+    '{{count}} mục trùng tên với tài sản cùng loại đã đăng ký; khi xác nhận sẽ tự gộp vào tài sản đó, không tạo tài sản mới.',
+  'new_assets_auto_merged_notice_other':
+    '{{count}} mục trùng tên với tài sản cùng loại đã đăng ký; khi xác nhận sẽ tự gộp vào tài sản đó, không tạo tài sản mới.',
   'new_asset_decision_label': 'Cách xử lý "{{name}}"',
   'new_asset_decision_register': 'Đăng ký tài sản mới',
   'new_asset_decision_merge': 'Gộp vào tài sản có sẵn',
@@ -1240,9 +1320,11 @@ export default {
   'references_badge_scene': 'Cảnh',
   'references_badge_prop': 'Đạo cụ',
   'reference_editor_unit_meta': '{{duration}}s',
-  'reference_editor_pending_authoring_hint': 'Chờ biên soạn: prompt của đơn vị video này chưa được biên soạn. Hãy nhờ Agent bổ sung hoặc tự điền bên dưới',
+  'reference_editor_pending_authoring_hint':
+    'Chờ biên soạn: prompt của đơn vị video này chưa được biên soạn. Hãy nhờ Agent bổ sung hoặc tự điền bên dưới',
   'default_duration_label': 'Thời lượng mặc định',
-  'default_duration_project_desc': 'Thời lượng video mặc định cho phân cảnh mới; "Tự động" để AI quyết định theo nội dung',
+  'default_duration_project_desc':
+    'Thời lượng video mặc định cho phân cảnh mới; "Tự động" để AI quyết định theo nội dung',
   'duration_selection': 'Chọn thời lượng',
   'auto_label': 'Tự động',
   'image_model': 'Mô hình ảnh',
@@ -1258,9 +1340,11 @@ export default {
   'video_option_caps_unknown': 'Chưa rõ năng lực',
   'voice_consistency_label': 'Độ nhất quán giọng nói',
   'voice_consistency_native_label': 'Nhất quán gốc',
-  'voice_consistency_native_desc': 'Dùng âm thanh tham chiếu của nhân vật để giữ cùng một giọng xuyên suốt các đoạn trên các mô hình hỗ trợ; âm thanh tham chiếu không phát sinh thêm chi phí.',
+  'voice_consistency_native_desc':
+    'Dùng âm thanh tham chiếu của nhân vật để giữ cùng một giọng xuyên suốt các đoạn trên các mô hình hỗ trợ; âm thanh tham chiếu không phát sinh thêm chi phí.',
   'voice_consistency_soft_label': 'Gợi ý mềm',
-  'voice_consistency_soft_desc': 'Chỉ gợi ý giọng nói theo mô tả giọng của nhân vật, âm sắc gần giống nhưng không đảm bảo nhất quán giữa các đoạn.',
+  'voice_consistency_soft_desc':
+    'Chỉ gợi ý giọng nói theo mô tả giọng của nhân vật, âm sắc gần giống nhưng không đảm bảo nhất quán giữa các đoạn.',
   'voice_consistency_none_label': 'Không âm thanh',
   'voice_consistency_none_desc': 'Mô hình này không hỗ trợ lời thoại — video tạo ra không có track giọng nói.',
   'text_model_override_desc': 'Ghi đè theo loại tác vụ; để trống để theo mặc định toàn cục',
@@ -1289,7 +1373,8 @@ export default {
   'provider_credential_count_other': 'Đã cấu hình {{count}} khóa',
   'custom_provider_model_count_one': '{{count}} mô hình',
   'custom_provider_model_count_other': '{{count}} mô hình',
-  'custom_providers_empty': 'Chưa có nhà cung cấp tùy chỉnh. Thêm tại đây khi kết nối dịch vụ trung chuyển, mô hình cục bộ hoặc ComfyUI.',
+  'custom_providers_empty':
+    'Chưa có nhà cung cấp tùy chỉnh. Thêm tại đây khi kết nối dịch vụ trung chuyển, mô hình cục bộ hoặc ComfyUI.',
   'provider_credentials_title': 'Khóa',
   'add_key': 'Thêm khóa',
   'test_credential': 'Kiểm tra',
@@ -1301,7 +1386,8 @@ export default {
   'credential_keep_existing': 'Để trống để giữ khóa hiện tại ({{masked}})',
   'credential_delete_title': 'Xóa khóa "{{name}}"?',
   'credential_delete_description': 'Không thể hoàn tác.',
-  'credential_delete_active_description': 'Đây là khóa đang dùng. Không thể hoàn tác, và khóa được thêm sớm nhất còn lại sẽ được dùng thay thế. Nếu không còn khóa nào, các mô hình của nhà cung cấp này sẽ không dùng được.',
+  'credential_delete_active_description':
+    'Đây là khóa đang dùng. Không thể hoàn tác, và khóa được thêm sớm nhất còn lại sẽ được dùng thay thế. Nếu không còn khóa nào, các mô hình của nhà cung cấp này sẽ không dùng được.',
   'advanced_config_hint': 'Để trống để dùng giá trị mặc định.',
   'pm_heading': 'Mô hình',
   'pm_add_model': 'Thêm mô hình',
@@ -1393,7 +1479,8 @@ export default {
   'pm_pe_free_allowance_remove': 'Xóa hạn mức miễn phí của {{name}}',
   'pm_pe_free_allowance_invalid': 'Hãy nhập số từ 0 trở lên.',
   'pm_pe_context_tier_from_zero': 'Mức độ dài đầu vào đầu tiên phải bắt đầu từ 0.',
-  'pm_pe_context_tier_mismatch': 'Mọi mục tính phí phải chia mức độ dài đầu vào tại cùng các điểm: một yêu cầu được tính giá theo cùng một mức cho mọi mục.',
+  'pm_pe_context_tier_mismatch':
+    'Mọi mục tính phí phải chia mức độ dài đầu vào tại cùng các điểm: một yêu cầu được tính giá theo cùng một mức cho mọi mục.',
   'pm_pe_cjk_double': 'Tính mỗi chữ Hán là 2 ký tự',
   'pm_pe_official': 'Giá chính thức: ',
   'pm_pe_adopt_official': 'Dùng giá chính thức',
@@ -1465,7 +1552,8 @@ export default {
   'pm_sheet_capabilities': 'Tham số nhà cung cấp này hỗ trợ',
   'pm_sheet_capabilities_hint': 'Sửa những mục khác với thông tin mô hình bên dưới.',
   'pm_sheet_capabilities_official_hint': 'Các giá trị này theo dữ liệu chính thức, không thể sửa.',
-  'pm_sheet_capabilities_endpoint_changed': 'Endpoint đã thay đổi. Hãy lưu trước, rồi chỉnh các tham số này theo endpoint mới.',
+  'pm_sheet_capabilities_endpoint_changed':
+    'Endpoint đã thay đổi. Hãy lưu trước, rồi chỉnh các tham số này theo endpoint mới.',
   'pm_sheet_capabilities_invalid': 'Một số giá trị trong "Tham số nhà cung cấp này hỗ trợ" không hợp lệ.',
   'pm_sheet_entry_invalid': 'Một số giá trị trong "Thông tin mô hình" không hợp lệ.',
   'pm_sheet_request_address_hint': 'Sửa ở đây khi địa chỉ yêu cầu của nhà cung cấp khác mặc định.',
@@ -1475,7 +1563,8 @@ export default {
   'pm_sheet_remove': 'Xóa khỏi "{{name}}"',
   'pm_sheet_remove_title': 'Xóa "{{model}}" khỏi "{{provider}}"?',
   'pm_sheet_remove_description': 'Sau khi xóa, mô hình này không còn trong danh sách mô hình của nhà cung cấp.',
-  'pm_sheet_remove_references': 'Các cài đặt và dự án sau đang dùng mô hình này. Sau khi xóa, hãy chọn mô hình khác cho chúng:',
+  'pm_sheet_remove_references':
+    'Các cài đặt và dự án sau đang dùng mô hình này. Sau khi xóa, hãy chọn mô hình khác cho chúng:',
   'pm_sheet_remove_references_loading': 'Đang kiểm tra cài đặt và dự án nào dùng mô hình này…',
   'pm_sheet_remove_references_failed': 'Không kiểm tra được cài đặt và dự án nào dùng mô hình này: {{message}}',
   'pm_sheet_remove_setting_item': 'Cài đặt chung: {{name}}',
@@ -1506,15 +1595,18 @@ export default {
   'pm_entry_restore_description': 'Các thay đổi của bạn với "{{name}}" sẽ bị hủy và không thể hoàn tác.',
   'pm_entry_restore_shared': ' {{providers}} cũng sẽ được khôi phục.',
   'pm_entry_restore_failed': 'Khôi phục thất bại: {{message}}',
-  'pm_entry_discard_refresh_failed': 'Đã áp dụng, nhưng không làm mới được thông tin mô hình. Hãy đóng rồi mở lại mô hình này để xem.',
-  'pm_entry_save_stops_following': 'Sau khi lưu, mô hình này dùng thông tin bạn đã sửa và không còn theo cập nhật chính thức.',
+  'pm_entry_discard_refresh_failed':
+    'Đã áp dụng, nhưng không làm mới được thông tin mô hình. Hãy đóng rồi mở lại mô hình này để xem.',
+  'pm_entry_save_stops_following':
+    'Sau khi lưu, mô hình này dùng thông tin bạn đã sửa và không còn theo cập nhật chính thức.',
   'pm_entry_save_shared': ' {{providers}} cũng sẽ thay đổi.',
   'pm_link_other': 'Liên kết mô hình khác',
   'pm_link_pick': 'Chọn từ danh mục mô hình',
   'pm_link_manual': 'Điền thủ công',
   'pm_link_media_mismatch': 'Đây là mô hình loại {{type}}, nên chỉ có thể liên kết với mô hình cùng loại.',
   'pm_link_pending': 'Sau khi lưu, mô hình này lấy khả năng và giá từ "{{name}}".',
-  'pm_link_pending_unlink': 'Sau khi lưu, mô hình này không còn liên kết với mô hình khác và quay lại đối chiếu theo tên.',
+  'pm_link_pending_unlink':
+    'Sau khi lưu, mô hình này không còn liên kết với mô hình khác và quay lại đối chiếu theo tên.',
   'pm_link_discard': 'Bỏ',
   'pm_link_edit_manual': 'Sửa',
   'pm_link_bound': 'Đã liên kết với "{{name}}", không còn đối chiếu theo tên.',
@@ -1532,11 +1624,14 @@ export default {
   'pm_manual_price_empty': 'Nếu để trống giá, chi phí gọi sẽ được ghi là chưa định giá.',
   'pm_manual_price_filled': 'Đã nhập giá',
   'pm_manual_confirm': 'Xong',
-  'pm_manual_pending': 'Sau khi lưu, thông tin mô hình "{{name}}" được thêm vào và mô hình này lấy khả năng và giá từ đó.',
-  'pm_entry_source_user_created_official': 'Dữ liệu chính thức hiện đã có mô hình này. Thông tin bạn điền không theo cập nhật chính thức. Bạn có thể chuyển sang dữ liệu chính thức.',
+  'pm_manual_pending':
+    'Sau khi lưu, thông tin mô hình "{{name}}" được thêm vào và mô hình này lấy khả năng và giá từ đó.',
+  'pm_entry_source_user_created_official':
+    'Dữ liệu chính thức hiện đã có mô hình này. Thông tin bạn điền không theo cập nhật chính thức. Bạn có thể chuyển sang dữ liệu chính thức.',
   'pm_entry_use_official': 'Dùng dữ liệu chính thức',
   'pm_entry_use_official_title': 'Dùng dữ liệu chính thức?',
-  'pm_entry_use_official_description': 'Thông tin bạn đã điền cho "{{name}}" sẽ bị thay bằng dữ liệu chính thức. Không thể hoàn tác.',
+  'pm_entry_use_official_description':
+    'Thông tin bạn đã điền cho "{{name}}" sẽ bị thay bằng dữ liệu chính thức. Không thể hoàn tác.',
   'pm_entry_use_official_shared': ' {{providers}} cũng sẽ chuyển theo.',
   'pm_entry_use_official_failed': 'Không thể chuyển: {{message}}',
   'pm_cap_image_input': 'Đầu vào hình ảnh',
@@ -1550,7 +1645,8 @@ export default {
   'pm_cap_text_to_video': 'Văn bản thành video',
   'pm_cap_first_frame': 'Khung hình đầu',
   'pm_cap_last_frame': 'Khung hình cuối',
-  'pm_cap_reference_images_hint': '0 nghĩa là không nhận ảnh tham chiếu; thay đổi giới hạn không bật khả năng tạo ảnh từ ảnh nếu điểm cuối không hỗ trợ',
+  'pm_cap_reference_images_hint':
+    '0 nghĩa là không nhận ảnh tham chiếu; thay đổi giới hạn không bật khả năng tạo ảnh từ ảnh nếu điểm cuối không hỗ trợ',
   'pm_cap_max_reference_images': 'Số ảnh tham chiếu tối đa',
   'pm_cap_reference_audio_mode': 'Âm thanh tham chiếu',
   'pm_cap_max_reference_audio_count': 'Số đoạn âm thanh tham chiếu tối đa',
@@ -1601,8 +1697,10 @@ export default {
   'cp_delete_provider': 'Xóa nhà cung cấp',
   'cp_delete_provider_title': 'Xóa nhà cung cấp "{{name}}"?',
   'cp_delete_provider_description_zero': 'Nhà cung cấp này chưa có mô hình. Không thể hoàn tác sau khi xóa.',
-  'cp_delete_provider_description_one': '{{count}} mô hình của nó sẽ bị xóa cùng. Không thể hoàn tác sau khi xóa. Các dự án đang dùng mô hình này sẽ chuyển sang mô hình khả dụng khác.',
-  'cp_delete_provider_description_other': '{{count}} mô hình của nó sẽ bị xóa cùng. Không thể hoàn tác sau khi xóa. Các dự án đang dùng các mô hình này sẽ chuyển sang mô hình khả dụng khác.',
+  'cp_delete_provider_description_one':
+    '{{count}} mô hình của nó sẽ bị xóa cùng. Không thể hoàn tác sau khi xóa. Các dự án đang dùng mô hình này sẽ chuyển sang mô hình khả dụng khác.',
+  'cp_delete_provider_description_other':
+    '{{count}} mô hình của nó sẽ bị xóa cùng. Không thể hoàn tác sau khi xóa. Các dự án đang dùng các mô hình này sẽ chuyển sang mô hình khả dụng khác.',
   'cp_models_empty_hint': 'Chưa có mô hình. Nhấn "Lấy mô hình" để lấy từ nhà cung cấp, hoặc thêm thủ công.',
   'cp_model_type_filter': 'Lọc theo loại',
   'cp_model_type_all': 'Tất cả',
@@ -1611,8 +1709,10 @@ export default {
   'cp_model_entry_pending': 'Hiển thị sau khi lưu',
   'cp_model_entry_pending_hint': 'Mục mô hình tương ứng với mô hình này sẽ hiển thị sau khi lưu.',
   'cp_model_entry_unpriced': 'Chưa có giá',
-  'cp_model_entry_unmatched_hint': 'Không có mục mô hình nào tương ứng với mô hình này, nên các lần gọi sẽ được ghi là chưa có giá.',
-  'cp_model_entry_no_price_hint': 'Mục mô hình tương ứng chưa có bảng giá dùng được, nên các lần gọi mô hình này sẽ được ghi là chưa có giá.',
+  'cp_model_entry_unmatched_hint':
+    'Không có mục mô hình nào tương ứng với mô hình này, nên các lần gọi sẽ được ghi là chưa có giá.',
+  'cp_model_entry_no_price_hint':
+    'Mục mô hình tương ứng chưa có bảng giá dùng được, nên các lần gọi mô hình này sẽ được ghi là chưa có giá.',
   'cp_model_expand_column': 'Chỉnh sửa',
   'cp_models_no_match': 'Không có mô hình phù hợp',
   'cp_model_id_missing': 'Chưa điền Model ID',
@@ -1671,16 +1771,21 @@ export default {
   'resolution_help_custom': 'Chọn token phổ biến từ danh sách hoặc nhập giá trị thô mà API yêu cầu',
   'resolution_native_placeholder': 'Gốc của workflow ({{value}})',
   'resolution_endpoint_fixed_placeholder': 'Do workflow quyết định',
-  'resolution_fixed_hint': 'Workflow này có kích thước cố định: chiều rộng/cao không liên kết với node nào, nên tỉ lệ và độ phân giải không có tác dụng. Hãy sửa liên kết node để thay đổi.',
+  'resolution_fixed_hint':
+    'Workflow này có kích thước cố định: chiều rộng/cao không liên kết với node nào, nên tỉ lệ và độ phân giải không có tác dụng. Hãy sửa liên kết node để thay đổi.',
   'supported_durations_fixed_placeholder': 'Workflow này có thời lượng cố định',
-  'supported_durations_fixed_hint': 'Workflow này có thời lượng cố định: số khung hình không liên kết với node nào, nên độ dài thành phẩm do chính workflow quyết định. Hãy sửa liên kết node để thay đổi.',
+  'supported_durations_fixed_hint':
+    'Workflow này có thời lượng cố định: số khung hình không liên kết với node nào, nên độ dài thành phẩm do chính workflow quyết định. Hãy sửa liên kết node để thay đổi.',
   'supported_durations_no_fps_placeholder': 'Workflow này không có tốc độ khung hình, thời lượng cố định',
-  'supported_durations_no_fps_hint': 'Số khung hình đã được liên kết, nhưng định nghĩa này không có nguồn tốc độ khung hình nên không quy đổi được thời lượng. Hãy thêm một liên kết fps, hoặc nhập tốc độ khung hình cho mục số khung hình: ArcReel cần có một trong hai thì mới quy đổi ra được các mức thời lượng.',
+  'supported_durations_no_fps_hint':
+    'Số khung hình đã được liên kết, nhưng định nghĩa này không có nguồn tốc độ khung hình nên không quy đổi được thời lượng. Hãy thêm một liên kết fps, hoặc nhập tốc độ khung hình cho mục số khung hình: ArcReel cần có một trong hai thì mới quy đổi ra được các mức thời lượng.',
   'supported_durations_not_derivable_placeholder': 'Workflow này không quy đổi ra thời lượng tròn giây',
-  'supported_durations_not_derivable_hint': 'Số khung hình đã được liên kết và tốc độ khung hình cũng đọc được, nhưng chúng không quy đổi ra mức thời lượng tròn giây ghi lại được đúng nguyên trạng (ví dụ 81 khung hình ở 24fps), nên ArcReel không đưa ra mức thời lượng nào. Hãy sửa liên kết node để thay đổi.',
+  'supported_durations_not_derivable_hint':
+    'Số khung hình đã được liên kết và tốc độ khung hình cũng đọc được, nhưng chúng không quy đổi ra mức thời lượng tròn giây ghi lại được đúng nguyên trạng (ví dụ 81 khung hình ở 24fps), nên ArcReel không đưa ra mức thời lượng nào. Hãy sửa liên kết node để thay đổi.',
   'supported_durations_label': 'Thời lượng hỗ trợ',
   'supported_durations_placeholder': 'Ví dụ 4, 8, 12 hoặc 3-15 (để trống để dùng thời lượng gốc của workflow)',
-  'supported_durations_help': 'Các giá trị phân tách bằng dấu phẩy hoặc khoảng (ví dụ 3-15). Để trống để dùng thời lượng gốc của workflow.',
+  'supported_durations_help':
+    'Các giá trị phân tách bằng dấu phẩy hoặc khoảng (ví dụ 3-15). Để trống để dùng thời lượng gốc của workflow.',
   'supported_durations_invalid': 'Định dạng không hợp lệ: {{message}}',
   'supported_durations_err_empty_after_split': 'Đầu vào chỉ chứa dấu phân tách — vui lòng nhập số nguyên dương',
   'supported_durations_err_non_positive': "Đoạn '{{seg}}' phải là số nguyên dương",
@@ -1694,7 +1799,8 @@ export default {
   'cap_override_follow': 'Theo nhận định',
   'cap_override_on': 'Buộc bật',
   'cap_override_off': 'Buộc tắt',
-  'cap_override_follow_title': 'Hệ thống nhận định khả năng khung cuối từ model id và tự động theo khi nhận định thay đổi',
+  'cap_override_follow_title':
+    'Hệ thống nhận định khả năng khung cuối từ model id và tự động theo khi nhận định thay đổi',
   'cap_override_on_title': 'Bỏ qua nhận định, luôn coi model này là hỗ trợ khung cuối',
   'cap_override_off_title': 'Bỏ qua nhận định, luôn coi model này là không hỗ trợ khung cuối',
   'cap_override_value_supported': 'hỗ trợ',
@@ -1715,8 +1821,10 @@ export default {
   'global_bucket_label_text_backend_complex': 'Văn bản - bậc phức tạp',
   'global_bucket_label_default_audio_backend': 'Model âm thanh mặc định',
   'duration_incompatible_warning': '{{value}}s đã chọn không nằm trong [{{supported}}] mà mô hình hỗ trợ',
-  'duration_incompatible_resolution_warning': '{{value}}s đã chọn không khả dụng ở độ phân giải hiện tại — khả dụng: [{{supported}}]',
-  'duration_incompatible_reference_warning': '{{value}}s đã chọn không khả dụng ở chế độ Reference-to-Video — khả dụng: [{{supported}}]',
+  'duration_incompatible_resolution_warning':
+    '{{value}}s đã chọn không khả dụng ở độ phân giải hiện tại — khả dụng: [{{supported}}]',
+  'duration_incompatible_reference_warning':
+    '{{value}}s đã chọn không khả dụng ở chế độ Reference-to-Video — khả dụng: [{{supported}}]',
   'duration_seconds_value_text': '{{value}}s',
   'duration_no_options': 'Mô hình hiện tại không có thời lượng cấu hình — không thể thay đổi',
   'duration_not_driven_notice': 'Thời lượng do endpoint cố định: workflow quyết định độ dài mỗi đoạn.',
@@ -1734,7 +1842,8 @@ export default {
   'enable_one_model': 'Phải bật ít nhất một mô hình',
   'enabled_model_needs_id': 'Mô hình đã bật phải có Model ID',
   'cp_concurrency_label': 'Giới hạn đồng thời',
-  'cp_concurrency_help': 'Số tác vụ đồng thời tối đa cho mỗi luồng phương tiện (ảnh / video / âm thanh). Để trống = mặc định toàn cục; tối thiểu 1.',
+  'cp_concurrency_help':
+    'Số tác vụ đồng thời tối đa cho mỗi luồng phương tiện (ảnh / video / âm thanh). Để trống = mặc định toàn cục; tối thiểu 1.',
   'cp_image_max_workers_label': 'Đồng thời ảnh',
   'cp_video_max_workers_label': 'Đồng thời video',
   'cp_audio_max_workers_label': 'Đồng thời âm thanh',
@@ -1742,30 +1851,41 @@ export default {
   'max_workers_invalid': 'Giới hạn đồng thời phải là số nguyên dương. Kiểm tra ô nhập hình ảnh / video / âm thanh.',
   'cp_model_multiplier_label': 'Hệ số nhân của mô hình',
   'cp_multiplier_invalid': 'Hệ số nhân phải là số không nhỏ hơn 0.',
-  'cp_model_multiplier_help': 'Nhân với hệ số nhân của nhà cung cấp rồi áp vào chi phí tham khảo của mô hình này, dùng để thể hiện chênh lệch giá theo kênh, ví dụ giá của trạm trung chuyển so với giá chính thức. 1 nghĩa là không điều chỉnh.',
+  'cp_model_multiplier_help':
+    'Nhân với hệ số nhân của nhà cung cấp rồi áp vào chi phí tham khảo của mô hình này, dùng để thể hiện chênh lệch giá theo kênh, ví dụ giá của trạm trung chuyển so với giá chính thức. 1 nghĩa là không điều chỉnh.',
   'cp_model_multiplier_invalid': 'Hệ số nhân của mô hình phải là số không nhỏ hơn 0. Kiểm tra ô nhập của từng mô hình.',
   'cp_billing_heading': 'Tính phí',
   'cp_provider_multiplier_label': 'Hệ số nhân của nhà cung cấp',
-  'cp_provider_multiplier_help': 'Chi phí bằng giá chính thức nhân với hệ số. Ví dụ 0.8 nghĩa là giảm 20%. Hệ số của nhà cung cấp còn được nhân với hệ số của từng mô hình. Thay đổi chỉ ảnh hưởng các lần gọi sau; chi phí đã ghi không được tính lại. Để trống = giá trị mặc định.',
+  'cp_provider_multiplier_help':
+    'Chi phí bằng giá chính thức nhân với hệ số. Ví dụ 0.8 nghĩa là giảm 20%. Hệ số của nhà cung cấp còn được nhân với hệ số của từng mô hình. Thay đổi chỉ ảnh hưởng các lần gọi sau; chi phí đã ghi không được tính lại. Để trống = giá trị mặc định.',
   'cp_provider_multiplier_placeholder': 'Mặc định {{value}}',
   'cp_provider_multiplier_invalid': 'Hệ số nhân của nhà cung cấp phải là số không nhỏ hơn 0.',
-  'cp_provider_multiplier_save_failed': 'Đã lưu nhà cung cấp, nhưng chưa lưu được hệ số nhân của nhà cung cấp: {{message}}',
-  'cp_provider_multiplier_create_failed': 'Đã tạo nhà cung cấp, nhưng chưa lưu được hệ số nhân của nhà cung cấp: {{message}}. Hãy nhập lại trong phần chi tiết nhà cung cấp.',
+  'cp_provider_multiplier_save_failed':
+    'Đã lưu nhà cung cấp, nhưng chưa lưu được hệ số nhân của nhà cung cấp: {{message}}',
+  'cp_provider_multiplier_create_failed':
+    'Đã tạo nhà cung cấp, nhưng chưa lưu được hệ số nhân của nhà cung cấp: {{message}}. Hãy nhập lại trong phần chi tiết nhà cung cấp.',
 
   // CustomProviderDetail
   'discovery_format_label': 'Giao thức phát hiện mô hình',
-  'discovery_format_help': 'Chỉ dùng cho "Lấy danh sách mô hình" và "Kiểm tra kết nối"; không ảnh hưởng tới các lượt gọi runtime.',
+  'discovery_format_help':
+    'Chỉ dùng cho "Lấy danh sách mô hình" và "Kiểm tra kết nối"; không ảnh hưởng tới các lượt gọi runtime.',
   'discovery_format_openai': 'Tương thích OpenAI',
   'discovery_format_google': 'Google AI Studio',
   'discovery_format_comfyui': 'ComfyUI',
-  'discovery_not_applicable': 'Lấy mô hình không áp dụng cho ComfyUI: gọi được gì là do các workflow bạn nhập quyết định. Hãy nhập một endpoint ComfyUI ở mục "Endpoint", rồi chọn nó trong vùng chỉnh sửa của mô hình.',
-  'cp_comfyui_connectivity_hint': 'Kiểm tra kết nối gửi khóa dưới dạng Bearer trần tới /system_stats (để trống khóa thì không kèm thông tin xác thực). Nếu reverse proxy của bạn xác thực bằng header tùy chỉnh, kiểm tra này có thể báo không truy cập được — khi đó hãy căn cứ vào "Kiểm tra kết nối" của endpoint.',
+  'discovery_not_applicable':
+    'Lấy mô hình không áp dụng cho ComfyUI: gọi được gì là do các workflow bạn nhập quyết định. Hãy nhập một endpoint ComfyUI ở mục "Endpoint", rồi chọn nó trong vùng chỉnh sửa của mô hình.',
+  'cp_comfyui_connectivity_hint':
+    'Kiểm tra kết nối gửi khóa dưới dạng Bearer trần tới /system_stats (để trống khóa thì không kèm thông tin xác thực). Nếu reverse proxy của bạn xác thực bằng header tùy chỉnh, kiểm tra này có thể báo không truy cập được — khi đó hãy căn cứ vào "Kiểm tra kết nối" của endpoint.',
   'cp_comfyui_add_model_hint': 'Một dòng mô hình = một tên chọn được trong dự án, gắn với một endpoint ComfyUI.',
-  'cp_comfyui_no_endpoint_hint': 'Chưa có endpoint ComfyUI nào để gắn. Hãy nhập một workflow ở mục "Endpoint" trước, rồi quay lại thêm dòng mô hình.',
+  'cp_comfyui_no_endpoint_hint':
+    'Chưa có endpoint ComfyUI nào để gắn. Hãy nhập một workflow ở mục "Endpoint" trước, rồi quay lại thêm dòng mô hình.',
   'cp_endpoint_unselected': 'Chưa chọn endpoint',
-  'cp_model_endpoint_unselected': 'Một số dòng mô hình chưa chọn endpoint ComfyUI. Hãy nhập một workflow ở mục "Endpoint" trước, rồi chọn endpoint cho từng dòng đang ghi "Chưa chọn endpoint".',
-  'cp_endpoint_catalog_pending': 'Danh mục endpoint vẫn đang tải nên chưa thể kiểm tra các dòng này theo giao thức. Hãy thử lưu lại sau giây lát.',
-  'cp_concurrency_help_comfyui': 'Số tác vụ đồng thời tối đa cho mỗi luồng phương tiện (ảnh / video / âm thanh). Để trống = mặc định 1 cho giao thức này: một máy ComfyUI thường chỉ có một GPU, mở thêm chỉ xếp hàng ở phía xa. Có thể tăng nếu máy bạn kham được.',
+  'cp_model_endpoint_unselected':
+    'Một số dòng mô hình chưa chọn endpoint ComfyUI. Hãy nhập một workflow ở mục "Endpoint" trước, rồi chọn endpoint cho từng dòng đang ghi "Chưa chọn endpoint".',
+  'cp_endpoint_catalog_pending':
+    'Danh mục endpoint vẫn đang tải nên chưa thể kiểm tra các dòng này theo giao thức. Hãy thử lưu lại sau giây lát.',
+  'cp_concurrency_help_comfyui':
+    'Số tác vụ đồng thời tối đa cho mỗi luồng phương tiện (ảnh / video / âm thanh). Để trống = mặc định 1 cho giao thức này: một máy ComfyUI thường chỉ có một GPU, mở thêm chỉ xếp hàng ở phía xa. Có thể tăng nếu máy bạn kham được.',
   'cp_max_workers_placeholder_comfyui': 'Mặc định 1',
   'endpoint_label': 'Endpoint gọi',
   'endpoint_text_group': 'Văn bản',
@@ -1832,7 +1952,6 @@ export default {
   'endpoint_grok_video_classic_display': 'Grok Video (Cổ điển)',
   'endpoint_grok_video_mixed_display': 'Grok Video (Đầu vào hỗn hợp)',
 
-
   'endpoint_dashscope_always_on_video_display': 'Alibaba Model Studio (Video luôn có âm thanh)',
   'endpoint_dashscope_video_display': 'Alibaba Model Studio (Video)',
   'endpoint_dashscope_reference_video_display': 'Alibaba Model Studio (Video tham chiếu)',
@@ -1870,7 +1989,8 @@ export default {
   'timeline_script_not_ready': 'Chưa tạo kịch bản — hãy hoàn tất xác nhận nội dung ở bước Kế hoạch kịch bản trước',
   'timeline_tab': 'Dòng thời gian kịch bản',
   'generate_all_grids': 'Bổ sung ảnh ghép',
-  'generate_all_grids_hint': 'Chỉ tạo ảnh ghép cho các nhóm còn thiếu ảnh phân cảnh; nhóm đã có ảnh ghép nhưng chưa tách ô sẽ được bỏ qua',
+  'generate_all_grids_hint':
+    'Chỉ tạo ảnh ghép cho các nhóm còn thiếu ảnh phân cảnh; nhóm đã có ảnh ghép nhưng chưa tách ô sẽ được bỏ qua',
   'submitting': 'Đang gửi...',
 
   'no_original_text': '(Chưa có văn bản gốc)',
@@ -1890,23 +2010,34 @@ export default {
   'reference_duration_confirm_cta': 'Tạo với thời lượng này',
   'reference_duration_diff_longer': '(dài hơn {{value}})',
   'reference_duration_diff_shorter': '(ngắn hơn {{value}})',
-  'reference_duration_note_longer': 'Chi phí video được tính theo mức {{duration}} đã yêu cầu. Video được giao đúng thời lượng đó và không bị cắt về mốc yêu cầu.',
-  'reference_duration_note_shorter': 'Mô hình chỉ hỗ trợ tối đa {{duration}} nên video không chứa hết mốc thời lượng yêu cầu.',
-  'reference_duration_note_no_trim': 'Mỗi video được tính phí theo mức đã yêu cầu ở trên. Video được giao đúng thời lượng đó và không bị cắt.',
+  'reference_duration_note_longer':
+    'Chi phí video được tính theo mức {{duration}} đã yêu cầu. Video được giao đúng thời lượng đó và không bị cắt về mốc yêu cầu.',
+  'reference_duration_note_shorter':
+    'Mô hình chỉ hỗ trợ tối đa {{duration}} nên video không chứa hết mốc thời lượng yêu cầu.',
+  'reference_duration_note_no_trim':
+    'Mỗi video được tính phí theo mức đã yêu cầu ở trên. Video được giao đúng thời lượng đó và không bị cắt.',
   'reference_duration_batch_summary': '{{count}} đơn vị sẽ dùng mức thời lượng video khác:',
   'reference_advisory_heading': 'Các điều chỉnh sau sẽ áp dụng cho lần tạo này:',
   'reference_advisory_confirm_title': 'Xác nhận tạo video',
   'reference_advisory_confirm_cta': 'Vẫn tạo',
-  'reference_duration_precheck_failed_one': 'Không kiểm tra được thời lượng của {{count}} đơn vị, chưa đưa vào hàng đợi. Vui lòng thử lại.',
-  'reference_duration_precheck_failed_other': 'Không kiểm tra được thời lượng của {{count}} đơn vị, chưa đưa vào hàng đợi. Vui lòng thử lại.',
-  'reference_batch_enqueue_interrupted_one': 'Việc xếp hàng bị gián đoạn: {{count}} đơn vị chưa có tác vụ lần này. Các tác vụ đã gửi vẫn chạy bình thường, thử lại sẽ bổ sung phần còn thiếu.',
-  'reference_batch_enqueue_interrupted_other': 'Việc xếp hàng bị gián đoạn: {{count}} đơn vị chưa có tác vụ lần này. Các tác vụ đã gửi vẫn chạy bình thường, thử lại sẽ bổ sung phần còn thiếu.',
+  'reference_duration_precheck_failed_one':
+    'Không kiểm tra được thời lượng của {{count}} đơn vị, chưa đưa vào hàng đợi. Vui lòng thử lại.',
+  'reference_duration_precheck_failed_other':
+    'Không kiểm tra được thời lượng của {{count}} đơn vị, chưa đưa vào hàng đợi. Vui lòng thử lại.',
+  'reference_batch_enqueue_interrupted_one':
+    'Việc xếp hàng bị gián đoạn: {{count}} đơn vị chưa có tác vụ lần này. Các tác vụ đã gửi vẫn chạy bình thường, thử lại sẽ bổ sung phần còn thiếu.',
+  'reference_batch_enqueue_interrupted_other':
+    'Việc xếp hàng bị gián đoạn: {{count}} đơn vị chưa có tác vụ lần này. Các tác vụ đã gửi vẫn chạy bình thường, thử lại sẽ bổ sung phần còn thiếu.',
   'reference_batch_enqueue_interrupted_title': 'Một số đơn vị chưa được xếp hàng',
-  'reference_batch_enqueue_interrupted_intro_one': 'Đơn vị này chưa có tác vụ lần này. Các tác vụ đã gửi vẫn chạy bình thường — tạo hàng loạt lần nữa sẽ bổ sung nó.',
-  'reference_batch_enqueue_interrupted_intro_other': '{{count}} đơn vị này chưa có tác vụ lần này. Các tác vụ đã gửi vẫn chạy bình thường — tạo hàng loạt lần nữa sẽ bổ sung chúng.',
+  'reference_batch_enqueue_interrupted_intro_one':
+    'Đơn vị này chưa có tác vụ lần này. Các tác vụ đã gửi vẫn chạy bình thường — tạo hàng loạt lần nữa sẽ bổ sung nó.',
+  'reference_batch_enqueue_interrupted_intro_other':
+    '{{count}} đơn vị này chưa có tác vụ lần này. Các tác vụ đã gửi vẫn chạy bình thường — tạo hàng loạt lần nữa sẽ bổ sung chúng.',
   'reference_batch_enqueue_none_queued_title': 'Lô này không có tác vụ nào được xếp hàng',
-  'reference_batch_enqueue_none_queued_intro_one': 'Đơn vị này chưa có tác vụ lần này và lô này không có tác vụ nào đang chạy. Tạo hàng loạt lần nữa để thử lại.',
-  'reference_batch_enqueue_none_queued_intro_other': 'Cả {{count}} đơn vị này đều chưa có tác vụ lần này và lô này không có tác vụ nào đang chạy. Tạo hàng loạt lần nữa để thử lại.',
+  'reference_batch_enqueue_none_queued_intro_one':
+    'Đơn vị này chưa có tác vụ lần này và lô này không có tác vụ nào đang chạy. Tạo hàng loạt lần nữa để thử lại.',
+  'reference_batch_enqueue_none_queued_intro_other':
+    'Cả {{count}} đơn vị này đều chưa có tác vụ lần này và lô này không có tác vụ nào đang chạy. Tạo hàng loạt lần nữa để thử lại.',
   'reference_batch_queued_one': 'Đã gửi {{count}} tác vụ tạo video',
   'reference_batch_queued_other': 'Đã gửi {{count}} tác vụ tạo video',
   'reference_batch_confirm_title': 'Xác nhận mức thời lượng cho loạt này',
@@ -1934,7 +2065,8 @@ export default {
   'reference_unit_next': 'Đơn vị sau',
   'reference_unit_remove': 'Gỡ đơn vị',
   'reference_unit_remove_title': 'Gỡ {{id}}?',
-  'reference_unit_remove_desc': 'Đơn vị này sẽ bị gỡ khỏi kịch bản. Video và các sản phẩm đã tạo cùng lịch sử phiên bản được chuyển vào thùng rác dự án và giữ trong 30 ngày, trong thời gian đó có thể khôi phục.',
+  'reference_unit_remove_desc':
+    'Đơn vị này sẽ bị gỡ khỏi kịch bản. Video và các sản phẩm đã tạo cùng lịch sử phiên bản được chuyển vào thùng rác dự án và giữ trong 30 ngày, trong thời gian đó có thể khôi phục.',
   'reference_unit_remove_confirm': 'Chuyển vào thùng rác dự án',
   'reference_preview_label': 'Xem trước video',
   'reference_preview_metadata': 'Thông tin đơn vị',
@@ -2089,8 +2221,10 @@ export default {
   'review_status_pending': 'Chờ xác nhận',
   'review_status_confirmed': 'Đã xác nhận',
   'review_pending_hint': 'Kiểm tra nội dung rồi xác nhận để mở khoá tạo hình ảnh.',
-  'review_confirmed_hint': 'Nội dung đã được xác nhận và chỉ đọc tại đây. Hãy chỉnh sửa trên dòng thời gian; để làm lại cả tập, hãy chạy lại kế hoạch kịch bản rồi xác nhận lại.',
-  'review_script_missing_hint': 'Nội dung đã được xác nhận nhưng tập này chưa có kịch bản chính thức. Hãy xác nhận lại để tạo kịch bản từ kế hoạch kịch bản.',
+  'review_confirmed_hint':
+    'Nội dung đã được xác nhận và chỉ đọc tại đây. Hãy chỉnh sửa trên dòng thời gian; để làm lại cả tập, hãy chạy lại kế hoạch kịch bản rồi xác nhận lại.',
+  'review_script_missing_hint':
+    'Nội dung đã được xác nhận nhưng tập này chưa có kịch bản chính thức. Hãy xác nhận lại để tạo kịch bản từ kế hoạch kịch bản.',
   'review_rematerialize_action': 'Xác nhận lại & tạo kịch bản',
   'review_open_timeline': 'Sửa trên dòng thời gian',
   'review_confirm_action': 'Xác nhận & tiếp tục',
@@ -2113,7 +2247,8 @@ export default {
   'draft_violation_count_other': '{{count}} vi phạm',
   'draft_episode_level_count_one': 'Cả tập · {{count}}',
   'draft_episode_level_count_other': 'Cả tập · {{count}}',
-  'draft_edit_hint': 'Nhấp để chuyển đến mục; sửa trực tiếp rồi lưu — khi hết vi phạm, bản nháp sẽ trở thành nội dung chính thức',
+  'draft_edit_hint':
+    'Nhấp để chuyển đến mục; sửa trực tiếp rồi lưu — khi hết vi phạm, bản nháp sẽ trở thành nội dung chính thức',
   'draft_unrenderable': 'Cấu trúc bản nháp bị hỏng nên không thể sửa tại đây; hãy giao cho Agent sửa hoặc bỏ bản nháp',
   'draft_no_violations_hint': 'Không còn vi phạm — lưu để biến nó thành nội dung chính thức',
   'draft_save_action': 'Lưu và kiểm tra',
@@ -2123,7 +2258,8 @@ export default {
   'draft_ai_repair': 'AI sửa lỗi',
   'draft_repairing': 'Đang sửa…',
   'draft_repair_title': 'Sửa bản nháp bằng AI',
-  'draft_repair_desc': 'AI chỉ sửa các mục có vi phạm, các mục còn lại giữ nguyên. Nếu có vi phạm ở cấp cả tập, AI sẽ sửa toàn bộ bản nháp. Việc sửa chạy ở chế độ nền; sau khi xong, kết quả được kiểm tra như thường lệ và trở thành nội dung chính thức khi không còn vi phạm.',
+  'draft_repair_desc':
+    'AI chỉ sửa các mục có vi phạm, các mục còn lại giữ nguyên. Nếu có vi phạm ở cấp cả tập, AI sẽ sửa toàn bộ bản nháp. Việc sửa chạy ở chế độ nền; sau khi xong, kết quả được kiểm tra như thường lệ và trở thành nội dung chính thức khi không còn vi phạm.',
   'draft_repair_instructions_label': 'Chỉ dẫn bổ sung (không bắt buộc, chỉ dùng cho lần sửa này)',
   'draft_repair_instructions_placeholder': 'Ví dụ: giữ nguyên lời thoại, chỉ điều chỉnh thời lượng',
   'draft_repair_submit': 'Bắt đầu sửa',
@@ -2134,9 +2270,12 @@ export default {
   'draft_repair_failed_toast': 'AI sửa lỗi thất bại, bản nháp không thay đổi. Vui lòng thử lại',
   'draft_discard_action': 'Bỏ bản nháp',
   'draft_discard_title': 'Bỏ bản nháp này?',
-  'draft_discard_to_formal_script_plan': 'Bạn sẽ quay về kế hoạch kịch bản chính thức hiện tại. Bản nháp được chuyển vào thùng rác dự án và có thể khôi phục trong 30 ngày.',
-  'draft_discard_to_empty_script_plan': 'Tập này chưa có kế hoạch kịch bản chính thức nên sẽ quay về trạng thái chưa lập kế hoạch. Bản nháp được chuyển vào thùng rác dự án và có thể khôi phục trong 30 ngày.',
-  'draft_discard_to_formal_script': 'Bạn sẽ quay về kịch bản chính thức hiện tại. Bản nháp được chuyển vào thùng rác dự án và có thể khôi phục trong 30 ngày.',
+  'draft_discard_to_formal_script_plan':
+    'Bạn sẽ quay về kế hoạch kịch bản chính thức hiện tại. Bản nháp được chuyển vào thùng rác dự án và có thể khôi phục trong 30 ngày.',
+  'draft_discard_to_empty_script_plan':
+    'Tập này chưa có kế hoạch kịch bản chính thức nên sẽ quay về trạng thái chưa lập kế hoạch. Bản nháp được chuyển vào thùng rác dự án và có thể khôi phục trong 30 ngày.',
+  'draft_discard_to_formal_script':
+    'Bạn sẽ quay về kịch bản chính thức hiện tại. Bản nháp được chuyển vào thùng rác dự án và có thể khôi phục trong 30 ngày.',
   'draft_outdated_hint': 'Bản nháp đã được cập nhật ở nơi khác nên không thể lưu chỉnh sửa của bạn',
   'draft_reload_latest': 'Bỏ chỉnh sửa và tải bản mới nhất',
   'draft_episode_level_title': 'Vấn đề ở cấp cả tập',
@@ -2154,12 +2293,17 @@ export default {
   'draft_agent_discard_title': 'Bỏ chỉnh sửa chưa hoàn tất của Agent?',
   'draft_name_script_plan': 'bản nháp kế hoạch kịch bản',
   'draft_name_prompt_authoring': 'bản nháp viết prompt',
-  'draft_fix_request_prefill_header': '{{draftName}} của {{episodeRef}} có {{count}} vi phạm cần sửa; hãy gọi open_draft với doc_type={{docType}} để đọc, sau đó sửa bằng patch_draft với cùng doc_type và truyền revision trả về làm base_revision:',
-  'draft_fix_request_promote_prefill': '{{draftName}} của {{episodeRef}} khi xác thực lại không còn vi phạm nhưng vẫn chưa được thăng cấp — hãy gọi open_draft với doc_type={{docType}}, sau đó gọi promote_draft với cùng doc_type và truyền revision trả về làm base_revision.',
-  'draft_agent_finish_prefill': 'Bạn có một chỉnh sửa chưa hoàn tất cho {{episodeRef}} (doc_type={{docType}}) — hãy đọc bằng open_draft, hoàn tất thay đổi rồi áp dụng bằng promote_draft và truyền revision trả về làm base_revision.',
-  'review_video_model_unresolved_hint': 'Chưa cấu hình mô hình video khả dụng nên không xác định được thời lượng phân cảnh, tạm thời chưa thể xác nhận; hãy chọn mô hình video trong cài đặt dự án, hoặc cấu hình nhà cung cấp video trong Cài đặt → Nhà cung cấp',
+  'draft_fix_request_prefill_header':
+    '{{draftName}} của {{episodeRef}} có {{count}} vi phạm cần sửa; hãy gọi open_draft với doc_type={{docType}} để đọc, sau đó sửa bằng patch_draft với cùng doc_type và truyền revision trả về làm base_revision:',
+  'draft_fix_request_promote_prefill':
+    '{{draftName}} của {{episodeRef}} khi xác thực lại không còn vi phạm nhưng vẫn chưa được thăng cấp — hãy gọi open_draft với doc_type={{docType}}, sau đó gọi promote_draft với cùng doc_type và truyền revision trả về làm base_revision.',
+  'draft_agent_finish_prefill':
+    'Bạn có một chỉnh sửa chưa hoàn tất cho {{episodeRef}} (doc_type={{docType}}) — hãy đọc bằng open_draft, hoàn tất thay đổi rồi áp dụng bằng promote_draft và truyền revision trả về làm base_revision.',
+  'review_video_model_unresolved_hint':
+    'Chưa cấu hình mô hình video khả dụng nên không xác định được thời lượng phân cảnh, tạm thời chưa thể xác nhận; hãy chọn mô hình video trong cài đặt dự án, hoặc cấu hình nhà cung cấp video trong Cài đặt → Nhà cung cấp',
   'review_item_duration_label': 'Thời lượng {{item}}',
-  'review_duration_out_of_tier_hint': 'Có phân cảnh có thời lượng nằm ngoài các mức hiện tại — hãy chọn lại trước khi xác nhận',
+  'review_duration_out_of_tier_hint':
+    'Có phân cảnh có thời lượng nằm ngoài các mức hiện tại — hãy chọn lại trước khi xác nhận',
   'review_structure_hint': 'Sau khi xác nhận, bạn có thể thêm, xóa và đổi thứ tự trên dòng thời gian',
   'review_video_model_unresolved_action': 'Mở cài đặt dự án',
 
@@ -2168,7 +2312,8 @@ export default {
   'reference_script_plan_source_anchor_broken': 'Không phải chuỗi con nguyên văn của văn bản gốc',
   'reference_script_plan_edit_text': 'Chỉnh sửa văn bản',
   'reference_script_plan_edit_done': 'Hoàn tất chỉnh sửa',
-  'reference_script_plan_unit_without_scene': 'Đơn vị này không tham chiếu bối cảnh nào; địa điểm của khung hình sẽ do mô hình tự quyết định',
+  'reference_script_plan_unit_without_scene':
+    'Đơn vị này không tham chiếu bối cảnh nào; địa điểm của khung hình sẽ do mô hình tự quyết định',
   'reference_script_plan_unit_stats': '{{utterances}} lời thoại',
   'reference_script_plan_duration_label': 'Thời lượng {{unit}}',
   'reference_script_plan_unit_text_label': 'Nội dung {{unit}}',
@@ -2176,11 +2321,13 @@ export default {
   'reference_script_plan_duration_option': '{{seconds}} giây',
   'reference_script_plan_confirm_continue': 'Xác nhận chia, tiếp tục tạo',
   'reference_script_plan_duration_out_of_tier': 'Mức thời lượng không còn hợp lệ',
-  'reference_script_plan_duration_out_of_tier_hint': 'Có đơn vị video có thời lượng nằm ngoài các mức hiện hợp lệ — hãy chọn lại trước khi xác nhận',
+  'reference_script_plan_duration_out_of_tier_hint':
+    'Có đơn vị video có thời lượng nằm ngoài các mức hiện hợp lệ — hãy chọn lại trước khi xác nhận',
   'reference_bucket_i2v': 'tạo video từ ảnh (không có ảnh tham chiếu)',
   'reference_bucket_r2v': 'tạo video từ ảnh tham chiếu (có ảnh tham chiếu)',
   'reference_unit_tier_unknown_label': 'Chưa rõ mức thời lượng {{bucket}}',
-  'reference_unit_tier_unknown_hint': '{{reason}}. Hãy chọn mô hình {{bucket}} khả dụng trong cài đặt dự án hoặc sửa cấu hình mô hình tại Cài đặt → Nhà cung cấp.',
+  'reference_unit_tier_unknown_hint':
+    '{{reason}}. Hãy chọn mô hình {{bucket}} khả dụng trong cài đặt dự án hoặc sửa cấu hình mô hình tại Cài đặt → Nhà cung cấp.',
   'reference_unit_tier_reason_unsupported': 'Mô hình hiện tại không hỗ trợ {{bucket}}',
   'reference_unit_tier_reason_removed': 'Mô hình {{bucket}} đã bị xóa hoặc tắt',
   'reference_unit_tier_reason_discontinued': 'Mô hình {{bucket}} đã ngừng hoạt động',
@@ -2188,7 +2335,8 @@ export default {
   'reference_unit_tier_reason_invalid_tiers': 'Mức thời lượng của mô hình {{bucket}} không hợp lệ',
   'reference_unit_tier_reason_incompatible': 'Không có mức thời lượng {{bucket}} tương thích với độ phân giải hiện tại',
   'reference_unit_tier_reason_unresolved': 'Không thể xác định khả năng của mô hình {{bucket}}',
-  'reference_unit_split_title': 'Tham chiếu đã khai báo và ảnh tham chiếu khả dụng không khớp — hãy sửa tham chiếu trước khi tạo',
+  'reference_unit_split_title':
+    'Tham chiếu đã khai báo và ảnh tham chiếu khả dụng không khớp — hãy sửa tham chiếu trước khi tạo',
   'reference_unit_bucket_changed': 'Đơn vị này sẽ chạy theo {{hydrated}} thay vì {{declared}} như đã khai báo',
   'reference_unit_unavailable_references': 'Tài sản được tham chiếu chưa có ảnh: {{names}}',
   'reference_unit_unregistered_references': 'Tham chiếu chưa đăng ký: {{names}}',
@@ -2227,27 +2375,32 @@ export default {
 
   // External Agent integration modal
   // 外部 Agent 接入与访问令牌
-  'ext_agent_desc': 'Agent bên ngoài dùng khả năng sáng tạo của [[brand]] qua skills công khai và MCP từ xa. Hoàn tất ba bước dưới đây để kết nối.',
+  'ext_agent_desc':
+    'Agent bên ngoài dùng khả năng sáng tạo của [[brand]] qua skills công khai và MCP từ xa. Hoàn tất ba bước dưới đây để kết nối.',
   'ext_agent_steps': 'Các bước kết nối',
   'ext_agent_step_skills_title': 'Cài đặt skills công khai',
   'ext_agent_step_skills_desc': 'Chạy lệnh này trong terminal để cài cả skill thiết lập và quy trình sản xuất.',
   'ext_agent_install_command': 'Lệnh cài đặt',
   'ext_agent_copy_install_command': 'Sao chép lệnh cài đặt',
   'ext_agent_step_mcp_title': 'Cấu hình MCP từ xa',
-  'ext_agent_step_mcp_desc': 'Quay lại Agent bên ngoài và yêu cầu nó dùng skill thiết lập để kết nối. Khi skill thiết lập hỏi endpoint, hãy cung cấp URL endpoint MCP.',
+  'ext_agent_step_mcp_desc':
+    'Quay lại Agent bên ngoài và yêu cầu nó dùng skill thiết lập để kết nối. Khi skill thiết lập hỏi endpoint, hãy cung cấp URL endpoint MCP.',
   'ext_agent_setup_skill': 'Skill thiết lập',
   'ext_agent_copy_setup_skill': 'Sao chép skill thiết lập',
   'ext_agent_mcp_endpoint': 'Endpoint MCP',
   'ext_agent_copy_mcp_endpoint': 'Sao chép endpoint MCP',
   'ext_agent_step_token_title': 'Chuẩn bị token truy cập',
-  'ext_agent_step_token_desc': 'Skill thiết lập còn cần một token truy cập. Token đầy đủ chỉ hiển thị một lần khi tạo. Hãy lưu ngay và chỉ chia sẻ với Agent bên ngoài mà bạn tin cậy. Skill thiết lập lưu token dạng văn bản thuần vào cấu hình MCP và .arcreel/settings.json. Nếu các tệp này nằm trong kho mã, hãy thêm chúng vào .gitignore và ngừng theo dõi những tệp Git đã theo dõi, để token không bị commit.',
+  'ext_agent_step_token_desc':
+    'Skill thiết lập còn cần một token truy cập. Token đầy đủ chỉ hiển thị một lần khi tạo. Hãy lưu ngay và chỉ chia sẻ với Agent bên ngoài mà bạn tin cậy. Skill thiết lập lưu token dạng văn bản thuần vào cấu hình MCP và .arcreel/settings.json. Nếu các tệp này nằm trong kho mã, hãy thêm chúng vào .gitignore và ngừng theo dõi những tệp Git đã theo dõi, để token không bị commit.',
   'ext_agent_manage_tokens': 'Quản lý token truy cập',
   'ext_agent_prompt_title': 'Để AI Agent kết nối giúp bạn',
-  'ext_agent_prompt_desc': 'Gửi lời nhắc này cho AI Agent. Agent sẽ đọc hướng dẫn cài đặt dành riêng và hoàn tất skills, MCP cùng bước xác minh kết nối.',
+  'ext_agent_prompt_desc':
+    'Gửi lời nhắc này cho AI Agent. Agent sẽ đọc hướng dẫn cài đặt dành riêng và hoàn tất skills, MCP cùng bước xác minh kết nối.',
   'ext_agent_prompt': 'Hãy giúp tôi kết nối ArcReel. Đọc và làm theo {{guideUrl}}',
   'ext_agent_copy_prompt': 'Sao chép lời nhắc',
   'access_copy_failed': 'Sao chép thất bại. Hãy chọn và sao chép nội dung theo cách thủ công.',
-  'access_tokens_desc': 'Agent bên ngoài và công cụ tự động hóa gọi [[brand]] bằng token truy cập. Token truy cập có thể dùng hầu hết các chức năng nghiệp vụ và cấu hình; hãy thu hồi ngay khi không còn dùng hoặc nghi bị lộ.',
+  'access_tokens_desc':
+    'Agent bên ngoài và công cụ tự động hóa gọi [[brand]] bằng token truy cập. Token truy cập có thể dùng hầu hết các chức năng nghiệp vụ và cấu hình; hãy thu hồi ngay khi không còn dùng hoặc nghi bị lộ.',
   'access_token_create': 'Tạo token truy cập',
   'access_token_list': 'Danh sách token truy cập',
   'access_token_col_name': 'Tên',
@@ -2264,7 +2417,8 @@ export default {
   'access_token_load_failed': 'Không tải được token truy cập: {{message}}',
   'access_token_revoke_named': 'Thu hồi "{{name}}"',
   'access_token_revoke_title': 'Thu hồi token truy cập "{{name}}"?',
-  'access_token_revoke_desc': 'Sau khi thu hồi, Agent bên ngoài và công cụ tự động hóa dùng token này sẽ không thể truy cập [[brand]] nữa. Không thể hoàn tác thao tác này.',
+  'access_token_revoke_desc':
+    'Sau khi thu hồi, Agent bên ngoài và công cụ tự động hóa dùng token này sẽ không thể truy cập [[brand]] nữa. Không thể hoàn tác thao tác này.',
   'access_token_revoke_confirm': 'Thu hồi',
   'access_token_revoking': 'Đang thu hồi…',
   'access_token_revoke_failed': 'Thu hồi thất bại: {{message}}',
@@ -2276,15 +2430,16 @@ export default {
   'access_token_creating': 'Đang tạo…',
   'access_token_create_failed': 'Tạo thất bại: {{message}}',
   'access_token_created_title': 'Đã tạo token truy cập',
-  'access_token_created_warning': 'Token đầy đủ chỉ hiển thị lần này và không thể xem lại sau khi đóng hộp thoại. Hãy sao chép ngay và lưu giữ an toàn.',
+  'access_token_created_warning':
+    'Token đầy đủ chỉ hiển thị lần này và không thể xem lại sau khi đóng hộp thoại. Hãy sao chép ngay và lưu giữ an toàn.',
   'access_token_value': 'Token truy cập',
   'access_token_copy': 'Sao chép token truy cập',
-
 
   'add_episode': 'Thêm tập',
   'prompt_authoring_open': 'Viết prompt',
   'prompt_authoring_title': 'Viết prompt',
-  'prompt_authoring_desc': 'Viết prompt hình ảnh và prompt video cho kịch bản của tập này. Có thể giao cho Agent hoặc để AI viết trực tiếp.',
+  'prompt_authoring_desc':
+    'Viết prompt hình ảnh và prompt video cho kịch bản của tập này. Có thể giao cho Agent hoặc để AI viết trực tiếp.',
   'prompt_authoring_scope_label': 'Phạm vi',
   'prompt_authoring_scope_current': 'Mục hiện tại',
   'prompt_authoring_scope_pending': 'Tất cả mục chờ viết ({{count}})',
@@ -2294,9 +2449,11 @@ export default {
   'prompt_authoring_entry_empty': 'Chưa có prompt',
   'prompt_authoring_rewrite_toggle': 'Ghi đè prompt hiện có',
   'prompt_authoring_fill_hint': 'Prompt hình ảnh hoặc video đã có sẽ được giữ nguyên, chỉ viết phần còn thiếu.',
-  'prompt_authoring_rewrite_hint': 'AI sẽ viết lại prompt của mọi mục trong phạm vi. Bạn sẽ thấy nội dung bị ghi đè trước khi chạy.',
+  'prompt_authoring_rewrite_hint':
+    'AI sẽ viết lại prompt của mọi mục trong phạm vi. Bạn sẽ thấy nội dung bị ghi đè trước khi chạy.',
   'prompt_authoring_fill_hint_units': 'Các đơn vị chờ viết sẽ được viết đầy đủ; các đơn vị đã hoàn tất giữ nguyên.',
-  'prompt_authoring_rewrite_hint_units': 'AI sẽ viết lại nội dung của mọi đơn vị trong phạm vi. Bạn sẽ thấy nội dung bị ghi đè trước khi chạy.',
+  'prompt_authoring_rewrite_hint_units':
+    'AI sẽ viết lại nội dung của mọi đơn vị trong phạm vi. Bạn sẽ thấy nội dung bị ghi đè trước khi chạy.',
   'prompt_authoring_instructions_label': 'Chỉ dẫn bổ sung (không bắt buộc)',
   'prompt_authoring_instructions_placeholder': 'Ví dụ: tông màu lạnh, chuyển động máy quay tiết chế',
   'prompt_authoring_ai_write': 'AI viết',
@@ -2306,22 +2463,28 @@ export default {
   'prompt_authoring_busy': 'Tập này đang được viết prompt. Hãy đợi hoàn tất.',
   'prompt_authoring_queued': 'Đã gửi yêu cầu viết prompt',
   'prompt_authoring_rewrite_queued': 'Đã gửi yêu cầu viết lại prompt',
-  'prompt_authoring_nothing_pending': 'Không có mục nào chờ viết prompt nên AI chưa thay đổi gì. Để viết lại prompt hiện có, hãy chọn “Ghi đè prompt hiện có” rồi gửi lại',
+  'prompt_authoring_nothing_pending':
+    'Không có mục nào chờ viết prompt nên AI chưa thay đổi gì. Để viết lại prompt hiện có, hãy chọn “Ghi đè prompt hiện có” rồi gửi lại',
   'prompt_authoring_id_separator': ', ',
   'prompt_authoring_scope_pending_prefill': 'tất cả mục chờ viết ({{count}})',
   'prompt_authoring_agent_prefill': 'Hãy viết prompt cho {{episodeRef}}. Phạm vi: {{scope}}.',
   'prompt_authoring_agent_prefill_fill': 'Chỉ bổ sung prompt hình ảnh hoặc video còn thiếu; giữ nguyên prompt đã có.',
-  'prompt_authoring_agent_prefill_rewrite': 'Viết lại prompt của các mục trong phạm vi. Nếu nội dung hiện có sẽ bị ghi đè, hãy cho tôi xem danh sách trước và chờ tôi đồng ý.',
+  'prompt_authoring_agent_prefill_rewrite':
+    'Viết lại prompt của các mục trong phạm vi. Nếu nội dung hiện có sẽ bị ghi đè, hãy cho tôi xem danh sách trước và chờ tôi đồng ý.',
   'prompt_authoring_agent_prefill_instructions': 'Chỉ dẫn bổ sung: {{instructions}}',
   'script_plan_open': 'AI lập kế hoạch kịch bản',
   'script_plan_regenerate_open': 'Lập lại kế hoạch',
   'script_plan_title': 'AI lập kế hoạch kịch bản',
   'script_plan_regenerate_title': 'Lập lại kế hoạch kịch bản',
   'script_plan_start_title': 'Tập này chưa có kịch bản',
-  'script_plan_desc': 'AI lập kế hoạch kịch bản theo nguyên văn của tập này, xong sẽ chuyển sang xác nhận nội dung. Có thể giao cho Agent, hoặc để AI lập kế hoạch trực tiếp.',
-  'script_plan_replace_confirmed_hint': 'Kế hoạch mới chỉ thay thế kịch bản chính thức sau khi bạn xác nhận, và trước đó sẽ liệt kê nội dung sẽ bị mất.',
-  'script_plan_replace_pending_warning': 'Kế hoạch mới sẽ thay thế toàn bộ kế hoạch kịch bản chưa xác nhận của tập này. Mọi chỉnh sửa trên trang xác nhận nội dung sẽ bị mất.',
-  'script_plan_replace_draft_warning': 'Kế hoạch mới sẽ thay thế toàn bộ bản nháp cần sửa của tập này. Mọi chỉnh sửa trên bản nháp sẽ bị mất.',
+  'script_plan_desc':
+    'AI lập kế hoạch kịch bản theo nguyên văn của tập này, xong sẽ chuyển sang xác nhận nội dung. Có thể giao cho Agent, hoặc để AI lập kế hoạch trực tiếp.',
+  'script_plan_replace_confirmed_hint':
+    'Kế hoạch mới chỉ thay thế kịch bản chính thức sau khi bạn xác nhận, và trước đó sẽ liệt kê nội dung sẽ bị mất.',
+  'script_plan_replace_pending_warning':
+    'Kế hoạch mới sẽ thay thế toàn bộ kế hoạch kịch bản chưa xác nhận của tập này. Mọi chỉnh sửa trên trang xác nhận nội dung sẽ bị mất.',
+  'script_plan_replace_draft_warning':
+    'Kế hoạch mới sẽ thay thế toàn bộ bản nháp cần sửa của tập này. Mọi chỉnh sửa trên bản nháp sẽ bị mất.',
   'script_plan_instructions_label': 'Chỉ dẫn bổ sung (không bắt buộc)',
   'script_plan_instructions_placeholder': 'Ví dụ: nhịp nhanh hơn, giữ lại nhiều lời thoại nhân vật',
   'script_plan_ai_plan': 'AI lập kế hoạch',
@@ -2330,7 +2493,8 @@ export default {
   'script_plan_busy': 'Tập này đang được lập kế hoạch kịch bản, hãy đợi hoàn tất',
   'script_plan_dirty_hint': 'Bạn có chỉnh sửa chưa lưu. Hãy lưu trước khi lập lại kế hoạch',
   'script_plan_agent_prefill': 'Hãy lập kế hoạch kịch bản cho {{episodeRef}}.',
-  'script_plan_agent_prefill_replace': 'Kế hoạch mới thay thế toàn bộ kế hoạch kịch bản hiện có hoặc bản nháp cần sửa của tập này; tôi hiểu rằng các chỉnh sửa trong đó sẽ bị mất.',
+  'script_plan_agent_prefill_replace':
+    'Kế hoạch mới thay thế toàn bộ kế hoạch kịch bản hiện có hoặc bản nháp cần sửa của tập này; tôi hiểu rằng các chỉnh sửa trong đó sẽ bị mất.',
   'script_plan_agent_prefill_instructions': 'Chỉ dẫn bổ sung: {{instructions}}',
   'script_plan_refused_episode_source_missing': 'Cần bổ sung nguyên văn của tập này trước',
   'script_plan_refused': 'Hiện không thể dùng AI lập kế hoạch kịch bản',
@@ -2364,8 +2528,10 @@ export default {
   'storyboard_batch_cost_unknown': 'Chưa thể ước tính chi phí cho lô này',
   'storyboard_batch_unpriced_one': 'Còn {{count}} mục chưa có giá, không tính vào chi phí ước tính',
   'storyboard_batch_unpriced_other': 'Còn {{count}} mục chưa có giá, không tính vào chi phí ước tính',
-  'storyboard_batch_stale_note.storyboards': 'Ảnh phân cảnh đã lỗi thời không được đưa vào lô; hãy tạo lại từng ảnh trong chi tiết phân cảnh.',
-  'storyboard_batch_stale_note.videos': 'Video đã lỗi thời không được đưa vào lô; hãy tạo lại từng video trong chi tiết phân cảnh.',
+  'storyboard_batch_stale_note.storyboards':
+    'Ảnh phân cảnh đã lỗi thời không được đưa vào lô; hãy tạo lại từng ảnh trong chi tiết phân cảnh.',
+  'storyboard_batch_stale_note.videos':
+    'Video đã lỗi thời không được đưa vào lô; hãy tạo lại từng video trong chi tiết phân cảnh.',
   'storyboard_batch_confirm': 'Bắt đầu tạo',
   'storyboard_batch_submitting': 'Đang gửi…',
   'storyboard_batch_submitted.storyboards_one': 'Đã gửi {{count}} tác vụ tạo ảnh phân cảnh',
@@ -2380,11 +2546,13 @@ export default {
   'detail_dialogue_empty': '(chưa có đối thoại)',
   'detail_field_chars_count': '{{count}} ký tự',
   'detail_image_prompt_placeholder': 'Mô tả khung hình: bối cảnh, nhân vật, hành động, bố cục…',
-  'detail_pending_authoring_hint': 'Chờ biên soạn: prompt của phân cảnh này chưa được biên soạn. Hãy nhờ Agent bổ sung hoặc tự điền bên dưới',
+  'detail_pending_authoring_hint':
+    'Chờ biên soạn: prompt của phân cảnh này chưa được biên soạn. Hãy nhờ Agent bổ sung hoặc tự điền bên dưới',
   'shot_pending_authoring': 'Chờ biên soạn',
   'detail_image_prompt_title': 'Lời nhắc ảnh phân cảnh',
   'detail_section_dialogue': 'Lời thoại',
-  'detail_legacy_dialogue_hint': 'Phân cảnh thuyết minh không còn dùng lời thoại. Lời thoại cùng với văn bản thuyết minh bị coi là giọng nói hỗn hợp; hãy xoá rồi lưu.',
+  'detail_legacy_dialogue_hint':
+    'Phân cảnh thuyết minh không còn dùng lời thoại. Lời thoại cùng với văn bản thuyết minh bị coi là giọng nói hỗn hợp; hãy xoá rồi lưu.',
   'detail_legacy_dialogue_clear': 'Xoá lời thoại',
   'detail_legacy_dialogue_cleared': 'Đã xoá lời thoại; có hiệu lực sau khi lưu',
   'detail_section_utterances': 'Lời nói',
@@ -2419,27 +2587,32 @@ export default {
   'segment_break_hint': 'Không tham chiếu ảnh phân cảnh trước đó nữa; ở chế độ lưới, một nhóm mới bắt đầu từ đây',
   'reference_unit_add_first': 'Thêm đơn vị video đầu tiên',
   'reference_unit_add_title': 'Thêm đơn vị video',
-  'reference_unit_add_desc': 'Nội dung là phần duy nhất của đơn vị video: video được tạo sẽ dàn dựng hình ảnh và lời thoại theo nó. Điền xong mới thêm đơn vị video.',
+  'reference_unit_add_desc':
+    'Nội dung là phần duy nhất của đơn vị video: video được tạo sẽ dàn dựng hình ảnh và lời thoại theo nó. Điền xong mới thêm đơn vị video.',
   'reference_unit_add_label': 'Nội dung',
   'reference_unit_add_confirm': 'Thêm đơn vị',
   'reference_unit_add_failed': 'Thêm đơn vị video thất bại: {{message}}',
   'blank_script_start': 'Bắt đầu từ trang trống',
   'blank_script_hint': 'Không dùng AI, tự viết từng mục kịch bản trên dòng thời gian',
   'blank_script_discard_title': 'Bỏ bản lập kịch bản chưa xác nhận?',
-  'blank_script_discard_desc': 'Bắt đầu từ trang trống sẽ chuyển bản lập kịch bản chưa xác nhận và bản nháp cần sửa của tập này vào thùng rác dự án, có thể khôi phục trong 30 ngày. Sau đó hãy tự viết từng mục kịch bản trên dòng thời gian.',
+  'blank_script_discard_desc':
+    'Bắt đầu từ trang trống sẽ chuyển bản lập kịch bản chưa xác nhận và bản nháp cần sửa của tập này vào thùng rác dự án, có thể khôi phục trong 30 ngày. Sau đó hãy tự viết từng mục kịch bản trên dòng thời gian.',
   'blank_script_failed': 'Không thể bắt đầu từ trang trống: {{message}}',
   'shot_insert_failed': 'Thêm phân cảnh thất bại: {{message}}',
   'shot_insert_narration_title': 'Thêm phân cảnh lời dẫn',
-  'shot_insert_narration_desc': 'Văn bản lời dẫn là nền nội dung của phân cảnh này: lồng tiếng đọc theo nó, và biên soạn prompt dựa vào nó để tạo hình ảnh. Sau đó một phân cảnh chờ biên soạn sẽ được thêm.',
+  'shot_insert_narration_desc':
+    'Văn bản lời dẫn là nền nội dung của phân cảnh này: lồng tiếng đọc theo nó, và biên soạn prompt dựa vào nó để tạo hình ảnh. Sau đó một phân cảnh chờ biên soạn sẽ được thêm.',
   'shot_insert_narration_label': 'Văn bản lời dẫn',
   'shot_insert_narration_confirm': 'Thêm phân cảnh',
   'shot_remove': 'Gỡ phân cảnh',
   'shot_remove_title': 'Gỡ {{id}}?',
-  'shot_remove_desc': 'Phân cảnh này sẽ bị gỡ khỏi kịch bản. Ảnh phân cảnh, video và các sản phẩm đã tạo cùng lịch sử phiên bản được chuyển vào thùng rác dự án và giữ trong 30 ngày, trong thời gian đó có thể khôi phục.',
+  'shot_remove_desc':
+    'Phân cảnh này sẽ bị gỡ khỏi kịch bản. Ảnh phân cảnh, video và các sản phẩm đã tạo cùng lịch sử phiên bản được chuyển vào thùng rác dự án và giữ trong 30 ngày, trong thời gian đó có thể khôi phục.',
   'shot_remove_blocked_generating': 'Phân cảnh này đang có tác vụ tạo; hãy gỡ sau khi tác vụ hoàn tất',
   'shot_remove_confirm': 'Chuyển vào thùng rác dự án',
   'shot_remove_failed': 'Gỡ phân cảnh thất bại: {{message}}',
-  'shot_structure_refresh_failed': 'Đã lưu nhưng không làm mới được dòng thời gian. Hãy tải lại trang để xem kết quả mới nhất.',
+  'shot_structure_refresh_failed':
+    'Đã lưu nhưng không làm mới được dòng thời gian. Hãy tải lại trang để xem kết quả mới nhất.',
   'shot_structure_pending': 'Đang cập nhật phân cảnh…',
   'detail_section_prompts': 'Lời nhắc',
   'detail_video_prompt_placeholder': 'Mô tả chuyển động bắt đầu từ khung phân cảnh…',
@@ -2464,13 +2637,17 @@ export default {
   'episode_workspace_guide_beats': '{{count}} nhịp truyện',
   'episode_workspace_guide_hook': 'Móc câu cuối tập',
   'episode_workspace_guide_title': 'Tổng quan tập',
-  'episode_workspace_no_episode': 'Tập này chưa được bắt đầu. Hãy bắt đầu từ kịch bản, hoặc để Agent phác thảo cho bạn.',
+  'episode_workspace_no_episode':
+    'Tập này chưa được bắt đầu. Hãy bắt đầu từ kịch bản, hoặc để Agent phác thảo cho bạn.',
   'episode_workspace_source_loading': 'Đang tải lát cắt nguồn…',
-  'episode_workspace_source_missing': 'Tập này chưa có nguyên văn của tập. Bạn có thể bắt đầu kịch bản từ trang trống và tự viết',
-  'episode_workspace_source_empty_hint': 'Tập này chưa có nguyên văn của tập. Hãy nhập hoặc dán ở bên dưới rồi lưu để lập kế hoạch kịch bản bằng AI, hoặc bắt đầu kịch bản từ trang trống và tự viết.',
+  'episode_workspace_source_missing':
+    'Tập này chưa có nguyên văn của tập. Bạn có thể bắt đầu kịch bản từ trang trống và tự viết',
+  'episode_workspace_source_empty_hint':
+    'Tập này chưa có nguyên văn của tập. Hãy nhập hoặc dán ở bên dưới rồi lưu để lập kế hoạch kịch bản bằng AI, hoặc bắt đầu kịch bản từ trang trống và tự viết.',
   'episode_workspace_source_placeholder': 'Nhập hoặc dán nguyên văn của tập này',
   'episode_workspace_source_title': 'Nguyên văn của tập',
-  'episode_workspace_source_readonly_hint': 'Tập này được cắt từ nguyên văn đầy đủ. Hãy sửa nội dung trong chế độ xem Phân tập.',
+  'episode_workspace_source_readonly_hint':
+    'Tập này được cắt từ nguyên văn đầy đủ. Hãy sửa nội dung trong chế độ xem Phân tập.',
   'episode_workspace_source_go_episodes': 'Mở Phân tập',
   'episode_workspace_source_blank': 'Nguyên văn của tập không được để trống',
   'episode_workspace_source_kind_declined': 'Chưa xác nhận đổi loại tệp nguồn',
@@ -2493,7 +2670,8 @@ export default {
   'lobby_sort_recent': 'Sắp xếp theo hoạt động gần đây',
   'lobby_projects_label': 'Dự án',
   'lobby_empty_title': 'Chưa có dự án',
-  'lobby_empty_desc': 'Bắt đầu từ một cuốn tiểu thuyết, một kịch bản hoặc một ý tưởng. Dự án đã xuất dưới dạng ZIP có thể nhập trực tiếp.',
+  'lobby_empty_desc':
+    'Bắt đầu từ một cuốn tiểu thuyết, một kịch bản hoặc một ý tưởng. Dự án đã xuất dưới dạng ZIP có thể nhập trực tiếp.',
   'lobby_card_status_empty': 'Chưa có tập',
   'lobby_card_status_in_progress': 'Đang sản xuất',
   'lobby_card_status_completed': 'Đã hoàn thành',
@@ -2510,9 +2688,11 @@ export default {
   'lobby_rename_desc': 'Chỉ đổi tiêu đề hiển thị. ID dự án “{{name}}” và địa chỉ dự án giữ nguyên.',
   'lobby_rename_label': 'Tiêu đề dự án',
   'lobby_delete_title': 'Xóa “{{title}}”?',
-  'lobby_delete_desc': 'Dự án sẽ được chuyển vào Dự án đã xóa và giữ trong 30 ngày. Trong thời gian đó bạn có thể khôi phục toàn bộ từ danh sách dự án. Các tác vụ đang xếp hàng sẽ bị hủy.',
+  'lobby_delete_desc':
+    'Dự án sẽ được chuyển vào Dự án đã xóa và giữ trong 30 ngày. Trong thời gian đó bạn có thể khôi phục toàn bộ từ danh sách dự án. Các tác vụ đang xếp hàng sẽ bị hủy.',
   'lobby_deleted_projects': 'Dự án đã xóa',
-  'deleted_projects_description': 'Dự án đã xóa cùng thùng rác dự án của nó được giữ ở đây {{days}} ngày. Bạn có thể khôi phục toàn bộ dự án; hết hạn sẽ tự động bị dọn đi.',
+  'deleted_projects_description':
+    'Dự án đã xóa cùng thùng rác dự án của nó được giữ ở đây {{days}} ngày. Bạn có thể khôi phục toàn bộ dự án; hết hạn sẽ tự động bị dọn đi.',
   'deleted_projects_loading': 'Đang tải dự án đã xóa…',
   'deleted_projects_load_failed': 'Không thể tải dự án đã xóa: {{message}}',
   'deleted_projects_empty': 'Không có dự án đã xóa',
@@ -2523,13 +2703,16 @@ export default {
   'deleted_projects_restored_renamed': 'Tên gốc đã được dùng, “{{title}}” đã được khôi phục thành {{name}}',
   'deleted_projects_purge_title': 'Xóa vĩnh viễn “{{title}}”?',
   'deleted_projects_purge_description': 'Dự án cùng thùng rác dự án của nó sẽ bị xóa vĩnh viễn, không thể khôi phục.',
-  'lobby_import_conflict_desc': 'ID dự án “{{name}}” trong gói nhập đã được một dự án hiện có sử dụng. Có thể nhập với ID mới hoặc ghi đè dự án hiện có.',
+  'lobby_import_conflict_desc':
+    'ID dự án “{{name}}” trong gói nhập đã được một dự án hiện có sử dụng. Có thể nhập với ID mới hoặc ghi đè dự án hiện có.',
   'lobby_import_succeeded': 'Đã nhập dự án “{{title}}”',
   'lobby_import_failed': 'Không nhập được dự án: {{message}}',
   'lobby_import_open_project': 'Mở dự án',
   'lobby_import_failed_left': 'Không nhập được dự án: {{message}}. Hãy quay lại trang Dự án để nhập lại.',
-  'lobby_import_conflict_left': 'Dự án chưa được nhập: ID dự án “{{name}}” đã được dùng. Hãy quay lại trang Dự án để nhập lại với ID mới hoặc ghi đè dự án hiện có.',
-  'lobby_import_confirm_left': 'Dự án chưa được nhập: gói nhập đã được điều chỉnh khi nâng cấp và cần bạn xác nhận. Hãy quay lại trang Dự án để nhập lại và xác nhận.',
+  'lobby_import_conflict_left':
+    'Dự án chưa được nhập: ID dự án “{{name}}” đã được dùng. Hãy quay lại trang Dự án để nhập lại với ID mới hoặc ghi đè dự án hiện có.',
+  'lobby_import_confirm_left':
+    'Dự án chưa được nhập: gói nhập đã được điều chỉnh khi nâng cấp và cần bạn xác nhận. Hãy quay lại trang Dự án để nhập lại và xác nhận.',
   'lobby_clear_filters': 'Xóa bộ lọc',
   'lobby_filter_all': 'Tất cả',
   'lobby_hero_greeting_afternoon': 'Chào buổi chiều, đạo diễn.',
@@ -2752,12 +2935,16 @@ export default {
   'guide_plan_detail': 'Lập kế hoạch từ đầu đến cuối văn bản nguồn; sau đó có thể điều chỉnh từng tập.',
   'guide_plan_continue_detail': 'Tiếp tục sau tập cuối cùng đã lập kế hoạch cho đến hết văn bản nguồn.',
   'guide_prefill_plan': 'Hãy lập kế hoạch phân tập cho toàn bộ văn bản nguồn, cho đến hết văn bản.',
-  'guide_prefill_plan_continue': 'Hãy tiếp nối các tập đã có và lập kế hoạch phân tập cho phần văn bản nguồn còn lại, cho đến hết văn bản.',
+  'guide_prefill_plan_continue':
+    'Hãy tiếp nối các tập đã có và lập kế hoạch phân tập cho phần văn bản nguồn còn lại, cho đến hết văn bản.',
   'guide_replan_title': 'Lập lại kế hoạch phân tập',
-  'guide_replan_detail': 'Văn bản nguồn không còn khớp với bản ghi kế hoạch phân tập nên không thể tiếp nối các tập đã có; cần lập lại kế hoạch phân tập.',
-  'guide_prefill_replan': 'Văn bản nguồn của dự án này không còn khớp với bản ghi kế hoạch phân tập nên không thể tiếp nối các tập đã có. Trước hết hãy cho tôi biết việc lập lại kế hoạch sẽ ảnh hưởng đến những tập nào, sau khi tôi xác nhận thì lập lại kế hoạch phân tập.',
+  'guide_replan_detail':
+    'Văn bản nguồn không còn khớp với bản ghi kế hoạch phân tập nên không thể tiếp nối các tập đã có; cần lập lại kế hoạch phân tập.',
+  'guide_prefill_replan':
+    'Văn bản nguồn của dự án này không còn khớp với bản ghi kế hoạch phân tập nên không thể tiếp nối các tập đã có. Trước hết hãy cho tôi biết việc lập lại kế hoạch sẽ ảnh hưởng đến những tập nào, sau khi tôi xác nhận thì lập lại kế hoạch phân tập.',
   'guide_upload_title': 'Tải lên văn bản nguồn',
-  'guide_upload_detail': 'Tải lên toàn bộ văn bản nguồn để AI lập kế hoạch phân tập, hoặc không dùng văn bản nguồn mà tạo một tập để tự viết.',
+  'guide_upload_detail':
+    'Tải lên toàn bộ văn bản nguồn để AI lập kế hoạch phân tập, hoặc không dùng văn bản nguồn mà tạo một tập để tự viết.',
   'guide_prefill_instruction': 'Chỉ dẫn bổ sung: {{instruction}}',
   'guide_instruction_label': 'Chỉ dẫn bổ sung (không bắt buộc, chỉ dùng cho yêu cầu này và không được lưu)',
   'guide_instruction_placeholder': 'Ví dụ: mỗi tập khoảng 90 giây, ngắt ở chỗ gay cấn',
@@ -2780,7 +2967,8 @@ export default {
   'migration_retry_failed_title_one': 'Thử lại không thành công · đã thử {{count}} lần',
   'migration_retry_failed_title_other': 'Thử lại không thành công · đã thử {{count}} lần',
   'migration_retry_failed_heading': 'Thử lại không thành công',
-  'migration_retry_failed_body': 'Vấn đề nằm ở chính các tệp dự án, nên thử lại nhiều khả năng vẫn cho cùng kết quả. Có thể giao cho Agent kiểm tra và sửa, hoặc tự sửa tệp rồi thử lại.',
+  'migration_retry_failed_body':
+    'Vấn đề nằm ở chính các tệp dự án, nên thử lại nhiều khả năng vẫn cho cùng kết quả. Có thể giao cho Agent kiểm tra và sửa, hoặc tự sửa tệp rồi thử lại.',
   'migration_hand_to_agent': 'Giao cho Agent kiểm tra',
   'migration_retry_succeeded': 'Nâng cấp dữ liệu đã hoàn tất, chức năng tạo nội dung đã hoạt động trở lại.',
   'lobby_card_progress': 'Đã hoàn thành {{completed}} / {{total}} tập',
@@ -2788,8 +2976,10 @@ export default {
   'lobby_filter_completed': 'Đã hoàn thành',
   'lobby_filter_repair': 'Cần sửa',
   'migration_repair_title': 'Dự án này cần được sửa',
-  'migration_repair_body': 'Nâng cấp dữ liệu chưa hoàn tất nên chức năng tạo nội dung tạm thời bị tắt. Kịch bản và hình ảnh đã có vẫn xem được bình thường. Nhấn "Thử lại" để chạy lại nâng cấp dữ liệu.',
-  'migration_repair_prefill': 'Nâng cấp dữ liệu của dự án này đã thất bại. Hãy giải thích từng mục trong chi tiết lỗi — tập nào, tệp nào, vi phạm điều gì — rồi dùng patch_project / patch_episode_meta / rename_asset để sửa và gọi retry_project_migration.',
+  'migration_repair_body':
+    'Nâng cấp dữ liệu chưa hoàn tất nên chức năng tạo nội dung tạm thời bị tắt. Kịch bản và hình ảnh đã có vẫn xem được bình thường. Nhấn "Thử lại" để chạy lại nâng cấp dữ liệu.',
+  'migration_repair_prefill':
+    'Nâng cấp dữ liệu của dự án này đã thất bại. Hãy giải thích từng mục trong chi tiết lỗi — tập nào, tệp nào, vi phạm điều gì — rồi dùng patch_project / patch_episode_meta / rename_asset để sửa và gọi retry_project_migration.',
   // Báo cáo nâng cấp dữ liệu: thông báo một lần trên trang dự án và hộp xác nhận trước khi nhập
   'migration_report_notice_one': 'Lần nâng cấp này đã điều chỉnh {{count}} mục',
   'migration_report_notice_other': 'Lần nâng cấp này đã điều chỉnh {{count}} mục',
@@ -2797,26 +2987,39 @@ export default {
   'migration_report_acknowledge': 'Đã hiểu, không hiện lại',
   'migration_report_dismiss_failed': 'Không thể đóng thông báo nâng cấp: {{message}}',
   'migration_report_title': 'Những gì lần nâng cấp đã điều chỉnh',
-  'migration_report_description': 'Khi nâng cấp dữ liệu dự án, các điều chỉnh dưới đây đã được thực hiện. Nội dung bị thay thế được giữ làm bản sao lưu; không có tệp nào bị xóa.',
+  'migration_report_description':
+    'Khi nâng cấp dữ liệu dự án, các điều chỉnh dưới đây đã được thực hiện. Nội dung bị thay thế được giữ làm bản sao lưu; không có tệp nào bị xóa.',
   'migration_report_adjusted': 'Đã điều chỉnh',
   'migration_report_skipped': 'Không mang theo được',
-  'migration_report_skipped_hint': 'Các tệp này vẫn ở nguyên chỗ nhưng dự án không còn nhận ra, nên hiển thị là bị thiếu. Hãy tạo lại hoặc tải lên khi cần.',
+  'migration_report_skipped_hint':
+    'Các tệp này vẫn ở nguyên chỗ nhưng dự án không còn nhận ra, nên hiển thị là bị thiếu. Hãy tạo lại hoặc tải lên khi cần.',
   'migration_report_backup': 'Bản sao lưu: {{path}}',
-  'migration_adjustment_draft_name_conflict_resolved': '{{episode}} có hai bản nháp kế hoạch kịch bản dưới tên cũ và tên mới. Giữ bản mới, bản cũ được lưu làm bản sao lưu.',
-  'migration_adjustment_duplicate_episode_entry_removed': '{{episode}} được ghi hai lần trong danh sách tập. Mục trùng đã được bỏ; kịch bản {{file}} của mục đó vẫn ở nguyên chỗ.',
-  'migration_adjustment_shared_script_binding_split': '{{episode}} và {{owner}} dùng chung kịch bản {{from}}. Kịch bản thuộc về {{owner}}; {{episode}} chuyển sang dùng {{to}}.',
-  'migration_adjustment_script_episode_corrected_missing': 'Kịch bản {{file}} chưa ghi tập của nó. Đã ghi là {{episode}}.',
-  'migration_adjustment_script_episode_corrected': 'Kịch bản {{file}} ghi một tập khác với {{episode}} đang dùng nó. Đã sửa thành {{episode}}.',
+  'migration_adjustment_draft_name_conflict_resolved':
+    '{{episode}} có hai bản nháp kế hoạch kịch bản dưới tên cũ và tên mới. Giữ bản mới, bản cũ được lưu làm bản sao lưu.',
+  'migration_adjustment_duplicate_episode_entry_removed':
+    '{{episode}} được ghi hai lần trong danh sách tập. Mục trùng đã được bỏ; kịch bản {{file}} của mục đó vẫn ở nguyên chỗ.',
+  'migration_adjustment_shared_script_binding_split':
+    '{{episode}} và {{owner}} dùng chung kịch bản {{from}}. Kịch bản thuộc về {{owner}}; {{episode}} chuyển sang dùng {{to}}.',
+  'migration_adjustment_script_episode_corrected_missing':
+    'Kịch bản {{file}} chưa ghi tập của nó. Đã ghi là {{episode}}.',
+  'migration_adjustment_script_episode_corrected':
+    'Kịch bản {{file}} ghi một tập khác với {{episode}} đang dùng nó. Đã sửa thành {{episode}}.',
   'migration_adjustment_script_binding_canonicalized': 'Kịch bản của {{episode}} đã chuyển từ {{from}} sang {{to}}.',
-  'migration_adjustment_item_id_reassigned_duplicate': 'Trong {{episode}}, mã phân cảnh {{from}} bị dùng hai lần. Phân cảnh sau được đổi thành {{to}}.',
+  'migration_adjustment_item_id_reassigned_duplicate':
+    'Trong {{episode}}, mã phân cảnh {{from}} bị dùng hai lần. Phân cảnh sau được đổi thành {{to}}.',
   'migration_adjustment_item_id_reassigned_missing': 'Trong {{episode}}, một phân cảnh không có mã. Đã gán {{to}}.',
   'migration_adjustment_duplicate_asset_removed': '{{assetType}} “{{name}}” trùng tên với “{{kept}}”. Giữ “{{kept}}”.',
   'migration_adjustment_blank_asset_removed': 'Một {{assetType}} có tên trống đã được bỏ khỏi danh sách tài sản.',
-  'migration_adjustment_duplicate_asset_derivative_moved': 'Phái sinh “{{derivative}}” của nhân vật “{{name}}” đã được chuyển sang “{{kept}}”.',
-  'migration_adjustment_duplicate_asset_derivative_folded': 'Phái sinh “{{derivative}}” của nhân vật “{{name}}” trùng tên với phái sinh “{{into}}” của “{{kept}}”. Đã gộp vào “{{into}}”.',
-  'migration_adjustment_duplicate_asset_references_rewritten': 'Trong {{episode}}, các tham chiếu đến {{assetType}} “{{name}}” đã được đổi thành “{{kept}}”.',
-  'migration_adjustment_shared_reference_file_copied': '{{assetType}} “{{name}}” dùng tệp {{from}} thuộc “{{owner}}”. Đã sao chép thành {{file}} để dùng riêng.',
-  'migration_adjustment_placeholder_asset_added': 'Kịch bản dùng {{assetType}} “{{name}}” nhưng chưa được định nghĩa. Đã thêm một định nghĩa trống.',
+  'migration_adjustment_duplicate_asset_derivative_moved':
+    'Phái sinh “{{derivative}}” của nhân vật “{{name}}” đã được chuyển sang “{{kept}}”.',
+  'migration_adjustment_duplicate_asset_derivative_folded':
+    'Phái sinh “{{derivative}}” của nhân vật “{{name}}” trùng tên với phái sinh “{{into}}” của “{{kept}}”. Đã gộp vào “{{into}}”.',
+  'migration_adjustment_duplicate_asset_references_rewritten':
+    'Trong {{episode}}, các tham chiếu đến {{assetType}} “{{name}}” đã được đổi thành “{{kept}}”.',
+  'migration_adjustment_shared_reference_file_copied':
+    '{{assetType}} “{{name}}” dùng tệp {{from}} thuộc “{{owner}}”. Đã sao chép thành {{file}} để dùng riêng.',
+  'migration_adjustment_placeholder_asset_added':
+    'Kịch bản dùng {{assetType}} “{{name}}” nhưng chưa được định nghĩa. Đã thêm một định nghĩa trống.',
   'migration_asset_type_character': 'nhân vật',
   'migration_asset_type_scene': 'bối cảnh',
   'migration_asset_type_prop': 'đạo cụ',
@@ -2835,7 +3038,8 @@ export default {
   'migration_artifact_kind_project-bgm': 'Nhạc nền',
   'migration_artifact_kind_other': 'Tệp',
   'import_confirm_title': 'Xác nhận trước khi nhập',
-  'import_confirm_description': 'Khi nâng cấp gói lên phiên bản hiện tại, các điều chỉnh dưới đây đã được thực hiện. Dự án chỉ xuất hiện trong danh sách sau khi xác nhận; nếu hủy, không dữ liệu nào được giữ lại.',
+  'import_confirm_description':
+    'Khi nâng cấp gói lên phiên bản hiện tại, các điều chỉnh dưới đây đã được thực hiện. Dự án chỉ xuất hiện trong danh sách sau khi xác nhận; nếu hủy, không dữ liệu nào được giữ lại.',
   'import_confirm_action': 'Xác nhận nhập',
   // Skill display names (single source of truth: user-invocable SKILL.md
   // dưới agent_runtime_profile/.claude/skills/; tests/test_frontend_skill_i18n.py kiểm tra đồng bộ)
@@ -2852,11 +3056,14 @@ export default {
   'workspace_nav_props': 'Đạo cụ',
   'ad_script_generate': 'AI tạo kịch bản',
   'ad_script_regenerate': 'Tạo lại kịch bản',
-  'ad_script_desc': 'Viết toàn bộ kịch bản theo ý tưởng sáng tạo, sản phẩm và tổng thời lượng mục tiêu. Kết quả trở thành kịch bản chính thức của tập ngay, không qua bước xác nhận nội dung. Nhân vật, bối cảnh và đạo cụ mà kịch bản dùng nhưng dự án chưa có sẽ được đăng ký thành tài nguyên chờ tạo.',
-  'ad_script_regenerate_desc': 'Tạo lại toàn bộ kịch bản và thay thế kịch bản chính thức của tập. Tài nguyên đã đăng ký trước đó được giữ lại. Khi gửi, hệ thống liệt kê trước các mục và sản phẩm đã tạo sẽ bị xóa; chỉ bắt đầu tạo sau khi bạn xác nhận.',
+  'ad_script_desc':
+    'Viết toàn bộ kịch bản theo ý tưởng sáng tạo, sản phẩm và tổng thời lượng mục tiêu. Kết quả trở thành kịch bản chính thức của tập ngay, không qua bước xác nhận nội dung. Nhân vật, bối cảnh và đạo cụ mà kịch bản dùng nhưng dự án chưa có sẽ được đăng ký thành tài nguyên chờ tạo.',
+  'ad_script_regenerate_desc':
+    'Tạo lại toàn bộ kịch bản và thay thế kịch bản chính thức của tập. Tài nguyên đã đăng ký trước đó được giữ lại. Khi gửi, hệ thống liệt kê trước các mục và sản phẩm đã tạo sẽ bị xóa; chỉ bắt đầu tạo sau khi bạn xác nhận.',
   'ad_script_instructions_label': 'Chỉ dẫn bổ sung (không bắt buộc, chỉ dùng cho lần này)',
   'ad_script_instructions_placeholder': 'Ví dụ: nhịp nhanh hơn, kết thúc bằng lời kêu gọi hành động',
-  'ad_script_agent_prefill_regenerate': 'Tạo lại toàn bộ kịch bản của {{episodeRef}}, thay thế kịch bản chính thức hiện có',
+  'ad_script_agent_prefill_regenerate':
+    'Tạo lại toàn bộ kịch bản của {{episodeRef}}, thay thế kịch bản chính thức hiện có',
   'ad_script_overwrite_title': 'Thay thế kịch bản chính thức của tập này?',
   'ad_script_overwrite_confirm': 'Thay thế & tạo lại',
   'ad_script_queued': 'Đã gửi yêu cầu AI tạo kịch bản',
@@ -2894,7 +3101,8 @@ export default {
   'file_view_preview_label': 'Nội dung của {{name}}',
   'file_view_modified_at': 'Sửa đổi lúc {{time}}',
   'file_view_remote_only': 'Không có trên máy chủ',
-  'file_view_remote_only_desc': 'Nội dung được lưu trong lưu trữ đối tượng, bộ nhớ đệm cục bộ đã được dọn. Nội dung sẽ được tải về trước khi xem trước, tải xuống hoặc chuyển vào thùng rác dự án.',
+  'file_view_remote_only_desc':
+    'Nội dung được lưu trong lưu trữ đối tượng, bộ nhớ đệm cục bộ đã được dọn. Nội dung sẽ được tải về trước khi xem trước, tải xuống hoặc chuyển vào thùng rác dự án.',
   'file_view_role_structure': 'Tệp cấu trúc',
   'file_view_role_referenced': 'Đang dùng',
   'file_view_role_history': 'Phiên bản cũ',
@@ -2903,10 +3111,13 @@ export default {
   'file_view_role_agent_config': 'Cấu hình Agent',
   'file_view_role_memory': 'Bộ nhớ dự án',
   'file_view_role_desc_structure': 'Dữ liệu cấu trúc của dự án. Ở đây chỉ đọc; hãy thay đổi tại nơi nó thuộc về.',
-  'file_view_role_desc_referenced': 'Tệp mà dự án đang dùng. Hãy thay đổi hoặc xóa tại nơi nó thuộc về, nơi đó sẽ cho biết ảnh hưởng.',
+  'file_view_role_desc_referenced':
+    'Tệp mà dự án đang dùng. Hãy thay đổi hoặc xóa tại nơi nó thuộc về, nơi đó sẽ cho biết ảnh hưởng.',
   'file_view_role_desc_history': 'Một phiên bản trong lịch sử phiên bản, không ảnh hưởng phiên bản hiện tại.',
-  'file_view_role_desc_unreferenced': 'Không được dữ liệu dự án, danh sách sản phẩm hay lịch sử phiên bản tham chiếu, chẳng hạn media còn lại khi xóa phân cảnh ở phiên bản cũ hoặc tệp tạm do Agent ghi.',
-  'file_view_role_desc_unreferenced_source': 'Chưa thuộc nguồn toàn bộ và không phải nguồn của tập nào. Hãy quyết định trong Phân tập: thêm vào nguồn toàn bộ, dùng làm nguồn của một tập, hoặc xóa.',
+  'file_view_role_desc_unreferenced':
+    'Không được dữ liệu dự án, danh sách sản phẩm hay lịch sử phiên bản tham chiếu, chẳng hạn media còn lại khi xóa phân cảnh ở phiên bản cũ hoặc tệp tạm do Agent ghi.',
+  'file_view_role_desc_unreferenced_source':
+    'Chưa thuộc nguồn toàn bộ và không phải nguồn của tập nào. Hãy quyết định trong Phân tập: thêm vào nguồn toàn bộ, dùng làm nguồn của một tập, hoặc xóa.',
   'file_view_role_desc_derived': 'Được tạo ra từ nội dung khác và có thể tạo lại. Ở đây chỉ đọc.',
   'file_view_role_desc_agent_config': 'Hướng dẫn và skill mà Agent thực sự sử dụng. Ở đây chỉ đọc.',
   'file_view_role_desc_memory': 'Bộ nhớ dự án của Agent. Ở đây chỉ đọc; hãy chỉnh sửa trong Bộ nhớ dự án.',
@@ -2919,72 +3130,81 @@ export default {
   'file_view_open_source': 'Xử lý trong Phân tập',
   'file_view_open_memory': 'Xem trong Bộ nhớ dự án',
   'file_view_open_project': 'Mở cài đặt dự án',
-  'file_view_sections_aria': "Các phần của chế độ xem tệp",
-  'file_view_section_files': "Tệp",
-  'file_view_section_trash': "Thùng rác dự án",
-  'file_view_move_to_trash': "Chuyển vào thùng rác dự án",
-  'file_view_select_file': "Chọn {{name}}",
-  'file_view_delete_selected': "Chuyển vào thùng rác dự án ({{total}})",
-  'file_view_clear_selection': "Bỏ chọn",
-  'file_view_moved_to_trash': "Đã chuyển {{name}} vào thùng rác dự án, giữ trong 30 ngày",
-  'file_view_delete_failed': "Không thể xóa {{name}}: {{message}}",
-  'trash_load_failed': "Không thể đọc thùng rác dự án: {{message}}",
-  'trash_summary': "{{total}} bản ghi xóa, chiếm {{size}}. Bản ghi xóa được giữ {{days}} ngày rồi tự động dọn đi.",
-  'trash_empty': "Dọn sạch thùng rác dự án",
-  'trash_empty_title': "Dọn sạch thùng rác dự án?",
-  'trash_empty_description': "{{total}} bản ghi xóa sẽ bị xóa vĩnh viễn và không thể khôi phục.",
-  'trash_empty_state_title': "Thùng rác dự án đang trống",
-  'trash_empty_state_description': "Các tệp bạn xóa trong chế độ xem tệp sẽ xuất hiện ở đây và được giữ {{days}} ngày.",
-  'trash_record_meta_user': "Bạn đã xóa lúc {{time}}",
-  'trash_record_meta_agent': "Agent đã xóa lúc {{time}}",
-  'trash_record_meta_target_deleted': "Tạo xong lúc {{time}}, mục tiêu đã bị xóa",
-  'trash_restore': "Khôi phục",
-  'trash_restored': "Đã khôi phục {{name}} về vị trí cũ",
-  'trash_restored_renamed': "Vị trí cũ đã có tệp, {{name}} được khôi phục thành {{path}}",
-  'trash_restored_as_history': "Vị trí cũ đã có phiên bản hiện tại, {{name}} được khôi phục thành một phiên bản lịch sử",
-  'trash_object_edit_timeline': "Dòng thời gian dựng \"{{name}}\" (tập {{episode}})",
-  'trash_object_episode': "Tập \"{{name}}\"",
-  'trash_object_episode_untitled': "Tập {{episode}}",
-  'trash_object_script_entry': "Phân cảnh {{id}} (tập {{episode}})",
-  'trash_object_script_unit': "Đơn vị video {{id}} (tập {{episode}})",
-  'trash_object_script_entry_at': "Phân cảnh {{item}}",
-  'trash_object_script_unit_at': "Đơn vị video {{item}}",
-  'trash_object_with_excerpt': "{{name}}: {{excerpt}}",
-  'trash_object_source_file': "Tệp nguồn \"{{name}}\"",
-  'trash_object_planning_draft': "Bản nháp kế hoạch của tập {{episode}}",
-  'trash_object_grid': "Lưới của tập {{episode}}",
-  'trash_object_end_frame': "Khung hình cuối của phân cảnh {{shot}}",
-  'trash_object_reference_audio': "Âm thanh tham chiếu của \"{{name}}\"",
-  'trash_object_asset.character': "Nhân vật \"{{name}}\"",
-  'trash_object_asset.scene': "Cảnh \"{{name}}\"",
-  'trash_object_asset.prop': "Đạo cụ \"{{name}}\"",
-  'trash_object_asset.product': "Sản phẩm \"{{name}}\"",
-  'trash_object_asset_derivative': "Phái sinh \"{{name}}\" của nhân vật \"{{owner}}\"",
-  'trash_restored_object': "Đã khôi phục {{name}}",
-  'trash_restored_episode': "Đã khôi phục {{name}}, xếp ở cuối thứ tự phát sóng",
-  'trash_restored_object_renamed': "Tên gốc đã được dùng, {{name}} được khôi phục với tên \"{{landed}}\"",
-  'trash_restored_degraded': "Không thể khôi phục {{name}} theo cấu trúc ban đầu. Đã lấy lại {{count}} tệp; các tệp cấu trúc vẫn ở trong thùng rác dự án và chỉ có thể tải xuống",
-  'trash_restored_degraded_files': "Không thể khôi phục {{name}} theo cấu trúc ban đầu. Đã lấy lại {{count}} tệp",
-  'trash_download_only_hint': "Không thể khôi phục theo cấu trúc ban đầu. Các tệp cấu trúc dưới đây chỉ có thể tải xuống",
-  'trash_download_file': "Tải xuống {{path}}",
-  'trash_purge': "Xóa vĩnh viễn",
-  'trash_purge_title': "Xóa vĩnh viễn bản ghi xóa này?",
-  'trash_purge_description': "{{name}} sẽ bị xóa vĩnh viễn và không thể khôi phục.",
-  'trash_action_failed': "Thao tác thất bại: {{message}}",
+  'file_view_sections_aria': 'Các phần của chế độ xem tệp',
+  'file_view_section_files': 'Tệp',
+  'file_view_section_trash': 'Thùng rác dự án',
+  'file_view_move_to_trash': 'Chuyển vào thùng rác dự án',
+  'file_view_select_file': 'Chọn {{name}}',
+  'file_view_delete_selected': 'Chuyển vào thùng rác dự án ({{total}})',
+  'file_view_clear_selection': 'Bỏ chọn',
+  'file_view_moved_to_trash': 'Đã chuyển {{name}} vào thùng rác dự án, giữ trong 30 ngày',
+  'file_view_delete_failed': 'Không thể xóa {{name}}: {{message}}',
+  'trash_load_failed': 'Không thể đọc thùng rác dự án: {{message}}',
+  'trash_summary': '{{total}} bản ghi xóa, chiếm {{size}}. Bản ghi xóa được giữ {{days}} ngày rồi tự động dọn đi.',
+  'trash_empty': 'Dọn sạch thùng rác dự án',
+  'trash_empty_title': 'Dọn sạch thùng rác dự án?',
+  'trash_empty_description': '{{total}} bản ghi xóa sẽ bị xóa vĩnh viễn và không thể khôi phục.',
+  'trash_empty_state_title': 'Thùng rác dự án đang trống',
+  'trash_empty_state_description': 'Các tệp bạn xóa trong chế độ xem tệp sẽ xuất hiện ở đây và được giữ {{days}} ngày.',
+  'trash_record_meta_user': 'Bạn đã xóa lúc {{time}}',
+  'trash_record_meta_agent': 'Agent đã xóa lúc {{time}}',
+  'trash_record_meta_target_deleted': 'Tạo xong lúc {{time}}, mục tiêu đã bị xóa',
+  'trash_restore': 'Khôi phục',
+  'trash_restored': 'Đã khôi phục {{name}} về vị trí cũ',
+  'trash_restored_renamed': 'Vị trí cũ đã có tệp, {{name}} được khôi phục thành {{path}}',
+  'trash_restored_as_history':
+    'Vị trí cũ đã có phiên bản hiện tại, {{name}} được khôi phục thành một phiên bản lịch sử',
+  'trash_object_edit_timeline': 'Dòng thời gian dựng "{{name}}" (tập {{episode}})',
+  'trash_object_episode': 'Tập "{{name}}"',
+  'trash_object_episode_untitled': 'Tập {{episode}}',
+  'trash_object_script_entry': 'Phân cảnh {{id}} (tập {{episode}})',
+  'trash_object_script_unit': 'Đơn vị video {{id}} (tập {{episode}})',
+  'trash_object_script_entry_at': 'Phân cảnh {{item}}',
+  'trash_object_script_unit_at': 'Đơn vị video {{item}}',
+  'trash_object_with_excerpt': '{{name}}: {{excerpt}}',
+  'trash_object_source_file': 'Tệp nguồn "{{name}}"',
+  'trash_object_planning_draft': 'Bản nháp kế hoạch của tập {{episode}}',
+  'trash_object_grid': 'Lưới của tập {{episode}}',
+  'trash_object_end_frame': 'Khung hình cuối của phân cảnh {{shot}}',
+  'trash_object_reference_audio': 'Âm thanh tham chiếu của "{{name}}"',
+  'trash_object_asset.character': 'Nhân vật "{{name}}"',
+  'trash_object_asset.scene': 'Cảnh "{{name}}"',
+  'trash_object_asset.prop': 'Đạo cụ "{{name}}"',
+  'trash_object_asset.product': 'Sản phẩm "{{name}}"',
+  'trash_object_asset_derivative': 'Phái sinh "{{name}}" của nhân vật "{{owner}}"',
+  'trash_restored_object': 'Đã khôi phục {{name}}',
+  'trash_restored_episode': 'Đã khôi phục {{name}}, xếp ở cuối thứ tự phát sóng',
+  'trash_restored_object_renamed': 'Tên gốc đã được dùng, {{name}} được khôi phục với tên "{{landed}}"',
+  'trash_restored_degraded':
+    'Không thể khôi phục {{name}} theo cấu trúc ban đầu. Đã lấy lại {{count}} tệp; các tệp cấu trúc vẫn ở trong thùng rác dự án và chỉ có thể tải xuống',
+  'trash_restored_degraded_files': 'Không thể khôi phục {{name}} theo cấu trúc ban đầu. Đã lấy lại {{count}} tệp',
+  'trash_download_only_hint':
+    'Không thể khôi phục theo cấu trúc ban đầu. Các tệp cấu trúc dưới đây chỉ có thể tải xuống',
+  'trash_download_file': 'Tải xuống {{path}}',
+  'trash_purge': 'Xóa vĩnh viễn',
+  'trash_purge_title': 'Xóa vĩnh viễn bản ghi xóa này?',
+  'trash_purge_description': '{{name}} sẽ bị xóa vĩnh viễn và không thể khôi phục.',
+  'trash_action_failed': 'Thao tác thất bại: {{message}}',
   'workspace_nav_scenes': 'Cảnh',
   'workspace_nav_episodes': 'Phân tập',
   'workspace_notifications_title': 'Thông báo không gian làm việc',
   'notifications_trigger_unread': 'Thông báo không gian làm việc, {{count}} chưa đọc',
   'agent_credentials': 'Nhà cung cấp Agent',
-  'agent_providers_desc': 'Mỗi nhà cung cấp Agent là một cổng tương thích Anthropic. Mỗi lúc chỉ một nhà cung cấp được dùng; sau khi chuyển, phiên mới dùng nhà cung cấp mới, phiên đang chạy vẫn dùng nhà cung cấp cũ.',
-  'arcreel_agent_section_desc': '[[brand]] Agent là Agent sáng tác trong không gian làm việc, gọi mô hình qua nhà cung cấp Agent đang dùng bên dưới.',
-  'arcreel_agent_external_hint': 'Để Agent bên ngoài như Claude Code làm việc với [[brand]], xem <guide>Kết nối Agent bên ngoài</guide>.',
-  'arcreel_agent_language_rule_hint': 'Quy tắc ngôn ngữ quy định ngôn ngữ trả lời và nội dung do Agent tạo. Xem nội dung trong <templates>Mẫu prompt</templates>.',
+  'agent_providers_desc':
+    'Mỗi nhà cung cấp Agent là một cổng tương thích Anthropic. Mỗi lúc chỉ một nhà cung cấp được dùng; sau khi chuyển, phiên mới dùng nhà cung cấp mới, phiên đang chạy vẫn dùng nhà cung cấp cũ.',
+  'arcreel_agent_section_desc':
+    '[[brand]] Agent là Agent sáng tác trong không gian làm việc, gọi mô hình qua nhà cung cấp Agent đang dùng bên dưới.',
+  'arcreel_agent_external_hint':
+    'Để Agent bên ngoài như Claude Code làm việc với [[brand]], xem <guide>Kết nối Agent bên ngoài</guide>.',
+  'arcreel_agent_language_rule_hint':
+    'Quy tắc ngôn ngữ quy định ngôn ngữ trả lời và nội dung do Agent tạo. Xem nội dung trong <templates>Mẫu prompt</templates>.',
   'arcreel_agent_advanced': 'Nâng cao',
   'embedded_agent_not_configured': '[[brand]] Agent chưa được cấu hình',
-  'embedded_agent_not_configured_desc': 'Chưa có nhà cung cấp Agent đang dùng nên Agent trong không gian làm việc của dự án không thể trò chuyện. Thêm một nhà cung cấp Agent để bắt đầu.',
+  'embedded_agent_not_configured_desc':
+    'Chưa có nhà cung cấp Agent đang dùng nên Agent trong không gian làm việc của dự án không thể trò chuyện. Thêm một nhà cung cấp Agent để bắt đầu.',
   'cred_multiplier_label': 'Hệ số nhân',
-  'cred_multiplier_help': 'Nhân vào chi phí tham khảo của mọi lần gọi qua nhà cung cấp Agent này, để thể hiện chênh lệch giữa cổng và giá chính thức. 1 nghĩa là không điều chỉnh; cổng theo gói thuê bao có thể nhập 0 để không tính chi phí. Thay đổi chỉ áp dụng cho các lần gọi sau; chi phí đã ghi không được tính lại.',
+  'cred_multiplier_help':
+    'Nhân vào chi phí tham khảo của mọi lần gọi qua nhà cung cấp Agent này, để thể hiện chênh lệch giữa cổng và giá chính thức. 1 nghĩa là không điều chỉnh; cổng theo gói thuê bao có thể nhập 0 để không tính chi phí. Thay đổi chỉ áp dụng cho các lần gọi sau; chi phí đã ghi không được tính lại.',
   'cred_multiplier_invalid': 'Hệ số nhân phải là số không nhỏ hơn 0.',
   'cred_tier_pricing_title': 'Bậc mô hình và giá',
   'cred_tier_priced': 'Đã có giá',
@@ -3003,7 +3223,8 @@ export default {
   'claude_compat_providers': 'Nhà cung cấp Claude',
   'unified_providers_coming_soon': 'Nhà cung cấp thống nhất (sắp ra mắt)',
   'custom_config': 'Tuỳ chỉnh',
-  'cred_list_empty': 'Chưa có nhà cung cấp Agent nào. Hãy thêm một nhà cung cấp để [[brand]] Agent có thể trò chuyện trong dự án.',
+  'cred_list_empty':
+    'Chưa có nhà cung cấp Agent nào. Hãy thêm một nhà cung cấp để [[brand]] Agent có thể trò chuyện trong dự án.',
   'cred_activate_label': 'Đặt làm đang dùng',
   'cred_edit_label': 'Chỉnh sửa',
   'cred_delete_label': 'Xoá',
@@ -3011,14 +3232,16 @@ export default {
   'cred_testing': 'Đang kiểm tra…',
   'raw_error': 'Lỗi gốc',
   'is_active': 'Đang dùng',
-  'cred_delete_active_blocked': 'Không thể xoá nhà cung cấp Agent đang dùng. Hãy đặt nhà cung cấp khác làm đang dùng trước.',
+  'cred_delete_active_blocked':
+    'Không thể xoá nhà cung cấp Agent đang dùng. Hãy đặt nhà cung cấp khác làm đang dùng trước.',
   'cred_delete_confirm_title': 'Xoá nhà cung cấp Agent',
   'cred_delete_confirm': 'Xoá "{{name}}" sẽ gỡ địa chỉ, khoá và định tuyến mô hình của nó. Không thể hoàn tác.',
   'edit_credential_title': 'Chỉnh sửa nhà cung cấp Agent',
   'preset_locked_in_edit': 'Không thể đổi loại nhà cung cấp khi chỉnh sửa.',
   'api_key_unchanged_hint': 'Để trống để giữ nguyên',
   'api_key_from_provider_hint': 'Sẽ dùng khóa của {{name}}',
-  'api_key_from_provider_note': 'Máy chủ sao chép khoá từ nhà cung cấp đã chọn và không hiển thị ở đây. Sau khi lưu, có thể kiểm tra kết nối trong danh sách nhà cung cấp Agent.',
+  'api_key_from_provider_note':
+    'Máy chủ sao chép khoá từ nhà cung cấp đã chọn và không hiển thị ở đây. Sau khi lưu, có thể kiểm tra kết nối trong danh sách nhà cung cấp Agent.',
   'api_key_manual_entry': 'Nhập thủ công',
   'display_name': 'Tên hiển thị',
   'get_api_key': 'Lấy khoá',
@@ -3027,13 +3250,16 @@ export default {
   'test_fail': 'Không thể kết nối',
   'messages_url': 'Địa chỉ gọi',
   'messages_url_preview_hint': 'Claude Agent luôn gọi:',
-  'base_url_unsupported_components': 'Địa chỉ không được chứa tham số truy vấn, fragment hay tên người dùng/mật khẩu. Hãy dùng dạng https://host/path.',
-  'diagnosis_openai_compat_only': 'Endpoint này dùng giao thức tương thích OpenAI — Claude SDK không thể dùng. Kiểm tra Plan.',
+  'base_url_unsupported_components':
+    'Địa chỉ không được chứa tham số truy vấn, fragment hay tên người dùng/mật khẩu. Hãy dùng dạng https://host/path.',
+  'diagnosis_openai_compat_only':
+    'Endpoint này dùng giao thức tương thích OpenAI — Claude SDK không thể dùng. Kiểm tra Plan.',
   'diagnosis_model_not_found': 'Không tìm thấy model. Hãy khám phá model khả dụng trước.',
   'diagnosis_model_required': 'Preset này chưa có model mặc định. Hãy điền model mặc định trước khi kiểm tra.',
   'diagnosis_rate_limited': 'Đã vượt giới hạn tốc độ. Thử lại sau.',
   'diagnosis_network': 'Không thể truy cập mạng. Kiểm tra URL và tường lửa.',
-  'diagnosis_timeout': 'Upstream hết thời gian chờ. Endpoint truy cập được nhưng model không trả lời kịp; bạn có thể lưu và thử lại.',
+  'diagnosis_timeout':
+    'Upstream hết thời gian chờ. Endpoint truy cập được nhưng model không trả lời kịp; bạn có thể lưu và thử lại.',
   'diagnosis_unknown': 'Lỗi không xác định. Xem chi tiết bên dưới.',
   // ==================== Khung hình cuối ====================
   'end_frame_title': 'Khung hình cuối',
@@ -3044,8 +3270,10 @@ export default {
   'end_frame_clear_end_frame': 'Xóa khung hình cuối',
   'end_frame_summary_set': 'Đã đặt',
   'end_frame_summary_unset': 'Chưa đặt',
-  'end_frame_unsupported_hint': 'Model video hiện tại không hỗ trợ khung hình cuối. Hãy đổi model hoặc điều chỉnh ghi đè năng lực trong Cài đặt.',
-  'end_frame_unsupported_notice': 'Model hiện tại không hỗ trợ khung hình cuối — việc tạo video cho cảnh này sẽ bị từ chối.',
+  'end_frame_unsupported_hint':
+    'Model video hiện tại không hỗ trợ khung hình cuối. Hãy đổi model hoặc điều chỉnh ghi đè năng lực trong Cài đặt.',
+  'end_frame_unsupported_notice':
+    'Model hiện tại không hỗ trợ khung hình cuối — việc tạo video cho cảnh này sẽ bị từ chối.',
   'end_frame_busy_hint': 'Cảnh này đang có tác vụ video chạy. Hãy đợi tác vụ xong rồi sửa khung hình cuối.',
   'end_frame_capability_checking': 'Đang kiểm tra\u2026',
   'end_frame_preview_alt': 'Khung hình cuối của {{id}}',
@@ -3062,15 +3290,23 @@ export default {
   'end_frame_picker_group_storyboards': 'Ảnh storyboard của tập này',
   'end_frame_picker_group_grid_cells': 'Ảnh cắt phân cảnh của tập này',
   'end_frame_picker_grid_cell_label': '{{grid}} ô {{index}}',
-  'speech_admission_mixed_speech': 'Đơn vị video {{position}} chứa cả lời thoại nhân vật và lời dẫn tại {{location}}. Hãy lập kế hoạch lại để mỗi đơn vị chỉ có một chủ thể phát ngôn.',
-  'speech_admission_needs_replan': 'Đơn vị video {{position}} đang chờ lập kế hoạch lại ({{location}}). Hãy lập kế hoạch lại nội dung lời nói trước khi tạo video.',
-  'speech_admission_parse_failed': 'Không thể đọc nội dung lời nói của đơn vị video {{position}} tại {{location}}. Hãy sửa trường này trước khi tạo video.',
-  'speech_admission_empty_speaker': 'Đơn vị video {{position}} có lời thoại chưa chỉ định nhân vật tại {{location}}. Hãy chỉ định nhân vật trước khi tạo video.',
+  'speech_admission_mixed_speech':
+    'Đơn vị video {{position}} chứa cả lời thoại nhân vật và lời dẫn tại {{location}}. Hãy lập kế hoạch lại để mỗi đơn vị chỉ có một chủ thể phát ngôn.',
+  'speech_admission_needs_replan':
+    'Đơn vị video {{position}} đang chờ lập kế hoạch lại ({{location}}). Hãy lập kế hoạch lại nội dung lời nói trước khi tạo video.',
+  'speech_admission_parse_failed':
+    'Không thể đọc nội dung lời nói của đơn vị video {{position}} tại {{location}}. Hãy sửa trường này trước khi tạo video.',
+  'speech_admission_empty_speaker':
+    'Đơn vị video {{position}} có lời thoại chưa chỉ định nhân vật tại {{location}}. Hãy chỉ định nhân vật trước khi tạo video.',
   'script_edit_revision_conflict': 'Kịch bản đã được chỉnh sửa ở nơi khác. Hãy làm mới rồi thử lại.',
-  'script_edit_operation_invalid': 'Một thao tác chỉnh sửa kịch bản không hợp lệ. Hãy kiểm tra thao tác tương ứng rồi thử lại.',
-  'script_edit_schema_invalid': 'Kịch bản sau khi chỉnh sửa có cấu trúc không hợp lệ. Hãy sửa trường liên quan rồi thử lại.',
-  'script_edit_references_invalid': 'Kịch bản sau khi chỉnh sửa tham chiếu đến tài nguyên chưa được đăng ký trong dự án.',
-  'script_edit_manifest_invalid': 'Không thể xác minh trạng thái sản phẩm nên kịch bản chưa được thay đổi. Hãy thử lại hoặc sửa dữ liệu dự án.',
+  'script_edit_operation_invalid':
+    'Một thao tác chỉnh sửa kịch bản không hợp lệ. Hãy kiểm tra thao tác tương ứng rồi thử lại.',
+  'script_edit_schema_invalid':
+    'Kịch bản sau khi chỉnh sửa có cấu trúc không hợp lệ. Hãy sửa trường liên quan rồi thử lại.',
+  'script_edit_references_invalid':
+    'Kịch bản sau khi chỉnh sửa tham chiếu đến tài nguyên chưa được đăng ký trong dự án.',
+  'script_edit_manifest_invalid':
+    'Không thể xác minh trạng thái sản phẩm nên kịch bản chưa được thay đổi. Hãy thử lại hoặc sửa dữ liệu dự án.',
   'script_edit_commit_failed': 'Không thể lưu kịch bản an toàn. Hãy thử lại.',
   'script_edit_rejected': 'Chỉnh sửa kịch bản bị từ chối. Hãy kiểm tra thao tác tương ứng rồi thử lại.',
 
@@ -3109,20 +3345,25 @@ export default {
   'ce_group_builtin_python': 'Có sẵn · Python',
   'ce_kind_custom': 'Tùy chỉnh',
   'ce_import_title': 'Nhập định nghĩa điểm gọi',
-  'ce_import_source_desc': 'Nhận workflow xuất từ ComfyUI bằng Export (API), hoặc một định nghĩa endpoint của ArcReel. Workflow định dạng UI không gửi được.',
+  'ce_import_source_desc':
+    'Nhận workflow xuất từ ComfyUI bằng Export (API), hoặc một định nghĩa endpoint của ArcReel. Workflow định dạng UI không gửi được.',
   'ce_import_pick_file': 'Chọn tệp JSON',
   'ce_import_or_paste': 'hoặc dán nội dung',
   'ce_import_paste_label': 'Dán định nghĩa endpoint hoặc workflow',
   'ce_import_paste_placeholder': 'Dán JSON từ Export (API) của ComfyUI, hoặc một định nghĩa endpoint',
   'ce_import_detect': 'Nhận diện',
   'ce_import_pasted': 'Nội dung đã dán',
-  'ce_import_read_failed': 'Nội dung không phải là định nghĩa JSON hợp lệ. Hãy chọn tệp định nghĩa xuất từ một endpoint, hoặc dán toàn bộ JSON.',
+  'ce_import_read_failed':
+    'Nội dung không phải là định nghĩa JSON hợp lệ. Hãy chọn tệp định nghĩa xuất từ một endpoint, hoặc dán toàn bộ JSON.',
   'ce_import_failed': 'Không nhập được định nghĩa.',
   'ce_import_blocked': 'Hãy sửa các lỗi trong tệp trước khi nhập.',
-  'ce_import_shape_comfyui_api': 'Đã nhận diện là workflow API của ComfyUI và được đóng gói thành định nghĩa điểm cuối ComfyUI. Các liên kết node chưa được xác nhận; hãy liên kết câu lệnh và đầu ra trước khi lưu.',
-  'ce_import_shape_comfyui_ui': 'Đây là workflow định dạng UI của ComfyUI và không thể gửi đi. Hãy xuất lại bằng "Export (API)" trong ComfyUI.',
+  'ce_import_shape_comfyui_api':
+    'Đã nhận diện là workflow API của ComfyUI và được đóng gói thành định nghĩa điểm cuối ComfyUI. Các liên kết node chưa được xác nhận; hãy liên kết câu lệnh và đầu ra trước khi lưu.',
+  'ce_import_shape_comfyui_ui':
+    'Đây là workflow định dạng UI của ComfyUI và không thể gửi đi. Hãy xuất lại bằng "Export (API)" trong ComfyUI.',
   'ce_import_media_type': 'Workflow này tạo ra',
-  'ce_import_media_type_note': 'Quyết định nhận diện liên kết node theo bộ quy tắc ảnh hay video; sau khi nhập vẫn đổi được trong trang chi tiết điểm gọi.',
+  'ce_import_media_type_note':
+    'Quyết định nhận diện liên kết node theo bộ quy tắc ảnh hay video; sau khi nhập vẫn đổi được trong trang chi tiết điểm gọi.',
   'ce_import_to_bindings': 'Liên kết node',
   'ce_import_create': 'Nhập',
   'ce_import_create_copy': 'Nhập thành bản sao',
@@ -3133,7 +3374,8 @@ export default {
   'ce_import_relation_older': 'Phiên bản tệp mới hơn',
   'ce_import_schema_mismatch': 'Tệp dùng định dạng phiên bản {{file}}; sẽ được đọc theo {{current}}.',
   'ce_import_schema_unknown': 'không ghi rõ',
-  'ce_import_requires_newer_app': 'Định nghĩa này cần ArcReel ≥ {{required}} (hiện tại: {{current}}); có thể không hoạt động đúng sau khi nhập.',
+  'ce_import_requires_newer_app':
+    'Định nghĩa này cần ArcReel ≥ {{required}} (hiện tại: {{current}}); có thể không hoạt động đúng sau khi nhập.',
   'ce_import_hint_base_url': 'Địa chỉ giao diện đề xuất: {{url}}',
   'ce_import_hint_models': 'Mô hình đề xuất: {{models}}',
   'ce_get_from_market': 'Lấy từ chợ',
@@ -3153,7 +3395,8 @@ export default {
   'ce_copy_failed': 'Không tạo được bản sao.',
   'ce_create_provider': 'Tạo nhà cung cấp và dùng',
   'ce_create_provider_hint': 'Tự điền địa chỉ giao diện và chọn sẵn điểm gọi này',
-  'ce_builtin_readonly': 'Điểm gọi có sẵn cập nhật theo phiên bản và không sửa được. Hãy sao chép để có bản chỉnh sửa được.',
+  'ce_builtin_readonly':
+    'Điểm gọi có sẵn cập nhật theo phiên bản và không sửa được. Hãy sao chép để có bản chỉnh sửa được.',
   'ce_python_readonly': 'Điểm gọi này được cài đặt bằng mã nguồn, chỉ hiển thị thông tin giao diện.',
   'ce_cf_draft_entry': 'Workflow chờ liên kết',
   'ce_cf_name_label': 'Tên điểm gọi',
@@ -3162,8 +3405,10 @@ export default {
   'ce_cf_node_count': '{{n}} node',
   'ce_cf_reimport': 'Nhập lại',
   'ce_cf_bindings_title': 'Liên kết node',
-  'ce_cf_bindings_desc': 'Mỗi dòng là một ngữ nghĩa: nó rơi vào đầu vào nào của node nào trong workflow. Những mục nhận diện tự động đều sửa được; khi các ứng viên bằng điểm thì bạn chọn; những mục workflow này không có thì đánh dấu là không hỗ trợ.',
-  'ce_cf_tally': 'Đã liên kết {{bound}} · Cần chọn {{ambiguous}} · Không tìm thấy {{notFound}} · Không hỗ trợ {{unsupported}}',
+  'ce_cf_bindings_desc':
+    'Mỗi dòng là một ngữ nghĩa: nó rơi vào đầu vào nào của node nào trong workflow. Những mục nhận diện tự động đều sửa được; khi các ứng viên bằng điểm thì bạn chọn; những mục workflow này không có thì đánh dấu là không hỗ trợ.',
+  'ce_cf_tally':
+    'Đã liên kết {{bound}} · Cần chọn {{ambiguous}} · Không tìm thấy {{notFound}} · Không hỗ trợ {{unsupported}}',
   'ce_cf_inferring': 'Đang nhận diện liên kết node',
   'ce_cf_infer_failed': 'Không nhận diện được liên kết node: {{reason}}',
   'ce_cf_required': 'Bắt buộc',
@@ -3197,7 +3442,8 @@ export default {
   'ce_cf_status_required_unbound': 'Bắt buộc, chưa liên kết',
   'ce_cf_origin_kept': 'Giữ nguyên',
   'ce_cf_origin_rematched': 'Đã khớp lại',
-  'ce_cf_needs_confirmation': 'Cần xác nhận: một phần các node từng được liên kết không còn trong workflow mới, mục này đã được nhận diện lại.',
+  'ce_cf_needs_confirmation':
+    'Cần xác nhận: một phần các node từng được liên kết không còn trong workflow mới, mục này đã được nhận diện lại.',
   'ce_cf_expand_candidates': '{{n}} ứng viên',
   'ce_cf_expand_manual': 'Chọn thủ công',
   'ce_cf_collapse': 'Thu gọn',
@@ -3227,21 +3473,27 @@ export default {
   'ce_cf_blocked_taken': '“{{key}}” và “{{other}}” rơi vào cùng một trường; hãy đổi một trong hai',
   'ce_cf_definition_title': 'Định nghĩa',
   'ce_cf_media_type_label': 'Loại phương tiện',
-  'ce_cf_media_type_note': 'Workflow này tạo ảnh hay tạo video. Đổi nó sẽ đổi tập ngữ nghĩa khả dụng và chạy nhận diện lại.',
+  'ce_cf_media_type_note':
+    'Workflow này tạo ảnh hay tạo video. Đổi nó sẽ đổi tập ngữ nghĩa khả dụng và chạy nhận diện lại.',
   'ce_cf_auth_label': 'Tiêm thông tin xác thực (mục auth)',
-  'ce_cf_auth_empty': 'Định nghĩa này không có mục auth. Bản thân ComfyUI không xác thực; khi đặt sau một reverse proxy, khóa của nhà cung cấp được tiêm theo mẫu ở trên.',
+  'ce_cf_auth_empty':
+    'Định nghĩa này không có mục auth. Bản thân ComfyUI không xác thực; khi đặt sau một reverse proxy, khóa của nhà cung cấp được tiêm theo mẫu ở trên.',
   'ce_cf_auth_blank_note': 'Khi khóa của nhà cung cấp để trống thì cả mục này không được dựng.',
   'ce_cf_workflow_title': 'Bản thân workflow',
-  'ce_cf_workflow_desc': 'Được nhúng nguyên trạng trong định nghĩa; đó là bản nháp được gửi đi. Muốn đổi một giá trị cố định trong đó (tên tệp mô hình, câu lệnh nghịch mặc định), hãy sửa trong ComfyUI, xuất lại rồi nhập lại.',
+  'ce_cf_workflow_desc':
+    'Được nhúng nguyên trạng trong định nghĩa; đó là bản nháp được gửi đi. Muốn đổi một giá trị cố định trong đó (tên tệp mô hình, câu lệnh nghịch mặc định), hãy sửa trong ComfyUI, xuất lại rồi nhập lại.',
   'ce_cf_test_title': 'Kiểm thử điểm cuối',
-  'ce_cf_test_desc': 'Điểm cuối ComfyUI chỉ có hai phép thử: xem phần thân yêu cầu sau khi dựng, hoặc gửi thật một lần. Không có "kiểm tra phản hồi" — việc trích xuất sản phẩm là mã cố định, không có đường lấy giá trị nào để cấu hình.',
+  'ce_cf_test_desc':
+    'Điểm cuối ComfyUI chỉ có hai phép thử: xem phần thân yêu cầu sau khi dựng, hoặc gửi thật một lần. Không có "kiểm tra phản hồi" — việc trích xuất sản phẩm là mã cố định, không có đường lấy giá trị nào để cấu hình.',
   'ce_cf_test_aspect': 'Tỉ lệ khung hình',
   'ce_cf_test_resolution': 'Độ phân giải',
   'ce_cf_test_resolution_native': 'Theo workflow',
   'ce_cf_test_duration': 'Thời lượng (giây)',
   'ce_cf_test_slots': '{{n}} ô',
-  'ce_cf_test_credentials_note': 'Hai thẻ dùng chung bộ tham số, tư liệu và thông tin xác thực này. Trong bản xem trước, thông tin xác thực đã được che; để trống thì giữ nguyên chỗ dành sẵn.',
-  'ce_cf_test_blocked': 'Hãy hoàn tất các ràng buộc nút trước: câu lệnh và sản phẩm đều phải có chỗ đáp, và hai khóa ngữ nghĩa không được rơi vào cùng một trường. Nếu không, máy chủ sẽ từ chối định nghĩa này.',
+  'ce_cf_test_credentials_note':
+    'Hai thẻ dùng chung bộ tham số, tư liệu và thông tin xác thực này. Trong bản xem trước, thông tin xác thực đã được che; để trống thì giữ nguyên chỗ dành sẵn.',
+  'ce_cf_test_blocked':
+    'Hãy hoàn tất các ràng buộc nút trước: câu lệnh và sản phẩm đều phải có chỗ đáp, và hai khóa ngữ nghĩa không được rơi vào cùng một trường. Nếu không, máy chủ sẽ từ chối định nghĩa này.',
   'ce_cf_test_preview_desc': 'Xem ArcReel ghi những gì vào workflow. Không một byte nào được gửi ra ngoài.',
   'ce_cf_test_preview_run': 'Dựng phần thân /prompt',
   'ce_cf_test_section_submit': 'Gửi · POST /prompt',
@@ -3256,7 +3508,8 @@ export default {
   'ce_cf_test_conv_fingerprint': 'Dấu vân workflow',
   'ce_cf_test_conv_unbound': 'Không chi phối workflow này; nó giữ giá trị của chính nó',
   'ce_cf_test_trial_gpu': 'Chiếm GPU',
-  'ce_cf_test_trial_desc': 'Gửi thật một lần và truy vấn đến trạng thái cuối, rồi lấy sản phẩm về. Chi phí ghi 0; thời gian thực thi vẫn được ghi lại.',
+  'ce_cf_test_trial_desc':
+    'Gửi thật một lần và truy vấn đến trạng thái cuối, rồi lấy sản phẩm về. Chi phí ghi 0; thời gian thực thi vẫn được ghi lại.',
   'ce_cf_test_trial_run': 'Gửi thật một lần',
   'ce_cf_test_trial_note': 'Lần gửi này hiện trong hàng đợi ComfyUI dưới tên endpoint-test-…',
   'ce_cf_test_trial_empty': 'Gửi một lần để xem bốn chặng và sản phẩm ở đây.',
@@ -3268,13 +3521,17 @@ export default {
   'ce_cf_test_stage_state_pending': 'đang chạy',
   'ce_cf_test_stage_state_skipped': 'chưa tới',
   'ce_cf_test_clip_length': 'video {{seconds}} giây',
-  'ce_cf_test_poll_stopped': 'Đã ngừng đọc tiến độ của lần thử này. Tác vụ từ xa có thể vẫn đang chạy; hãy bấm «Huỷ» để giải phóng suất chạy trên máy chủ trước khi thử lại.',
-  'ce_cf_test_action_configure': 'Loại lỗi này phải xử lý ở phía nhà cung cấp: bổ sung mô hình hoặc sửa cấu hình trên máy ComfyUI, hoặc sửa workflow rồi nhập lại.',
-  'ce_cf_test_action_retry': 'Loại lỗi này thường chỉ nhất thời — ComfyUI khởi động lại, ai đó ngắt tác vụ, hoặc tư liệu chưa tải lên được. Hãy thử lại.',
+  'ce_cf_test_poll_stopped':
+    'Đã ngừng đọc tiến độ của lần thử này. Tác vụ từ xa có thể vẫn đang chạy; hãy bấm «Huỷ» để giải phóng suất chạy trên máy chủ trước khi thử lại.',
+  'ce_cf_test_action_configure':
+    'Loại lỗi này phải xử lý ở phía nhà cung cấp: bổ sung mô hình hoặc sửa cấu hình trên máy ComfyUI, hoặc sửa workflow rồi nhập lại.',
+  'ce_cf_test_action_retry':
+    'Loại lỗi này thường chỉ nhất thời — ComfyUI khởi động lại, ai đó ngắt tác vụ, hoặc tư liệu chưa tải lên được. Hãy thử lại.',
   'ce_view_form': 'Biểu mẫu',
   'ce_view_json': 'JSON',
   'ce_json_parse_error': 'JSON không hợp lệ. Thay đổi chỉ áp dụng khi phân tích được.',
-  'ce_json_shape_error': 'JSON phân tích được nhưng thiếu cấu trúc bắt buộc như meta, submit hoặc poll. Thay đổi chỉ áp dụng khi các phần này đầy đủ.',
+  'ce_json_shape_error':
+    'JSON phân tích được nhưng thiếu cấu trúc bắt buộc như meta, submit hoặc poll. Thay đổi chỉ áp dụng khi các phần này đầy đủ.',
   'ce_variables_hint': 'Biến khả dụng · bấm để chèn',
   'ce_diagnostics_clean': 'Không phát hiện vấn đề trong định nghĩa này.',
   'ce_diagnostics_summary': '{{errors}} lỗi · {{warnings}} cảnh báo',
@@ -3295,10 +3552,12 @@ export default {
   'ce_auth_header_value': 'Nội dung header',
   'ce_auth_header_add': 'Thêm header',
   'ce_auth_header_remove': 'Xóa header',
-  'ce_auth_api_key_note': 'Một trong các giá trị này phải tham chiếu {{ api_key }}, và nó không được xuất hiện ở nơi khác trong định nghĩa.',
+  'ce_auth_api_key_note':
+    'Một trong các giá trị này phải tham chiếu {{ api_key }}, và nó không được xuất hiện ở nơi khác trong định nghĩa.',
   'ce_var_api_key': 'Khóa lưu trong phần nhà cung cấp',
   'ce_section_inputs': 'Tư liệu đầu vào',
-  'ce_section_inputs_desc': 'Khai báo các tư liệu điểm gọi nhận và cách mã hóa chúng. Sau khi khai báo, bạn có thể dùng biến tương ứng trong phần thân yêu cầu.',
+  'ce_section_inputs_desc':
+    'Khai báo các tư liệu điểm gọi nhận và cách mã hóa chúng. Sau khi khai báo, bạn có thể dùng biến tương ứng trong phần thân yêu cầu.',
   'ce_input_variable': 'Tên biến',
   'ce_input_source': 'Loại tư liệu',
   'ce_input_encoding': 'Cách mã hóa',
@@ -3318,15 +3577,18 @@ export default {
   'ce_submit_url': 'Địa chỉ yêu cầu',
   'ce_base_url_hint': '{{ base_url }} là địa chỉ giao diện đặt ở nhà cung cấp.',
   'ce_submit_body': 'Thân yêu cầu (JSON)',
-  'ce_submit_variables_note': 'Biến được thay bằng giá trị thực của mỗi lần tạo. Trường kích thước dùng bậc độ phân giải, tỷ lệ khung hình hay chiều rộng và chiều cao suy ra, tùy theo yêu cầu của giao diện. {{ api_key }} chỉ được dùng trong phần Thông tin xác thực.',
+  'ce_submit_variables_note':
+    'Biến được thay bằng giá trị thực của mỗi lần tạo. Trường kích thước dùng bậc độ phân giải, tỷ lệ khung hình hay chiều rộng và chiều cao suy ra, tùy theo yêu cầu của giao diện. {{ api_key }} chỉ được dùng trong phần Thông tin xác thực.',
   'ce_submit_task_id': 'ID tác vụ',
   'ce_submit_error': 'Thông báo lỗi',
-  'ce_paths_hint': 'Đường dẫn bắt đầu từ gốc phản hồi và viết theo từng cấp, ví dụ $.data.task_id. Có thể thêm đường dẫn dự phòng, hệ thống lấy giá trị khớp đầu tiên.',
+  'ce_paths_hint':
+    'Đường dẫn bắt đầu từ gốc phản hồi và viết theo từng cấp, ví dụ $.data.task_id. Có thể thêm đường dẫn dự phòng, hệ thống lấy giá trị khớp đầu tiên.',
   'ce_path_add': 'Thêm đường dẫn dự phòng',
   'ce_path_remove': 'Xóa đường dẫn',
   'ce_path_json_only': 'Sửa trong chế độ JSON',
   'ce_section_poll': 'Theo dõi tiến độ và kết quả',
-  'ce_section_poll_desc': 'Yêu cầu kiểm tra tác vụ và đường dẫn lấy từng trường. Sau khi gửi, hệ thống hỏi lại định kỳ cho tới khi có địa chỉ video hoặc thông báo lỗi.',
+  'ce_section_poll_desc':
+    'Yêu cầu kiểm tra tác vụ và đường dẫn lấy từng trường. Sau khi gửi, hệ thống hỏi lại định kỳ cho tới khi có địa chỉ video hoặc thông báo lỗi.',
   'ce_poll_url': 'Địa chỉ truy vấn',
   'ce_poll_url_hint': '{{ task_id }} là ID tác vụ đọc từ phản hồi khi gửi.',
   'ce_poll_status': 'Trạng thái tác vụ',
@@ -3340,9 +3602,11 @@ export default {
   'ce_result_id_hint': 'Đọc từ phản hồi tiến độ, dùng được trong địa chỉ lấy kết quả dưới dạng {{ result_id }}.',
   'ce_result_url': 'Địa chỉ lấy kết quả',
   'ce_result_video_url': 'Địa chỉ video',
-  'ce_download_policy': 'Video được tải về tự động. Việc tải mang theo khóa khi cùng máy chủ với địa chỉ giao diện, khác máy chủ thì không.',
+  'ce_download_policy':
+    'Video được tải về tự động. Việc tải mang theo khóa khi cùng máy chủ với địa chỉ giao diện, khác máy chủ thì không.',
   'ce_section_status': 'Đối chiếu trạng thái',
-  'ce_section_status_desc': 'Ánh xạ các giá trị trạng thái của điểm gọi sang bốn trạng thái chuẩn. Nhiều giá trị có thể cùng ánh xạ về một trạng thái chuẩn; giá trị chưa cấu hình được coi là Đang tạo và tiếp tục truy vấn cho tới khi hết thời gian.',
+  'ce_section_status_desc':
+    'Ánh xạ các giá trị trạng thái của điểm gọi sang bốn trạng thái chuẩn. Nhiều giá trị có thể cùng ánh xạ về một trạng thái chuẩn; giá trị chưa cấu hình được coi là Đang tạo và tiếp tục truy vấn cho tới khi hết thời gian.',
   'ce_status_provider_value': 'Giá trị trạng thái của điểm gọi',
   'ce_status_standard': 'Trạng thái chuẩn',
   'ce_status_add': 'Thêm ánh xạ',
@@ -3353,7 +3617,8 @@ export default {
   'ce_status_succeeded': 'Hoàn tất',
   'ce_status_failed': 'Thất bại',
   'ce_section_capabilities': 'Tính năng hỗ trợ',
-  'ce_section_capabilities_desc': 'Khai báo những gì điểm gọi này tạo được. Khai báo phải khớp với tư liệu mà phần thân yêu cầu thực sự dùng.',
+  'ce_section_capabilities_desc':
+    'Khai báo những gì điểm gọi này tạo được. Khai báo phải khớp với tư liệu mà phần thân yêu cầu thực sự dùng.',
   'ce_cap_text_to_video': 'Văn bản thành video',
   'ce_cap_first_frame': 'Khung hình đầu',
   'ce_cap_last_frame': 'Khung hình cuối',
@@ -3363,7 +3628,8 @@ export default {
   'ce_cap_audio_mode_direct': 'Gửi kèm yêu cầu',
   'ce_cap_max_reference_audio_count': 'Số tệp âm thanh tham chiếu tối đa',
   'ce_capabilities_hint': 'Khai báo mà không dùng trong phần thân yêu cầu là lỗi, và ngược lại cũng vậy.',
-  'ce_capabilities_hint_image': 'Khai báo Ảnh sang ảnh mà không dùng ảnh tham chiếu trong phần thân yêu cầu là lỗi, và ngược lại cũng vậy.',
+  'ce_capabilities_hint_image':
+    'Khai báo Ảnh sang ảnh mà không dùng ảnh tham chiếu trong phần thân yêu cầu là lỗi, và ngược lại cũng vậy.',
   'ce_section_test': 'Kiểm thử',
   'ce_section_test_desc': 'Kiểm tra định nghĩa trước khi lưu. Chỉ “Kiểm tra kết nối” mới gọi thật.',
   'ce_test_check': 'Kiểm tra phản hồi',
@@ -3396,7 +3662,8 @@ export default {
   'ce_trial_prompt_placeholder': 'Mô tả hình ảnh dùng cho lần kiểm thử này',
   'ce_test_asset_required': ' (bắt buộc)',
   'ce_test_asset_optional': ' (không bắt buộc)',
-  'ce_trial_cancelled': 'Đã hủy lần kiểm thử này. Tác vụ ở phía nhà cung cấp có thể vẫn đang chạy và khoản phí đã phát sinh vẫn được tính.',
+  'ce_trial_cancelled':
+    'Đã hủy lần kiểm thử này. Tác vụ ở phía nhà cung cấp có thể vẫn đang chạy và khoản phí đã phát sinh vẫn được tính.',
   'ce_trial_status_queued': 'Đang chờ',
   'ce_trial_status_running': 'Đang chạy',
   'ce_trial_status_succeeded': 'Thành công',
@@ -3423,15 +3690,19 @@ export default {
   'ce_check_image_b64_invalid': 'Giá trị lấy được không phải ảnh base64 hợp lệ',
   'ce_cap_text_to_image': 'Văn bản sang ảnh',
   'ce_cap_image_to_image': 'Ảnh sang ảnh',
-  'ce_section_poll_desc_image': 'Yêu cầu kiểm tra tác vụ và đường dẫn lấy từng trường. Sau khi gửi, hệ thống hỏi lại định kỳ cho tới khi có ảnh hoặc thông báo lỗi.',
+  'ce_section_poll_desc_image':
+    'Yêu cầu kiểm tra tác vụ và đường dẫn lấy từng trường. Sau khi gửi, hệ thống hỏi lại định kỳ cho tới khi có ảnh hoặc thông báo lỗi.',
   'ce_result_hint_image': 'Dành cho giao diện mà phản hồi tiến độ không trả về ảnh.',
-  'ce_download_policy_image': 'Khi cấu hình cả địa chỉ ảnh và base64, địa chỉ được ưu tiên. Địa chỉ ảnh được tải về tự động, mang theo khóa khi cùng máy chủ với địa chỉ giao diện, khác máy chủ thì không. Base64 nhận cả chuỗi thuần lẫn data URI và được lưu sau khi giải mã.',
+  'ce_download_policy_image':
+    'Khi cấu hình cả địa chỉ ảnh và base64, địa chỉ được ưu tiên. Địa chỉ ảnh được tải về tự động, mang theo khóa khi cùng máy chủ với địa chỉ giao diện, khác máy chủ thì không. Base64 nhận cả chuỗi thuần lẫn data URI và được lưu sau khi giải mã.',
   'cp_no_api_key': 'Nhà cung cấp này không cần khóa',
-  'cp_no_api_key_conflict': 'Các mô hình sau dùng điểm gọi cần khóa: {{models}}. Yêu cầu của chúng sẽ đi ra mà không có thông tin xác thực.',
+  'cp_no_api_key_conflict':
+    'Các mô hình sau dùng điểm gọi cần khóa: {{models}}. Yêu cầu của chúng sẽ đi ra mà không có thông tin xác thực.',
   // ---- 市场 ----
   'market_section_title': 'Chợ',
   'market_refresh_all': 'Làm mới tất cả',
-  'market_sources_desc': 'Các mục được hiển thị theo thứ tự của danh sách này. Nguồn chợ bị tắt vẫn ở trong danh sách nhưng không hiển thị mục.',
+  'market_sources_desc':
+    'Các mục được hiển thị theo thứ tự của danh sách này. Nguồn chợ bị tắt vẫn ở trong danh sách nhưng không hiển thị mục.',
   'market_status_never_fetched': 'Chưa làm mới',
   'market_source_official': 'Chính thức',
   'market_status_ok': 'Bình thường',
@@ -3448,10 +3719,12 @@ export default {
   'market_add_placeholder': 'owner/repo[@ref], URL kho GitHub hoặc URL tệp chỉ mục',
   'market_add_submit': 'Thêm',
   'market_add_fetching': 'Đang tải…',
-  'market_third_party_body': 'Nguồn chợ này do bên thứ ba duy trì, nội dung chưa được [[brand]] kiểm duyệt. Hãy xác nhận nguồn đáng tin cậy trước khi cài đặt.',
+  'market_third_party_body':
+    'Nguồn chợ này do bên thứ ba duy trì, nội dung chưa được [[brand]] kiểm duyệt. Hãy xác nhận nguồn đáng tin cậy trước khi cài đặt.',
   'market_action_failed': 'Thao tác thất bại: {{message}}',
   'market_proxy_label': 'Proxy truy cập GitHub',
-  'market_proxy_hint': 'Nếu nguồn chợ trên GitHub tải chậm, hãy nhập tiền tố proxy. Tiền tố được ghép trước mọi địa chỉ raw.githubusercontent.com. Để trống để truy cập trực tiếp.',
+  'market_proxy_hint':
+    'Nếu nguồn chợ trên GitHub tải chậm, hãy nhập tiền tố proxy. Tiền tố được ghép trước mọi địa chỉ raw.githubusercontent.com. Để trống để truy cập trực tiếp.',
   'market_search_label': 'Tìm mục trong chợ',
   'market_search_placeholder': 'Tìm theo tên, tác giả, mô tả',
   'market_source_filter_label': 'Nguồn chợ',
@@ -3468,10 +3741,13 @@ export default {
   'market_share_action': 'Chia sẻ lên chợ chính thức',
   'market_share_save_first': 'Hãy lưu thay đổi trước khi chia sẻ',
   'market_share_title': 'Chia sẻ lên chợ chính thức',
-  'market_share_intro': 'Sau khi gửi, dịch vụ chính thức sẽ mở một PR trên kho chợ chính thức và người duyệt sẽ xem xét trên GitHub. Được hợp nhất nghĩa là được chấp nhận, bị đóng nghĩa là bị từ chối. Gửi lại cùng slug khi PR còn mở sẽ đưa thay đổi vào cùng PR đó; sau khi PR được hợp nhất hoặc bị đóng, một PR mới sẽ được mở.',
-  'market_share_no_credentials': 'Nội dung gửi là định nghĩa đã lưu của điểm gọi này. Định nghĩa không chứa thông tin xác thực như khóa; mục auth chỉ có chỗ giữ chỗ. Nội dung gửi sẽ hiển thị công khai trong PR.',
+  'market_share_intro':
+    'Sau khi gửi, dịch vụ chính thức sẽ mở một PR trên kho chợ chính thức và người duyệt sẽ xem xét trên GitHub. Được hợp nhất nghĩa là được chấp nhận, bị đóng nghĩa là bị từ chối. Gửi lại cùng slug khi PR còn mở sẽ đưa thay đổi vào cùng PR đó; sau khi PR được hợp nhất hoặc bị đóng, một PR mới sẽ được mở.',
+  'market_share_no_credentials':
+    'Nội dung gửi là định nghĩa đã lưu của điểm gọi này. Định nghĩa không chứa thông tin xác thực như khóa; mục auth chỉ có chỗ giữ chỗ. Nội dung gửi sẽ hiển thị công khai trong PR.',
   'market_share_slug_label': 'Slug đề xuất',
-  'market_share_slug_hint': 'Tên thư mục của mục, chỉ gồm chữ thường, chữ số và dấu gạch nối. Mặc định được tạo từ tên điểm gọi; người duyệt có thể điều chỉnh slug cuối cùng trước khi hợp nhất.',
+  'market_share_slug_hint':
+    'Tên thư mục của mục, chỉ gồm chữ thường, chữ số và dấu gạch nối. Mặc định được tạo từ tên điểm gọi; người duyệt có thể điều chỉnh slug cuối cùng trước khi hợp nhất.',
   'market_share_github_label': 'Tên người dùng GitHub (tùy chọn)',
   'market_share_github_hint': 'Nếu điền, bạn sẽ được @ nhắc đến trong PR để tham gia thảo luận. Không được xác minh.',
   'market_share_icon_label': 'Biểu tượng (tùy chọn)',
@@ -3502,7 +3778,8 @@ export default {
   'market_submit_url': 'Thông tin xác thực gửi đến',
   'market_poll_url': 'URL thăm dò',
   'market_auth': 'Xác thực (JSON auth gốc)',
-  'market_comfyui_target': 'Định nghĩa không chứa địa chỉ yêu cầu. Yêu cầu và thông tin xác thực được gửi tới địa chỉ máy chủ ComfyUI bạn nhập trong nhà cung cấp.',
+  'market_comfyui_target':
+    'Định nghĩa không chứa địa chỉ yêu cầu. Yêu cầu và thông tin xác thực được gửi tới địa chỉ máy chủ ComfyUI bạn nhập trong nhà cung cấp.',
   'market_comfyui_no_auth': 'Định nghĩa không có mục auth, yêu cầu không mang thông tin xác thực',
   'market_workflow_summary': 'Tóm tắt workflow',
   'market_workflow_nodes_one': '{{count}} nút',
@@ -3531,7 +3808,8 @@ export default {
   'market_rate_failed': 'Đánh giá thất bại: {{message}}',
   'market_entry_byline': '{{author}}, v{{version}}',
   'market_uninstall_title': 'Gỡ cài đặt “{{name}}”?',
-  'market_uninstall_desc': 'Gỡ cài đặt sẽ xóa điểm gọi này, kể cả các thay đổi cục bộ. Bạn có thể cài lại từ chợ khi cần.',
+  'market_uninstall_desc':
+    'Gỡ cài đặt sẽ xóa điểm gọi này, kể cả các thay đổi cục bộ. Bạn có thể cài lại từ chợ khi cần.',
   'market_tab_browse': 'Duyệt',
   'market_tab_shared': 'Chia sẻ của tôi',
   'market_tab_settings': 'Cài đặt',
@@ -3550,12 +3828,14 @@ export default {
   'market_source_name_label': 'Tên hiển thị',
   'market_source_delete_action': 'Xóa',
   'market_source_delete_title': 'Xóa nguồn chợ “{{name}}”?',
-  'market_source_delete_desc': 'Chợ sẽ không còn hiển thị các mục từ nguồn chợ này. Các điểm gọi đã cài vẫn được giữ lại. Bạn có thể thêm lại sau bằng cùng địa chỉ.',
+  'market_source_delete_desc':
+    'Chợ sẽ không còn hiển thị các mục từ nguồn chợ này. Các điểm gọi đã cài vẫn được giữ lại. Bạn có thể thêm lại sau bằng cùng địa chỉ.',
   'market_source_status_disabled': 'Đã tắt',
   'market_source_entries_one': '{{count}} mục',
   'market_source_entries_other': '{{count}} mục',
   'market_proxy_field_label': 'Tiền tố proxy',
-  'market_shared_empty': 'Bạn chưa chia sẻ điểm gọi nào. Mở một điểm gọi của bạn trong mục Điểm gọi và chọn “Chia sẻ lên chợ chính thức”.',
+  'market_shared_empty':
+    'Bạn chưa chia sẻ điểm gọi nào. Mở một điểm gọi của bạn trong mục Điểm gọi và chọn “Chia sẻ lên chợ chính thức”.',
   'market_shared_requires_official': 'Chia sẻ lên chợ chính thức cần dùng dịch vụ chính thức.',
   'market_open_settings': 'Đến cài đặt chợ',
   'market_section_validation': 'Kết quả kiểm tra',
@@ -3563,17 +3843,21 @@ export default {
   'market_section_trust': 'Nơi nhận thông tin xác thực',
   'official_service_reset_title': 'Tạo lại mã định danh thực thể?',
   'official_notice_title': 'Lượt cài đặt và đánh giá đến từ dịch vụ chính thức của [[brand]]',
-  'official_notice_body': 'Khi bạn cài đặt một mục từ nguồn chợ chính thức, [[brand]] gửi báo cáo một lần gồm mục đó, phiên bản của mục, phiên bản ứng dụng và một mã định danh thực thể ngẫu nhiên. Không gửi gì về dự án hay khóa của bạn. Bạn có thể tắt bất cứ lúc nào trong <settings>Cài đặt</settings> của chợ.',
+  'official_notice_body':
+    'Khi bạn cài đặt một mục từ nguồn chợ chính thức, [[brand]] gửi báo cáo một lần gồm mục đó, phiên bản của mục, phiên bản ứng dụng và một mã định danh thực thể ngẫu nhiên. Không gửi gì về dự án hay khóa của bạn. Bạn có thể tắt bất cứ lúc nào trong <settings>Cài đặt</settings> của chợ.',
   'official_notice_ack': 'Đã hiểu',
   'official_notice_turn_off': 'Tắt dịch vụ chính thức',
   'official_service_title': 'Dịch vụ chính thức',
-  'official_service_desc': 'Hiển thị lượt cài đặt và đánh giá trong chợ, cho phép đánh giá các mục đã cài và báo cáo lượt cài từ nguồn chợ chính thức. Khi tắt, [[brand]] không gửi bất kỳ yêu cầu nào đến dịch vụ chính thức.',
+  'official_service_desc':
+    'Hiển thị lượt cài đặt và đánh giá trong chợ, cho phép đánh giá các mục đã cài và báo cáo lượt cài từ nguồn chợ chính thức. Khi tắt, [[brand]] không gửi bất kỳ yêu cầu nào đến dịch vụ chính thức.',
   'official_service_toggle': 'Dùng dịch vụ chính thức',
-  'official_service_not_configured': 'Bản dựng này chưa cấu hình địa chỉ dịch vụ chính thức nên dịch vụ chính thức đang tắt.',
+  'official_service_not_configured':
+    'Bản dựng này chưa cấu hình địa chỉ dịch vụ chính thức nên dịch vụ chính thức đang tắt.',
   'official_service_instance_id': 'Mã định danh thực thể',
   'official_service_instance_id_none': 'Chưa tạo',
   'official_service_reset': 'Tạo lại',
-  'official_service_reset_desc': 'Sau khi tạo lại, dịch vụ chính thức coi [[brand]] này là một thực thể mới, các báo cáo cài đặt và đánh giá trước đó không còn liên kết với nó. Các mục đã cài trước đó chỉ có thể được đánh giá lại sau khi bạn cài đặt lại.',
+  'official_service_reset_desc':
+    'Sau khi tạo lại, dịch vụ chính thức coi [[brand]] này là một thực thể mới, các báo cáo cài đặt và đánh giá trước đó không còn liên kết với nó. Các mục đã cài trước đó chỉ có thể được đánh giá lại sau khi bạn cài đặt lại.',
   'official_service_reset_confirm': 'Tạo lại',
   'official_service_update_failed': 'Không thể cập nhật cài đặt dịch vụ chính thức: {{message}}',
   'episodes_view_chars_one': '{{formatted}} ký tự',
@@ -3601,15 +3885,19 @@ export default {
   'episode_planning_continue': 'Lập kế hoạch phần còn lại bằng AI',
   'episode_planning_continue_detail': 'Tiếp tục từ sau tập đã tách cuối cùng. Còn {{volume}} chưa phân tập.',
   'episode_planning_running': 'Đang lập kế hoạch tập, đã phân tập {{percent}}%',
-  'episode_planning_running_hint': 'Mỗi khi xong một đoạn, các tập mới sẽ xuất hiện trong mục lục tập. Nếu dừng, các tập đã lập kế hoạch vẫn được giữ lại.',
-  'episode_planning_finishing': 'Sẽ dừng sau khi đoạn đang lập kế hoạch hoàn tất. Các tập đã lập kế hoạch vẫn được giữ lại.',
+  'episode_planning_running_hint':
+    'Mỗi khi xong một đoạn, các tập mới sẽ xuất hiện trong mục lục tập. Nếu dừng, các tập đã lập kế hoạch vẫn được giữ lại.',
+  'episode_planning_finishing':
+    'Sẽ dừng sau khi đoạn đang lập kế hoạch hoàn tất. Các tập đã lập kế hoạch vẫn được giữ lại.',
   'episode_planning_stop': 'Dừng lập kế hoạch',
   'episode_planning_busy': 'Đang lập kế hoạch tập. Hãy đợi hoàn tất hoặc dừng lại rồi gửi lại.',
   'episode_planning_failed': 'Lần lập kế hoạch trước chưa hoàn tất: {{reason}}',
-  'text_output_truncated_switch_model': 'Không thể thay đổi độ dài đầu ra tối đa của mô hình tích hợp sẵn. Hãy đổi sang mô hình văn bản khác trong phần Cài đặt rồi thử lại.',
+  'text_output_truncated_switch_model':
+    'Không thể thay đổi độ dài đầu ra tối đa của mô hình tích hợp sẵn. Hãy đổi sang mô hình văn bản khác trong phần Cài đặt rồi thử lại.',
   'text_output_truncated_register_limit': 'Đặt độ dài đầu ra tối đa',
   'episode_planning_done': 'Toàn bộ văn bản nguồn đã được phân tập',
-  'episode_planning_done_with_gaps': 'Đã lập kế hoạch đến cuối toàn bộ văn bản nguồn, ở giữa vẫn còn nguyên văn chưa chia',
+  'episode_planning_done_with_gaps':
+    'Đã lập kế hoạch đến cuối toàn bộ văn bản nguồn, ở giữa vẫn còn nguyên văn chưa chia',
   'episode_planning_stats_count': 'Số tập',
   'episode_planning_stats_median': 'Trung vị mỗi tập',
   'episode_planning_stats_spoken': ', đọc {{spoken}}',
@@ -3617,28 +3905,33 @@ export default {
   'episode_planning_stats_seconds_one': '{{count}} giây',
   'episode_planning_stats_seconds_other': '{{count}} giây',
   'guide_planning_running_title': 'Đang lập kế hoạch tập',
-  'guide_planning_running_detail': 'AI đang lập kế hoạch tập theo từng đoạn. Mỗi khi xong một đoạn, các tập mới sẽ xuất hiện trong chế độ xem Phân tập.',
+  'guide_planning_running_detail':
+    'AI đang lập kế hoạch tập theo từng đoạn. Mỗi khi xong một đoạn, các tập mới sẽ xuất hiện trong chế độ xem Phân tập.',
   'guide_view_planning_progress': 'Xem tiến độ lập kế hoạch',
   'episodes_view_gap_row': 'Nguyên văn chưa cắt, {{volume}}',
   'episodes_view_gap_title': 'Nguyên văn chưa cắt',
-  'episodes_view_gap_hint': 'Đoạn nguyên văn này nằm giữa các tập đã cắt và chưa thuộc tập nào. Nhấp vào bất kỳ vị trí nào trong đoạn để cắt ra một tập mới.',
+  'episodes_view_gap_hint':
+    'Đoạn nguyên văn này nằm giữa các tập đã cắt và chưa thuộc tập nào. Nhấp vào bất kỳ vị trí nào trong đoạn để cắt ra một tập mới.',
   'episodes_view_unsplit_divider': 'Phần dưới đây chưa phân tập',
   'episodes_view_episode_continued': '{{name}} (tiếp từ tệp trước)',
   'episodes_view_file_original': 'Tên tệp khi tải lên: {{name}}',
   'episodes_view_file_missing': 'Không đọc được tệp này. Tệp có thể đã bị xóa hoặc không phải văn bản UTF-8',
   'episodes_view_external_title': '«{{name}}» đã bị sửa bên ngoài ArcReel',
-  'episodes_view_external_hint': 'Sau khi đối chiếu với văn bản được lưu trước khi sửa, các tập dưới đây sẽ được điều chỉnh theo. Cho đến khi sổ phân tập được cập nhật, việc thay thế, chỉnh sửa, đổi thứ tự, đổi loại và phân tập trên tệp này đều tạm dừng; vẫn có thể xóa tệp.',
+  'episodes_view_external_hint':
+    'Sau khi đối chiếu với văn bản được lưu trước khi sửa, các tập dưới đây sẽ được điều chỉnh theo. Cho đến khi sổ phân tập được cập nhật, việc thay thế, chỉnh sửa, đổi thứ tự, đổi loại và phân tập trên tệp này đều tạm dừng; vẫn có thể xóa tệp.',
   'episodes_view_external_none': 'Thay đổi này không chạm tới tập nào, các tập giữ nguyên sau khi cập nhật.',
   'episodes_view_external_accept': 'Cập nhật sổ phân tập',
   'episodes_view_external_locate': 'Xem tệp',
   'episodes_view_external_accept_title': 'Cập nhật sổ phân tập theo thay đổi của «{{name}}»',
   'episodes_view_file_changed_outside': 'Đã sửa bên ngoài, chờ cập nhật',
-  'manual_split_paused_changed_outside': 'Tệp này đã bị sửa bên ngoài ArcReel. Hãy cập nhật sổ phân tập ở đầu trang trước khi phân tập trên tệp này',
+  'manual_split_paused_changed_outside':
+    'Tệp này đã bị sửa bên ngoài ArcReel. Hãy cập nhật sổ phân tập ở đầu trang trước khi phân tập trên tệp này',
   'episodes_view_file_coverage': 'Đã phân tập {{cut}} / {{total}}',
   'episodes_view_hook': 'Móc câu: {{hook}}',
   'episodes_view_untitled': 'Chưa đặt tên',
   'episodes_view_replanned': 'Nguyên văn đã lập kế hoạch lại',
-  'episodes_view_replanned_hint': 'Nguyên văn của tập này đã thay đổi; nội dung đã tạo có thể không khớp với nguyên văn mới',
+  'episodes_view_replanned_hint':
+    'Nguyên văn của tập này đã thay đổi; nội dung đã tạo có thể không khớp với nguyên văn mới',
   'episodes_view_origin_whole_source': 'Cắt từ toàn bộ văn bản nguồn',
   'episodes_view_origin_own': 'Nguyên văn riêng',
   'episodes_view_origin_none': 'Chưa có nguyên văn',
@@ -3669,20 +3962,26 @@ export default {
   'episodes_view_loading': 'Đang tải danh sách tập…',
   'episodes_view_source_label': 'Toàn bộ văn bản nguồn',
   'episodes_view_empty_title': 'Chưa có toàn bộ văn bản nguồn',
-  'episodes_view_empty_hint': 'Sau khi tải lên toàn bộ văn bản nguồn, bạn có thể xem tại đây nguyên văn được chia thành các tập như thế nào; hoặc tải lên nguyên văn từng tập, mỗi tệp là một tập.',
-  'episodes_view_empty_has_episodes': 'Các tập của dự án này đều có nguyên văn riêng hoặc chưa có nguyên văn. Sau khi tải lên toàn bộ văn bản nguồn, lập kế hoạch phân tập có thể cắt tập từ đó.',
+  'episodes_view_empty_hint':
+    'Sau khi tải lên toàn bộ văn bản nguồn, bạn có thể xem tại đây nguyên văn được chia thành các tập như thế nào; hoặc tải lên nguyên văn từng tập, mỗi tệp là một tập.',
+  'episodes_view_empty_has_episodes':
+    'Các tập của dự án này đều có nguyên văn riêng hoặc chưa có nguyên văn. Sau khi tải lên toàn bộ văn bản nguồn, lập kế hoạch phân tập có thể cắt tập từ đó.',
   'source_upload_title': 'Tải lên nguyên văn',
   'source_upload_mode_legend': 'Cách tải lên',
   'source_upload_mode_whole': 'Toàn bộ văn bản nguồn',
-  'source_upload_mode_whole_hint': 'Một hoặc nhiều tệp nối theo thứ tự thành một văn bản; lập kế hoạch phân tập sẽ cắt tập từ đó',
+  'source_upload_mode_whole_hint':
+    'Một hoặc nhiều tệp nối theo thứ tự thành một văn bản; lập kế hoạch phân tập sẽ cắt tập từ đó',
   'source_upload_mode_episode': 'Nguyên văn từng tập',
   'source_upload_mode_episode_hint': 'Mỗi tệp là nguyên văn của một tập',
-  'source_upload_order_whole': 'Toàn bộ văn bản nguồn nối các tệp theo thứ tự dưới đây; tên tệp không ảnh hưởng thứ tự. Tệp mới mặc định xếp cuối, có thể kéo hoặc dùng mũi tên để đổi vị trí.',
-  'source_upload_order_episode': 'Sau khi xác nhận, các tệp được thêm vào cuối thứ tự phát theo thứ tự dưới đây; tên tệp không ảnh hưởng thứ tự. Có thể kéo hoặc dùng mũi tên để đổi thứ tự.',
+  'source_upload_order_whole':
+    'Toàn bộ văn bản nguồn nối các tệp theo thứ tự dưới đây; tên tệp không ảnh hưởng thứ tự. Tệp mới mặc định xếp cuối, có thể kéo hoặc dùng mũi tên để đổi vị trí.',
+  'source_upload_order_episode':
+    'Sau khi xác nhận, các tệp được thêm vào cuối thứ tự phát theo thứ tự dưới đây; tên tệp không ảnh hưởng thứ tự. Có thể kéo hoặc dùng mũi tên để đổi thứ tự.',
   'source_upload_empty': 'Chưa chọn tệp. Nhấn “Chọn tệp” bên dưới hoặc kéo tệp vào đây.',
   'source_upload_list_label': 'Tệp sẽ tải lên',
   'source_upload_existing': 'Đã có',
-  'source_upload_reserved_name': 'Tên dạng episode_N được dành cho nguyên văn của tập. Hãy đổi tên trước khi tải lên làm toàn bộ văn bản nguồn, hoặc tải lên làm nguyên văn từng tập',
+  'source_upload_reserved_name':
+    'Tên dạng episode_N được dành cho nguyên văn của tập. Hãy đổi tên trước khi tải lên làm toàn bộ văn bản nguồn, hoặc tải lên làm nguyên văn từng tập',
   'source_upload_becomes': 'Sẽ thành tập {{position}}',
   'source_upload_move_up': 'Chuyển {{name}} lên',
   'source_upload_move_down': 'Chuyển {{name}} xuống',
@@ -3695,24 +3994,34 @@ export default {
   'source_upload_confirm_whole_other': 'Tải lên {{count}} tệp',
   'source_upload_confirm_episodes': 'Thêm thành tập {{from}}–{{to}}',
   'source_upload_confirm_episode': 'Thêm thành tập {{position}}',
-  'source_upload_failed_partway': 'Tải lên {{name}} thất bại: {{message}}. Các tệp trước đã được tải lên, các tệp còn lại vẫn trong danh sách',
-  'source_upload_whole_done_renamed_one': 'Đã thêm {{count}} tệp vào toàn bộ văn bản nguồn; tệp trùng tên được lưu thành {{names}}',
-  'source_upload_whole_done_renamed_other': 'Đã thêm {{count}} tệp vào toàn bộ văn bản nguồn; tệp trùng tên được lưu thành {{names}}',
-  'unregistered_hint': 'Các tệp này nằm trong source/ nhưng không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào. Có thể thêm từng tệp vào toàn bộ văn bản nguồn, dùng làm nguyên văn của một tập, hoặc xóa.',
-  'unregistered_banner_one': '{{names}} chưa được dùng: tệp này không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào.',
-  'unregistered_banner_other': '{{names}} chưa được dùng: các tệp này không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào.',
-  'unregistered_banner_more_one': '{{names}} và các tệp khác (tổng {{count}} tệp) chưa được dùng: các tệp này không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào.',
-  'unregistered_banner_more_other': '{{names}} và các tệp khác (tổng {{count}} tệp) chưa được dùng: các tệp này không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào.',
+  'source_upload_failed_partway':
+    'Tải lên {{name}} thất bại: {{message}}. Các tệp trước đã được tải lên, các tệp còn lại vẫn trong danh sách',
+  'source_upload_whole_done_renamed_one':
+    'Đã thêm {{count}} tệp vào toàn bộ văn bản nguồn; tệp trùng tên được lưu thành {{names}}',
+  'source_upload_whole_done_renamed_other':
+    'Đã thêm {{count}} tệp vào toàn bộ văn bản nguồn; tệp trùng tên được lưu thành {{names}}',
+  'unregistered_hint':
+    'Các tệp này nằm trong source/ nhưng không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào. Có thể thêm từng tệp vào toàn bộ văn bản nguồn, dùng làm nguyên văn của một tập, hoặc xóa.',
+  'unregistered_banner_one':
+    '{{names}} chưa được dùng: tệp này không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào.',
+  'unregistered_banner_other':
+    '{{names}} chưa được dùng: các tệp này không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào.',
+  'unregistered_banner_more_one':
+    '{{names}} và các tệp khác (tổng {{count}} tệp) chưa được dùng: các tệp này không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào.',
+  'unregistered_banner_more_other':
+    '{{names}} và các tệp khác (tổng {{count}} tệp) chưa được dùng: các tệp này không thuộc toàn bộ văn bản nguồn và cũng không là nguyên văn của tập nào.',
   'unregistered_handle': 'Xử lý',
   'unregistered_dialog_title': 'Xử lý các tệp chưa được dùng',
   'unregistered_join_whole': 'Thêm vào toàn bộ văn bản nguồn',
   'unregistered_use_as_episode': 'Dùng làm nguyên văn tập',
-  'unregistered_cannot_join': 'Tên tệp bắt đầu bằng dấu gạch dưới hoặc có dạng episode_N không thể thêm vào toàn bộ văn bản nguồn',
+  'unregistered_cannot_join':
+    'Tên tệp bắt đầu bằng dấu gạch dưới hoặc có dạng episode_N không thể thêm vào toàn bộ văn bản nguồn',
   'unregistered_target_new_episode': 'Một tập mới (ở cuối thứ tự phát)',
   'unregistered_target_episode': 'Tập {{position}}: {{title}} (chưa có nguyên văn)',
   'unregistered_delete_aria': 'Xóa {{name}}',
   'unregistered_delete_title': 'Xóa {{name}}?',
-  'unregistered_delete_desc': 'Tệp cùng bản gốc lúc tải lên được chuyển vào thùng rác dự án và có thể khôi phục trong 30 ngày.',
+  'unregistered_delete_desc':
+    'Tệp cùng bản gốc lúc tải lên được chuyển vào thùng rác dự án và có thể khôi phục trong 30 ngày.',
   'unregistered_delete_confirm': 'Chuyển vào thùng rác dự án',
   'unregistered_action_failed': 'Không xử lý được {{name}}: {{message}}',
   'episode_create_title': 'Tạo tập mới',
@@ -3720,35 +4029,43 @@ export default {
   'episode_create_position_end': 'Ở cuối',
   'episode_create_position_after': 'Sau “{{name}}”',
   'episode_create_title_label': 'Tiêu đề',
-  'episode_create_title_hint': 'Nếu để trống, tập hiển thị theo vị trí phát là “Tập {{position}}” và thay đổi khi chèn hoặc sắp xếp lại các tập.',
+  'episode_create_title_hint':
+    'Nếu để trống, tập hiển thị theo vị trí phát là “Tập {{position}}” và thay đổi khi chèn hoặc sắp xếp lại các tập.',
   'episode_create_hook_label': 'Móc câu',
   'episode_create_optional': 'Không bắt buộc',
   'episode_create_source_label': 'Nguyên văn của tập',
-  'episode_create_source_hint': 'Nguyên văn riêng của tập này, không cắt từ toàn bộ nguyên văn. Có thể để trống và bổ sung sau.',
+  'episode_create_source_hint':
+    'Nguyên văn riêng của tập này, không cắt từ toàn bộ nguyên văn. Có thể để trống và bổ sung sau.',
   'episode_create_submit': 'Tạo',
   'episode_create_failed': 'Không tạo được tập: {{message}}',
   'episode_delete_title': 'Xóa “{{name}}”',
   'episode_delete_confirm': 'Chuyển vào thùng rác dự án',
   'episode_delete_running': 'Đang xóa…',
   'episode_delete_failed': 'Không xóa được tập: {{message}}',
-  'episode_delete_changed': 'Tập này vừa thay đổi. Danh sách bên dưới đã được cập nhật; tập chỉ bị xóa sau khi bạn xác nhận lại.',
+  'episode_delete_changed':
+    'Tập này vừa thay đổi. Danh sách bên dưới đã được cập nhật; tập chỉ bị xóa sau khi bạn xác nhận lại.',
   'replan_start_action': 'Lập lại kế hoạch từ tập này',
   'replan_start_title': 'Lập lại kế hoạch từ «{{name}}»',
-  'replan_start_detail': 'AI cắt lại nguyên văn từ tập này đến cuối toàn bộ văn bản nguồn và tạo một phương án phân tập mới, thay thế {{count}} tập cắt kể từ tập này. Các tập hiện có giữ nguyên cho đến khi áp dụng phương án. Khi tạo xong, hãy đối chiếu thay đổi rồi quyết định áp dụng hoặc bỏ.',
-  'replan_start_started': 'Đã bắt đầu sản xuất: {{names}}. Sau khi áp dụng, các tập này chuyển thành tập không có nguyên văn và vẫn giữ sản phẩm.',
-  'replan_start_from_beginning': 'Văn bản nguồn đã thay đổi sau khi lập kế hoạch phân tập, hoặc có tập thiếu bản ghi phạm vi nguyên văn, nên chỉ có thể lập lại kế hoạch từ tập cắt đầu tiên.',
+  'replan_start_detail':
+    'AI cắt lại nguyên văn từ tập này đến cuối toàn bộ văn bản nguồn và tạo một phương án phân tập mới, thay thế {{count}} tập cắt kể từ tập này. Các tập hiện có giữ nguyên cho đến khi áp dụng phương án. Khi tạo xong, hãy đối chiếu thay đổi rồi quyết định áp dụng hoặc bỏ.',
+  'replan_start_started':
+    'Đã bắt đầu sản xuất: {{names}}. Sau khi áp dụng, các tập này chuyển thành tập không có nguyên văn và vẫn giữ sản phẩm.',
+  'replan_start_from_beginning':
+    'Văn bản nguồn đã thay đổi sau khi lập kế hoạch phân tập, hoặc có tập thiếu bản ghi phạm vi nguyên văn, nên chỉ có thể lập lại kế hoạch từ tập cắt đầu tiên.',
   'replan_start_confirm': 'Bắt đầu lập lại kế hoạch',
   'replan_failed': 'Lập lại kế hoạch thất bại: {{message}}',
   'replan_name_separator': ', ',
   'replan_none': 'Không có',
   'replan_pending_hint': 'Hãy áp dụng hoặc bỏ phương án phân tập mới trước',
   'replan_generating': 'Đang tạo phương án phân tập mới, đã có {{count}} tập',
-  'replan_generating_hint': 'Các tập hiện có giữ nguyên cho đến khi áp dụng phương án. Khi tạo xong, hãy đối chiếu thay đổi ở đây rồi quyết định áp dụng hoặc bỏ.',
+  'replan_generating_hint':
+    'Các tập hiện có giữ nguyên cho đến khi áp dụng phương án. Khi tạo xong, hãy đối chiếu thay đổi ở đây rồi quyết định áp dụng hoặc bỏ.',
   'replan_stop': 'Dừng tạo',
   'replan_stopped': 'Việc tạo đã dừng. Phương án mới chỉ tới {{end}}.',
   'replan_stopped_no_cut_point': 'AI không tìm được điểm cắt phù hợp trong nguyên văn sau {{end}}, việc tạo đã dừng.',
   'replan_stopped_failed': 'AI tạo bị lỗi. Phương án mới chỉ tới {{end}}.',
-  'replan_stopped_adopt_hint': 'Khi áp dụng phần đã xong, các tập vượt ra ngoài phương án cũng được xử lý như tập bị thay thế, phần nguyên văn sau đó trở thành nguyên văn chưa phân tập, có thể lập kế hoạch lại hoặc cắt thủ công.',
+  'replan_stopped_adopt_hint':
+    'Khi áp dụng phần đã xong, các tập vượt ra ngoài phương án cũng được xử lý như tập bị thay thế, phần nguyên văn sau đó trở thành nguyên văn chưa phân tập, có thể lập kế hoạch lại hoặc cắt thủ công.',
   'replan_continue': 'Tiếp tục tạo',
   'replan_adopt_partial': 'Áp dụng phần đã xong',
   'replan_uncovered': 'Ngoài phương án',
@@ -3758,8 +4075,10 @@ export default {
   'replan_legend_diff': 'Ranh giới khác nhau',
   'replan_waiting': 'Chờ lập kế hoạch',
   'replan_boundary_differs': 'Ranh giới hiện tại và mới khác nhau',
-  'replan_stale_ledger_changed': 'Các tập hiện có đã thay đổi sau khi tạo phương án này nên không thể áp dụng nữa. Hãy bỏ phương án rồi lập lại kế hoạch.',
-  'replan_stale_source_changed': 'Văn bản nguồn đã thay đổi sau khi tạo phương án này nên không thể áp dụng nữa. Hãy bỏ phương án rồi lập lại kế hoạch.',
+  'replan_stale_ledger_changed':
+    'Các tập hiện có đã thay đổi sau khi tạo phương án này nên không thể áp dụng nữa. Hãy bỏ phương án rồi lập lại kế hoạch.',
+  'replan_stale_source_changed':
+    'Văn bản nguồn đã thay đổi sau khi tạo phương án này nên không thể áp dụng nữa. Hãy bỏ phương án rồi lập lại kế hoạch.',
   'replan_title': 'Phương án phân tập mới',
   'replan_detail': 'Lập lại kế hoạch từ «{{name}}». Các tập hiện có giữ nguyên cho đến khi áp dụng phương án.',
   'replan_count': 'Số tập',
@@ -3784,7 +4103,8 @@ export default {
   'replan_discard_detail': 'Các tập hiện có giữ nguyên. Các tập đã tạo trong phương án sẽ bị loại bỏ.',
   'replan_adopt': 'Áp dụng phương án mới',
   'replan_adopt_title': 'Áp dụng phương án phân tập mới',
-  'replan_adopt_changed': 'Phương án hoặc các tập hiện có vừa thay đổi. Bên dưới là hệ quả đã cập nhật; phương án chỉ được áp dụng sau khi bạn xác nhận lại.',
+  'replan_adopt_changed':
+    'Phương án hoặc các tập hiện có vừa thay đổi. Bên dưới là hệ quả đã cập nhật; phương án chỉ được áp dụng sau khi bạn xác nhận lại.',
   'replan_adopt_running': 'Đang áp dụng…',
   'replan_delete_retired': 'Xóa luôn',
   'source_file_actions_label': 'Thao tác với {{name}}',
@@ -3794,13 +4114,15 @@ export default {
   'source_file_replace': 'Thay bằng tệp mới',
   'source_file_delete': 'Xóa tệp',
   'source_file_edit_title': 'Sửa «{{name}}»',
-  'source_file_edit_hint': 'Sau khi lưu, các tập có nguyên văn thay đổi được đánh dấu «Nguyên văn đã lập kế hoạch lại», các tập còn lại chỉ dời vị trí.',
+  'source_file_edit_hint':
+    'Sau khi lưu, các tập có nguyên văn thay đổi được đánh dấu «Nguyên văn đã lập kế hoạch lại», các tập còn lại chỉ dời vị trí.',
   'source_file_edit_loading': 'Đang đọc nguyên văn…',
   'source_file_edit_load_failed': 'Không đọc được nguyên văn: {{message}}',
   'source_file_edit_label': 'Nguyên văn của {{name}}',
   'source_file_edit_save': 'Lưu',
   'source_file_replace_title': 'Thay «{{name}}»',
-  'source_file_replace_hint': 'Nội dung tệp mới thay cho nguyên văn của «{{name}}». Tên tệp và vị trí trong toàn bộ văn bản nguồn giữ nguyên. Các tập có nguyên văn không đổi chỉ dời vị trí.',
+  'source_file_replace_hint':
+    'Nội dung tệp mới thay cho nguyên văn của «{{name}}». Tên tệp và vị trí trong toàn bộ văn bản nguồn giữ nguyên. Các tập có nguyên văn không đổi chỉ dời vị trí.',
   'source_file_replace_pick': 'Chọn tệp',
   'source_file_replace_none': 'Chưa chọn tệp',
   'source_file_replace_kind': 'Loại tệp nguồn',
@@ -3808,12 +4130,14 @@ export default {
   'source_file_move_title': 'Di chuyển «{{name}}»',
   'source_file_move_confirm': 'Di chuyển',
   'source_file_delete_title': 'Xóa «{{name}}»',
-  'source_file_delete_desc': 'Tệp được đưa ra khỏi toàn bộ văn bản nguồn; tệp và bản gốc lúc tải lên được chuyển vào thùng rác dự án, có thể khôi phục trong 30 ngày. Tệp khôi phục không còn thuộc nguồn toàn bộ; bạn có thể thêm lại trong Phân tập.',
+  'source_file_delete_desc':
+    'Tệp được đưa ra khỏi toàn bộ văn bản nguồn; tệp và bản gốc lúc tải lên được chuyển vào thùng rác dự án, có thể khôi phục trong 30 ngày. Tệp khôi phục không còn thuộc nguồn toàn bộ; bạn có thể thêm lại trong Phân tập.',
   'source_file_delete_confirm': 'Chuyển vào thùng rác dự án',
   'source_file_insert_title': 'Chèn «{{name}}»',
   'source_file_insert_confirm': 'Chèn',
   'source_file_change_impact': 'Thay đổi này ảnh hưởng đến các tập sau:',
-  'source_file_change_changed': 'Các tập bị ảnh hưởng vừa thay đổi. Danh sách bên dưới đã được cập nhật; thay đổi chỉ được thực hiện sau khi bạn xác nhận lại.',
+  'source_file_change_changed':
+    'Các tập bị ảnh hưởng vừa thay đổi. Danh sách bên dưới đã được cập nhật; thay đổi chỉ được thực hiện sau khi bạn xác nhận lại.',
   'source_file_change_running': 'Đang xử lý…',
   'source_file_change_failed': 'Không thay đổi được «{{name}}»: {{message}}',
   'episode_move_cut_locked': 'Các tập cắt từ toàn bộ nguyên văn theo thứ tự nguyên văn, không thể di chuyển đến đây.',
@@ -3857,7 +4181,8 @@ export default {
   'edit_view_loading': 'Đang tải dòng thời gian dựng…',
   'edit_view_load_failed': 'Không tải được dòng thời gian dựng: {{message}}',
   'edit_view_retry': 'Thử lại',
-  'edit_view_link_timeline_missing': 'Dòng thời gian dựng mà liên kết trỏ tới không còn tồn tại. Đang hiển thị dòng thời gian dựng hiện tại.',
+  'edit_view_link_timeline_missing':
+    'Dòng thời gian dựng mà liên kết trỏ tới không còn tồn tại. Đang hiển thị dòng thời gian dựng hiện tại.',
   'edit_view_player_aria': 'Xem trước bản dựng',
   'edit_view_play': 'Phát',
   'edit_view_pause': 'Tạm dừng',
@@ -3875,11 +4200,14 @@ export default {
   'edit_view_track_bgm': 'BGM',
   'edit_view_narration_title': 'Thuyết minh của {{unit}}, gắn vào {{clip}}: {{start}}–{{end}}s',
   'edit_view_narration_missing': '{{unit}} chưa có âm thanh thuyết minh, gắn vào {{clip}}',
-  'edit_view_narration_post_production': 'Thuyết minh của {{unit}} được lồng tiếng ở khâu hậu kỳ nên bản xem trước không phát tiếng, gắn vào {{clip}}',
-  'edit_view_bgm_title': '{{bgm}}: {{start}}–{{end}}s, âm lượng {{volume}}, tăng dần {{fadeIn}}s, giảm dần {{fadeOut}}s',
+  'edit_view_narration_post_production':
+    'Thuyết minh của {{unit}} được lồng tiếng ở khâu hậu kỳ nên bản xem trước không phát tiếng, gắn vào {{clip}}',
+  'edit_view_bgm_title':
+    '{{bgm}}: {{start}}–{{end}}s, âm lượng {{volume}}, tăng dần {{fadeIn}}s, giảm dần {{fadeOut}}s',
   'edit_view_bgm_upload': 'Tải lên BGM',
   'edit_view_bgm_uploading': 'Đang tải lên BGM…',
-  'edit_view_bgm_uploaded': 'Đã tải lên BGM "{{name}}". Mọi dòng thời gian dựng của các tập đều dùng được; hãy nhờ Agent đặt vào dòng thời gian',
+  'edit_view_bgm_uploaded':
+    'Đã tải lên BGM "{{name}}". Mọi dòng thời gian dựng của các tập đều dùng được; hãy nhờ Agent đặt vào dòng thời gian',
   'edit_view_bgm_upload_failed': 'Tải lên BGM thất bại: {{message}}',
   'edit_view_bgm_track_empty': 'Chưa có đoạn BGM. Sau khi tải lên BGM, hãy nhờ Agent đặt vào dòng thời gian',
   'edit_view_subtitles_toggle': 'Phụ đề',
@@ -3913,12 +4241,18 @@ export default {
   'edit_view_issue_unit_unused': 'Đơn vị video {{unit}} chưa được dùng',
   'edit_view_issue_video_missing': '{{clip}}: đơn vị video {{unit}} chưa có video dùng được',
   'edit_view_issue_hold_too_long': '{{clip}}: dừng hình {{hold}}s, vượt quá {{limit}}s',
-  'edit_view_issue_narration_missing': '{{clip}}: đơn vị video {{unit}} chưa có âm thanh thuyết minh, không xuất được bản có thuyết minh',
-  'edit_view_issue_narration_overrun_next_narration': '{{clip}}: lời thuyết minh chồng lên đoạn thuyết minh tiếp theo {{overlap}}s',
-  'edit_view_issue_narration_overrun_timeline_end': '{{clip}}: lời thuyết minh vượt quá cuối dòng thời gian {{overflow}}s',
-  'edit_view_issue_narration_source_collision_dialogue': '{{clip}}: lời thuyết minh kéo dài {{overlap}}s sang đoạn có lời thoại, có thể chồng với âm thanh gốc',
-  'edit_view_issue_narration_source_collision_source_volume': '{{clip}}: lời thuyết minh kéo dài {{overlap}}s sang đoạn có âm thanh gốc chưa giảm (âm lượng {{source_volume}}), có thể chồng với âm thanh gốc',
-  'edit_view_issue_subtitle_missing_glyphs': '{{clip}}: phụ đề của đơn vị video {{unit}} có ký tự mà phông phụ đề không có (“{{characters}}”); các ký tự này có thể không hiển thị đúng khi ghi vào video thành phẩm',
+  'edit_view_issue_narration_missing':
+    '{{clip}}: đơn vị video {{unit}} chưa có âm thanh thuyết minh, không xuất được bản có thuyết minh',
+  'edit_view_issue_narration_overrun_next_narration':
+    '{{clip}}: lời thuyết minh chồng lên đoạn thuyết minh tiếp theo {{overlap}}s',
+  'edit_view_issue_narration_overrun_timeline_end':
+    '{{clip}}: lời thuyết minh vượt quá cuối dòng thời gian {{overflow}}s',
+  'edit_view_issue_narration_source_collision_dialogue':
+    '{{clip}}: lời thuyết minh kéo dài {{overlap}}s sang đoạn có lời thoại, có thể chồng với âm thanh gốc',
+  'edit_view_issue_narration_source_collision_source_volume':
+    '{{clip}}: lời thuyết minh kéo dài {{overlap}}s sang đoạn có âm thanh gốc chưa giảm (âm lượng {{source_volume}}), có thể chồng với âm thanh gốc',
+  'edit_view_issue_subtitle_missing_glyphs':
+    '{{clip}}: phụ đề của đơn vị video {{unit}} có ký tự mà phông phụ đề không có (“{{characters}}”); các ký tự này có thể không hiển thị đúng khi ghi vào video thành phẩm',
   'edit_view_issue_bgm_missing': '{{clip}}: BGM {{bgm_id}} không còn trong dự án nên không thể xuất video',
   'edit_view_issue_other': '{{clip}}: {{code}}',
   'edit_view_menu_aria': "Thao tác khác cho '{{name}}'",
@@ -3930,7 +4264,8 @@ export default {
   'edit_view_rename_confirm': 'Đổi tên',
   'edit_view_rename_failed': 'Đổi tên không thành công: {{message}}',
   'edit_view_delete_title': "Xóa dòng thời gian dựng '{{name}}'?",
-  'edit_view_delete_description': 'Mọi phiên bản sửa của dòng thời gian dựng, cùng bản dựng hoàn chỉnh đã kết xuất và các bản nháp Jianying đã xuất, sẽ được chuyển vào thùng rác dự án và giữ trong 30 ngày. Trong thời gian đó, bạn có thể khôi phục từ thùng rác dự án trong chế độ xem Tệp. Kịch bản và video của từng đơn vị không bị ảnh hưởng.',
+  'edit_view_delete_description':
+    'Mọi phiên bản sửa của dòng thời gian dựng, cùng bản dựng hoàn chỉnh đã kết xuất và các bản nháp Jianying đã xuất, sẽ được chuyển vào thùng rác dự án và giữ trong 30 ngày. Trong thời gian đó, bạn có thể khôi phục từ thùng rác dự án trong chế độ xem Tệp. Kịch bản và video của từng đơn vị không bị ảnh hưởng.',
   'edit_view_delete_confirm': 'Xóa',
   'edit_view_delete_failed': 'Xóa không thành công: {{message}}',
   'edit_transition_dissolve': 'Hòa tan',
@@ -3954,11 +4289,13 @@ export default {
   'edit_transition_squeeze': 'Ép',
   // Tổng quan dự án quảng cáo và tab «Thiết lập câu chuyện»
   'episode_view_setting': 'Thiết lập câu chuyện',
-  'ad_setting_hint': 'AI tham khảo các thiết lập này khi tạo kịch bản. Sau khi lưu thay đổi, kịch bản đã tạo sẽ được đánh dấu lỗi thời.',
+  'ad_setting_hint':
+    'AI tham khảo các thiết lập này khi tạo kịch bản. Sau khi lưu thay đổi, kịch bản đã tạo sẽ được đánh dấu lỗi thời.',
   'ad_brief_title': 'Ý tưởng sáng tạo',
   'ad_brief_placeholder': 'Mô tả video bạn muốn: đối tượng, phong cách, điểm bán hàng chính, lời kêu gọi hành động...',
   'ad_products_view_all': 'Xem tất cả',
-  'ad_products_empty_hint': 'Thêm ảnh sản phẩm và điểm bán hàng để AI xây dựng kịch bản quanh sản phẩm. Không có sản phẩm, bạn vẫn có thể tạo kịch bản chỉ từ ý tưởng sáng tạo.',
+  'ad_products_empty_hint':
+    'Thêm ảnh sản phẩm và điểm bán hàng để AI xây dựng kịch bản quanh sản phẩm. Không có sản phẩm, bạn vẫn có thể tạo kịch bản chỉ từ ý tưởng sáng tạo.',
   // 共享组件：缩略图的查看大图
   'image_fullscreen_preview': 'Xem ảnh lớn của {{name}}',
   // 共享组件：模型目录选择面板（模型厂商名取品牌通行写法）
@@ -3984,69 +4321,85 @@ export default {
   'catalog_maker_shengshu': 'Shengshu',
   'catalog_maker_xai': 'xAI',
   'catalog_maker_zhipu': 'Zhipu AI',
-  "settings_asset_library": "Thư viện tư liệu và lưu trữ",
-  "asset_library_section_desc": "Cấu hình lưu trữ đối tượng của riêng bạn và tài khoản thư viện tư liệu của nhà cung cấp, rồi chọn khóa suy luận nào được dùng tư liệu trong thư viện. Không có các cấu hình này, dự án cục bộ vẫn hoạt động bình thường.",
-  "object_storage_title": "Lưu trữ đối tượng",
-  "object_storage_desc": "Bucket TOS của riêng bạn, dùng để trung chuyển hình ảnh khi đưa vào thư viện tư liệu, cũng có thể dùng để lưu hình ảnh mới. Chỉ lưu kết nối không thay đổi nơi lưu hình ảnh.",
-  "object_storage_empty": "Chưa cấu hình lưu trữ đối tượng",
-  "object_storage_configure": "Cấu hình lưu trữ đối tượng",
-  "object_storage_edit_title": "Sửa lưu trữ đối tượng",
-  "object_storage_dialog_desc": "Nhập khu vực, endpoint, tên bucket và khóa truy cập của bucket TOS. Khóa chỉ được dùng để truy cập bucket này.",
-  "object_storage_region": "Khu vực",
-  "object_storage_endpoint": "Endpoint",
-  "object_storage_bucket": "Bucket",
-  "object_storage_access_key_id": "Access Key ID",
-  "object_storage_secret_access_key": "Secret Access Key",
-  "object_storage_test": "Kiểm tra kết nối",
-  "object_storage_test_ok": "Kết nối thành công, có thể truy cập bucket này",
-  "object_storage_delete": "Xóa kết nối lưu trữ đối tượng",
-  "object_storage_delete_title": "Xóa kết nối lưu trữ đối tượng?",
-  "object_storage_delete_desc": "Sau khi xóa, không thể trung chuyển hình ảnh qua bucket này nữa. Các đối tượng đã có trong bucket không bị xóa.",
-  "new_image_target_title": "Nơi lưu ảnh mới",
-  "new_image_target_desc": "Hình ảnh được tạo, tải lên hoặc nhập từ giờ trở đi sẽ lưu ở đây, có hiệu lực ngay. Hình ảnh và phiên bản cũ không bị di chuyển, vẫn được đọc từ vị trí ban đầu. Khung cuối của phân cảnh, ảnh gốc của nhân vật và sản phẩm, ảnh tham chiếu phong cách luôn lưu cục bộ.",
-  "new_image_target_local": "Cục bộ",
-  "new_image_target_local_hint": "Lưu trong thư mục dự án của ArcReel",
-  "new_image_target_object_storage": "Lưu trữ đối tượng",
-  "new_image_target_object_storage_hint": "Lưu vào bucket ở trên; cục bộ chỉ giữ bộ nhớ đệm có thể dọn",
-  "new_image_target_needs_connection": "Cần cấu hình kết nối lưu trữ đối tượng để chọn lưu trữ đối tượng",
-  "object_storage_retained_relay_one": "Bucket còn {{count}} bản trung chuyển chưa được dọn. Sau khi đổi bucket, endpoint hoặc xóa kết nối, các bản này không còn được tự động xóa và cần dọn trong bảng điều khiển TOS.",
-  "object_storage_retained_relay_other": "Bucket còn {{count}} bản trung chuyển chưa được dọn. Sau khi đổi bucket, endpoint hoặc xóa kết nối, các bản này không còn được tự động xóa và cần dọn trong bảng điều khiển TOS.",
-  "object_storage_unreleased_images_one": "Còn {{count}} đối tượng ảnh lưu không thành công hoặc không còn được dùng đang chờ xóa. Sau khi đổi bucket, endpoint hoặc xóa kết nối, các đối tượng này không còn được tự động xóa; những đối tượng đã ghi vào bucket cũ cần dọn trong bảng điều khiển TOS.",
-  "object_storage_unreleased_images_other": "Còn {{count}} đối tượng ảnh lưu không thành công hoặc không còn được dùng đang chờ xóa. Sau khi đổi bucket, endpoint hoặc xóa kết nối, các đối tượng này không còn được tự động xóa; những đối tượng đã ghi vào bucket cũ cần dọn trong bảng điều khiển TOS.",
-  "asset_library_accounts_title": "Tài khoản thư viện tư liệu",
-  "asset_library_accounts_desc": "Access Key để truy cập thư viện tư liệu Volcano Engine Ark hoặc BytePlus, được lưu riêng với API Key dùng cho suy luận.",
-  "asset_library_accounts_empty": "Chưa có tài khoản thư viện tư liệu",
-  "asset_library_account_add": "Thêm tài khoản",
-  "asset_library_account_edit_title": "Sửa tài khoản thư viện tư liệu",
-  "asset_library_account_dialog_desc": "Access Key cần có quyền thư viện tư liệu. Yêu cầu control plane chỉ được gửi tới địa chỉ chính thức của trang đã chọn.",
-  "asset_library_account_name": "Tên",
-  "asset_library_account_more_actions": "Thao tác khác cho «{{name}}»",
-  "asset_library_site": "Trang",
-  "asset_library_site_volcengine": "Volcano Engine (Trung Quốc)",
-  "asset_library_site_byteplus": "BytePlus (quốc tế)",
-  "asset_library_region_hint": "Khu vực thư viện tư liệu: {{region}}",
-  "asset_library_project": "Dự án",
-  "asset_library_project_hint": "Nhà cung cấp tách tư liệu theo dự án, khóa suy luận cần thuộc cùng dự án. Dự án mặc định là default",
-  "asset_library_project_value": "Dự án {{project}}",
-  "asset_library_account_delete_title": "Xóa tài khoản thư viện tư liệu «{{name}}»?",
-  "asset_library_account_delete_desc": "Các khóa suy luận liên kết với tài khoản này cũng bị hủy liên kết. Tư liệu trong thư viện của nhà cung cấp không bị ảnh hưởng.",
-  "asset_library_bindings_title": "Liên kết khóa suy luận",
-  "asset_library_bindings_desc": "Chọn tài khoản thư viện tư liệu mà mỗi khóa suy luận được dùng. Sau khi đổi khóa hoặc Base URL, cần xác nhận lại liên kết. Liên kết không thay thế việc kiểm tra quyền của nhà cung cấp.",
-  "asset_library_bindings_empty": "Chưa có khóa suy luận để liên kết. Hãy thêm khóa Volcano Engine Ark hoặc nhà cung cấp tùy chỉnh trong mục Nhà cung cấp trước.",
-  "asset_library_bindings_need_account": "Hãy thêm tài khoản thư viện tư liệu trước khi liên kết khóa suy luận",
-  "asset_library_col_credential": "Khóa suy luận",
-  "asset_library_col_account": "Tài khoản thư viện tư liệu",
-  "asset_library_col_status": "Trạng thái",
-  "asset_library_credential_builtin": "Khóa nhà cung cấp tích hợp",
-  "asset_library_credential_custom": "Nhà cung cấp tùy chỉnh",
-  "asset_library_binding_unbound": "Chưa liên kết",
-  "asset_library_binding_confirmed": "Đã xác nhận",
-  "asset_library_binding_needs_confirmation": "Cần xác nhận lại",
-  "asset_library_binding_needs_confirmation_hint": "Khóa hoặc tài khoản đã thay đổi sau khi xác nhận. Tư liệu của tài khoản này không được dùng cho tới khi xác nhận lại",
-  "asset_library_binding_reconfirm": "Xác nhận lại",
-  "asset_library_binding_account_label": "Tài khoản thư viện tư liệu liên kết với «{{name}}»",
-  "presence_trigger": "Cũng đang ở dự án này: {{names}}",
-  "presence_title": "Cũng đang ở dự án này",
-  "presence_view_episode": "Đang xem tập {{episode}}",
-  "presence_view_project": "Trong dự án",
+  'settings_asset_library': 'Thư viện tư liệu và lưu trữ',
+  'asset_library_section_desc':
+    'Cấu hình lưu trữ đối tượng của riêng bạn và tài khoản thư viện tư liệu của nhà cung cấp, rồi chọn khóa suy luận nào được dùng tư liệu trong thư viện. Không có các cấu hình này, dự án cục bộ vẫn hoạt động bình thường.',
+  'object_storage_title': 'Lưu trữ đối tượng',
+  'object_storage_desc':
+    'Bucket TOS của riêng bạn, dùng để trung chuyển hình ảnh khi đưa vào thư viện tư liệu, cũng có thể dùng để lưu hình ảnh mới. Chỉ lưu kết nối không thay đổi nơi lưu hình ảnh.',
+  'object_storage_empty': 'Chưa cấu hình lưu trữ đối tượng',
+  'object_storage_configure': 'Cấu hình lưu trữ đối tượng',
+  'object_storage_edit_title': 'Sửa lưu trữ đối tượng',
+  'object_storage_dialog_desc':
+    'Nhập khu vực, endpoint, tên bucket và khóa truy cập của bucket TOS. Khóa chỉ được dùng để truy cập bucket này.',
+  'object_storage_region': 'Khu vực',
+  'object_storage_endpoint': 'Endpoint',
+  'object_storage_bucket': 'Bucket',
+  'object_storage_access_key_id': 'Access Key ID',
+  'object_storage_secret_access_key': 'Secret Access Key',
+  'object_storage_test': 'Kiểm tra kết nối',
+  'object_storage_test_ok': 'Kết nối thành công, có thể truy cập bucket này',
+  'object_storage_delete': 'Xóa kết nối lưu trữ đối tượng',
+  'object_storage_delete_title': 'Xóa kết nối lưu trữ đối tượng?',
+  'object_storage_delete_desc':
+    'Sau khi xóa, không thể trung chuyển hình ảnh qua bucket này nữa. Các đối tượng đã có trong bucket không bị xóa.',
+  'new_image_target_title': 'Nơi lưu ảnh mới',
+  'new_image_target_desc':
+    'Hình ảnh được tạo, tải lên hoặc nhập từ giờ trở đi sẽ lưu ở đây, có hiệu lực ngay. Hình ảnh và phiên bản cũ không bị di chuyển, vẫn được đọc từ vị trí ban đầu. Khung cuối của phân cảnh, ảnh gốc của nhân vật và sản phẩm, ảnh tham chiếu phong cách luôn lưu cục bộ.',
+  'new_image_target_local': 'Cục bộ',
+  'new_image_target_local_hint': 'Lưu trong thư mục dự án của ArcReel',
+  'new_image_target_object_storage': 'Lưu trữ đối tượng',
+  'new_image_target_object_storage_hint': 'Lưu vào bucket ở trên; cục bộ chỉ giữ bộ nhớ đệm có thể dọn',
+  'new_image_target_needs_connection': 'Cần cấu hình kết nối lưu trữ đối tượng để chọn lưu trữ đối tượng',
+  'object_storage_retained_relay_one':
+    'Bucket còn {{count}} bản trung chuyển chưa được dọn. Sau khi đổi bucket, endpoint hoặc xóa kết nối, các bản này không còn được tự động xóa và cần dọn trong bảng điều khiển TOS.',
+  'object_storage_retained_relay_other':
+    'Bucket còn {{count}} bản trung chuyển chưa được dọn. Sau khi đổi bucket, endpoint hoặc xóa kết nối, các bản này không còn được tự động xóa và cần dọn trong bảng điều khiển TOS.',
+  'object_storage_unreleased_images_one':
+    'Còn {{count}} đối tượng ảnh lưu không thành công hoặc không còn được dùng đang chờ xóa. Sau khi đổi bucket, endpoint hoặc xóa kết nối, các đối tượng này không còn được tự động xóa; những đối tượng đã ghi vào bucket cũ cần dọn trong bảng điều khiển TOS.',
+  'object_storage_unreleased_images_other':
+    'Còn {{count}} đối tượng ảnh lưu không thành công hoặc không còn được dùng đang chờ xóa. Sau khi đổi bucket, endpoint hoặc xóa kết nối, các đối tượng này không còn được tự động xóa; những đối tượng đã ghi vào bucket cũ cần dọn trong bảng điều khiển TOS.',
+  'asset_library_accounts_title': 'Tài khoản thư viện tư liệu',
+  'asset_library_accounts_desc':
+    'Access Key để truy cập thư viện tư liệu Volcano Engine Ark hoặc BytePlus, được lưu riêng với API Key dùng cho suy luận.',
+  'asset_library_accounts_empty': 'Chưa có tài khoản thư viện tư liệu',
+  'asset_library_account_add': 'Thêm tài khoản',
+  'asset_library_account_edit_title': 'Sửa tài khoản thư viện tư liệu',
+  'asset_library_account_dialog_desc':
+    'Access Key cần có quyền thư viện tư liệu. Yêu cầu control plane chỉ được gửi tới địa chỉ chính thức của trang đã chọn.',
+  'asset_library_account_name': 'Tên',
+  'asset_library_account_more_actions': 'Thao tác khác cho «{{name}}»',
+  'asset_library_site': 'Trang',
+  'asset_library_site_volcengine': 'Volcano Engine (Trung Quốc)',
+  'asset_library_site_byteplus': 'BytePlus (quốc tế)',
+  'asset_library_region_hint': 'Khu vực thư viện tư liệu: {{region}}',
+  'asset_library_project': 'Dự án',
+  'asset_library_project_hint':
+    'Nhà cung cấp tách tư liệu theo dự án, khóa suy luận cần thuộc cùng dự án. Dự án mặc định là default',
+  'asset_library_project_value': 'Dự án {{project}}',
+  'asset_library_account_delete_title': 'Xóa tài khoản thư viện tư liệu «{{name}}»?',
+  'asset_library_account_delete_desc':
+    'Các khóa suy luận liên kết với tài khoản này cũng bị hủy liên kết. Tư liệu trong thư viện của nhà cung cấp không bị ảnh hưởng.',
+  'asset_library_bindings_title': 'Liên kết khóa suy luận',
+  'asset_library_bindings_desc':
+    'Chọn tài khoản thư viện tư liệu mà mỗi khóa suy luận được dùng. Sau khi đổi khóa hoặc Base URL, cần xác nhận lại liên kết. Liên kết không thay thế việc kiểm tra quyền của nhà cung cấp.',
+  'asset_library_bindings_empty':
+    'Chưa có khóa suy luận để liên kết. Hãy thêm khóa Volcano Engine Ark hoặc nhà cung cấp tùy chỉnh trong mục Nhà cung cấp trước.',
+  'asset_library_bindings_need_account': 'Hãy thêm tài khoản thư viện tư liệu trước khi liên kết khóa suy luận',
+  'asset_library_col_credential': 'Khóa suy luận',
+  'asset_library_col_account': 'Tài khoản thư viện tư liệu',
+  'asset_library_col_status': 'Trạng thái',
+  'asset_library_credential_builtin': 'Khóa nhà cung cấp tích hợp',
+  'asset_library_credential_custom': 'Nhà cung cấp tùy chỉnh',
+  'asset_library_binding_unbound': 'Chưa liên kết',
+  'asset_library_binding_confirmed': 'Đã xác nhận',
+  'asset_library_binding_needs_confirmation': 'Cần xác nhận lại',
+  'asset_library_binding_needs_confirmation_hint':
+    'Khóa hoặc tài khoản đã thay đổi sau khi xác nhận. Tư liệu của tài khoản này không được dùng cho tới khi xác nhận lại',
+  'asset_library_binding_reconfirm': 'Xác nhận lại',
+  'asset_library_binding_account_label': 'Tài khoản thư viện tư liệu liên kết với «{{name}}»',
+  'presence_trigger': 'Cũng đang ở dự án này: {{names}}',
+  'presence_title': 'Cũng đang ở dự án này',
+  'presence_view_episode': 'Đang xem tập {{episode}}',
+  'presence_view_project': 'Trong dự án',
 } satisfies Record<keyof typeof enDashboard, string>;

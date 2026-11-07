@@ -92,7 +92,11 @@ export function AssetSheetBatchDialog({
 
   let body;
   if (error) {
-    body = <p role="alert" className="text-destructive">{t("sheet_batch_load_failed", { message: error })}</p>;
+    body = (
+      <p role="alert" className="text-destructive">
+        {t("sheet_batch_load_failed", { message: error })}
+      </p>
+    );
   } else if (!preview) {
     body = <p className="text-subtle-foreground">{t("sheet_batch_loading")}</p>;
   } else {
@@ -102,9 +106,7 @@ export function AssetSheetBatchDialog({
           <p>{t("sheet_batch_nothing")}</p>
         ) : (
           <div>
-            <p className="font-medium">
-              {t("sheet_batch_targets", { count: preview.targets.length })}
-            </p>
+            <p className="font-medium">{t("sheet_batch_targets", { count: preview.targets.length })}</p>
             {groups.map((group) => (
               <div key={group.type} className="mt-2">
                 <p className="text-xs font-medium text-muted-foreground">{t(`type.${group.type}`)}</p>
@@ -172,7 +174,10 @@ export function AssetSheetBatchDialog({
           <DialogClose render={<Button variant="outline" />} disabled={submitting}>
             {t("common:cancel")}
           </DialogClose>
-          <Button disabled={submitting || !preview || preview.targets.length === 0} onClick={() => void handleConfirm()}>
+          <Button
+            disabled={submitting || !preview || preview.targets.length === 0}
+            onClick={() => void handleConfirm()}
+          >
             {submitting && <Loader2 aria-hidden data-icon="inline-start" className="animate-spin" />}
             {submitting ? t("sheet_batch_submitting") : t("sheet_batch_confirm")}
           </Button>

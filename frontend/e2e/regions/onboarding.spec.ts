@@ -67,9 +67,8 @@ async function advance(page: Page, steps: number) {
 
 // 就地提示：项目先没有故事设定（有原文），从原文生成后变为有内容。
 const PROJECT = "GET /api/v1/projects/demo";
-const recordedProject = (
-  JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse
-).body as { project: Record<string, unknown> };
+const recordedProject = (JSON.parse(readFileSync(join(RECORDED_DIR, "project-demo.json"), "utf8")) as RecordedResponse)
+  .body as { project: Record<string, unknown> };
 const OVERVIEW = {
   synopsis: "灯塔守夜人在雾季收到一封三十年前寄出的信，循着邮戳找回失踪的邮差。",
   genre: "悬疑",
@@ -82,7 +81,11 @@ const SOURCE_ONLY: ApiOverrides = {
     status: 200,
     body: {
       ...recordedProject,
-      project: { ...recordedProject.project, overview: undefined, whole_source_files: [{ source_file: "source/novel.txt" }] },
+      project: {
+        ...recordedProject.project,
+        overview: undefined,
+        whole_source_files: [{ source_file: "source/novel.txt" }],
+      },
     },
   },
 };
@@ -143,10 +146,12 @@ defineRegionScenarios("新手引导", [
       await expect(tour(page)).toBeInViewport({ ratio: 1 });
     },
   },
-  ...([
-    ["vi", "越南语", "Chào mừng đến với ArcReel"],
-    ["ru", "俄语", "Добро пожаловать в ArcReel"],
-  ] as const).map(([locale, label, welcomeTitle]) => ({
+  ...(
+    [
+      ["vi", "越南语", "Chào mừng đến với ArcReel"],
+      ["ru", "俄语", "Добро пожаловать в ArcReel"],
+    ] as const
+  ).map(([locale, label, welcomeTitle]) => ({
     name: `${label}：每一步的气泡都完整落在视口内`,
     path: LOBBY_PATH,
     api: UNSEEN,
@@ -191,22 +196,28 @@ defineRegionScenarios("新手引导", [
       await page.route("**/api/v1/projects/demo/generate-overview", (route) =>
         route.fulfill({ json: { success: true, overview: OVERVIEW } }),
       );
-      await page.route("**/api/v1/projects/demo", (route) => route.fulfill({ json: { ...recordedProject, project: { ...recordedProject.project, overview: OVERVIEW } } }));
+      await page.route("**/api/v1/projects/demo", (route) =>
+        route.fulfill({ json: { ...recordedProject, project: { ...recordedProject.project, overview: OVERVIEW } } }),
+      );
       await clearAgentOverlay(page);
       await page.getByRole("button", { name: "从原文生成" }).click();
       const tip = page.getByRole("status").filter({ hasText: "故事设定已提炼完成" });
       await tip.scrollIntoViewIfNeeded();
       await expect(tip).toBeInViewport({ ratio: 1 });
     },
-    screenshot: { name: "overview-handoff-tip", target: (page) => page.getByRole("status").filter({ hasText: "故事设定已提炼完成" }) },
+    screenshot: {
+      name: "overview-handoff-tip",
+      target: (page) => page.getByRole("status").filter({ hasText: "故事设定已提炼完成" }),
+    },
   },
 ]);
-
 
 test("已有新建项目向导时启动引导：焦点只归气泡，结束后归还对话框", async ({ page, api }) => {
   api.override({ "POST /api/v1/onboarding/seen": { status: 200, body: { success: true } } });
   let releaseStatus!: () => void;
-  const released = new Promise<void>((resolve) => { releaseStatus = resolve; });
+  const released = new Promise<void>((resolve) => {
+    releaseStatus = resolve;
+  });
   await page.route("**/api/v1/onboarding/status", async (route) => {
     await released;
     await route.fulfill({ json: { seen: false } });
@@ -214,7 +225,9 @@ test("已有新建项目向导时启动引导：焦点只归气泡，结束后�
   await page.addInitScript((token) => localStorage.setItem("arcreel_auth_token", token), RECORDED_ACCESS_TOKEN);
   await page.goto(LOBBY_PATH);
   await page.getByRole("button", { name: "新建项目" }).first().click();
-  const wizard = page.locator("[data-slot=dialog-content]").filter({ has: page.getByRole("heading", { name: "新建项目" }) });
+  const wizard = page
+    .locator("[data-slot=dialog-content]")
+    .filter({ has: page.getByRole("heading", { name: "新建项目" }) });
   const name = wizard.getByRole("textbox").first();
   await name.focus();
   releaseStatus();
@@ -222,9 +235,9 @@ test("已有新建项目向导时启动引导：焦点只归气泡，结束后�
 
   for (let i = 0; i < 4; i++) {
     await page.keyboard.press("Tab");
-    await expect.poll(() => page.evaluate(() =>
-      Boolean(document.activeElement?.closest(".driver-popover")),
-    )).toBe(true);
+    await expect
+      .poll(() => page.evaluate(() => Boolean(document.activeElement?.closest(".driver-popover"))))
+      .toBe(true);
   }
   await tour(page).locator(".driver-popover-next-btn").focus();
   await page.keyboard.press("Enter");

@@ -123,15 +123,22 @@ export function AgentQuestionnaire({ pendingQuestion, answering, error, onSubmit
           {questions.map((question, index) => (
             <QuestionnaireItem key={itemName(index)} name={itemName(index)} multiple={question.multiSelect} required>
               <QuestionnaireTitle>{question.question}</QuestionnaireTitle>
-              {question.multiSelect && <QuestionnaireDescription>{t("question_multi_select")}</QuestionnaireDescription>}
+              {question.multiSelect && (
+                <QuestionnaireDescription>{t("question_multi_select")}</QuestionnaireDescription>
+              )}
               <QuestionnaireChoices>
                 {choicesOf(question).map((option) => (
                   <QuestionnaireChoice key={option.label} value={option.label}>
                     <span>{option.label}</span>
-                    {option.description && <QuestionnaireChoiceDescription>{option.description}</QuestionnaireChoiceDescription>}
+                    {option.description && (
+                      <QuestionnaireChoiceDescription>{option.description}</QuestionnaireChoiceDescription>
+                    )}
                   </QuestionnaireChoice>
                 ))}
-                <QuestionnaireInput aria-label={t("question_other_label")} placeholder={t("question_other_placeholder")} />
+                <QuestionnaireInput
+                  aria-label={t("question_other_label")}
+                  placeholder={t("question_other_placeholder")}
+                />
               </QuestionnaireChoices>
               <QuestionnaireError>{t("question_required")}</QuestionnaireError>
             </QuestionnaireItem>

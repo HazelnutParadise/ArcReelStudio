@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { createDeferred } from "@/test/deferred";
@@ -215,7 +215,11 @@ describe("pages/CredentialList credential groups (api_key OR access_key+secret_k
   });
 
   const renderKling = () =>
-    renderList({ providerId: "kling", secretFields: KLING_SECRET_FIELDS, secretFieldGroups: KLING_SECRET_FIELD_GROUPS });
+    renderList({
+      providerId: "kling",
+      secretFields: KLING_SECRET_FIELDS,
+      secretFieldGroups: KLING_SECRET_FIELD_GROUPS,
+    });
 
   it("describes the two groups and marks no single secret field as required", async () => {
     renderKling();

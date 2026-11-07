@@ -9,10 +9,7 @@
 import type { CostBreakdown } from "./cost";
 import type { DurationExclusionReason, VideoCapabilityProblem } from "./project";
 import type { PlanNewAsset, RenderedPromptPreview } from "./script";
-import type {
-  AdmissionProblem,
-  WorkflowAdmission,
-} from "./workflow";
+import type { AdmissionProblem, WorkflowAdmission } from "./workflow";
 
 export type AssetKind = "product" | "character" | "scene" | "prop";
 
@@ -328,7 +325,6 @@ export interface SaveEpisodeDraftResult {
   adopted: boolean;
   draft: EpisodeDraftView | null;
 }
-
 
 /** 当前草稿按模型能力投影后的最终文本与实发图片，图片顺序对应提示词中的图号。 */
 export interface ReferenceUnitPromptPreview extends RenderedPromptPreview {

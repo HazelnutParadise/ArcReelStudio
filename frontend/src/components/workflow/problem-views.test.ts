@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { TFunction } from "i18next";
 import enWorkflow from "@/i18n/en/workflow";
 import viWorkflow from "@/i18n/vi/workflow";
@@ -61,7 +61,11 @@ describe("计划提示的本地化", () => {
           unit_id: "E1S02",
           admitted: false,
           problems: [
-            { code: "mixed_speech", detail: "发声准入未通过：{\"reason\": \"character_and_narrator_mixed\"}", action: "replan_unit" },
+            {
+              code: "mixed_speech",
+              detail: '发声准入未通过：{"reason": "character_and_narrator_mixed"}',
+              action: "replan_unit",
+            },
           ],
         },
       ],

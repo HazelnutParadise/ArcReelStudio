@@ -61,7 +61,9 @@ export function ScriptOverwriteConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogBody tabIndex={0} role="region" aria-label={title ?? t("review_overwrite_title")}>
           <AlertDialogDescription>
-            <span className="whitespace-pre-line wrap-break-word">{itemIdsAsPositionsInText(overwrite.text, scripts, t)}</span>
+            <span className="whitespace-pre-line wrap-break-word">
+              {itemIdsAsPositionsInText(overwrite.text, scripts, t)}
+            </span>
           </AlertDialogDescription>
         </AlertDialogBody>
         <AlertDialogFooter>

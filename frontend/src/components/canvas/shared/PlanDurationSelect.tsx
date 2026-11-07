@@ -33,7 +33,10 @@ export function PlanDurationSelect({
   }
   // 存量秒数可能已不在当前档位内：补一个当前值选项，否则下拉显示不出盘上的秒数。
   const values = options.includes(seconds) ? options : [...options, seconds].sort((a, b) => a - b);
-  const items = values.map((value) => ({ value, label: t("reference_script_plan_duration_option", { seconds: value }) }));
+  const items = values.map((value) => ({
+    value,
+    label: t("reference_script_plan_duration_option", { seconds: value }),
+  }));
   const select = (
     <Select
       items={items}

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API, ReadOnlyModeError, setApiReadOnly } from "@/api";
 import { DEMO_PROJECT_NAME } from "@/onboarding/demo-project";
 
@@ -34,25 +34,19 @@ describe("read-only demo mode", () => {
   });
 
   it("blocks writes before they reach the network", async () => {
-    await expect(
-      API.request("/projects", { method: "POST", body: "{}" }),
-    ).rejects.toThrow(ReadOnlyModeError);
+    await expect(API.request("/projects", { method: "POST", body: "{}" })).rejects.toThrow(ReadOnlyModeError);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("blocks every non-GET method, not just POST", async () => {
     for (const method of ["POST", "PUT", "PATCH", "DELETE", "post"]) {
-      await expect(
-        API.request(`/projects/${DEMO_PROJECT_NAME}/x`, { method }),
-      ).rejects.toThrow(ReadOnlyModeError);
+      await expect(API.request(`/projects/${DEMO_PROJECT_NAME}/x`, { method })).rejects.toThrow(ReadOnlyModeError);
     }
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("blocks writes with no project in the URL (global endpoints)", async () => {
-    await expect(
-      API.request("/assets", { method: "POST", body: "{}" }),
-    ).rejects.toThrow(ReadOnlyModeError);
+    await expect(API.request("/assets", { method: "POST", body: "{}" })).rejects.toThrow(ReadOnlyModeError);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -91,9 +85,7 @@ describe("read-only demo mode", () => {
   });
 
   it("still blocks the static archive-import endpoint itself", async () => {
-    await expect(
-      API.request("/projects/import", { method: "POST", body: "{}" }),
-    ).rejects.toThrow(ReadOnlyModeError);
+    await expect(API.request("/projects/import", { method: "POST", body: "{}" })).rejects.toThrow(ReadOnlyModeError);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -142,8 +134,6 @@ describe("getFileUrl", () => {
   });
 
   it("still builds a project-relative URL for real asset paths", () => {
-    expect(API.getFileUrl("demo", "storyboards/E1S1.png", null)).toContain(
-      "storyboards/E1S1.png",
-    );
+    expect(API.getFileUrl("demo", "storyboards/E1S1.png", null)).toContain("storyboards/E1S1.png");
   });
 });

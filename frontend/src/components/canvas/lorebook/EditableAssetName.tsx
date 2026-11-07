@@ -127,18 +127,20 @@ export function EditableAssetName({
     }
     setRenaming(true);
     try {
-      await track((async () => {
-        const result = await API.renameProjectAsset(projectName, assetType, name, trimmed);
-        setPreview(null);
-        setIsEditing(false);
-        onRenamed?.(name, result.new_name);
-        // 重命名已提交，刷新是独立的后续步骤：refreshProject 以结算值报告失败而不 reject，
-        // 不单独提示的话详情会停在旧数据上，看着像改名没生效。cancelled 是项目已切走，静默。
-        const refreshed = await useProjectsStore.getState().refreshProject(projectName);
-        if (refreshed === "failed") {
-          useAppStore.getState().pushToast(t("assets:rename_refresh_failed"), "warning");
-        }
-      })());
+      await track(
+        (async () => {
+          const result = await API.renameProjectAsset(projectName, assetType, name, trimmed);
+          setPreview(null);
+          setIsEditing(false);
+          onRenamed?.(name, result.new_name);
+          // 重命名已提交，刷新是独立的后续步骤：refreshProject 以结算值报告失败而不 reject，
+          // 不单独提示的话详情会停在旧数据上，看着像改名没生效。cancelled 是项目已切走，静默。
+          const refreshed = await useProjectsStore.getState().refreshProject(projectName);
+          if (refreshed === "failed") {
+            useAppStore.getState().pushToast(t("assets:rename_refresh_failed"), "warning");
+          }
+        })(),
+      );
     } catch (err) {
       useAppStore.getState().pushToast(t("assets:rename_failed", { message: errMsg(err) }), "error");
       // 失败保持确认框关闭、编辑态保留，可以改名后重试
@@ -193,7 +195,13 @@ export function EditableAssetName({
         <Button type="submit" variant="ghost" size="icon-sm" disabled={!canSubmit} aria-label={t("common:save")}>
           {previewLoading ? <Loader2 aria-hidden className="animate-spin" /> : <Check aria-hidden />}
         </Button>
-        <Button variant="ghost" size="icon-sm" onClick={cancelEdit} disabled={submitting} aria-label={t("common:cancel")}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={cancelEdit}
+          disabled={submitting}
+          aria-label={t("common:cancel")}
+        >
           <X aria-hidden />
         </Button>
       </form>

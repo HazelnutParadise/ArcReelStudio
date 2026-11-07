@@ -5,9 +5,5 @@ export const EPISODE_TARGET_DURATION_MAX = 600;
 /** 该值是否可提交（null = 未设目标，合法）。 */
 export function isValidEpisodeTargetDuration(value: number | null): boolean {
   if (value === null) return true;
-  return (
-    Number.isInteger(value) &&
-    value >= EPISODE_TARGET_DURATION_MIN &&
-    value <= EPISODE_TARGET_DURATION_MAX
-  );
+  return Number.isInteger(value) && value >= EPISODE_TARGET_DURATION_MIN && value <= EPISODE_TARGET_DURATION_MAX;
 }

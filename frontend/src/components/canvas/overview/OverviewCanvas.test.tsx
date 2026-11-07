@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
@@ -56,7 +56,11 @@ function renderOverview(props: Partial<Parameters<typeof OverviewCanvas>[0]> = {
   const element = (next: Partial<Parameters<typeof OverviewCanvas>[0]>) =>
     withRouter(<OverviewCanvas projectName="demo" projectData={makeProjectData()} {...next} />, location);
   const view = render(element(props));
-  return { ...view, location, rerender: (next: Partial<Parameters<typeof OverviewCanvas>[0]>) => view.rerender(element(next)) };
+  return {
+    ...view,
+    location,
+    rerender: (next: Partial<Parameters<typeof OverviewCanvas>[0]>) => view.rerender(element(next)),
+  };
 }
 
 function StoreOverview() {
@@ -399,7 +403,10 @@ describe("OverviewCanvas", () => {
     vi.spyOn(API, "getProject").mockRejectedValue(new Error("offline"));
     useProjectsStore
       .getState()
-      .setCurrentProject("demo", makeProjectData({ ...EMPTY_PROJECT, whole_source_files: [{ source_file: "source/novel.txt" }] }));
+      .setCurrentProject(
+        "demo",
+        makeProjectData({ ...EMPTY_PROJECT, whole_source_files: [{ source_file: "source/novel.txt" }] }),
+      );
     render(withRouter(<StoreOverview />));
 
     await user.click(screen.getByRole("button", { name: "从原文生成" }));
@@ -472,7 +479,11 @@ describe("OverviewCanvas", () => {
 
     it("does not generate when only per-episode sources were added", async () => {
       const user = userEvent.setup();
-      vi.spyOn(API, "uploadFile").mockResolvedValue({ success: true, path: "source/second.txt", filename: "second.txt" });
+      vi.spyOn(API, "uploadFile").mockResolvedValue({
+        success: true,
+        path: "source/second.txt",
+        filename: "second.txt",
+      });
       const generate = vi.spyOn(API, "generateOverview");
       renderOverview({ projectData: makeProjectData(EMPTY_PROJECT) });
 
@@ -582,7 +593,11 @@ describe("OverviewCanvas", () => {
     });
 
     it("does not fire on a read-only project", () => {
-      const view = renderOverview({ projectName: "onboarding_demo", projectData: makeProjectData(EMPTY_PROJECT), readOnly: true });
+      const view = renderOverview({
+        projectName: "onboarding_demo",
+        projectData: makeProjectData(EMPTY_PROJECT),
+        readOnly: true,
+      });
       view.rerender({ projectName: "onboarding_demo", projectData: makeProjectData(), readOnly: true });
 
       expect(screen.queryByText(TIP)).not.toBeInTheDocument();

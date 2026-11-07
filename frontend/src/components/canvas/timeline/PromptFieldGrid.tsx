@@ -11,7 +11,11 @@ export function PromptFieldGrid({ title, children }: { title: string; children: 
   return (
     <Collapsible defaultOpen>
       <CollapsibleTrigger render={<Button variant="ghost" size="xs" className="-ml-2" />}>
-        <ChevronRight aria-hidden data-icon="inline-start" className="transition-transform group-aria-expanded/button:rotate-90" />
+        <ChevronRight
+          aria-hidden
+          data-icon="inline-start"
+          className="transition-transform group-aria-expanded/button:rotate-90"
+        />
         {title}
       </CollapsibleTrigger>
       <CollapsibleContent>

@@ -2,11 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import type { DurationOutOfRangeReason } from "@/hooks/useModelCapabilities";
-import type {
-  NarrationSegment,
-  DramaScene,
-  AdShot,
-} from "@/types";
+import type { NarrationSegment, DramaScene, AdShot } from "@/types";
 import { useAppStore } from "@/stores/app-store";
 import { getScriptItemId, type EditorContentMode } from "@/utils/script-shape";
 import { stepAnchor } from "@/utils/move-anchor";
@@ -31,7 +27,11 @@ interface ShotSplitViewProps {
   scriptFile?: string;
   /** 提交分镜字段的增量修改，失败时抛错，resolve 为项目是否已刷新；缺省时只读展示。 */
   /** `base` 是开始编辑时这些字段的值，起点之后被其他成员改过的字段保存时拒绝写入。 */
-  onUpdatePrompt?: (segmentId: string, patch: Record<string, unknown>, base?: Record<string, unknown>) => Promise<boolean>;
+  onUpdatePrompt?: (
+    segmentId: string,
+    patch: Record<string, unknown>,
+    base?: Record<string, unknown>,
+  ) => Promise<boolean>;
   /** 分镜改序：移到 afterId 之后，null 移到最前；resolve 为是否移动成功 */
   onMoveShot?: (shotId: string, afterId: string | null) => Promise<boolean>;
   /** 新增分镜（旁白带正文）：afterId 为 null 时追加到末尾；resolve 为是否成功 */
@@ -113,17 +113,23 @@ export function ShotSplitView({
   }
 
   /** 切到第 index 个分镜；当前分镜有未保存修改时先由离开拦截询问。 */
-  const select = useCallback((index: number) => {
-    const id = ids[index];
-    if (id === undefined) return;
-    if (id === selection.id) {
-      setSelection({ id, index });
-      return;
-    }
-    confirmLeave(() => setSelection({ id, index }), { saveLabel: t("save_and_switch") });
-  }, [ids, selection.id, confirmLeave, t]);
+  const select = useCallback(
+    (index: number) => {
+      const id = ids[index];
+      if (id === undefined) return;
+      if (id === selection.id) {
+        setSelection({ id, index });
+        return;
+      }
+      confirmLeave(() => setSelection({ id, index }), { saveLabel: t("save_and_switch") });
+    },
+    [ids, selection.id, confirmLeave, t],
+  );
   const selectPrev = useCallback(() => select(Math.max(0, safeIndex - 1)), [select, safeIndex]);
-  const selectNext = useCallback(() => select(Math.min(ids.length - 1, safeIndex + 1)), [select, ids.length, safeIndex]);
+  const selectNext = useCallback(
+    () => select(Math.min(ids.length - 1, safeIndex + 1)),
+    [select, ids.length, safeIndex],
+  );
   const saveSelected = useCallback(() => editRef.current?.save(), []);
 
   // 分镜改序：请求在途时丢弃后续操作（快速连点会基于过期顺序计算锚点）。选中态按 ID 跟随原来的分镜。
@@ -204,8 +210,6 @@ export function ShotSplitView({
     }
   }, [scrollTarget, ids, select, clearScrollTarget]);
 
-
-
   const segment = segments[safeIndex];
 
   return (
@@ -231,42 +235,48 @@ export function ShotSplitView({
         moveDisabled={structurePending || movePending}
         footer={<ShotShortcutHint canSave={Boolean(onUpdatePrompt)} />}
       />
-      <RetainedEditUnit identity={segmentId ?? "missing"} value={
-      segmentId !== undefined && segment ? <ShotDetail
-        key={segmentId}
-        segment={segment}
-        segmentId={segmentId}
-        contentMode={contentMode}
-        aspectRatio={aspectRatio}
-        projectName={projectName}
-        episode={episode}
-        scriptFile={scriptFile}
-        selectedIndex={safeIndex}
-        totalCount={segments.length}
-        onPrev={selectPrev}
-        onNext={selectNext}
-        onUpdatePrompt={onUpdatePrompt}
-        onMoveShot={handleMoveStep}
-        movePending={movePending}
-        onInsertShot={handleInsertShot}
-        onRemoveShot={handleRemoveShot}
-        structurePending={structurePending}
-        onGenerateStoryboard={onGenerateStoryboard}
-        onGenerateVideo={onGenerateVideo}
-        onGenerateNarration={onGenerateNarration}
-        onRestoreStoryboard={onRestoreStoryboard}
-        onRestoreVideo={onRestoreVideo}
-        generatingStoryboard={generatingStoryboard?.(segmentId)}
-        generatingVideo={generatingVideo?.(segmentId)}
-        generatingNarration={generatingNarration?.(segmentId)}
-        durationOptions={durationOptions}
-        durationEndpointFixed={durationEndpointFixed}
-        lastFrame={lastFrame}
-        capabilitiesLoading={capabilitiesLoading}
-        durationWarningReason={durationWarningReason}
-        editRef={editRef}
-      /> : null
-      } message={t("dashboard:shot_externally_removed")}>
+      <RetainedEditUnit
+        identity={segmentId ?? "missing"}
+        value={
+          segmentId !== undefined && segment ? (
+            <ShotDetail
+              key={segmentId}
+              segment={segment}
+              segmentId={segmentId}
+              contentMode={contentMode}
+              aspectRatio={aspectRatio}
+              projectName={projectName}
+              episode={episode}
+              scriptFile={scriptFile}
+              selectedIndex={safeIndex}
+              totalCount={segments.length}
+              onPrev={selectPrev}
+              onNext={selectNext}
+              onUpdatePrompt={onUpdatePrompt}
+              onMoveShot={handleMoveStep}
+              movePending={movePending}
+              onInsertShot={handleInsertShot}
+              onRemoveShot={handleRemoveShot}
+              structurePending={structurePending}
+              onGenerateStoryboard={onGenerateStoryboard}
+              onGenerateVideo={onGenerateVideo}
+              onGenerateNarration={onGenerateNarration}
+              onRestoreStoryboard={onRestoreStoryboard}
+              onRestoreVideo={onRestoreVideo}
+              generatingStoryboard={generatingStoryboard?.(segmentId)}
+              generatingVideo={generatingVideo?.(segmentId)}
+              generatingNarration={generatingNarration?.(segmentId)}
+              durationOptions={durationOptions}
+              durationEndpointFixed={durationEndpointFixed}
+              lastFrame={lastFrame}
+              capabilitiesLoading={capabilitiesLoading}
+              durationWarningReason={durationWarningReason}
+              editRef={editRef}
+            />
+          ) : null
+        }
+        message={t("dashboard:shot_externally_removed")}
+      >
         {(detail) => detail}
       </RetainedEditUnit>
     </div>

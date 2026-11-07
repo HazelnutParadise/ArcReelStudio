@@ -247,7 +247,14 @@ export function useEditUnit<T>({
   );
 
   // 外部替换后，可见单元已与真实视图分离，旧视图的放行规则不能继续用于主动跳转。
-  const discarding = useLeaveGuard({ dirty, saving: status === "saving", save, discard, title: leaveTitle, allowNavigation: retention?.message ? undefined : allowNavigation });
+  const discarding = useLeaveGuard({
+    dirty,
+    saving: status === "saving",
+    save,
+    discard,
+    title: leaveTitle,
+    allowNavigation: retention?.message ? undefined : allowNavigation,
+  });
   // 放弃修改后等待落定的删除自己移除了本单元，不当作外部移除保留
   useRetainWhile((dirty || status === "saving") && !discarding);
 

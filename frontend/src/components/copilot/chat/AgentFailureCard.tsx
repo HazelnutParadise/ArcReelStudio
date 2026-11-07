@@ -87,7 +87,10 @@ export function AgentFailureCard({ failure, announce = false, onRetry }: Readonl
   }, [copied]);
 
   const copy = () => {
-    void copyText(raw).then(() => setCopied(true), () => setCopied(false));
+    void copyText(raw).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    );
   };
 
   const Icon = startup ? Unplug : TriangleAlert;

@@ -93,9 +93,7 @@ export function EndpointTestSection({ definition, providers }: EndpointTestSecti
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   // --- 测试连接 ---
-  const [credSource, setCredSource] = useState<"provider" | "inline">(
-    providers.length > 0 ? "provider" : "inline",
-  );
+  const [credSource, setCredSource] = useState<"provider" | "inline">(providers.length > 0 ? "provider" : "inline");
   const [providerId, setProviderId] = useState(() => (providers[0] ? String(providers[0].id) : ""));
   const [baseUrl, setBaseUrl] = useState(definition.meta.hints?.base_url ?? "");
   const [apiKey, setApiKey] = useState("");

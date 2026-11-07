@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import {
   costEntries,
   formatCost,
@@ -36,9 +36,7 @@ describe("cost-format", () => {
   });
 
   it("normalizes invalid fraction digit ranges", () => {
-    expect(formatCurrencyAmount("USD", 1.2345, { minimumFractionDigits: 4, maximumFractionDigits: 2 })).toBe(
-      "$1.2345",
-    );
+    expect(formatCurrencyAmount("USD", 1.2345, { minimumFractionDigits: 4, maximumFractionDigits: 2 })).toBe("$1.2345");
     expect(formatCurrencyAmount("POINTS", 1.2345, { minimumFractionDigits: 4, maximumFractionDigits: 2 })).toBe(
       "POINTS 1.2345",
     );

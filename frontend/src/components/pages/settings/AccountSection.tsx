@@ -249,7 +249,10 @@ function MembersPanel({ selfId }: { selfId: string }) {
       {members.status === "loading" ? (
         <Loading />
       ) : members.status === "error" ? (
-        <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4"
+        >
           <p className="min-w-0 text-sm text-destructive">
             {t("dashboard:members_load_failed", { message: members.message })}
           </p>
@@ -548,7 +551,9 @@ function ResetPasswordForm({ member, onDone }: { member: MemberInfo; onDone: () 
     setError(null);
     try {
       await API.updateMember(member.id, { password });
-      useAppStore.getState().pushToast(t("dashboard:members_password_reset_done", { name: member.username }), "success");
+      useAppStore
+        .getState()
+        .pushToast(t("dashboard:members_password_reset_done", { name: member.username }), "success");
       onDone();
     } catch (err) {
       setError(t("dashboard:members_update_failed", { message: errMsg(err) }));

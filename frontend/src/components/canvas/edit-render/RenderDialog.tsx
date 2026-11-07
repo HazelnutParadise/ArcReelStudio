@@ -279,7 +279,9 @@ function RenderPanel({
               label={t("edit_render_narration_label")}
               value={narration}
               disabled={submitting}
-              onChange={(value) => onNarrationChange(value === "with_narration" ? "with_narration" : "without_narration")}
+              onChange={(value) =>
+                onNarrationChange(value === "with_narration" ? "with_narration" : "without_narration")
+              }
               options={[
                 { value: "with_narration", label: t("edit_render_narration_with") },
                 { value: "without_narration", label: t("edit_render_narration_without") },
@@ -347,7 +349,18 @@ function RenderPanel({
         </div>
       </DialogBody>
       <DialogFooter>
-        {hasFile && (downloadIsPrimary ? <>{renderButton}{downloadButton}</> : <>{downloadButton}{renderButton}</>)}
+        {hasFile &&
+          (downloadIsPrimary ? (
+            <>
+              {renderButton}
+              {downloadButton}
+            </>
+          ) : (
+            <>
+              {downloadButton}
+              {renderButton}
+            </>
+          ))}
         {!hasFile && renderButton}
       </DialogFooter>
     </>

@@ -1,10 +1,5 @@
-import { describe, expect, it, beforeEach } from "vitest";
-import {
-  useAppStore,
-  useAssistantStore,
-  useProjectsStore,
-  useTasksStore,
-} from "@/stores";
+import { describe, expect, it, beforeEach } from "vite-plus/test";
+import { useAppStore, useAssistantStore, useProjectsStore, useTasksStore } from "@/stores";
 import type { DraftState, TaskItem, TimelineEntry } from "@/types";
 
 function resetAllStores(): void {
@@ -76,9 +71,7 @@ describe("stores", () => {
     app.pushNotification("task failed", "error", {
       target: { type: "segment", id: "S1", route: "/episodes/1" },
     });
-    expect(useAppStore.getState().toast).toEqual(
-      expect.objectContaining({ text: "task failed", tone: "error" }),
-    );
+    expect(useAppStore.getState().toast).toEqual(expect.objectContaining({ text: "task failed", tone: "error" }));
     expect(useAppStore.getState().workspaceNotifications[0]).toEqual(
       expect.objectContaining({
         text: "task failed",
@@ -102,9 +95,7 @@ describe("stores", () => {
     app.markWorkspaceNotificationRead(notification.id);
     expect(useAppStore.getState().workspaceNotifications[0].read).toBe(true);
     app.removeWorkspaceNotification(notification.id);
-    expect(
-      useAppStore.getState().workspaceNotifications.some((item) => item.id === notification.id)
-    ).toBe(false);
+    expect(useAppStore.getState().workspaceNotifications.some((item) => item.id === notification.id)).toBe(false);
 
     app.setUsagePanelOpen(true);
     expect(useAppStore.getState().usagePanelOpen).toBe(true);
@@ -297,10 +288,9 @@ describe("stores", () => {
     useAssistantStore.setState(useAssistantStore.getInitialState(), true);
     // 新会话复用同一 message_id 的 draft：替换索引应按新（空）entries 自愈，
     // draftTurn 不被上一会话的陈旧 message_id 误判为已替换
-    useAssistantStore.getState().setDraftSnapshot(
-      { message_id: "msg_1", content: [{ type: "text", text: "新会话草稿" }], rev: 1 },
-      1,
-    );
+    useAssistantStore
+      .getState()
+      .setDraftSnapshot({ message_id: "msg_1", content: [{ type: "text", text: "新会话草稿" }], rev: 1 }, 1);
     expect(useAssistantStore.getState().draftTurn?.content[0].text).toBe("新会话草稿");
   });
 
@@ -312,8 +302,18 @@ describe("stores", () => {
     // "前缀延续"，永远不会折叠中段条目的新内容，turns 停留在上一会话的陈旧值。
     const entryX: TimelineEntry = { seq: 0, type: "user", uuid: "x", content: [{ type: "text", text: "开头" }] };
     const entryA: TimelineEntry = { seq: 2, type: "user", uuid: "a", content: [{ type: "text", text: "结尾" }] };
-    const entryMid1: TimelineEntry = { seq: 1, type: "user", uuid: "m1", content: [{ type: "text", text: "会话一中段" }] };
-    const entryMid2: TimelineEntry = { seq: 1, type: "user", uuid: "m2", content: [{ type: "text", text: "会话二中段" }] };
+    const entryMid1: TimelineEntry = {
+      seq: 1,
+      type: "user",
+      uuid: "m1",
+      content: [{ type: "text", text: "会话一中段" }],
+    };
+    const entryMid2: TimelineEntry = {
+      seq: 1,
+      type: "user",
+      uuid: "m2",
+      content: [{ type: "text", text: "会话二中段" }],
+    };
 
     const assistant = useAssistantStore.getState();
     assistant.resetTimeline();

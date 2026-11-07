@@ -22,7 +22,13 @@ import { TabHeader } from "./SettingsBlock";
 
 function toPickerValue(style: ProjectStyle): StylePickerValue {
   if (style.kind === "image") {
-    return { mode: "custom", templateId: null, activeCategory: "live", uploadedFile: style.file, uploadedPreview: style.preview };
+    return {
+      mode: "custom",
+      templateId: null,
+      activeCategory: "live",
+      uploadedFile: style.file,
+      uploadedPreview: style.preview,
+    };
   }
   const templateId = style.kind === "template" ? style.templateId : null;
   const category = STYLE_TEMPLATES.find((tpl) => tpl.id === templateId)?.category ?? "live";
@@ -43,7 +49,12 @@ function fromPickerValue(draft: StylePickerValue, current: ProjectStyle): Projec
     if (current.kind === "image" && current.file === draft.uploadedFile) return current;
     // 选择器只在自己挂载期间持有文件的预览地址；写进项目风格的这一个归页面，由页面在不再使用时收回
     // react-doctor-disable-next-line react-doctor/no-create-object-url-without-revoke -- 地址经 onChange 存入表单值，ProjectSettingsPage 的 effect 在换图、放弃、保存或卸载时 revoke
-    return { kind: "image", preview: URL.createObjectURL(draft.uploadedFile), description: "", file: draft.uploadedFile };
+    return {
+      kind: "image",
+      preview: URL.createObjectURL(draft.uploadedFile),
+      description: "",
+      file: draft.uploadedFile,
+    };
   }
   // 沿用已保存的参考图
   return draft.uploadedPreview && current.kind === "image" ? current : null;

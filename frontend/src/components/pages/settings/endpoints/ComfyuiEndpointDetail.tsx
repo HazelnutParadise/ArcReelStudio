@@ -308,7 +308,10 @@ export function ComfyuiEndpointDetail({
 
   useEffect(() => {
     if (saveState.status !== "saved") return;
-    const timer = setTimeout(() => setSaveState((prev) => (prev.status === "saved" ? { ...prev, status: "idle" } : prev)), SAVED_DISPLAY_MS);
+    const timer = setTimeout(
+      () => setSaveState((prev) => (prev.status === "saved" ? { ...prev, status: "idle" } : prev)),
+      SAVED_DISPLAY_MS,
+    );
     return () => clearTimeout(timer);
   }, [saveState.status]);
 
@@ -346,7 +349,9 @@ export function ComfyuiEndpointDetail({
                   {record.key}
                 </span>
               )}
-              {sourceFileName && <span className="min-w-0 break-all">{t("ce_cf_source_file", { file: sourceFileName })}</span>}
+              {sourceFileName && (
+                <span className="min-w-0 break-all">{t("ce_cf_source_file", { file: sourceFileName })}</span>
+              )}
               <span>{t("ce_cf_node_count", { n: nodes.length })}</span>
               <MarketOrigin installation={installation} />
             </>
@@ -528,4 +533,3 @@ function authPreview(definition: ComfyuiEndpointDefinition): string {
   });
   return configured.length > 0 ? configured.join("\n") : "headers:\n  Authorization: Bearer {{ api_key }}";
 }
-

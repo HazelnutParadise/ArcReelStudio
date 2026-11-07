@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import type { Asset } from "@/types/asset";
 import { AssetPickerModal } from "./AssetPickerModal";
@@ -33,7 +33,9 @@ describe("AssetPickerModal", () => {
       .spyOn(API, "listAssets")
       .mockResolvedValue({ items: ITEMS, total: 75, counts: { character: 75, scene: 4, prop: 0 } });
     const onImport = vi.fn();
-    render(<AssetPickerModal type="character" existingNames={new Set(["李小红"])} onClose={() => {}} onImport={onImport} />);
+    render(
+      <AssetPickerModal type="character" existingNames={new Set(["李小红"])} onClose={() => {}} onImport={onImport} />,
+    );
 
     expect(await screen.findByText("匹配 75 个角色")).toBeInTheDocument();
     expect(listSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "character", offset: 0 }), expect.anything());

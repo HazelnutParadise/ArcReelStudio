@@ -149,18 +149,9 @@ export function TimelineCanvas(props: TimelineCanvasProps) {
   const storyboardBusyIds = useActiveResourceIds("storyboard", projectName);
   const videoBusyIds = useActiveResourceIds("video", projectName);
   const ttsBusyIds = useActiveResourceIds("tts", projectName);
-  const generatingStoryboard = useCallback(
-    (segId: string) => storyboardBusyIds.has(segId),
-    [storyboardBusyIds],
-  );
-  const generatingVideo = useCallback(
-    (segId: string) => videoBusyIds.has(segId),
-    [videoBusyIds],
-  );
-  const generatingNarration = useCallback(
-    (segId: string) => ttsBusyIds.has(segId),
-    [ttsBusyIds],
-  );
+  const generatingStoryboard = useCallback((segId: string) => storyboardBusyIds.has(segId), [storyboardBusyIds]);
+  const generatingVideo = useCallback((segId: string) => videoBusyIds.has(segId), [videoBusyIds]);
+  const generatingNarration = useCallback((segId: string) => ttsBusyIds.has(segId), [ttsBusyIds]);
   // 批量旁白进行中：当前分集还有未完结的 tts 任务时禁用批量按钮，避免重复入队；
   // 按本集 segment 范围判定，不影响其他分集的批量入口
   const currentSegmentIds = useMemo(
@@ -195,17 +186,11 @@ export function TimelineCanvas(props: TimelineCanvasProps) {
   const handleInsertShot: InsertShotHandler | undefined = onInsertShot
     ? (afterId, novelText) => onInsertShot(afterId, novelText, scriptFile)
     : undefined;
-  const handleRemoveShot = onRemoveShot
-    ? (itemId: string) => onRemoveShot(itemId, scriptFile)
-    : undefined;
+  const handleRemoveShot = onRemoveShot ? (itemId: string) => onRemoveShot(itemId, scriptFile) : undefined;
   // 生成回调保持可选透传：未提供时编辑器隐藏对应生成入口，
   // 而非渲染一个点了没反应的按钮。
-  const handleGenSb = onGenerateStoryboard
-    ? (segId: string) => onGenerateStoryboard(segId, scriptFile)
-    : undefined;
-  const handleGenVid = onGenerateVideo
-    ? (segId: string) => onGenerateVideo(segId, scriptFile)
-    : undefined;
+  const handleGenSb = onGenerateStoryboard ? (segId: string) => onGenerateStoryboard(segId, scriptFile) : undefined;
+  const handleGenVid = onGenerateVideo ? (segId: string) => onGenerateVideo(segId, scriptFile) : undefined;
   const handleGenNarration = onGenerateNarration
     ? (segId: string) => onGenerateNarration(segId, scriptFile)
     : undefined;
@@ -256,55 +241,61 @@ export function TimelineCanvas(props: TimelineCanvasProps) {
 
       {/* 主体 */}
       <div className="flex min-h-0 flex-1 flex-col" data-onboarding={ONBOARDING_ANCHORS.workbenchTimeline}>
-        <RetainedEditUnit identity={episodeScript && segments.length > 0 ? "shots" : "empty"} message={t("shot_externally_removed")} value={view === "plan" && hasDraft && editorContentMode !== "ad" ? (
-          <div className="relative h-full overflow-y-auto p-4">
-            <ScriptReviewGate
-              key={`${projectName}:${episode}`}
-              projectName={projectName}
-              episode={episode}
-              contentMode={editorContentMode}
-              videoModelUnresolved={videoModelUnresolved}
-              durationOptions={planDurationOptions}
-              durationEndpointFixed={durationEndpointFixed}
-              durationWarningReason={durationWarningReason}
-              onOpenTimeline={hasScript ? () => onViewChange("board") : undefined}
-            />
-          </div>
-        ) : episodeScript && segments.length > 0 ? (
-          <ShotSplitView
-            segments={segments}
-            contentMode={editorContentMode}
-            aspectRatio={aspectRatio}
-            projectName={projectName}
-            episode={episode}
-            scriptFile={scriptFile}
-            onUpdatePrompt={handleUpdatePrompt}
-            onMoveShot={handleMoveShot}
-            onInsertShot={handleInsertShot}
-            onRemoveShot={handleRemoveShot}
-            onGenerateStoryboard={handleGenSb}
-            onGenerateVideo={handleGenVid}
-            onGenerateNarration={handleGenNarration}
-            onRestoreStoryboard={onRestoreStoryboard}
-            onRestoreVideo={onRestoreVideo}
-            generatingStoryboard={generatingStoryboard}
-            generatingVideo={generatingVideo}
-            generatingNarration={generatingNarration}
-            durationOptions={durationOptions}
-            durationEndpointFixed={durationEndpointFixed}
-            lastFrame={lastFrame}
-            capabilitiesLoading={capabilitiesLoading}
-            durationWarningReason={durationWarningReason}
-          />
-        ) : episodeScript && contentMode === editorContentMode ? (
-          <EmptyScriptState contentMode={editorContentMode} onInsert={handleInsertShot} />
-        ) : (
-          // 兜底：分镜视图下无可编辑分镜（未知 content_mode），
-          // 或剧本回退后仍停留在分镜视图——给出指引而非空白
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            {hasScript ? t("timeline_no_editable_segments") : t("timeline_script_not_ready")}
-          </div>
-        )}>
+        <RetainedEditUnit
+          identity={episodeScript && segments.length > 0 ? "shots" : "empty"}
+          message={t("shot_externally_removed")}
+          value={
+            view === "plan" && hasDraft && editorContentMode !== "ad" ? (
+              <div className="relative h-full overflow-y-auto p-4">
+                <ScriptReviewGate
+                  key={`${projectName}:${episode}`}
+                  projectName={projectName}
+                  episode={episode}
+                  contentMode={editorContentMode}
+                  videoModelUnresolved={videoModelUnresolved}
+                  durationOptions={planDurationOptions}
+                  durationEndpointFixed={durationEndpointFixed}
+                  durationWarningReason={durationWarningReason}
+                  onOpenTimeline={hasScript ? () => onViewChange("board") : undefined}
+                />
+              </div>
+            ) : episodeScript && segments.length > 0 ? (
+              <ShotSplitView
+                segments={segments}
+                contentMode={editorContentMode}
+                aspectRatio={aspectRatio}
+                projectName={projectName}
+                episode={episode}
+                scriptFile={scriptFile}
+                onUpdatePrompt={handleUpdatePrompt}
+                onMoveShot={handleMoveShot}
+                onInsertShot={handleInsertShot}
+                onRemoveShot={handleRemoveShot}
+                onGenerateStoryboard={handleGenSb}
+                onGenerateVideo={handleGenVid}
+                onGenerateNarration={handleGenNarration}
+                onRestoreStoryboard={onRestoreStoryboard}
+                onRestoreVideo={onRestoreVideo}
+                generatingStoryboard={generatingStoryboard}
+                generatingVideo={generatingVideo}
+                generatingNarration={generatingNarration}
+                durationOptions={durationOptions}
+                durationEndpointFixed={durationEndpointFixed}
+                lastFrame={lastFrame}
+                capabilitiesLoading={capabilitiesLoading}
+                durationWarningReason={durationWarningReason}
+              />
+            ) : episodeScript && contentMode === editorContentMode ? (
+              <EmptyScriptState contentMode={editorContentMode} onInsert={handleInsertShot} />
+            ) : (
+              // 兜底：分镜视图下无可编辑分镜（未知 content_mode），
+              // 或剧本回退后仍停留在分镜视图——给出指引而非空白
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                {hasScript ? t("timeline_no_editable_segments") : t("timeline_script_not_ready")}
+              </div>
+            )
+          }
+        >
           {(content) => content}
         </RetainedEditUnit>
       </div>
