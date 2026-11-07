@@ -2,6 +2,7 @@ import { fromBase64, toBase64 } from "lib0/buffer";
 import * as decoding from "lib0/decoding";
 import * as encoding from "lib0/encoding";
 import * as syncProtocol from "y-protocols/sync";
+import { encodeAwarenessUpdate, type Awareness } from "y-protocols/awareness";
 import * as Y from "yjs";
 
 import { applyJson, type UnitJson } from "./ydoc-json";
@@ -58,6 +59,16 @@ export class FakeCollabServer {
     syncProtocol.writeUpdate(encoder, update);
     for (const socket of this.sockets) {
       socket.deliver({ type: "sync", room, data: toBase64(encoding.toUint8Array(encoder)) });
+    }
+  }
+
+  /** 把另一位成员的在线状态送给所有连线（服务端转发的替身）。 */
+  deliverAwareness(room: { project: string; kind: string; key: string }, awareness: Awareness): void {
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, 1);
+    encoding.writeVarUint8Array(encoder, encodeAwarenessUpdate(awareness, [awareness.clientID]));
+    for (const socket of this.sockets) {
+      socket.deliver({ type: "awareness", room, data: toBase64(encoding.toUint8Array(encoder)) });
     }
   }
 

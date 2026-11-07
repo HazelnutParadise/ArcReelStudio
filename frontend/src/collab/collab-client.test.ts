@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { Awareness } from "y-protocols/awareness";
+import * as Y from "yjs";
 
 import { CollabClient, scriptItemRef, type CollabRoom } from "./collab-client";
 import { setToken } from "@/utils/auth";
@@ -92,6 +94,28 @@ describe("CollabClient", () => {
     room.undoManager.undo();
 
     expect(room.getSnapshot().json).toEqual({ synopsis: "深夜，雨夜" });
+  });
+
+  it("moves another member's caret along when their text grows behind it", async () => {
+    const client = new CollabClient("ws://test/collab");
+    const room = client.acquire(REF);
+    await waitFor(room, "synced");
+    room.markRendered(room.getSnapshot().json!);
+
+    // 另一位成员把光标停在「雨夜」结尾，接着打字：光标的相对位置不变，不会再送一次在线状态
+    const peerDoc = server.docFor(REF);
+    const text = peerDoc.getMap("unit").get("synopsis") as Y.Text;
+    const end = Y.relativePositionToJSON(Y.createRelativePositionFromTypeIndex(text, text.length));
+    const peer = new Awareness(peerDoc);
+    peer.setLocalState({ user: { id: "u-bob", name: "bob" }, focus: { field: "synopsis", anchor: end, head: end } });
+    server.deliverAwareness(REF, peer);
+    await settle();
+    expect(room.getSnapshot().peers[0]?.selection).toEqual({ anchor: 2, head: 2 });
+
+    server.externalChange(REF, { synopsis: "雨夜的街口" });
+    await settle();
+
+    expect(room.getSnapshot().peers[0]?.selection).toEqual({ anchor: 5, head: 5 });
   });
 
   it("answers flush requests", async () => {

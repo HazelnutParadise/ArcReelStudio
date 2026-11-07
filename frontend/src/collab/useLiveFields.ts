@@ -15,6 +15,7 @@ export interface CollabFieldProps {
   onFocus: (event: FocusEvent<FieldElement>) => void;
   onBlur: () => void;
   onSelect: (event: SyntheticEvent<FieldElement>) => void;
+  onInput: (event: SyntheticEvent<FieldElement>) => void;
   onKeyDown: (event: KeyboardEvent<FieldElement>) => void;
 }
 
@@ -80,6 +81,11 @@ export function useLiveFields(room: CollabRoom | null, json: UnitJson | null) {
         },
         onFocus: (event) => capture(path, event.currentTarget),
         onSelect: (event) => capture(path, event.currentTarget),
+        // 打字（尤其输入法上字）不一定触发选取事件：输入后也广播一次光标，等本机修改进了文档再算位置
+        onInput: (event) => {
+          const el = event.currentTarget;
+          queueMicrotask(() => capture(path, el));
+        },
         onBlur: () => {
           if (focus.current?.path === path) focus.current = null;
           room?.setPresence(null);

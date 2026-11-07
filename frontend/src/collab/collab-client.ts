@@ -293,6 +293,8 @@ export class CollabRoom {
 
   private handleDocUpdate = (update: Uint8Array, origin: unknown): void => {
     if (this.synced) this.update({ json: unitJson(this.doc) });
+    // 其他人的光标以相对位置广播：停在结尾时打字前后的相对位置一样，不会有新的在线状态，内容变了就重新换算位置
+    if (this.snapshot.peers.some((peer) => peer.selection !== null)) this.handleAwarenessChange();
     if (origin === REMOTE_ORIGIN) return;
     const encoder = encoding.createEncoder();
     encoding.writeVarUint(encoder, MESSAGE_SYNC);
