@@ -77,6 +77,21 @@ ArcReel 依赖 Python 包 imageio-ffmpeg（BSD-2-Clause），其平台 wheel 再
 按 GNU 通用公共许可证授权（Linux 与 Windows 构建另启用 --enable-version3，即 GPL 第 3 版
 或更新版本），GPL 第 3 版全文见 LICENSES/GPL-3.0-or-later.txt。对应源码的获取方式见上。
 
+The Docker image additionally ships /opt/arcreel/ffmpeg-gpu/ffmpeg, the
+unmodified portable static build of jellyfin-ffmpeg 8.1.3-1 (FFmpeg with
+Jellyfin's patches, configured with --enable-gpl --enable-version3, including
+NVENC support). ArcReel runs it as a separate process to encode final cuts on
+NVIDIA GPUs. It is licensed under the GNU General Public License version 3 or
+later (LICENSES/GPL-3.0-or-later.txt).
+
+Corresponding source code: https://github.com/jellyfin/jellyfin-ffmpeg, tag
+v8.1.3-1; the build scripts are in the same repository.
+
+Docker 镜像另随附 /opt/arcreel/ffmpeg-gpu/ffmpeg，即未经修改的 jellyfin-ffmpeg 8.1.3-1
+便携静态构建（含 Jellyfin 补丁的 FFmpeg，启用 --enable-gpl --enable-version3，支持 NVENC）。
+ArcReel 以独立子进程调用它在 NVIDIA GPU 上编码成片。它按 GPL 第 3 版或更新版本授权，
+对应源码与构建脚本见 https://github.com/jellyfin/jellyfin-ffmpeg 的 v8.1.3-1 标签。
+
 ==== Third-party: Source Han Sans / 第三方组件：思源黑体 ====
 
 ArcReel bundles lib/subtitle_style/fonts/SourceHanSansCN-Bold.otf, the

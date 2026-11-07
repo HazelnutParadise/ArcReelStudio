@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 type Messages = Record<string, unknown>;
 
 const zh = import.meta.glob<Messages>("./zh/*.ts", { eager: true, import: "default" });
+const zhTW = import.meta.glob<Messages>("./zh-TW/*.ts", { eager: true, import: "default" });
 const vi = import.meta.glob<Messages>("./vi/*.ts", { eager: true, import: "default" });
 const en = import.meta.glob<Messages>("./en/*.ts", { eager: true, import: "default" });
 const ru = import.meta.glob<Messages>("./ru/*.ts", { eager: true, import: "default" });
@@ -19,24 +20,37 @@ function entries(modules: Record<string, Messages>): [string, string][] {
   return out;
 }
 
-// 后端 zh 包按同一口径检查：tests/unit/lib/i18n/test_locale_wording.py
+// 简体与繁体中文包守同一套标点规则；后端中文包按同一口径检查：tests/unit/lib/i18n/test_locale_wording.py
+const CHINESE_PACKS = [
+  ["zh", zh],
+  ["zh-TW", zhTW],
+] as const;
+
+/** 只在简体中文里出现的常用字；繁体包里出现即说明有文案没有转成繁体。 */
+const SIMPLIFIED_ONLY = /[们这个设视频项时为于与说对进会发动务类页选码号应关开当无将让还从网络数据图显输删编辑览载传导级链帮请确认]/u;
+
 describe("locale wording", () => {
-  it("uses a full-width colon after Chinese text in the zh pack", () => {
-    const offenders = entries(zh).filter(([, text]) => /\p{Script=Han}\s?:/u.test(text));
+  it.each(CHINESE_PACKS)("uses a full-width colon after Chinese text in the %s pack", (_, modules) => {
+    const offenders = entries(modules).filter(([, text]) => /\p{Script=Han}\s?:/u.test(text));
     expect(offenders).toEqual([]);
   });
 
-  it("uses「…」for ellipses and「」for quotes in the zh pack", () => {
+  it.each(CHINESE_PACKS)("uses「…」for ellipses and「」for quotes in the %s pack", (_, modules) => {
     // 只查成对的引号：列举非法字符时单独出现的 " 是字符本身
-    const offenders = entries(zh).filter(([, text]) => /\.\.\.|……|"[^"]*"/.test(text));
+    const offenders = entries(modules).filter(([, text]) => /\.\.\.|……|"[^"]*"/.test(text));
     expect(offenders).toEqual([]);
   });
 
-  it("writes value ranges with「～」in the zh pack", () => {
+  it.each(CHINESE_PACKS)("writes value ranges with「～」in the %s pack", (_, modules) => {
     // 端点含占位符或百分号、或后接单位的才算范围；两端都是裸数字的（如时长档位简写 3-15）是用户照样输入的语法
     const range =
       /\{\{\w+\}\}\s?[-–]\s?(\d|\{\{)|\d\s?[-–]\s?\{\{|\d%\s?[-–]\s?\d|\d\s?[-–]\s?\d+(\.\d+)?(%|\s?[\p{Script=Han}A-Za-z])/u;
-    const offenders = entries(zh).filter(([, text]) => range.test(text));
+    const offenders = entries(modules).filter(([, text]) => range.test(text));
+    expect(offenders).toEqual([]);
+  });
+
+  it("writes the zh-TW pack in Traditional Chinese", () => {
+    const offenders = entries(zhTW).filter(([, text]) => SIMPLIFIED_ONLY.test(text));
     expect(offenders).toEqual([]);
   });
 

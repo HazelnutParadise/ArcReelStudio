@@ -20,6 +20,7 @@ export const SETTINGS_SECTIONS = [
   "access-tokens",
   "market",
   "usage",
+  "account",
   "general",
   "prompt-templates",
   "about",

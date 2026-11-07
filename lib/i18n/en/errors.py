@@ -494,6 +494,15 @@ MESSAGES = {
     ),
     # API Keys
     "jwt_auth_required": "API Key is not authorized to perform this action, please use JWT authentication",
+    "admin_only_operation": "Only administrators can manage members",
+    "username_invalid": "Usernames may contain only lowercase letters, digits, and . _ @ -, must start with a letter or digit, and can be up to 64 characters",
+    "password_too_short": "Passwords must be at least {min} characters",
+    "user_role_invalid": "Unsupported role: {role}",
+    "username_exists": "The username {username} is already taken",
+    "user_not_found": "Member not found",
+    "cannot_change_own_admin_access": "You can't disable your own account or remove your own administrator role. Ask another administrator",
+    "last_admin_required": "At least one active administrator is required",
+    "current_password_incorrect": "The current password is incorrect",
     "api_key_name_exists": "Name '{name}' already exists",
     "api_key_not_found": "API Key {key_id} not found",
     # Agent Chat

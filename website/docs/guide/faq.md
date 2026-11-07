@@ -47,7 +47,7 @@ docker compose logs arcreel
 
 1. Docker 服务是否正常，ArcReel 容器是否通过健康检查。
 2. 端口 `1241` 是否已被其他程序占用。
-3. `.env` 是否存在且容器有权读取；生产部署还必须设置 `POSTGRES_PASSWORD`。
+3. 生产部署的 `.env` 中是否设置了 `POSTGRES_PASSWORD`；留空时 `docker compose` 拒绝启动。
 4. 日志是否包含 `SANDBOX_UNAVAILABLE`、`SANDBOX_BWRAP_BROKEN` 或更具体的修复提示。
 5. 供应商 API Key 是否误放在 `.env` 中。供应商凭据应在 Web 设置页保存，否则服务会拒绝启动。
 
@@ -55,15 +55,17 @@ docker compose logs arcreel
 
 ### 默认登录账号是什么？忘记密码怎么办？ {#default-login}
 
-默认用户名是 `admin`，可通过 `.env` 中的 `AUTH_USERNAME` 修改。`AUTH_PASSWORD` 留空时，首次启动会生成密码并回写到当前部署目录的 `.env`，不会把明文密码打印到日志。
+默认管理员的用户名是 `admin`，第一次启动前可以在 `.env` 中用 `AUTH_USERNAME` 修改。密码是第一次启动时 `.env` 中的 `AUTH_PASSWORD`；留空时会生成初始密码，保存在数据根的 `runtime/initial-admin-password`（Docker 部署为 Compose 目录下的 `projects/runtime/initial-admin-password`），不会打印到日志。
 
-忘记密码时，修改 `.env` 中的 `AUTH_PASSWORD`。Docker 部署需要重建容器以重新载入环境变量：
+登录后在「设置 › 账号与成员」中修改密码；管理员还可以在这里新增成员。
+
+忘记密码时，修改 `.env` 不会改动已有账号。在 Compose 目录执行下面的命令重设，它会生成新密码并显示一次：
 
 ```bash
-docker compose up -d --force-recreate
+docker compose exec arcreel uv run python -m scripts.manage_users reset-password admin
 ```
 
-源码部署则重启 ArcReel 服务。不要在公网部署中关闭身份认证。
+源码部署在仓库根目录执行 `uv run python -m scripts.manage_users reset-password admin`。不要在公网部署中关闭身份认证。
 
 ### 修改 `.env` 后为什么没有生效？ {#env-changes-not-applied}
 
@@ -73,9 +75,9 @@ Docker 部署在创建容器时读取 `.env`，之后 `docker compose restart`�
 docker compose up -d
 ```
 
-不要用 `docker compose restart` 让修改生效。启动时发现进程环境变量与挂载的 `.env` 取值不一致，日志会输出一条 WARNING，只列出变量名，不输出取值。
+不要用 `docker compose restart` 让修改生效。`.env` 只作为 Compose 的插值来源，不挂进容器；容器只收到 `docker-compose.yml` 中 `environment` 列出的变量。
 
-`AUTH_PASSWORD` 留空时只在首次启动生成一次，之后重启沿用 `.env` 中的值。`AUTH_TOKEN_SECRET` 留空时，签名密钥保存在数据目录的 `runtime/auth-token-secret`（Docker 部署的数据目录是 Compose 目录下的 `projects/`），重启后已登录的会话仍然有效；在 `.env` 中设置后以设置值为准。
+`AUTH_USERNAME` 与 `AUTH_PASSWORD` 只在第一次启动时使用，之后修改不会改动已有账号。`AUTH_TOKEN_SECRET` 留空时，签名密钥保存在数据目录的 `runtime/auth-token-secret`（Docker 部署的数据目录是 Compose 目录下的 `projects/`），重启后已登录的会话仍然有效；在 `.env` 中设置后以设置值为准。
 
 ### Docker 怎样更新？更新会丢失项目吗？ {#docker-update}
 

@@ -147,6 +147,22 @@ class TestVideoGenerateAudio:
         assert result is False
 
 
+class TestGpuEncodingEnabled:
+    """成片 GPU 编码开关：未设置时为开，系统设置可以关掉。"""
+
+    async def test_defaults_to_enabled_on_empty_db(self, db_factory):
+        assert await ConfigResolver(db_factory).gpu_encoding_enabled() is True
+
+    async def test_reads_the_stored_setting(self, db_factory):
+        from lib.config.service import ConfigService
+
+        for stored, expected in (("false", False), ("true", True)):
+            async with db_factory() as session:
+                await ConfigService(session).set_setting("gpu_encoding_enabled", stored)
+                await session.commit()
+            assert await ConfigResolver(db_factory).gpu_encoding_enabled() is expected
+
+
 class TestDefaultBackends:
     """验证 video/image 后端解析：显式值 vs auto-resolve。"""
 

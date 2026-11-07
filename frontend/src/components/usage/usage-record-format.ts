@@ -161,13 +161,14 @@ export function projectTitleResolver(summary: UsageSummary | null): (name: strin
 /** i18n 语言码 → Intl locale；两者不同名，故显式映射，未知语言回落英文。 */
 const INTL_LOCALES: Record<string, string> = {
   zh: "zh-CN",
+  "zh-TW": "zh-TW",
   en: "en-US",
   vi: "vi-VN",
   ru: "ru-RU",
 };
 
 function intlLocale(language: string): string {
-  return INTL_LOCALES[language.split("-")[0]] ?? "en-US";
+  return INTL_LOCALES[language] ?? INTL_LOCALES[language.split("-")[0]] ?? "en-US";
 }
 
 const percentFormatters = new Map<string, Intl.NumberFormat>();

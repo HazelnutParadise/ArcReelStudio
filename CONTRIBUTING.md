@@ -188,6 +188,15 @@ chore: 构建/工具变更
 1. 普通 PR 按 conventional commits 规范 squash merge 到 `main`；`afk-team-workflow` stage PR 按上述例外 rebase merge
 2. release-please 扫描自上次 release 以来的 commit，自动创建或更新标题形如 `chore(main): release X.Y.Z` 的 Release PR，包含下一版本号与更新后的 `CHANGELOG.md`
 3. 合并该 Release PR 即自动创建 `vX.Y.Z` tag 并发布 GitHub Release
+4. `vX.Y.Z` tag 建立后，Docker Release 工作流发布该版本的镜像标签，稳定版本另外更新 `latest`，见部署文档 `website/docs/ops/deployment.md` 的「固定版本」一节。每次合入 `main` 后，Docker Edge 工作流另外发布 `main` 镜像
+
+镜像总是发布到 GitHub Container Registry（`ghcr.io/<仓库所有者>/<仓库名>`）；仓库配置了 `DOCKERHUB_USERNAME` 与 `DOCKERHUB_TOKEN` 两个 secret 时，同一次构建再推送 Docker Hub。需要为已存在的 tag 补发镜像时，在 Actions 页手动运行 Docker Release 并填入 tag。
+
+release-please 优先使用仓库配置的 GitHub App（secret `RELEASE_PLEASE_APP_CLIENT_ID`、`RELEASE_PLEASE_APP_PRIVATE_KEY`）建立 Release PR 与 tag。没有配置 App 时改用 `GITHUB_TOKEN`，此时：
+
+- 需要在仓库 Settings › Actions › General 勾选「Allow GitHub Actions to create and approve pull requests」，否则无法建立 Release PR；
+- 由 `GITHUB_TOKEN` 建立的 Release PR 不会触发 CI 检查，合并前需要手动确认；
+- 由 `GITHUB_TOKEN` 建立的 tag 不会触发 Docker Release，release-please 工作流会在发版后直接调用它发布镜像。
 
 ### commit type → 版本步进
 

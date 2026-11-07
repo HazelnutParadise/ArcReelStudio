@@ -7,6 +7,7 @@ GET/PATCH /api/v1/system/config without real providers.
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 from fastapi import FastAPI
@@ -19,6 +20,7 @@ from lib.catalog.errors import ModelNotInCatalogError
 from lib.config.service import ConfigService, ProviderStatus
 from lib.db import get_async_session
 from lib.db.base import Base
+from lib.infra.video_encoder import GpuEncoderStatus
 from server.auth import CurrentUserInfo, get_current_user
 from server.dependencies import get_config_service
 from server.error_handlers import register_error_handlers
@@ -158,6 +160,7 @@ class TestGetSystemConfig:
             "default_text_backend",
             "video_generate_audio",
             "video_poll_timeout_seconds",
+            "gpu_encoding_enabled",
             "anthropic_api_key",
             "anthropic_base_url",
             "anthropic_model",
@@ -288,6 +291,28 @@ class TestGetSystemConfig:
             res = client.get("/api/v1/system/config")
         settings = res.json()["settings"]
         assert settings["video_generate_audio"] is True
+
+    def test_gpu_encoding_defaults_to_enabled_on_empty_db(self):
+        mock_svc = _make_mock_svc(settings={})
+        with TestClient(_make_app_with_mock(mock_svc)) as client:
+            res = client.get("/api/v1/system/config")
+        assert res.json()["settings"]["gpu_encoding_enabled"] is True
+
+    def test_gpu_encoding_reflects_the_stored_setting(self):
+        mock_svc = _make_mock_svc(settings={"gpu_encoding_enabled": "false"})
+        with TestClient(_make_app_with_mock(mock_svc)) as client:
+            res = client.get("/api/v1/system/config")
+        assert res.json()["settings"]["gpu_encoding_enabled"] is False
+
+    def test_options_report_the_available_gpu_encoder(self, monkeypatch):
+        for status, expected in (
+            (GpuEncoderStatus(Path("/opt/arcreel/ffmpeg-gpu/ffmpeg"), None), "h264_nvenc"),
+            (GpuEncoderStatus(None, "未找到"), None),
+        ):
+            monkeypatch.setattr(system_config_router, "gpu_encoder_status", lambda status=status: status)
+            with TestClient(_make_app_with_mock(_make_mock_svc())) as client:
+                res = client.get("/api/v1/system/config")
+            assert res.json()["options"]["gpu_encoder"] == expected
 
     def test_video_poll_timeout_defaults_to_3600_on_empty_db(self):
         mock_svc = _make_mock_svc()
@@ -432,6 +457,14 @@ class TestPatchSystemConfig:
             )
         assert res.status_code == 200
         assert res.json()["settings"]["video_generate_audio"] is False
+
+    def test_patch_sets_gpu_encoding_toggle(self):
+        mock_svc = _make_mock_svc()
+        with TestClient(self._make_patch_app(mock_svc)) as client:
+            off = client.patch("/api/v1/system/config", json={"gpu_encoding_enabled": False})
+            on = client.patch("/api/v1/system/config", json={"gpu_encoding_enabled": True})
+        assert off.json()["settings"]["gpu_encoding_enabled"] is False
+        assert on.json()["settings"]["gpu_encoding_enabled"] is True
 
     def test_patch_sets_video_poll_timeout(self):
         mock_svc = _make_mock_svc()

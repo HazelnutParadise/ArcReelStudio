@@ -195,6 +195,15 @@ Version numbers and the changelog are maintained automatically by [release-pleas
 1. Squash-merge ordinary PRs into `main` according to the conventional commits specification; rebase-merge `afk-team-workflow` stage PRs as described in the exception above
 2. release-please scans commits since the previous release and automatically opens or updates a Release PR titled like `chore(main): release X.Y.Z`, containing the next version number and an updated `CHANGELOG.md`
 3. Merging that Release PR automatically creates a `vX.Y.Z` tag and publishes a GitHub Release
+4. After the `vX.Y.Z` tag is created, the Docker Release workflow publishes the image tags for that version and, for a stable release, also updates `latest`; see the "Pin a Version" section of the deployment guide, `website/docs/ops/deployment.md`. Every merge into `main` also publishes a `main` image through the Docker Edge workflow
+
+Images are always published to the GitHub Container Registry (`ghcr.io/<repository owner>/<repository name>`). When the repository has the `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets, the same build is also pushed to Docker Hub. To publish images for an existing tag, run Docker Release manually from the Actions page and enter the tag.
+
+release-please uses the repository's GitHub App (secrets `RELEASE_PLEASE_APP_CLIENT_ID` and `RELEASE_PLEASE_APP_PRIVATE_KEY`) to create the Release PR and tag when it is configured. Without the App it falls back to `GITHUB_TOKEN`, in which case:
+
+- Enable "Allow GitHub Actions to create and approve pull requests" under the repository's Settings › Actions › General; otherwise the Release PR cannot be created;
+- A Release PR created by `GITHUB_TOKEN` does not trigger CI checks, so check it manually before merging;
+- A tag created by `GITHUB_TOKEN` does not trigger Docker Release, so the release-please workflow calls it directly after the release to publish the images.
 
 ### commit type → version increment {#commit-type-version-bump}
 

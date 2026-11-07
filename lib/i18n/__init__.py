@@ -37,16 +37,25 @@ from .zh import providers as zh_providers
 from .zh import system as zh_system
 from .zh import templates as zh_templates
 from .zh import validation as zh_validation
+from .zh_tw import assets as zh_tw_assets
+from .zh_tw import emails as zh_tw_emails
+from .zh_tw import errors as zh_tw_errors
+from .zh_tw import events as zh_tw_events
+from .zh_tw import providers as zh_tw_providers
+from .zh_tw import system as zh_tw_system
+from .zh_tw import templates as zh_tw_templates
+from .zh_tw import validation as zh_tw_validation
 
 logger = logging.getLogger(__name__)
 
 # Default locale
 DEFAULT_LOCALE = "zh"
-SUPPORTED_LOCALES = ["zh", "en", "vi", "ru"]
+SUPPORTED_LOCALES = ["zh", "zh-TW", "en", "vi", "ru"]
 
 # Mapping from locale code to human-readable language name
 LOCALE_LANGUAGE_MAP: dict[str, str] = {
-    "zh": "中文",
+    "zh": "简体中文",
+    "zh-TW": "繁體中文",
     "en": "English",
     "vi": "Tiếng Việt",
     "ru": "Русский",
@@ -63,6 +72,16 @@ MESSAGES: dict[str, dict[str, str]] = {
         **zh_templates.MESSAGES,
         **zh_assets.MESSAGES,
         **zh_validation.MESSAGES,
+    },
+    "zh-TW": {
+        **zh_tw_errors.MESSAGES,
+        **zh_tw_events.MESSAGES,
+        **zh_tw_system.MESSAGES,
+        **zh_tw_emails.MESSAGES,
+        **zh_tw_providers.MESSAGES,
+        **zh_tw_templates.MESSAGES,
+        **zh_tw_assets.MESSAGES,
+        **zh_tw_validation.MESSAGES,
     },
     "en": {
         **en_errors.MESSAGES,

@@ -149,7 +149,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-访问 <http://localhost:1241>。默认用户名为 `admin`；`AUTH_PASSWORD` 留空时，首次启动会自动生成密码并回写到 `deploy/.env`。
+访问 <http://localhost:1241>。默认用户名为 `admin`；`AUTH_PASSWORD` 留空时，首次启动会生成初始密码，保存在 `deploy/projects/runtime/initial-admin-password`。登录后可以在「设置 › 账号与成员」中修改密码、新增成员。
 
 > 默认 Compose 会将 `1241` 端口发布到宿主机所有网络接口。请勿将服务直接暴露到公网；远程访问前请配置认证，并使用 HTTPS、VPN 或安全隧道，详见 [反向代理与 HTTPS](https://docs.arc-reel.com/ops/deployment#reverse-proxy-and-https)。
 

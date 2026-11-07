@@ -140,7 +140,7 @@ After the health check succeeds, open this address in your browser:
 http://localhost:1241
 ```
 
-> When `AUTH_PASSWORD` is empty, ArcReel automatically generates a password on first startup and writes it back to `.env`. For regular use, you should still set and securely store a strong password yourself.
+> `AUTH_USERNAME` and `AUTH_PASSWORD` only create the default administrator on first startup. If `AUTH_PASSWORD` is empty, ArcReel generates an initial password and saves it to `deploy/projects/runtime/initial-admin-password`. After signing in, change the password and add members under Settings › Accounts & members.
 
 ### 2.3 Use the PostgreSQL Production Deployment {#deploy-with-postgresql}
 

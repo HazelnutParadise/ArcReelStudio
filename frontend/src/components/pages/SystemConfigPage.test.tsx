@@ -25,6 +25,7 @@ function makeConfigResponse(
       text_backend_complex: "",
       video_generate_audio: true,
       video_poll_timeout_seconds: 3600,
+      gpu_encoding_enabled: true,
       anthropic_api_key: { is_set: true, masked: "sk-ant-***" },
       anthropic_base_url: "",
       anthropic_model: "",
@@ -135,7 +136,7 @@ describe("SystemConfigPage", () => {
       ["生成", ["供应商", "默认模型", "调用端点", "素材库与存储"]],
       ["Agent", ["ArcReel Agent", "Agent 记忆", "外部 Agent 接入", "访问令牌"]],
       [null, ["市场", "使用记录"]],
-      ["系统", ["通用", "提示词模版", "关于"]],
+      ["系统", ["账号与成员", "通用", "提示词模版", "关于"]],
     ]);
     expect(within(nav).getByRole("link", { name: "供应商" })).toHaveAttribute("aria-current", "page");
   });

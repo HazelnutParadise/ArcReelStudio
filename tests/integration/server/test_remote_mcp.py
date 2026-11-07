@@ -34,11 +34,12 @@ from lib.workflow.workflow_state import WorkflowStatus
 from server.agent_toolset.declaration import invoke_declaration
 from server.agent_toolset.script_authoring import GENERATE_EPISODE_SCRIPT
 from server.agent_toolset.toolset import ARCREEL_MCP_TOOL_IDS
-from server.auth import create_download_token, create_token
+from server.auth import create_download_token
 from server.cors_config import resolve_cors_policy
 from server.remote_mcp import ArcApiKeyVerifier, RemoteMCPHost, build_remote_mcp_server, mount_remote_mcp
 from server.services.project.workflow_planner import WorkflowPlanner
 from server.tool_runtime import Services, TextGenerationResult
+from tests.auth_deps import default_admin_token
 from tests.factories import install_current_video, make_test_clip, make_video_request_facts, register_project_sources
 from tests.fakes import refuse_resume_execution
 from tests.integration.server.agent_tool_support import ToolHarness
@@ -326,7 +327,7 @@ async def test_remote_mcp_mount_inherits_app_cors_allowlist(
 
 
 @pytest.mark.parametrize(
-    "token_factory", [lambda: create_token("admin"), lambda: create_download_token("admin", "demo")]
+    "token_factory", [lambda: default_admin_token(), lambda: create_download_token("admin", "demo")]
 )
 async def test_remote_mcp_rejects_non_api_key_bearer_tokens(remote_server, token_factory) -> None:
     response = await _post_initialize(_mounted(remote_server), token_factory())

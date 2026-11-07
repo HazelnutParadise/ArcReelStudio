@@ -493,6 +493,15 @@ MESSAGES = {
     ),
     # API Keys
     "jwt_auth_required": "API Key không được phép thực hiện thao tác này, vui lòng dùng xác thực JWT",
+    "admin_only_operation": "Chỉ quản trị viên mới có thể quản lý thành viên",
+    "username_invalid": "Tên người dùng chỉ gồm chữ thường, chữ số và . _ @ -, bắt đầu bằng chữ hoặc số, tối đa 64 ký tự",
+    "password_too_short": "Mật khẩu phải có ít nhất {min} ký tự",
+    "user_role_invalid": "Vai trò không được hỗ trợ: {role}",
+    "username_exists": "Tên người dùng {username} đã được sử dụng",
+    "user_not_found": "Không tìm thấy thành viên",
+    "cannot_change_own_admin_access": "Không thể tự vô hiệu hóa tài khoản hoặc tự bỏ vai trò quản trị viên. Hãy nhờ một quản trị viên khác",
+    "last_admin_required": "Cần giữ ít nhất một quản trị viên đang hoạt động",
+    "current_password_incorrect": "Mật khẩu hiện tại không đúng",
     "api_key_name_exists": "Tên '{name}' đã tồn tại",
     "api_key_not_found": "Không tìm thấy API Key {key_id}",
     # Agent Chat

@@ -20,7 +20,36 @@ COPY frontend/ ./
 RUN pnpm build
 
 # ============================================================
-# Stage 2: 生产镜像
+# Stage 2: 支持 GPU 编码的 ffmpeg
+# ============================================================
+# 随包 ffmpeg（imageio-ffmpeg）没有编入 NVENC；成片在检测到 NVIDIA GPU 时改用这份
+# jellyfin-ffmpeg 静态构建编码，其余媒体处理仍用随包 ffmpeg。版本与校验和随架构固定。
+FROM python:3.12-slim AS gpu-ffmpeg
+
+ARG TARGETARCH
+ARG JELLYFIN_FFMPEG_VERSION=8.1.3-1
+ARG JELLYFIN_FFMPEG_SHA256_AMD64=b86dc023c64a5a9a410e6e3a938a970460214fae78f31c1553c9f88f1c289b6a
+ARG JELLYFIN_FFMPEG_SHA256_ARM64=7bc8e8d0986f7f4693f63e9728570f671f07b6e21c05d5465dd7ce461d1631dc
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+    amd64) platform=linux64; sha256="${JELLYFIN_FFMPEG_SHA256_AMD64}" ;; \
+    arm64) platform=linuxarm64; sha256="${JELLYFIN_FFMPEG_SHA256_ARM64}" ;; \
+    *) echo "不支持的架构：${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/ffmpeg.tar.xz \
+    "https://github.com/jellyfin/jellyfin-ffmpeg/releases/download/v${JELLYFIN_FFMPEG_VERSION}/jellyfin-ffmpeg_${JELLYFIN_FFMPEG_VERSION}_portable_${platform}-gpl.tar.xz"; \
+    echo "${sha256}  /tmp/ffmpeg.tar.xz" | sha256sum -c -; \
+    mkdir -p /out; \
+    tar -xJf /tmp/ffmpeg.tar.xz -C /out ffmpeg; \
+    rm /tmp/ffmpeg.tar.xz
+
+# ============================================================
+# Stage 3: 生产镜像
 # ============================================================
 FROM python:3.12-slim AS production
 
@@ -71,6 +100,9 @@ COPY LICENSES/ LICENSES/
 
 # 复制前端构建产物
 COPY --from=frontend-builder /build/frontend/dist/ frontend/dist/
+
+# GPU 编码用的 ffmpeg，路径与 lib/infra/video_encoder.py 的 GPU_FFMPEG_PATH 一致
+COPY --from=gpu-ffmpeg /out/ffmpeg /opt/arcreel/ffmpeg-gpu/ffmpeg
 
 # 构建 commit 由 CI 传入，/health 据此返回运行版本；放在最后，值每次变化也不影响前面的层缓存
 ARG BUILD_COMMIT=

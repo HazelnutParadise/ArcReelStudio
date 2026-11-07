@@ -17,7 +17,7 @@ update_docs: fact-check
 | `deploy/projects/` 中的其他文件 | 项目元数据、媒体资产、日志、Vertex 凭据等 | 复制到 `deploy/production/projects/` |
 | `deploy/production/pgdata/` | PostgreSQL 集群数据 | 由 PostgreSQL 初始化，不放项目文件或 SQLite 文件 |
 
-以下命令统一用 shell 变量 `source_projects` 指向宿主机上的源数据根目录。默认部署会把它设为 `deploy/projects/` 的绝对路径；如果通过 `ARCREEL_DATA_DIR` 和自定义挂载更改了容器内数据目录，请在第 1 步把 `source_projects` 改为对应的宿主机绝对路径。容器内路径与宿主机路径可能不同，因此本文不会直接从 `.env` 推导该值。迁移期间在同一个 shell 中保留此变量。
+以下命令统一用 shell 变量 `source_projects` 指向宿主机上的源数据根目录。默认部署会把它设为 `deploy/projects/` 的绝对路径；如果在 `deploy/.env` 中设置了 `ARCREEL_HOST_DATA_DIR`，请在第 1 步把 `source_projects` 改为该目录下 `projects/` 的绝对路径。迁移期间在同一个 shell 中保留此变量。生产部署的 `deploy/production/.env` 设置了 `ARCREEL_HOST_DATA_DIR` 时，下文的 `deploy/production/projects/` 与 `deploy/production/pgdata/` 都换成该目录下的同名目录。
 
 ## 前置条件 {#prerequisites}
 

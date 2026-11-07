@@ -41,6 +41,7 @@ from lib.custom_provider import is_custom_provider, parse_provider_id
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.db.repositories.custom_provider_repo import CustomProviderRepository
 from lib.episode.episode_target_duration import project_episode_target_duration
+from lib.infra.video_encoder import GPU_ENCODING_SETTING
 from lib.project.project_manager import get_project_manager
 from lib.speech.character_voice import CharacterVoiceBinding, character_voice_binding
 
@@ -731,6 +732,8 @@ class ConfigResolver:
     # 与 Seedance / Grok 默认开启、storyboard 用户期望一致。
     # server/routers/system_config.py 与 lib/generation/media_generator.py 均通过引用此常量读取。
     _DEFAULT_VIDEO_GENERATE_AUDIO = True
+    # GPU 不可用时成片编码自动用 CPU，默认开启不影响没有 GPU 的部署。
+    _DEFAULT_GPU_ENCODING_ENABLED = True
 
     def __init__(
         self,
@@ -779,6 +782,12 @@ class ConfigResolver:
         """
         async with self._open_session() as (_session, svc):
             return await self._resolve_video_generate_audio_from_project(svc, project)
+
+    async def gpu_encoding_enabled(self) -> bool:
+        """系统设置 ``gpu_encoding_enabled``：成片是否在 GPU 可用时用 GPU 编码，未设置时为开。"""
+        async with self._open_session() as (_session, svc):
+            raw = await svc.get_setting(GPU_ENCODING_SETTING, "")
+        return _parse_bool(raw) if raw else self._DEFAULT_GPU_ENCODING_ENABLED
 
     async def default_video_backend(self) -> tuple[str, str]:
         """返回系统级默认 (provider_id, model_id)（不含项目级覆盖）。"""

@@ -7,16 +7,20 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from lib.config.resolver import ConfigResolver
+from lib.db import async_session_factory
 from lib.edit_timeline.errors import EditTimelineError
 from lib.final_cut.basis import FINAL_CUT_VARIANTS, FinalCutVariant, final_cut_artifact_path, final_cut_key
 from lib.final_cut.errors import FinalCutError
 from lib.final_cut.service import FinalCutRender, FinalCutService
 from lib.generation.generation_result import GenerationAction, GenerationProblem, encode_generation_problem
 from lib.generation.render_lane import RENDER_MEDIA_TYPE
+from lib.infra.video_encoder import VideoEncoding, select_video_encoding
 from lib.jianying_draft.basis import (
     WITH_NARRATION,
     WITHOUT_NARRATION,
@@ -123,13 +127,22 @@ def jianying_draft_task_request(
 type RenderTaskExecutor = Callable[[dict[str, Any], ProjectManager], Awaitable[dict[str, Any]]]
 
 
+async def final_cut_video_encoding() -> VideoEncoding:
+    """按系统设置与 GPU 自检结论选成片画面的编码方式；自检会启动子进程，放进线程执行。"""
+    enabled = await ConfigResolver(async_session_factory).gpu_encoding_enabled()
+    return await asyncio.to_thread(select_video_encoding, gpu_enabled=enabled)
+
+
 async def execute_final_cut_task(task: dict[str, Any], projects: ProjectManager) -> dict[str, Any]:
     # 旁白与字幕取自呈现模型读侧，执行时才导入。
     from server.services.presentation.timeline_units import TimelineUnitMaterials
 
     payload: Mapping[str, Any] = task.get("payload") or {}
     revision = payload.get("revision")
-    result = await FinalCutService(projects, unit_materials=TimelineUnitMaterials(projects)).render(
+    service = FinalCutService(
+        projects, unit_materials=TimelineUnitMaterials(projects), video_encoding=await final_cut_video_encoding()
+    )
+    result = await service.render(
         str(task["project_name"]),
         str(payload["timeline_id"]),
         revision=revision if isinstance(revision, int) else None,

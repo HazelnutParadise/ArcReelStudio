@@ -462,6 +462,15 @@ MESSAGES = {
     "project_asset_name_conflict": "{requested_type}名称「{name}」已被{existing_type}「{existing_name}」使用，项目内角色、场景、道具和商品不能同名",
     # API Keys
     "jwt_auth_required": "API Key 无权执行此操作，请使用 JWT 认证",
+    "admin_only_operation": "只有管理员可以管理成员",
+    "username_invalid": "用户名只能使用小写英文字母、数字和 . _ @ -，以字母或数字开头，最多 64 个字符",
+    "password_too_short": "密码至少需要 {min} 个字符",
+    "user_role_invalid": "不支持的角色：{role}",
+    "username_exists": "用户名 {username} 已被使用",
+    "user_not_found": "成员不存在",
+    "cannot_change_own_admin_access": "不能停用自己的账号或取消自己的管理员身份，请让另一位管理员操作",
+    "last_admin_required": "至少要保留一位启用中的管理员",
+    "current_password_incorrect": "当前密码不正确",
     "api_key_name_exists": "名称 '{name}' 已存在",
     "api_key_not_found": "API Key {key_id} 不存在",
     # Agent 对话

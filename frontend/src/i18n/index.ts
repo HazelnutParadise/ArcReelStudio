@@ -8,22 +8,30 @@ import { BRAND } from '@/branding';
 // Vite import.meta.glob 在编译期为每个 (lang, ns) 文件生成独立 chunk；运行时由
 // i18next 异步 load。资源仍是 .ts（保留 satisfies Record schema 锁），不是 JSON。
 const loaders = import.meta.glob<{ default: Record<string, string> }>(
-  './{en,zh,vi,ru}/*.ts',
+  './{en,zh,zh-TW,vi,ru}/*.ts',
 );
 
 function pathFor(lang: string, ns: string): string {
   return `./${lang}/${ns}.ts`;
 }
 
-export const SUPPORTED_LANGUAGES = ['zh', 'en', 'vi', 'ru'] as const;
+export const SUPPORTED_LANGUAGES = ['zh', 'zh-TW', 'en', 'vi', 'ru'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 
 export const LANGUAGE_DISPLAY_LABELS: Record<SupportedLanguage, string> = {
-  zh: '中文',
+  zh: '简体中文',
+  'zh-TW': '繁體中文',
   en: 'English',
   vi: 'Tiếng Việt',
   ru: 'Русский',
 };
+
+const TRADITIONAL_CHINESE = /^zh-(tw|hk|mo|hant)\b/i;
+
+/** 把浏览器语言里的繁体中文变体（zh-HK、zh-Hant-TW 等）归到 zh-TW。 */
+export function toSupportedChinese(lng: string): string {
+  return TRADITIONAL_CHINESE.test(lng) ? 'zh-TW' : lng;
+}
 
 const I18N_NAMESPACES = [
   'common',
@@ -80,7 +88,10 @@ export const i18nReady = i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    fallbackLng: 'zh',
+    // 繁体中文地区（台湾、香港、澳门）的浏览器语言统一用繁体界面，其余中文用简体。
+    detection: { convertDetectedLanguage: toSupportedChinese },
+    // zh-TW 缺的键先回落简体中文，再回落默认。
+    fallbackLng: { 'zh-TW': ['zh'], default: ['zh'] },
     supportedLngs: SUPPORTED_LANGUAGES,
     debug: false,
     interpolation: { escapeValue: false },

@@ -3,11 +3,11 @@ services:
     image: postgres:18-alpine
     environment:
       POSTGRES_USER: arcreel
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env 中设置 POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?必須設定 POSTGRES_PASSWORD}
       POSTGRES_DB: arcreel
       TZ: ${TZ:-Asia/Shanghai}
     volumes:
-      - ./pgdata:/var/lib/postgresql
+      - ${ARCREEL_HOST_DATA_DIR:-.}/pgdata:/var/lib/postgresql
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U arcreel"]
@@ -16,13 +16,29 @@ services:
       retries: 5
 
   arcreel:
-    image: arcreel/arcreel:latest
+    # 镜像标签取 .env 的 ARCREEL_IMAGE_TAG：main 跟踪 main 分支最新构建，latest 为最新正式版本，
+    # X.Y.Z 固定到某个正式版本
+    image: ghcr.io/hazelnutparadise/arcreelstudio:${ARCREEL_IMAGE_TAG:-latest}
     ports:
       - "1241:1241"
-    # 端口发布到宿主机所有网卡：远程部署不得在 .env 中设置 AUTH_ENABLED=false。
-    env_file: .env
+    # 端口发布到宿主机所有网卡：远程部署不得设置 AUTH_ENABLED=false。
+    # 容器只收到下面列出的变量。取值来自本目录的 .env（Compose 插值来源）或 shell 环境，.env 文件本身不进容器；
+    # 修改 .env 后执行 docker compose up -d 重建容器才会生效。
     environment:
-      DATABASE_URL: postgresql+asyncpg://arcreel:${POSTGRES_PASSWORD}@postgres:5432/arcreel
+      DATABASE_URL: postgresql+asyncpg://arcreel:${POSTGRES_PASSWORD:?必須設定 POSTGRES_PASSWORD}@postgres:5432/arcreel
+      # 只在第一次启动、还没有任何账号时用来建立默认管理员；之后在「设置 › 账号与成员」中管理账号。
+      # AUTH_PASSWORD 留空时生成初始密码，保存在数据存放位置的 projects/runtime/initial-admin-password
+      AUTH_USERNAME: ${AUTH_USERNAME:-admin}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-}
+      # 留空时自动生成并保存到数据存放位置的 projects/runtime/auth-token-secret，重启后沿用
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-}
+      AUTH_ENABLED: ${AUTH_ENABLED:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ARCREEL_LOG_FILE_DISABLED: ${ARCREEL_LOG_FILE_DISABLED:-false}
+      ARCREEL_SDK_SESSION_STORE: ${ARCREEL_SDK_SESSION_STORE:-db}
+      # 未设置时使用内置官方服务地址；在 .env 中设为空值即关闭官方服务
+      ARCREEL_OFFICIAL_SERVICE_URL: ${ARCREEL_OFFICIAL_SERVICE_URL-https://arc-reel.com}
       TZ: ${TZ:-Asia/Shanghai}
     # Agent Bash 沙箱 (bwrap) 需要：
     # 1) 非特权 user namespace → 放开 docker 默认 seccomp/apparmor profile
@@ -33,10 +49,10 @@ services:
       - apparmor:unconfined
     cap_add:
       - NET_ADMIN
+    # 宿主机上的数据存放位置取 .env 的 ARCREEL_HOST_DATA_DIR（相对路径以本目录为基准），未设置时为本目录
     volumes:
-      - ./.env:/app/.env
-      - ./projects:/app/projects
-      - ./claude_data:/root/.claude
+      - ${ARCREEL_HOST_DATA_DIR:-.}/projects:/app/projects
+      - ${ARCREEL_HOST_DATA_DIR:-.}/claude_data:/root/.claude
     depends_on:
       postgres:
         condition: service_healthy

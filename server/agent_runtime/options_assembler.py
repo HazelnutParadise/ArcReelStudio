@@ -157,7 +157,7 @@ class OptionsAssembler:
         into the cwd, carrying the Agent persona) is auto-loaded by the SDK via
         setting_sources=["project"].
         """
-        lang = LOCALE_LANGUAGE_MAP.get(locale, "中文")
+        lang = LOCALE_LANGUAGE_MAP.get(locale, LOCALE_LANGUAGE_MAP[DEFAULT_LOCALE])
         parts = [builtin_templates.render("text/agent_language_rule", lang=lang)]
 
         project_context = await asyncio.to_thread(self._build_project_context, project_name)

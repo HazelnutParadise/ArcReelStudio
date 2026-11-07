@@ -47,7 +47,7 @@ Check the following in order:
 
 1. Confirm that Docker is running normally and that the ArcReel container passes its health check.
 2. Confirm that port `1241` is not already in use by another program.
-3. Confirm that `.env` exists and is readable by the container. Production deployments must also set `POSTGRES_PASSWORD`.
+3. Confirm that the production `.env` sets `POSTGRES_PASSWORD`; `docker compose` refuses to start when it is empty.
 4. Check whether the logs contain `SANDBOX_UNAVAILABLE`, `SANDBOX_BWRAP_BROKEN`, or more specific remediation guidance.
 5. Check whether provider API keys were mistakenly placed in `.env`. Provider credentials must be saved in the Web Settings page, or the service will refuse to start.
 
@@ -55,15 +55,17 @@ Do not switch the container to privileged mode just to bypass a sandbox error. F
 
 ### What are the default login credentials? What should I do if I forget the password? {#default-login}
 
-The default username is `admin`; you can change it in `.env` with `AUTH_USERNAME`. If `AUTH_PASSWORD` is empty, ArcReel generates a password on first startup and writes it back to `.env` in the current deployment directory. The plaintext password is not printed to the logs.
+The default administrator's username is `admin`; you can change it with `AUTH_USERNAME` in `.env` before the first startup. The password is the `AUTH_PASSWORD` in `.env` at first startup. If it is empty, ArcReel generates an initial password and saves it to `runtime/initial-admin-password` in the data root (`projects/runtime/initial-admin-password` under the Compose directory for Docker deployments); it is never printed to the logs.
 
-If you forget the password, update `.env` by setting `AUTH_PASSWORD`. Docker deployments must recreate the container to reload environment variables:
+After signing in, change the password under Settings › Accounts & members; administrators can also add members there.
+
+If you forget the password, editing `.env` does not change existing accounts. Run the following in the Compose directory to reset it; the command generates a new password and shows it once:
 
 ```bash
-docker compose up -d --force-recreate
+docker compose exec arcreel uv run python -m scripts.manage_users reset-password admin
 ```
 
-For a source deployment, restart the ArcReel service. Do not disable authentication on a public deployment.
+For a source deployment, run `uv run python -m scripts.manage_users reset-password admin` from the repository root. Do not disable authentication on a public deployment.
 
 ### Why didn't my `.env` changes take effect? {#env-changes-not-applied}
 
@@ -73,9 +75,9 @@ A Docker deployment reads `.env` when the container is created. After that, `doc
 docker compose up -d
 ```
 
-Do not use `docker compose restart` to apply changes. If startup finds that a process environment variable differs from the mounted `.env`, the log shows one WARNING that lists only the variable names, never their values.
+Do not use `docker compose restart` to apply changes. `.env` only supplies Compose interpolation values and is not mounted into the container; the container receives only the variables listed under `environment` in `docker-compose.yml`.
 
-If `AUTH_PASSWORD` is empty, ArcReel generates it only once on first startup and reuses the value in `.env` after restarts. If `AUTH_TOKEN_SECRET` is empty, the signing secret is saved to `runtime/auth-token-secret` in the data directory (`projects/` under the Compose directory for Docker deployments), so signed-in sessions stay valid after restarts; once you set it in `.env`, the value you set takes precedence.
+`AUTH_USERNAME` and `AUTH_PASSWORD` are used only on first startup; changing them later does not affect existing accounts. If `AUTH_TOKEN_SECRET` is empty, the signing secret is saved to `runtime/auth-token-secret` in the data directory (`projects/` under the Compose directory for Docker deployments), so signed-in sessions stay valid after restarts; once you set it in `.env`, the value you set takes precedence.
 
 ### How do I update Docker? Will an update delete my projects? {#docker-update}
 

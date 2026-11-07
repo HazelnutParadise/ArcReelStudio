@@ -48,6 +48,10 @@ import type {
   OnboardingStatus,
   SystemConfigPatch,
   ApiKeyInfo,
+  CreateMemberRequest,
+  CurrentAccount,
+  MemberInfo,
+  UpdateMemberRequest,
   AssetLibraryAccount,
   AssetLibraryAccountList,
   AssetLibraryBindableCredential,
@@ -3325,6 +3329,36 @@ class API {
   /** 删除（吊销）指定 API Key。 */
   static async deleteApiKey(keyId: number): Promise<void> {
     return this.request(`/api-keys/${keyId}`, { method: "DELETE" });
+  }
+
+  // ==================== 账号与成员 API ====================
+
+  /** 当前登录的账号。 */
+  static async getMe(options: { signal?: AbortSignal } = {}): Promise<CurrentAccount> {
+    return this.request("/auth/me", { signal: options.signal });
+  }
+
+  /** 修改自己的密码；成功后返回新的登录 token，旧 token 随之失效。 */
+  static async changePassword(currentPassword: string, newPassword: string): Promise<{ access_token: string }> {
+    return this.request("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+  }
+
+  /** 列出所有成员（仅管理员）。 */
+  static async listMembers(options: { signal?: AbortSignal } = {}): Promise<MemberInfo[]> {
+    return this.request("/users", { signal: options.signal });
+  }
+
+  /** 新增成员（仅管理员）。 */
+  static async createMember(body: CreateMemberRequest): Promise<MemberInfo> {
+    return this.request("/users", { method: "POST", body: JSON.stringify(body) });
+  }
+
+  /** 修改成员的角色、启用状态或重设密码（仅管理员）。 */
+  static async updateMember(userId: string, body: UpdateMemberRequest): Promise<MemberInfo> {
+    return this.request(`/users/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify(body) });
   }
 
   // ==================== 模型目录 API ====================

@@ -1,13 +1,39 @@
 name: Docker Release
 
 # v* tag 触发的正式发布：双架构漏洞闸门 → 多架构构建 → semver + latest 标签，
-# 同一次构建推送 ghcr 与 Docker Hub，附带 SBOM 与 provenance attestation。
+# 附带 SBOM 与 provenance attestation。镜像总是推送 ghcr；仓库配置了 DOCKERHUB_USERNAME
+# 与 DOCKERHUB_TOKEN 时，同一次构建再推送 Docker Hub，未配置时跳过 Docker Hub。
 # GitHub Release 由 release-please 创建，此处不再重复生成。
 # 镜像发布成功后触发目录数据仓库（ArcReel/arcreel-catalog）构建一次。
 
 on:
   push:
     tags: ["v*"]
+  # release-please 用 GITHUB_TOKEN 发版时，它建立的 tag 不会触发 push 事件，
+  # 由 release-please.yml 直接调用本工作流
+  workflow_call:
+    inputs:
+      tag:
+        description: 要发布的版本 tag（如 v0.36.0）
+        required: true
+        type: string
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
+      # 只给上游仓库触发目录数据构建用；上游由 tag 推送触发，不经调用路径
+      RELEASE_PLEASE_APP_CLIENT_ID:
+        required: false
+      RELEASE_PLEASE_APP_PRIVATE_KEY:
+        required: false
+  # 为已存在的版本 tag 补发镜像
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 要发布的版本 tag（如 v0.36.0）
+        required: true
+        type: string
 
 # 不同 v* tag 并发运行时，后完成的旧版本会覆盖 latest/{{major}} 等可变标签，故串行执行。
 # queue: max 保留全部排队 tag：默认的 queue: single 每组只留一个 pending 运行，连续推多个
@@ -19,6 +45,9 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
+  # tag 推送时取触发的 tag，被调用或手动运行时取输入的 tag
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+  DOCKERHUB_ENABLED: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
 
 jobs:
   build-and-release:
@@ -28,9 +57,27 @@ jobs:
       contents: read
       packages: write
     steps:
+      - name: Validate release tag
+        id: tag
+        run: |
+          if [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "stable=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.-]+$ ]]; then
+            echo "stable=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::不是版本 tag：${RELEASE_TAG}"
+            exit 1
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
           persist-credentials: false
+
+      # 被调用或手动运行时 github.sha 是触发分支的提交，不一定是 tag 指向的提交
+      - name: Resolve release commit
+        id: rev
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       # Docker Hub 命名空间与 GitHub 组织同名，两个 registry 共用这一份小写仓库名；
       # fork 因此自动指向自己的命名空间，不会继承上游的推送目标
@@ -56,6 +103,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
+        if: env.DOCKERHUB_ENABLED == 'true'
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -70,10 +118,10 @@ jobs:
           context: .
           build-args: |
             APT_REFRESH=${{ steps.apt.outputs.week }}
-            BUILD_COMMIT=${{ github.sha }}
+            BUILD_COMMIT=${{ steps.rev.outputs.sha }}
           platforms: linux/amd64
           load: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-amd64-${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-amd64-${{ steps.rev.outputs.sha }}
           cache-from: type=gha,scope=release-amd64
           cache-to: type=gha,scope=release-amd64,mode=max,ignore-error=true
 
@@ -83,10 +131,10 @@ jobs:
           context: .
           build-args: |
             APT_REFRESH=${{ steps.apt.outputs.week }}
-            BUILD_COMMIT=${{ github.sha }}
+            BUILD_COMMIT=${{ steps.rev.outputs.sha }}
           platforms: linux/arm64
           load: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-arm64-${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-arm64-${{ steps.rev.outputs.sha }}
           cache-from: type=gha,scope=release-arm64
           cache-to: type=gha,scope=release-arm64,mode=max,ignore-error=true
 
@@ -95,7 +143,7 @@ jobs:
         env:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-amd64-${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-amd64-${{ steps.rev.outputs.sha }}
           format: table
           severity: CRITICAL
           ignore-unfixed: true
@@ -107,7 +155,7 @@ jobs:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db
         with:
           skip-setup-trivy: true
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-arm64-${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-arm64-${{ steps.rev.outputs.sha }}
           format: table
           severity: CRITICAL
           ignore-unfixed: true
@@ -119,7 +167,7 @@ jobs:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db
         with:
           skip-setup-trivy: true
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-amd64-${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-amd64-${{ steps.rev.outputs.sha }}
           format: table
           severity: HIGH
           ignore-unfixed: true
@@ -131,7 +179,7 @@ jobs:
           TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db
         with:
           skip-setup-trivy: true
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-arm64-${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:scan-arm64-${{ steps.rev.outputs.sha }}
           format: table
           severity: HIGH
           ignore-unfixed: true
@@ -142,13 +190,17 @@ jobs:
         with:
           images: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}
-            docker.io/${{ env.IMAGE_NAME_LC }}
-          # latest 交由 metadata-action 默认 flavor（latest=auto）：仅稳定
-          # semver tag 生成，预发布 tag（如 v1.2.3-rc.1）只推版本标签
+            name=docker.io/${{ env.IMAGE_NAME_LC }},enable=${{ env.DOCKERHUB_ENABLED }}
+          # 被调用或手动运行时没有 tag 推送事件，版本号一律取 RELEASE_TAG；
+          # latest 也不交给 latest=auto（它只认 tag 推送事件），只在稳定版本推送，
+          # 预发布 tag（如 v1.2.3-rc.1）只推版本标签
+          flavor: |
+            latest=false
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=semver,pattern={{version}},value=${{ env.RELEASE_TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.RELEASE_TAG }}
+            type=semver,pattern={{major}},value=${{ env.RELEASE_TAG }}
+            type=raw,value=latest,enable=${{ steps.tag.outputs.stable }}
 
       - name: Build & push multi-arch image with SBOM and provenance
         id: build
@@ -157,7 +209,7 @@ jobs:
           context: .
           build-args: |
             APT_REFRESH=${{ steps.apt.outputs.week }}
-            BUILD_COMMIT=${{ github.sha }}
+            BUILD_COMMIT=${{ steps.rev.outputs.sha }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
