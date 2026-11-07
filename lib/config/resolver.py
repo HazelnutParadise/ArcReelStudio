@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Literal, get_args
 
 if TYPE_CHECKING:
@@ -31,6 +31,7 @@ from lib.backends.text_backends.base import TEXT_TASK_TIERS, VISION_REQUIRED_TAS
 from lib.catalog import builtin_models
 from lib.catalog import query as catalog
 from lib.catalog.errors import ModelNotInCatalogError
+from lib.config.model_setting_keys import credential_key, parse_credential_id
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.config.service import (
     DEFAULT_REFERENCE_SINGLE_MAX_BYTES,
@@ -62,6 +63,9 @@ class ProviderModel:
 
     provider_id: str
     model_id: str
+    #: 指定的连线（``provider_credential.id``）；None 用该供应商的默认连线。不进 ``pair_key``：
+    #: 按模型分的存储（model_settings 等）与连线无关。
+    credential_id: int | None = None
 
     @property
     def pair_key(self) -> str:
@@ -604,6 +608,17 @@ class NoAvailableProviderError(ValueError):
     """自动推断未找到可用供应商。"""
 
 
+class CredentialNotFoundError(ValueError):
+    """设置里指定的连线（凭证）已不存在，或不属于该供应商。
+
+    不静默改用默认连线：已提交给厂商的任务绑定在提交时的账号上，换账号轮询会查不到任务。"""
+
+    def __init__(self, *, provider_id: str, credential_id: int):
+        self.provider_id = provider_id
+        self.credential_id = credential_id
+        super().__init__(f"credential {credential_id} not found for provider {provider_id}")
+
+
 class VisionCapabilityError(ValueError):
     """解析出的文本模型不支持图像输入（vision），无法执行需要 vision 的任务。
 
@@ -1141,13 +1156,17 @@ class ConfigResolver:
         async with self._open_session() as (session, svc):
             return await self._resolve_provider_config(svc, session, provider_id)
 
-    async def provider_config_with_credential(self, provider_id: str) -> tuple[dict[str, str], int | None]:
-        """获取单个供应商配置，连同叠加进来的生效凭证记录 ID；没有生效凭证时 ID 为 None。
+    async def provider_config_with_credential(
+        self, provider_id: str, credential_id: int | None = None
+    ) -> tuple[dict[str, str], int | None]:
+        """获取单个供应商配置，连同叠加进来的凭证记录 ID；没有凭证时 ID 为 None。
 
-        两者在同一次读取里取得：素材库绑定按凭证记录与它的实际内容核对，分开读会在中途切换凭证时对不上。
+        ``credential_id`` 指定连线时用那一条凭证，不存在或不属于该供应商时抛 :class:`CredentialNotFoundError`；
+        为 None 时用该供应商的默认连线。两者在同一次读取里取得：素材库绑定按凭证记录与它的实际内容核对，
+        分开读会在中途切换凭证时对不上。
         """
         async with self._open_session() as (session, svc):
-            return await self._resolve_provider_config_and_credential(svc, session, provider_id)
+            return await self._resolve_provider_config_and_credential(svc, session, provider_id, credential_id)
 
     async def all_provider_configs(self) -> dict[str, dict[str, str]]:
         """批量获取所有供应商配置。"""
@@ -1196,7 +1215,8 @@ class ConfigResolver:
 
         走四级骨架但不带项目（project=None 跳过项目层），键位不含桶层（``_VIDEO_DEFAULT_LAYERED_KEYS``）。
         """
-        return await self._resolve_layered_backend(svc, session, None, _VIDEO_DEFAULT_LAYERED_KEYS)
+        resolved = await self._resolve_layered_backend(svc, session, None, _VIDEO_DEFAULT_LAYERED_KEYS)
+        return resolved.provider_id, resolved.model_id
 
     async def _resolve_video_backend(
         self,
@@ -1209,7 +1229,8 @@ class ConfigResolver:
         走四级骨架的不定桶键位（``_VIDEO_DEFAULT_LAYERED_KEYS``），桶层缺席由骨架跳过。
         """
         project = await _load_project_snapshot(project_name)
-        return await self._resolve_layered_backend(svc, session, project, _VIDEO_DEFAULT_LAYERED_KEYS)
+        resolved = await self._resolve_layered_backend(svc, session, project, _VIDEO_DEFAULT_LAYERED_KEYS)
+        return resolved.provider_id, resolved.model_id
 
     async def _resolve_layered_backend(
         self,
@@ -1217,10 +1238,11 @@ class ConfigResolver:
         session: AsyncSession,
         project: dict | None,
         keys: _LayeredBackendKeys,
-    ) -> tuple[str, str]:
+    ) -> ProviderModel:
         """「默认 + 任务类型桶」四级解析骨架：项目桶 > 项目默认 > 全局桶 > 全局默认 > 自动推断。
 
-        媒体类型无关，各层键位由 ``_LayeredBackendKeys`` 声明（见 ``docs/adr/0054``）。项目层
+        媒体类型无关，各层键位由 ``_LayeredBackendKeys`` 声明（见 ``docs/adr/0054``）。取到模型的那一层同时给出
+        连线：同层的 ``<键>_credential_id`` 旁键（见 ``lib.config.model_setting_keys``），没有就是默认连线。项目层
         字段兼容裸供应商覆盖（补该供应商可用的默认模型，已下线或被用户停用的不算，补不出时报错）；全局层要求 ``provider/model``
         完整形态。payload 层与运行时身份收敛（如视频自定义供应商的有效身份收敛）不属于
         骨架，由各媒体的调用方在骨架外处理。
@@ -1230,28 +1252,28 @@ class ConfigResolver:
                 if project_key is None:
                     continue
                 raw = project.get(project_key)
+                credential_id = parse_credential_id(project.get(credential_key(project_key)))
                 provider = _bare_provider(raw)
                 if provider is None:
                     pair = _split_pair(raw)
                     if pair is not None:
-                        return pair
+                        return ProviderModel(*pair, credential_id=credential_id)
                     continue
                 default = await builtin_models.default_builtin_model(session, provider, keys.media_type)
                 if default is not None:
-                    return provider, default
+                    return ProviderModel(provider, default, credential_id=credential_id)
                 _reject_bare_builtin_without_default(provider, keys.media_type)
         settings = await svc.get_all_settings()
-        if keys.global_bucket_key is not None:
-            raw = settings.get(keys.global_bucket_key, "")
+        for global_key in (keys.global_bucket_key, keys.global_default_key):
+            if global_key is None:
+                continue
+            raw = settings.get(global_key, "")
             if "/" in raw:
                 provider_id, model_id = raw.split("/", 1)
-                return provider_id, model_id
-        if keys.global_default_key is not None:
-            raw = settings.get(keys.global_default_key, "")
-            if "/" in raw:
-                provider_id, model_id = raw.split("/", 1)
-                return provider_id, model_id
-        return await self._auto_resolve_backend(svc, session, keys.media_type, keys.generation_type)
+                return ProviderModel(
+                    provider_id, model_id, credential_id=parse_credential_id(settings.get(credential_key(global_key)))
+                )
+        return ProviderModel(*await self._auto_resolve_backend(svc, session, keys.media_type, keys.generation_type))
 
     async def _resolve_image_provider_model(
         self,
@@ -1279,12 +1301,13 @@ class ConfigResolver:
             if provider_id is not None:
                 model = await _payload_model_or_default(session, payload.get("image_model"), provider_id, "image")
                 if model is not None:
-                    selected = ProviderModel(provider_id, model)
+                    selected = ProviderModel(
+                        provider_id,
+                        model,
+                        credential_id=parse_credential_id(payload.get(credential_key("image_provider"))),
+                    )
         if selected is None:
-            provider_id, model_id = await self._resolve_layered_backend(
-                svc, session, project, _IMAGE_LAYERED_KEYS[generation_type]
-            )
-            selected = ProviderModel(provider_id, model_id)
+            selected = await self._resolve_layered_backend(svc, session, project, _IMAGE_LAYERED_KEYS[generation_type])
         await self._ensure_image_bucket_capability(session, selected, generation_type)
         return selected
 
@@ -1347,9 +1370,14 @@ class ConfigResolver:
         直接报错，不让豁免落到按当前配置解析出的身份上。
         """
         pinned = _payload_video_pinned_pair(payload, generation_type) if payload else None
-        if pinned is not None:
+        if pinned is not None and payload is not None:
             pinned_generation_type, pair = pinned
-            selected = ProviderModel(*pair)
+            selected = ProviderModel(
+                *pair,
+                credential_id=parse_credential_id(
+                    payload.get(credential_key(f"video_provider_{pinned_generation_type}"))
+                ),
+            )
             await self._ensure_video_identity_resolvable(
                 session, selected, pinned_generation_type, submitted_job=submitted_job
             )
@@ -1359,14 +1387,9 @@ class ConfigResolver:
                 "续跑已提交的视频任务须在 payload 里锁定提交时的执行身份（video_provider_<generation_type>）"
             )
         if generation_type is None:
-            provider_id, model_id = await self._resolve_layered_backend(
-                svc, session, project, _VIDEO_DEFAULT_LAYERED_KEYS
-            )
-            return await self._resolve_effective_video_provider_model(session, ProviderModel(provider_id, model_id))
-        provider_id, model_id = await self._resolve_layered_backend(
-            svc, session, project, _VIDEO_LAYERED_KEYS[generation_type]
-        )
-        selected = ProviderModel(provider_id, model_id)
+            selected = await self._resolve_layered_backend(svc, session, project, _VIDEO_DEFAULT_LAYERED_KEYS)
+            return await self._resolve_effective_video_provider_model(session, selected)
+        selected = await self._resolve_layered_backend(svc, session, project, _VIDEO_LAYERED_KEYS[generation_type])
         await self._ensure_video_bucket_capability(session, selected, generation_type)
         return selected
 
@@ -1511,14 +1534,15 @@ class ConfigResolver:
             )
         except ValueError as exc:
             raise ValueError(f"custom model not found: {selected.provider_id}/{selected.model_id}") from exc
-        return ProviderModel(selected.provider_id, default_model.model_id)
+        return replace(selected, model_id=default_model.model_id)
 
     async def _resolve_default_audio_backend(self, svc: ConfigService, session: AsyncSession) -> tuple[str, str]:
         """仅全局层解析音频默认 backend：全局默认键 > 自动推断。
 
         走四级骨架但不带项目（project=None 跳过项目层）。
         """
-        return await self._resolve_layered_backend(svc, session, None, _AUDIO_LAYERED_KEYS)
+        resolved = await self._resolve_layered_backend(svc, session, None, _AUDIO_LAYERED_KEYS)
+        return resolved.provider_id, resolved.model_id
 
     async def _resolve_audio_provider_model(
         self,
@@ -1537,9 +1561,12 @@ class ConfigResolver:
             if provider_id is not None:
                 model = await _payload_model_or_default(session, payload.get("audio_model"), provider_id, "audio")
                 if model is not None:
-                    return ProviderModel(provider_id, model)
-        provider_id, model_id = await self._resolve_layered_backend(svc, session, project, _AUDIO_LAYERED_KEYS)
-        return ProviderModel(provider_id, model_id)
+                    return ProviderModel(
+                        provider_id,
+                        model,
+                        credential_id=parse_credential_id(payload.get(credential_key("audio_provider"))),
+                    )
+        return await self._resolve_layered_backend(svc, session, project, _AUDIO_LAYERED_KEYS)
 
     async def _resolve_video_capabilities_from_project(
         self,
@@ -1770,7 +1797,8 @@ class ConfigResolver:
 
         走四级骨架但不带项目（project=None 跳过项目层）。全局桶无值时回退全局默认键。
         """
-        return await self._resolve_layered_backend(svc, session, None, _IMAGE_LAYERED_KEYS[generation_type])
+        resolved = await self._resolve_layered_backend(svc, session, None, _IMAGE_LAYERED_KEYS[generation_type])
+        return resolved.provider_id, resolved.model_id
 
     async def _resolve_provider_config(
         self,
@@ -1786,14 +1814,20 @@ class ConfigResolver:
         svc: ConfigService,
         session: AsyncSession,
         provider_id: str,
+        credential_id: int | None = None,
     ) -> tuple[dict[str, str], int | None]:
         config = await svc.get_provider_config(provider_id)
         cred_repo = CredentialRepository(session)
-        active = await cred_repo.get_active(provider_id)
-        if active:
+        if credential_id is None:
+            credential = await cred_repo.get_active(provider_id)
+        else:
+            credential = await cred_repo.get_by_id(credential_id)
+            if credential is None or credential.provider != provider_id:
+                raise CredentialNotFoundError(provider_id=provider_id, credential_id=credential_id)
+        if credential:
             # 凭证叠加会探测 Vertex 凭证文件是否存在，放进工作线程。
-            await asyncio.to_thread(active.overlay_config, config)
-        return config, active.id if active else None
+            await asyncio.to_thread(credential.overlay_config, config)
+        return config, credential.id if credential else None
 
     async def _resolve_reference_payload_limits(
         self,
@@ -1836,7 +1870,7 @@ class ConfigResolver:
         self,
         task_type: TextTaskType,
         project_name: str | None = None,
-    ) -> tuple[str, str]:
+    ) -> ProviderModel:
         """按任务档位解析文本 backend。
 
         优先级（项目优先）：项目档位 > 项目默认模型 > 全局档位 > 全局默认模型 > 自动推断。
@@ -1851,12 +1885,12 @@ class ConfigResolver:
         session: AsyncSession,
         task_type: TextTaskType,
         project_name: str | None,
-    ) -> tuple[str, str]:
+    ) -> ProviderModel:
         project = await _load_project_snapshot(project_name)
         keys = _TEXT_LAYERED_KEYS[TEXT_TASK_TIERS[task_type]]
         resolved = await self._resolve_layered_backend(svc, session, project, keys)
         if task_type in VISION_REQUIRED_TASKS:
-            await self._ensure_text_model_vision_capable(session, task_type, *resolved)
+            await self._ensure_text_model_vision_capable(session, task_type, resolved.provider_id, resolved.model_id)
         return resolved
 
     async def _ensure_text_model_vision_capable(

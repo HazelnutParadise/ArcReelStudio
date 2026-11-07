@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 from lib.backends.text_backends.base import TextTaskType
-from lib.config.resolver import ConfigResolver
+from lib.config.resolver import ConfigResolver, ProviderModel
 from lib.infra.app_data_dir import app_data_dir
 from lib.project.project_migrations import CURRENT_SCHEMA_VERSION
 from lib.project.project_migrations.runner import migrate_project_dir
@@ -43,13 +43,11 @@ async def test_schema_16_project_with_retired_flash_lite_resolves_the_formal_id(
     assert [path.name for path in project_dir.glob("project.json.bak.v16-*")]
 
     resolver = ConfigResolver(db_factory)
-    assert await resolver.text_backend_for_task(TextTaskType.STYLE_ANALYSIS, project_dir.name) == (
-        provider_id,
-        "gemini-3.1-flash-lite",
+    assert await resolver.text_backend_for_task(TextTaskType.STYLE_ANALYSIS, project_dir.name) == ProviderModel(
+        provider_id, "gemini-3.1-flash-lite"
     )
-    assert await resolver.text_backend_for_task(TextTaskType.SCRIPT, project_dir.name) == (
-        "gemini-aistudio",
-        "gemini-3-flash-preview",
+    assert await resolver.text_backend_for_task(TextTaskType.SCRIPT, project_dir.name) == ProviderModel(
+        "gemini-aistudio", "gemini-3-flash-preview"
     )
 
 

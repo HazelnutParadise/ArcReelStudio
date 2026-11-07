@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from lib.catalog import query as catalog
 from lib.config.model_setting_keys import MODEL_SETTING_MEDIA_TYPES
 from lib.config.registry import PROVIDER_REGISTRY
+from lib.db.repositories.credential_repository import CredentialRepository
 from lib.infra.api_errors import BadRequestError
 
 
@@ -42,3 +45,25 @@ def validate_backend_value(value: str, field_name: str) -> None:
                 expected=expected_media_type,
                 actual=model_info.media_type,
             ).with_diagnostic(f"field: {field_name}")
+
+
+async def validate_backend_credential(
+    session: AsyncSession, backend_value: str, credential_id: int | None
+) -> int | None:
+    """校验与 ``backend_value``（同一字段的 ``provider/model``）同层的连线旁键，返回要存的凭证 id。
+
+    None 表示用该供应商的默认连线。指定的连线必须存在、属于同一个内置供应商；自定义供应商的凭证就在供应商本身，
+    没有可选的连线。
+    """
+    if credential_id is None:
+        return None
+    provider_id = backend_value.split("/", 1)[0].strip() if backend_value else ""
+    credential = await CredentialRepository(session).get_by_id(credential_id)
+    if (
+        not provider_id
+        or provider_id not in PROVIDER_REGISTRY
+        or credential is None
+        or credential.provider != provider_id
+    ):
+        raise BadRequestError("credential_not_for_provider", provider=provider_id or "-", credential_id=credential_id)
+    return credential_id

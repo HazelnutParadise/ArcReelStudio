@@ -26,14 +26,15 @@ async def create_text_backend_for_task(
     resolver = ConfigResolver(async_session_factory)
 
     async with resolver.session() as r:
-        provider_id, model_id = await r.text_backend_for_task(task_type, project_name)
+        resolved = await r.text_backend_for_task(task_type, project_name)
         backend = await assemble_backend(
-            provider_id=provider_id,
+            provider_id=resolved.provider_id,
             media_type="text",
-            model_id=model_id,
+            model_id=resolved.model_id,
             resolver=r,
+            credential_id=resolved.credential_id,
         )
-    return backend, provider_id
+    return backend, resolved.provider_id
 
 
 async def text_model_output_limit(provider_id: str, model_id: str) -> OutputLimitFacts:

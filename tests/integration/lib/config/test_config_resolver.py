@@ -9,6 +9,7 @@ from lib.catalog.query import factory_snapshot
 from lib.config.resolver import (
     _VIDEO_LAYERED_KEYS,
     ConfigResolver,
+    ProviderModel,
     VideoBucketCapabilityError,
     VideoGenerationType,
     caps_generation_mode,
@@ -1181,15 +1182,15 @@ class TestLayeredBackendSkeleton:
         result = await resolver._resolve_layered_backend(fake_svc, None, project, self._keys())
 
         if p_bucket:
-            assert result == ("p-bucket", "m")
+            assert (result.provider_id, result.model_id) == ("p-bucket", "m")
         elif p_def:
-            assert result == ("p-def", "m")
+            assert (result.provider_id, result.model_id) == ("p-def", "m")
         elif g_bucket:
-            assert result == ("g-bucket", "m")
+            assert (result.provider_id, result.model_id) == ("g-bucket", "m")
         elif g_def:
-            assert result == ("g-def", "m")
+            assert (result.provider_id, result.model_id) == ("g-def", "m")
         else:
-            assert result[0] == "gemini-aistudio"  # 全层缺失 → 自动推断到 ready provider
+            assert result.provider_id == "gemini-aistudio"  # 全层缺失 → 自动推断到 ready provider
 
     async def test_none_keys_skip_that_level(self):
         """键位为 None 的层直接跳过——项目默认层未声明时项目里的同名字段不生效。"""
@@ -1198,21 +1199,42 @@ class TestLayeredBackendSkeleton:
         project = {"img_default": "p-def/m"}
         keys = self._keys(project_bucket_key=None, project_default_key=None)
         result = await resolver._resolve_layered_backend(fake_svc, None, project, keys)
-        assert result == ("g-def", "m")
+        assert (result.provider_id, result.model_id) == ("g-def", "m")
 
     async def test_empty_global_bucket_follows_default(self):
         """全局桶键存在但无有效值 → 回退全局默认层（docs/adr/0054）。"""
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"global_bucket": "", "global_default": "g-def/m"})
         result = await resolver._resolve_layered_backend(fake_svc, None, None, self._keys())
-        assert result == ("g-def", "m")
+        assert (result.provider_id, result.model_id) == ("g-def", "m")
 
     async def test_project_bare_provider_supported(self, db_session):
         """项目层兼容裸 provider 覆盖（补该 provider 默认 model），与既有图片/视频项目字段语义一致。"""
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"global_default": "g-def/m"})
         result = await resolver._resolve_layered_backend(fake_svc, db_session, {"img_bucket": "openai"}, self._keys())
-        assert result == ("openai", "gpt-image-2")
+        assert (result.provider_id, result.model_id) == ("openai", "gpt-image-2")
+
+    async def test_the_connection_comes_from_the_layer_that_supplied_the_model(self):
+        """连线随取到模型的那一层走：项目桶给了模型，就用项目桶旁边的连线，不拿全局层的。"""
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        fake_svc = _FakeConfigService(settings={"global_default": "g-def/m", "global_default_credential_id": "9"})
+        project = {"img_bucket": "p-bucket/m", "img_bucket_credential_id": 4}
+        result = await resolver._resolve_layered_backend(fake_svc, None, project, self._keys())
+        assert result == ProviderModel("p-bucket", "m", credential_id=4)
+
+    async def test_a_model_without_a_connection_uses_the_provider_default(self):
+        """取到模型的那一层没指定连线，就用默认连线，不往下层借。"""
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        fake_svc = _FakeConfigService(settings={"global_bucket_credential_id": "9", "global_default": "g-def/m"})
+        result = await resolver._resolve_layered_backend(fake_svc, None, {"img_default": "p-def/m"}, self._keys())
+        assert result == ProviderModel("p-def", "m", credential_id=None)
+
+    async def test_the_global_layer_reads_its_own_connection(self):
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        fake_svc = _FakeConfigService(settings={"global_default": "g-def/m", "global_default_credential_id": "9"})
+        result = await resolver._resolve_layered_backend(fake_svc, None, None, self._keys())
+        assert result == ProviderModel("g-def", "m", credential_id=9)
 
 
 class TestResolveVideoBackend:
@@ -1683,7 +1705,7 @@ class TestTextBackendTierResolution:
         with patch("lib.config.resolver.get_project_manager") as mock_pm:
             mock_pm.return_value.load_project.return_value = project
             result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.SCRIPT, "demo")
-        assert result == expected
+        assert (result.provider_id, result.model_id) == expected
 
     async def test_no_project_name_skips_project_levels(self):
         from unittest.mock import MagicMock
@@ -1693,7 +1715,7 @@ class TestTextBackendTierResolution:
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"text_backend_complex": "g-tier/m", "default_text_backend": "g-def/m"})
         result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.SCRIPT, None)
-        assert result == ("g-tier", "m")
+        assert (result.provider_id, result.model_id) == ("g-tier", "m")
 
     async def test_simple_tier_tasks_read_simple_key(self):
         """OVERVIEW / STYLE_ANALYSIS 归简单档，读 text_backend_simple 而非复杂档键。"""
@@ -1705,7 +1727,7 @@ class TestTextBackendTierResolution:
         fake_svc = _FakeConfigService(settings={"text_backend_simple": "simple/m", "text_backend_complex": "complex/m"})
         for task in (TextTaskType.OVERVIEW, TextTaskType.STYLE_ANALYSIS):
             result = await resolver._resolve_text_backend(fake_svc, MagicMock(), task, None)
-            assert result == ("simple", "m")
+            assert (result.provider_id, result.model_id) == ("simple", "m")
 
     async def test_script_task_reads_complex_key(self):
         from unittest.mock import MagicMock
@@ -1715,7 +1737,7 @@ class TestTextBackendTierResolution:
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"text_backend_simple": "simple/m", "text_backend_complex": "complex/m"})
         result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.SCRIPT, None)
-        assert result == ("complex", "m")
+        assert (result.provider_id, result.model_id) == ("complex", "m")
 
     async def test_malformed_value_without_slash_falls_through(self):
         """无 "/" 的脏值视为未设置，落到下一级。"""
@@ -1726,7 +1748,7 @@ class TestTextBackendTierResolution:
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"text_backend_complex": "no-slash", "default_text_backend": "g-def/m"})
         result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.SCRIPT, None)
-        assert result == ("g-def", "m")
+        assert (result.provider_id, result.model_id) == ("g-def", "m")
 
     async def test_project_bare_provider_pins_its_default_model(self, db_session):
         """项目档位写裸 provider（写边界放行的合法值）→ pin 住该 provider 补默认 model，
@@ -1738,7 +1760,7 @@ class TestTextBackendTierResolution:
         with patch("lib.config.resolver.get_project_manager") as mock_pm:
             mock_pm.return_value.load_project.return_value = {"text_backend_complex": "openai"}
             result = await resolver._resolve_text_backend(fake_svc, db_session, TextTaskType.SCRIPT, "demo")
-        assert result == ("openai", "gpt-5.4-mini")
+        assert (result.provider_id, result.model_id) == ("openai", "gpt-5.4-mini")
 
 
 class TestStyleAnalysisVisionGuard:
@@ -1766,7 +1788,7 @@ class TestStyleAnalysisVisionGuard:
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"text_backend_simple": f"{provider_id}/gemini-3.1-flash-lite"})
         result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.STYLE_ANALYSIS, None)
-        assert result == (provider_id, "gemini-3.1-flash-lite")
+        assert (result.provider_id, result.model_id) == (provider_id, "gemini-3.1-flash-lite")
 
     async def test_accepts_registry_model_with_vision(self):
         from unittest.mock import MagicMock
@@ -1776,7 +1798,7 @@ class TestStyleAnalysisVisionGuard:
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"text_backend_simple": "gemini-aistudio/gemini-3-flash-preview"})
         result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.STYLE_ANALYSIS, None)
-        assert result == ("gemini-aistudio", "gemini-3-flash-preview")
+        assert (result.provider_id, result.model_id) == ("gemini-aistudio", "gemini-3-flash-preview")
 
     async def test_unknown_model_passes_without_guess(self):
         """registry 之外（自定义供应商等）无逐模型能力事实，放行不猜测。"""
@@ -1787,7 +1809,7 @@ class TestStyleAnalysisVisionGuard:
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"text_backend_simple": "custom-abc/some-model"})
         result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.STYLE_ANALYSIS, None)
-        assert result == ("custom-abc", "some-model")
+        assert (result.provider_id, result.model_id) == ("custom-abc", "some-model")
 
     async def test_custom_model_follows_image_input_override(self, db_factory):
         """自定义供应商的文本模型：能力覆盖关掉图片输入时报错；对应不上条目且没有覆盖时放行。"""
@@ -1830,7 +1852,7 @@ class TestStyleAnalysisVisionGuard:
                 TextTaskType.STYLE_ANALYSIS,
                 None,
             )
-        assert result == (pid, "relay-llm")
+        assert (result.provider_id, result.model_id) == (pid, "relay-llm")
 
     @pytest.mark.parametrize("provider_id", ["gemini-aistudio", "gemini-vertex"])
     async def test_complex_tier_task_not_vision_checked(self, provider_id):
@@ -1842,7 +1864,7 @@ class TestStyleAnalysisVisionGuard:
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"text_backend_complex": f"{provider_id}/gemini-3.1-flash-lite"})
         result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.SCRIPT, None)
-        assert result == (provider_id, "gemini-3.1-flash-lite")
+        assert (result.provider_id, result.model_id) == (provider_id, "gemini-3.1-flash-lite")
 
 
 class TestProjectGenerationModeCaps:
@@ -2068,9 +2090,11 @@ class TestAutoResolvedBackendsPreview:
 
         async def _or_none(coro):
             try:
-                return await coro
+                resolved = await coro
             except ValueError:
                 return None
+            # 分层骨架回 ProviderModel，其余默认解析回 (provider, model)
+            return resolved if isinstance(resolved, tuple) else (resolved.provider_id, resolved.model_id)
 
         return {
             "t2i": await _or_none(resolver._resolve_default_image_backend(svc, session, "t2i")),
@@ -2135,3 +2159,35 @@ class TestAutoResolvedBackendsPreview:
         pid = make_provider_id(provider.id)
         assert preview == {"t2i": (pid, "t2i-m"), "i2i": (pid, "i2i-m"), "i2v": None, "r2v": None, "text": None}
         assert preview == executed
+
+
+class TestPinnedConnection:
+    """生成时按设置指定的连线取凭证；连线不存在或不属于该供应商时明确报错，不换成默认连线。"""
+
+    async def _two_accounts(self, db_factory):
+        from lib.db.repositories.credential_repository import CredentialRepository
+
+        async with db_factory() as session:
+            repo = CredentialRepository(session)
+            first = await repo.create("gemini-aistudio", "公司帳", api_key="company-key")
+            second = await repo.create("gemini-aistudio", "個人帳", api_key="personal-key")
+            other = await repo.create("openai", "OpenAI", api_key="openai-key")
+            await session.commit()
+        return first.id, second.id, other.id
+
+    async def test_without_a_connection_the_default_is_used(self, db_factory):
+        first, _, _ = await self._two_accounts(db_factory)
+        config, used = await ConfigResolver(db_factory).provider_config_with_credential("gemini-aistudio")
+        assert (config["api_key"], used) == ("company-key", first)
+
+    async def test_a_pinned_connection_supplies_its_own_key(self, db_factory):
+        _, second, _ = await self._two_accounts(db_factory)
+        config, used = await ConfigResolver(db_factory).provider_config_with_credential("gemini-aistudio", second)
+        assert (config["api_key"], used) == ("personal-key", second)
+
+    async def test_a_connection_of_another_provider_is_refused(self, db_factory):
+        from lib.config.resolver import CredentialNotFoundError
+
+        _, _, other = await self._two_accounts(db_factory)
+        with pytest.raises(CredentialNotFoundError):
+            await ConfigResolver(db_factory).provider_config_with_credential("gemini-aistudio", other)

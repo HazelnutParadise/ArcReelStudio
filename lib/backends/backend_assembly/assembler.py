@@ -8,6 +8,7 @@ backend 实例缓存留在调用方编排层、不进缝。
 from __future__ import annotations
 
 import asyncio
+import weakref
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -23,14 +24,16 @@ if TYPE_CHECKING:
     from lib.config.resolver import ConfigResolver
 
 
-async def _load_builtin_config(resolver: ConfigResolver, provider_id: str, rate_limiter: Any | None) -> LoadedConfig:
+async def _load_builtin_config(
+    resolver: ConfigResolver, provider_id: str, rate_limiter: Any | None, credential_id: int | None = None
+) -> LoadedConfig:
     """内置侧 async 装载段：查 DB/config 产出 LoadedConfig 信封。
 
     凭证 overlay 来自 db_config（resolver.provider_config）；registry meta 提供 default_base_url /
     api_model_name 来源；rate_limiter 由调用方注入（共享实例）。这一段是唯一的 await/DB 触点，
     之后 sync 构造闭包只读信封。
     """
-    db_config, credential_id = await resolver.provider_config_with_credential(provider_id)
+    db_config, credential_id = await resolver.provider_config_with_credential(provider_id, credential_id)
     return LoadedConfig(
         credentials=dict(db_config),
         provider_meta=PROVIDER_REGISTRY.get(provider_id),
@@ -49,6 +52,7 @@ async def assemble_backend(
     generation_type: str | None = None,
     submitted_job: bool = False,
     builtin_endpoint: str | None = None,
+    credential_id: int | None = None,
 ) -> Any:
     """统一构造入口。按 provider_id 是否自定义分流；未登记的内置 provider × media fail-loud。
 
@@ -60,6 +64,9 @@ async def assemble_backend(
 
     ``builtin_endpoint`` 是调用方已经定下的内置调用端点：传入时内置供应商按它构造，调用方据同一次读取冻结的续跑守卫
     与构造出的实例一致；为 None 时这里按模型挂接的端点现定（:func:`builtin_model_endpoint`）。自定义供应商不读它。
+
+    ``credential_id`` 是设置里为这个调用处指定的连线（凭证），None 用该供应商的默认连线；自定义供应商的凭证就在
+    供应商本身，不读它。
     """
     if is_custom_provider(provider_id):
         from lib.custom_provider.loader import load_custom_backend
@@ -80,13 +87,36 @@ async def assemble_backend(
     # 先定下供应商模型挂接的内置调用端点，再由端点构造：供应商给凭证，端点决定请求
     endpoint = builtin_endpoint or builtin_model_endpoint(provider_id, media_type, model_id)
     spec = PROVIDER_ENDPOINT_SPECS[(provider_id, endpoint)]
-    config = await _load_builtin_config(resolver, provider_id, rate_limiter)
+    config = await _load_builtin_config(resolver, provider_id, rate_limiter, credential_id)
     # 构造闭包可能读凭证文件（Vertex 服务账号 JSON），放线程里跑，不阻塞事件循环。工作线程里没有事件循环，
     # backend 构造时不能创建要求事件循环的 SDK 客户端（xai_sdk.AsyncClient 的做法见 grok_shared.LazyGrokClient）。
     backend = await asyncio.to_thread(spec.build_backend, config, model_id)
     if media_type == "video":
         backend = _with_model_entry(backend, provider_id, model_id)
+    _remember_credential(backend, config.credential_id)
     return backend
+
+
+#: 内置供应商的 backend 实例 → 构造它时实际用的连线（凭证 id）。记账按它记下这次调用花在哪个账号上。
+_ASSEMBLED_CREDENTIALS: weakref.WeakKeyDictionary[Any, int] = weakref.WeakKeyDictionary()
+
+
+def _remember_credential(backend: Any, credential_id: int | None) -> None:
+    if credential_id is None:
+        return
+    try:
+        _ASSEMBLED_CREDENTIALS[backend] = credential_id
+    except TypeError:
+        # 不支持弱引用的实例（``__slots__`` 且无 ``__weakref__``）：记不下连线，记账留空
+        return
+
+
+def assembled_credential_id(backend: Any) -> int | None:
+    """``backend`` 构造时实际用的连线（含默认连线）；自定义供应商或没有凭证记录时为 None。"""
+    try:
+        return _ASSEMBLED_CREDENTIALS.get(backend)
+    except TypeError:
+        return None
 
 
 async def callable_model_key(

@@ -78,6 +78,7 @@ MESSAGES = {
     # Task failure reasons (GenerationWorker stores a code + params; tasks API renders per locale on read)
     "task_fail_provider_unsupported_media": "Provider {provider_id} does not support {media_type} generation",
     "task_fail_provider_rejected": "The provider rejected this generation request (HTTP {status})",
+    "task_fail_credential_not_found": "The connection chosen for “{provider}” in settings has been deleted. Choose a connection again in settings.",
     "task_fail_dispatch_provider_requeue_failed": "The task provider changed from {claimed_provider_id} to {actual_provider_id}, but the task could not be requeued for a new slot; please retry",
     "task_fail_project_deleted_during_task": "The project was deleted while the task was running; the generated result was not saved",
     "task_fail_restart_lost_image": "The image task was interrupted by a service restart and cannot be resumed; please retry manually to avoid duplicate billing",
@@ -734,6 +735,8 @@ MESSAGES = {
     "collab_error_episode_source_derived": "This episode's source comes from episode planning and can't be edited here",
     "collab_error_episode_source_empty": "The source text can't be empty",
     "collab_error_revision_conflict": "The script was just changed by something else. Try again shortly",
+    "credential_in_use": "{count} settings still use this connection. Confirm before deleting it.",
+    "credential_not_for_provider": "The selected connection doesn't belong to “{provider}” or has been deleted. Choose a connection again.",
     "collab_error_generic": "This content couldn't be saved to the project: {detail}",
     "collab_error_invalid_settings": "A setting has a value in the wrong format and wasn't saved. Check the option you just changed.",
     "claude_login_cli_not_found": "The bundled Claude CLI was not found, so the subscription can't be signed in",

@@ -13,6 +13,7 @@ import pytest
 
 from lib.backends.text_backends.base import TextTaskType
 from lib.backends.text_backends.factory import create_text_backend_for_task
+from lib.config.resolver import ProviderModel
 from tests.fakes import captured_backend_construction
 
 
@@ -32,7 +33,7 @@ def _make_mock_resolver(**async_methods):
 
 async def test_resolved_provider_model_and_credentials_reach_the_spec():
     mock_resolver = _make_mock_resolver(
-        text_backend_for_task=("ark", "doubao-seed-2-1-lite-260915"),
+        text_backend_for_task=ProviderModel("ark", "doubao-seed-2-1-lite-260915"),
         provider_config_with_credential=({"api_key": "ark-key"}, None),
     )
 
@@ -69,7 +70,7 @@ async def test_returns_resolver_provider_id_not_registry_backend_name(
     provider_id: str, model: str, credentials: dict, registry_backend: str
 ):
     mock_resolver = _make_mock_resolver(
-        text_backend_for_task=(provider_id, model),
+        text_backend_for_task=ProviderModel(provider_id, model),
         provider_config_with_credential=(credentials, None),
     )
 
@@ -81,3 +82,19 @@ async def test_returns_resolver_provider_id_not_registry_backend_name(
 
     assert returned_id == provider_id
     assert [r["backend"] for r in built] == [registry_backend]
+
+
+async def test_a_connection_pinned_in_settings_is_the_one_whose_credentials_are_used():
+    mock_resolver = _make_mock_resolver(
+        text_backend_for_task=ProviderModel("ark", "doubao-seed-2-1-lite-260915", credential_id=7),
+        provider_config_with_credential=({"api_key": "second-account-key"}, 7),
+    )
+
+    with (
+        patch("lib.backends.text_backends.factory.ConfigResolver", return_value=mock_resolver),
+        captured_backend_construction() as built,
+    ):
+        await create_text_backend_for_task(TextTaskType.OVERVIEW, "my-project")
+
+    mock_resolver.provider_config_with_credential.assert_awaited_once_with("ark", 7)
+    assert built[0]["kwargs"]["api_key"] == "second-account-key"

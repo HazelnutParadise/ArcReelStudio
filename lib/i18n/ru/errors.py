@@ -78,6 +78,7 @@ MESSAGES = {
     # Task failure reasons (GenerationWorker stores a code + params; tasks API renders per locale on read)
     "task_fail_provider_unsupported_media": "Провайдер {provider_id} не поддерживает генерацию {media_type}",
     "task_fail_provider_rejected": "Провайдер отклонил этот запрос на генерацию (HTTP {status})",
+    "task_fail_credential_not_found": "Подключение, выбранное для «{provider}» в настройках, удалено. Выберите подключение заново в настройках.",
     "task_fail_dispatch_provider_requeue_failed": "Провайдер задачи изменился с {claimed_provider_id} на {actual_provider_id}, но задачу не удалось вернуть в очередь за новым слотом. Повторите попытку",
     "task_fail_project_deleted_during_task": "Проект удалён во время выполнения задачи; сгенерированный результат не сохранён",
     "task_fail_restart_lost_image": "Задача генерации изображения прервалась из-за перезапуска сервиса и не может быть продолжена; повторите попытку вручную, чтобы избежать повторного списания",
@@ -732,6 +733,8 @@ MESSAGES = {
     "collab_error_episode_source_derived": "Исходный текст этой серии берётся из плана серий и не редактируется здесь",
     "collab_error_episode_source_empty": "Исходный текст не может быть пустым",
     "collab_error_revision_conflict": "Сценарий только что изменили. Повторите попытку чуть позже",
+    "credential_in_use": "Это подключение всё ещё используется в {count} настройках. Подтвердите удаление.",
+    "credential_not_for_provider": "Выбранное подключение не относится к «{provider}» или было удалено. Выберите подключение заново.",
     "collab_error_generic": "Не удалось сохранить этот фрагмент в проект: {detail}",
     "collab_error_invalid_settings": "Значение настройки в неверном формате и не сохранено. Проверьте параметр, который вы только что изменили.",
     "claude_login_cli_not_found": "Встроенный Claude CLI не найден, войти в подписку невозможно",

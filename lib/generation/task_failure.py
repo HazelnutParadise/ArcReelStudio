@@ -144,6 +144,8 @@ FAILURE_CODE_KEYS: dict[str, str] = {
     # 译文模板：它不该被翻译，读侧按独立字段原样展示。
     "provider_rejected": "task_fail_provider_rejected",
     "dispatch_provider_requeue_failed": "task_fail_dispatch_provider_requeue_failed",
+    # 设置里指定的连线（凭证）已删除或不属于该供应商：不换账号，由用户重新选择连线。
+    "credential_not_found": "task_fail_credential_not_found",
     # 项目在任务执行期间被删除：任务放弃落盘，见 lib.project.task_project_claim。
     "project_deleted_during_task": "task_fail_project_deleted_during_task",
     "restart_lost_image": "task_fail_restart_lost_image",

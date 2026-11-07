@@ -54,7 +54,7 @@ if TYPE_CHECKING:
 
 rate_limiter = get_shared_rate_limiter()
 
-_CacheKey = tuple[str, str, str | None, str | None, str | None]
+_CacheKey = tuple[str, str, str | None, str | None, str | None, int | None]
 
 
 class _BackendCache:
@@ -126,6 +126,7 @@ async def _get_or_create_backend(
     generation_type: str | None = None,
     *,
     submitted_job: bool = False,
+    credential_id: int | None = None,
 ) -> tuple[Any, str | None]:
     """组 key + 提供 factory closure，缓存纪律统一委托 :class:`_BackendCache`；返回 backend 与构造它的内置调用端点。
 
@@ -164,10 +165,12 @@ async def _get_or_create_backend(
             generation_type=generation_type,
             submitted_job=submitted_job,
             builtin_endpoint=endpoint,
+            credential_id=credential_id,
         )
 
+    # 连线进缓存键：同一供应商的两个账号各自一个实例，不会拿错账号的客户端
     backend = await _backend_cache.get_or_create(
-        (media_type, provider_name, effective_model, generation_type, endpoint), _factory
+        (media_type, provider_name, effective_model, generation_type, endpoint, credential_id), _factory
     )
     return backend, endpoint
 
@@ -179,6 +182,7 @@ async def _get_or_create_video_backend(
     *,
     default_video_model: str | None = None,
     submitted_job: bool = False,
+    credential_id: int | None = None,
 ) -> tuple[Any, str | None]:
     """获取或创建 VideoBackend 实例（带缓存），连同构造它的内置调用端点。
 
@@ -188,7 +192,13 @@ async def _get_or_create_video_backend(
     submitted_job: 续跑已提交给厂商的任务，见 :class:`VideoLaneRequest`。
     """
     backend, endpoint = await _get_or_create_backend(
-        "video", provider_name, provider_settings, resolver, default_video_model, submitted_job=submitted_job
+        "video",
+        provider_name,
+        provider_settings,
+        resolver,
+        default_video_model,
+        submitted_job=submitted_job,
+        credential_id=credential_id,
     )
     return backend, endpoint
 
@@ -200,6 +210,7 @@ async def _get_or_create_image_backend(
     *,
     default_image_model: str | None = None,
     generation_type: Literal["t2i", "i2i"] | None = None,
+    credential_id: int | None = None,
 ):
     """获取或创建 ImageBackend 实例（带缓存）。
 
@@ -207,7 +218,13 @@ async def _get_or_create_image_backend(
     传到 ``load_custom_backend``，也进缓存 key（t2i 与 i2i 不互相命中）。
     """
     backend, _ = await _get_or_create_backend(
-        "image", provider_name, provider_settings, resolver, default_image_model, generation_type
+        "image",
+        provider_name,
+        provider_settings,
+        resolver,
+        default_image_model,
+        generation_type,
+        credential_id=credential_id,
     )
     return backend
 
@@ -218,9 +235,12 @@ async def _get_or_create_audio_backend(
     resolver: ConfigResolver,
     *,
     default_audio_model: str | None = None,
+    credential_id: int | None = None,
 ):
     """获取或创建 AudioBackend 实例（带缓存）。audio 无媒体特例：自定义 + 简单族统一经构造缝。"""
-    backend, _ = await _get_or_create_backend("audio", provider_name, provider_settings, resolver, default_audio_model)
+    backend, _ = await _get_or_create_backend(
+        "audio", provider_name, provider_settings, resolver, default_audio_model, credential_id=credential_id
+    )
     return backend
 
 
@@ -465,6 +485,7 @@ async def resolve_generation_context(
                 r,
                 default_image_model=resolved.model_id or None,
                 generation_type=image.generation_type,
+                credential_id=resolved.credential_id,
             )
             image_provider_model = resolved
             image_resolution = await r.resolve_resolution(project, resolved.provider_id, image_backend.model)
@@ -482,6 +503,7 @@ async def resolve_generation_context(
                 r,
                 default_video_model=resolved.model_id or None,
                 submitted_job=video.submitted_job,
+                credential_id=resolved.credential_id,
             )
             actual_model = video_backend.model
             request_facts: VideoRequestFacts | VideoRequestFactsFailure | None = None
@@ -522,6 +544,7 @@ async def resolve_generation_context(
                 {},
                 r,
                 default_audio_model=resolved.model_id or None,
+                credential_id=resolved.credential_id,
             )
             audio_result = AudioLaneResult(
                 provider_model=resolved,

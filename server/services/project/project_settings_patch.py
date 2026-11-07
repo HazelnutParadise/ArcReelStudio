@@ -10,6 +10,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, BeforeValidator, Field
 
+from lib.config.model_setting_keys import PROJECT_MODEL_SETTING_KEYS, credential_key
 from lib.episode.episode_target_duration import (
     EPISODE_TARGET_DURATION_FIELD,
     MAX_EPISODE_TARGET_DURATION,
@@ -121,12 +122,24 @@ class ProjectSettingsPatch(BaseModel):
     style_template_id: str | None = None
     clear_style_image: bool | None = None
     model_settings: dict[str, dict[str, str | None]] | None = None
+    # 各模型字段同层的「连线」旁键（见 lib.config.model_setting_keys）：null = 该供应商的默认连线
+    default_text_backend_credential_id: int | None = None
+    text_backend_simple_credential_id: int | None = None
+    text_backend_complex_credential_id: int | None = None
+    default_image_backend_credential_id: int | None = None
+    image_provider_t2i_credential_id: int | None = None
+    image_provider_i2i_credential_id: int | None = None
+    video_backend_credential_id: int | None = None
+    video_provider_i2v_credential_id: int | None = None
+    video_provider_r2v_credential_id: int | None = None
+    audio_backend_credential_id: int | None = None
 
 
 def apply_project_settings_patch(project: dict, patch: ProjectSettingsPatch) -> None:
     """把 ``patch`` 里出现的字段写进 ``project``（原地修改）；不合规时抛 ``ApiError``，调用方整次放弃。"""
     fields = patch.model_fields_set
     is_ad = project.get("content_mode") == "ad"
+    providers_before = {key: _provider_of(project.get(key)) for key in PROJECT_MODEL_SETTING_KEYS}
     for field in PROJECT_BACKEND_FIELDS:
         if field in fields:
             value = getattr(patch, field)
@@ -211,6 +224,30 @@ def apply_project_settings_patch(project: dict, patch: ProjectSettingsPatch) -> 
             project.pop("model_settings", None)
         else:
             project["model_settings"] = patch.model_settings
+    _apply_credentials(project, patch, providers_before)
+
+
+def _apply_credentials(project: dict, patch: ProjectSettingsPatch, providers_before: dict[str, str]) -> None:
+    """写入连线旁键；字段换了供应商又没有重选连线时回到默认连线。
+
+    指定的连线是否属于该供应商要查数据库，由调用方在写入前核对（``validate_backend_credential``）；生成时连线已不存在
+    同样会明确报错（``CredentialNotFoundError``）。
+    """
+    fields = patch.model_fields_set
+    for key in PROJECT_MODEL_SETTING_KEYS:
+        cred_key = credential_key(key)
+        if cred_key in fields:
+            value = getattr(patch, cred_key)
+            if value is None or not _provider_of(project.get(key)):
+                project.pop(cred_key, None)
+            else:
+                project[cred_key] = value
+        elif _provider_of(project.get(key)) != providers_before[key]:
+            project.pop(cred_key, None)
+
+
+def _provider_of(value: object) -> str:
+    return value.split("/", 1)[0].strip() if isinstance(value, str) and value else ""
 
 
 def _apply_narration(project: dict, patch: ProjectSettingsPatch) -> None:
@@ -246,3 +283,21 @@ def _apply_narration(project: dict, patch: ProjectSettingsPatch) -> None:
         validate_project_narration_config(project)
     except NarrationConfigError as exc:
         raise UnprocessableError(exc.code) from exc
+
+
+async def validate_patch_credentials(patch: ProjectSettingsPatch, current: dict) -> None:
+    """写入前核对补丁里指定的连线属于同一字段（补丁里的新值，否则项目现值）所选的供应商；不合规时抛 ``ApiError``。"""
+    from lib.db import async_session_factory
+    from server.services.backend_values import validate_backend_credential
+
+    fields = patch.model_fields_set
+    pending = [key for key in PROJECT_MODEL_SETTING_KEYS if getattr(patch, credential_key(key)) is not None]
+    pending = [key for key in pending if credential_key(key) in fields]
+    if not pending:
+        return
+    async with async_session_factory() as session:
+        for key in pending:
+            backend_value = getattr(patch, key) if key in fields else current.get(key)
+            await validate_backend_credential(
+                session, backend_value if isinstance(backend_value, str) else "", getattr(patch, credential_key(key))
+            )

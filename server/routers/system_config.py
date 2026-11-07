@@ -38,7 +38,12 @@ from lib.backends.http_status_errors import raise_for_status_redacted
 from lib.catalog import query as catalog
 from lib.catalog.errors import ModelNotInCatalogError
 from lib.catalog.lifecycle import Lifecycle, entry_lifecycle
-from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS, MODEL_SETTING_MEDIA_TYPES
+from lib.config.model_setting_keys import (
+    GLOBAL_MODEL_SETTING_KEYS,
+    MODEL_SETTING_MEDIA_TYPES,
+    credential_key,
+    parse_credential_id,
+)
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.config.repository import mask_secret
 from lib.config.resolver import ConfigResolver
@@ -52,7 +57,7 @@ from lib.market.sources import PROXY_PREFIX_SETTING
 from lib.speech.narration_config import parse_tts_backend
 from server.dependencies import get_config_service
 from server.i18n import Locale, Translator
-from server.services.backend_values import validate_backend_value
+from server.services.backend_values import validate_backend_credential, validate_backend_value
 from server.services.project.model_references import project_model_references
 from server.services.project.narration_settings import default_narration_tts
 from server.services.tasks.generation_context import audio_backend_profile
@@ -479,6 +484,17 @@ class SystemConfigPatchRequest(BaseModel):
     default_image_backend_i2i: str | None = None
     default_text_backend: str | None = None
     default_audio_backend: str | None = None
+    # 各模型字段同层的「连线」旁键（见 lib.config.model_setting_keys）：指定用该供应商的哪一条凭证，null = 默认连线
+    default_video_backend_credential_id: int | None = None
+    default_video_backend_i2v_credential_id: int | None = None
+    default_video_backend_r2v_credential_id: int | None = None
+    default_image_backend_credential_id: int | None = None
+    default_image_backend_t2i_credential_id: int | None = None
+    default_image_backend_i2i_credential_id: int | None = None
+    default_text_backend_credential_id: int | None = None
+    default_audio_backend_credential_id: int | None = None
+    text_backend_simple_credential_id: int | None = None
+    text_backend_complex_credential_id: int | None = None
     narration_voice: str | None = None
     narration_speed: float | None = None
     # 市场源 GitHub raw 代理前缀：空串 = 直连
@@ -586,6 +602,10 @@ async def get_system_config(
         "text_backend_simple": all_s.get("text_backend_simple") or "",
         "text_backend_complex": all_s.get("text_backend_complex") or "",
         "market_github_proxy_prefix": all_s.get(PROXY_PREFIX_SETTING) or "",
+        **{
+            credential_key(key): parse_credential_id(all_s.get(credential_key(key)))
+            for key in GLOBAL_MODEL_SETTING_KEYS
+        },
     }
 
     options = await _build_options(svc, session, locale)
@@ -769,6 +789,10 @@ def _is_valid_proxy_prefix(prefix: str) -> bool:
     )
 
 
+def _provider_of(backend_value: str) -> str:
+    return backend_value.split("/", 1)[0] if backend_value else ""
+
+
 @router.patch("/system/config")
 async def patch_system_config(
     req: SystemConfigPatchRequest,
@@ -782,23 +806,22 @@ async def patch_system_config(
         patch[field_name] = getattr(req, field_name)
 
     # Validate backend references (empty string = auto-resolve)
-    for backend_key in (
-        "default_video_backend",
-        "default_video_backend_i2v",
-        "default_video_backend_r2v",
-        "default_image_backend",
-        "default_image_backend_t2i",
-        "default_image_backend_i2i",
-        "default_text_backend",
-        "default_audio_backend",
-        "text_backend_simple",
-        "text_backend_complex",
-    ):
+    current_settings = await svc.get_all_settings()
+    for backend_key in GLOBAL_MODEL_SETTING_KEYS:
+        current = current_settings.get(backend_key, "")
+        effective = current
         if backend_key in patch:
-            value = str(patch[backend_key] or "").strip()
-            if value:
-                validate_backend_value(value, backend_key)
-            await svc.set_setting(backend_key, value)
+            effective = str(patch[backend_key] or "").strip()
+            if effective:
+                validate_backend_value(effective, backend_key)
+            await svc.set_setting(backend_key, effective)
+        # 连线跟着同一字段的供应商走：指定时核对属于该供应商；换了供应商又没重选连线时回到默认连线
+        cred_key = credential_key(backend_key)
+        if cred_key in patch:
+            stored = await validate_backend_credential(session, effective, patch[cred_key])
+            await svc.set_setting(cred_key, str(stored) if stored else "")
+        elif backend_key in patch and _provider_of(effective) != _provider_of(current):
+            await svc.set_setting(cred_key, "")
 
     # 旁白音色：可配置字符串 id（照供应商文档填），空串 = 清除回落服务默认
     if "narration_voice" in patch:
