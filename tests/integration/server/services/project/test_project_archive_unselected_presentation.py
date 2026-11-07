@@ -282,6 +282,28 @@ async def test_unprovable_old_audio_claims_still_fail_export(tmp_path: Path, dam
         assert _PRESENTATION.encode() in str(exc.value)
 
 
+async def test_a_failed_export_leaves_no_snapshot_directory_behind(tmp_path: Path, monkeypatch) -> None:
+    pm, project_path, _ = await _project_with_materialized_presentations(tmp_path)
+    _install_narration(project_path, narration_segment("E1S01", "旁白一句"), 1.4)
+    versions_path = project_path / "versions" / "versions.json"
+    versions = json.loads(versions_path.read_text(encoding="utf-8"))
+    versions["audio"]["E1S01"]["versions"][0]["artifact_audio_basis"]["digest"] = "sha256-v1:" + "0" * 64
+    versions_path.write_text(json.dumps(versions), encoding="utf-8")
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    monkeypatch.setattr("tempfile.tempdir", str(scratch))
+
+    for export in (
+        lambda service: service.get_export_diagnostics("demo", scope="full"),
+        lambda service: service.export_project("demo", scope="full"),
+    ):
+        with pytest.raises(ValueError, match="unprovable formal claims") as exc:
+            export(ProjectArchiveService(pm))
+        # 异常（连同它的调用栈）还被持有时目录就已删除：不靠垃圾回收在不确定的时刻（可能在事件循环里）清理
+        assert exc.value.__traceback__ is not None
+        assert not list(scratch.glob("arcreel-export-*"))
+
+
 async def test_changing_both_video_and_narration_keeps_old_claims_in_full_archive(tmp_path: Path) -> None:
     pm, project_path, _ = await _project_with_materialized_presentations(tmp_path)
     _install_video(project_path, narration_segment("E1S01", "旁白一句"), 1.0)
