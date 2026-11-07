@@ -176,7 +176,7 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 | `AUTH_ENABLED` | `true` | 远程部署不得关闭；设为 `false` 时全部管理接口无需认证 |
 | `LOG_LEVEL` | `INFO` | 排障时临时改为 `DEBUG`，完成后恢复 |
 | `POSTGRES_PASSWORD` | 无 | 仅生产部署需要，必须设置 |
-| `TZ` | `Asia/Shanghai` | 可在 Compose 环境中覆盖 |
+| `TZ` | `Asia/Taipei` | 可在 Compose 环境中覆盖 |
 | `DATABASE_URL` | SQLite 默认路径 | 生产 Compose 自动设置 PostgreSQL URL |
 | `ARCREEL_DATA_DIR` | `projects` | 数据根；项目、默认 SQLite 数据库、日志和 Vertex 凭据都在其下 |
 | `CORS_ORIGINS` | 通配 | 设为白名单时，浏览器型 MCP 客户端的 Origin 也须列入 |

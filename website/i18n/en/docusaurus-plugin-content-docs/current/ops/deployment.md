@@ -176,7 +176,7 @@ The default deployment examples currently include these core variables:
 | `AUTH_ENABLED` | `true` | Never disable for remote deployments; `false` leaves every management endpoint unauthenticated |
 | `LOG_LEVEL` | `INFO` | Temporarily change to `DEBUG` while troubleshooting, then restore it |
 | `POSTGRES_PASSWORD` | None | Required and must be set only for production deployments |
-| `TZ` | `Asia/Shanghai` | Can be overridden in the Compose environment |
+| `TZ` | `Asia/Taipei` | Can be overridden in the Compose environment |
 | `DATABASE_URL` | Default SQLite path | Production Compose sets the PostgreSQL URL automatically |
 | `ARCREEL_DATA_DIR` | `projects` | Data root; projects, the default SQLite database, logs, and Vertex credentials all live under it |
 | `CORS_ORIGINS` | Wildcard | When narrowed to an allowlist, browser MCP client origins must be listed too |
