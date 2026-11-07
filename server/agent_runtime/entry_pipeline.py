@@ -365,6 +365,19 @@ class SessionEntryPipeline:
             return
         self._broadcast({"type": "log_entry", "session_id": session_id, "entry": authoritative})
 
+    async def append_system_entry(self, entry: dict[str, Any]) -> None:
+        """会话层直接产生的系统事件（如认证来源切换）：写入并广播。失败只记日志不打断会话。"""
+        session_id = self._session_id_provider()
+        if not session_id:
+            return
+        try:
+            appended = await self._append_with_retry(session_id, [entry])
+        except Exception:
+            logger.exception("系统事件写入事件日志失败 session_id=%s subtype=%s", session_id, entry.get("subtype"))
+            return
+        for item in appended:
+            self._broadcast({"type": "log_entry", "session_id": session_id, "entry": item})
+
     async def append_interrupt(self) -> list[dict[str, Any]]:
         """中断动作的直接写入点（终态路径：SDK 回显不再经 inbox 到达时补写）。
 

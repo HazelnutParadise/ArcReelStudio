@@ -2504,6 +2504,11 @@ export default {
   // ToolCallWithResult
   // 时间线 typed 条目（interrupt / AskUserQuestion 答复）
   'chat_interrupt_notice': '已停止，这一轮的回复没有完成',
+  'chat_auth_switch_from_subscription': 'Claude 订阅额度用完了，下一条消息改用 API Key。',
+  'chat_auth_switch_from_api_key': 'API Key 额度用完或无法使用，下一条消息改用 Claude 订阅。',
+  'chat_auth_switch_back_at': '{{time}} 之后改回原来的方式。',
+  'chat_auth_switch_back_after_relogin': '重新登录 Claude 订阅后改回。',
+  'chat_auth_switch_back_after_fix': '修好 API Key 后改回。',
   'chat_compacted_label': '上下文已压缩',
   // Agent 消息流
   'chat_transcript_label': '对话记录',

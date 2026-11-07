@@ -2621,6 +2621,11 @@ export default {
   // ToolCallWithResult
   // Timeline typed entries (interrupt / AskUserQuestion answer)
   'chat_interrupt_notice': 'Stopped. This reply was not finished',
+  'chat_auth_switch_from_subscription': 'The Claude subscription ran out. The next message uses the API key.',
+  'chat_auth_switch_from_api_key': 'The API key ran out or failed. The next message uses the Claude subscription.',
+  'chat_auth_switch_back_at': 'It switches back after {{time}}.',
+  'chat_auth_switch_back_after_relogin': 'It switches back after you sign in to the subscription again.',
+  'chat_auth_switch_back_after_fix': 'It switches back once the API key is fixed.',
   'chat_compacted_label': 'Context compacted',
   // Agent message stream
   'chat_transcript_label': 'Conversation',

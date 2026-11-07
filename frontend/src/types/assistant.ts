@@ -36,6 +36,7 @@ export interface ContentBlock {
     | "interrupt_notice"
     | "question_answer"
     | "agent_failure"
+    | "auth_switch_notice"
     | "compact_summary"
     | "image";
   text?: string;
@@ -67,6 +68,8 @@ export interface ContentBlock {
   answers?: Record<string, string>;
   // agent_failure block（写入点定型的 Agent 故障观测）
   failure?: FailureObservation;
+  // auth_switch_notice block（Agent 改用另一种认证来源）
+  auth_switch?: AgentAuthSwitch;
 }
 
 export interface FailureObservation {
@@ -137,6 +140,15 @@ export interface TimelineEntry {
   answers?: Record<string, string> | null;
   // agent_turn_failure 系统条目
   failure?: FailureObservation;
+  // agent_auth_switched 系统条目
+  auth_switch?: AgentAuthSwitch;
+}
+
+/** Agent 的认证来源用完或失效，下一则消息改用另一方。`until` 是原来源恢复的时间（Unix 秒），要等重新配置时为 null。 */
+export interface AgentAuthSwitch {
+  from: "subscription" | "api_key";
+  to: "subscription" | "api_key";
+  until: number | null;
 }
 
 /** 排队消息的状态：`queued` 已交给 Agent、等待被接纳；`unsent` Agent 进程退出时仍在排队，需由用户决定发送、编辑或删除。 */

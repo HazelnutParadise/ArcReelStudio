@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { ContentBlock } from "@/types";
+import type { AgentAuthSwitch, ContentBlock } from "@/types";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import { ChatImage } from "./ChatImage";
 import { TextBlock } from "./TextBlock";
@@ -91,6 +91,11 @@ export function ContentBlockRenderer({ block, index, streaming, announce }: Cont
     case "interrupt_notice":
       return <InterruptNoticeBlock key={block.id ?? `block-${index}`} />;
 
+    case "auth_switch_notice":
+      return block.auth_switch ? (
+        <AuthSwitchNotice key={block.id ?? `block-${index}`} change={block.auth_switch} />
+      ) : null;
+
     case "question_answer":
       return <QuestionAnswerBlock key={block.id ?? `block-${index}`} block={block} />;
 
@@ -150,6 +155,27 @@ function StandaloneToolResult({ block }: Readonly<{ block: ContentBlock }>) {
     >
       {result && <WorkDetail label={t("tool_call_result_label")} text={result} error={block.is_error} />}
     </WorkRow>
+  );
+}
+
+/** Agent 改用另一种认证来源：订阅额度用完改用 API Key，或反过来；附上原来源何时恢复。 */
+function AuthSwitchNotice({ change }: Readonly<{ change: AgentAuthSwitch }>) {
+  const { t, i18n } = useTranslation("dashboard");
+  const reason = t(
+    change.from === "subscription" ? "chat_auth_switch_from_subscription" : "chat_auth_switch_from_api_key",
+  );
+  const back =
+    change.until === null
+      ? t(change.from === "subscription" ? "chat_auth_switch_back_after_relogin" : "chat_auth_switch_back_after_fix")
+      : t("chat_auth_switch_back_at", {
+          time: new Date(change.until * 1000).toLocaleString(i18n.language, { dateStyle: "short", timeStyle: "short" }),
+        });
+  return (
+    <Marker variant="separator">
+      <MarkerContent>
+        {reason} {back}
+      </MarkerContent>
+    </Marker>
   );
 }
 

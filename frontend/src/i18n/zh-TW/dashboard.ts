@@ -2503,6 +2503,11 @@ export default {
   // ToolCallWithResult
   // 時間軸 typed 條目（interrupt / AskUserQuestion 答覆）
   'chat_interrupt_notice': '已停止，這一輪的回覆沒有完成',
+  'chat_auth_switch_from_subscription': 'Claude 訂閱額度用完了，下一則訊息改用 API Key。',
+  'chat_auth_switch_from_api_key': 'API Key 額度用完或無法使用，下一則訊息改用 Claude 訂閱。',
+  'chat_auth_switch_back_at': '{{time}} 後改回原本的方式。',
+  'chat_auth_switch_back_after_relogin': '重新登入 Claude 訂閱後改回。',
+  'chat_auth_switch_back_after_fix': '修好 API Key 後改回。',
   'chat_compacted_label': '上下文已壓縮',
   // Agent 訊息流
   'chat_transcript_label': '對話記錄',

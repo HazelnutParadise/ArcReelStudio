@@ -349,6 +349,10 @@ export function createTimelineProjector(): TimelineProjector {
         startTurn(fold, "system", [{ type: "interrupt_notice" }], entry);
         return;
       }
+      if (entry.subtype === "agent_auth_switched" && entry.auth_switch) {
+        startTurn(fold, "system", [{ type: "auth_switch_notice", auth_switch: entry.auth_switch }], entry);
+        return;
+      }
       if (entry.subtype === "subagent_outcome") {
         if (entry.tool_use_id) {
           subagentOutcomes.set(entry.tool_use_id, {
