@@ -59,7 +59,7 @@ The default administrator's username is `admin`; you can change it with `AUTH_US
 
 After signing in, change the password under Settings › Accounts & members; administrators can also add members there.
 
-If you forget the password, editing `.env` does not change existing accounts. Run the following in the Compose directory to reset it; the command generates a new password and shows it once:
+If you forget the password, editing `.env` does not change existing accounts. Run the following in the Compose directory to reset it, then enter the new password twice when prompted (what you type is not shown):
 
 ```bash
 docker compose exec arcreel uv run python -m scripts.manage_users reset-password admin

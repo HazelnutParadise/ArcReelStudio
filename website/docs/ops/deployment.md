@@ -226,7 +226,7 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 docker compose exec arcreel uv run python -m scripts.manage_users reset-password admin
 ```
 
-命令会生成一个新密码并显示一次；加上 `--password <新密码>` 可以自己指定。`list` 子命令列出所有账号。源码部署在仓库根目录执行 `uv run python -m scripts.manage_users ...`。
+命令会请你输入两次新密码，输入时不会显示；不方便交互时可以加上 `--password <新密码>`。`list` 子命令列出所有账号。源码部署在仓库根目录执行 `uv run python -m scripts.manage_users ...`。
 
 从只有一组 `.env` 账号的旧版本升级时，第一次启动会把当时的 `AUTH_USERNAME` / `AUTH_PASSWORD` 写成默认管理员，原来的密码照常可用；升级前签发的登录全部失效，需要重新登录一次。旧的 `AUTH_USERNAME` 不符合上面的用户名规则时（例如含有空格或中文），默认管理员会改名为 `admin`，启动日志会记录这次改名，之后请用 `admin` 登录。
 

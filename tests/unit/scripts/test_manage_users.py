@@ -39,11 +39,12 @@ def cli_env(tmp_path: Path) -> dict[str, str]:
     return env
 
 
-def _cli(env: dict[str, str], *args: str) -> subprocess.CompletedProcess[str]:
+def _cli(env: dict[str, str], *args: str, stdin: str = "") -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, "-m", "scripts.manage_users", *args],
         cwd=_REPO,
         env=env,
+        input=stdin,
         capture_output=True,
         text=True,
         timeout=_TIMEOUT,
@@ -70,3 +71,19 @@ def test_reset_password_then_list_accounts(cli_env):
     assert "admin\tadmin\t启用" in listed.stdout
     assert missing.returncode == 1
     assert "找不到账号" in missing.stderr
+
+
+def test_reset_password_reads_the_new_password_twice_without_printing_it(cli_env):
+    reset = _cli(cli_env, "reset-password", "admin", stdin="typed-password\ntyped-password\n")
+
+    assert reset.returncode == 0, reset.stderr
+    assert _password_matches(cli_env, "admin", "typed-password")
+    assert "typed-password" not in reset.stdout + reset.stderr
+
+
+def test_reset_password_keeps_the_old_password_when_the_two_entries_differ(cli_env):
+    reset = _cli(cli_env, "reset-password", "admin", stdin="first-password\nsecond-password\n")
+
+    assert reset.returncode == 1
+    assert "不一致" in reset.stderr
+    assert _password_matches(cli_env, "admin", "bootstrap-pass")

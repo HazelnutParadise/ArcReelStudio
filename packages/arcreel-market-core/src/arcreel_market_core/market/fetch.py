@@ -241,9 +241,18 @@ def decode_json_payload(content: bytes) -> Any:
         raise MarketPayloadNotJsonError(f"is not valid JSON: {exc}") from exc
     except RecursionError as exc:
         raise MarketPayloadNotJsonError(_too_deep()) from exc
-    if _nesting_exceeds(document, MAX_JSON_DEPTH):
+    if exceeds_max_json_depth(document):
         raise MarketPayloadNotJsonError(_too_deep())
     return document
+
+
+def exceeds_max_json_depth(document: Any) -> bool:
+    """``document`` 的容器嵌套是否超过 :data:`MAX_JSON_DEPTH`。
+
+    逐层迭代判断，不依赖解析器的递归上限：Python 3.14 的 ``json`` 按 C 栈空间判断递归，
+    在 Linux 上能解析出很深的嵌套而不抛 ``RecursionError``。
+    """
+    return _nesting_exceeds(document, MAX_JSON_DEPTH)
 
 
 def _reject_constant(name: str) -> Any:

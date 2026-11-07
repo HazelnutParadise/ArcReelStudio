@@ -59,7 +59,7 @@ docker compose logs arcreel
 
 登录后在「设置 › 账号与成员」中修改密码；管理员还可以在这里新增成员。
 
-忘记密码时，修改 `.env` 不会改动已有账号。在 Compose 目录执行下面的命令重设，它会生成新密码并显示一次：
+忘记密码时，修改 `.env` 不会改动已有账号。在 Compose 目录执行下面的命令重设，按提示输入两次新密码，输入时不会显示：
 
 ```bash
 docker compose exec arcreel uv run python -m scripts.manage_users reset-password admin

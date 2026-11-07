@@ -48,9 +48,9 @@ function fromPickerValue(draft: StylePickerValue, current: ProjectStyle): Projec
   if (draft.uploadedFile) {
     if (current.kind === "image" && current.file === draft.uploadedFile) return current;
     // 选择器只在自己挂载期间持有文件的预览地址；写进项目风格的这一个归页面，由页面在不再使用时收回
-    // react-doctor-disable-next-line react-doctor/no-create-object-url-without-revoke -- 地址经 onChange 存入表单值，ProjectSettingsPage 的 effect 在换图、放弃、保存或卸载时 revoke
     return {
       kind: "image",
+      // react-doctor-disable-next-line react-doctor/no-create-object-url-without-revoke -- 地址经 onChange 存入表单值，ProjectSettingsPage 的 effect 在换图、放弃、保存或卸载时 revoke
       preview: URL.createObjectURL(draft.uploadedFile),
       description: "",
       file: draft.uploadedFile,

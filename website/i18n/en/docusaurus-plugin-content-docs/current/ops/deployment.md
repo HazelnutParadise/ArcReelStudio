@@ -226,7 +226,7 @@ If you forget the password, run this in the Compose directory:
 docker compose exec arcreel uv run python -m scripts.manage_users reset-password admin
 ```
 
-The command generates a new password and shows it once; add `--password <new password>` to choose one yourself. The `list` subcommand lists all accounts. For source deployments, run `uv run python -m scripts.manage_users ...` from the repository root.
+The command asks you to enter the new password twice and does not show what you type; when you cannot answer prompts, add `--password <new password>` instead. The `list` subcommand lists all accounts. For source deployments, run `uv run python -m scripts.manage_users ...` from the repository root.
 
 When you upgrade from an earlier version that had only one `.env` account, the first startup turns the current `AUTH_USERNAME` / `AUTH_PASSWORD` into the default administrator, so the existing password keeps working. Sessions issued before the upgrade all end, and everyone needs to sign in again once. If the old `AUTH_USERNAME` does not meet the username rules above (for example, it contains spaces or Chinese characters), the default administrator is renamed to `admin` and the startup log records the change; sign in as `admin` from then on.
 

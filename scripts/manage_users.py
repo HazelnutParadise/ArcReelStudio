@@ -12,8 +12,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import secrets
-import string
+import getpass
 import sys
 from collections.abc import Sequence
 
@@ -23,12 +22,19 @@ from lib.infra.api_errors import ApiError
 from lib.infra.data_root_layout import DataRootLayout
 from server.services import accounts
 
-_GENERATED_PASSWORD_LENGTH = 20
+
+def _read_password(prompt: str) -> str:
+    """终端里不回显地读入；标准输入不是终端（例如管道）时逐行读取，不打印提示。"""
+    if sys.stdin.isatty():
+        return getpass.getpass(prompt)
+    return sys.stdin.readline().rstrip("\r\n")
 
 
-def _generate_password() -> str:
-    alphabet = string.ascii_letters + string.digits
-    return "".join(secrets.choice(alphabet) for _ in range(_GENERATED_PASSWORD_LENGTH))
+def _prompt_new_password() -> str | None:
+    """请用户输入两次新密码；两次不一致时返回 None。"""
+    first = _read_password("新密码：")
+    second = _read_password("再输入一次：")
+    return first if first == second else None
 
 
 async def _list() -> int:
@@ -41,12 +47,17 @@ async def _list() -> int:
 
 
 async def _reset_password(username: str, password: str | None) -> int:
-    new_password = password or _generate_password()
-    async with async_session_factory() as session, session.begin():
+    async with async_session_factory() as session:
         user = await UserRepository(session).get_by_username(accounts.normalize_username(username))
-        if user is None:
-            print(f"找不到账号：{username}", file=sys.stderr)
-            return 1
+    if user is None:
+        print(f"找不到账号：{username}", file=sys.stderr)
+        return 1
+    # 新密码只从参数或输入读取，不由命令生成，也就不会出现在终端输出与日志里
+    new_password = password if password is not None else _prompt_new_password()
+    if new_password is None:
+        print("两次输入的密码不一致，密码没有修改。", file=sys.stderr)
+        return 1
+    async with async_session_factory() as session, session.begin():
         await accounts.update_account(
             session,
             actor_id="",
@@ -55,8 +66,6 @@ async def _reset_password(username: str, password: str | None) -> int:
             initial_password_path=DataRootLayout.current().initial_admin_password_path,
         )
     print(f"已重设 {user.username} 的密码。")
-    if password is None:
-        print(f"新密码：{new_password}")
     return 0
 
 
@@ -70,7 +79,7 @@ def _parser() -> argparse.ArgumentParser:
     reset = commands.add_parser(
         "reset-password",
         help="重设账号密码，该账号现有的登录随之失效",
-        description="重设账号密码。不给 --password 时生成 20 位随机密码并只显示这一次。",
+        description="重设账号密码。不给 --password 时请你输入两次新密码，输入时不显示。",
     )
     reset.add_argument("username", help="要重设密码的用户名（不区分大小写）")
     reset.add_argument("--password", help=f"新密码，至少 {accounts.MIN_PASSWORD_LENGTH} 个字符")

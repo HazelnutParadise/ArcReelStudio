@@ -11,19 +11,28 @@ from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
 from .entry import check_entry_definition
+from .fetch import MAX_JSON_DEPTH, exceeds_max_json_depth
 from .icon import inspect_icon
 from .index import ENDPOINT_ENTRY_TYPE, InvalidIndexError, UnsupportedIndexSchemaError, parse_index
 from .issues import INDEX_FILENAME, ROOT_PATH, MarketIssue, MarketIssueCode, join_path
 
+_TOO_DEEP = f"JSON nesting is deeper than {MAX_JSON_DEPTH} levels"
+
 
 def read_json_file(path: Path) -> Any:
-    """读一份 UTF-8 JSON 文件；读不到或解析不了（含嵌套过深）时抛 ``ValueError``，消息即原因。"""
+    """读一份 UTF-8 JSON 文件；读不到或解析不了时抛 ``ValueError``，消息即原因。
+
+    嵌套超过 :data:`MAX_JSON_DEPTH` 也算解析不了，与应用抓取索引、定义时的上限一致。
+    """
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError(str(exc)) from exc
     except RecursionError as exc:
-        raise ValueError("JSON nesting is too deep") from exc
+        raise ValueError(_TOO_DEEP) from exc
+    if exceeds_max_json_depth(document):
+        raise ValueError(_TOO_DEEP)
+    return document
 
 
 def read_index_document(root: Path) -> Any:
