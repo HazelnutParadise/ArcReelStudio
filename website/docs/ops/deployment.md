@@ -452,12 +452,12 @@ docker compose start arcreel
 
 ### 5.6 固定版本 {#pin-version}
 
-`latest` 适合快速体验，但生产环境更适合固定 Release 标签。
+默认 Compose 使用 `main` 标签，跟随 main 分支的最新构建，适合快速体验。生产环境更适合固定 Release 标签。
 
 将 Compose 中的镜像改为：
 
 ```yaml
-image: arcreel/arcreel:X.Y.Z
+image: ghcr.io/hazelnutparadise/arcreelstudio:X.Y.Z
 ```
 
 升级时显式修改版本，可以降低无意中拉取新版本的风险。

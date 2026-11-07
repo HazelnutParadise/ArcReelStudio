@@ -452,12 +452,12 @@ If a project migration fails, preserve the files and inspect the startup logs. D
 
 ### 5.6 Pin a Version {#pin-version}
 
-`latest` is suitable for a quick evaluation, but pinning a release tag is a better choice for production.
+The default Compose files use the `main` tag, which follows the latest build of the main branch and suits a quick evaluation. Pinning a release tag is a better choice for production.
 
 Change the image in Compose to:
 
 ```yaml
-image: arcreel/arcreel:X.Y.Z
+image: ghcr.io/hazelnutparadise/arcreelstudio:X.Y.Z
 ```
 
 Explicitly changing the version when upgrading reduces the risk of unintentionally pulling a new version.

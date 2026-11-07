@@ -1,6 +1,7 @@
 services:
   arcreel:
-    image: arcreel/arcreel:latest
+    image: ghcr.io/hazelnutparadise/arcreelstudio:main
+    # main 标签跟随 main 分支的最新构建；生产环境建议改为固定的 Release 版本标签
     # build: ../  # 本地构建时取消注释，注释掉 image 行
     ports:
       - "1241:1241"
