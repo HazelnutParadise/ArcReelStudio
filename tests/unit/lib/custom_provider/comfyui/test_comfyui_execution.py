@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import httpx
+import httpx2
 
 from lib.custom_provider.comfyui.comfyui_client import ComfyuiClient
 from lib.custom_provider.comfyui.comfyui_execution import ComfyuiExecution
@@ -26,10 +26,12 @@ async def test_a_stop_toward_a_metadata_address_is_never_sent():
     )
     with capture_http() as router:
         version = router.get(f"{METADATA_BASE_URL}/system_stats").mock(
-            return_value=httpx.Response(200, json={"system": {"comfyui_version": "0.26.0"}})
+            return_value=httpx2.Response(200, json={"system": {"comfyui_version": "0.26.0"}})
         )
-        cancel = router.post(f"{METADATA_BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx.Response(200, json={}))
-        queue = router.get(f"{METADATA_BASE_URL}/queue").mock(return_value=httpx.Response(200, json={}))
+        cancel = router.post(f"{METADATA_BASE_URL}/api/jobs/p-1/cancel").mock(
+            return_value=httpx2.Response(200, json={})
+        )
+        queue = router.get(f"{METADATA_BASE_URL}/queue").mock(return_value=httpx2.Response(200, json={}))
 
         await execution.stop_remote("p-1")
 

@@ -101,8 +101,10 @@ def gemini_backend(mock_rate_limiter):
 class TestGeminiVideoBackendProperties:
     def test_name(self, gemini_backend):
         assert gemini_backend.name == "gemini-aistudio"
-        # aistudio 模式：api_key 原样交给 genai.Client，未给 base_url 则不带 http_options
-        gemini_backend._test_genai.Client.assert_called_once_with(api_key="test-key", http_options=None)
+        # aistudio 模式：api_key 原样交给 genai.Client，http_options 固定 API 版本，未给 base_url 则不带 base_url
+        gemini_backend._test_genai.Client.assert_called_once_with(
+            api_key="test-key", http_options={"api_version": "v1beta"}
+        )
 
     def test_video_capabilities_aistudio(self, gemini_backend):
         caps = gemini_backend.video_capabilities
@@ -847,7 +849,7 @@ class TestGeminiSubmittedBaseUrlReplay:
             await gemini_backend.resume_video("op-a", request)
 
         genai_mock.Client.assert_called_once_with(
-            api_key="test-key", http_options={"base_url": "https://relay-a.example.com/"}
+            api_key="test-key", http_options={"api_version": "v1beta", "base_url": "https://relay-a.example.com/"}
         )
         assert request.output_path.read_bytes() == b"from-relay-a"
         gemini_backend._client.files.download.assert_not_called()

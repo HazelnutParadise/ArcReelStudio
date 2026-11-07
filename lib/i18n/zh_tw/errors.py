@@ -648,6 +648,7 @@ MESSAGES = {
     "video_first_frame_unsupported": "{provider}/{model} 當前設定不支援首幀，已中止生成；請移除該分鏡的首幀，或改用支援首幀的模型/檔位",
     "video_last_frame_unsupported": "{provider}/{model} 當前設定不支援尾幀，已中止生成；請移除該分鏡的尾幀，或改用支援尾幀的模型/檔位",
     "video_reference_audio_unsupported": "{provider}/{model} 不支援參考音訊，已中止生成；請移除角色的參考音訊，或改用支援音色參考的模型",
+    "video_veo_api_key_mode_unsupported": "{provider}/{model} 無法生成影片：Gemini Developer API（API Key 方式）已不再提供 Veo；請改用 Vertex AI 憑證呼叫 Veo，或改用 Gemini Omni 影片模型",
     "video_reference_route_audio_unsupported": "{provider}/{model} 用參考圖生成時請求裡發不出音訊開關，成片只能無聲，已中止生成；請關閉音訊開關、撤銷參考圖路徑的音軌覆蓋，或去掉參考圖後重試",
     "video_reference_audio_exceeded": "模型 {model} 最多支援 {limit} 段參考音訊，收到 {count} 段；請減少帶參考音訊的角色數量",
     "video_reference_audio_duration_exceeded": "模型 {model} 參考音訊總時長最多 {limit:g} 秒，當前合計 {total:.1f} 秒；請減少參考音訊段數或換用更短的音訊",

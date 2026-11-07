@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlsplit
 
-import httpx
+import httpx2
 
 from arcreel_catalog_core import CatalogEntry
 from arcreel_market_core.aspect_size import VIDEO_TIER_SHORT_EDGE, aspect_size, resolution_to_short_edge
@@ -530,7 +530,7 @@ class AgnesVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
         retry_if=should_retry_submit,
     )
     async def _create_task(
-        self, client: httpx.AsyncClient, payload: dict, request: VideoGenerationRequest | None = None
+        self, client: httpx2.AsyncClient, payload: dict, request: VideoGenerationRequest | None = None
     ) -> str:
         # 非幂等的「建任务 + 计费」POST：submit_post 把歧义传输错误转 AmbiguousSubmitError 终态失败，
         # 避免重试重复建任务 + 重复计费；>=400 抛 HTTPStatusError 交 should_retry_submit 按状态码分流
@@ -547,7 +547,7 @@ class AgnesVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
         )
         return _extract_task_id(resp.json(), prefer_video_id=self.endpoint.v25)
 
-    async def _poll_once(self, client: httpx.AsyncClient, task_id: str) -> dict:
+    async def _poll_once(self, client: httpx2.AsyncClient, task_id: str) -> dict:
         resp = await client.get(
             f"{self._base_url}{_VIDEOS_ENDPOINT}/{task_id}",
             headers=agnes_headers(self._api_key),
@@ -555,7 +555,7 @@ class AgnesVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
         raise_for_status_redacted(resp)
         return resp.json()
 
-    async def _query_video_once(self, client: httpx.AsyncClient, video_id: str) -> dict:
+    async def _query_video_once(self, client: httpx2.AsyncClient, video_id: str) -> dict:
         """单次按 ``video_id`` 查询；重试由调用方选择内层装饰器或外层轮询统一承担。"""
         params = {"video_id": video_id}
         if self.endpoint.v25:
@@ -575,7 +575,7 @@ class AgnesVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
     )
     async def _query_video(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         video_id: str,
         request: VideoGenerationRequest,
         *,
@@ -595,7 +595,7 @@ class AgnesVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
         return await recording_poll(fetch, request, stage="result")()
 
     async def _resolve_video_url(
-        self, client: httpx.AsyncClient, final: dict, request: VideoGenerationRequest
+        self, client: httpx2.AsyncClient, final: dict, request: VideoGenerationRequest
     ) -> tuple[str, dict | None]:
         """成片 URL 两级来源：完成态直接字段命中即用；否则用 video_id 二次查询取 URL。
 
@@ -621,7 +621,7 @@ class AgnesVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
 
     async def _poll_and_build(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         task_id: str,
         request: VideoGenerationRequest,
         *,

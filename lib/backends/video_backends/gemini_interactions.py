@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import Any, ClassVar
 
-import httpx
+import httpx2
 
 from arcreel_catalog_core import CatalogEntry
 from arcreel_market_core.video_backend_contract import (
@@ -306,12 +306,12 @@ def _interactions_status_code(exc: BaseException) -> int | None:
 def _should_retry_interactions_poll(exc: Exception) -> bool:
     """有状态码的按状态码判定（404 不重试，续跑据此认出过期），其余按幂等轮询口径。
 
-    SDK 把 httpx 的传输错误包成自己的连接错误类、原错误放在 ``__cause__``，按原错误判定。
+    SDK 把 httpx2 的传输错误包成自己的连接错误类、原错误放在 ``__cause__``，按原错误判定。
     """
     status = _interactions_status_code(exc)
     if status is not None:
         return is_retryable_http_status(status)
     cause = exc.__cause__
-    if isinstance(cause, httpx.HTTPError):
+    if isinstance(cause, httpx2.HTTPError):
         return should_retry_poll(cause)
     return should_retry_poll(exc)

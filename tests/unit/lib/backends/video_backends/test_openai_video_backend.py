@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
-import httpx
+import httpx2
 import pytest
 from openai import InternalServerError
 from openai.types.video_create_error import VideoCreateError
@@ -855,12 +855,12 @@ class TestSubmittedBaseUrlReplay:
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             router.post(f"{_RELAY_A}/videos").mock(
-                return_value=httpx.Response(200, json=_video_json("vid-a", "queued"))
+                return_value=httpx2.Response(200, json=_video_json("vid-a", "queued"))
             )
             router.get(f"{_RELAY_A}/videos/vid-a").mock(
-                return_value=httpx.Response(200, json=_video_json("vid-a", "completed"))
+                return_value=httpx2.Response(200, json=_video_json("vid-a", "completed"))
             )
-            router.get(f"{_RELAY_A}/videos/vid-a/content").mock(return_value=httpx.Response(200, content=b"mp4"))
+            router.get(f"{_RELAY_A}/videos/vid-a/content").mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             await OpenAIVideoBackend(api_key="k", model="sora-2", base_url=f"{_RELAY_A}/").generate(
                 VideoGenerationRequest(
@@ -876,13 +876,13 @@ class TestSubmittedBaseUrlReplay:
 
         with capture_http() as router, bounded_poll_clock():
             poll = router.get(f"{_RELAY_A}/videos/vid-a").mock(
-                return_value=httpx.Response(200, json=_video_json("vid-a", "completed"))
+                return_value=httpx2.Response(200, json=_video_json("vid-a", "completed"))
             )
             content = router.get(f"{_RELAY_A}/videos/vid-a/content").mock(
-                return_value=httpx.Response(200, content=b"resumed")
+                return_value=httpx2.Response(200, content=b"resumed")
             )
             current = router.get(url__regex=r"^https://relay-b\.example\.com/").mock(
-                return_value=httpx.Response(404, json={"error": {"message": "not found"}})
+                return_value=httpx2.Response(404, json={"error": {"message": "not found"}})
             )
 
             result = await OpenAIVideoBackend(api_key="k", model="sora-2", base_url=_RELAY_B).resume_video(

@@ -9,7 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.endpoint_definition import validate_definition
@@ -87,7 +87,7 @@ def _messages(*events: Any) -> dict[str, Any]:
     return {"completed": True, "status_str": "error", "messages": list(events)}
 
 
-def _cancel_here(_request: httpx.Request) -> httpx.Response:
+def _cancel_here(_request: httpx2.Request) -> httpx2.Response:
     """让这一条路由的请求撞上一次任务取消。
 
     ``CancelledError`` 继承 ``BaseException``，respx 的异常型 ``side_effect`` 只收 ``Exception``，
@@ -175,22 +175,24 @@ class TestGenerate:
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             upload = router.post(f"{BASE_URL}/upload/image").mock(
                 side_effect=[
-                    httpx.Response(200, json={"name": "task-7-start_image.png", "subfolder": "arcreel"}),
-                    httpx.Response(200, json={"name": "task-7-reference_images-1.jpg", "subfolder": "arcreel"}),
+                    httpx2.Response(200, json={"name": "task-7-start_image.png", "subfolder": "arcreel"}),
+                    httpx2.Response(200, json={"name": "task-7-reference_images-1.jpg", "subfolder": "arcreel"}),
                 ]
             )
             submit = router.post(f"{BASE_URL}/prompt").mock(
-                return_value=httpx.Response(200, json={"prompt_id": "p-1", "node_errors": {}})
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1", "node_errors": {}})
             )
             history = router.get(f"{BASE_URL}/history/p-1").mock(
                 side_effect=[
-                    httpx.Response(200, json={}),
-                    httpx.Response(200, json={"p-1": _history({"9": _video_output()})}),
+                    httpx2.Response(200, json={}),
+                    httpx2.Response(200, json={"p-1": _history({"9": _video_output()})}),
                 ]
             )
             # 空态那一轮顺手确认这次执行还在队列上，否则一台重启过的 ComfyUI 只会让轮询空转到超时。
-            queue = router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(pending=["p-1"])))
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            queue = router.get(f"{BASE_URL}/queue").mock(
+                return_value=httpx2.Response(200, json=_queue(pending=["p-1"]))
+            )
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend(definition).generate(
                 _request(tmp_path, start_image=start, reference_images=[reference])
@@ -220,11 +222,13 @@ class TestGenerate:
     async def test_the_version_metadata_gets_the_actual_seed_and_the_workflow_fingerprint(self, tmp_path: Path):
         """两者都只有生成过一次才知道：种子是提交那一刻现随机的，指纹是那份实发 workflow 的。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            submit = router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+            submit = router.post(f"{BASE_URL}/prompt").mock(
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/history/p-1").mock(
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
+            )
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -235,11 +239,13 @@ class TestGenerate:
     async def test_an_unbound_duration_is_forwarded_untouched(self, tmp_path: Path):
         """``frames`` 未绑定即时长不由 ArcReel 驱动：照常提交，帧数保持 workflow 字面值。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            submit = router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+            submit = router.post(f"{BASE_URL}/prompt").mock(
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/history/p-1").mock(
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
+            )
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path, duration_seconds=5))
 
@@ -276,11 +282,11 @@ class TestGenerate:
     async def test_a_root_level_history_entry_is_accepted(self, tmp_path: Path):
         """两种形状都得认：不同版本与代理各回一种，只认包裹那种会让另一半部署永远等不到终态。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -295,13 +301,15 @@ class TestGenerate:
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             upload = router.post(f"{BASE_URL}/upload/image").mock(
-                return_value=httpx.Response(200, json={"name": "stored.png", "subfolder": "arcreel"})
+                return_value=httpx2.Response(200, json={"name": "stored.png", "subfolder": "arcreel"})
             )
-            submit = router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            submit = router.post(f"{BASE_URL}/prompt").mock(
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
+            )
             history = router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             await _backend(definition, api_key="k-1").generate(_request(tmp_path, start_image=start))
 
@@ -313,11 +321,13 @@ class TestGenerate:
         definition = _definition(auth={"query": {"token": "{{api_key}}"}})
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            submit = router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            history = router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+            submit = router.post(f"{BASE_URL}/prompt").mock(
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
             )
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            history = router.get(f"{BASE_URL}/history/p-1").mock(
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
+            )
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             await _backend(definition, api_key="k-1").generate(_request(tmp_path))
 
@@ -330,7 +340,7 @@ class TestGenerate:
     async def test_a_cross_origin_redirect_never_takes_the_credential_along(self, tmp_path: Path, route: str):
         """反代把某条路由 302 到别处时凭证不许跟过去。
 
-        httpx 的 follow_redirects 跨源只摘 ``Authorization``，而 auth 节允许任意头名——交给它
+        httpx2 的 follow_redirects 跨源只摘 ``Authorization``，而 auth 节允许任意头名——交给它
         自动跟随，一次指向对象存储的 ``/view`` 跳转就会把 ``X-API-Key`` 送进第三方的访问日志。
         """
         definition = _with_image_bindings()
@@ -339,7 +349,7 @@ class TestGenerate:
         start = tmp_path / "first.png"
         start.write_bytes(b"png")
         elsewhere = "https://elsewhere.test"
-        redirect = httpx.Response(307, headers={"location": f"{elsewhere}/moved"})
+        redirect = httpx2.Response(307, headers={"location": f"{elsewhere}/moved"})
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             moved_post = router.post(f"{elsewhere}/moved")
@@ -347,28 +357,28 @@ class TestGenerate:
             upload = router.post(f"{BASE_URL}/upload/image").mock(
                 return_value=redirect
                 if route == "upload"
-                else httpx.Response(200, json={"name": "stored.png", "subfolder": "arcreel"})
+                else httpx2.Response(200, json={"name": "stored.png", "subfolder": "arcreel"})
             )
             moved_post.mock(
-                return_value=httpx.Response(200, json={"name": "stored.png", "subfolder": "arcreel"})
+                return_value=httpx2.Response(200, json={"name": "stored.png", "subfolder": "arcreel"})
                 if route == "upload"
-                else httpx.Response(200, json={"prompt_id": "p-1"})
+                else httpx2.Response(200, json={"prompt_id": "p-1"})
             )
             router.post(f"{BASE_URL}/prompt").mock(
-                return_value=redirect if route == "submit" else httpx.Response(200, json={"prompt_id": "p-1"})
+                return_value=redirect if route == "submit" else httpx2.Response(200, json={"prompt_id": "p-1"})
             )
             router.get(f"{BASE_URL}/history/p-1").mock(
                 return_value=redirect
                 if route == "history"
-                else httpx.Response(200, json=_history({"9": _video_output()}))
+                else httpx2.Response(200, json=_history({"9": _video_output()}))
             )
             router.get(f"{BASE_URL}/view").mock(
-                return_value=redirect if route == "view" else httpx.Response(200, content=MP4_BYTES)
+                return_value=redirect if route == "view" else httpx2.Response(200, content=MP4_BYTES)
             )
             moved_get.mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
                 if route == "history"
-                else httpx.Response(200, content=MP4_BYTES)
+                else httpx2.Response(200, content=MP4_BYTES)
             )
 
             await _backend(definition, api_key="secret").generate(_request(tmp_path, start_image=start))
@@ -382,12 +392,14 @@ class TestGenerate:
     async def test_view_redirect_to_a_link_local_address_is_not_followed(self, tmp_path: Path):
         metadata = "http://169.254.169.254/latest/"
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(302, headers={"location": metadata}))
-            target = router.get(metadata).mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            view = router.get(f"{BASE_URL}/view").mock(
+                return_value=httpx2.Response(302, headers={"location": metadata})
+            )
+            target = router.get(metadata).mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             with pytest.raises(ArtifactDestinationRejectedError):
                 await _backend().generate(_request(tmp_path))
@@ -399,11 +411,13 @@ class TestGenerate:
         oversized = {"Content-Length": str(VIDEO_ARTIFACT_MAX_BYTES + 1)}
         request = _request(tmp_path)
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, headers=oversized, content=b""))
+            view = router.get(f"{BASE_URL}/view").mock(
+                return_value=httpx2.Response(200, headers=oversized, content=b"")
+            )
 
             with pytest.raises(ArtifactTooLargeError):
                 await _backend().generate(request)
@@ -416,14 +430,14 @@ class TestGenerate:
         definition = _definition(auth={"query": {"token": "{{api_key}}"}})
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
             router.get(f"{BASE_URL}/view").mock(
-                return_value=httpx.Response(302, headers={"location": f"{BASE_URL}/files/final.mp4"})
+                return_value=httpx2.Response(302, headers={"location": f"{BASE_URL}/files/final.mp4"})
             )
-            moved = router.get(f"{BASE_URL}/files/final.mp4").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            moved = router.get(f"{BASE_URL}/files/final.mp4").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             await _backend(definition, api_key="k-1").generate(_request(tmp_path))
 
@@ -434,11 +448,13 @@ class TestGenerate:
         definition = _definition(auth={"headers": {"Authorization": "Bearer {{api_key}}"}})
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            submit = router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+            submit = router.post(f"{BASE_URL}/prompt").mock(
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/history/p-1").mock(
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
+            )
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             await _backend(definition, api_key="").generate(_request(tmp_path))
 
@@ -452,7 +468,7 @@ class TestFailures:
         start.write_bytes(b"png")
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/upload/image").mock(return_value=httpx.Response(507, text="disk full"))
+            router.post(f"{BASE_URL}/upload/image").mock(return_value=httpx2.Response(507, text="disk full"))
             submit = router.post(f"{BASE_URL}/prompt")
 
             with pytest.raises(ComfyuiError) as caught:
@@ -470,7 +486,7 @@ class TestFailures:
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             router.post(f"{BASE_URL}/prompt").mock(
-                return_value=httpx.Response(200, json={"prompt_id": "p-1", "node_errors": node_errors})
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1", "node_errors": node_errors})
             )
             history = router.get(f"{BASE_URL}/history/p-1")
 
@@ -487,7 +503,7 @@ class TestFailures:
         body = {"error": {"message": "Prompt has no outputs"}, "node_errors": {"6": {"class_type": "CLIPTextEncode"}}}
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(400, json=body))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(400, json=body))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -498,7 +514,7 @@ class TestFailures:
     async def test_a_400_without_node_errors_falls_back_to_the_error_message(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             router.post(f"{BASE_URL}/prompt").mock(
-                return_value=httpx.Response(400, json={"error": {"message": "prompt outputs failed validation"}})
+                return_value=httpx2.Response(400, json={"error": {"message": "prompt outputs failed validation"}})
             )
 
             with pytest.raises(ComfyuiError) as caught:
@@ -510,7 +526,7 @@ class TestFailures:
         """job_id 没落库就进轮询，进程一重启这笔已在跑的任务就再也找不回来。"""
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids(fail=RuntimeError("db is down")):
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             history = router.get(f"{BASE_URL}/history/p-1")
 
             with pytest.raises(RuntimeError, match="db is down"):
@@ -520,8 +536,8 @@ class TestFailures:
 
     async def test_an_output_node_without_artifacts_is_refused(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history({"9": {}})))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history({"9": {}})))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -534,8 +550,8 @@ class TestFailures:
         outputs = {"9": {"gifs": [{"filename": "preview.mp4", "subfolder": "", "type": "temp"}]}}
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history(outputs)))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history(outputs)))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -547,8 +563,8 @@ class TestFailures:
         outputs = {"99": _video_output("preview.mp4")}
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history(outputs)))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history(outputs)))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -559,8 +575,8 @@ class TestFailures:
         outputs = {"9": {"images": [{"filename": "final_00001.png", "subfolder": "", "type": "output"}]}}
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history(outputs)))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history(outputs)))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -572,11 +588,11 @@ class TestFailures:
     async def test_the_iso_bmff_family_is_accepted(self, tmp_path: Path, filename: str):
         """三个允许的扩展名同属 ISO BMFF，与参考视频上传收的那三个同一份口径。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output(filename)}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output(filename)}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -585,9 +601,9 @@ class TestFailures:
     async def test_a_webm_artifact_is_refused_with_the_allowed_suffixes_in_the_copy(self, tmp_path: Path):
         """``.webm`` 的字节装进规范 ``.mp4`` 路径后扩展名与下发 MIME 都在说谎，故按类型不符拒收。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output("final_00001.webm")}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output("final_00001.webm")}))
             )
             view = router.get(f"{BASE_URL}/view")
 
@@ -605,11 +621,11 @@ class TestFailures:
     async def test_webm_bytes_under_an_mp4_name_are_refused_and_nothing_is_left_on_disk(self, tmp_path: Path):
         """扩展名只是 history 里的一个字符串：保存节点可以把别的容器写进 ``.mp4`` 的名字。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=b"\x1a\x45\xdf\xa3webm"))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=b"\x1a\x45\xdf\xa3webm"))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -625,12 +641,12 @@ class TestFailures:
     async def test_still_image_iso_bmff_bytes_under_an_mp4_name_are_refused(self, tmp_path: Path):
         """``ftyp`` 只说这是 ISO BMFF 家族：HEIC / AVIF 同用这一层，放行它们会留下一份放不出的成片。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
             router.get(f"{BASE_URL}/view").mock(
-                return_value=httpx.Response(200, content=b"\x00\x00\x00\x18ftypheic\x00\x00\x00\x00heic-bytes")
+                return_value=httpx2.Response(200, content=b"\x00\x00\x00\x18ftypheic\x00\x00\x00\x00heic-bytes")
             )
 
             with pytest.raises(ComfyuiError) as caught:
@@ -696,9 +712,9 @@ class TestMultipleArtifacts:
         }
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history(outputs)))
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history(outputs)))
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             with caplog.at_level("WARNING"):
                 result = await _backend().generate(_request(tmp_path))
@@ -724,9 +740,9 @@ class TestMultipleArtifacts:
         }
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history(outputs)))
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history(outputs)))
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -737,11 +753,11 @@ class TestMultipleArtifacts:
 
     async def test_a_single_artifact_reports_nothing(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -767,9 +783,9 @@ class TestDiagnostics:
         outputs = {"9": _video_output(), "99": {"images": [{"filename": "noise.png", "type": "temp"}]}}
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history(outputs)))
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history(outputs)))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             await _backend().generate(_request(tmp_path, on_provider_response=_record))
 
@@ -795,8 +811,8 @@ class TestTerminalStates:
         ]
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_entry(_messages(event))))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_entry(_messages(event))))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -808,9 +824,9 @@ class TestTerminalStates:
     async def test_an_interrupted_execution_has_its_own_code(self, tmp_path: Path):
         """有人在 ComfyUI 上按了取消：这一次没跑完，本身不说明这份 workflow 有问题。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_entry(_messages(["execution_interrupted", {"node_id": "9"}])))
+                return_value=httpx2.Response(200, json=_entry(_messages(["execution_interrupted", {"node_id": "9"}])))
             )
 
             with pytest.raises(ComfyuiError) as caught:
@@ -827,11 +843,11 @@ class TestTerminalStates:
         )
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_entry(_messages(*events), {"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_entry(_messages(*events), {"9": _video_output()}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -840,8 +856,8 @@ class TestTerminalStates:
     async def test_a_null_status_without_outputs_falls_back_to_execution_error(self, tmp_path: Path):
         """无从判起的那一格按执行失败兜底：说成「产物节点没出东西」会把环境问题栽给绑定。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_entry(None)))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_entry(None)))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -852,11 +868,11 @@ class TestTerminalStates:
     async def test_a_null_status_with_outputs_is_still_a_success(self, tmp_path: Path):
         """部分版本与代理不回 status；有产出就当它跑完了，否则这些部署一次片都出不了。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_entry(None, {"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_entry(None, {"9": _video_output()}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -865,9 +881,9 @@ class TestTerminalStates:
     async def test_a_finished_run_without_artifacts_stays_output_missing(self, tmp_path: Path):
         """末尾事件说跑成功了、绑定的节点却没出文件——这一格才是绑定的问题。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_entry(_messages(["execution_success", {}]), {"9": {}}))
+                return_value=httpx2.Response(200, json=_entry(_messages(["execution_success", {}]), {"9": {}}))
             )
 
             with pytest.raises(ComfyuiError) as caught:
@@ -881,9 +897,9 @@ class TestJobLost:
 
     async def test_an_id_in_neither_queue_is_reported_lost(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            history = router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json={}))
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(running=["other"])))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            history = router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json={}))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(running=["other"])))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -896,15 +912,15 @@ class TestJobLost:
     @pytest.mark.parametrize("lane", ["running", "pending"])
     async def test_an_id_still_on_the_queue_keeps_polling(self, tmp_path: Path, lane: str):
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
                 side_effect=[
-                    httpx.Response(200, json={}),
-                    httpx.Response(200, json=_history({"9": _video_output()})),
+                    httpx2.Response(200, json={}),
+                    httpx2.Response(200, json=_history({"9": _video_output()})),
                 ]
             )
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(**{lane: ["p-1"]})))
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(**{lane: ["p-1"]})))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -913,15 +929,15 @@ class TestJobLost:
     async def test_a_run_that_finished_between_the_two_requests_is_not_lost(self, tmp_path: Path):
         """队列与 history 是两次独立请求：执行恰好在两次之间走完时它两边都不在。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
                 side_effect=[
-                    httpx.Response(200, json={}),
-                    httpx.Response(200, json=_history({"9": _video_output()})),
+                    httpx2.Response(200, json={}),
+                    httpx2.Response(200, json=_history({"9": _video_output()})),
                 ]
             )
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue()))
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue()))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -931,17 +947,17 @@ class TestJobLost:
         """只挡掉 ``/queue`` 的反向代理：任务本身的地址好着，别拿辅助判据把出片中的执行判死。"""
         rounds = itertools.count()
 
-        def _history_route(_request: httpx.Request) -> httpx.Response:
+        def _history_route(_request: httpx2.Request) -> httpx2.Response:
             # 一次真实的长生成在产物就绪之前会一直空态，故这条辅助判据每一轮都要走一遍。
             if next(rounds) < VIDEO_POLL_MAX_CONSECUTIVE_FAILURES:
-                return httpx.Response(200, json={})
-            return httpx.Response(200, json=_history({"9": _video_output()}))
+                return httpx2.Response(200, json={})
+            return httpx2.Response(200, json=_history({"9": _video_output()}))
 
         with capture_http() as router, bounded_poll_clock(step=1.0), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(side_effect=_history_route)
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(503, text="bad gateway"))
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(503, text="bad gateway"))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -950,15 +966,15 @@ class TestJobLost:
     async def test_an_unreadable_queue_never_declares_a_loss(self, tmp_path: Path):
         """代理重启期回一页 HTML：读不出这张表不等于队列是空的。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
                 side_effect=[
-                    httpx.Response(200, json={}),
-                    httpx.Response(200, json=_history({"9": _video_output()})),
+                    httpx2.Response(200, json={}),
+                    httpx2.Response(200, json=_history({"9": _video_output()})),
                 ]
             )
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, html="<html>502</html>"))
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, html="<html>502</html>"))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -967,16 +983,16 @@ class TestJobLost:
     async def test_a_json_body_without_the_two_lists_is_unreadable_too(self, tmp_path: Path):
         """代理重启期回 ``{"error": "restarting"}``：解得出 JSON 不代表读得到队列。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
                 side_effect=[
-                    httpx.Response(200, json={}),
-                    httpx.Response(200, json={}),
-                    httpx.Response(200, json=_history({"9": _video_output()})),
+                    httpx2.Response(200, json={}),
+                    httpx2.Response(200, json={}),
+                    httpx2.Response(200, json=_history({"9": _video_output()})),
                 ]
             )
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json={"error": "restarting"}))
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json={"error": "restarting"}))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -991,9 +1007,9 @@ class TestResume:
             upload = router.post(f"{BASE_URL}/upload/image")
             submit = router.post(f"{BASE_URL}/prompt")
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend(_with_image_bindings()).resume_video("p-1", _request(tmp_path))
 
@@ -1014,9 +1030,9 @@ class TestResume:
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             current = router.get(f"{BASE_URL}/history/p-1")
             router.get(f"{submitted}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            view = router.get(f"{submitted}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            view = router.get(f"{submitted}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().resume_video("p-1", _request(tmp_path, submitted_base_url=submitted))
 
@@ -1028,9 +1044,9 @@ class TestResume:
         """两者只在提交那一次的构造里存在；这条路不构造，故一起缺席而不是各给一个假值。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             result = await _backend().resume_video("p-1", _request(tmp_path))
 
@@ -1049,7 +1065,7 @@ class TestResume:
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _video_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _video_output()}))
             )
 
             with pytest.raises(ComfyuiError) as caught:
@@ -1061,8 +1077,8 @@ class TestResume:
     async def test_a_lost_job_on_resume_becomes_resume_expired(self, tmp_path: Path):
         """续跑期的丢失归 resume_expired：worker 据此标失败并结算那条 pending 的调用行。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json={}))
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue()))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json={}))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue()))
 
             with pytest.raises(ResumeExpiredError) as caught:
                 await _backend().resume_video("p-1", _request(tmp_path))
@@ -1075,19 +1091,19 @@ class TestStoppingTheRemote:
 
     @staticmethod
     def _polling_cancelled(router: Any) -> None:
-        router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+        router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
         router.get(f"{BASE_URL}/history/p-1").mock(side_effect=_cancel_here)
 
     @staticmethod
     def _version(router: Any, version: str | None) -> None:
         body = {"system": {"comfyui_version": version}} if version is not None else {"system": {}}
-        router.get(f"{BASE_URL}/system_stats").mock(return_value=httpx.Response(200, json=body))
+        router.get(f"{BASE_URL}/system_stats").mock(return_value=httpx2.Response(200, json=body))
 
     async def test_a_new_enough_server_gets_one_cancel_call(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             self._polling_cancelled(router)
             self._version(router, "0.26.0")
-            cancel = router.post(f"{BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx.Response(200, json={}))
+            cancel = router.post(f"{BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx2.Response(200, json={}))
             queue = router.get(f"{BASE_URL}/queue")
 
             with pytest.raises(asyncio.CancelledError):
@@ -1101,8 +1117,8 @@ class TestStoppingTheRemote:
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             self._polling_cancelled(router)
             self._version(router, "0.25.14")
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(pending=["p-1"])))
-            drop = router.post(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json={}))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(pending=["p-1"])))
+            drop = router.post(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json={}))
             interrupt = router.post(f"{BASE_URL}/interrupt")
 
             with pytest.raises(asyncio.CancelledError):
@@ -1115,9 +1131,9 @@ class TestStoppingTheRemote:
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             self._polling_cancelled(router)
             self._version(router, "0.25.14")
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(running=["p-1"])))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(running=["p-1"])))
             drop = router.post(f"{BASE_URL}/queue")
-            interrupt = router.post(f"{BASE_URL}/interrupt").mock(return_value=httpx.Response(200, json={}))
+            interrupt = router.post(f"{BASE_URL}/interrupt").mock(return_value=httpx2.Response(200, json={}))
 
             with pytest.raises(asyncio.CancelledError):
                 await _backend().generate(_request(tmp_path))
@@ -1130,7 +1146,7 @@ class TestStoppingTheRemote:
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             self._polling_cancelled(router)
             self._version(router, "0.25.14")
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(running=["other"])))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(running=["other"])))
             drop = router.post(f"{BASE_URL}/queue")
             interrupt = router.post(f"{BASE_URL}/interrupt")
 
@@ -1144,9 +1160,9 @@ class TestStoppingTheRemote:
         """老版本与部分代理不回这一字段；据此走新路会打在一个 404 上、什么都没停掉。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             self._polling_cancelled(router)
-            router.get(f"{BASE_URL}/system_stats").mock(return_value=httpx.Response(500, text="boom"))
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(pending=["p-1"])))
-            drop = router.post(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json={}))
+            router.get(f"{BASE_URL}/system_stats").mock(return_value=httpx2.Response(500, text="boom"))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(pending=["p-1"])))
+            drop = router.post(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json={}))
 
             with pytest.raises(asyncio.CancelledError):
                 await _backend().generate(_request(tmp_path))
@@ -1158,7 +1174,7 @@ class TestStoppingTheRemote:
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             self._polling_cancelled(router)
             self._version(router, "0.26.1")
-            cancel = router.post(f"{BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx.Response(500, text="boom"))
+            cancel = router.post(f"{BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx2.Response(500, text="boom"))
 
             with pytest.raises(asyncio.CancelledError):
                 await _backend().generate(_request(tmp_path))
@@ -1168,11 +1184,11 @@ class TestStoppingTheRemote:
     async def test_the_remote_is_stopped_before_a_timeout_surfaces(self, tmp_path: Path):
         """全局超时同样叫停：跑到一半没人要的执行照样占着卡。"""
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json={}))
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(running=["p-1"])))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json={}))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(running=["p-1"])))
             self._version(router, "0.26.0")
-            cancel = router.post(f"{BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx.Response(200, json={}))
+            cancel = router.post(f"{BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx2.Response(200, json={}))
 
             with pytest.raises(TimeoutError):
                 await _backend().generate(_request(tmp_path, poll_timeout_seconds=60))
@@ -1195,8 +1211,8 @@ class TestStoppingTheRemote:
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids():
             self._polling_cancelled(router)
             self._version(router, None)
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(pending=["p-1"])))
-            drop = router.post(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json={}))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(pending=["p-1"])))
+            drop = router.post(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json={}))
 
             with pytest.raises(asyncio.CancelledError):
                 await _backend().generate(_request(tmp_path))

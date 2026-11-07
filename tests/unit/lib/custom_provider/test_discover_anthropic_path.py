@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.artifact_download_guard import ArtifactDestinationRejectedError
@@ -39,8 +39,8 @@ async def test_discover_retries_with_bearer_after_401() -> None:
     with capture_http() as router:
         route = router.get("https://ark.cn-beijing.volces.com/api/plan/v1/models").mock(
             side_effect=[
-                httpx.Response(401, text="unauthorized"),
-                httpx.Response(200, json={"data": [{"id": "doubao-seed-evolving"}]}),
+                httpx2.Response(401, text="unauthorized"),
+                httpx2.Response(200, json={"data": [{"id": "doubao-seed-evolving"}]}),
             ]
         )
         models = await _discover_anthropic("https://ark.cn-beijing.volces.com/api/plan", "sk")

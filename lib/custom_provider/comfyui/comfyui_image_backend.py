@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-import httpx
+import httpx2
 
 from arcreel_market_core.comfyui.bindings import targets_of
 from arcreel_market_core.video_backend_contract import ProviderResponseStage
@@ -156,7 +156,7 @@ class ComfyuiImageBackend:
             )
 
     async def _upload_media(
-        self, http: httpx.AsyncClient, request: ImageGenerationRequest, *, job_label: str
+        self, http: httpx2.AsyncClient, request: ImageGenerationRequest, *, job_label: str
     ) -> MediaInputs:
         """把已通过槽位容量校验的参考图全部上传。"""
         references: list[str] = []

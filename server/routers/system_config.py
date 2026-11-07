@@ -18,7 +18,7 @@ from functools import lru_cache
 from typing import Annotated, Any, Literal, TypedDict
 from urllib.parse import urlsplit
 
-import httpx
+import httpx2
 from fastapi import APIRouter, Depends, HTTPException
 from packaging.version import InvalidVersion, Version
 from pydantic import BaseModel
@@ -127,7 +127,7 @@ def _build_latest_release_payload(data: dict[str, Any]) -> dict[str, str]:
 
 async def _get_latest_release(
     *,
-    http_client: httpx.AsyncClient | None = None,
+    http_client: httpx2.AsyncClient | None = None,
     now: datetime | None = None,
 ) -> tuple[dict[str, str], datetime]:
     """Fetch latest GitHub release with a 5-minute cache.

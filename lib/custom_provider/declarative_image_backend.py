@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 
 from arcreel_market_core.video_backend_contract import ProviderJobStatus
 from lib.backends.artifact_download_guard import IMAGE_ARTIFACT_MAX_BYTES, artifact_http_client
@@ -209,7 +209,7 @@ class DeclarativeImageBackend:
 
     async def _collect(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         job_id: str,
         call: JobCall,
         context: Mapping[str, object],

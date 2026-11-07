@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import NamedTuple
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -53,11 +53,11 @@ def _agnes_api(*, base_url: str = _BASE_URL) -> Generator[_AgnesRoutes]:
         )
 
 
-def _json(body: dict, status_code: int = 200) -> httpx.Response:
-    return httpx.Response(status_code, json=body)
+def _json(body: dict, status_code: int = 200) -> httpx2.Response:
+    return httpx2.Response(status_code, json=body)
 
 
-def _queued(task_id: str = "task-1") -> httpx.Response:
+def _queued(task_id: str = "task-1") -> httpx2.Response:
     return _json({"task_id": task_id, "status": "queued"})
 
 
@@ -207,7 +207,7 @@ class TestTextToVideo:
         with _agnes_api(base_url=_GATEWAY_BASE_URL) as routes:
             routes.submit.mock(return_value=_queued("task-42"))
             routes.poll.mock(return_value=_json(_completed("task-42", seconds="5.0")))
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4-bytes"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4-bytes"))
 
             backend = AgnesVideoBackend(api_key="sk-test", model="agnes-video-v2.0", base_url=_GATEWAY_BASE_URL)
             result = await backend.generate(
@@ -257,7 +257,7 @@ class TestTextToVideo:
         with _agnes_api(base_url=_GATEWAY_BASE_URL) as routes:
             routes.submit.mock(return_value=_json({"task_id": "task-v20", "video_id": "video-v20", "status": "queued"}))
             routes.poll.mock(return_value=_json(_completed("task-v20", seconds="5")))
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4-bytes"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4-bytes"))
 
             backend = AgnesVideoBackend(api_key="sk-test", model="agnes-video-v2.0", base_url=_GATEWAY_BASE_URL)
             result = await backend.generate(_request(tmp_path))
@@ -271,7 +271,7 @@ class TestTextToVideo:
         with _agnes_api() as routes, bounded_poll_clock():
             routes.submit.mock(return_value=_queued("t3"))
             routes.poll.mock(side_effect=[in_progress, in_progress, _json(_completed("t3"))])
-            routes.download.mock(return_value=httpx.Response(200, content=b"v"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"v"))
 
             backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_BASE_URL)
             result = await backend.generate(_request(tmp_path))
@@ -488,7 +488,7 @@ class TestFailureAndTimeout:
                 )
             )
             routes.query.mock(return_value=_json({"video_id": "vid-123", "url": "https://cdn.agnes/queried.mp4"}))
-            routes.download.mock(return_value=httpx.Response(200, content=b"queried-bytes"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"queried-bytes"))
 
             backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_GATEWAY_BASE_URL)
             result = await backend.generate(_request(tmp_path, on_provider_response=_record))
@@ -617,7 +617,7 @@ class TestFailureAndTimeout:
                     }
                 )
             )
-            routes.download.mock(return_value=httpx.Response(200, content=b"meta-bytes"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"meta-bytes"))
 
             backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_BASE_URL)
             result = await backend.generate(_request(tmp_path))
@@ -658,7 +658,7 @@ class TestFailureAndTimeout:
 class TestSubmitResilience:
     async def test_submit_retries_on_503_busy(self, tmp_path: Path):
         """503 Service busy → 经 should_retry_submit 的 status_code 闸门重试。"""
-        busy = httpx.Response(503, text="Service busy")
+        busy = httpx2.Response(503, text="Service busy")
 
         with _agnes_api() as routes, bounded_poll_clock():
             routes.submit.mock(side_effect=[busy, busy, _queued("t-retry")])
@@ -676,7 +676,7 @@ class TestSubmitResilience:
             routes.submit.mock(return_value=_json({"error": "bad request"}, status_code=400))
 
             backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_BASE_URL)
-            with pytest.raises(httpx.HTTPStatusError):
+            with pytest.raises(httpx2.HTTPStatusError):
                 await backend.generate(_request(tmp_path))
 
             assert routes.submit.call_count == 1
@@ -684,7 +684,7 @@ class TestSubmitResilience:
 
     async def test_submit_read_timeout_wraps_ambiguous(self, tmp_path: Path):
         with _agnes_api() as routes, bounded_poll_clock():
-            routes.submit.mock(side_effect=httpx.ReadTimeout("read timed out"))
+            routes.submit.mock(side_effect=httpx2.ReadTimeout("read timed out"))
 
             backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_BASE_URL)
             with pytest.raises(AmbiguousSubmitError):
@@ -698,10 +698,10 @@ class TestResume:
     async def test_download_failure_can_resume_without_resubmit(self, tmp_path: Path):
         download_ready = False
 
-        def download_response(_request: httpx.Request) -> httpx.Response:
+        def download_response(_request: httpx2.Request) -> httpx2.Response:
             if download_ready:
-                return httpx.Response(200, content=b"resumed")
-            return httpx.Response(503, text="cdn unavailable")
+                return httpx2.Response(200, content=b"resumed")
+            return httpx2.Response(503, text="cdn unavailable")
 
         with _agnes_api() as routes, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             routes.submit.mock(return_value=_queued("task-download"))
@@ -724,7 +724,7 @@ class TestResume:
     async def test_resume_polls_existing_job_no_submit(self, tmp_path: Path):
         with _agnes_api() as routes:
             routes.poll.mock(return_value=_json(_completed("task-resume", "https://cdn.agnes/resumed.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b"resumed"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"resumed"))
 
             backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_BASE_URL)
             result = await backend.resume_video("task-resume", _request(tmp_path, output_path=tmp_path / "out.mp4"))
@@ -754,7 +754,7 @@ class TestResume:
             routes.query.mock(
                 return_value=_json({"video_id": "vid-resume", "url": "https://cdn.agnes/resume-queried.mp4"})
             )
-            routes.download.mock(return_value=httpx.Response(200, content=b"resume-queried"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"resume-queried"))
 
             backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_GATEWAY_BASE_URL)
             result = await backend.resume_video("task-resume-vid", _request(tmp_path, output_path=tmp_path / "out.mp4"))
@@ -786,7 +786,7 @@ class TestDurationPassthrough:
         with _agnes_api() as routes:
             routes.submit.mock(return_value=_queued("task-30"))
             routes.poll.mock(return_value=_json(_completed("task-30", seconds="30.0")))
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_BASE_URL)
             await backend.generate(_request(tmp_path, duration_seconds=30))
@@ -843,8 +843,8 @@ class TestPollErrorRedaction:
         backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_BASE_URL)
         with _agnes_api() as routes:
             routes.poll.mock(return_value=_json({"message": "forbidden"}, 403))
-            async with httpx.AsyncClient(params={"api_key": "SECRETKEY"}) as client:
-                with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            async with httpx2.AsyncClient(params={"api_key": "SECRETKEY"}) as client:
+                with pytest.raises(httpx2.HTTPStatusError) as excinfo:
                     await backend._poll_once(client, "task-1")
 
         assert "SECRETKEY" not in str(excinfo.value)
@@ -854,8 +854,8 @@ class TestPollErrorRedaction:
         backend = AgnesVideoBackend(api_key="k", model="agnes-video-v2.0", base_url=_BASE_URL)
         with _agnes_api() as routes:
             routes.query.mock(return_value=_json({"message": "forbidden"}, 403))
-            async with httpx.AsyncClient(params={"api_key": "SECRETKEY"}) as client:
-                with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            async with httpx2.AsyncClient(params={"api_key": "SECRETKEY"}) as client:
+                with pytest.raises(httpx2.HTTPStatusError) as excinfo:
                     await backend._query_video(client, "vid-1", _request(tmp_path))
 
         assert "SECRETKEY" not in str(excinfo.value)

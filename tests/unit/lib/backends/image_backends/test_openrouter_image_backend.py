@@ -15,7 +15,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 
-import httpx
+import httpx2
 import pytest
 from PIL import Image
 
@@ -41,12 +41,12 @@ _IMAGES_URL = f"{_BASE_URL}/images"
 _MODELS_URL = f"{_BASE_URL}/images/models"
 
 
-def _ok_response() -> httpx.Response:
-    return httpx.Response(200, json={"created": 1, "data": [{"b64_json": _PNG_1PX, "media_type": "image/png"}]})
+def _ok_response() -> httpx2.Response:
+    return httpx2.Response(200, json={"created": 1, "data": [{"b64_json": _PNG_1PX, "media_type": "image/png"}]})
 
 
-def _models_response(*models: dict) -> httpx.Response:
-    return httpx.Response(200, json={"data": list(models)})
+def _models_response(*models: dict) -> httpx2.Response:
+    return httpx2.Response(200, json={"data": list(models)})
 
 
 def _enum(name: str, *values: str) -> dict:
@@ -117,7 +117,7 @@ def test_caps_and_defaults():
 def _limit(model: str, *catalog: dict, status: int = 200) -> int:
     backend = OpenRouterImageBackend(api_key="sk-or-test", model=model, base_url=_BASE_URL)
     with capture_http() as router:
-        response = _models_response(*catalog) if status == 200 else httpx.Response(status)
+        response = _models_response(*catalog) if status == 200 else httpx2.Response(status)
         router.get(_MODELS_URL).mock(return_value=response)
         return asyncio.run(backend.reference_image_limit())
 
@@ -162,7 +162,7 @@ def test_unknown_model_falls_back_to_size(tmp_path: Path):
 def test_discovery_failure_falls_back_to_size(tmp_path: Path):
     """目录查询失败只影响参数精化：生成按 size 兜底照常走，不中断。"""
     with capture_http() as router:
-        router.get(_MODELS_URL).mock(return_value=httpx.Response(500))
+        router.get(_MODELS_URL).mock(return_value=httpx2.Response(500))
         route = router.post(_IMAGES_URL).mock(return_value=_ok_response())
         _run(_request(tmp_path))
     req_json = request_json(only_request(route))
@@ -382,7 +382,7 @@ def test_catalog_failure_is_not_requeried_within_the_failure_window(tmp_path: Pa
         api_key="sk-or-test", model="openai/gpt-image-2", base_url=_BASE_URL, clock=lambda: now[0]
     )
     with capture_http() as router:
-        models_route = router.get(_MODELS_URL).mock(return_value=httpx.Response(503))
+        models_route = router.get(_MODELS_URL).mock(return_value=httpx2.Response(503))
         router.post(_IMAGES_URL).mock(return_value=_ok_response())
         asyncio.run(backend.generate(_request(tmp_path)))
         now[0] += 59
@@ -419,7 +419,7 @@ def test_non_png_raster_output_is_stored_as_png(tmp_path: Path):
     with capture_http() as router:
         router.get(_MODELS_URL).mock(return_value=_models_response())
         router.post(_IMAGES_URL).mock(
-            return_value=httpx.Response(200, json={"data": [{"b64_json": jpeg, "media_type": "image/jpeg"}]})
+            return_value=httpx2.Response(200, json={"data": [{"b64_json": jpeg, "media_type": "image/jpeg"}]})
         )
         _run(_request(tmp_path))
     with Image.open(tmp_path / "out.png") as stored:
@@ -431,10 +431,10 @@ def test_url_output_is_downloaded_and_stored_as_png(tmp_path: Path):
     with capture_http() as router:
         router.get(_MODELS_URL).mock(return_value=_models_response())
         router.post(_IMAGES_URL).mock(
-            return_value=httpx.Response(200, json={"data": [{"url": "https://cdn.example.com/out.jpg"}]})
+            return_value=httpx2.Response(200, json={"data": [{"url": "https://cdn.example.com/out.jpg"}]})
         )
         router.get("https://cdn.example.com/out.jpg").mock(
-            return_value=httpx.Response(200, content=_image_bytes("JPEG"))
+            return_value=httpx2.Response(200, content=_image_bytes("JPEG"))
         )
         _run(_request(tmp_path))
     with Image.open(tmp_path / "out.png") as stored:
@@ -447,7 +447,7 @@ def test_vector_output_raises_structured_failure(tmp_path: Path):
     with capture_http() as router:
         router.get(_MODELS_URL).mock(return_value=_models_response())
         router.post(_IMAGES_URL).mock(
-            return_value=httpx.Response(200, json={"data": [{"b64_json": svg, "media_type": "image/svg+xml"}]})
+            return_value=httpx2.Response(200, json={"data": [{"b64_json": svg, "media_type": "image/svg+xml"}]})
         )
         with pytest.raises(ImageOutputFormatError) as ei:
             _run(_request(tmp_path))
@@ -594,7 +594,7 @@ def test_response_without_image_raises_structured_failure(tmp_path: Path, body):
     with capture_http() as router:
         router.get(_MODELS_URL).mock(return_value=_models_response())
         router.post(_IMAGES_URL).mock(
-            return_value=httpx.Response(200, content=body, headers={"Content-Type": "application/json"})
+            return_value=httpx2.Response(200, content=body, headers={"Content-Type": "application/json"})
         )
         with pytest.raises(ImageOutputMissingError) as ei:
             _run(_request(tmp_path))

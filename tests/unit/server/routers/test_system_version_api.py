@@ -5,7 +5,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -227,8 +227,8 @@ class TestGetLatestReleaseCache:
         with capture_http(assert_all_called=True) as http:
             http.get(_GITHUB_LATEST).respond(status_code=302, headers={"Location": leaky})
             http.get(url__startswith="https://objects.githubusercontent.com/release").respond(status_code=401)
-            async with httpx.AsyncClient(follow_redirects=True) as client:
-                with pytest.raises(httpx.HTTPStatusError) as exc_info:
+            async with httpx2.AsyncClient(follow_redirects=True) as client:
+                with pytest.raises(httpx2.HTTPStatusError) as exc_info:
                     await system_config._get_latest_release(http_client=client)
 
         assert "sk-leaked-gh" in str(exc_info.value.request.url)
@@ -240,7 +240,7 @@ class TestGetLatestReleaseCache:
         with capture_http(assert_all_called=True) as http:
             route = http.get(_GITHUB_LATEST).respond(status_code=500)
             for _ in range(2):
-                with pytest.raises(httpx.HTTPStatusError):
+                with pytest.raises(httpx2.HTTPStatusError):
                     await system_config._get_latest_release()
 
         assert route.call_count == 2

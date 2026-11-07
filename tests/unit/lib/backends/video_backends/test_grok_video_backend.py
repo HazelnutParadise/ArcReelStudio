@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -24,9 +24,9 @@ from tests.http_capture import capture_http
 
 @contextmanager
 def _video_download(url: str, content: bytes) -> Generator[respx.Route]:
-    """成片下载的出站流：base 层用真实 httpx 流式取字节，走 respx 在 transport 层拦截。"""
+    """成片下载的出站流：base 层用真实 httpx2 流式取字节，走 respx 在 transport 层拦截。"""
     with capture_http() as router:
-        yield router.get(url).mock(return_value=httpx.Response(200, content=content))
+        yield router.get(url).mock(return_value=httpx2.Response(200, content=content))
 
 
 @pytest.fixture

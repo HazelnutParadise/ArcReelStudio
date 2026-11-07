@@ -16,7 +16,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import ClassVar
 
-import httpx
+import httpx2
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -63,14 +63,16 @@ def _target():
 
 
 def _mock_successful_run(router) -> None:
-    router.post("https://relay.test/v1/video/create").mock(return_value=httpx.Response(200, json={"task_id": "job-42"}))
+    router.post("https://relay.test/v1/video/create").mock(
+        return_value=httpx2.Response(200, json={"task_id": "job-42"})
+    )
     router.get("https://relay.test/v1/video/fetch/job-42").mock(
         side_effect=[
-            httpx.Response(200, json={"status": "processing"}),
-            httpx.Response(200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}),
+            httpx2.Response(200, json={"status": "processing"}),
+            httpx2.Response(200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}),
         ]
     )
-    router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+    router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
 
 async def _await_terminal(trial_runs: TrialRunManager, run_id: str):
@@ -93,17 +95,17 @@ def _mock_pending_run(router) -> asyncio.Event:
     """
     submitted = asyncio.Event()
     parked = asyncio.Event()
-    fetches: list[httpx.Request] = []
+    fetches: list[httpx2.Request] = []
 
-    def _create(_request: httpx.Request) -> httpx.Response:
+    def _create(_request: httpx2.Request) -> httpx2.Response:
         submitted.set()
-        return httpx.Response(200, json={"task_id": "job-42"})
+        return httpx2.Response(200, json={"task_id": "job-42"})
 
-    async def _fetch(request: httpx.Request) -> httpx.Response:
+    async def _fetch(request: httpx2.Request) -> httpx2.Response:
         if fetches:
             await parked.wait()
         fetches.append(request)
-        return httpx.Response(200, json={"status": "processing"})
+        return httpx2.Response(200, json={"status": "processing"})
 
     router.post("https://relay.test/v1/video/create").mock(side_effect=_create)
     router.get("https://relay.test/v1/video/fetch/job-42").mock(side_effect=_fetch)
@@ -176,13 +178,13 @@ def _image_target():
     return declarative_target(image_endpoint_definition(), CREDENTIALS, IMAGE_PARAMETERS)
 
 
-def _image_task(status: str, **data: object) -> httpx.Response:
-    return httpx.Response(200, json={"code": 200, "data": {"status": status, **data}})
+def _image_task(status: str, **data: object) -> httpx2.Response:
+    return httpx2.Response(200, json={"code": 200, "data": {"status": status, **data}})
 
 
 def _mock_image_submit(router) -> None:
     router.post("https://relay.test/v1/images/generations").mock(
-        return_value=httpx.Response(200, json={"code": 200, "data": [{"status": "submitted", "task_id": "task_9"}]})
+        return_value=httpx2.Response(200, json={"code": 200, "data": [{"status": "submitted", "task_id": "task_9"}]})
     )
 
 
@@ -198,7 +200,7 @@ class TestImageDefinitionTrialRun:
                     _image_task("completed", result={"images": [{"url": ["https://cdn.test/img/a.png"]}]}),
                 ]
             )
-            router.get("https://cdn.test/img/a.png").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get("https://cdn.test/img/a.png").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
             started = await trial_runs.start(_image_target(), IMAGE_PARAMETERS)
             run = await _await_terminal(trial_runs, started.id)
 
@@ -239,7 +241,7 @@ class TestImageDefinitionTrialRun:
         ],
     )
     async def test_a_provider_side_failure_lands_as_a_failed_image_run(
-        self, trial_runs: TrialRunManager, poll_body: httpx.Response, reason: str
+        self, trial_runs: TrialRunManager, poll_body: httpx2.Response, reason: str
     ):
         with capture_http() as router, bounded_poll_clock():
             _mock_image_submit(router)
@@ -329,20 +331,20 @@ class TestTrialRun:
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
                 side_effect=[
-                    httpx.Response(429, json={"error": "busy"}),
-                    httpx.Response(200, json={"task_id": "job-42"}),
+                    httpx2.Response(429, json={"error": "busy"}),
+                    httpx2.Response(200, json={"task_id": "job-42"}),
                 ]
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
                 side_effect=[
-                    httpx.Response(200, json={"status": "processing"}),
-                    httpx.Response(
+                    httpx2.Response(200, json={"status": "processing"}),
+                    httpx2.Response(
                         200,
                         json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                     ),
                 ]
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             started = await trial_runs.start(_target(), PARAMETERS)
             run = await _await_terminal(trial_runs, started.id)
@@ -367,15 +369,15 @@ class TestTrialRun:
 
         with capture_http() as router, bounded_poll_clock(step=1.0):
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(200, json=poll_body)
+                return_value=httpx2.Response(200, json=poll_body)
             )
             router.get("https://relay.test/v1/video/result/result-9").mock(
-                return_value=httpx.Response(200, json=result_body)
+                return_value=httpx2.Response(200, json=result_body)
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             target = declarative_target(definition, CREDENTIALS, PARAMETERS)
             started = await trial_runs.start(target, PARAMETERS)
@@ -455,7 +457,7 @@ class TestTrialRun:
         with capture_http() as router, bounded_poll_clock():
             _mock_successful_run(router)
             submit = router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             started = await trial_runs.start(
                 declarative_target(definition, CREDENTIALS, PARAMETERS),
@@ -515,7 +517,7 @@ class TestTrialRun:
         with capture_http() as router, bounded_poll_clock():
             _mock_successful_run(router)
             submit = router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             started = await trial_runs.start(_tier_aware_target(parameters), parameters, assets={"start_image": frame})
             run = await _await_terminal(trial_runs, started.id)
@@ -526,7 +528,7 @@ class TestTrialRun:
     async def test_a_provider_failure_lands_as_a_failed_run(self, trial_runs: TrialRunManager):
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"error": {"message": "quota exceeded"}})
+                return_value=httpx2.Response(200, json={"error": {"message": "quota exceeded"}})
             )
             started = await trial_runs.start(_target(), PARAMETERS)
             run = await _await_terminal(trial_runs, started.id)

@@ -1,0 +1,6 @@
+# pnpm 的项目设置。core-js 的 postinstall 只打印赞助信息，不执行。
+allowBuilds:
+  core-js: false
+overrides:
+  "qs": "^6.16.0"
+  "serialize-javascript": "^7.0.5"

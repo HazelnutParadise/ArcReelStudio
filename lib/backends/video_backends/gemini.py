@@ -124,7 +124,7 @@ class GeminiVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
             self._client = _genai.Client(api_key=self._api_key, http_options=self._http_options)
 
     async def _close_injected_http_clients(self) -> None:
-        # SDK 的 close/aclose 跳过外部传入的 httpx 客户端
+        # SDK 的 close/aclose 跳过外部传入的 httpx2 客户端
         options = self._http_options
         if self._transport_layer is None or not isinstance(options, self._types.HttpOptions):
             return
@@ -312,7 +312,16 @@ class GeminiVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
                 }
             ),
         )
-        operation = await self._client.aio.models.generate_videos(model=self._video_model, source=source, config=config)
+        try:
+            operation = await self._client.aio.models.generate_videos(
+                model=self._video_model, source=source, config=config
+            )
+        except ValueError as exc:
+            if _is_api_key_mode_refusal(exc):
+                raise VideoCapabilityError(
+                    "video_veo_api_key_mode_unsupported", provider=self.name, model=self._video_model
+                ) from exc
+            raise
         op_name = getattr(operation, "name", "unknown")
         logger.info("视频生成已提交, operation=%s", op_name)
         return operation
@@ -529,6 +538,15 @@ def _should_retry_gemini_poll(exc: Exception) -> bool:
     if isinstance(exc, genai_errors.APIError):
         return is_retryable_http_status(exc.code)
     return should_retry_poll(exc)
+
+
+def _is_api_key_mode_refusal(exc: BaseException) -> bool:
+    """识别 google-genai 在 API Key（Gemini Developer API）模式下对 ``generate_videos`` 的拒绝。
+
+    SDK 3.0 起该模式在发请求前即抛 ``ValueError``，新的 Veo 任务只能经 Vertex 提交；按 operation 名查询
+    已提交任务不受影响，续跑照常轮询。只认这条提示文本：同为 ``ValueError`` 的入参校验错误照原样上抛。
+    """
+    return isinstance(exc, ValueError) and "not in Gemini Developer API mode" in str(exc)
 
 
 def _is_gemini_not_found(exc: BaseException) -> bool:

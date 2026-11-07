@@ -13,7 +13,7 @@ import string
 from collections import Counter
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import VideoCapabilityError
@@ -625,11 +625,11 @@ def test_non_capability_exception_still_passes_through():
 
 def test_provider_rejection_stores_status_and_reason_as_separate_params():
     """上游确定性 4xx：状态码进译文，拒因摘要以独立参数原样留在信封里。"""
-    request = httpx.Request("POST", "https://x/v2?api_key=SECRETKEY")
+    request = httpx2.Request("POST", "https://x/v2?api_key=SECRETKEY")
     exc = ProviderRejectedError(
         "400 response for https://x/v2",
         request=request,
-        response=httpx.Response(400, request=request),
+        response=httpx2.Response(400, request=request),
         provider_reason="InvalidParameter: prompt violates the content policy",
     )
 
@@ -649,11 +649,11 @@ def test_provider_rejection_stores_status_and_reason_as_separate_params():
 
 def test_provider_rejection_without_a_reason_still_stores_the_status():
     """摘要缺席（认证类不透传、空响应体）时仍走结构化信封，读侧照常拿到本地化文案。"""
-    request = httpx.Request("POST", "https://x/v2?api_key=SECRETKEY")
+    request = httpx2.Request("POST", "https://x/v2?api_key=SECRETKEY")
     exc = ProviderRejectedError(
         "401 response for https://x/v2",
         request=request,
-        response=httpx.Response(401, request=request),
+        response=httpx2.Response(401, request=request),
     )
 
     stored = encode_task_failure_message(exc)

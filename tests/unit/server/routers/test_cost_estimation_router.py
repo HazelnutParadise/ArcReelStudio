@@ -4,7 +4,7 @@ import asyncio
 import gc
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -175,7 +175,7 @@ class TestCostEstimationCoalescing:
             service.return_value.compute = estimates.compute
             app = _make_app()
             app.dependency_overrides[cost_estimation.get_cost_estimate_coalescer] = lambda: spy
-            client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
+            client = httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test")
             yield inputs, estimates, spy, client
 
     @staticmethod

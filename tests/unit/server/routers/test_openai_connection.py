@@ -1,6 +1,6 @@
 """OpenAI 连接测试 (_check_openai) 单元测试。
 
-替身落在出站 HTTP 上：``openai.OpenAI`` 自带的 httpx 客户端同样被 respx 拦截，URL 拼接与
+替身落在出站 HTTP 上：``openai.OpenAI`` 自带的 httpx2 客户端同样被 respx 拦截，URL 拼接与
 鉴权 header 因而都在断言范围内（见 ``tests/http_capture``）。
 """
 

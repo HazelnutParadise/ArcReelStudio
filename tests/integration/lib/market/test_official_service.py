@@ -3,7 +3,7 @@
 import asyncio
 from types import TracebackType
 
-import httpx
+import httpx2
 import respx
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -34,7 +34,7 @@ async def test_concurrent_first_requests_keep_the_first_committed_instance_id(
         concurrent_session_factory.kw["bind"], class_=PausedSession, expire_on_commit=False
     )
     ref = EntryRef(type="endpoint", source="github:ArcReel/arcreel-market@HEAD", slug="example")
-    async with httpx.AsyncClient() as network:
+    async with httpx2.AsyncClient() as network:
         gateway = OfficialServiceGateway(factory, base_url="https://official.test", http_client=lambda: network)
         with respx.mock(assert_all_called=True) as remote:
             route = remote.put("https://official.test/api/v1/market/ratings").respond(204)
@@ -88,7 +88,7 @@ async def test_first_request_regenerates_when_the_winning_instance_id_is_reset_m
         concurrent_session_factory.kw["bind"], class_=PausedSession, expire_on_commit=False
     )
     ref = EntryRef(type="endpoint", source="github:ArcReel/arcreel-market@HEAD", slug="example")
-    async with httpx.AsyncClient() as network:
+    async with httpx2.AsyncClient() as network:
         gateway = OfficialServiceGateway(factory, base_url="https://official.test", http_client=lambda: network)
         with respx.mock(assert_all_called=True) as remote:
             route = remote.put("https://official.test/api/v1/market/ratings").respond(204)

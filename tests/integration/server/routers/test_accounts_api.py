@@ -10,7 +10,7 @@ from collections.abc import AsyncIterator
 
 import pytest
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from lib.db import async_session_factory
 from server.auth import EMBEDDED_AGENT_SUB, create_token

@@ -15,7 +15,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 
 from lib.artifacts.artifact_manifest import ArtifactBasis, compose_video_artifact_basis
@@ -309,13 +309,13 @@ async def test_ce_orphan_resumes_end_to_end_without_resubmitting(chain_project: 
         submit = router.post("https://relay.test/v1/video/create")
         poll_current = router.get("https://relay.test/v1/video/fetch/job-old")
         poll = router.get("https://old-relay.test/v1/video/fetch/job-old").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200,
                 json={"status": "completed", "video_url": "https://old-relay.test/files/job-old.mp4"},
             )
         )
         download = router.get("https://old-relay.test/files/job-old.mp4").mock(
-            return_value=httpx.Response(200, content=b"resumed")
+            return_value=httpx2.Response(200, content=b"resumed")
         )
 
         await _run_orphan_recovery(session_factory)
@@ -417,11 +417,11 @@ async def test_ce_orphan_resumes_through_unchanged_path_overrides(chain_project:
     with capture_http() as router:
         submit = router.post("https://relay.test/v1/video/create")
         poll = router.get("https://relay.test/v2/fetch/job-old").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"status": "completed", "video_url": "https://relay.test/files/job-old.mp4"}
             )
         )
-        router.get("https://relay.test/files/job-old.mp4").mock(return_value=httpx.Response(200, content=b"resumed"))
+        router.get("https://relay.test/files/job-old.mp4").mock(return_value=httpx2.Response(200, content=b"resumed"))
 
         await _run_orphan_recovery(session_factory)
 
@@ -494,10 +494,10 @@ async def test_builtin_job_submitted_before_shutdown_still_resumes_after_it(
     with capture_http() as router:
         submit = router.post("https://apihub.agnes-ai.com/v1/videos")
         poll = router.get("https://apihub.agnes-ai.com/v1/videos/job-old").mock(
-            return_value=httpx.Response(200, json={"status": "completed", "url": "https://cdn.agnes.test/job-old.mp4"})
+            return_value=httpx2.Response(200, json={"status": "completed", "url": "https://cdn.agnes.test/job-old.mp4"})
         )
         download = router.get("https://cdn.agnes.test/job-old.mp4").mock(
-            return_value=httpx.Response(200, content=b"resumed")
+            return_value=httpx2.Response(200, content=b"resumed")
         )
 
         await _run_orphan_recovery(session_factory)
@@ -533,12 +533,12 @@ async def test_custom_job_submitted_before_shutdown_still_resumes_after_it(
     with capture_http() as router:
         submit = router.post("https://relay.test/v1/video/create")
         poll = router.get("https://relay.test/v1/video/fetch/job-old").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"status": "completed", "video_url": "https://relay.test/files/job-old.mp4"}
             )
         )
         download = router.get("https://relay.test/files/job-old.mp4").mock(
-            return_value=httpx.Response(200, content=b"resumed")
+            return_value=httpx2.Response(200, content=b"resumed")
         )
 
         await _run_orphan_recovery(session_factory)
@@ -596,7 +596,7 @@ async def test_seedance_job_submitted_before_endpoint_split_resumes(chain_projec
     with capture_http() as router:
         submit = router.post("https://ark-relay.test/api/v3/contents/generations/tasks")
         poll = router.get("https://ark-relay.test/api/v3/contents/generations/tasks/job-old").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200,
                 json={
                     "id": "job-old",
@@ -610,7 +610,7 @@ async def test_seedance_job_submitted_before_endpoint_split_resumes(chain_projec
             )
         )
         download = router.get("https://cdn.ark.test/job-old.mp4").mock(
-            return_value=httpx.Response(200, content=b"resumed")
+            return_value=httpx2.Response(200, content=b"resumed")
         )
 
         await _run_orphan_recovery(session_factory)
@@ -669,7 +669,7 @@ async def test_kling_job_submitted_before_split_resumes(chain_project: Path, ses
     with capture_http() as router:
         submit = router.post("https://ark-relay.test/v1/videos/text2video")
         poll = router.get("https://ark-relay.test/v1/videos/text2video/job-old").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200,
                 json={
                     "code": 0,
@@ -681,7 +681,7 @@ async def test_kling_job_submitted_before_split_resumes(chain_project: Path, ses
             )
         )
         download = router.get("https://cdn.kling.test/old.mp4").mock(
-            return_value=httpx.Response(200, content=b"resumed-kling")
+            return_value=httpx2.Response(200, content=b"resumed-kling")
         )
         await _run_orphan_recovery(session_factory)
 

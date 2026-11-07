@@ -10,7 +10,7 @@ import json
 from collections.abc import Generator
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -89,13 +89,15 @@ async def _fixed_timeout() -> int:
 
 
 def _mock_successful_run(router) -> None:
-    router.post("https://relay.test/v1/video/create").mock(return_value=httpx.Response(200, json={"task_id": "job-42"}))
+    router.post("https://relay.test/v1/video/create").mock(
+        return_value=httpx2.Response(200, json={"task_id": "job-42"})
+    )
     router.get("https://relay.test/v1/video/fetch/job-42").mock(
-        return_value=httpx.Response(
+        return_value=httpx2.Response(
             200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}
         )
     )
-    router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+    router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
 
 def _mock_successful_comfyui_run(router) -> None:
@@ -104,14 +106,14 @@ def _mock_successful_comfyui_run(router) -> None:
     ``/queue`` 一并给出：history 还空着的那一轮要据这张表判任务是不是丢了，队列里有这一笔才
     说明它还在排。
     """
-    router.post("https://comfy.test/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+    router.post("https://comfy.test/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
     router.get("https://comfy.test/queue").mock(
-        return_value=httpx.Response(200, json={"queue_running": [[0, "p-1", {}, [], {}]], "queue_pending": []})
+        return_value=httpx2.Response(200, json={"queue_running": [[0, "p-1", {}, [], {}]], "queue_pending": []})
     )
     router.get("https://comfy.test/history/p-1").mock(
         side_effect=[
-            httpx.Response(200, json={}),
-            httpx.Response(
+            httpx2.Response(200, json={}),
+            httpx2.Response(
                 200,
                 json={
                     "p-1": {
@@ -122,17 +124,17 @@ def _mock_successful_comfyui_run(router) -> None:
             ),
         ]
     )
-    router.get("https://comfy.test/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+    router.get("https://comfy.test/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
 
 def _mock_successful_comfyui_image_run(router) -> None:
     """同上，但产物是一张图：产物挂在 ``images`` 键上，取回的字节带 PNG 文件头。"""
-    router.post("https://comfy.test/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+    router.post("https://comfy.test/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
     router.get("https://comfy.test/queue").mock(
-        return_value=httpx.Response(200, json={"queue_running": [[0, "p-1", {}, [], {}]], "queue_pending": []})
+        return_value=httpx2.Response(200, json={"queue_running": [[0, "p-1", {}, [], {}]], "queue_pending": []})
     )
     router.get("https://comfy.test/history/p-1").mock(
-        return_value=httpx.Response(
+        return_value=httpx2.Response(
             200,
             json={
                 "p-1": {
@@ -144,7 +146,7 @@ def _mock_successful_comfyui_image_run(router) -> None:
             },
         )
     )
-    router.get("https://comfy.test/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+    router.get("https://comfy.test/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
 
 def _comfyui_image_definition() -> dict[str, Any]:
@@ -165,15 +167,15 @@ def _mock_comfyui_run_stuck_in_polling(router) -> asyncio.Event:
     polling = asyncio.Event()
     gate = asyncio.Event()  # 永不置位：这次 run 只可能被 cancel 停下
 
-    async def _never_settles(_request: httpx.Request) -> httpx.Response:
+    async def _never_settles(_request: httpx2.Request) -> httpx2.Response:
         polling.set()
         await gate.wait()
         raise AssertionError("闸口只由取消解除，不该走到这里")
 
-    router.post("https://comfy.test/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+    router.post("https://comfy.test/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
     router.get("https://comfy.test/history/p-1").mock(side_effect=_never_settles)
     router.get("https://comfy.test/system_stats").mock(
-        return_value=httpx.Response(200, json={"system": {"comfyui_version": "0.26.1"}})
+        return_value=httpx2.Response(200, json={"system": {"comfyui_version": "0.26.1"}})
     )
     return polling
 
@@ -196,7 +198,7 @@ def _hold_submit(router) -> asyncio.Queue[None]:
     arrived: asyncio.Queue[None] = asyncio.Queue()
     gate = asyncio.Event()  # 永不置位：这次 run 只可能被 cancel 停下
 
-    async def _never_responds(_request: httpx.Request) -> httpx.Response:
+    async def _never_responds(_request: httpx2.Request) -> httpx2.Response:
         arrived.put_nowait(None)
         await gate.wait()
         raise AssertionError("闸口只由取消解除，不该走到这里")
@@ -426,7 +428,7 @@ class TestTrialRuns:
         definition = custom_endpoint_definition()
         definition["submit"]["extract"]["task_id"] = ["$[?@.a == 1e400]"]
         with capture_http() as router:
-            router.post("https://relay.test/v1/video/create").mock(return_value=httpx.Response(200, json={"a": 1}))
+            router.post("https://relay.test/v1/video/create").mock(return_value=httpx2.Response(200, json={"a": 1}))
             created = _post(
                 client,
                 "trial-runs",
@@ -509,10 +511,10 @@ class TestTrialRuns:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://fixed.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://fixed.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(200, json={"status": "processing"})
+                return_value=httpx2.Response(200, json={"status": "processing"})
             )
             created = _post(
                 client,
@@ -538,10 +540,10 @@ class TestTrialRuns:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://fixed.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://fixed.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(200, json={"status": "processing"})
+                return_value=httpx2.Response(200, json={"status": "processing"})
             )
             created = _post(client, "trial-runs", {"definition": definition, "parameters": PARAMETERS})
             assert created.status_code == 201, created.text
@@ -553,14 +555,14 @@ class TestTrialRuns:
         """定义随版发布不该让结果体缺渲染请求与逐阶段提取——与 ce-* 走同一条诊断路。"""
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/generations").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/generations/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "succeeded", "url": "https://relay.test/files/job-42.mp4"}
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
             created = _post(
                 client,
                 "trial-runs",
@@ -587,14 +589,14 @@ class TestTrialRuns:
         """内置模型行走声明式装配：结果体同样给出渲染请求与逐阶段提取，不因定义随版发布而缺段。"""
         with capture_http() as router, bounded_poll_clock():
             router.post("https://api.minimaxi.com/v2/video_generation").mock(
-                return_value=httpx.Response(200, json={"task_id": "t-1"})
+                return_value=httpx2.Response(200, json={"task_id": "t-1"})
             )
             router.get("https://api.minimaxi.com/v2/query/video_generation/t-1").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"task": {"status": "succeeded", "content": {"url": "https://cdn.test/mm/h3.mp4"}}}
                 )
             )
-            router.get("https://cdn.test/mm/h3.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://cdn.test/mm/h3.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
             created = _post(
                 client,
                 "trial-runs",
@@ -846,7 +848,7 @@ class TestTrialRuns:
         row = stored_model_row_with_submit_override
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://relay.test/v2/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             _mock_successful_run(router)
             created = _post(
@@ -1218,7 +1220,7 @@ class TestComfyuiEndpoints:
     ):
         with capture_http() as router, bounded_poll_clock():
             router.post("https://comfy.test/prompt").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     400,
                     json={"node_errors": {"3": {"class_type": "KSampler", "errors": [{"message": "value too large"}]}}},
                 )
@@ -1250,12 +1252,12 @@ class TestComfyuiEndpoints:
     ):
         """一时的失败与配置错误在卡上要说不同的话，动作由失败码本身决定。"""
         with capture_http() as router, bounded_poll_clock():
-            router.post("https://comfy.test/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post("https://comfy.test/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             # 队列与历史里都没有这一笔：ComfyUI 多半重启过，重试就能好。
             router.get("https://comfy.test/queue").mock(
-                return_value=httpx.Response(200, json={"queue_running": [], "queue_pending": []})
+                return_value=httpx2.Response(200, json={"queue_running": [], "queue_pending": []})
             )
-            router.get("https://comfy.test/history/p-1").mock(return_value=httpx.Response(200, json={}))
+            router.get("https://comfy.test/history/p-1").mock(return_value=httpx2.Response(200, json={}))
             created = _post(
                 client,
                 "trial-runs",
@@ -1293,7 +1295,7 @@ class TestComfyuiEndpoints:
         with capture_http() as router:
             polling = _mock_comfyui_run_stuck_in_polling(router)
             job_cancel = router.post("https://comfy.test/api/jobs/p-1/cancel").mock(
-                return_value=httpx.Response(200, json={})
+                return_value=httpx2.Response(200, json={})
             )
             created = _post(
                 client,
@@ -1366,7 +1368,7 @@ class TestComfyuiEndpoints:
         with capture_http() as router, bounded_poll_clock():
             _mock_successful_comfyui_image_run(router)
             router.post("https://comfy.test/upload/image").mock(
-                return_value=httpx.Response(200, json={"name": "ref.png", "subfolder": "arcreel"})
+                return_value=httpx2.Response(200, json={"name": "ref.png", "subfolder": "arcreel"})
             )
             created = client.post(
                 "/api/v1/custom-endpoints/trial-runs",

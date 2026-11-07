@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
-import httpx
+import httpx2
 
 from arcreel_catalog_core import CatalogEntry
 from arcreel_market_core.video_backend_contract import (
@@ -138,7 +138,7 @@ SEEDANCE_2_5 = SeedanceEndpoint(
 def _retry_ark_download(exc: Exception) -> bool:
     """产物下载共用谓词 ⊕ Ark 特有的「任务已成功但产物未就绪」形态（400 video_not_ready）。"""
     if (
-        isinstance(exc, httpx.HTTPStatusError)
+        isinstance(exc, httpx2.HTTPStatusError)
         and exc.response.status_code == 400
         and "video_not_ready" in str(exc.response.text)
     ):

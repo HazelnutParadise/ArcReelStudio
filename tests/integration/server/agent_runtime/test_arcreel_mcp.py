@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from claude_agent_sdk import ClaudeAgentOptions
 from mcp import types
+from mcp.client import Client
 
 from lib.edit_timeline import EditTimelineService
 from lib.project.project_manager import ProjectManager
@@ -34,17 +35,15 @@ def test_build_arcreel_mcp_server_contains_all_tools(tmp_path: Path) -> None:
 async def test_session_server_lists_every_catalogued_tool(tmp_path: Path) -> None:
     server = build_arcreel_mcp_server(project_name="demo", data_root=tmp_path)["instance"]
 
-    listed = (await server.request_handlers[types.ListToolsRequest](types.ListToolsRequest())).root
+    async with Client(server) as client:
+        listed = await client.list_tools()
 
-    assert isinstance(listed, types.ListToolsResult)
     assert sorted(tool.name for tool in listed.tools) == sorted(ARCREEL_MCP_TOOL_IDS)
 
 
 async def _call(server, name: str, arguments: dict) -> types.CallToolResult:
-    request = types.CallToolRequest(params=types.CallToolRequestParams(name=name, arguments=arguments))
-    result = (await server.request_handlers[types.CallToolRequest](request)).root
-    assert isinstance(result, types.CallToolResult)
-    return result
+    async with Client(server) as client:
+        return await client.call_tool(name, arguments)
 
 
 async def test_session_entry_tools_share_the_session_projects_root(tmp_path: Path) -> None:
@@ -55,7 +54,7 @@ async def test_session_entry_tools_share_the_session_projects_root(tmp_path: Pat
     listed = await _call(server, "list_projects", {})
     uploaded = await _call(server, "upload_source", {"filename": "novel.txt", "content": "hello"})
 
-    assert [result.isError for result in (created, listed, uploaded)] == [False, False, False]
+    assert [result.is_error for result in (created, listed, uploaded)] == [False, False, False]
     assert isinstance(listed.content[-1], types.TextContent)
     assert [project["name"] for project in json.loads(listed.content[-1].text)["projects"]] == ["demo"]
     assert (projects.get_project_path("demo") / "source" / "novel.txt").read_text(encoding="utf-8") == "hello"
@@ -88,13 +87,13 @@ async def test_create_project_writes_tts_snapshot(tmp_path: Path) -> None:
         },
     )
 
-    assert created.isError is False
+    assert created.is_error is False
     project = projects.load_project("voiced")
     assert project["narration_delivery"] == "use_tts"
     assert project["audio_backend"] == "dashscope/qwen3-tts-flash"
     assert project["narration_voice"] == "Cherry"
     assert "narration_speed" not in project
-    assert rejected.isError is True
+    assert rejected.is_error is True
     assert not (projects.projects_dir / "broken").exists()
 
 
@@ -161,7 +160,7 @@ async def test_timeline_revision_records_the_agent_author(
         assert "type" in config
         assert config["type"] == "sdk"
         created = await _call(config["instance"], "create_timeline", {"from": "script", "episode": 1, "name": "完整版"})
-        assert created.isError is False
+        assert created.is_error is False
         [summary] = await EditTimelineService(projects).list_timelines("demo", episode=1)
         assert summary.updated_by.kind == "arcreel_agent"
     finally:

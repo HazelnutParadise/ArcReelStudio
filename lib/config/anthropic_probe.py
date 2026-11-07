@@ -3,9 +3,9 @@
 只探测 Agent 真正调用的 ``POST {base_url}/v1/messages``：测试连接的结论必须与运行时
 一致，模型发现是独立的尽力而为路径，不参与体检。
 
-走 httpx 直调（不走 Claude SDK 子进程）：
+走 httpx2 直调（不走 Claude SDK 子进程）：
 - SDK 路径冷启动 6s+ / timeout 30s / stderr 不含 HTTP status，诊断精度差
-- httpx 直调能拿到精确 status code 和上游错误 body，分类更可靠也更快
+- httpx2 直调能拿到精确 status code 和上游错误 body，分类更可靠也更快
 
 日志严格只打 URL 与 status，不打 body / headers / api_key。
 """
@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Literal
 
-import httpx
+import httpx2
 
 from lib.agent.agent_provider_catalog import CUSTOM_SENTINEL_ID, get_preset
 from lib.config.url_utils import (
@@ -80,8 +80,8 @@ async def _post(
     headers: dict[str, str],
     payload: dict[str, Any],
     timeout_s: float,
-    http_client: httpx.AsyncClient | None = None,
-) -> httpx.Response:
+    http_client: httpx2.AsyncClient | None = None,
+) -> httpx2.Response:
     """POST 出站间接层；``http_client`` 缺省时用共享客户端。"""
     client = http_client or get_http_client()
     return await client.post(url, headers=headers, json=payload, timeout=timeout_s)
@@ -99,7 +99,7 @@ async def probe_messages(
     api_key: str,
     model: str,
     timeout_s: float = _MESSAGES_PROBE_TIMEOUT_S,
-    http_client: httpx.AsyncClient | None = None,
+    http_client: httpx2.AsyncClient | None = None,
 ) -> ProbeResult:
     """POST {base_url}/v1/messages 发最小请求 (max_tokens=1)。
 
@@ -119,11 +119,11 @@ async def probe_messages(
     started = time.perf_counter()
     try:
         resp = await _post(url=url, headers=headers, payload=payload, timeout_s=timeout_s, http_client=http_client)
-    except httpx.ReadTimeout as exc:
+    except httpx2.ReadTimeout as exc:
         elapsed = int((time.perf_counter() - started) * 1000)
         logger.info("probe_messages timeout url=%s elapsed_ms=%d", url, elapsed)
         return ProbeResult(success=False, status_code=None, latency_ms=elapsed, error=f"{_TIMEOUT_ERROR_PREFIX}{exc!s}")
-    except httpx.HTTPError as exc:
+    except httpx2.HTTPError as exc:
         elapsed = int((time.perf_counter() - started) * 1000)
         logger.info("probe_messages network err url=%s elapsed_ms=%d", url, elapsed)
         return ProbeResult(success=False, status_code=None, latency_ms=elapsed, error=_truncate(str(exc)))
@@ -213,7 +213,7 @@ async def run_test(
     base_url: str | None,
     api_key: str,
     model: str | None,
-    http_client: httpx.AsyncClient | None = None,
+    http_client: httpx2.AsyncClient | None = None,
 ) -> TestConnectionResponse:
     """校验 base_url → 探测 Agent 真正调用的 messages 端点 → 诊断。
 

@@ -36,7 +36,3 @@ reason = "数据根布局迁移步骤，只经 lifespan 调用的 migrate_data_r
 [[exemption]]
 key = "lib/infra/data_root_layout_migration.py::_move_runtime_state_to_runtime_dir"
 reason = "数据根布局迁移步骤，只经 lifespan 调用的 migrate_data_root_layout 在启动时执行一次。"
-
-[[exemption]]
-key = "server/remote_mcp.py::RemoteMCPHost.run"
-reason = "只由 lifespan 以 async with 进入：启动时构造远程 MCP 服务并运行其会话管理器，请求处理不经过这一帧。"

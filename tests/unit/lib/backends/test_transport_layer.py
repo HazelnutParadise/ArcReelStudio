@@ -1,8 +1,8 @@
-"""注入的 transport 层叠在调用通道原有的 httpx 客户端之上：先改写请求，再由原客户端（含出站目的地校验）发出。"""
+"""注入的 transport 层叠在调用通道原有的 httpx2 客户端之上：先改写请求，再由原客户端（含出站目的地校验）发出。"""
 
 from __future__ import annotations
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.artifact_download_guard import ArtifactDestinationRejectedError, artifact_http_client
@@ -11,14 +11,14 @@ from tests.http_capture import PathPrefixRewrite, capture_http, only_request
 
 
 def test_without_layer_returns_the_original_clients() -> None:
-    async_client = httpx.AsyncClient()
-    sync_client = httpx.Client()
+    async_client = httpx2.AsyncClient()
+    sync_client = httpx2.Client()
     assert layer_async_client(async_client, None) is async_client
     assert layer_sync_client(sync_client, None) is sync_client
 
 
 async def test_async_layer_rewrites_path_and_keeps_client_settings() -> None:
-    inner = httpx.AsyncClient(base_url="https://relay.example/v1", headers={"Authorization": "Bearer k"})
+    inner = httpx2.AsyncClient(base_url="https://relay.example/v1", headers={"Authorization": "Bearer k"})
     with capture_http() as router:
         route = router.post("https://relay.example/relay/v2/chat").respond(200, json={"ok": True})
         async with layer_async_client(inner, PathPrefixRewrite("/v1/", "/relay/v2/")) as client:
@@ -31,7 +31,7 @@ async def test_async_layer_rewrites_path_and_keeps_client_settings() -> None:
 def test_sync_layer_rewrites_path() -> None:
     with capture_http() as router:
         route = router.get("https://relay.example/relay/tasks/1").respond(200)
-        with layer_sync_client(httpx.Client(), PathPrefixRewrite("/api/", "/relay/")) as client:
+        with layer_sync_client(httpx2.Client(), PathPrefixRewrite("/api/", "/relay/")) as client:
             client.get("https://relay.example/api/tasks/1")
     assert route.call_count == 1
 

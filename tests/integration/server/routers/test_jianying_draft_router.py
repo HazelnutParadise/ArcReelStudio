@@ -8,7 +8,7 @@ from io import BytesIO
 
 import pytest
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from lib.artifacts.version_manager import VersionManager
 from lib.edit_timeline import EditTimelineService, RevisionAuthor

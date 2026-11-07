@@ -19,7 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 
-import httpx
+import httpx2
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from arcreel_catalog_core import (
@@ -115,7 +115,7 @@ def _with_retained(manifest: bytes, content: bytes, current: CatalogData) -> tup
     return merged, json.dumps(raw, ensure_ascii=False).encode()
 
 
-async def _fetch(client: httpx.AsyncClient, url: str, max_bytes: int, proxy_prefix: str) -> bytes:
+async def _fetch(client: httpx2.AsyncClient, url: str, max_bytes: int, proxy_prefix: str) -> bytes:
     response = await fetch_bytes(
         client, url, max_bytes=max_bytes, proxy_prefix=proxy_prefix, deadline_seconds=_FETCH_DEADLINE_SECONDS
     )
@@ -144,7 +144,7 @@ async def _record(
 
 async def sync_once(
     session_factory: async_sessionmaker[AsyncSession],
-    http_client: Callable[[], httpx.AsyncClient] = get_http_client,
+    http_client: Callable[[], httpx2.AsyncClient] = get_http_client,
 ) -> None:
     """检查一次：数据集版本比本地新时取回并整批应用。失败只记下原因，本地目录不变。"""
     async with session_factory() as session:
@@ -169,7 +169,7 @@ async def sync_once(
 
 
 async def _sync_loop(
-    session_factory: async_sessionmaker[AsyncSession], http_client: Callable[[], httpx.AsyncClient]
+    session_factory: async_sessionmaker[AsyncSession], http_client: Callable[[], httpx2.AsyncClient]
 ) -> None:
     while True:
         try:
@@ -185,7 +185,7 @@ async def _sync_loop(
 
 def start_official_sync(
     session_factory: async_sessionmaker[AsyncSession],
-    http_client: Callable[[], httpx.AsyncClient] = get_http_client,
+    http_client: Callable[[], httpx2.AsyncClient] = get_http_client,
 ) -> asyncio.Task[None] | None:
     """立即检查一次，之后每天一次；离线录制设 ARCREEL_SKIP_CATALOG_SYNC=1 跳过网络同步。"""
     if os.getenv("ARCREEL_SKIP_CATALOG_SYNC") == "1":

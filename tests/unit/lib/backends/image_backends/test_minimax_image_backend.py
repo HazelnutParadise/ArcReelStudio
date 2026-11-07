@@ -1,4 +1,4 @@
-"""MiniMaxImageBackend 单元测试（mock httpx，单步同步端点，不打真实 HTTP）。"""
+"""MiniMaxImageBackend 单元测试（mock httpx2，单步同步端点，不打真实 HTTP）。"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -22,8 +22,8 @@ from lib.backends.providers import PROVIDER_MINIMAX
 from tests.http_capture import capture_http, request_json
 
 
-def _img_response(url: str = "https://x/out.png") -> httpx.Response:
-    return httpx.Response(
+def _img_response(url: str = "https://x/out.png") -> httpx2.Response:
+    return httpx2.Response(
         200,
         json={
             "id": "trace-1",
@@ -33,8 +33,8 @@ def _img_response(url: str = "https://x/out.png") -> httpx.Response:
     )
 
 
-def _b64_response(b64: str) -> httpx.Response:
-    return httpx.Response(
+def _b64_response(b64: str) -> httpx2.Response:
+    return httpx2.Response(
         200,
         json={
             "id": "trace-1",
@@ -44,8 +44,8 @@ def _b64_response(b64: str) -> httpx.Response:
     )
 
 
-def _biz_error_response(status_code: int = 1004, msg: str = "invalid api key") -> httpx.Response:
-    return httpx.Response(200, json={"base_resp": {"status_code": status_code, "status_msg": msg}})
+def _biz_error_response(status_code: int = 1004, msg: str = "invalid api key") -> httpx2.Response:
+    return httpx2.Response(200, json={"base_resp": {"status_code": status_code, "status_msg": msg}})
 
 
 def _make_ref(tmp_path: Path, name: str) -> ReferenceImage:
@@ -54,12 +54,12 @@ def _make_ref(tmp_path: Path, name: str) -> ReferenceImage:
     return ReferenceImage(path=str(p))
 
 
-def _error_response(status_code: int) -> httpx.Response:
-    return httpx.Response(status_code, text="Request Entity Too Large")
+def _error_response(status_code: int) -> httpx2.Response:
+    return httpx2.Response(status_code, text="Request Entity Too Large")
 
 
 @contextmanager
-def _generation_route(resp: httpx.Response, download: AsyncMock | None = None) -> Generator[respx.Route]:
+def _generation_route(resp: httpx2.Response, download: AsyncMock | None = None) -> Generator[respx.Route]:
     """成图端点的出站流：走 respx 在 transport 层拦截。
 
     端点派生、请求体字段、鉴权头都是「发出去的请求长什么样」的契约，断言落在路由捕获的
@@ -339,7 +339,7 @@ class TestResponseHandling:
         download.assert_not_called()
 
     async def test_empty_data_raises_runtime(self, tmp_path: Path):
-        resp = httpx.Response(200, json={"data": {}, "base_resp": {"status_code": 0}})
+        resp = httpx2.Response(200, json={"data": {}, "base_resp": {"status_code": 0}})
         download = AsyncMock()
         with _generation_route(resp, download):
             from lib.backends.image_backends.minimax import MiniMaxImageBackend
@@ -357,7 +357,7 @@ class TestHttpErrors:
             from lib.backends.image_backends.minimax import MiniMaxImageBackend
 
             b = MiniMaxImageBackend(api_key="sk")
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.generate(ImageGenerationRequest(prompt="p", output_path=tmp_path / "o.png"))
         assert ei.value.response.status_code == 400
         assert route.call_count == 1
@@ -369,7 +369,7 @@ class TestHttpErrors:
             from lib.backends.image_backends.minimax import MiniMaxImageBackend
 
             b = MiniMaxImageBackend(api_key="sk")
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.generate(ImageGenerationRequest(prompt="p", output_path=tmp_path / "o.png"))
         # 保留 status_code 让咽喉层识别 413 走降档；单次 fail-fast
         assert ei.value.response.status_code == 413
@@ -383,7 +383,7 @@ class TestRetryScope:
         # 退避 sleep 打桩跳过，避免下载层重试真的等退避的秒级时间。
         from lib.backends.backend_runtime import VIDEO_POLL_MAX_CONSECUTIVE_FAILURES
 
-        download = AsyncMock(side_effect=httpx.ConnectError("conn reset"))
+        download = AsyncMock(side_effect=httpx2.ConnectError("conn reset"))
         with _generation_route(_img_response(), download) as route:
             from lib.backends.image_backends.minimax import MiniMaxImageBackend
 

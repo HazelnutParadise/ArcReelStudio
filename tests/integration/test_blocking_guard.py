@@ -334,8 +334,21 @@ def _make_session_dir(root: Path, exemptions: dict[str, str]) -> Path:
 def _run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(_REPO_ROOT), env.get("PYTHONPATH")]))
+    # 与仓库 pytest 配置一致禁用 respx 插件：它先 import httpx，lib 包初始化时的 httpx2.alias_httpx() 就会失败
     return subprocess.run(
-        [sys.executable, "-m", "pytest", "-p", "tests.blocking_guard", "-p", "no:cacheprovider", "-rA", *args],
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-p",
+            "tests.blocking_guard",
+            "-p",
+            "no:cacheprovider",
+            "-p",
+            "no:respx",
+            "-rA",
+            *args,
+        ],
         cwd=root,
         capture_output=True,
         text=True,

@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from arcreel_market_core.endpoint_definition import COMFYUI_KIND
 from arcreel_market_core.video_backend_contract import ReferenceAudioMode, audio_capability_pair_is_coherent
 from lib.backends.artifact_download_guard import artifact_http_client
+from lib.backends.gemini_shared import GEMINI_DEVELOPER_API_VERSION
 from lib.backends.http_status_errors import raise_for_status_redacted
 from lib.backends.image_backends.base import ImageCapability
 from lib.catalog.model_id import has_dot_segment
@@ -1641,7 +1642,7 @@ async def _run_connectivity_check(
                 timeout=_CONNECTIVITY_CHECK_TIMEOUT,
             )
         elif is_comfyui_protocol(discovery_format):
-            # 不进 to_thread：ComfyUI 探针走 httpx 直调，本就是协程，另外两条是同步 SDK 调用。
+            # 不进 to_thread：ComfyUI 探针走 httpx2 直调，本就是协程，另外两条是同步 SDK 调用。
             result = await asyncio.wait_for(
                 _check_comfyui(base_url, api_key, _t),
                 timeout=_CONNECTIVITY_CHECK_TIMEOUT,
@@ -1703,7 +1704,9 @@ def _check_google(
     from lib.config.url_utils import ensure_google_base_url
 
     effective_url = ensure_google_base_url(base_url)
-    http_options: genai.types.HttpOptionsDict | None = {"base_url": effective_url} if effective_url else None
+    http_options: genai.types.HttpOptionsDict = {"api_version": GEMINI_DEVELOPER_API_VERSION}
+    if effective_url:
+        http_options["base_url"] = effective_url
     client = (client_factory or genai.Client)(api_key=api_key, http_options=http_options)
     pager = client.models.list()
     count = sum(1 for _ in pager)

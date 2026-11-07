@@ -167,9 +167,13 @@ def _short_name(name: str | None) -> str:
 def _list_google_aistudio(config: Mapping[str, str]) -> list[str]:
     from google import genai
 
+    from lib.backends.gemini_shared import GEMINI_DEVELOPER_API_VERSION
     from lib.config.url_utils import ensure_google_base_url
 
-    http_options: genai.types.HttpOptionsDict = {"timeout": _GENAI_LIST_TIMEOUT_MS}
+    http_options: genai.types.HttpOptionsDict = {
+        "api_version": GEMINI_DEVELOPER_API_VERSION,
+        "timeout": _GENAI_LIST_TIMEOUT_MS,
+    }
     if base_url := config.get("base_url"):
         http_options["base_url"] = ensure_google_base_url(base_url)
     client = genai.Client(api_key=config["api_key"], http_options=http_options)

@@ -9,7 +9,7 @@ import shutil
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 
-import httpx
+import httpx2
 
 from lib.infra.data_root_layout import PROJECT_FILENAME, DataRootLayout, is_project_dir
 from lib.infra.env_init import PROJECT_ROOT
@@ -20,19 +20,19 @@ _DISABLED_TRUTHY = frozenset({"1", "true", "yes"})
 
 
 class _StripUrlQueryFilter(logging.Filter):
-    """httpx 在 INFO 级别记录每个请求的完整 URL。预签名 URL 的 query 在有效期内等同下载凭证，记录前去掉 query。"""
+    """httpx2 在 INFO 级别记录每个请求的完整 URL。预签名 URL 的 query 在有效期内等同下载凭证，记录前去掉 query。"""
 
     def filter(self, record: logging.LogRecord) -> bool:
         args = record.args
-        if isinstance(args, tuple) and any(isinstance(arg, httpx.URL) and arg.query for arg in args):
+        if isinstance(args, tuple) and any(isinstance(arg, httpx2.URL) and arg.query for arg in args):
             record.args = tuple(
-                arg.copy_with(query=None) if isinstance(arg, httpx.URL) and arg.query else arg for arg in args
+                arg.copy_with(query=None) if isinstance(arg, httpx2.URL) and arg.query else arg for arg in args
             )
         return True
 
 
 def _install_httpx_url_redaction() -> None:
-    httpx_logger = logging.getLogger("httpx")
+    httpx_logger = logging.getLogger("httpx2")
     if not any(isinstance(f, _StripUrlQueryFilter) for f in httpx_logger.filters):
         httpx_logger.addFilter(_StripUrlQueryFilter())
 

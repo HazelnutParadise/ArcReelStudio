@@ -6,9 +6,9 @@ import asyncio
 import json
 from collections.abc import AsyncGenerator
 from itertools import pairwise
-from typing import Any
+from typing import Any, cast
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -51,18 +51,18 @@ def _index(**overrides: Any) -> dict[str, Any]:
 
 
 @pytest.fixture
-async def raw_client() -> AsyncGenerator[httpx.AsyncClient]:
-    async with httpx.AsyncClient(timeout=5.0) as http_client:
+async def raw_client() -> AsyncGenerator[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient(timeout=5.0) as http_client:
         yield http_client
 
 
-async def _fetch_error(raw_client: httpx.AsyncClient, **kwargs: Any) -> MarketFetchError:
+async def _fetch_error(raw_client: httpx2.AsyncClient, **kwargs: Any) -> MarketFetchError:
     with pytest.raises(MarketFetchError) as excinfo:
         await fetch_index(raw_client, INDEX_URL, **kwargs)
     return excinfo.value
 
 
-async def test_fetch_returns_parsed_index_raw_document_and_etag(raw_client: httpx.AsyncClient) -> None:
+async def test_fetch_returns_parsed_index_raw_document_and_etag(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         route = http.get(INDEX_URL).respond(json=_index(), headers={"ETag": '"v1"'})
 
@@ -70,7 +70,7 @@ async def test_fetch_returns_parsed_index_raw_document_and_etag(raw_client: http
 
     request = _only_request(route)
     assert "if-none-match" not in request.headers
-    assert request.extensions["timeout"] == httpx.Timeout(FETCH_TIMEOUT_SECONDS).as_dict()
+    assert request.extensions["timeout"] == httpx2.Timeout(FETCH_TIMEOUT_SECONDS).as_dict()
     assert result.not_modified is False
     assert result.document == _index()
     assert result.index is not None
@@ -78,7 +78,7 @@ async def test_fetch_returns_parsed_index_raw_document_and_etag(raw_client: http
     assert result.etag == '"v1"'
 
 
-async def test_etag_is_sent_as_if_none_match_and_304_reports_not_modified(raw_client: httpx.AsyncClient) -> None:
+async def test_etag_is_sent_as_if_none_match_and_304_reports_not_modified(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         route = http.get(INDEX_URL).respond(304)
 
@@ -89,7 +89,7 @@ async def test_etag_is_sent_as_if_none_match_and_304_reports_not_modified(raw_cl
     assert result.document is None
 
 
-async def test_oversized_etag_is_not_kept(raw_client: httpx.AsyncClient) -> None:
+async def test_oversized_etag_is_not_kept(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(json=_index(), headers={"ETag": '"' + "x" * MAX_ETAG_LENGTH + '"'})
 
@@ -99,7 +99,7 @@ async def test_oversized_etag_is_not_kept(raw_client: httpx.AsyncClient) -> None
     assert result.etag is None
 
 
-async def test_unexpected_304_without_etag_is_unreachable(raw_client: httpx.AsyncClient) -> None:
+async def test_unexpected_304_without_etag_is_unreachable(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(304)
 
@@ -109,7 +109,7 @@ async def test_unexpected_304_without_etag_is_unreachable(raw_client: httpx.Asyn
     assert error.detail == "HTTP 304 without If-None-Match"
 
 
-async def test_cache_bust_appends_timestamp_query_parameter(raw_client: httpx.AsyncClient) -> None:
+async def test_cache_bust_appends_timestamp_query_parameter(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         route = http.get(INDEX_URL, params={"_ts": "1789000000000"}).respond(json=_index())
 
@@ -118,7 +118,7 @@ async def test_cache_bust_appends_timestamp_query_parameter(raw_client: httpx.As
     assert str(_only_request(route).url) == f"{INDEX_URL}?_ts=1789000000000"
 
 
-async def test_proxy_prefix_is_prepended_to_raw_github_addresses(raw_client: httpx.AsyncClient) -> None:
+async def test_proxy_prefix_is_prepended_to_raw_github_addresses(raw_client: httpx2.AsyncClient) -> None:
     proxied = f"https://proxy.example.net/{INDEX_URL}"
     with respx.mock(assert_all_called=False) as http:
         route = http.get(proxied).respond(json=_index())
@@ -134,9 +134,9 @@ def test_proxy_prefix_leaves_other_hosts_untouched() -> None:
     assert with_proxy_prefix(INDEX_URL, "https://proxy.example.net") == f"https://proxy.example.net/{INDEX_URL}"
 
 
-async def test_timeout_is_unreachable(raw_client: httpx.AsyncClient) -> None:
+async def test_timeout_is_unreachable(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
-        http.get(INDEX_URL).mock(side_effect=httpx.ReadTimeout("timed out"))
+        http.get(INDEX_URL).mock(side_effect=httpx2.ReadTimeout("timed out"))
 
         error = await _fetch_error(raw_client)
 
@@ -145,7 +145,7 @@ async def test_timeout_is_unreachable(raw_client: httpx.AsyncClient) -> None:
 
 
 async def test_body_that_keeps_trickling_past_the_deadline_is_a_transport_error(
-    raw_client: httpx.AsyncClient,
+    raw_client: httpx2.AsyncClient,
 ) -> None:
     first_chunk_sent = asyncio.Event()
     never = asyncio.Event()
@@ -166,10 +166,10 @@ async def test_body_that_keeps_trickling_past_the_deadline_is_a_transport_error(
     assert str(excinfo.value) == "request timed out after 0s"
 
 
-async def test_connection_lost_while_reading_body_is_unreachable(raw_client: httpx.AsyncClient) -> None:
+async def test_connection_lost_while_reading_body_is_unreachable(raw_client: httpx2.AsyncClient) -> None:
     async def broken() -> AsyncGenerator[bytes]:
         yield b"{"
-        raise httpx.ReadError("connection reset")
+        raise httpx2.ReadError("connection reset")
 
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(content=broken())
@@ -180,7 +180,7 @@ async def test_connection_lost_while_reading_body_is_unreachable(raw_client: htt
     assert error.detail == "request failed: ReadError"
 
 
-async def test_url_with_control_character_is_unreachable(raw_client: httpx.AsyncClient) -> None:
+async def test_url_with_control_character_is_unreachable(raw_client: httpx2.AsyncClient) -> None:
     with pytest.raises(MarketFetchError) as excinfo:
         await fetch_index(raw_client, "https://mirror.example.com/team\n/arcreel-market.json")
 
@@ -188,7 +188,7 @@ async def test_url_with_control_character_is_unreachable(raw_client: httpx.Async
     assert excinfo.value.detail.startswith("invalid URL: ")
 
 
-async def test_http_error_status_is_unreachable(raw_client: httpx.AsyncClient) -> None:
+async def test_http_error_status_is_unreachable(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(404)
 
@@ -198,7 +198,7 @@ async def test_http_error_status_is_unreachable(raw_client: httpx.AsyncClient) -
     assert error.detail == "HTTP 404"
 
 
-async def test_oversized_response_is_invalid_index(raw_client: httpx.AsyncClient) -> None:
+async def test_oversized_response_is_invalid_index(raw_client: httpx2.AsyncClient) -> None:
     padding = "x" * INDEX_MAX_BYTES
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(json=_index(description=padding))
@@ -209,7 +209,7 @@ async def test_oversized_response_is_invalid_index(raw_client: httpx.AsyncClient
     assert str(INDEX_MAX_BYTES) in error.detail
 
 
-async def test_oversized_streamed_response_without_length_is_invalid_index(raw_client: httpx.AsyncClient) -> None:
+async def test_oversized_streamed_response_without_length_is_invalid_index(raw_client: httpx2.AsyncClient) -> None:
     async def chunks() -> AsyncGenerator[bytes]:
         for _ in range(INDEX_MAX_BYTES // 4096 + 2):
             yield b" " * 4096
@@ -222,7 +222,7 @@ async def test_oversized_streamed_response_without_length_is_invalid_index(raw_c
     assert error.status is SourceStatus.INVALID_INDEX
 
 
-async def test_excessive_json_nesting_is_invalid_index(raw_client: httpx.AsyncClient) -> None:
+async def test_excessive_json_nesting_is_invalid_index(raw_client: httpx2.AsyncClient) -> None:
     nested: Any = "leaf"
     for _ in range(MAX_JSON_DEPTH + 1):
         nested = [nested]
@@ -235,7 +235,7 @@ async def test_excessive_json_nesting_is_invalid_index(raw_client: httpx.AsyncCl
     assert "nest" in error.detail
 
 
-async def test_non_json_body_is_invalid_index(raw_client: httpx.AsyncClient) -> None:
+async def test_non_json_body_is_invalid_index(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(text="<html>not found</html>")
 
@@ -253,7 +253,7 @@ async def test_non_json_body_is_invalid_index(raw_client: httpx.AsyncClient) -> 
     ],
     ids=["nan", "infinity", "huge-integer"],
 )
-async def test_non_standard_json_numbers_are_invalid_index(raw_client: httpx.AsyncClient, body: bytes) -> None:
+async def test_non_standard_json_numbers_are_invalid_index(raw_client: httpx2.AsyncClient, body: bytes) -> None:
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(content=body)
 
@@ -262,7 +262,7 @@ async def test_non_standard_json_numbers_are_invalid_index(raw_client: httpx.Asy
     assert error.status is SourceStatus.INVALID_INDEX
 
 
-async def test_one_invalid_entry_invalidates_the_whole_index(raw_client: httpx.AsyncClient) -> None:
+async def test_one_invalid_entry_invalidates_the_whole_index(raw_client: httpx2.AsyncClient) -> None:
     document = _index()
     document["entries"].append({**document["entries"][0], "slug": "Bad Slug"})
     with respx.mock(assert_all_called=False) as http:
@@ -274,7 +274,7 @@ async def test_one_invalid_entry_invalidates_the_whole_index(raw_client: httpx.A
     assert "slug_invalid" in error.detail
 
 
-async def test_unknown_entry_type_does_not_invalidate_the_index(raw_client: httpx.AsyncClient) -> None:
+async def test_unknown_entry_type_does_not_invalidate_the_index(raw_client: httpx2.AsyncClient) -> None:
     document = _index()
     document["entries"].append({"type": "prompt-template", "whatever": 1})
     with respx.mock(assert_all_called=False) as http:
@@ -286,7 +286,7 @@ async def test_unknown_entry_type_does_not_invalidate_the_index(raw_client: http
     assert len(result.index.entries) == 1
 
 
-async def test_higher_major_schema_version_is_unsupported_schema(raw_client: httpx.AsyncClient) -> None:
+async def test_higher_major_schema_version_is_unsupported_schema(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(json={"schema_version": "2.0.0", "shape": "changed"})
 
@@ -295,7 +295,7 @@ async def test_higher_major_schema_version_is_unsupported_schema(raw_client: htt
     assert error.status is SourceStatus.UNSUPPORTED_SCHEMA
 
 
-async def test_https_redirects_are_followed(raw_client: httpx.AsyncClient) -> None:
+async def test_https_redirects_are_followed(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(302, headers={"Location": MIRROR_URL})
         target = http.get(MIRROR_URL).respond(json=_index())
@@ -306,7 +306,7 @@ async def test_https_redirects_are_followed(raw_client: httpx.AsyncClient) -> No
     assert result.document == _index()
 
 
-async def test_redirect_to_raw_github_is_also_sent_through_proxy(raw_client: httpx.AsyncClient) -> None:
+async def test_redirect_to_raw_github_is_also_sent_through_proxy(raw_client: httpx2.AsyncClient) -> None:
     proxied = f"https://proxy.example.net/{INDEX_URL}"
     with respx.mock(assert_all_called=False) as http:
         http.get(MIRROR_URL).respond(302, headers={"Location": INDEX_URL})
@@ -318,7 +318,7 @@ async def test_redirect_to_raw_github_is_also_sent_through_proxy(raw_client: htt
     assert result.document == _index()
 
 
-async def test_redirect_to_plain_http_is_unreachable(raw_client: httpx.AsyncClient) -> None:
+async def test_redirect_to_plain_http_is_unreachable(raw_client: httpx2.AsyncClient) -> None:
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(301, headers={"Location": "http://mirror.example.com/team/arcreel-market.json"})
         plain = http.get("http://mirror.example.com/team/arcreel-market.json").respond(json=_index())
@@ -330,7 +330,7 @@ async def test_redirect_to_plain_http_is_unreachable(raw_client: httpx.AsyncClie
     assert "https" in error.detail
 
 
-async def test_redirect_chain_longer_than_limit_is_unreachable(raw_client: httpx.AsyncClient) -> None:
+async def test_redirect_chain_longer_than_limit_is_unreachable(raw_client: httpx2.AsyncClient) -> None:
     hops = [f"https://mirror.example.com/hop/{n}/arcreel-market.json" for n in range(MAX_REDIRECTS + 1)]
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(302, headers={"Location": hops[0]})
@@ -345,7 +345,7 @@ async def test_redirect_chain_longer_than_limit_is_unreachable(raw_client: httpx
     assert "redirect" in error.detail
 
 
-async def test_redirect_chain_at_limit_is_followed(raw_client: httpx.AsyncClient) -> None:
+async def test_redirect_chain_at_limit_is_followed(raw_client: httpx2.AsyncClient) -> None:
     hops = [f"https://mirror.example.com/hop/{n}/arcreel-market.json" for n in range(MAX_REDIRECTS)]
     with respx.mock(assert_all_called=False) as http:
         http.get(INDEX_URL).respond(302, headers={"Location": hops[0]})
@@ -358,7 +358,8 @@ async def test_redirect_chain_at_limit_is_followed(raw_client: httpx.AsyncClient
     assert result.document == _index()
 
 
-def _only_request(route: respx.Route) -> httpx.Request:
+def _only_request(route: respx.Route) -> httpx2.Request:
     """断言该路由恰好收到一次请求并返回它。"""
     assert route.call_count == 1, f"期望 1 次请求，实际 {route.call_count} 次"
-    return route.calls.last.request
+    # respx 标注的是 httpx.Request；alias_httpx 之后它记录的就是 httpx2.Request
+    return cast("httpx2.Request", route.calls.last.request)

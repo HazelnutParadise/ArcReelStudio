@@ -1,6 +1,6 @@
 """音色接口经真实配置与端点装配，按模型和请求语言列音色，不发供应商请求。"""
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 
@@ -53,7 +53,7 @@ async def test_voices_follow_model_endpoint_and_request_locale(
     app.include_router(system_config.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
     try:
         with capture_http():
-            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as client:
                 response = await client.get(
                     "/api/v1/system/tts-model-capabilities",
                     params={"backend": backend},

@@ -17,6 +17,7 @@ from anthropic import (
     DefaultAsyncHttpxClient,
     InternalServerError,
     RateLimitError,
+    omit,
     transform_schema,
 )
 
@@ -60,9 +61,12 @@ class AnthropicTextBackend:
     ):
         # base_url 为空时显式回填官方地址，断掉 SDK 对 ANTHROPIC_BASE_URL 的环境回落；
         # 禁用 SDK 内置重试，由 _generate_native 统一管理。
+        # SDK 把 api_key 放进 Authorization: Bearer；Anthropic 协议端点按 x-api-key 认证（与连接测试
+        # lib/config/anthropic_probe.py 一致），改回 x-api-key 并去掉 Authorization。
         self._client = AsyncAnthropic(
             api_key=api_key,
             base_url=(base_url or "").strip() or OFFICIAL_ANTHROPIC_BASE_URL,
+            default_headers={"x-api-key": api_key, "Authorization": omit},  # pyright: ignore[reportArgumentType]  # SDK 运行期按 Omit 去掉该请求头，参数标注未声明 Omit
             max_retries=0,
             http_client=(
                 layer_async_client(DefaultAsyncHttpxClient(), transport_layer) if transport_layer is not None else None

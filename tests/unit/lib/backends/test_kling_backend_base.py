@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import inspect
 
-import httpx
+import httpx2
 import jwt
 import pytest
 
@@ -78,10 +78,10 @@ class TestPollErrorRedaction:
         backend = KlingVideoBackend(auth_mode="bearer", api_key="static-key", base_url="https://kling.example/v1")
         with capture_http() as router:
             router.get(url__regex=r"^https://kling\.example/v1/tasks/job-1").mock(
-                return_value=httpx.Response(403, json={"message": "forbidden"})
+                return_value=httpx2.Response(403, json={"message": "forbidden"})
             )
-            async with httpx.AsyncClient(params={"api_key": "SECRETKEY"}) as client:
-                with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            async with httpx2.AsyncClient(params={"api_key": "SECRETKEY"}) as client:
+                with pytest.raises(httpx2.HTTPStatusError) as excinfo:
                     await backend._poll_query(client, "tasks/job-1")
 
         assert "SECRETKEY" not in str(excinfo.value)

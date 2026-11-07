@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-import httpx
+import httpx2
 import pytest
 
 from lib.agent.agent_provider_catalog import CUSTOM_SENTINEL_ID, get_preset
@@ -22,19 +22,19 @@ _ANTHROPIC_OK = {"id": "msg_1", "type": "message", "content": [{"type": "text", 
 
 
 @pytest.fixture
-async def probe_client() -> AsyncIterator[httpx.AsyncClient]:
-    """真实 httpx 客户端；出站流量由 respx 在 transport 层接管。
+async def probe_client() -> AsyncIterator[httpx2.AsyncClient]:
+    """真实 httpx2 客户端；出站流量由 respx 在 transport 层接管。
 
     生产的共享单例要靠 lifespan 初始化，单测经 `http_client` seam 显式注入。
     """
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         yield client
 
 
-async def test_probe_messages_success(probe_client: httpx.AsyncClient) -> None:
+async def test_probe_messages_success(probe_client: httpx2.AsyncClient) -> None:
     with capture_http() as router:
         route = router.post("https://api.example.com/v1/messages").mock(
-            return_value=httpx.Response(200, json=_ANTHROPIC_OK)
+            return_value=httpx2.Response(200, json=_ANTHROPIC_OK)
         )
         result = await probe_messages(
             base_url="https://api.example.com",
@@ -56,10 +56,10 @@ async def test_probe_messages_success(probe_client: httpx.AsyncClient) -> None:
     }
 
 
-async def test_probe_messages_401_marks_failure(probe_client: httpx.AsyncClient) -> None:
+async def test_probe_messages_401_marks_failure(probe_client: httpx2.AsyncClient) -> None:
     with capture_http() as router:
         router.post("https://api.example.com/v1/messages").mock(
-            return_value=httpx.Response(401, json={"error": {"type": "authentication_error"}})
+            return_value=httpx2.Response(401, json={"error": {"type": "authentication_error"}})
         )
         result = await probe_messages(
             base_url="https://api.example.com",
@@ -73,11 +73,11 @@ async def test_probe_messages_401_marks_failure(probe_client: httpx.AsyncClient)
     assert "authentication_error" in (result.error or "")
 
 
-async def test_probe_messages_200_but_not_anthropic_marks_failure(probe_client: httpx.AsyncClient) -> None:
+async def test_probe_messages_200_but_not_anthropic_marks_failure(probe_client: httpx2.AsyncClient) -> None:
     """OpenAI 兼容协议响应：200 但缺 type=message 应判失败。"""
     with capture_http() as router:
         router.post("https://api.example.com/v1/messages").mock(
-            return_value=httpx.Response(200, json={"id": "chatcmpl-1", "object": "chat.completion", "choices": []})
+            return_value=httpx2.Response(200, json={"id": "chatcmpl-1", "object": "chat.completion", "choices": []})
         )
         result = await probe_messages(
             base_url="https://api.example.com",
@@ -94,15 +94,15 @@ async def test_probe_messages_200_but_not_anthropic_marks_failure(probe_client: 
 @pytest.mark.parametrize(
     ("exc", "expected"),
     [
-        (httpx.ReadTimeout("read timed out"), DiagnosisCode.TIMEOUT),
-        (httpx.ConnectTimeout("connect timed out"), DiagnosisCode.NETWORK),
-        (httpx.WriteTimeout("write timed out"), DiagnosisCode.NETWORK),
-        (httpx.PoolTimeout("pool timed out"), DiagnosisCode.NETWORK),
+        (httpx2.ReadTimeout("read timed out"), DiagnosisCode.TIMEOUT),
+        (httpx2.ConnectTimeout("connect timed out"), DiagnosisCode.NETWORK),
+        (httpx2.WriteTimeout("write timed out"), DiagnosisCode.NETWORK),
+        (httpx2.PoolTimeout("pool timed out"), DiagnosisCode.NETWORK),
     ],
     ids=["read", "connect", "write", "pool"],
 )
 async def test_probe_messages_timeout_only_read_timeout_means_upstream_slow(
-    probe_client: httpx.AsyncClient, exc: httpx.TimeoutException, expected: DiagnosisCode
+    probe_client: httpx2.AsyncClient, exc: httpx2.TimeoutException, expected: DiagnosisCode
 ) -> None:
     """只有 ReadTimeout 证明服务可达；其余超时与网络不通同类。"""
     with capture_http() as router:
@@ -121,9 +121,9 @@ async def test_probe_messages_timeout_only_read_timeout_means_upstream_slow(
     assert classify_probe_failure(result) == expected
 
 
-async def test_probe_messages_network_error(probe_client: httpx.AsyncClient) -> None:
+async def test_probe_messages_network_error(probe_client: httpx2.AsyncClient) -> None:
     with capture_http() as router:
-        router.post("https://api.example.com/v1/messages").mock(side_effect=httpx.ConnectError("connection refused"))
+        router.post("https://api.example.com/v1/messages").mock(side_effect=httpx2.ConnectError("connection refused"))
         result = await probe_messages(
             base_url="https://api.example.com",
             api_key="sk",
@@ -177,17 +177,17 @@ def test_classify_probe_failure_unknown_404_no_model() -> None:
     assert classify_probe_failure(p) == DiagnosisCode.UNKNOWN
 
 
-async def test_run_test_probes_only_messages_endpoint(probe_client: httpx.AsyncClient) -> None:
+async def test_run_test_probes_only_messages_endpoint(probe_client: httpx2.AsyncClient) -> None:
     """测试连接只打 Agent 真正调用的 messages 端点：不发 /v1/models，也不补 /anthropic 重试。"""
     with capture_http() as router:
         messages = router.post("https://api.deepseek.com/v1/messages").mock(
-            return_value=httpx.Response(404, text="not found")
+            return_value=httpx2.Response(404, text="not found")
         )
         models = router.get("https://api.deepseek.com/v1/models").mock(
-            return_value=httpx.Response(200, json={"data": []})
+            return_value=httpx2.Response(200, json={"data": []})
         )
         suffixed = router.post("https://api.deepseek.com/anthropic/v1/messages").mock(
-            return_value=httpx.Response(200, json=_ANTHROPIC_OK)
+            return_value=httpx2.Response(200, json=_ANTHROPIC_OK)
         )
 
         resp = await run_test(
@@ -207,12 +207,12 @@ async def test_run_test_probes_only_messages_endpoint(probe_client: httpx.AsyncC
 
 
 async def test_run_test_preset_with_base_url_override_probes_stored_value(
-    probe_client: httpx.AsyncClient,
+    probe_client: httpx2.AsyncClient,
 ) -> None:
     """preset 凭证覆盖 base_url：整条完整端点归一后即为调用值，探测打的就是它。"""
     with capture_http() as router:
         messages = router.post("https://proxy.internal/anthropic/v1/messages").mock(
-            return_value=httpx.Response(200, json=_ANTHROPIC_OK)
+            return_value=httpx2.Response(200, json=_ANTHROPIC_OK)
         )
 
         resp = await run_test(
@@ -294,14 +294,14 @@ def test_classify_probe_failure_400_without_model_keyword_stays_unknown() -> Non
     assert classify_probe_failure(p) == DiagnosisCode.UNKNOWN
 
 
-async def test_run_test_preset_without_model_short_circuits(probe_client: httpx.AsyncClient) -> None:
+async def test_run_test_preset_without_model_short_circuits(probe_client: httpx2.AsyncClient) -> None:
     """预设默认模型为空且用户未填：不发 messages 请求，直接给 MODEL_REQUIRED。"""
     preset = get_preset("anthropic-official")
     assert preset is not None
 
     with capture_http() as router:
         messages = router.post(f"{preset.messages_url}/v1/messages").mock(
-            return_value=httpx.Response(200, json=_ANTHROPIC_OK)
+            return_value=httpx2.Response(200, json=_ANTHROPIC_OK)
         )
 
         resp = await run_test(
@@ -322,14 +322,14 @@ async def test_run_test_preset_without_model_short_circuits(probe_client: httpx.
     assert messages.call_count == 0
 
 
-async def test_run_test_ark_preset_uses_default_model(probe_client: httpx.AsyncClient) -> None:
+async def test_run_test_ark_preset_uses_default_model(probe_client: httpx2.AsyncClient) -> None:
     """火山方舟 Agent Plan：预设默认模型直接可用。"""
     preset = get_preset("ark-agent-plan")
     assert preset is not None
 
     with capture_http() as router:
         messages = router.post(f"{preset.messages_url}/v1/messages").mock(
-            return_value=httpx.Response(200, json=_ANTHROPIC_OK)
+            return_value=httpx2.Response(200, json=_ANTHROPIC_OK)
         )
 
         resp = await run_test(
@@ -344,11 +344,11 @@ async def test_run_test_ark_preset_uses_default_model(probe_client: httpx.AsyncC
     assert request_json(only_request(messages))["model"] == preset.default_model
 
 
-async def test_run_test_custom_mode_without_model_uses_fallback(probe_client: httpx.AsyncClient) -> None:
+async def test_run_test_custom_mode_without_model_uses_fallback(probe_client: httpx2.AsyncClient) -> None:
     """自定义模式不受空模型短路影响，仍用内置兜底模型。"""
     with capture_http() as router:
         messages = router.post("https://api.example.com/anthropic/v1/messages").mock(
-            return_value=httpx.Response(200, json=_ANTHROPIC_OK)
+            return_value=httpx2.Response(200, json=_ANTHROPIC_OK)
         )
 
         resp = await run_test(

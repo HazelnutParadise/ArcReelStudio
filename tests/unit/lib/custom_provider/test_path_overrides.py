@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import VideoGenerationRequest
@@ -61,7 +61,7 @@ def test_layer_matches_base_url_paths_with_percent_escapes_and_keeps_them():
     base = "https://relay.test/proxy%2Ftenant"
     layer = path_override_layer([_POLL], {"poll": "/tasks/{{ task_id }}"}, base, base, "m")
     assert layer is not None
-    request = httpx.Request("GET", f"{base}/v1/videos/a%2Fb")
+    request = httpx2.Request("GET", f"{base}/v1/videos/a%2Fb")
 
     layer.rewrite(request)
 
@@ -79,10 +79,10 @@ async def test_resume_after_base_path_change_still_hits_the_overrides(tmp_path: 
 
     with capture_http() as router, bounded_poll_clock():
         poll = router.get(f"https://relay.test/old{version}/api/tasks/vid-a").mock(
-            return_value=httpx.Response(200, json=video)
+            return_value=httpx2.Response(200, json=video)
         )
         router.get(f"https://relay.test/old{version}/api/tasks/vid-a/file").mock(
-            return_value=httpx.Response(200, content=b"resumed")
+            return_value=httpx2.Response(200, content=b"resumed")
         )
 
         await backend.resume_video(
@@ -106,11 +106,11 @@ async def test_dashscope_resume_restores_the_replaced_base_suffix(tmp_path: Path
     )
     with capture_http() as router, bounded_poll_clock():
         poll = router.get("https://relay.test/old/compatible-mode/v1/proxy/tasks/t").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"output": {"task_status": "SUCCEEDED", "video_url": "https://cdn.test/resumed.mp4"}}
             )
         )
-        router.get("https://cdn.test/resumed.mp4").mock(return_value=httpx.Response(200, content=b"resumed"))
+        router.get("https://cdn.test/resumed.mp4").mock(return_value=httpx2.Response(200, content=b"resumed"))
 
         await backend.resume_video(
             "t",
@@ -138,7 +138,7 @@ def test_layer_matches_replayed_requests_against_the_submitted_base(
     normalized = current_base if current_base.endswith("/v1") else f"{current_base}/v1"
     layer = path_override_layer([_POLL], {"poll": "/tasks/{{ task_id }}"}, current_base, normalized, "m")
     assert layer is not None
-    request = httpx.Request("GET", f"https://relay.test{sent}")
+    request = httpx2.Request("GET", f"https://relay.test{sent}")
 
     with replaying_base_url(submitted_base):
         layer.rewrite(request)
@@ -151,7 +151,7 @@ def test_layer_leaves_requests_outside_both_bases_untouched():
         [_POLL], {"poll": "/tasks/{{ task_id }}"}, "https://relay.test/new", "https://relay.test/new", "m"
     )
     assert layer is not None
-    request = httpx.Request("GET", "https://cdn.test/files/v1/videos/t")
+    request = httpx2.Request("GET", "https://cdn.test/files/v1/videos/t")
 
     with replaying_base_url("https://relay.test/old"):
         layer.rewrite(request)

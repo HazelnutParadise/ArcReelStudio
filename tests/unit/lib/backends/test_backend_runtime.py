@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import httpx
+import httpx2
 import pytest
 from sqlalchemy.exc import OperationalError
 
@@ -69,17 +69,17 @@ class _FakeClock:
         self.sleeps.append(delay)
 
 
-def _http_status_error(status_code: int, *, text: str = "boom") -> httpx.HTTPStatusError:
-    """构造真实 httpx.HTTPStatusError；URL 故意含 "503" 子串以验证不会按字符串误判。"""
-    request = httpx.Request("GET", "https://relay.example/v2/video/generations?generation_id=task-503")
-    response = httpx.Response(status_code, request=request, text=text)
-    return httpx.HTTPStatusError(f"error '{status_code}'", request=request, response=response)
+def _http_status_error(status_code: int, *, text: str = "boom") -> httpx2.HTTPStatusError:
+    """构造真实 httpx2.HTTPStatusError；URL 故意含 "503" 子串以验证不会按字符串误判。"""
+    request = httpx2.Request("GET", "https://relay.example/v2/video/generations?generation_id=task-503")
+    response = httpx2.Response(status_code, request=request, text=text)
+    return httpx2.HTTPStatusError(f"error '{status_code}'", request=request, response=response)
 
 
-def _http_status_error_with_headers(status_code: int, headers: dict[str, str]) -> httpx.HTTPStatusError:
-    request = httpx.Request("GET", "https://relay.example/tasks/1")
-    response = httpx.Response(status_code, request=request, headers=headers)
-    return httpx.HTTPStatusError(f"error '{status_code}'", request=request, response=response)
+def _http_status_error_with_headers(status_code: int, headers: dict[str, str]) -> httpx2.HTTPStatusError:
+    request = httpx2.Request("GET", "https://relay.example/tasks/1")
+    response = httpx2.Response(status_code, request=request, headers=headers)
+    return httpx2.HTTPStatusError(f"error '{status_code}'", request=request, response=response)
 
 
 class TestPollWithRetry:
@@ -447,10 +447,10 @@ class TestRetryPredicates:
     def test_submit_retries_only_not_sent_transport_errors(self):
         # 连接建立失败 / 从未取得连接 / 代理握手失败 → 请求确定未送达 → submit 重试安全。
         for exc in (
-            httpx.ConnectError("refused"),
-            httpx.ConnectTimeout("connect timed out"),
-            httpx.PoolTimeout("pool exhausted"),
-            httpx.ProxyError("proxy handshake failed"),
+            httpx2.ConnectError("refused"),
+            httpx2.ConnectTimeout("connect timed out"),
+            httpx2.PoolTimeout("pool exhausted"),
+            httpx2.ProxyError("proxy handshake failed"),
         ):
             assert should_retry_submit(exc) is True
 
@@ -460,11 +460,11 @@ class TestRetryPredicates:
         # 进重试谓词，should_retry_submit 运行时并不会直接收到它们；此处单独断言谓词对原始异常
         # 的防御性行为（文档化兜底），与 submit_post 的包装互为双保险。
         for exc in (
-            httpx.ReadTimeout("read timed out"),
-            httpx.WriteTimeout("write timed out"),
-            httpx.ReadError("conn reset mid-read"),
-            httpx.WriteError("conn reset mid-write"),
-            httpx.RemoteProtocolError("server disconnected"),
+            httpx2.ReadTimeout("read timed out"),
+            httpx2.WriteTimeout("write timed out"),
+            httpx2.ReadError("conn reset mid-read"),
+            httpx2.WriteError("conn reset mid-write"),
+            httpx2.RemoteProtocolError("server disconnected"),
             ConnectionError(),  # 内建：歧义，不重试
             TimeoutError(),  # 内建：歧义，不重试
         ):
@@ -473,9 +473,9 @@ class TestRetryPredicates:
     def test_poll_retries_all_transport_errors(self):
         # 幂等 GET：连接建立失败与读/写阶段错误一律重试。
         for exc in (
-            httpx.ConnectError("refused"),
-            httpx.ReadTimeout("read timed out"),
-            httpx.RemoteProtocolError("server disconnected"),
+            httpx2.ConnectError("refused"),
+            httpx2.ReadTimeout("read timed out"),
+            httpx2.RemoteProtocolError("server disconnected"),
             ConnectionError(),
             TimeoutError(),
         ):
@@ -490,8 +490,8 @@ class TestRetryPredicates:
         # UnsupportedProtocol / LocalProtocolError 在请求发出前就确定失败（均为 RequestError
         # 子类），两条路径都快速失败——poll 不该重试到 max_wait，submit 也无重复计费风险。
         for exc in (
-            httpx.UnsupportedProtocol("scheme not http(s)"),
-            httpx.LocalProtocolError("bad local request"),
+            httpx2.UnsupportedProtocol("scheme not http(s)"),
+            httpx2.LocalProtocolError("bad local request"),
         ):
             assert should_retry_poll(exc) is False
             assert should_retry_submit(exc) is False
@@ -499,7 +499,7 @@ class TestRetryPredicates:
     def test_poll_still_retries_remote_protocol_error(self):
         # RemoteProtocolError 与 LocalProtocolError 同为 ProtocolError 子类，但属「服务端中途
         # 断开」，幂等 GET 重试安全——确认本地错误的排除没有误伤它。
-        assert should_retry_poll(httpx.RemoteProtocolError("server disconnected")) is True
+        assert should_retry_poll(httpx2.RemoteProtocolError("server disconnected")) is True
 
     def test_business_exceptions_fail_fast(self):
         # ResumeExpiredError 的 job_id 含 "503" 子串：若按字符串兜底会误判为可重试。
@@ -527,17 +527,17 @@ class TestShouldRetryDownload:
     def test_retries_all_transport_errors(self):
         # 幂等 GET 下载：连接建立失败与读阶段错误一律重试（与 poll 一致，无重复计费风险）。
         for exc in (
-            httpx.ConnectError("refused"),
-            httpx.ReadTimeout("read timed out"),
-            httpx.RemoteProtocolError("server disconnected"),
+            httpx2.ConnectError("refused"),
+            httpx2.ReadTimeout("read timed out"),
+            httpx2.RemoteProtocolError("server disconnected"),
             ConnectionError(),
             TimeoutError(),
         ):
             assert should_retry_download(exc) is True
 
     def test_local_protocol_errors_and_business_exceptions_fail_fast(self):
-        assert should_retry_download(httpx.UnsupportedProtocol("scheme")) is False
-        assert should_retry_download(httpx.LocalProtocolError("bad")) is False
+        assert should_retry_download(httpx2.UnsupportedProtocol("scheme")) is False
+        assert should_retry_download(httpx2.LocalProtocolError("bad")) is False
         # 普通异常即便消息含状态码子串也不重试（绕开字符串误判）。
         assert should_retry_download(ValueError("503 in message")) is False
 
@@ -555,18 +555,18 @@ class TestShouldRetrySignedDownload:
             assert should_retry_signed_download(_http_status_error(code)) is True
 
     def test_transport_errors_retry_and_local_protocol_errors_fail_fast(self):
-        assert should_retry_signed_download(httpx.ConnectError("refused")) is True
-        assert should_retry_signed_download(httpx.UnsupportedProtocol("scheme")) is False
+        assert should_retry_signed_download(httpx2.ConnectError("refused")) is True
+        assert should_retry_signed_download(httpx2.UnsupportedProtocol("scheme")) is False
 
 
 class TestSubmitPost:
     """submit_post：create/提交阶段按「请求是否确定送达」给失败分流。"""
 
     async def test_returns_response_on_success(self):
-        resp = httpx.Response(200, request=httpx.Request("POST", "https://x/v2"), json={"id": "ok"})
+        resp = httpx2.Response(200, request=httpx2.Request("POST", "https://x/v2"), json={"id": "ok"})
         recorded: list[tuple[str, object]] = []
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
         async def _record(stage: ProviderResponseStage, body: object) -> None:
@@ -579,8 +579,8 @@ class TestSubmitPost:
 
     async def test_recorded_response_is_sanitized_before_it_is_persisted(self):
         # 留痕会落库并经 API 回读：上游把凭证回显在字段里时不能原样存下来。
-        request_obj = httpx.Request("POST", "https://x/v2")
-        resp = httpx.Response(
+        request_obj = httpx2.Request("POST", "https://x/v2")
+        resp = httpx2.Response(
             200,
             request=request_obj,
             json={
@@ -591,7 +591,7 @@ class TestSubmitPost:
             },
         )
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
         recorded: list[tuple[ProviderResponseStage, object]] = []
@@ -619,9 +619,9 @@ class TestSubmitPost:
 
     async def test_not_sent_error_propagates_for_retry(self):
         # 连接建立失败 / 代理握手失败原样抛出，交 should_retry_submit 重试（不包成终态）。
-        for exc in (httpx.ConnectError("refused"), httpx.ProxyError("proxy handshake failed")):
+        for exc in (httpx2.ConnectError("refused"), httpx2.ProxyError("proxy handshake failed")):
 
-            async def _post(_exc: httpx.RequestError = exc) -> httpx.Response:
+            async def _post(_exc: httpx2.RequestError = exc) -> httpx2.Response:
                 raise _exc
 
             with pytest.raises(type(exc)) as excinfo:
@@ -632,11 +632,11 @@ class TestSubmitPost:
         # 本地/协议错误请求发出前就失败、无计费风险 → 原样抛出，不包成 AmbiguousSubmitError
         # （否则会误导运维去供应商侧确认一个从未创建的任务）。
         for exc in (
-            httpx.UnsupportedProtocol("scheme not http(s)"),
-            httpx.LocalProtocolError("bad local request"),
+            httpx2.UnsupportedProtocol("scheme not http(s)"),
+            httpx2.LocalProtocolError("bad local request"),
         ):
 
-            async def _post(_exc: httpx.RequestError = exc) -> httpx.Response:
+            async def _post(_exc: httpx2.RequestError = exc) -> httpx2.Response:
                 raise _exc
 
             with pytest.raises(type(exc)):
@@ -644,38 +644,38 @@ class TestSubmitPost:
 
     async def test_ambiguous_error_wrapped_with_manual_retry_hint(self):
         # ReadTimeout（请求可能已送达）包成 AmbiguousSubmitError，消息含手动重试提示。
-        async def _post() -> httpx.Response:
-            raise httpx.ReadTimeout("read timed out")
+        async def _post() -> httpx2.Response:
+            raise httpx2.ReadTimeout("read timed out")
 
         with pytest.raises(AmbiguousSubmitError) as excinfo:
             await submit_post(_post, provider="newapi")
         msg = str(excinfo.value)
         assert "[create_ambiguous]" in msg
         assert "手动重试" in msg
-        assert isinstance(excinfo.value.__cause__, httpx.ReadTimeout)
+        assert isinstance(excinfo.value.__cause__, httpx2.ReadTimeout)
 
     async def test_http_status_error_propagates_for_status_gate(self):
         # >=400 响应经 raise_for_status 抛 HTTPStatusError，交 should_retry_submit 按 status_code 分流。
-        request = httpx.Request("POST", "https://x/v2")
-        resp = httpx.Response(503, request=request, text="upstream busy")
+        request = httpx2.Request("POST", "https://x/v2")
+        resp = httpx2.Response(503, request=request, text="upstream busy")
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(httpx2.HTTPStatusError):
             await submit_post(_post, provider="v2")
 
     async def test_deterministic_4xx_carries_the_redacted_provider_reason(self):
         # 确定性 4xx 抛 ProviderRejectedError：消息仍不含查询串里的 api_key，拒因另挂在
         # provider_reason 上，供落库侧作为独立字段编码。
-        request = httpx.Request("POST", "https://x/v2?api_key=SECRETKEY")
-        resp = httpx.Response(
+        request = httpx2.Request("POST", "https://x/v2?api_key=SECRETKEY")
+        resp = httpx2.Response(
             400,
             request=request,
             json={"code": "InvalidParameter", "message": "prompt violates the content policy"},
         )
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
         with pytest.raises(ProviderRejectedError) as excinfo:
@@ -687,28 +687,28 @@ class TestSubmitPost:
 
     async def test_server_error_stays_a_plain_status_error(self):
         # 5xx 说的是「上游此刻不可用」，响应体不并入错误信息——异常类型也保持原样。
-        request = httpx.Request("POST", "https://x/v2")
-        resp = httpx.Response(502, request=request, json={"message": "bad gateway"})
+        request = httpx2.Request("POST", "https://x/v2")
+        resp = httpx2.Response(502, request=request, json={"message": "bad gateway"})
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
-        with pytest.raises(httpx.HTTPStatusError) as excinfo:
+        with pytest.raises(httpx2.HTTPStatusError) as excinfo:
             await submit_post(_post, provider="v2")
 
-        assert type(excinfo.value) is httpx.HTTPStatusError
+        assert type(excinfo.value) is httpx2.HTTPStatusError
         assert str(excinfo.value) == "502 response for https://x/v2"
 
     async def test_error_message_drops_url_userinfo(self):
         # base_url 允许用户自填：写成 https://user:pw@host 时口令落在权限段里，剥查询串剥不掉它，
         # 而这条消息会进 task.error_message 并随任务列表回传。
-        request = httpx.Request("POST", "https://user:SECRETPW@x/v2?api_key=SECRETKEY")
-        resp = httpx.Response(502, request=request, json={"message": "bad gateway"})
+        request = httpx2.Request("POST", "https://user:SECRETPW@x/v2?api_key=SECRETKEY")
+        resp = httpx2.Response(502, request=request, json={"message": "bad gateway"})
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
-        with pytest.raises(httpx.HTTPStatusError) as excinfo:
+        with pytest.raises(httpx2.HTTPStatusError) as excinfo:
             await submit_post(_post, provider="v2")
 
         assert str(excinfo.value) == "502 response for https://x/v2"
@@ -720,10 +720,10 @@ class TestSubmitPost:
     async def test_deterministic_4xx_is_structured_even_without_a_reason(self, status: int, body: dict[str, str]):
         # 摘要缺席（认证类不透传、空响应体、字段全不认得）时拒绝本身仍要结构化，
         # 否则读侧拿不到本地化文案与「修改输入」的后续动作，只剩一行裸状态。
-        request = httpx.Request("POST", "https://x/v2")
-        resp = httpx.Response(status, request=request, json=body)
+        request = httpx2.Request("POST", "https://x/v2")
+        resp = httpx2.Response(status, request=request, json=body)
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
         with pytest.raises(ProviderRejectedError) as excinfo:
@@ -734,8 +734,8 @@ class TestSubmitPost:
 
     async def test_failure_body_is_redacted_before_it_reaches_the_log(self, caplog):
         # 失败响应体照样落日志保留可诊断性，但凭证不随它进日志文件。
-        request = httpx.Request("POST", "https://x/v2")
-        resp = httpx.Response(
+        request = httpx2.Request("POST", "https://x/v2")
+        resp = httpx2.Response(
             401,
             request=request,
             json={
@@ -746,12 +746,12 @@ class TestSubmitPost:
             },
         )
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
         with (
             caplog.at_level(logging.WARNING, logger="lib.backends.backend_runtime"),
-            pytest.raises(httpx.HTTPStatusError),
+            pytest.raises(httpx2.HTTPStatusError),
         ):
             await submit_post(_post, provider="v2")
 
@@ -763,24 +763,24 @@ class TestSubmitPost:
 
     @pytest.mark.parametrize("status", [408, 425, 429])
     async def test_retryable_client_error_stays_a_plain_status_error(self, status: int):
-        request = httpx.Request("POST", "https://x/v2")
-        resp = httpx.Response(status, request=request, json={"message": "retry later"})
+        request = httpx2.Request("POST", "https://x/v2")
+        resp = httpx2.Response(status, request=request, json={"message": "retry later"})
 
-        async def _post() -> httpx.Response:
+        async def _post() -> httpx2.Response:
             return resp
 
-        with pytest.raises(httpx.HTTPStatusError) as excinfo:
+        with pytest.raises(httpx2.HTTPStatusError) as excinfo:
             await submit_post(_post, provider="v2")
 
-        assert type(excinfo.value) is httpx.HTTPStatusError
+        assert type(excinfo.value) is httpx2.HTTPStatusError
 
 
 class TestProviderReasonSummary:
     """provider_reason_summary：4xx 响应体 → 脱敏、截断后的拒因摘要。"""
 
     @staticmethod
-    def _response(status: int, **kwargs: object) -> httpx.Response:
-        return httpx.Response(status, request=httpx.Request("POST", "https://x/v2"), **kwargs)
+    def _response(status: int, **kwargs: object) -> httpx2.Response:
+        return httpx2.Response(status, request=httpx2.Request("POST", "https://x/v2"), **kwargs)
 
     def test_prefers_the_message_field_over_the_whole_body(self):
         # 错误体常把请求原样回显回来；只取消息字段，prompt 全文不会进摘要。
@@ -1066,7 +1066,7 @@ class TestProviderJobIdPersistenceMixin:
 
 
 class TestRedirectMethodRewrite:
-    """跟随重定向时的方法改写规则，与 httpx / RFC 9110 同口径。"""
+    """跟随重定向时的方法改写规则，与 httpx2 / RFC 9110 同口径。"""
 
     @pytest.mark.parametrize(
         ("status_code", "method", "expected"),
@@ -1095,10 +1095,10 @@ class TestScopedCredentialRedirect:
         """307 / 308 保留方法，但请求体与凭证都不带出凭证作用域。"""
         with capture_http() as router:
             router.post("https://relay.test/submit").mock(
-                return_value=httpx.Response(status, headers={"Location": "https://other.test/submit"})
+                return_value=httpx2.Response(status, headers={"Location": "https://other.test/submit"})
             )
-            target = router.post("https://other.test/submit").mock(return_value=httpx.Response(200, json={"ok": True}))
-            async with httpx.AsyncClient() as client:
+            target = router.post("https://other.test/submit").mock(return_value=httpx2.Response(200, json={"ok": True}))
+            async with httpx2.AsyncClient() as client:
                 response = await request_with_scoped_credentials(
                     client,
                     "POST",
@@ -1117,10 +1117,12 @@ class TestScopedCredentialRedirect:
     async def test_a_same_origin_hop_keeps_the_method_body_and_credentials(self, status: int):
         with capture_http() as router:
             router.post("https://relay.test/submit").mock(
-                return_value=httpx.Response(status, headers={"Location": "/submit/"})
+                return_value=httpx2.Response(status, headers={"Location": "/submit/"})
             )
-            target = router.post("https://relay.test/submit/").mock(return_value=httpx.Response(200, json={"ok": True}))
-            async with httpx.AsyncClient() as client:
+            target = router.post("https://relay.test/submit/").mock(
+                return_value=httpx2.Response(200, json={"ok": True})
+            )
+            async with httpx2.AsyncClient() as client:
                 response = await request_with_scoped_credentials(
                     client,
                     "POST",
@@ -1162,8 +1164,8 @@ class TestStreamToFile:
         payload = b"x" * (9 * 1024 * 1024)  # 跨过攒批阈值，走多次落盘
 
         with capture_http() as router:
-            router.get("https://cdn.test/a.mp4").mock(return_value=httpx.Response(200, content=payload))
-            async with httpx.AsyncClient() as client:
+            router.get("https://cdn.test/a.mp4").mock(return_value=httpx2.Response(200, content=payload))
+            async with httpx2.AsyncClient() as client:
                 await stream_to_file(client, "https://cdn.test/a.mp4", output, max_bytes=_LIMIT)
 
         assert output.read_bytes() == payload
@@ -1174,8 +1176,8 @@ class TestStreamToFile:
         output = tmp_path / "out.mp4"
 
         with capture_http() as router:
-            router.get("https://relay.test/a.mp4").mock(return_value=httpx.Response(302, content=b"not a video"))
-            async with httpx.AsyncClient() as client:
+            router.get("https://relay.test/a.mp4").mock(return_value=httpx2.Response(302, content=b"not a video"))
+            async with httpx2.AsyncClient() as client:
                 with pytest.raises(RuntimeError, match="redirect without a Location header"):
                     await stream_to_file(
                         client,
@@ -1192,9 +1194,9 @@ class TestStreamToFile:
         output = tmp_path / "out.mp4"
 
         with capture_http() as router:
-            router.get("https://cdn.test/a.mp4").mock(return_value=httpx.Response(404, text="gone"))
-            async with httpx.AsyncClient() as client:
-                with pytest.raises(httpx.HTTPStatusError):
+            router.get("https://cdn.test/a.mp4").mock(return_value=httpx2.Response(404, text="gone"))
+            async with httpx2.AsyncClient() as client:
+                with pytest.raises(httpx2.HTTPStatusError):
                     await stream_to_file(client, "https://cdn.test/a.mp4", output, max_bytes=_LIMIT)
 
         assert not output.exists()
@@ -1205,9 +1207,9 @@ class TestStreamToFile:
 
         with capture_http() as router:
             router.get("https://cdn.test/a.mp4").mock(
-                return_value=httpx.Response(200, headers={"Content-Length": "8"}, content=b"x" * 65)
+                return_value=httpx2.Response(200, headers={"Content-Length": "8"}, content=b"x" * 65)
             )
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 with pytest.raises(ArtifactTooLargeError):
                     await stream_to_file(client, "https://cdn.test/a.mp4", output, max_bytes=64)
 
@@ -1219,10 +1221,10 @@ class TestStreamToFile:
 
         with capture_http() as router:
             router.get("https://cdn.test/a.mp4").mock(
-                return_value=httpx.Response(500, content=b"e" * (ERROR_BODY_MAX_BYTES * 4))
+                return_value=httpx2.Response(500, content=b"e" * (ERROR_BODY_MAX_BYTES * 4))
             )
-            async with httpx.AsyncClient() as client:
-                with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            async with httpx2.AsyncClient() as client:
+                with pytest.raises(httpx2.HTTPStatusError) as excinfo:
                     await stream_to_file(client, "https://cdn.test/a.mp4", output, max_bytes=_LIMIT)
 
         assert excinfo.value.response.status_code == 500
@@ -1235,9 +1237,9 @@ class TestDownloadVideoDestination:
 
         with capture_http() as router:
             first = router.get("http://203.0.113.7/a.mp4").mock(
-                return_value=httpx.Response(302, headers={"Location": "http://169.254.169.254/latest/"})
+                return_value=httpx2.Response(302, headers={"Location": "http://169.254.169.254/latest/"})
             )
-            target = router.get("http://169.254.169.254/latest/").mock(return_value=httpx.Response(200))
+            target = router.get("http://169.254.169.254/latest/").mock(return_value=httpx2.Response(200))
             with pytest.raises(ArtifactDestinationRejectedError):
                 await download_video("http://203.0.113.7/a.mp4", output, label="test")
 
@@ -1248,7 +1250,7 @@ class TestDownloadVideoDestination:
     async def test_resumable_download_keeps_destination_rejection_terminal(self, tmp_path: Path):
         # 目的地不合规重试取件也不会变，不落可重试下载的 ArtifactDownloadError
         with capture_http() as router:
-            target = router.get("http://169.254.169.254/a.mp4").mock(return_value=httpx.Response(200))
+            target = router.get("http://169.254.169.254/a.mp4").mock(return_value=httpx2.Response(200))
             with pytest.raises(ArtifactDestinationRejectedError):
                 await download_resumable_video("http://169.254.169.254/a.mp4", tmp_path / "out.mp4", label="test")
 
@@ -1257,7 +1259,7 @@ class TestDownloadVideoDestination:
     async def test_resumable_download_keeps_size_limit_terminal(self, tmp_path: Path):
         with capture_http() as router:
             router.get("https://cdn.test/a.mp4").mock(
-                return_value=httpx.Response(200, headers={"Content-Length": str(VIDEO_ARTIFACT_MAX_BYTES + 1)})
+                return_value=httpx2.Response(200, headers={"Content-Length": str(VIDEO_ARTIFACT_MAX_BYTES + 1)})
             )
             with pytest.raises(ArtifactTooLargeError):
                 await download_resumable_video("https://cdn.test/a.mp4", tmp_path / "out.mp4", label="test")
@@ -1300,20 +1302,20 @@ class TestRecordingPoll:
     async def test_http_error_response_body_is_recorded(self):
         """4xx/5xx 响应从 poll_fn 自己抛出，同样是需要诊断的那次调用。"""
         recorded: list[tuple[str, object]] = []
-        response = httpx.Response(500, json={"detail": "boom"}, request=httpx.Request("GET", "https://x/t"))
-        error = httpx.HTTPStatusError("500", request=response.request, response=response)
+        response = httpx2.Response(500, json={"detail": "boom"}, request=httpx2.Request("GET", "https://x/t"))
+        error = httpx2.HTTPStatusError("500", request=response.request, response=response)
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(httpx2.HTTPStatusError):
             await recording_poll(AsyncMock(side_effect=error), self._request(recorded))()
 
         assert recorded == [("poll", {"detail": "boom"})]
 
     async def test_non_json_http_error_body_is_recorded_as_text(self):
         recorded: list[tuple[str, object]] = []
-        response = httpx.Response(502, text="<html>gateway</html>", request=httpx.Request("GET", "https://x/t"))
-        error = httpx.HTTPStatusError("502", request=response.request, response=response)
+        response = httpx2.Response(502, text="<html>gateway</html>", request=httpx2.Request("GET", "https://x/t"))
+        error = httpx2.HTTPStatusError("502", request=response.request, response=response)
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(httpx2.HTTPStatusError):
             await recording_poll(AsyncMock(side_effect=error), self._request(recorded))()
 
         assert recorded == [("poll", "<html>gateway</html>")]
@@ -1355,13 +1357,13 @@ class TestResumeExpiryGate:
     async def test_resume_non_404_propagates(self):
         gated = resume_expiry_gate(AsyncMock(side_effect=_http_status_error(503)), resume_job_id="job-1", provider="p")
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(httpx2.HTTPStatusError):
             await gated()
 
     async def test_submit_path_404_propagates_for_retry(self):
         gated = resume_expiry_gate(AsyncMock(side_effect=_http_status_error(404)), resume_job_id=None, provider="p")
 
-        with pytest.raises(httpx.HTTPStatusError) as ei:
+        with pytest.raises(httpx2.HTTPStatusError) as ei:
             await gated()
 
         assert should_retry_poll(ei.value) is True

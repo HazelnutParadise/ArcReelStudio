@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -759,7 +759,7 @@ class TestConnectionTest:
     def test_connection_failure(self, custom_providers_client: TestClient):
         """探测抛错时端点软失败：仍返回 200，success=False 且带上游错误摘要。"""
         with capture_http(assert_all_called=True) as http:
-            http.get("https://api.example.com/v1/models").mock(side_effect=httpx.ConnectError("Connection refused"))
+            http.get("https://api.example.com/v1/models").mock(side_effect=httpx2.ConnectError("Connection refused"))
             resp = custom_providers_client.post(
                 "/api/v1/custom-providers/test",
                 json={

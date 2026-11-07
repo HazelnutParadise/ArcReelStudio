@@ -1,4 +1,4 @@
-"""AudioBackend 家族测试：registry 注册/创建 + DashScopeAudioBackend（mock httpx，同步端点）
+"""AudioBackend 家族测试：registry 注册/创建 + DashScopeAudioBackend（mock httpx2，同步端点）
 + OpenAIAudioBackend（mock SDK client，/v1/audio/speech）+ extract_audio_url。"""
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from typing import Any, NamedTuple
 from unittest.mock import patch
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -86,8 +86,8 @@ class _DashScopeRoutes(NamedTuple):
 @contextmanager
 def _dashscope_audio_routes(
     *,
-    synth: httpx.Response | None = None,
-    download: httpx.Response | list[httpx.Response | Exception] | None = None,
+    synth: httpx2.Response | None = None,
+    download: httpx2.Response | list[httpx2.Response | Exception] | None = None,
     audio_url: str = _AUDIO_URL,
     synth_url: str = _SYNTH_URL,
 ) -> Generator[_DashScopeRoutes]:
@@ -98,12 +98,12 @@ def _dashscope_audio_routes(
     """
     with capture_http() as router:
         synth_route = router.post(synth_url)
-        synth_route.mock(return_value=synth or httpx.Response(200, json={"output": {"audio": {"url": audio_url}}}))
+        synth_route.mock(return_value=synth or httpx2.Response(200, json={"output": {"audio": {"url": audio_url}}}))
         download_route = router.get(audio_url)
         if isinstance(download, list):
             download_route.mock(side_effect=download)
         else:
-            download_route.mock(return_value=download or httpx.Response(200, content=b"RIFFfakewav"))
+            download_route.mock(return_value=download or httpx2.Response(200, content=b"RIFFfakewav"))
         yield _DashScopeRoutes(synthesize=synth_route, download=download_route)
 
 
@@ -137,7 +137,7 @@ class TestDashScopeAudioBackend:
     async def test_synthesize_request_and_download(self, tmp_path: Path):
         from lib.backends.audio_backends.dashscope import DashScopeAudioBackend
 
-        with _dashscope_audio_routes(download=httpx.Response(200, content=b"RIFFwavbytes")) as routes:
+        with _dashscope_audio_routes(download=httpx2.Response(200, content=b"RIFFwavbytes")) as routes:
             b = DashScopeAudioBackend(api_key="sk", model="qwen3-tts-flash", base_url="https://dashscope.aliyuncs.com")
             out = tmp_path / "o.wav"
             result = await b.synthesize(
@@ -177,16 +177,16 @@ class TestDashScopeAudioBackend:
         assert "speech_rate" not in body["input"]
 
     async def test_http_error_raises(self, tmp_path: Path):
-        # 4xx 透出 httpx.HTTPStatusError（与其余 backend 一致），不嵌响应体进异常消息；提交按状态码不可重试
+        # 4xx 透出 httpx2.HTTPStatusError（与其余 backend 一致），不嵌响应体进异常消息；提交按状态码不可重试
         from lib.backends.audio_backends.dashscope import DashScopeAudioBackend
 
-        with _dashscope_audio_routes(synth=httpx.Response(400, text="bad request")) as routes:
+        with _dashscope_audio_routes(synth=httpx2.Response(400, text="bad request")) as routes:
             b = DashScopeAudioBackend(api_key="sk")
-            with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            with pytest.raises(httpx2.HTTPStatusError) as excinfo:
                 await b.synthesize(AudioSynthesisRequest(text="x", output_path=tmp_path / "e.wav", voice="Cherry"))
 
         # 4xx 按 status_code fail-fast：计费的合成 POST 只发一次、不连带触发下载
-        assert type(excinfo.value) is httpx.HTTPStatusError
+        assert type(excinfo.value) is httpx2.HTTPStatusError
         assert "bad request" not in str(excinfo.value)
         assert routes.synthesize.call_count == 1
         assert routes.download.call_count == 0
@@ -199,11 +199,11 @@ class TestDashScopeAudioBackend:
         # host 里带 503 让异常文本命中瞬态子串——真实形态是请求 URL / task_id 里出现的数字
         host = "https://dashscope-503.example.com"
         with _dashscope_audio_routes(
-            synth=httpx.Response(400, text="bad request"),
+            synth=httpx2.Response(400, text="bad request"),
             synth_url=f"{host}/api/v1/services/aigc/multimodal-generation/generation",
         ) as routes:
             b = DashScopeAudioBackend(api_key="sk", base_url=host)
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.synthesize(AudioSynthesisRequest(text="x", output_path=tmp_path / "e.wav", voice="Cherry"))
 
         # 异常字符串确实带瞬态子串（旧兜底据此误判重试的前提）；新谓词按状态码单次 fail-fast
@@ -217,7 +217,7 @@ class TestDashScopeAudioBackend:
         from lib.backends.audio_backends.dashscope import DashScopeAudioBackend
 
         with _dashscope_audio_routes(
-            download=[httpx.ConnectError("transient"), httpx.Response(200, content=b"ok")]
+            download=[httpx2.ConnectError("transient"), httpx2.Response(200, content=b"ok")]
         ) as routes:
             b = DashScopeAudioBackend(api_key="sk")
             out = tmp_path / "d.wav"
@@ -234,7 +234,7 @@ class TestDashScopeAudioBackend:
         from lib.backends.audio_backends.dashscope import DashScopeAudioBackend
         from lib.backends.backend_runtime import VIDEO_POLL_MAX_CONSECUTIVE_FAILURES
 
-        with _dashscope_audio_routes(download=httpx.Response(200, content=b"")) as routes:
+        with _dashscope_audio_routes(download=httpx2.Response(200, content=b"")) as routes:
             b = DashScopeAudioBackend(api_key="sk")
             out = tmp_path / "empty.wav"
             with pytest.raises(RuntimeError, match="空内容"):
@@ -249,7 +249,7 @@ class TestDashScopeAudioBackend:
         from lib.backends.audio_backends.dashscope import DashScopeAudioBackend
 
         with _dashscope_audio_routes(
-            download=[httpx.Response(200, content=b""), httpx.Response(200, content=b"ok")]
+            download=[httpx2.Response(200, content=b""), httpx2.Response(200, content=b"ok")]
         ) as routes:
             b = DashScopeAudioBackend(api_key="sk")
             out = tmp_path / "recover.wav"
@@ -260,15 +260,15 @@ class TestDashScopeAudioBackend:
         assert out.read_bytes() == b"ok"
 
     async def test_download_http_error_raises(self, tmp_path: Path, poll_clock):
-        # 下载 4xx：透出 httpx.HTTPStatusError 且不写文件、不被误判可重试、合成 POST 不被重跑；
+        # 下载 4xx：透出 httpx2.HTTPStatusError 且不写文件、不被误判可重试、合成 POST 不被重跑；
         # 异常文本不携带预签名 query（有效期内等同下载凭证）
         from lib.backends.audio_backends.dashscope import DashScopeAudioBackend
 
         signed_url = "https://x/out.wav?Expires=1&Signature=topsecret"
-        with _dashscope_audio_routes(audio_url=signed_url, download=httpx.Response(404)) as routes:
+        with _dashscope_audio_routes(audio_url=signed_url, download=httpx2.Response(404)) as routes:
             b = DashScopeAudioBackend(api_key="sk")
             out = tmp_path / "err.wav"
-            with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            with pytest.raises(httpx2.HTTPStatusError) as excinfo:
                 await b.synthesize(AudioSynthesisRequest(text="hi", output_path=out, voice="Cherry"))
 
         assert "Signature" not in str(excinfo.value)
@@ -287,7 +287,7 @@ class TestDashScopeAudioBackend:
         out = GatedWritePath(tmp_path / "gated.wav").attach(gate)
         written = tmp_path / "gated.wav"
 
-        with _dashscope_audio_routes(download=httpx.Response(200, content=b"RIFFwavbytes")):
+        with _dashscope_audio_routes(download=httpx2.Response(200, content=b"RIFFwavbytes")):
             b = DashScopeAudioBackend(api_key="sk")
             steps = await cancel_during_write(
                 lambda: b.synthesize(AudioSynthesisRequest(text="你好", output_path=out, voice="Cherry")), gate
@@ -299,7 +299,7 @@ class TestDashScopeAudioBackend:
     async def test_download_over_audio_limit_is_rejected_without_retry(self, tmp_path: Path, poll_clock):
         from lib.backends.audio_backends.dashscope import DashScopeAudioBackend
 
-        oversized = httpx.Response(200, headers={"Content-Length": str(AUDIO_ARTIFACT_MAX_BYTES + 1)}, content=b"")
+        oversized = httpx2.Response(200, headers={"Content-Length": str(AUDIO_ARTIFACT_MAX_BYTES + 1)}, content=b"")
         with _dashscope_audio_routes(download=oversized) as routes:
             b = DashScopeAudioBackend(api_key="sk")
             out = tmp_path / "big.wav"
@@ -339,7 +339,7 @@ class _RecordingSpeechClient:
     @asynccontextmanager
     async def _create(self, **kwargs: Any) -> AsyncGenerator[SimpleNamespace]:
         self.requests.append(kwargs)
-        yield SimpleNamespace(http_response=httpx.Response(200, headers=self._headers, content=self._content))
+        yield SimpleNamespace(http_response=httpx2.Response(200, headers=self._headers, content=self._content))
 
 
 def _mock_speech_client(

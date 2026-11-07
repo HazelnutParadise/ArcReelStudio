@@ -1206,7 +1206,7 @@ def use_assets_router_sessions(monkeypatch, factory) -> None:
 def use_object_storage_sdk(monkeypatch, factory: Callable[..., Any]) -> None:
     """对象存储的网络边界：``create_sdk_client`` 改调 *factory*（收 ``ObjectStorageConfig``，返回 TOS SDK 客户端替身）。
 
-    TOS SDK 基于 requests，不经 httpx，respx 拦不到；所有对象存取都经这一处构造客户端。
+    TOS SDK 基于 requests，不经 httpx2，respx 拦不到；所有对象存取都经这一处构造客户端。
     """
     monkeypatch.setattr("lib.object_storage.client.create_sdk_client", factory)
 

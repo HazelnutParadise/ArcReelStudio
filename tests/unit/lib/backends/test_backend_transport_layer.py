@@ -1,7 +1,7 @@
 """自定义供应商可挂接的 Python 调用通道把注入的 transport 层交给自己的 HTTP 客户端。
 
 路径覆盖（docs/adr/0101）在 transport 层改写请求：注入层改写过的路径就是实际发出的路径，
-SDK（OpenAI、Anthropic、google-genai、方舟）与直连 httpx 的调用通道都一样。
+SDK（OpenAI、Anthropic、google-genai、方舟）与直连 httpx2 的调用通道都一样。
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ import contextlib
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import VideoGenerationRequest
@@ -37,7 +37,7 @@ from lib.backends.text_backends.openai_responses import OpenAIResponsesTextBacke
 from lib.backends.transport_layer import TransportLayer
 from lib.backends.video_backends.ark import Seedance2VideoBackend
 from lib.backends.video_backends.dashscope import DashScopeVideoBackend
-from lib.backends.video_backends.gemini import GeminiVideoBackend
+from lib.backends.video_backends.gemini_interactions import GeminiInteractionsVideoBackend
 from lib.backends.video_backends.kling import KlingVideoBackend
 from lib.backends.video_backends.kling_model_path import KlingModelPathVideoBackend
 from lib.backends.video_backends.openai import OpenAIVideoBackend
@@ -121,8 +121,8 @@ _CALLS: dict[str, Call] = {
     "openai-video": lambda layer, tmp_path: OpenAIVideoBackend(
         api_key="k", model="sora-2", base_url=f"{BASE}/v1", transport_layer=layer
     ).generate(_video(tmp_path)),
-    "gemini-video": lambda layer, tmp_path: GeminiVideoBackend(
-        api_key="k", base_url=BASE, transport_layer=layer
+    "gemini-interactions-video": lambda layer, tmp_path: GeminiInteractionsVideoBackend(
+        api_key="k", base_url=BASE, video_model="gemini-omni-1.2-flash", transport_layer=layer
     ).generate(_video(tmp_path)),
     "ark-seedance-2": lambda layer, tmp_path: Seedance2VideoBackend(
         api_key="k", model="doubao-seedance-2-0-260128", base_url=f"{BASE}/api/v3", transport_layer=layer
@@ -147,7 +147,7 @@ async def test_requests_leave_on_the_path_rewritten_by_the_injected_layer(call: 
     layer = PathPrefixRewrite("/", "/rewritten/")
     with capture_http() as router, bounded_poll_clock():
         rewritten = router.route(host="relay.example", path__startswith="/rewritten/").mock(
-            return_value=httpx.Response(400, json={"error": {"message": "stop here"}})
+            return_value=httpx2.Response(400, json={"error": {"message": "stop here"}})
         )
         # 回包一律拒绝，各调用通道怎样报错不在本用例范围内，只看请求怎样发出
         with contextlib.suppress(Exception):

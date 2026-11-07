@@ -407,7 +407,7 @@ class ViduVideoBackend(EntryBoundCapabilities):
         # create 是非幂等的「创建 + 计费」调用：submit_post 把歧义态（ReadTimeout 等
         # 「请求可能已送达服务端」）转 AmbiguousSubmitError 终态失败、不重试，仅「请求确定
         # 未送达」的连接建立失败交 should_retry_submit 重试，避免重复建任务 + 重复计费。
-        # 413 等 4xx 经 raise_for_status 透出 httpx.HTTPStatusError（保留 status_code），
+        # 413 等 4xx 经 raise_for_status 透出 httpx2.HTTPStatusError（保留 status_code），
         # 让咽喉层识别 413 走降档重试；body 由 submit_post 落日志保留可诊断性。
         resp = await submit_post(lambda: client.post(endpoint, json=body), provider=PROVIDER_VIDU, request=request)
         data = resp.json()

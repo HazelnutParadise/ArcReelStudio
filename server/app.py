@@ -519,7 +519,7 @@ async def lifespan(app: FastAPI):
     _profile_sync_stats = await asyncio.to_thread(_pm.sync_all_agent_profiles)
     _log_profile_sync_outcome(_profile_sync_stats)
 
-    # 启动共享 httpx 客户端（用于版本检查等外部 API 调用）
+    # 启动共享 httpx2 客户端（用于版本检查等外部 API 调用）
     await startup_http_client()
 
     # Initialize async services

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from lib.artifacts.artifact_activation import active_artifact_currency_resolver
@@ -54,11 +54,11 @@ def _backend() -> DashScopeImageBackend:
 
 def _routes(router, *, result_bytes: bytes):
     submit = router.post(GENERATION_URL).mock(
-        return_value=httpx.Response(
+        return_value=httpx2.Response(
             200, json={"output": {"choices": [{"message": {"content": [{"image": RESULT_URL}]}}]}}
         )
     )
-    router.get(RESULT_URL).mock(return_value=httpx.Response(200, content=result_bytes))
+    router.get(RESULT_URL).mock(return_value=httpx2.Response(200, content=result_bytes))
     return submit
 
 

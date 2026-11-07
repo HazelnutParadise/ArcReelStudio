@@ -16,7 +16,7 @@ import tempfile
 from collections.abc import Awaitable, Callable, Generator, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, is_dataclass, replace
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Generic, Literal, Self, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.json_schema import SkipJsonSchema
@@ -321,9 +321,12 @@ class ToolProblem:
         return payload
 
 
+ResultT_co = TypeVar("ResultT_co", covariant=True)
+
+
 @dataclass(frozen=True, slots=True)
-class ToolOutcome[ResultT]:
-    value: ResultT | None = None
+class ToolOutcome(Generic[ResultT_co]):  # noqa: UP046 -- 3.13+ 的 dataclass 合成 __replace__，PEP 695 推断出不变，返回窄结果的工具会类型不符
+    value: ResultT_co | None = None
     problem: ToolProblem | None = None
 
 

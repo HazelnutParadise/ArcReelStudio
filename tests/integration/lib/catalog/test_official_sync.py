@@ -12,7 +12,7 @@ from datetime import date
 from pathlib import Path
 
 import anyio
-import httpx
+import httpx2
 import pytest
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -81,8 +81,8 @@ UPSTREAM = _dataset(
 
 
 @pytest.fixture
-async def http_client() -> AsyncGenerator[httpx.AsyncClient]:
-    async with httpx.AsyncClient() as client:
+async def http_client() -> AsyncGenerator[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient() as client:
         yield client
 
 
@@ -95,7 +95,9 @@ def _catalog_state(monkeypatch: pytest.MonkeyPatch):
     catalog.install_user_added_models(())
 
 
-async def _sync(db_factory: async_sessionmaker[AsyncSession], client: httpx.AsyncClient, upstream: CatalogData) -> None:
+async def _sync(
+    db_factory: async_sessionmaker[AsyncSession], client: httpx2.AsyncClient, upstream: CatalogData
+) -> None:
     manifest, content = _files(upstream)
     with capture_http() as http:
         http.get(official_sync.MANIFEST_URL).respond(content=manifest)
@@ -275,7 +277,7 @@ async def test_recording_can_skip_sync_without_requesting_the_official_catalog(d
     assert catalog.official_data() is SNAPSHOT
 
 
-class _AnyioConnectTransport(httpx.AsyncBaseTransport):
+class _AnyioConnectTransport(httpx2.AsyncBaseTransport):
     """同 httpcore 经 ``anyio.connect_tcp`` 建连：连接建立后 anyio 取消自己的任务组，再返回清单响应。"""
 
     def __init__(self, status_code: int) -> None:
@@ -283,7 +285,7 @@ class _AnyioConnectTransport(httpx.AsyncBaseTransport):
         self.status_code = status_code
         self.requested_urls: list[str] = []
 
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+    async def handle_async_request(self, request: httpx2.Request) -> httpx2.Response:
         self.requested_urls.append(str(request.url))
         async with anyio.create_task_group() as tg:
 
@@ -294,13 +296,13 @@ class _AnyioConnectTransport(httpx.AsyncBaseTransport):
             tg.start_soon(connect)
             await anyio.sleep_forever()
         manifest, _ = _files(UPSTREAM)
-        return httpx.Response(self.status_code, content=manifest)
+        return httpx2.Response(self.status_code, content=manifest)
 
 
 @pytest.mark.parametrize("status_code", [500, 200])
 async def test_stop_ends_the_sync_when_anyio_absorbs_the_cancellation(db_factory, status_code: int) -> None:
     transport = _AnyioConnectTransport(status_code)
-    async with httpx.AsyncClient(transport=transport) as client:
+    async with httpx2.AsyncClient(transport=transport) as client:
         task = official_sync.start_official_sync(db_factory, lambda: client)
         assert task is not None
 

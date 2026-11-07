@@ -3,9 +3,9 @@ name = "arcreel-market-core"
 version = "0.1.0"
 description = "ArcReel market source tools and endpoint definition validator"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
-    "httpx>=0.28.1",
+    "httpx2>=2.16.0",
     "jsonpath-rfc9535>=1.0.0",
     "jsonschema>=4.26.0",
     "packaging>=24.0",
@@ -30,5 +30,6 @@ packages = ["src/arcreel_market_core"]
 testpaths = ["tests"]
 # 测试目录不是包：辅助模块经 pythonpath 导入，用例按文件路径导入，互不撞名。
 pythonpath = ["tests"]
-addopts = "--strict-markers --import-mode=importlib"
+# respx 的 pytest 插件在加载 conftest 之前就 import httpx，会让 tests/conftest.py 里的 httpx2.alias_httpx() 失败，禁止自动加载。
+addopts = "--strict-markers --import-mode=importlib -p no:respx"
 asyncio_mode = "auto"

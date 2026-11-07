@@ -5,7 +5,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Literal
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -121,7 +121,7 @@ async def _upload_with_test_sessions(
     PostgreSQL 连接绑定建立它的事件循环；进程级引擎与 TestClient 自己的事件循环都会取到别的循环建的连接。
     """
     bind_session_factory(monkeypatch, session_factory)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=client.app), base_url="http://test") as http:
+    async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=client.app), base_url="http://test") as http:
         response = await http.post(
             f"/api/v1/projects/demo/shots/E1S01/upload/{kind}?script_file=episode_1.json",
             files={"file": (filename, BytesIO(content), "application/octet-stream")},

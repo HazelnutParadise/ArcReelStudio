@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-import httpx
+import httpx2
 
 from arcreel_market_core.video_backend_contract import (
     ResumeExpiredError,
@@ -206,7 +206,7 @@ class ComfyuiVideoBackend(ProviderJobIdPersistenceMixin):
     # ------------------------------------------------------------------ 上传
 
     async def _upload_media(
-        self, http: httpx.AsyncClient, request: VideoGenerationRequest, *, job_label: str
+        self, http: httpx2.AsyncClient, request: VideoGenerationRequest, *, job_label: str
     ) -> MediaInputs:
         """上传绑定的首尾帧，以及已通过槽位容量校验的全部参考图。"""
         bindings: Mapping[str, Any] = self._definition.get("bindings") or {}
@@ -223,7 +223,7 @@ class ComfyuiVideoBackend(ProviderJobIdPersistenceMixin):
 
     async def _upload_one(
         self,
-        http: httpx.AsyncClient,
+        http: httpx2.AsyncClient,
         path: Path | None,
         bindings: Mapping[str, Any],
         key: str,

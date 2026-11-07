@@ -4,7 +4,7 @@ import asyncio
 import contextvars
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.image_backends.dashscope import DashScopeImageBackend
@@ -74,16 +74,16 @@ async def test_task_running_when_project_replaced_leaves_no_trace(monkeypatch, d
             if replacement != "deleted-only":
                 new_project.update(_tree(project_dir))
 
-        async def _delete_while_generating(_request: httpx.Request) -> httpx.Response:
+        async def _delete_while_generating(_request: httpx2.Request) -> httpx2.Response:
             # 删除、重建与覆盖导入来自别的请求，不在任务的执行上下文里，也不占任务所在的事件循环。
             await asyncio.to_thread(contextvars.Context().run, _replace)
-            return httpx.Response(
+            return httpx2.Response(
                 200, json={"output": {"choices": [{"message": {"content": [{"image": RESULT_URL}]}}]}}
             )
 
         with capture_http() as router:
             router.post(GENERATION_URL).mock(side_effect=_delete_while_generating)
-            router.get(RESULT_URL).mock(return_value=httpx.Response(200, content=solid_png_bytes(RESULT_IMAGE_RGB)))
+            router.get(RESULT_URL).mock(return_value=httpx2.Response(200, content=solid_png_bytes(RESULT_IMAGE_RGB)))
             worker = GenerationWorker(
                 queue=db_queue(db_factory),
                 executor=generation_tasks.execute_generation_task,

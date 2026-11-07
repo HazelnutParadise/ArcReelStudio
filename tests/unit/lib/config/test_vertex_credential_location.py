@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -90,7 +90,7 @@ async def test_uploaded_credential_is_stored_in_data_root_and_loadable(
     app.dependency_overrides[get_async_session] = _session
     override_auth(app)
     app.include_router(providers.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v1/providers/gemini-vertex/credentials/upload",
             files={"file": ("sa.json", json.dumps({"project_id": "uploaded"}), "application/json")},

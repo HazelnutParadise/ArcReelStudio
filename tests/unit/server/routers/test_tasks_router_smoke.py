@@ -1,7 +1,7 @@
 """Smoke tests for task router endpoints against a real generation queue."""
 
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from server.auth import CurrentUserInfo, get_current_user
 from server.routers import tasks as tasks_router

@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from arcreel_market_core.video_backend_contract import VideoAudioMode
 from lib.backends.backend_assembly.specs import builtin_video_capabilities_for_model
-from lib.backends.gemini_shared import VERTEX_SCOPES
+from lib.backends.gemini_shared import GEMINI_DEVELOPER_API_VERSION, VERTEX_SCOPES
 from lib.backends.http_status_errors import raise_for_status_redacted
 from lib.billing.multipliers import (
     PROVIDER_MULTIPLIER_KEY,
@@ -844,7 +844,9 @@ def _check_gemini_aistudio(config: dict[str, str], _t: Callable[..., str]) -> Co
 
     api_key = config["api_key"]
     base_url = normalize_base_url(config.get("base_url"))
-    http_options: genai.types.HttpOptionsDict | None = {"base_url": base_url} if base_url else None
+    http_options: genai.types.HttpOptionsDict = {"api_version": GEMINI_DEVELOPER_API_VERSION}
+    if base_url:
+        http_options["base_url"] = base_url
     client = genai.Client(api_key=api_key, http_options=http_options)
 
     pager = client.models.list()
@@ -1031,7 +1033,7 @@ def _check_kling(config: dict[str, str], _t: Callable[..., str]) -> Connectivity
     """
     import time
 
-    import httpx
+    import httpx2
 
     from lib.backends.kling_shared import (
         KLING_BASE_URL,
@@ -1053,7 +1055,7 @@ def _check_kling(config: dict[str, str], _t: Callable[..., str]) -> Connectivity
     root = base_url.removesuffix("/v1")
     now_ms = int(time.time() * 1000)
     one_day_ms = 24 * 60 * 60 * 1000
-    resp = httpx.get(
+    resp = httpx2.get(
         f"{root}/account/costs",
         params={"start_time": now_ms - one_day_ms, "end_time": now_ms},
         headers=headers,

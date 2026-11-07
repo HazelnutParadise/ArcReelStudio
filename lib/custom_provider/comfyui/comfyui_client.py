@@ -17,7 +17,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 
 from arcreel_market_core.auth_section import render_auth
 from arcreel_market_core.video_backend_contract import IMAGE_MIME_TYPES, ProviderResponseStage
@@ -56,7 +56,7 @@ def normalize_comfyui_base_url(base_url: str) -> str:
     不剥版本段：ComfyUI 的路由全在根下（``/prompt`` / ``/history``），没有声明式定义那种
     ``base_url`` 与定义各带一次版本前缀、拼出 ``/v1/v2`` 的形态。
 
-    无 scheme 的纯域名补 ``https://``——httpx 拒收缺协议的相对 URL，而自定义供应商的 ``base_url``
+    无 scheme 的纯域名补 ``https://``——httpx2 拒收缺协议的相对 URL，而自定义供应商的 ``base_url``
     是不受约束的字符串。
     """
     stripped = base_url.strip().rstrip("/")
@@ -111,20 +111,20 @@ class ComfyuiClient:
         续跳时补回），且它不收 ``params``——那会把这里拼上的查询串整串替换掉。带自有查询参数的
         ``/view`` 因此不走这条，凭证与参数一起交给 ``stream_to_file`` 的首跳 ``params``。
         """
-        url = httpx.URL(self._url(path))
+        url = httpx2.URL(self._url(path))
         return str(url.copy_merge_params(self._query) if self._query else url)
 
     @property
     def _credential_origin(self) -> tuple[str, str, int | None]:
         """凭证只许发往这台 ComfyUI 自己的源。
 
-        反向代理把 ``/view`` 之类的路由 302 到对象存储 / CDN 是常见部署，而 httpx 跨源只摘
+        反向代理把 ``/view`` 之类的路由 302 到对象存储 / CDN 是常见部署，而 httpx2 跨源只摘
         ``Authorization``——auth 节允许任意头名，交给 ``follow_redirects`` 会把 ``X-API-Key``
         原样送到第三方。
         """
         return url_origin(self._base_url)
 
-    async def upload_image(self, http: httpx.AsyncClient, path: Path, *, filename: str) -> str:
+    async def upload_image(self, http: httpx2.AsyncClient, path: Path, *, filename: str) -> str:
         """把一份素材传进服务端 ``input`` 区，返回读图节点认的引用值。
 
         引用值以**响应**里的 ``subfolder`` / ``name`` 拼成而不是以请求里的：服务端会为重名改名、
@@ -147,9 +147,9 @@ class ComfyuiClient:
             )
             response.raise_for_status()
             body = response.json()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             raise ComfyuiError(UPLOAD_FAILED, detail=str(redacted_status_error(exc))) from None
-        except (httpx.HTTPError, ValueError) as exc:
+        except (httpx2.HTTPError, ValueError) as exc:
             raise ComfyuiError(UPLOAD_FAILED, detail=str(exc)) from exc
         if not isinstance(body, Mapping) or not body.get("name"):
             raise ComfyuiError(UPLOAD_FAILED, detail="upload response did not name the stored file")
@@ -157,7 +157,7 @@ class ComfyuiClient:
 
     async def submit_prompt(
         self,
-        http: httpx.AsyncClient,
+        http: httpx2.AsyncClient,
         workflow: Mapping[str, Any],
         *,
         client_id: str,
@@ -176,7 +176,7 @@ class ComfyuiClient:
             if record is not None:
                 await record(stage, body)
 
-        async def post() -> httpx.Response:
+        async def post() -> httpx2.Response:
             response = await request_with_scoped_credentials(
                 http,
                 "POST",
@@ -205,7 +205,7 @@ class ComfyuiClient:
         logger.info("ComfyUI 已提交: %s", format_kwargs_for_log({"prompt_id": prompt_id, "client_id": client_id}))
         return prompt_id
 
-    async def fetch_history(self, http: httpx.AsyncClient, prompt_id: str) -> Mapping[str, Any] | None:
+    async def fetch_history(self, http: httpx2.AsyncClient, prompt_id: str) -> Mapping[str, Any] | None:
         """取一次执行记录；还没有记录时返回 ``None``。
 
         两种形状都接受：``{prompt_id: {...}}`` 包裹的与根即条目的。不同版本与代理各有一种，按
@@ -224,7 +224,7 @@ class ComfyuiClient:
         )
         try:
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             raise redacted_status_error(exc) from None
         body = response.json()
         if not isinstance(body, Mapping) or not body:
@@ -233,7 +233,7 @@ class ComfyuiClient:
         entry = wrapped if isinstance(wrapped, Mapping) else body
         return entry or None
 
-    async def queue_snapshot(self, http: httpx.AsyncClient) -> tuple[list[str], list[str]] | None:
+    async def queue_snapshot(self, http: httpx2.AsyncClient) -> tuple[list[str], list[str]] | None:
         """``GET /queue`` 的两张单子，各取其中的 ``prompt_id``（running 在前、pending 在后）。
 
         条目是数组 ``[序号, prompt_id, prompt, 待执行节点, 额外数据]``，id 在下标 1；一并认
@@ -255,7 +255,7 @@ class ComfyuiClient:
         )
         try:
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             raise redacted_status_error(exc) from None
         try:
             body = response.json()
@@ -268,7 +268,7 @@ class ComfyuiClient:
             return None
         return _queue_ids(running), _queue_ids(pending)
 
-    async def server_version(self, http: httpx.AsyncClient) -> str | None:
+    async def server_version(self, http: httpx2.AsyncClient) -> str | None:
         """``GET /system_stats`` 回的 ``system.comfyui_version``；读不到给 ``None``。
 
         与连通性检查读的是同一个字段。老版本与部分代理不回这一字段，故「读不到」不是错误，
@@ -284,7 +284,7 @@ class ComfyuiClient:
         )
         try:
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             # 地址带着按 query 传的凭证，裸 HTTPStatusError 的消息会把它原样写进日志。
             raise redacted_status_error(exc) from None
         body = response.json()
@@ -293,22 +293,22 @@ class ComfyuiClient:
         # 非字符串一律当读不到：调用方据此走低版本路径，那条路在新版本上同样有效。
         return version.strip() or None if isinstance(version, str) else None
 
-    async def cancel_job(self, http: httpx.AsyncClient, prompt_id: str) -> None:
+    async def cancel_job(self, http: httpx2.AsyncClient, prompt_id: str) -> None:
         """``POST /api/jobs/{id}/cancel``：新版本上一个动作同时覆盖排队中与执行中。"""
         await self._post_and_raise(http, f"/api/jobs/{prompt_id}/cancel", body=None)
 
-    async def drop_from_queue(self, http: httpx.AsyncClient, prompt_id: str) -> None:
+    async def drop_from_queue(self, http: httpx2.AsyncClient, prompt_id: str) -> None:
         """``POST /queue {"delete": [id]}``：低版本上取消一个还在排队的执行。"""
         await self._post_and_raise(http, "/queue", body={"delete": [prompt_id]})
 
-    async def interrupt(self, http: httpx.AsyncClient) -> None:
+    async def interrupt(self, http: httpx2.AsyncClient) -> None:
         """``POST /interrupt``：低版本上打断**当前正在执行**的那一个，不认 id。
 
         因此调用方必须先确认 running 里就是自己这一笔，否则打断的是别人的活。
         """
         await self._post_and_raise(http, "/interrupt", body=None)
 
-    async def _post_and_raise(self, http: httpx.AsyncClient, path: str, *, body: object | None) -> None:
+    async def _post_and_raise(self, http: httpx2.AsyncClient, path: str, *, body: object | None) -> None:
         response = await request_with_scoped_credentials(
             http,
             "POST",
@@ -319,12 +319,12 @@ class ComfyuiClient:
         )
         try:
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             raise redacted_status_error(exc) from None
 
     async def download_output(
         self,
-        http: httpx.AsyncClient,
+        http: httpx2.AsyncClient,
         artifact: Mapping[str, Any],
         output_path: Path,
         *,
@@ -377,7 +377,7 @@ def _queue_ids(entries: object) -> list[str]:
     return found
 
 
-def _body_or_text(response: httpx.Response) -> object:
+def _body_or_text(response: httpx2.Response) -> object:
     try:
         return response.json()
     except ValueError:

@@ -10,7 +10,7 @@ mutmut 按 mutant fork 出多个 pytest 会话并行跑。两处 fork 相关的�
   不登记任何清理，收尾时无事可做；目录由本会话在 unconfigure 时自己回收。
 - macOS 上 ``urllib.request.getproxies()`` 在环境里没有 ``*_proxy`` 变量时会经 ``_scproxy``
   调 SystemConfiguration 读系统代理，而该框架在 fork 出的多线程子进程里直接段错误。任何构造
-  ``openai.OpenAI`` / ``httpx.Client`` 的用例都会走到这里，整批 mutant 记成 −11。这里把两个
+  ``openai.OpenAI`` / ``httpx2.Client`` 的用例都会走到这里，整批 mutant 记成 −11。这里把两个
   macOS 专属入口换成「无系统代理」的常量实现：测试从不依赖真实系统代理，环境变量给的代理
   仍按原路生效。
 """

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import httpx
+import httpx2
 
 from lib.backends.backend_runtime import download_video, faststart_video_artifact, stream_to_file
 from lib.infra.mp4_faststart import Mp4Layout, read_mp4_layout
@@ -27,7 +27,7 @@ async def test_downloaded_moov_last_video_lands_as_faststart(tmp_path: Path):
     output.parent.mkdir()
 
     with capture_http() as router:
-        router.get("http://203.0.113.7/a.mp4").mock(return_value=httpx.Response(200, content=body))
+        router.get("http://203.0.113.7/a.mp4").mock(return_value=httpx2.Response(200, content=body))
         await download_video("http://203.0.113.7/a.mp4", output, label="test")
 
     layout = read_mp4_layout(output)
@@ -42,8 +42,8 @@ async def test_stream_to_file_stores_bytes_verbatim_inside_the_download_budget(t
     output = tmp_path / "out.mp4"
 
     with capture_http() as router:
-        router.get("https://cdn.test/a.mp4").mock(return_value=httpx.Response(200, content=body))
-        async with httpx.AsyncClient() as client:
+        router.get("https://cdn.test/a.mp4").mock(return_value=httpx2.Response(200, content=body))
+        async with httpx2.AsyncClient() as client:
             await stream_to_file(client, "https://cdn.test/a.mp4", output, max_bytes=_LIMIT)
 
     assert output.read_bytes() == body

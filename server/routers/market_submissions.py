@@ -139,7 +139,8 @@ def _fields(status: SubmissionStatus) -> dict[str, str]:
 async def _record_submission(session: AsyncSession, endpoint_id: int, status: SubmissionStatus) -> None:
     """以本次提交覆盖该端点的记录；同一端点并发提交时后写者生效。"""
     values = {**_fields(status), "submitted_at": utc_now()}
-    insert = pg_insert if session.bind.dialect.name == "postgresql" else sqlite_insert
+    bind = session.bind
+    insert = pg_insert if bind is not None and bind.dialect.name == "postgresql" else sqlite_insert
     stmt = insert(MarketSubmission).values(custom_endpoint_id=endpoint_id, **values)
     await session.execute(
         stmt.on_conflict_do_update(

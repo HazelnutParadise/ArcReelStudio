@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
-import httpx
+import httpx2
 
 from lib.backends.artifact_download_guard import ARTIFACT_MAX_BYTES_BY_MEDIA_TYPE, artifact_http_client
 from lib.backends.backend_runtime import poll_with_retry, should_retry_poll
@@ -84,7 +84,7 @@ class ComfyuiExecution:
 
     async def fetch_artifact(
         self,
-        http: httpx.AsyncClient,
+        http: httpx2.AsyncClient,
         prompt_id: str,
         *,
         output_path: Path,
@@ -136,7 +136,7 @@ class ComfyuiExecution:
 
     async def _poll_to_terminal(
         self,
-        http: httpx.AsyncClient,
+        http: httpx2.AsyncClient,
         prompt_id: str,
         *,
         poll_timeout_seconds: float,
@@ -198,7 +198,7 @@ class ComfyuiExecution:
         raise ComfyuiError(OUTPUT_CONTAINER_MISMATCH, filename=picked.filename, media_type=self._media_type)
 
     async def _history_or_lost(
-        self, http: httpx.AsyncClient, prompt_id: str, *, lost_error: Callable[[str], BaseException] | None
+        self, http: httpx2.AsyncClient, prompt_id: str, *, lost_error: Callable[[str], BaseException] | None
     ) -> Mapping[str, Any] | None:
         """history 还空着的这一轮：确认这次执行仍在队列上，否则判丢失。
 
@@ -222,7 +222,7 @@ class ComfyuiExecution:
             raise lost_error(prompt_id)
         raise ComfyuiError(JOB_LOST, prompt_id=prompt_id)
 
-    async def _queue_snapshot(self, http: httpx.AsyncClient) -> tuple[list[str], list[str]] | None:
+    async def _queue_snapshot(self, http: httpx2.AsyncClient) -> tuple[list[str], list[str]] | None:
         """丢失判定用的队列快照：这张表读不出时给 ``None``（继续轮询），不占轮询的失败预算。
 
         ``/queue`` 只是丢失判定的辅助判据，而任务本身的地址是 ``/history``——走到这里时它这一轮
@@ -232,7 +232,7 @@ class ComfyuiExecution:
         """
         try:
             return await self._client.queue_snapshot(http)
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             logger.info("ComfyUI 队列读取失败，本轮不判丢失", exc_info=True)
             return None
 
@@ -267,7 +267,7 @@ class ComfyuiExecution:
         except Exception:
             logger.warning("ComfyUI 远端叫停失败 prompt_id=%s", prompt_id, exc_info=True)
 
-    async def _server_version(self, http: httpx.AsyncClient) -> str | None:
+    async def _server_version(self, http: httpx2.AsyncClient) -> str | None:
         try:
             return await self._client.server_version(http)
         except Exception:

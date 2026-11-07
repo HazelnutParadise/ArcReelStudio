@@ -10,7 +10,7 @@ import base64
 from functools import partial
 from pathlib import Path
 
-import httpx
+import httpx2
 import openai
 import pytest
 
@@ -44,8 +44,8 @@ _MODEL = "doubao-seedream-5-0-260128"
 _GENERATIONS = "https://relay.example/proxy/api/v3/images/generations"
 
 
-def _image_response() -> httpx.Response:
-    return httpx.Response(
+def _image_response() -> httpx2.Response:
+    return httpx2.Response(
         200,
         json={"model": _MODEL, "created": 1, "data": [{"b64_json": base64.b64encode(b"png").decode()}]},
     )
@@ -178,7 +178,7 @@ async def test_seedream_saved_on_openai_images_explains_the_404_from_images_edit
     backend = ENDPOINT_REGISTRY["openai-images"].build_backend(_PROVIDER, _MODEL)
     with capture_http() as router:
         router.post("https://relay.example/proxy/v1/images/edits").mock(
-            return_value=httpx.Response(404, json={"error": {"code": "NotFound", "message": "not found"}})
+            return_value=httpx2.Response(404, json={"error": {"code": "NotFound", "message": "not found"}})
         )
         with pytest.raises(ImageCapabilityError) as excinfo:
             await backend.generate(
@@ -206,7 +206,7 @@ async def test_other_models_keep_the_raw_404_from_images_edits(tmp_path: Path):
     backend = ENDPOINT_REGISTRY["openai-images"].build_backend(_PROVIDER, "gpt-image-2")
     with capture_http() as router:
         router.post("https://relay.example/proxy/v1/images/edits").mock(
-            return_value=httpx.Response(404, json={"error": {"code": "model_not_found", "message": "no model"}})
+            return_value=httpx2.Response(404, json={"error": {"code": "model_not_found", "message": "no model"}})
         )
         with pytest.raises(openai.NotFoundError):
             await backend.generate(

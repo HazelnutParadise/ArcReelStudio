@@ -129,8 +129,8 @@ def _is_413(exc: BaseException) -> bool:
     """识别请求体超限（HTTP 413）。
 
     先从异常通用属性提取状态码：``status_code``（OpenAI/xai SDK + 规整后的 vidu/dashscope）/
-    ``response.status_code``（httpx.HTTPStatusError）/ ``code``（google-genai APIError）——
-    覆盖默认 provider gemini 及各 SDK 类后端，而非只认 httpx（与 lib/backends/video_backends/ark.py 的
+    ``response.status_code``（httpx2.HTTPStatusError）/ ``code``（google-genai APIError）——
+    覆盖默认 provider gemini 及各 SDK 类后端，而非只认 httpx2（与 lib/backends/video_backends/ark.py 的
     状态码提取口径一致）。状态码缺失时退回短语匹配，但不用裸 "413" 子串——避免被字节数 /
     请求 ID（如 "41300 bytes"）误命中。
     """

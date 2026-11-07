@@ -9,7 +9,7 @@ from typing import Any
 from fastapi.responses import PlainTextResponse
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import AnyHttpUrl
 from starlette.applications import Starlette
@@ -52,8 +52,8 @@ def build_remote_mcp_server(
     projects: ProjectManager | None = None,
     services: Services | None = None,
     token_verifier: TokenVerifier | None = None,
-) -> FastMCP:
-    """Build one restart-safe MCP server instance for the host lifespan."""
+) -> MCPServer:
+    """Build one restart-safe MCP server instance for the host lifespan; mount it via :func:`remote_mcp_app`."""
     if services is not None:
         if projects is not None and projects.data_root.resolve() != services.projects.data_root.resolve():
             raise ValueError("projects 与 services.projects 必须属于同一项目根")
@@ -62,7 +62,7 @@ def build_remote_mcp_server(
         projects = projects or get_project_manager()
         services = Services.defaults(projects)
 
-    return FastMCP(
+    return MCPServer(
         "arcreel",
         tools=remote_tools(AGENT_TOOLSET, projects=projects, services=services),
         token_verifier=token_verifier or ArcApiKeyVerifier(),
@@ -75,6 +75,12 @@ def build_remote_mcp_server(
             resource_server_url=None,
             required_scopes=["arcreel"],
         ),
+    )
+
+
+def remote_mcp_app(server: MCPServer) -> ASGIApp:
+    """按远程端点的传输配置构造 Streamable HTTP 子应用；之后才能进入 ``server.session_manager.run()``。"""
+    return server.streamable_http_app(
         stateless_http=True,
         streamable_http_path="/",
         json_response=False,
@@ -91,7 +97,7 @@ def build_remote_mcp_server(
 class RemoteMCPHost:
     """Stable ASGI mount whose one-shot SDK manager is rebuilt per host lifespan."""
 
-    def __init__(self, server_factory: Callable[[], FastMCP] = build_remote_mcp_server) -> None:
+    def __init__(self, server_factory: Callable[[], MCPServer] = build_remote_mcp_server) -> None:
         self._server_factory = server_factory
         self._app: Any | None = None
 
@@ -104,7 +110,7 @@ class RemoteMCPHost:
     @asynccontextmanager
     async def run(self) -> AsyncGenerator[None]:
         server = self._server_factory()
-        child_app = server.streamable_http_app()
+        child_app = remote_mcp_app(server)
         async with server.session_manager.run():
             self._app = child_app
             try:
@@ -162,5 +168,6 @@ __all__ = [
     "RemoteMCPHost",
     "build_remote_mcp_server",
     "mount_remote_mcp",
+    "remote_mcp_app",
     "remote_mcp_host",
 ]

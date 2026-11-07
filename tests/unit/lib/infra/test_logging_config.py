@@ -1,6 +1,6 @@
 import logging
 
-import httpx
+import httpx2
 
 from lib.infra.logging_config import _HANDLER_ATTR, setup_logging
 
@@ -53,11 +53,11 @@ class TestSetupLogging:
     def test_httpx_request_log_drops_signed_query(self, caplog):
         setup_logging()
         setup_logging()
-        httpx_logger = logging.getLogger("httpx")
+        httpx_logger = logging.getLogger("httpx2")
         # 重复调用不叠加过滤器
         assert len([f for f in httpx_logger.filters if type(f).__name__ == "_StripUrlQueryFilter"]) == 1
-        url = httpx.URL("https://assets.example/a.png?X-Tos-Signature=TEST-SIGNATURE")
-        with caplog.at_level(logging.INFO, logger="httpx"):
+        url = httpx2.URL("https://assets.example/a.png?X-Tos-Signature=TEST-SIGNATURE")
+        with caplog.at_level(logging.INFO, logger="httpx2"):
             httpx_logger.info('HTTP Request: %s %s "%s %d %s"', "GET", url, "HTTP/1.1", 200, "OK")
         assert "https://assets.example/a.png" in caplog.text
         assert "TEST-SIGNATURE" not in caplog.text

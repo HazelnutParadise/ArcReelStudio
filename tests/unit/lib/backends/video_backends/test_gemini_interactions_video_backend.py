@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import (
@@ -189,7 +189,7 @@ class TestPollAndCollect:
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             router.post(AISTUDIO_INTERACTIONS).respond(200, json=_running())
             router.get(f"{AISTUDIO_INTERACTIONS}/int-1").mock(
-                side_effect=[httpx.Response(200, json=_running()), httpx.Response(200, json=_completed(tokens=46336))]
+                side_effect=[httpx2.Response(200, json=_running()), httpx2.Response(200, json=_completed(tokens=46336))]
             )
             result = await _aistudio().generate(request)
 
@@ -232,7 +232,7 @@ class TestPollAndCollect:
         with capture_http() as router, bounded_poll_clock():
             router.post(AISTUDIO_INTERACTIONS).respond(200, json=_running())
             router.get(f"{AISTUDIO_INTERACTIONS}/int-1").mock(
-                side_effect=[httpx.ConnectError("reset"), httpx.Response(200, json=_completed())]
+                side_effect=[httpx2.ConnectError("reset"), httpx2.Response(200, json=_completed())]
             )
             await _aistudio().generate(request)
 
@@ -246,7 +246,10 @@ class TestResume:
         with capture_http() as router, bounded_poll_clock():
             create = router.post(AISTUDIO_INTERACTIONS).respond(500)
             router.get(f"{AISTUDIO_INTERACTIONS}/int-9").mock(
-                side_effect=[httpx.Response(200, json=_running("int-9")), httpx.Response(200, json=_completed("int-9"))]
+                side_effect=[
+                    httpx2.Response(200, json=_running("int-9")),
+                    httpx2.Response(200, json=_completed("int-9")),
+                ]
             )
             result = await _aistudio().resume_video("int-9", request)
 

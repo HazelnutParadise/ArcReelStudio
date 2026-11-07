@@ -1,4 +1,4 @@
-"""DashScopeVideoBackend 单元测试（mock httpx，异步两步式）。"""
+"""DashScopeVideoBackend 单元测试（mock httpx2，异步两步式）。"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import (
@@ -36,30 +36,30 @@ def _resp(json_body: dict, status_code: int = 200) -> MagicMock:
     resp = MagicMock()
     resp.status_code = status_code
     resp.json.return_value = json_body
-    # 与 httpx 一致：text 是响应体原文。>=400 的日志与拒因摘要都读它，留成 MagicMock 会
+    # 与 httpx2 一致：text 是响应体原文。>=400 的日志与拒因摘要都读它，留成 MagicMock 会
     # 让替身在真实代码路径上的行为与真响应分叉。
     resp.text = json.dumps(json_body, ensure_ascii=False)
     resp.raise_for_status = MagicMock()
     return resp
 
 
-def _http_error(status_code: int, message: str) -> httpx.HTTPStatusError:
-    request = httpx.Request("GET", "https://x/api/v1/tasks/t")
-    response = httpx.Response(status_code, request=request, text=message)
-    return httpx.HTTPStatusError(f"error {status_code}", request=request, response=response)
+def _http_error(status_code: int, message: str) -> httpx2.HTTPStatusError:
+    request = httpx2.Request("GET", "https://x/api/v1/tasks/t")
+    response = httpx2.Response(status_code, request=request, text=message)
+    return httpx2.HTTPStatusError(f"error {status_code}", request=request, response=response)
 
 
-def _http_error_503_in_message(status_code: int) -> httpx.HTTPStatusError:
+def _http_error_503_in_message(status_code: int) -> httpx2.HTTPStatusError:
     """生成 str() 含 "503" 子串、但状态码为 status_code 的真实 HTTPStatusError。
 
     raise_for_status 的消息包含请求 URL（这里 task_id 带 "503"），旧字符串兜底会据此误判重试；
     状态码谓词只读 response.status_code，不受 URL/消息中瞬态子串影响。
     """
-    request = httpx.Request("POST", "https://x/api/v1/tasks/job-503-xyz")
-    response = httpx.Response(status_code, request=request)
+    request = httpx2.Request("POST", "https://x/api/v1/tasks/job-503-xyz")
+    response = httpx2.Response(status_code, request=request)
     try:
         response.raise_for_status()
-    except httpx.HTTPStatusError as exc:
+    except httpx2.HTTPStatusError as exc:
         return exc
     raise AssertionError("expected HTTPStatusError")  # pragma: no cover
 
@@ -76,7 +76,7 @@ def _succeeded(url: str = "https://x/o.mp4", duration: int = 5) -> dict:
 
 
 class _RecordingClient:
-    """httpx.AsyncClient 替身：记录每次 post/get 的 url 与参数，响应由传入的替身产出。
+    """httpx2.AsyncClient 替身：记录每次 post/get 的 url 与参数，响应由传入的替身产出。
 
     提交体、端点、鉴权头这些契约都是「发出去的请求长什么样」，断言落在 ``posts`` / ``gets``
     里的请求内容上，而不是替身的调用对象。
@@ -109,7 +109,7 @@ def _client(*, post=None, get=None) -> _RecordingClient:
 
 def _patches(client: _RecordingClient, download: AsyncMock):
     return (
-        patch("httpx.AsyncClient", return_value=client),
+        patch("httpx2.AsyncClient", return_value=client),
         patch("lib.backends.video_backends.dashscope.download_resumable_video", download),
         bounded_poll_clock(),
     )
@@ -643,17 +643,17 @@ class TestResume:
     async def test_download_failure_can_resume_without_resubmit(self, tmp_path: Path):
         download_ready = False
 
-        def download_response(_request: httpx.Request) -> httpx.Response:
+        def download_response(_request: httpx2.Request) -> httpx2.Response:
             if download_ready:
-                return httpx.Response(200, content=b"resumed")
-            return httpx.Response(503, text="cdn unavailable")
+                return httpx2.Response(200, content=b"resumed")
+            return httpx2.Response(503, text="cdn unavailable")
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             submit = router.post(
                 "https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis"
-            ).mock(return_value=httpx.Response(200, json=_submit("task-download")))
+            ).mock(return_value=httpx2.Response(200, json=_submit("task-download")))
             router.get("https://dashscope.aliyuncs.com/api/v1/tasks/task-download").mock(
-                return_value=httpx.Response(200, json=_succeeded(url="https://x/r.mp4"))
+                return_value=httpx2.Response(200, json=_succeeded(url="https://x/r.mp4"))
             )
             router.get("https://x/r.mp4").mock(side_effect=download_response)
             request = VideoGenerationRequest(
@@ -751,7 +751,7 @@ class TestSubmit413:
         p1, p2, p3 = _patches(client, download)
         with p1, p2, p3:
             b = DashScopeReferenceVideoBackend(api_key="sk", model="happyhorse-1.0-r2v")
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.generate(
                     VideoGenerationRequest(
                         prompt="[Image 1] x",
@@ -782,7 +782,7 @@ class TestRetryStatusGating:
         p1, p2, p3 = _patches(client, AsyncMock())
         with p1, p2, p3, bounded_poll_clock():
             b = DashScopeAlwaysOnVideoBackend(api_key="sk", model="wan2.7-t2v")
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.generate(VideoGenerationRequest(prompt="p", output_path=tmp_path / "o.mp4", resolution="720p"))
         assert ei.value.response.status_code == 400
         assert len(client.posts) == 1
@@ -805,7 +805,7 @@ class TestRetryStatusGating:
 
     async def test_submit_connect_error_retries(self, tmp_path: Path):
         # 网络层错误（连接确定未送达）维持重试。
-        post = AsyncMock(side_effect=[httpx.ConnectError("refused"), _resp(_submit("t-ok"))])
+        post = AsyncMock(side_effect=[httpx2.ConnectError("refused"), _resp(_submit("t-ok"))])
         get = AsyncMock(return_value=_resp(_succeeded()))
         client = _client(post=post, get=get)
         p1, p2, p3 = _patches(client, AsyncMock())
@@ -820,7 +820,7 @@ class TestRetryStatusGating:
     async def test_poll_timeout_retries(self, tmp_path: Path):
         # 轮询（幂等 GET）网络层 Timeout 维持重试。
         post = AsyncMock(return_value=_resp(_submit("t-poll")))
-        get = AsyncMock(side_effect=[httpx.TimeoutException("read timed out"), _resp(_succeeded())])
+        get = AsyncMock(side_effect=[httpx2.TimeoutException("read timed out"), _resp(_succeeded())])
         client = _client(post=post, get=get)
         p1, p2, p3 = _patches(client, AsyncMock())
         with p1, p2, p3:
@@ -1465,10 +1465,10 @@ class TestPollErrorRedaction:
         base_url = "https://dashscope.example/api/v1"
         with capture_http() as router:
             router.get(url__regex=rf"^{base_url}/tasks/task-1").mock(
-                return_value=httpx.Response(403, json={"message": "forbidden"})
+                return_value=httpx2.Response(403, json={"message": "forbidden"})
             )
-            async with httpx.AsyncClient(params={"api_key": "SECRETKEY"}) as client:
-                with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            async with httpx2.AsyncClient(params={"api_key": "SECRETKEY"}) as client:
+                with pytest.raises(httpx2.HTTPStatusError) as excinfo:
                     await backend._poll_once(client, "task-1", base_url)
 
         assert "SECRETKEY" not in str(excinfo.value)

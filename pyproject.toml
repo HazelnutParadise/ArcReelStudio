@@ -4,13 +4,14 @@ name = "arcreel"
 version = "0.35.0"
 description = "AI video generation workspace"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "claude-agent-sdk>=0.2.153",
     "fastapi>=0.138.2",
     # fastapi 未 re-export 的 ASGI 类型与 MutableHeaders / FormData / UploadFile 直接取自 starlette。
     "starlette>=1.8.0",
-    "google-genai>=2.21.0",
+    # 3.x 的 Developer API 缺省 v1、API Key 模式不能提交 Veo 任务；仓库的处理见 docs/agents/dependencies.md。
+    "google-genai>=3.0.0",
     "Pillow>=12.1.1",
     "pydantic>=2.12.5",
     # pydantic 未 re-export 的 ErrorDetails / PydanticCustomError 直接取自 pydantic-core。
@@ -25,8 +26,8 @@ dependencies = [
     "asyncpg>=0.31.0",
     "alembic>=1.18.4",
     "pwdlib[argon2]>=0.3.0",
-    "volcengine-python-sdk[ark]>=5.0.17",
-    "openai>=2.30.0",
+    "volcengine-ark-runtime>=5.0.57",
+    "openai>=3.3.0",
     "xai-sdk>=1.20.0",
     "pyjianyingdraft>=0.3.0",
     "instructor>=1.16.0",
@@ -39,18 +40,18 @@ dependencies = [
     "portalocker>=2.10.1",
     "pdf-oxide>=0.3.46",
     "socksio>=1.0.0",
-    "mcp>=1.29.0,<2",
+    "mcp>=2.3.0,<3",
     "jsonschema>=4.26.0",
-    "httpx>=0.28.1",
+    "httpx2>=2.16.0",
     "grpcio>=1.83.0",
     "numpy>=2.5.2",
     "jinja2>=3.1.6",
     "arcreel-market-core",
     "arcreel-catalog-core",
     # 随包分发的 ffmpeg，经 lib/infra/ffmpeg.py 的查找器取用；不依赖系统 ffmpeg / ffprobe。
-    "imageio-ffmpeg>=0.6.0",
-    # 1.x 改用 httpx2，respx 与基于 httpx 的自定义 transport 拦截不到；约束见 docs/agents/dependencies.md。
-    "anthropic>=0.125.0,<1",
+    # 0.8 起随包 FFmpeg 9，媒体探测的时长算法要随之调整；约束见 docs/agents/dependencies.md。
+    "imageio-ffmpeg>=0.7.0,<0.8",
+    "anthropic>=2.6.0",
     "tos>=2.9.3",
 ]
 
@@ -94,7 +95,9 @@ packages = ["lib", "server"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers --durations=25"
+# respx 的 pytest 插件在加载 conftest 之前就 import httpx，会让根 conftest 里的 httpx2.alias_httpx() 失败；
+# 不用它提供的 fixture，禁止自动加载。
+addopts = "--strict-markers --durations=25 -p no:respx"
 asyncio_mode = "auto"
 # 卡死保护，不是耗时预算：当前最慢用例 30s，留 4 倍余量。个别用例需要更大预算时用
 # `@pytest.mark.timeout(N)` 单独放宽，不抬全局值。
@@ -315,7 +318,7 @@ DEP002 = [
     "aiosqlite",        # SQLAlchemy 的 sqlite+aiosqlite 异步驱动
     "asyncpg",          # SQLAlchemy 的 postgresql+asyncpg 异步驱动
     "python-multipart", # Starlette 解析 multipart/form-data 的后端
-    "socksio",          # httpx 的 SOCKS 代理传输后端
+    "socksio",          # httpx2 的 SOCKS 代理传输后端
     "lxml",             # BeautifulSoup 的 lxml / lxml-xml 解析器后端
     "mutmut",           # 变异测试 CLI，源码不 import 它；变异后的模块只在 mutants/ 副本里 import
     "pytest-testmon",   # pytest 插件，经 entry point 加载；按改动选测试，用法见 docs/agents/testing.md
@@ -327,7 +330,7 @@ DEP004 = [
     "pytest",         # 测试框架
     "_pytest",        # pytest 的内部模块，根 conftest 复用其选择参数解析器
     "pytest_asyncio", # pytest 的 asyncio 插件，测试内直接用 @pytest_asyncio.fixture（本规则按模块名匹配）
-    "respx",          # httpx 的测试替身
+    "respx",          # 出站 HTTP 的测试替身；alias_httpx 之后拦截的是 httpx2（见 docs/agents/dependencies.md）
     "blockbuster",    # 事件循环阻塞检测，tests/blocking_guard 护栏的拦截点来源
 ]
 
@@ -393,7 +396,7 @@ exclude = [
 venvPath = "."
 venv = ".venv"
 extraPaths = ["."]
-pythonVersion = "3.12"
+pythonVersion = "3.14"
 pythonPlatform = "All"
 
 typeCheckingMode = "standard"

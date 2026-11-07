@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-import httpx
+import httpx2
 from openai import APITimeoutError
 
 from lib.backends.http_status_errors import ArtifactDownloadError
@@ -99,8 +99,8 @@ def _classify_single(exc: BaseException) -> tuple[CallErrorCode, dict[str, Any]]
         return CallErrorCode.RATE_LIMITED, _retry_after_params(exc)
     if _provider_error_code(exc) in CONTENT_POLICY_PROVIDER_CODES:
         return CallErrorCode.CONTENT_POLICY, {}
-    if isinstance(exc, TimeoutError | httpx.TimeoutException | APITimeoutError) or status in _TIMEOUT_STATUS_CODES:
-        # TimeoutError 覆盖内置与 asyncio 别名（视频轮询超时抛的就是它）；httpx 与 openai 的
+    if isinstance(exc, TimeoutError | httpx2.TimeoutException | APITimeoutError) or status in _TIMEOUT_STATUS_CODES:
+        # TimeoutError 覆盖内置与 asyncio 别名（视频轮询超时抛的就是它）；httpx2 与 openai 的
         # 超时异常各有自己的基类，不继承 TimeoutError，须显式列出。
         return CallErrorCode.TIMEOUT, {}
     return None
@@ -140,7 +140,7 @@ def _retry_after_params(exc: BaseException) -> dict[str, Any]:
 
 
 def _http_status(exc: BaseException) -> int | None:
-    """异常携带的 HTTP 状态码：httpx 系挂在 ``response`` 上，google 系挂在异常自身。"""
+    """异常携带的 HTTP 状态码：httpx2 系挂在 ``response`` 上，google 系挂在异常自身。"""
     status = getattr(getattr(exc, "response", None), "status_code", None)
     if isinstance(status, int):
         return status

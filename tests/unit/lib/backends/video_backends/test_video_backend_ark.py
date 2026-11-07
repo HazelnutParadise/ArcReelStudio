@@ -5,7 +5,7 @@ import json
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -62,7 +62,7 @@ def _mock_httpx_stream(data: bytes = b"fake-mp4-data"):
     """
     router = respx.mock(assert_all_called=False)
     router.start()
-    router.get(url__regex=r".*").mock(return_value=httpx.Response(200, content=data))
+    router.get(url__regex=r".*").mock(return_value=httpx2.Response(200, content=data))
     return router
 
 
@@ -675,12 +675,12 @@ class TestArkSubmittedBaseUrlReplay:
     async def test_generate_persists_request_base_url(self, tmp_path):
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             router.post(f"{_RELAY_A}/contents/generations/tasks").mock(
-                return_value=httpx.Response(200, json={"id": "cgt-a"})
+                return_value=httpx2.Response(200, json={"id": "cgt-a"})
             )
             router.get(f"{_RELAY_A}/contents/generations/tasks/cgt-a").mock(
-                return_value=httpx.Response(200, json=_ark_task_json("cgt-a"))
+                return_value=httpx2.Response(200, json=_ark_task_json("cgt-a"))
             )
-            router.get(_ARK_VIDEO_URL).mock(return_value=httpx.Response(200, content=b"mp4"))
+            router.get(_ARK_VIDEO_URL).mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             await Seedance1VideoBackend(api_key="k", model=_SEEDANCE_1_5_PRO, base_url=f"{_RELAY_A}/").generate(
                 VideoGenerationRequest(prompt="p", output_path=tmp_path / "o.mp4", task_id="db-task-a")
@@ -692,12 +692,12 @@ class TestArkSubmittedBaseUrlReplay:
         # 提交时域名为 A，续跑前配置已改成 B：任务只在 A 上可查，凭据沿用当下这套
         with capture_http() as router, bounded_poll_clock():
             submitted = router.get(f"{_RELAY_A}/contents/generations/tasks/cgt-a").mock(
-                return_value=httpx.Response(200, json=_ark_task_json("cgt-a"))
+                return_value=httpx2.Response(200, json=_ark_task_json("cgt-a"))
             )
             current = router.get(url__regex=r"^https://relay-b\.example\.com/").mock(
-                return_value=httpx.Response(404, json={"error": {"code": "ResourceNotFound", "message": "not found"}})
+                return_value=httpx2.Response(404, json={"error": {"code": "ResourceNotFound", "message": "not found"}})
             )
-            router.get(_ARK_VIDEO_URL).mock(return_value=httpx.Response(200, content=b"resumed"))
+            router.get(_ARK_VIDEO_URL).mock(return_value=httpx2.Response(200, content=b"resumed"))
 
             result = await Seedance1VideoBackend(api_key="k", model=_SEEDANCE_1_5_PRO, base_url=_RELAY_B).resume_video(
                 "cgt-a",
@@ -901,7 +901,7 @@ class TestArkProviderAssets:
     def _rejection(code: str) -> Exception:
         from volcenginesdkarkruntime._exceptions import ArkBadRequestError
 
-        response = httpx.Response(400, request=httpx.Request("POST", "https://ark.test/api/v3/contents"))
+        response = httpx2.Response(400, request=httpx2.Request("POST", "https://ark.test/api/v3/contents"))
         return ArkBadRequestError(
             "rejected",
             response=response,

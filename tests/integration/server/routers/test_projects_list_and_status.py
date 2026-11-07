@@ -3,7 +3,7 @@
 import asyncio
 import threading
 
-import httpx
+import httpx2
 
 from lib.i18n import _
 from server.routers import projects
@@ -199,8 +199,8 @@ class TestProjectsRouter:
         spy = _ArrivalSpy()
         sync_client = build_projects_client(monkeypatch, _FakePM(tmp_path), summaries)
         override(sync_client, projects.get_project_detail_coalescer, lambda: spy)
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=sync_client.app), base_url="http://test"
+        async with httpx2.AsyncClient(
+            transport=httpx2.ASGITransport(app=sync_client.app), base_url="http://test"
         ) as client:
 
             def get(locale):

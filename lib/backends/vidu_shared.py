@@ -3,7 +3,7 @@
 供 image_backends / video_backends / providers router 复用。包含：
 - VIDU_BASE_URL — Vidu 开放平台 API 基础 URL
 - resolve_vidu_api_key — API Key 解析（缺失即 raise，不走 env fallback）
-- create_vidu_client — 经出站目的地校验的 httpx.AsyncClient 工厂
+- create_vidu_client — 经出站目的地校验的 httpx2.AsyncClient 工厂
 - image_to_data_uri — 本地图片 → base64 data URI（API 限制 body ≤20MB）
 - fetch_vidu_task / is_vidu_done / vidu_failure_reason / extract_vidu_url — 任务轮询工具
 - VIDU_RETRYABLE_ERRORS — Vidu HTTPX 瞬态错误集合（仅 NetworkError / TimeoutException）
@@ -18,7 +18,7 @@ import json
 import logging
 from pathlib import Path
 
-import httpx
+import httpx2
 
 from lib.backends.artifact_download_guard import artifact_http_client
 from lib.backends.data_uri import image_to_data_uri as _image_to_data_uri
@@ -34,8 +34,8 @@ VIDU_BASE_URL = "https://api.vidu.cn/ent/v2"
 # 重试到超时浪费 API 配额；这里只取 NetworkError + TimeoutException。
 VIDU_RETRYABLE_ERRORS: tuple[type[Exception], ...] = (
     *BASE_RETRYABLE_ERRORS,
-    httpx.NetworkError,
-    httpx.TimeoutException,
+    httpx2.NetworkError,
+    httpx2.TimeoutException,
 )
 
 # Vidu 文档限制单次请求体 ≤ 20MB；base64 自带 ~33% 膨胀，留 2MB 余量给非 images 字段。
@@ -61,8 +61,8 @@ def create_vidu_client(
     base_url: str | None = None,
     timeout: float = 60.0,
     transport_layer: TransportLayer | None = None,
-) -> httpx.AsyncClient:
-    """创建带 Authorization 头、经出站目的地校验的 ``httpx.AsyncClient``。"""
+) -> httpx2.AsyncClient:
+    """创建带 Authorization 头、经出站目的地校验的 ``httpx2.AsyncClient``。"""
     token = resolve_vidu_api_key(api_key)
     return artifact_http_client(
         base_url=base_url or VIDU_BASE_URL,
@@ -115,7 +115,7 @@ _DONE_STATE = "success"
 _FAILED_STATE = "failed"
 
 
-async def fetch_vidu_task(client: httpx.AsyncClient, task_id: str) -> dict:
+async def fetch_vidu_task(client: httpx2.AsyncClient, task_id: str) -> dict:
     """查询 Vidu 任务状态（GET /tasks/{id}/creations）。"""
     resp = await client.get(f"/tasks/{task_id}/creations")
     raise_for_status_redacted(resp)
@@ -161,7 +161,7 @@ def test_vidu_connection(config: dict[str, str]) -> None:
     base_url = (config.get("base_url") or VIDU_BASE_URL).rstrip("/")
     headers = {"Authorization": f"Token {api_key}"}
     # 用一个语法上合法但极不可能存在的数字 id（避开整数解析失败的 400 CODEC）
-    with httpx.Client(timeout=10.0) as client:
+    with httpx2.Client(timeout=10.0) as client:
         resp = client.get(f"{base_url}/tasks/0/creations", headers=headers)
     if resp.status_code == 404:
         return

@@ -7,10 +7,10 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 
-import httpx
+import httpx2
 import pytest
 
-from arcreel_market_core.video_backend_contract import VideoGenerationRequest
+from arcreel_market_core.video_backend_contract import VideoCapabilityError, VideoGenerationRequest
 from lib.backends.audio_backends.base import AudioSynthesisRequest
 from lib.backends.image_backends.base import ImageGenerationRequest
 from lib.backends.text_backends.base import TextGenerationRequest
@@ -23,8 +23,8 @@ PROVIDER = cast("Any", SimpleNamespace(provider_id="custom-g", base_url=BASE, ap
 OPERATION = "models/veo-x/operations/op1"
 
 
-def _stop_here() -> httpx.Response:
-    return httpx.Response(400, json={"error": {"code": 400, "message": "stop here", "status": "INVALID_ARGUMENT"}})
+def _stop_here() -> httpx2.Response:
+    return httpx2.Response(400, json={"error": {"code": 400, "message": "stop here", "status": "INVALID_ARGUMENT"}})
 
 
 async def _generate(endpoint: str, model: str, overrides: dict[str, str], tmp_path: Path) -> list[str]:
@@ -64,7 +64,26 @@ def test_requests_declare_google_strip_version_rule(endpoint: str):
 
 
 class TestGeminiVideo:
-    async def _run(self, overrides: dict[str, str], tmp_path: Path) -> list[str]:
+    """google-genai 3.0 起 API Key 模式的客户端拒绝提交 Veo 任务：生成在发请求前以能力错误中止。"""
+
+    @pytest.mark.parametrize("overrides", [{}, {"submit": "/veo/{{ model }}/submit", "poll": "/veo/ops/{{ task_id }}"}])
+    async def test_generate_fails_with_clear_reason_before_any_request(self, tmp_path: Path, overrides: dict[str, str]):
+        backend: Any = get_endpoint_spec("gemini-video").build_backend(PROVIDER, "veo-x", overrides)
+        request = VideoGenerationRequest(prompt="猫", output_path=tmp_path / "o.mp4", duration_seconds=5)
+
+        with capture_http() as router:
+            route = router.route(host="relay.example").mock(return_value=_stop_here())
+            with pytest.raises(VideoCapabilityError) as raised:
+                await backend.generate(request)
+
+        assert raised.value.code == "video_veo_api_key_mode_unsupported"
+        assert raised.value.params == {"provider": "gemini-aistudio", "model": "veo-x"}
+        assert route.call_count == 0
+        assert not request.output_path.exists()
+
+    async def test_resume_polls_and_downloads_through_their_overrides(self, tmp_path: Path):
+        """已提交任务的续跑不受拒绝影响：轮询与取件各按自己的覆盖路径发出。"""
+        overrides = {"poll": "/veo/ops/{{ task_id }}?m={{ model }}", "download": "/veo/files/{{ file_id }}"}
         backend: Any = get_endpoint_spec("gemini-video").build_backend(PROVIDER, "veo-x", overrides)
         request = VideoGenerationRequest(prompt="猫", output_path=tmp_path / "o.mp4", duration_seconds=5)
         done = {
@@ -79,34 +98,15 @@ class TestGeminiVideo:
         with capture_http() as router, bounded_poll_clock():
             route = router.route(host="relay.example")
             route.side_effect = lambda req: (
-                httpx.Response(200, json={"name": OPERATION, "done": False})
-                if req.method == "POST"
-                else httpx.Response(200, json=done)
-                if "abc123" not in req.url.path
-                else httpx.Response(200, content=b"mp4")
+                httpx2.Response(200, content=b"mp4") if "abc123" in req.url.path else httpx2.Response(200, json=done)
             )
-            await backend.generate(request)
-        return [f"{c.request.method} {c.request.url.raw_path.decode()}" for c in route.calls]
+            await backend.resume_video(OPERATION, request)
 
-    async def test_each_request_takes_its_own_override(self, tmp_path: Path):
-        overrides = {
-            "submit": "/veo/{{ model }}/submit",
-            "poll": "/veo/ops/{{ task_id }}?m={{ model }}",
-            "download": "/veo/files/{{ file_id }}",
-        }
-
-        assert await self._run(overrides, tmp_path) == [
-            "POST /google/v1/veo/veo-x/submit",
+        assert [f"{c.request.method} {c.request.url.raw_path.decode()}" for c in route.calls] == [
             f"GET /google/v1/veo/ops/{OPERATION}?m=veo-x",
             "GET /google/v1/veo/files/abc123?alt=media",
         ]
-
-    async def test_overriding_poll_leaves_submit_and_download_alone(self, tmp_path: Path):
-        assert await self._run({"poll": "/ops/{{ task_id }}"}, tmp_path) == [
-            "POST /google/v1beta/models/veo-x:predictLongRunning",
-            f"GET /google/v1/ops/{OPERATION}",
-            "GET /google/v1beta/files/abc123:download?alt=media",
-        ]
+        assert request.output_path.read_bytes() == b"mp4"
 
 
 @pytest.mark.parametrize("resume", [False, True])

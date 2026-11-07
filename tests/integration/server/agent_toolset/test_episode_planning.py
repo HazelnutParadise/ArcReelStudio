@@ -291,13 +291,13 @@ async def test_remote_plan_episodes_returns_the_generation_batch_handle(tmp_path
         PLAN_EPISODES, projects=projects, services=services, caller=lambda: CallerContext(user_id="u1", source="mcp")
     )
 
-    result = await tool.run({"project": "demo"})
+    result = await tool.run({"project": "demo"}, None)
 
     assert isinstance(result, types.CallToolResult)
-    assert result.isError is False
-    assert result.structuredContent is not None
-    assert set(result.structuredContent) == {"generation_batch"}
-    handle = result.structuredContent["generation_batch"]
+    assert result.is_error is False
+    assert result.structured_content is not None
+    assert set(result.structured_content) == {"generation_batch"}
+    handle = result.structured_content["generation_batch"]
     assert handle["done"] is False
     assert handle["poll_after_seconds"] is not None
 

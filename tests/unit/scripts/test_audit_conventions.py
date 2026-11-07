@@ -159,7 +159,7 @@ def test_missing_generation_markers_are_reported(repo: Path) -> None:
 
 
 def test_dependency_matching_only_the_catch_all_group_is_reported_at_its_declaration(repo: Path) -> None:
-    _write(repo, "pyproject.toml", _PYPROJECT.replace('    "demo-core",\n', '    "demo-core",\n    "httpx>=0.27",\n'))
+    _write(repo, "pyproject.toml", _PYPROJECT.replace('    "demo-core",\n', '    "demo-core",\n    "httpx2>=0.27",\n'))
     _write(repo, "frontend/package.json", json.dumps({"dependencies": {"react": "^19", "zustand": "^5"}}, indent=2))
 
     violations = audit(repo)
@@ -168,7 +168,7 @@ def test_dependency_matching_only_the_catch_all_group_is_reported_at_its_declara
         ("DEPENDABOT-GROUP", "pyproject.toml", 6),
         ("DEPENDABOT-GROUP", "frontend/package.json", 4),
     ]
-    assert "`httpx`" in violations[0].guidance
+    assert "`httpx2`" in violations[0].guidance
     assert "`zustand`" in violations[1].guidance
 
 

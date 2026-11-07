@@ -322,7 +322,7 @@ class OpenAIVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
     @with_retry_async(retryable_errors=OPENAI_RETRYABLE_ERRORS)
     async def _create_video(self, **kwargs):
         """仅创建视频任务（带重试）；轮询交由 _poll_until_complete 自管。"""
-        return await self._client.videos.create(**kwargs)
+        return await self._client.videos.create(**kwargs)  # pyright: ignore[reportDeprecated]  # openai 3.x 把 Sora 视频接口标为弃用（官方宣布停服），后端下线另行决定
 
     async def _poll_until_complete(self, client: AsyncOpenAI, video_id: str, poll_timeout_seconds: int):
         """轮询任务直到状态归一到终态。
@@ -337,7 +337,7 @@ class OpenAIVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
         #   - expired   → 在 caller 处按 generate vs resume 上下文抛 RuntimeError / ResumeExpiredError
         # 关键不变量：is_failed 不识别 expired，避免覆盖 caller 分流。
         return await poll_with_retry(
-            poll_fn=lambda: client.videos.retrieve(video_id),
+            poll_fn=lambda: client.videos.retrieve(video_id),  # pyright: ignore[reportDeprecated]  # openai 3.x 把 Sora 视频接口标为弃用（官方宣布停服），后端下线另行决定
             is_done=lambda v: _video_status(v) in TERMINAL_PROVIDER_STATUSES,
             is_failed=lambda v: (
                 f"Sora 视频生成失败: {_video_error_message(v)}"
@@ -359,7 +359,7 @@ class OpenAIVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixin):
         终止条件仍是共用的产物下载预算。
         """
         return await with_artifact_retry(
-            lambda: client.videos.download_content(video_id),
+            lambda: client.videos.download_content(video_id),  # pyright: ignore[reportDeprecated]  # openai 3.x 把 Sora 视频接口标为弃用（官方宣布停服），后端下线另行决定
             label="OpenAI",
             retry_if=None,
             retryable_errors=OPENAI_RETRYABLE_ERRORS,

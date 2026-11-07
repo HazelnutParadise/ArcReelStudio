@@ -12,7 +12,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import NamedTuple
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -346,12 +346,12 @@ class TestSnapshotDecoupling:
 class _InterleavedResponses(NamedTuple):
     """`_interleave_across_critical_section` 的两个请求各自的响应。"""
 
-    first: httpx.Response
-    second: httpx.Response
+    first: httpx2.Response
+    second: httpx2.Response
 
 
 def _interleave_across_critical_section(
-    script_io: _ScriptIOHooks, first: Callable[[], httpx.Response], second: Callable[[], httpx.Response]
+    script_io: _ScriptIOHooks, first: Callable[[], httpx2.Response], second: Callable[[], httpx2.Response]
 ) -> _InterleavedResponses:
     """让 `first` 停在剧本锁临界区内，确认 `second` 被锁挡在外面后再放行，返回两者的响应。
 
@@ -384,10 +384,10 @@ def _interleave_across_critical_section(
 
     script_io.write = _gated_persist
 
-    results: dict[str, httpx.Response] = {}
+    results: dict[str, httpx2.Response] = {}
     errors: dict[str, BaseException] = {}
 
-    def _run(key: str, call: Callable[[], httpx.Response]) -> threading.Thread:
+    def _run(key: str, call: Callable[[], httpx2.Response]) -> threading.Thread:
         def _target() -> None:
             try:
                 results[key] = call()

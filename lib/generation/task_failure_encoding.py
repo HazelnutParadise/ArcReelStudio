@@ -86,7 +86,7 @@ def encode_task_failure_message(exc: Exception) -> str:
 def is_provider_refusal(exc: BaseException) -> bool:
     """供应商是否真正拒绝了这次请求的内容或输入：原样重发只会被同样拒绝，该改输入。
 
-    与 :func:`encode_task_failure_message` 落 ``provider_rejected`` 的判据同口径（httpx 通道的确定性 4xx、
+    与 :func:`encode_task_failure_message` 落 ``provider_rejected`` 的判据同口径（httpx2 通道的确定性 4xx、
     gRPC 的确定性拒绝），另认上游错误体里的内容策略码（与记账层 ``content_policy`` 同一判据）。
     沿 ``__cause__`` 链逐层判：调用方常把 SDK 异常包一层再抛。其余异常都不算拒绝。
     """

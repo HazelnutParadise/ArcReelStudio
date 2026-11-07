@@ -5,7 +5,7 @@ import base64
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.image_backends.base import ImageCapability, ImageGenerationRequest, ReferenceImage
@@ -47,7 +47,7 @@ def _reference_files(tmp_path: Path, count: int) -> list[ReferenceImage]:
     return references
 
 
-def _completed() -> httpx.Response:
+def _completed() -> httpx2.Response:
     return _task("completed", result={"images": [{"url": ["https://cdn.test/img/first.png"]}]})
 
 
@@ -78,12 +78,12 @@ def _request(tmp_path: Path, **overrides) -> ImageGenerationRequest:
     return ImageGenerationRequest(**values)
 
 
-def _submitted() -> httpx.Response:
-    return httpx.Response(200, json={"code": 200, "data": [{"status": "submitted", "task_id": "task_9"}]})
+def _submitted() -> httpx2.Response:
+    return httpx2.Response(200, json={"code": 200, "data": [{"status": "submitted", "task_id": "task_9"}]})
 
 
-def _task(status: str, **data: object) -> httpx.Response:
-    return httpx.Response(200, json={"code": 200, "data": {"status": status, **data}})
+def _task(status: str, **data: object) -> httpx2.Response:
+    return httpx2.Response(200, json={"code": 200, "data": {"status": status, **data}})
 
 
 class TestDeclarativeImageBackend:
@@ -108,7 +108,7 @@ class TestDeclarativeImageBackend:
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://relay.test/v1/images/generations").mock(return_value=_submitted())
             router.get("https://relay.test/v1/tasks/task_9").mock(return_value=_completed())
-            router.get("https://cdn.test/img/first.png").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get("https://cdn.test/img/first.png").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             from lib.backends.image_capabilities import gate_image_request
             from lib.custom_provider.backends import CustomImageBackend
@@ -155,7 +155,7 @@ class TestDeclarativeImageBackend:
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://relay.test/v1/images/generations").mock(return_value=_submitted())
             router.get("https://relay.test/v1/tasks/task_9").mock(return_value=_completed())
-            router.get("https://cdn.test/img/first.png").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get("https://cdn.test/img/first.png").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             await _backend(_image_to_image_definition()).generate(_request(tmp_path))
 
@@ -179,7 +179,7 @@ class TestDeclarativeImageBackend:
                     ),
                 ]
             )
-            router.get("https://cdn.test/img/first.png").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get("https://cdn.test/img/first.png").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -249,7 +249,7 @@ class TestDeclarativeImageBackend:
                     result={"images": [{"url": ["https://cdn.test/img/a.png"], "b64_json": "bm90LXRoaXM="}]},
                 )
             )
-            router.get("https://cdn.test/img/a.png").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get("https://cdn.test/img/a.png").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             result = await _backend(_url_then_base64_definition()).generate(_request(tmp_path))
 
@@ -318,7 +318,7 @@ class TestDeclarativeImageBackend:
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/images/generations").mock(return_value=_submitted())
             router.get("https://relay.test/v1/tasks/task_9").mock(return_value=_completed())
-            router.get("https://cdn.test/img/first.png").mock(return_value=httpx.Response(503))
+            router.get("https://cdn.test/img/first.png").mock(return_value=httpx2.Response(503))
 
             with pytest.raises(DeclarativeRuntimeError) as caught:
                 await _backend().generate(_request(tmp_path))

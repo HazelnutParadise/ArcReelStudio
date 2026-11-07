@@ -6,7 +6,7 @@ import base64
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 from instructor import Mode
 from openai import BadRequestError
@@ -240,7 +240,7 @@ def _make_bad_request_error(message: str = "Invalid schema") -> BadRequestError:
     """构造 OpenAI BadRequestError。"""
     return BadRequestError(
         message=message,
-        response=httpx.Response(400, request=httpx.Request("POST", "https://api.openai.com/v1/chat/completions")),
+        response=httpx2.Response(400, request=httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")),
         body={"error": {"message": message}},
     )
 

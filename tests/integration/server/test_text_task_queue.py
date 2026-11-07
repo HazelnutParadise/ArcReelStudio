@@ -8,7 +8,7 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any, Literal
 
-import httpx
+import httpx2
 import openai
 import pytest
 from sqlalchemy import func, select
@@ -875,15 +875,15 @@ async def test_queued_text_task_with_a_retired_text_model_fails_with_a_reselecta
 
 def _content_filter_rejection() -> Exception:
     """OpenAI 兼容端点的内容策略拒绝：错误体 ``code`` 挂在 SDK 异常上。"""
-    response = httpx.Response(400, request=httpx.Request("POST", "https://llm.example/v1/chat/completions"))
+    response = httpx2.Response(400, request=httpx2.Request("POST", "https://llm.example/v1/chat/completions"))
     return openai.BadRequestError("blocked", response=response, body={"code": "content_filter"})
 
 
 def _provider_rejected() -> Exception:
-    """httpx 通道的确定性 4xx 拒绝，与图片任务落 ``provider_rejected`` 的是同一个异常类型。"""
-    request = httpx.Request("POST", "https://llm.example/v1/generate")
+    """httpx2 通道的确定性 4xx 拒绝，与图片任务落 ``provider_rejected`` 的是同一个异常类型。"""
+    request = httpx2.Request("POST", "https://llm.example/v1/generate")
     return ProviderRejectedError(
-        "422 response", request=request, response=httpx.Response(422, request=request), provider_reason="bad input"
+        "422 response", request=request, response=httpx2.Response(422, request=request), provider_reason="bad input"
     )
 
 

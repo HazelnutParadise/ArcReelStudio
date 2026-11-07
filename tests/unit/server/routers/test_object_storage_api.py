@@ -1,6 +1,6 @@
 """对象存储连接配置 API。
 
-TOS SDK 基于 requests，不经 httpx；对象存储的网络边界在 ``create_sdk_client`` 一处替换为内存替身。
+TOS SDK 基于 requests，不经 httpx2；对象存储的网络边界在 ``create_sdk_client`` 一处替换为内存替身。
 """
 
 from __future__ import annotations

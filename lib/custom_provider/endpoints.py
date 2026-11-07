@@ -558,7 +558,7 @@ def _python_requests(rule: BaseUrlRule, *requests: tuple[str, str, str]) -> tupl
     )
 
 
-# 直连 httpx 与方舟 SDK 的端点各自发出的请求；取自响应的下载地址不提供请求名（docs/adr/0101）。
+# 直连 httpx2 与方舟 SDK 的端点各自发出的请求；取自响应的下载地址不提供请求名（docs/adr/0101）。
 _ARK_SEEDANCE_REQUESTS = _python_requests(
     "ensure_api_v3",
     ("submit", "cp_request_submit", "/contents/generations/tasks"),

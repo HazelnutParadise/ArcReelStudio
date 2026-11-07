@@ -1,18 +1,20 @@
 # ============================================================
 # Stage 1: 构建前端
 # ============================================================
-FROM node:24-slim AS frontend-builder
+FROM node:26-slim AS frontend-builder
 
 WORKDIR /build/frontend
 
-# 启用 corepack；pnpm 版本由 frontend/package.json 的 packageManager 字段固定
+# 启用 corepack；pnpm 版本由 frontend/package.json 的 packageManager 字段固定。
+# Node 25 起不再内置 corepack，先用 npm 安装固定版本
 # 关闭交互式下载确认，否则 docker build 这种非 TTY 环境会卡在
 # "Corepack is about to download ..." 直到超时
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable
+RUN npm install -g corepack@0.36.0 && corepack enable
 
-# 先复制依赖文件，利用缓存（corepack 按 packageManager 字段自动下载对应 pnpm）
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+# 先复制依赖文件，利用缓存（corepack 按 packageManager 字段自动下载对应 pnpm）；
+# pnpm-workspace.yaml 存放 overrides 与 allowBuilds，缺了它 --frozen-lockfile 校验不过
+COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # 复制前端源码并构建
@@ -24,7 +26,7 @@ RUN pnpm build
 # ============================================================
 # 随包 ffmpeg（imageio-ffmpeg）没有编入 NVENC；成片在检测到 NVIDIA GPU 时改用这份
 # jellyfin-ffmpeg 静态构建编码，其余媒体处理仍用随包 ffmpeg。版本与校验和随架构固定。
-FROM python:3.12-slim AS gpu-ffmpeg
+FROM python:3.14-slim AS gpu-ffmpeg
 
 ARG TARGETARCH
 ARG JELLYFIN_FFMPEG_VERSION=8.1.3-1
@@ -51,7 +53,7 @@ RUN set -eu; \
 # ============================================================
 # Stage 3: 生产镜像
 # ============================================================
-FROM python:3.12-slim AS production
+FROM python:3.14-slim AS production
 
 # 安装系统依赖，并把基础镜像预装的系统包升级到当前仓库版本。
 # APT_REFRESH 由 CI 按 ISO 周传入，值变化时本层缓存失效，保证系统包定期刷新
@@ -67,7 +69,7 @@ RUN echo "apt refresh: ${APT_REFRESH}" \
     && rm -rf /var/lib/apt/lists/*
 
 # 升级基础镜像预装的 pip：依赖全部由 uv 安装、运行时不调用 pip，
-# 但 python:3.12-slim 自带的旧 pip 会被镜像扫描器报 CVE，升级以清除这些告警
+# 但 python:3.14-slim 自带的旧 pip 会被镜像扫描器报 CVE，升级以清除这些告警
 RUN python -m pip install --no-cache-dir --upgrade pip
 
 # 安装 uv

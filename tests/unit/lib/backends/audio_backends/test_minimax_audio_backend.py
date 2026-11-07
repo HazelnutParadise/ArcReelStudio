@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.audio_backends import AudioCapability, AudioSynthesisRequest
@@ -14,8 +14,8 @@ from tests.http_capture import capture_http, only_request, request_json
 _T2A_URL = "https://api.minimaxi.com/v1/t2a_v2"
 
 
-def _ok(audio: bytes) -> httpx.Response:
-    return httpx.Response(
+def _ok(audio: bytes) -> httpx2.Response:
+    return httpx2.Response(
         200,
         json={
             "data": {"audio": audio.hex(), "status": 2},
@@ -53,7 +53,7 @@ async def test_synthesize_decodes_hex_audio_to_file(tmp_path: Path):
 async def test_base_resp_error_raises_without_file(tmp_path: Path):
     with capture_http() as router:
         router.post(_T2A_URL).mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"data": None, "base_resp": {"status_code": 2013, "status_msg": "invalid voice"}}
             )
         )

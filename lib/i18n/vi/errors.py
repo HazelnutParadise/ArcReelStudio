@@ -711,6 +711,7 @@ MESSAGES = {
     "video_first_frame_unsupported": "{provider}/{model} không hỗ trợ khung hình đầu với cấu hình hiện tại; đã hủy tạo. Hãy bỏ khung hình đầu của cảnh quay này, hoặc chuyển sang mô hình hoặc gói có hỗ trợ",
     "video_last_frame_unsupported": "{provider}/{model} không hỗ trợ khung hình cuối với cấu hình hiện tại; đã hủy tạo. Hãy bỏ khung hình cuối của cảnh quay này, hoặc chuyển sang mô hình hoặc gói có hỗ trợ",
     "video_reference_audio_unsupported": "{provider}/{model} không hỗ trợ âm thanh tham chiếu; đã hủy tạo. Hãy bỏ âm thanh tham chiếu của nhân vật, hoặc chuyển sang mô hình có hỗ trợ tham chiếu giọng nói",
+    "video_veo_api_key_mode_unsupported": "{provider}/{model} không thể tạo video: Veo không còn được cung cấp qua Gemini Developer API (API Key). Hãy dùng thông tin xác thực Vertex AI cho Veo, hoặc chuyển sang mô hình video Gemini Omni",
     "video_reference_route_audio_unsupported": "{provider}/{model} không thể gửi công tắc âm thanh khi tạo từ ảnh tham chiếu nên video sẽ không có tiếng; đã hủy tạo. Hãy tắt công tắc âm thanh, gỡ ghi đè rãnh âm thanh của tuyến ảnh tham chiếu, hoặc bỏ ảnh tham chiếu rồi thử lại",
     "video_reference_audio_exceeded": "Mô hình {model} hỗ trợ tối đa {limit} đoạn âm thanh tham chiếu nhưng nhận được {count}; hãy giảm số nhân vật có âm thanh tham chiếu",
     "video_reference_audio_duration_exceeded": "Mô hình {model} hỗ trợ tổng thời lượng âm thanh tham chiếu tối đa {limit:g} giây nhưng nhận được {total:.1f} giây; hãy giảm số đoạn âm thanh tham chiếu hoặc dùng đoạn ngắn hơn",

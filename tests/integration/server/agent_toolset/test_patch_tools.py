@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 from mcp import types
+from mcp.client import Client
 
 from lib.artifacts.artifact_manifest import ArtifactKey, ArtifactManifestEntry, ProjectArtifactManifestAdapter
 from lib.project.data_validator import DataValidator
@@ -248,10 +249,10 @@ class TestPatchEpisodeScript:
             )
         )
 
-        result = (await session_server.request_handlers[types.CallToolRequest](request)).root
+        async with Client(session_server) as client:
+            result = await client.call_tool(request.params.name, request.params.arguments)
 
-        assert isinstance(result, types.CallToolResult)
-        assert result.isError is False
+        assert result.is_error is False
         summary, encoded = (block.text for block in result.content if isinstance(block, types.TextContent))
         patched = json.loads(encoded)["script_patch"]
         assert patched["before_revision"] == revision

@@ -56,7 +56,7 @@ they are licensed under the GNU General Public License. The Linux and Windows
 builds are additionally configured with --enable-version3 (GPL version 3 or
 later). The GPL version 3 text is in LICENSES/GPL-3.0-or-later.txt.
 
-Bundled builds (imageio-ffmpeg 0.6.0):
+Bundled builds (imageio-ffmpeg 0.7.0):
   - Linux x86_64 / aarch64: FFmpeg 7.0.2, static build by John Van Sickle
     (https://johnvansickle.com/ffmpeg/)
   - Windows x86_64: FFmpeg 7.1, build by gyan.dev

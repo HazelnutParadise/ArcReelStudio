@@ -12,7 +12,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.endpoint_definition import validate_definition
@@ -91,7 +91,7 @@ def _image_output(filename: str = "ArcReel_00001_.png") -> dict[str, Any]:
     return {"images": [{"filename": filename, "subfolder": "", "type": "output"}]}
 
 
-def _cancel_here(_request: httpx.Request) -> httpx.Response:
+def _cancel_here(_request: httpx2.Request) -> httpx2.Response:
     """让这一条路由的请求撞上一次任务取消。
 
     ``CancelledError`` 继承 ``BaseException``，respx 的异常型 ``side_effect`` 只收 ``Exception``，
@@ -179,15 +179,15 @@ class TestGenerate:
 
         with capture_http() as router:
             upload = router.post(f"{BASE_URL}/upload/image").mock(
-                return_value=httpx.Response(200, json={"name": "job-7-reference_images-1.jpg", "subfolder": "arcreel"})
+                return_value=httpx2.Response(200, json={"name": "job-7-reference_images-1.jpg", "subfolder": "arcreel"})
             )
             submit = router.post(f"{BASE_URL}/prompt").mock(
-                return_value=httpx.Response(200, json={"prompt_id": "p-1", "node_errors": {}})
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1", "node_errors": {}})
             )
             history = router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json={"p-1": _history({"9": _image_output()})})
+                return_value=httpx2.Response(200, json={"p-1": _history({"9": _image_output()})})
             )
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             result = await _backend(definition).generate(
                 _request(tmp_path, reference_images=[ReferenceImage(path=str(reference))])
@@ -219,11 +219,11 @@ class TestGenerate:
     async def test_a_text_to_image_generation_uploads_nothing(self, tmp_path: Path):
         with capture_http() as router:
             upload = router.post(f"{BASE_URL}/upload/image")
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _image_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _image_output()}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             await _backend().generate(_request(tmp_path))
 
@@ -232,11 +232,13 @@ class TestGenerate:
     async def test_the_requested_size_is_derived_on_the_image_tier_table(self, tmp_path: Path):
         """图像与视频的分辨率档位短边表不是同一张；构造层按定义的 media_type 选表。"""
         with capture_http() as router:
-            submit = router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _image_output()}))
+            submit = router.post(f"{BASE_URL}/prompt").mock(
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get(f"{BASE_URL}/history/p-1").mock(
+                return_value=httpx2.Response(200, json=_history({"9": _image_output()}))
+            )
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             await _backend().generate(_request(tmp_path, aspect_ratio="1:1", image_size="1k"))
 
@@ -254,13 +256,15 @@ class TestGenerate:
 
         with capture_http() as router:
             upload = router.post(f"{BASE_URL}/upload/image").mock(
-                return_value=httpx.Response(200, json={"name": "stored.png", "subfolder": "arcreel"})
+                return_value=httpx2.Response(200, json={"name": "stored.png", "subfolder": "arcreel"})
             )
-            submit = router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            submit = router.post(f"{BASE_URL}/prompt").mock(
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
+            )
             history = router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _image_output()}))
+                return_value=httpx2.Response(200, json=_history({"9": _image_output()}))
             )
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             await _backend(definition, api_key="k-1").generate(
                 _request(tmp_path, reference_images=[ReferenceImage(path=str(reference))])
@@ -276,11 +280,11 @@ class TestArtifactWhitelist:
     @pytest.mark.parametrize("filename", ["out.png", "out.jpg", "out.jpeg", "out.webp", "OUT.PNG"])
     async def test_a_whitelisted_suffix_is_stored(self, tmp_path: Path, filename: str):
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _image_output(filename)}))
+                return_value=httpx2.Response(200, json=_history({"9": _image_output(filename)}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -290,9 +294,9 @@ class TestArtifactWhitelist:
     async def test_an_animated_or_video_artifact_is_a_type_mismatch(self, tmp_path: Path, filename: str):
         """一份图像端点产出动图意味着产物绑定指在了视频合成节点上；入库会得到一张只有首帧的图。"""
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _image_output(filename)}))
+                return_value=httpx2.Response(200, json=_history({"9": _image_output(filename)}))
             )
             view = router.get(f"{BASE_URL}/view")
 
@@ -306,11 +310,11 @@ class TestArtifactWhitelist:
     async def test_bytes_that_are_not_an_image_container_are_refused(self, tmp_path: Path):
         """文件头对不上 PNG / JPEG / WEBP 时删掉落盘的文件并判容器不符，不留一份打不开的图。"""
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _image_output("out.png")}))
+                return_value=httpx2.Response(200, json=_history({"9": _image_output("out.png")}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=b"GIF89a-not-a-png"))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=b"GIF89a-not-a-png"))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -324,11 +328,11 @@ class TestArtifactWhitelist:
     )
     async def test_the_other_whitelisted_containers_pass_the_head_check(self, tmp_path: Path, content: bytes):
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"9": _image_output("out.jpg")}))
+                return_value=httpx2.Response(200, json=_history({"9": _image_output("out.jpg")}))
             )
-            router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=content))
+            router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=content))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -336,9 +340,9 @@ class TestArtifactWhitelist:
 
     async def test_nothing_produced_by_the_output_node_is_its_own_code(self, tmp_path: Path):
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(
-                return_value=httpx.Response(200, json=_history({"99": _image_output()}))
+                return_value=httpx2.Response(200, json=_history({"99": _image_output()}))
             )
 
             with pytest.raises(ComfyuiError) as caught:
@@ -365,9 +369,9 @@ class TestMultipleArtifacts:
         }
 
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history(outputs)))
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history(outputs)))
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             with caplog.at_level("WARNING"):
                 await _backend().generate(_request(tmp_path))
@@ -387,9 +391,9 @@ class TestMultipleArtifacts:
         }
 
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json=_history(outputs)))
-            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json=_history(outputs)))
+            view = router.get(f"{BASE_URL}/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             await _backend().generate(_request(tmp_path))
 
@@ -411,9 +415,9 @@ class TestNoResume:
     async def test_a_lost_job_is_a_plain_generation_failure(self, tmp_path: Path):
         """ComfyUI 重启把队列连同未落 history 的执行一起丢掉：判可重试的生成失败，不是续跑过期。"""
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx.Response(200, json={}))
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue()))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get(f"{BASE_URL}/history/p-1").mock(return_value=httpx2.Response(200, json={}))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue()))
 
             with pytest.raises(ComfyuiError) as caught:
                 await _backend().generate(_request(tmp_path))
@@ -428,15 +432,15 @@ class TestStoppingTheRemote:
     @staticmethod
     def _version(router: Any, version: str) -> None:
         router.get(f"{BASE_URL}/system_stats").mock(
-            return_value=httpx.Response(200, json={"system": {"comfyui_version": version}})
+            return_value=httpx2.Response(200, json={"system": {"comfyui_version": version}})
         )
 
     async def test_a_cancelled_generation_stops_the_remote_job(self, tmp_path: Path):
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(side_effect=_cancel_here)
             self._version(router, "0.26.0")
-            cancel = router.post(f"{BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx.Response(200, json={}))
+            cancel = router.post(f"{BASE_URL}/api/jobs/p-1/cancel").mock(return_value=httpx2.Response(200, json={}))
 
             with pytest.raises(asyncio.CancelledError):
                 await _backend().generate(_request(tmp_path))
@@ -445,11 +449,11 @@ class TestStoppingTheRemote:
 
     async def test_an_older_server_interrupts_a_running_entry(self, tmp_path: Path):
         with capture_http() as router:
-            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
+            router.post(f"{BASE_URL}/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
             router.get(f"{BASE_URL}/history/p-1").mock(side_effect=_cancel_here)
             self._version(router, "0.25.14")
-            router.get(f"{BASE_URL}/queue").mock(return_value=httpx.Response(200, json=_queue(running=("p-1",))))
-            interrupt = router.post(f"{BASE_URL}/interrupt").mock(return_value=httpx.Response(200, json={}))
+            router.get(f"{BASE_URL}/queue").mock(return_value=httpx2.Response(200, json=_queue(running=("p-1",))))
+            interrupt = router.post(f"{BASE_URL}/interrupt").mock(return_value=httpx2.Response(200, json={}))
 
             with pytest.raises(asyncio.CancelledError):
                 await _backend().generate(_request(tmp_path))

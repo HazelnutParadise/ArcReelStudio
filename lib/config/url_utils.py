@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from urllib.parse import urlparse
 
-import httpx
+import httpx2
 
 # 官方 OpenAI 端点：既是 is_official_openai_base_url 的判定基准，也是上层
 # 客户端工厂在 base_url 为空时须显式回填的默认值——AsyncOpenAI 对空 base_url
@@ -75,7 +75,8 @@ def normalize_base_url(url: str | None) -> str | None:
 def ensure_google_base_url(url: str | None) -> str | None:
     """规范化 Google genai SDK 的 base_url。
 
-    Google genai SDK 会自动在 base_url 后拼接 ``api_version``（默认 ``v1beta``）。
+    Google genai SDK 会自动在 base_url 后拼接 ``api_version``（AI Studio 客户端固定为 ``v1beta``，见
+    ``lib/backends/gemini_shared.py`` 的 ``GEMINI_DEVELOPER_API_VERSION``）。
     如果用户误填了 ``https://example.com/v1beta``，SDK 会拼出
     ``https://example.com/v1beta/v1beta/models``，导致请求失败。
 
@@ -145,8 +146,8 @@ def validate_anthropic_base_url(raw: str) -> str:
         has_userinfo = bool(parsed.username or parsed.password)
         host = parsed.hostname
         _ = parsed.port  # netloc 惰性解析，非法端口在这一步才抛 ValueError
-        httpx.URL(normalized)
-    except (ValueError, httpx.InvalidURL) as exc:
+        httpx2.URL(normalized)
+    except (ValueError, httpx2.InvalidURL) as exc:
         raise InvalidAnthropicBaseUrlError("base_url is not a parsable URL") from exc
     if has_userinfo:
         raise InvalidAnthropicBaseUrlError("base_url must not carry userinfo")
@@ -160,6 +161,6 @@ def anthropic_endpoint_url(base_url: str, path_suffix: str) -> str:
 
     与 Claude CLI 内置 SDK 同样按字符串拼接：``base_url`` 已经过 :func:`validate_anthropic_base_url`
     （无 query / fragment、无尾斜杠），逐字拼接才能让探测、模型发现与运行时请求的是同一个
-    字符串；经 ``httpx.URL`` 解码再回写 path 会把 ``%2F`` 这类已转义的分隔符还原成真实分隔符。
+    字符串；经 ``httpx2.URL`` 解码再回写 path 会把 ``%2F`` 这类已转义的分隔符还原成真实分隔符。
     """
     return base_url.rstrip("/") + path_suffix

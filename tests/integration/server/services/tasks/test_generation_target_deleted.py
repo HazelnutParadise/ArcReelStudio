@@ -3,7 +3,7 @@
 import asyncio
 import contextvars
 
-import httpx
+import httpx2
 
 from lib.artifacts.version_manager import VersionManager
 from lib.backends.image_backends.dashscope import DashScopeImageBackend
@@ -44,15 +44,15 @@ async def test_asset_deleted_while_generating_lands_the_result_in_project_trash(
     def _delete_character() -> None:
         manager.update_project("demo", lambda project: project["characters"].pop("阿岚"))
 
-    async def _delete_while_generating(_request: httpx.Request) -> httpx.Response:
+    async def _delete_while_generating(_request: httpx2.Request) -> httpx2.Response:
         # 删除来自别的请求，不在任务的执行上下文里。
         await asyncio.to_thread(contextvars.Context().run, _delete_character)
-        return httpx.Response(200, json={"output": {"choices": [{"message": {"content": [{"image": RESULT_URL}]}}]}})
+        return httpx2.Response(200, json={"output": {"choices": [{"message": {"content": [{"image": RESULT_URL}]}}]}})
 
     png = solid_png_bytes(RESULT_IMAGE_RGB)
     with capture_http() as router:
         router.post(GENERATION_URL).mock(side_effect=_delete_while_generating)
-        router.get(RESULT_URL).mock(return_value=httpx.Response(200, content=png))
+        router.get(RESULT_URL).mock(return_value=httpx2.Response(200, content=png))
         worker = GenerationWorker(
             queue=db_queue(db_factory),
             executor=generation_tasks.execute_generation_task,

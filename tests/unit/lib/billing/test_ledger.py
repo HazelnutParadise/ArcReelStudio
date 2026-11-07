@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from openai import BadRequestError
 from sqlalchemy import select
@@ -32,16 +32,16 @@ from lib.db.base import utc_now
 from lib.db.models.api_call import ApiCall
 from lib.db.repositories.usage_repo import AgentModelCall, UsageRepository
 
-_HTTP_REQUEST = httpx.Request("POST", "https://provider.example/v1/videos")
+_HTTP_REQUEST = httpx2.Request("POST", "https://provider.example/v1/videos")
 
 
 def _download_error_from_status(status: int) -> ArtifactDownloadError:
     """产物下载失败：状态码在它包裹的下载异常上，分类沿 ``__cause__`` 取。"""
     exc = ArtifactDownloadError(detail=f"{status} response")
-    exc.__cause__ = httpx.HTTPStatusError(
+    exc.__cause__ = httpx2.HTTPStatusError(
         f"{status} response",
         request=_HTTP_REQUEST,
-        response=httpx.Response(status, request=_HTTP_REQUEST),
+        response=httpx2.Response(status, request=_HTTP_REQUEST),
     )
     return exc
 
@@ -336,10 +336,10 @@ class TestRecordBracket:
         ("exc", "expected_code", "expected_params"),
         [
             pytest.param(
-                httpx.HTTPStatusError(
+                httpx2.HTTPStatusError(
                     "429 response",
                     request=_HTTP_REQUEST,
-                    response=httpx.Response(429, headers={"Retry-After": "30"}, request=_HTTP_REQUEST),
+                    response=httpx2.Response(429, headers={"Retry-After": "30"}, request=_HTTP_REQUEST),
                 ),
                 "rate_limited",
                 {"retry_after_seconds": 30},
@@ -348,7 +348,7 @@ class TestRecordBracket:
             pytest.param(
                 BadRequestError(
                     "rejected",
-                    response=httpx.Response(400, request=_HTTP_REQUEST),
+                    response=httpx2.Response(400, request=_HTTP_REQUEST),
                     body={"code": "content_policy_violation"},
                 ),
                 "content_policy",
@@ -513,10 +513,10 @@ class TestResumeAndAgentTurn:
         """认得出类别的异常在 resume 路径也落码，与记账括号同一口径。"""
         call_id = await self._seed_pending_video(db_factory)
         ledger = Ledger(session_factory=db_factory)
-        exc = httpx.HTTPStatusError(
+        exc = httpx2.HTTPStatusError(
             "429 response",
             request=_HTTP_REQUEST,
-            response=httpx.Response(429, headers={"Retry-After": "30"}, request=_HTTP_REQUEST),
+            response=httpx2.Response(429, headers={"Retry-After": "30"}, request=_HTTP_REQUEST),
         )
 
         await ledger.resume_failed(call_id=call_id, failure=exc)

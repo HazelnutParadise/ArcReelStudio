@@ -12,7 +12,7 @@ Ark (火山方舟) 共享工具模块
 
 from __future__ import annotations
 
-import httpx
+import httpx2
 
 from lib.backends.transport_layer import TransportLayer, layer_sync_client
 
@@ -42,7 +42,7 @@ def create_ark_client(
 ):
     """创建 Ark 客户端；base_url 缺省走 ARK_BASE_URL（即 /api/v3），经 ark_base_url 归一化。
 
-    SDK 是同步客户端，``transport_layer`` 叠在同步 httpx 客户端之上。
+    SDK 是同步客户端，``transport_layer`` 叠在同步 httpx2 客户端之上。
     """
     from volcenginesdkarkruntime import Ark
 
@@ -50,6 +50,5 @@ def create_ark_client(
     key = resolve_ark_api_key(api_key)
     if transport_layer is None:
         return Ark(base_url=base, api_key=key)
-    return Ark(
-        base_url=base, api_key=key, http_client=layer_sync_client(httpx.Client(follow_redirects=True), transport_layer)
-    )
+    layered = layer_sync_client(httpx2.Client(follow_redirects=True), transport_layer)
+    return Ark(base_url=base, api_key=key, http_client=layered)  # pyright: ignore[reportArgumentType]  # SDK 标注为 httpx.Client，alias_httpx 之后 httpx 即 httpx2

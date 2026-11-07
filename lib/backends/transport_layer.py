@@ -1,7 +1,7 @@
 """调用通道的 HTTP transport 注入接缝。
 
 路径覆盖（``docs/adr/0101``）在 HTTP transport 层改写调用端点发出的请求。调用通道构造时可以接收一个
-:class:`TransportLayer`，叠在它原本使用的 httpx 客户端之上：请求先经过注入层，再交给原客户端发出，
+:class:`TransportLayer`，叠在它原本使用的 httpx2 客户端之上：请求先经过注入层，再交给原客户端发出，
 原客户端上的出站目的地校验（request event hook）与环境代理因此作用于改写后的请求。不注入时原客户端原样使用。
 """
 
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Protocol, overload
 
-import httpx
+import httpx2
 
 
 class TransportLayer(Protocol):
@@ -19,44 +19,44 @@ class TransportLayer(Protocol):
     """
 
     @overload
-    def __call__(self, inner: httpx.AsyncBaseTransport, /) -> httpx.AsyncBaseTransport: ...
+    def __call__(self, inner: httpx2.AsyncBaseTransport, /) -> httpx2.AsyncBaseTransport: ...
     @overload
-    def __call__(self, inner: httpx.BaseTransport, /) -> httpx.BaseTransport: ...
+    def __call__(self, inner: httpx2.BaseTransport, /) -> httpx2.BaseTransport: ...
 
 
-class _AsyncClientTransport(httpx.AsyncBaseTransport):
+class _AsyncClientTransport(httpx2.AsyncBaseTransport):
     """把请求交给原客户端发出；重定向由外层客户端逐跳处理，每一跳都再经过注入层。"""
 
-    def __init__(self, client: httpx.AsyncClient) -> None:
+    def __init__(self, client: httpx2.AsyncClient) -> None:
         self._client = client
 
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+    async def handle_async_request(self, request: httpx2.Request) -> httpx2.Response:
         return await self._client.send(request, stream=True, follow_redirects=False)
 
     async def aclose(self) -> None:
         await self._client.aclose()
 
 
-class _SyncClientTransport(httpx.BaseTransport):
-    def __init__(self, client: httpx.Client) -> None:
+class _SyncClientTransport(httpx2.BaseTransport):
+    def __init__(self, client: httpx2.Client) -> None:
         self._client = client
 
-    def handle_request(self, request: httpx.Request) -> httpx.Response:
+    def handle_request(self, request: httpx2.Request) -> httpx2.Response:
         return self._client.send(request, stream=True, follow_redirects=False)
 
     def close(self) -> None:
         self._client.close()
 
 
-def layer_async_client(client: httpx.AsyncClient, layer: TransportLayer | None) -> httpx.AsyncClient:
+def layer_async_client(client: httpx2.AsyncClient, layer: TransportLayer | None) -> httpx2.AsyncClient:
     """返回请求先经 ``layer`` 再交 ``client`` 发出的客户端；``layer`` 为 None 时原样返回 ``client``。
 
-    外层沿用 ``client`` 的 base_url、默认头、超时与重定向设置，关闭外层即关闭 ``client``。httpx 给了 transport
+    外层沿用 ``client`` 的 base_url、默认头、超时与重定向设置，关闭外层即关闭 ``client``。httpx2 给了 transport
     就不挂环境代理，代理仍由 ``client`` 按改写后的 URL 选择。
     """
     if layer is None:
         return client
-    return httpx.AsyncClient(
+    return httpx2.AsyncClient(
         transport=layer(_AsyncClientTransport(client)),
         base_url=client.base_url,
         headers=client.headers,
@@ -65,11 +65,11 @@ def layer_async_client(client: httpx.AsyncClient, layer: TransportLayer | None) 
     )
 
 
-def layer_sync_client(client: httpx.Client, layer: TransportLayer | None) -> httpx.Client:
+def layer_sync_client(client: httpx2.Client, layer: TransportLayer | None) -> httpx2.Client:
     """:func:`layer_async_client` 的同步版本，供同步 SDK 客户端（方舟、google-genai 的同步通道）使用。"""
     if layer is None:
         return client
-    return httpx.Client(
+    return httpx2.Client(
         transport=layer(_SyncClientTransport(client)),
         base_url=client.base_url,
         headers=client.headers,

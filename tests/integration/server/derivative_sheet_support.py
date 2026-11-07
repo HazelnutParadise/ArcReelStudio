@@ -15,7 +15,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 from PIL import Image
 
 from lib.artifacts.artifact_manifest import ArtifactKey
@@ -191,11 +191,11 @@ def run_derivative_generation(
     result_bytes = solid_png_bytes(result_rgb)
     with capture_http() as router:
         router.post(GENERATION_URL).mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"output": {"choices": [{"message": {"content": [{"image": RESULT_URL}]}}]}}
             )
         )
-        router.get(RESULT_URL).mock(return_value=httpx.Response(200, content=result_bytes))
+        router.get(RESULT_URL).mock(return_value=httpx2.Response(200, content=result_bytes))
         asyncio.run(
             derivative_sheet_tasks.execute_character_derivative_task(
                 "demo", f"{owner}/{derivative}", {}, task_id="task-1"

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-import httpx
+import httpx2
 import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -62,8 +62,8 @@ async def test_asset_image_compensation_stops_at_commit(assets_env, db_engine, d
                 raise ConnectionError("asset database unavailable")
             await super().refresh(instance, *args, **kwargs)
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=assets_env["client"].app), base_url="http://test"
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=assets_env["client"].app), base_url="http://test"
     ) as api:
         asset_id = None
         if entry == "replace":
