@@ -1,0 +1,10 @@
+{
+  "method": "GET",
+  "path": "/api/v1/auth/me",
+  "status": 200,
+  "body": {
+    "id": "default",
+    "username": "e2e",
+    "role": "admin"
+  }
+}
