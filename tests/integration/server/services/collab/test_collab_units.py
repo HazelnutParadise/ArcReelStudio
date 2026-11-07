@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 from lib.project.project_manager import ProjectManager
-from server.services.collab.units import UNIT_SPECS, UnitNotFoundError, UnitWriteError
+from server.services.collab.units import PROJECT_UNIT_SPECS, UnitNotFoundError, UnitWriteError
 
 PROJECT = "demo"
 
@@ -52,7 +52,7 @@ def unit_project_files(tmp_path: Path) -> ProjectManager:
 
 
 def test_overview_reads_every_field_and_writes_trimmed_text(unit_project_files) -> None:
-    unit = UNIT_SPECS["overview"]
+    unit = PROJECT_UNIT_SPECS["overview"]
 
     unit.write(unit_project_files, PROJECT, "", {"synopsis": "  雨夜的故事  "})
 
@@ -65,7 +65,7 @@ def test_overview_reads_every_field_and_writes_trimmed_text(unit_project_files) 
 
 
 def test_brief_rejects_an_invalid_target_duration(unit_project_files) -> None:
-    unit = UNIT_SPECS["brief"]
+    unit = PROJECT_UNIT_SPECS["brief"]
 
     unit.write(unit_project_files, PROJECT, "", {"brief": "清爽一夏", "target_duration": 30})
     assert unit.read(unit_project_files, PROJECT, "") == {"brief": "清爽一夏", "target_duration": 30}
@@ -76,7 +76,7 @@ def test_brief_rejects_an_invalid_target_duration(unit_project_files) -> None:
 
 
 def test_character_fields_round_trip(unit_project_files) -> None:
-    unit = UNIT_SPECS["asset"]
+    unit = PROJECT_UNIT_SPECS["asset"]
 
     assert unit.read(unit_project_files, PROJECT, "character:Alice") == {"description": "高个子", "voice_style": "低沉"}
     unit.write(unit_project_files, PROJECT, "character:Alice", {"description": "矮个子"})
@@ -85,7 +85,7 @@ def test_character_fields_round_trip(unit_project_files) -> None:
 
 
 def test_product_selling_points_are_one_per_line(unit_project_files) -> None:
-    unit = UNIT_SPECS["asset"]
+    unit = PROJECT_UNIT_SPECS["asset"]
 
     unit.write(unit_project_files, PROJECT, "product:Tea", {"selling_points": "回甘\n\n  无糖  \n"})
 
@@ -96,14 +96,14 @@ def test_product_selling_points_are_one_per_line(unit_project_files) -> None:
 @pytest.mark.parametrize("key", ["character:Nobody", "nonsense", "dragon:Alice"])
 def test_missing_assets_are_reported_as_not_found(unit_project_files, key) -> None:
     with pytest.raises(UnitNotFoundError):
-        UNIT_SPECS["asset"].read(unit_project_files, PROJECT, key)
+        PROJECT_UNIT_SPECS["asset"].read(unit_project_files, PROJECT, key)
 
 
 def test_derivative_description_round_trips(unit_project_files) -> None:
     unit_project_files.update_asset_entry(
         "character", PROJECT, "Alice", lambda entry: entry.update({"derivatives": {"少年": {"description": "十岁"}}})
     )
-    unit = UNIT_SPECS["derivative"]
+    unit = PROJECT_UNIT_SPECS["derivative"]
 
     unit.write(unit_project_files, PROJECT, "Alice/少年", {"description": "十二岁"})
 
@@ -113,7 +113,7 @@ def test_derivative_description_round_trips(unit_project_files) -> None:
 
 
 def test_script_item_reads_its_whitelisted_fields_and_writes_through_the_batch_editor(unit_project_files) -> None:
-    unit = UNIT_SPECS["script_item"]
+    unit = PROJECT_UNIT_SPECS["script_item"]
     content = unit.read(unit_project_files, PROJECT, "episode_1.json#E1S01")
 
     assert "generated_assets" not in content
@@ -129,7 +129,7 @@ def test_script_item_reads_its_whitelisted_fields_and_writes_through_the_batch_e
 
 
 def test_script_item_ignores_fields_outside_the_whitelist(unit_project_files) -> None:
-    unit = UNIT_SPECS["script_item"]
+    unit = PROJECT_UNIT_SPECS["script_item"]
 
     unit.write(unit_project_files, PROJECT, "episode_1.json#E1S01", {"generated_assets": {"status": "done"}})
 
@@ -138,12 +138,12 @@ def test_script_item_ignores_fields_outside_the_whitelist(unit_project_files) ->
 
 def test_a_missing_script_item_is_reported_as_not_found(unit_project_files) -> None:
     with pytest.raises(UnitNotFoundError):
-        UNIT_SPECS["script_item"].read(unit_project_files, PROJECT, "episode_1.json#E1S99")
+        PROJECT_UNIT_SPECS["script_item"].read(unit_project_files, PROJECT, "episode_1.json#E1S99")
 
 
 def test_own_episode_source_round_trips(unit_project_files) -> None:
     unit_project_files.update_project(PROJECT, lambda data: data.update({"episodes": [{"episode": 2, "title": "二"}]}))
-    unit = UNIT_SPECS["episode_source"]
+    unit = PROJECT_UNIT_SPECS["episode_source"]
 
     assert unit.read(unit_project_files, PROJECT, "2") == {"text": ""}
     unit.write(unit_project_files, PROJECT, "2", {"text": "第二集原文"})
@@ -160,12 +160,12 @@ def test_a_derived_episode_source_cannot_be_written(unit_project_files) -> None:
     )
 
     with pytest.raises(UnitWriteError) as exc:
-        UNIT_SPECS["episode_source"].write(unit_project_files, PROJECT, "3", {"text": "改不了"})
+        PROJECT_UNIT_SPECS["episode_source"].write(unit_project_files, PROJECT, "3", {"text": "改不了"})
     assert exc.value.code == "episode_source_derived"
 
 
 def test_page_rooms_carry_no_content_and_need_an_existing_project(unit_project_files) -> None:
-    unit = UNIT_SPECS["page"]
+    unit = PROJECT_UNIT_SPECS["page"]
 
     assert unit.read(unit_project_files, PROJECT, "/app/projects/demo") == {}
     unit.write(unit_project_files, PROJECT, "/app/projects/demo", {"anything": "x"})
@@ -183,7 +183,7 @@ def test_project_settings_reads_the_settable_fields_under_their_stored_names(uni
         PROJECT, lambda data: data.update({"aspect_ratio": "16:9", "style_image": "style_reference.png"})
     )
 
-    settings = UNIT_SPECS["project_settings"].read(unit_project_files, PROJECT, "")
+    settings = PROJECT_UNIT_SPECS["project_settings"].read(unit_project_files, PROJECT, "")
 
     assert settings["aspect_ratio"] == "16:9"
     assert settings["style_image"] == "style_reference.png"
@@ -193,7 +193,7 @@ def test_project_settings_reads_the_settable_fields_under_their_stored_names(uni
 
 
 def test_project_settings_writes_through_the_same_rules_as_the_project_patch(unit_project_files) -> None:
-    unit = UNIT_SPECS["project_settings"]
+    unit = PROJECT_UNIT_SPECS["project_settings"]
 
     unit.write(unit_project_files, PROJECT, "", {"aspect_ratio": "16:9", "speech_rate_units_per_second": 4.5})
 
@@ -207,7 +207,7 @@ def test_project_settings_clearing_the_style_image_removes_it_with_its_descripti
         PROJECT, lambda data: data.update({"style_image": "style_reference.png", "style_description": "水彩"})
     )
 
-    UNIT_SPECS["project_settings"].write(unit_project_files, PROJECT, "", {"style_image": ""})
+    PROJECT_UNIT_SPECS["project_settings"].write(unit_project_files, PROJECT, "", {"style_image": ""})
 
     project = unit_project_files.load_project(PROJECT)
     assert "style_image" not in project
@@ -216,7 +216,9 @@ def test_project_settings_clearing_the_style_image_removes_it_with_its_descripti
 
 def test_project_settings_rejects_what_the_patch_rejects_with_its_message_key(unit_project_files) -> None:
     with pytest.raises(UnitWriteError) as exc:
-        UNIT_SPECS["project_settings"].write(unit_project_files, PROJECT, "", {"speech_rate_units_per_second": 999.0})
+        PROJECT_UNIT_SPECS["project_settings"].write(
+            unit_project_files, PROJECT, "", {"speech_rate_units_per_second": 999.0}
+        )
 
     assert exc.value.code == "speech_rate_out_of_range"
     assert set(exc.value.params) == {"min", "max"}
@@ -224,7 +226,7 @@ def test_project_settings_rejects_what_the_patch_rejects_with_its_message_key(un
 
 
 def test_project_settings_ignores_derived_fields_written_by_the_browser(unit_project_files) -> None:
-    UNIT_SPECS["project_settings"].write(
+    PROJECT_UNIT_SPECS["project_settings"].write(
         unit_project_files, PROJECT, "", {"style_image": "elsewhere.png", "style_description": "改不到"}
     )
 

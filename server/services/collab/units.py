@@ -625,7 +625,8 @@ class LibraryAssetUnit:
                 raise UnitWriteError(exc.key, params=exc.params) from exc
 
 
-UNIT_SPECS: dict[str, AnyUnitSpec] = {
+#: 属于项目的单元：读写是同步的文件操作
+PROJECT_UNIT_SPECS: dict[str, UnitSpec] = {
     spec.kind: spec
     for spec in (
         PageUnit(),
@@ -637,7 +638,12 @@ UNIT_SPECS: dict[str, AnyUnitSpec] = {
         ScriptItemUnit(),
         ProjectSettingsUnit(),
         ProjectMemoryFileUnit(),
-        WorkspaceMemoryFileUnit(),
-        LibraryAssetUnit(),
     )
 }
+
+#: 不属于项目的单元：房间的 project 为空串
+GLOBAL_UNIT_SPECS: dict[str, GlobalUnitSpec] = {
+    spec.kind: spec for spec in (WorkspaceMemoryFileUnit(), LibraryAssetUnit())
+}
+
+UNIT_SPECS: dict[str, AnyUnitSpec] = {**PROJECT_UNIT_SPECS, **GLOBAL_UNIT_SPECS}

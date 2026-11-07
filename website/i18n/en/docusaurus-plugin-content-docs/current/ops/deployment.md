@@ -267,11 +267,12 @@ When you upgrade from an earlier version that had only one `.env` account, the f
 Several members can open the same project at the same time and edit it together, as in a shared document:
 
 - The right side of the top bar shows the other members in the project; open it to see which episode each of them is viewing. You also see the other members' mouse pointers and names on the page.
-- In the project overview, the creative brief, characters / scenes / props / products, character derivatives, an episode's own source text, the shot details and reference video units, what each person types appears for the others right away. A member editing the same field shows up as a colored cursor with their name in that field.
+- In the project overview, the creative brief, characters / scenes / props / products, character derivatives, an episode's own source text, the shot details, reference video units, project settings, global asset library entries and Agent memory files, each person's changes appear for the others right away. A member editing the same field shows up as a colored cursor with their name in that field.
 - These editors have no Save button: the server merges everyone's input and writes it to the project files shortly after typing stops. When two people type in the same text at once, both keep their words; Ctrl / ⌘ + Z undoes only your own changes.
 - When the Agent or a background task changes what you are editing, the change merges into the editor without overwriting what you are still typing.
 - You can keep editing while disconnected; changes stay on your device and sync automatically once you reconnect, and the editor shows "Offline" in the meantime. If the collaboration service can't be reached (for example, the reverse proxy doesn't forward WebSockets), the editors fall back to editing and then saving.
-- Project settings, global settings and the global asset library are not part of live collaboration; you still edit and then save, and the later save wins when two members save at the same time.
+- When a project settings change isn't valid yet (for example, switching to TTS narration before choosing a voice model), the reason shows below the editor and the change stays until it's complete.
+- Providers and credentials, custom endpoints and the remaining global settings are still edited and then saved; the later save wins when two members save at the same time.
 
 The list of online members and the content being edited together live only in the service process's memory, so run a single service process. The service writes any unsaved content before it shuts down, and pages reconnect automatically after a restart.
 
