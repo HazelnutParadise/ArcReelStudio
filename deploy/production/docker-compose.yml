@@ -5,7 +5,7 @@ services:
       POSTGRES_USER: arcreel
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?必須設定 POSTGRES_PASSWORD}
       POSTGRES_DB: arcreel
-      TZ: ${TZ:-Asia/Shanghai}
+      TZ: ${TZ:-Asia/Taipei}
     volumes:
       - ${ARCREEL_HOST_DATA_DIR:-.}/pgdata:/var/lib/postgresql
     restart: unless-stopped
@@ -39,7 +39,7 @@ services:
       ARCREEL_SDK_SESSION_STORE: ${ARCREEL_SDK_SESSION_STORE:-db}
       # 未设置时使用内置官方服务地址；在 .env 中设为空值即关闭官方服务
       ARCREEL_OFFICIAL_SERVICE_URL: ${ARCREEL_OFFICIAL_SERVICE_URL-https://arc-reel.com}
-      TZ: ${TZ:-Asia/Shanghai}
+      TZ: ${TZ:-Asia/Taipei}
     # Agent Bash 沙箱 (bwrap) 需要：
     # 1) 非特权 user namespace → 放开 docker 默认 seccomp/apparmor profile
     # 2) bwrap 嵌套出的 net namespace 内配置 loopback → 容器需要 NET_ADMIN cap

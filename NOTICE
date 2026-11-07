@@ -6,6 +6,25 @@ Copyright © 2026 Pollo3470 and ArcReel contributors.
 This project is licensed under the GNU Affero General Public License v3.0.
 See LICENSE for the full project license terms.
 
+==== Modified version: ArcReelStudio / 修改版本：ArcReelStudio ====
+
+ArcReelStudio
+Copyright © 2026 HazelnutParadise.
+https://github.com/HazelnutParadise/ArcReelStudio
+
+ArcReelStudio is a modified version of ArcReel, maintained by HazelnutParadise.
+The modifications made by HazelnutParadise are licensed under the GNU Affero
+General Public License v3.0, the same license as ArcReel, and are subject to
+the additional terms below. The original ArcReel copyright notice and
+attribution above remain in effect. In accordance with AGPLv3 Section 7(c),
+the commit history of the repository above records each change made to
+ArcReel and its date.
+
+ArcReelStudio 是 ArcReel 的修改版本，由 HazelnutParadise 维护。HazelnutParadise
+所做的修改与 ArcReel 相同，采用 GNU Affero 通用公共许可证第 3 版授权，并适用下方的
+附加条款；上方 ArcReel 的原版权声明与署名继续有效。依照 AGPLv3 第 7(c) 条，上述仓库
+的提交历史记录了对 ArcReel 所做的每一项修改及其日期。
+
 ==== Additional Terms under AGPLv3 Section 7 ====
 
 Pursuant to Section 7(b) of the GNU Affero General Public License version 3,

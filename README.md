@@ -142,10 +142,12 @@ uv run pre-commit install
 
 ## 授權條款
 
-ArcReel 採用 [GNU Affero General Public License v3.0](LICENSE) 授權，附加條款見 [NOTICE](NOTICE)。
+ArcReel 採用 [GNU Affero General Public License v3.0](LICENSE) 授權，附加條款見 [NOTICE](NOTICE)。本專案 ArcReelStudio 是 ArcReel 的修改版本，HazelnutParadise 所做的修改同樣採用 AGPLv3 授權，所有修改記錄在本 repo 的提交歷史中。
 
 依照附加條款，修改版本必須保留原作者署名與原始專案連結，並標明所做的修改：
 
 Powered by ArcReel — <https://github.com/ArcReel/ArcReel>
 
 Copyright © 2026 Pollo3470 and ArcReel contributors
+
+ArcReelStudio 修改部分：Copyright © 2026 HazelnutParadise

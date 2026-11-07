@@ -25,7 +25,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-}
       # 未设置时使用内置官方服务地址；在 .env 中设为空值即关闭官方服务
       ARCREEL_OFFICIAL_SERVICE_URL: ${ARCREEL_OFFICIAL_SERVICE_URL-https://arc-reel.com}
-      TZ: ${TZ:-Asia/Shanghai}
+      TZ: ${TZ:-Asia/Taipei}
     # Agent Bash 沙箱 (bwrap) 需要：
     # 1) 非特权 user namespace → 放开 docker 默认 seccomp/apparmor profile
     # 2) bwrap 嵌套出的 net namespace 内配置 loopback → 容器需要 NET_ADMIN cap

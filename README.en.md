@@ -143,10 +143,12 @@ uv run pre-commit install
 
 ## License
 
-ArcReel is licensed under the [GNU Affero General Public License v3.0](LICENSE). Additional terms are available in [NOTICE](NOTICE).
+ArcReel is licensed under the [GNU Affero General Public License v3.0](LICENSE). Additional terms are available in [NOTICE](NOTICE). This project, ArcReelStudio, is a modified version of ArcReel. The modifications made by HazelnutParadise are also licensed under AGPLv3, and every change is recorded in this repository's commit history.
 
 Under those terms, modified versions must preserve the original author attribution and a link to the original project, and must mark their changes:
 
 Powered by ArcReel — <https://github.com/ArcReel/ArcReel>
 
 Copyright © 2026 Pollo3470 and ArcReel contributors
+
+ArcReelStudio modifications: Copyright © 2026 HazelnutParadise
