@@ -20,6 +20,7 @@ from server.services.currency.typed_media_restore import restore_typed_media_res
 from server.services.presentation.timeline_jianying_draft import TimelineJianyingDraftService
 from server.services.project.project_archive import ARCHIVE_MANIFEST_NAME, ProjectArchiveService
 from tests.factories import make_test_video
+from tests.fakes import private_tempdir
 from tests.integration.server.services.presentation.timeline_render_support import (
     _install_narration,
     _install_video,
@@ -289,9 +290,7 @@ async def test_a_failed_export_leaves_no_snapshot_directory_behind(tmp_path: Pat
     versions = json.loads(versions_path.read_text(encoding="utf-8"))
     versions["audio"]["E1S01"]["versions"][0]["artifact_audio_basis"]["digest"] = "sha256-v1:" + "0" * 64
     versions_path.write_text(json.dumps(versions), encoding="utf-8")
-    scratch = tmp_path / "scratch"
-    scratch.mkdir()
-    monkeypatch.setattr("tempfile.tempdir", str(scratch))
+    scratch = private_tempdir(tmp_path, monkeypatch)
 
     for export in (
         lambda service: service.get_export_diagnostics("demo", scope="full"),
