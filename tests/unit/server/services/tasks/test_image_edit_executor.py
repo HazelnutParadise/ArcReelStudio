@@ -1000,6 +1000,7 @@ class TestImageSizeResolutionEquivalence:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             return _EchoBackend(name=provider_id, model=model_id or "default-model")
 

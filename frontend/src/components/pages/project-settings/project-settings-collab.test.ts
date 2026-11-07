@@ -88,3 +88,20 @@ describe("project settings in a collaboration room", () => {
     expect(next).toEqual(current);
   });
 });
+
+describe("project settings connections", () => {
+  it("reads a pinned connection and writes a newly chosen one next to its model field", () => {
+    const current = stored({ video_backend: "gemini-aistudio/veo-3", video_backend_credential_id: 4 });
+    const form = projectSettingsFromUnit(current, options);
+    expect(form.models.credentials?.video_backend).toBe(4);
+
+    const next = projectSettingsToUnit(
+      { ...form, models: { ...form.models, credentials: { ...form.models.credentials, video_backend: 9 } } },
+      current,
+      options,
+    );
+
+    expect(next.video_backend_credential_id).toBe(9);
+    expect(next.video_backend).toBe("gemini-aistudio/veo-3");
+  });
+});

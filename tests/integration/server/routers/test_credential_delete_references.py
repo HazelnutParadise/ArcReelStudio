@@ -94,3 +94,11 @@ async def test_confirmed_delete_returns_those_settings_to_the_default(
     project = credential_refs_pm.load_project("pa")
     assert "video_backend_credential_id" not in project
     assert project["video_backend"] == "gemini-aistudio/veo-3"
+
+
+def test_every_connection_is_listed_across_providers(credential_refs_client, pinned) -> None:
+    resp = credential_refs_client.get("/api/v1/providers/credentials")
+
+    assert resp.status_code == 200
+    listed = [(c["provider"], c["name"]) for c in resp.json()["credentials"]]
+    assert listed == [("gemini-aistudio", "公司帳"), ("gemini-aistudio", "個人帳")]

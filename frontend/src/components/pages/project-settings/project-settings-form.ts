@@ -1,7 +1,7 @@
 import { API } from "@/api";
 import type { ProjectSettingsTab } from "@/app-routes";
 import { executingImageModel, executingVideoModel } from "@/components/shared/model-layers";
-import type { ModelConfigValue } from "@/components/shared/ModelConfigSection";
+import type { ModelConfigValue, ProjectModelSettingKey } from "@/components/shared/ModelConfigSection";
 import type { NarrationDeliveryValue } from "@/components/shared/narration-delivery";
 import type {
   AutoBackendsResponse,
@@ -131,6 +131,24 @@ export function keepSavedStylePreview(next: ProjectSettingsForm, saved: ProjectS
   return { ...next, style: { ...next.style, preview: saved.style.preview } };
 }
 
+/** 项目文件里引用模型的字段；每个字段旁有加 `_credential_id` 的「连线」旁键。 */
+const PROJECT_MODEL_SETTING_KEYS = [
+  "video_backend",
+  "video_provider_i2v",
+  "video_provider_r2v",
+  "default_image_backend",
+  "image_provider_t2i",
+  "image_provider_i2i",
+  "default_text_backend",
+  "text_backend_simple",
+  "text_backend_complex",
+  "audio_backend",
+] as const satisfies readonly ProjectModelSettingKey[];
+
+function credentialId(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
+}
+
 function str(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
@@ -208,6 +226,9 @@ export function deriveForm(
       videoResolutions,
       imageResolution: executingIb ? (modelSettings[executingIb]?.resolution ?? null) : null,
       generateAudio: typeof project.video_generate_audio === "boolean" ? project.video_generate_audio : null,
+      credentials: Object.fromEntries(
+        PROJECT_MODEL_SETTING_KEYS.map((key) => [key, credentialId(project[`${key}_credential_id`])]),
+      ),
     },
     narration: {
       delivery: (project.narration_delivery === "use_tts" ? "use_tts" : "post_production") satisfies NarrationDelivery,
@@ -289,6 +310,10 @@ function fullProjectPatch(
         : {}
       : { default_duration: models.defaultDuration, episode_target_duration: value.episodeTargetDuration }),
     model_settings: modelSettings,
+    // 各模型字段旁的连线；换了供应商又没重选时服务端会清掉
+    ...Object.fromEntries(
+      PROJECT_MODEL_SETTING_KEYS.map((key) => [`${key}_credential_id`, models.credentials?.[key] ?? null]),
+    ),
     ...stylePatch,
   };
 }

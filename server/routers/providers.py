@@ -450,6 +450,13 @@ async def list_providers(
     return ProvidersListResponse(providers=providers)
 
 
+@router.get("/credentials", response_model=CredentialListResponse)
+async def list_all_credentials(session: AsyncSession = Depends(get_async_session)) -> CredentialListResponse:
+    """全部内置供应商的连线（连线中心与各处的连线下拉用）；按供应商、建立时间排序。"""
+    creds = await CredentialRepository(session).list_all()
+    return CredentialListResponse(credentials=[_cred_to_response(c) for c in creds])
+
+
 @router.get("/video-capabilities")
 async def get_model_video_capabilities(
     _t: Translator,

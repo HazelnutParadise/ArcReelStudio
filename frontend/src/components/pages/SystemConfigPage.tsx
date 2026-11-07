@@ -10,6 +10,7 @@ import {
   HardDrive,
   Info,
   KeyRound,
+  KeySquare,
   Plug,
   ScrollText,
   SlidersHorizontal,
@@ -37,6 +38,7 @@ import { AssetLibrarySection } from "./settings/asset-library/AssetLibrarySectio
 import { AccessTokensSection } from "./settings/agent-access/AccessTokensSection";
 import { ExternalAgentSection } from "./settings/agent-access/ExternalAgentSection";
 import { ConfigIssueNotice } from "./settings/ConfigIssueNotice";
+import { ConnectionCenterSection } from "./settings/ConnectionCenterSection";
 import { EndpointsSection } from "./settings/endpoints/EndpointsSection";
 import { GeneralSection } from "./settings/GeneralSection";
 import { MarketSection } from "./settings/market/MarketSection";
@@ -51,6 +53,7 @@ interface SectionDef {
 
 const SECTIONS: Record<SettingsSection, SectionDef> = {
   providers: { labelKey: "dashboard:providers", icon: Plug, tier: "bleed" },
+  connections: { labelKey: "dashboard:connection_center_title", icon: KeySquare, tier: "constrained" },
   "default-models": { labelKey: "dashboard:settings_default_models", icon: Film, tier: "constrained" },
   endpoints: { labelKey: "dashboard:ce_section_title", icon: Waypoints, tier: "bleed" },
   "asset-library": { labelKey: "dashboard:settings_asset_library", icon: HardDrive, tier: "constrained" },
@@ -71,7 +74,7 @@ const SECTION_GROUPS: { id: string; labelKey?: string; sections: SettingsSection
   {
     id: "generation",
     labelKey: "dashboard:settings_group_generation",
-    sections: ["providers", "default-models", "endpoints", "asset-library"],
+    sections: ["providers", "connections", "default-models", "endpoints", "asset-library"],
   },
   {
     id: "agent",
@@ -158,6 +161,8 @@ function SectionContent({ section }: { section: SettingsSection }) {
   switch (section) {
     case "providers":
       return <ProviderSection />;
+    case "connections":
+      return <ConnectionCenterSection />;
     case "default-models":
       return <MediaModelSection />;
     case "endpoints":

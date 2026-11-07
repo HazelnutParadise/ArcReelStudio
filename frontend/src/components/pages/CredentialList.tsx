@@ -5,6 +5,7 @@ import type { TFunction } from "i18next";
 import { cn } from "cn";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
+import { useConnectionsStore } from "@/stores/connections-store";
 import { errMsg } from "@/utils/async";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import {
@@ -37,7 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import type { CredentialSecretField, ProviderCredential, ConnectivityCheckResult } from "@/types";
+import type { CredentialReferences, CredentialSecretField, ProviderCredential, ConnectivityCheckResult } from "@/types";
 
 // 已知 secret 凭证字段 → 前端 i18n label key；未知 key 回退后端提供的 label。
 const SECRET_FIELD_LABEL_KEY: Record<string, string> = {
@@ -127,6 +128,8 @@ export function CredentialList({
 
   const handleChanged = useCallback(async () => {
     await load();
+    // 各处的连线下拉共用一份清单：新增、改名、换默认或删除后一并更新
+    void useConnectionsStore.getState().refresh();
     onChangedRef.current?.();
   }, [load]);
 
@@ -608,7 +611,7 @@ function CredentialDialog({
 // 删除确认
 // ---------------------------------------------------------------------------
 
-function DeleteCredentialDialog({
+export function DeleteCredentialDialog({
   cred,
   providerId,
   onClose,
@@ -624,17 +627,37 @@ function DeleteCredentialDialog({
   const [error, setError] = useState<string | null>(null);
   // 关闭动画期间 cred 已清空，沿用最后一次的内容，标题不闪成空白
   const [shown, setShown] = useState(cred);
+  // 指定了这个连线的设置；删除后它们改用默认连线，先列出来让人确认
+  const [references, setReferences] = useState<{ credId: number; value: CredentialReferences } | null>(null);
   if (cred && cred !== shown) {
     setShown(cred);
     setError(null);
   }
+  useEffect(() => {
+    if (!cred) return;
+    let cancelled = false;
+    void API.getCredentialReferences(providerId, cred.id)
+      .then((value) => {
+        if (!cancelled) setReferences({ credId: cred.id, value });
+      })
+      .catch(() => {
+        // 读不到时照常删除；服务端仍会拦下有人指定的连线并回报原因
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cred, providerId]);
+  const inUse = cred && references?.credId === cred.id ? references.value : null;
+  const inUseCount = inUse ? inUse.settings.length + inUse.projects.length : 0;
 
   const handleDelete = async () => {
     if (!cred) return;
     setSubmitting(true);
     setError(null);
     try {
-      await API.deleteCredential(providerId, cred.id);
+      // 已经列出有哪些设置会改回默认连线，确认删除即一并处理
+      await API.deleteCredential(providerId, cred.id, { force: inUseCount > 0 });
+      void useConnectionsStore.getState().refresh();
       onDeleted();
     } catch (err) {
       setError(errMsg(err));
@@ -664,6 +687,21 @@ function DeleteCredentialDialog({
             <AlertDialogDescription>
               {shown?.is_active ? t("credential_delete_active_description") : t("credential_delete_description")}
             </AlertDialogDescription>
+            {inUse && inUseCount > 0 && (
+              <div className="flex flex-col gap-1 rounded-md border border-warn/40 bg-warn/5 px-3 py-2 text-sm">
+                <p>{t("credential_delete_in_use_intro")}</p>
+                <ul className="list-disc pl-5 text-muted-foreground">
+                  {inUse.settings.length > 0 && (
+                    <li>{t("credential_delete_in_use_global", { count: inUse.settings.length })}</li>
+                  )}
+                  {inUse.projects.map((project) => (
+                    <li key={project.name}>
+                      {t("credential_delete_in_use_project", { name: project.title || project.name })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {error && (
               <p role="alert" className="text-sm wrap-break-word text-destructive">
                 {error}

@@ -195,7 +195,7 @@ async def test_resolution_after_upgrade(name, before, after):
             None,
             _IMAGE_LAYERED_KEYS[generation_type],
         )
-        assert resolved == tuple(expected.split("/", 1))
+        assert (resolved.provider_id, resolved.model_id) == tuple(expected.split("/", 1))
 
 
 def test_downgrade_restores_buckets_from_default(alembic_cfg):

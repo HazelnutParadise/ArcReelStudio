@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { Loader2 } from "lucide-react";
 import { API } from "@/api";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { settingsSectionPath } from "@/app-routes";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -12,12 +13,16 @@ import type {
   SystemConfigSettings,
   SystemConfigOptions,
   SystemConfigPatch,
+  GlobalModelSettingKey,
 } from "@/types/system";
+import { GLOBAL_MODEL_SETTING_KEYS } from "@/types/system";
+import { ConnectionSelect } from "@/components/shared/ConnectionSelect";
 import type { CustomProviderInfo } from "@/types/custom-provider";
 import { ProviderModelSelect } from "@/components/shared/ProviderModelSelect";
 import {
   LayeredModelFields,
   useGenerationTypeBucketLabels,
+  type ConnectionField,
   type LayeredSubField,
 } from "@/components/shared/LayeredModelFields";
 import { degradeSubFieldsToSaved } from "@/components/shared/model-layers";
@@ -62,6 +67,7 @@ const MEDIA_MODEL_KEYS = [
   "narration_speed",
   "video_generate_audio",
   "video_poll_timeout_seconds",
+  ...GLOBAL_MODEL_SETTING_KEYS.map((key) => `${key}_credential_id` as const),
 ] as const satisfies readonly (keyof SystemConfigPatch & keyof SystemConfigSettings)[];
 
 type MediaModelFields = Pick<SystemConfigPatch, (typeof MEDIA_MODEL_KEYS)[number]>;
@@ -198,7 +204,20 @@ export function MediaModelSection() {
     },
     [fetchConfig, reloadCandidates],
   );
-  const unit = useEditUnit({ source, save: saveFields });
+  // 多人即时协作：默认模型页不属于任何项目，房间的 project 为空串；字段名与系统设置接口一致
+  const collab = useMemo(
+    () => ({
+      ref: { project: "", kind: "default_model_settings", key: "" },
+      toUnit: (value: MediaModelFields): UnitJson => ({ ...value }),
+      fromUnit: (unit: UnitJson, fallback: MediaModelFields): MediaModelFields => {
+        const next: Record<string, unknown> = { ...fallback };
+        for (const key of MEDIA_MODEL_KEYS) if (key in unit) next[key] = unit[key];
+        return next;
+      },
+    }),
+    [],
+  );
+  const unit = useEditUnit({ source, save: saveFields, collab });
   const fields = unit.value;
   const setFields = unit.setValue;
   // 默认音频模型留空（自动选择）时不列音色：实际模型由运行时推断，列出某一家的音色会误导
@@ -229,6 +248,12 @@ export function MediaModelSection() {
 
   // 全局层是解析链的基准，细分项留空即回退全局默认模型；默认模型也留空时是自动推断，
   // 显示后端预览的自动选中模型（预览缺席时只显示「自动选择」）。
+  // 各模型字段旁的连线：换了供应商时服务端会把旧连线清掉，这里不另作处理
+  const connectionField = (key: GlobalModelSettingKey): ConnectionField => ({
+    value: fields[`${key}_credential_id`],
+    onChange: (next) => setFields((prev) => ({ ...prev, [`${key}_credential_id`]: next })),
+  });
+
   const videoSubFields: LayeredSubField[] = degradeSubFieldsToSaved(
     [
       {
@@ -241,6 +266,7 @@ export function MediaModelSection() {
         effective: currentVideo || undefined,
         auto: auto?.i2v,
         onChange: (v) => setFields((prev) => ({ ...prev, default_video_backend_i2v: v })),
+        connection: connectionField("default_video_backend_i2v"),
       },
       {
         key: "r2v",
@@ -252,6 +278,7 @@ export function MediaModelSection() {
         effective: currentVideo || undefined,
         auto: auto?.r2v,
         onChange: (v) => setFields((prev) => ({ ...prev, default_video_backend_r2v: v })),
+        connection: connectionField("default_video_backend_r2v"),
       },
     ],
     !!candidates,
@@ -269,6 +296,7 @@ export function MediaModelSection() {
         effective: currentImage || undefined,
         auto: auto?.t2i,
         onChange: (v) => setFields((prev) => ({ ...prev, default_image_backend_t2i: v })),
+        connection: connectionField("default_image_backend_t2i"),
       },
       {
         key: "i2i",
@@ -280,6 +308,7 @@ export function MediaModelSection() {
         effective: currentImage || undefined,
         auto: auto?.i2i,
         onChange: (v) => setFields((prev) => ({ ...prev, default_image_backend_i2i: v })),
+        connection: connectionField("default_image_backend_i2i"),
       },
     ],
     !!candidates,
@@ -351,6 +380,7 @@ export function MediaModelSection() {
             defaultValue={currentVideo}
             defaultOptions={videoBackends}
             onDefaultChange={(v) => setFields((prev) => ({ ...prev, default_video_backend: v }))}
+            defaultConnection={connectionField("default_video_backend")}
             emptyLabel={t("auto_select")}
             emptyHint={t("auto")}
             // 默认层跨两条路径，与无项目上下文时的路径口径一致，取图生视频
@@ -448,6 +478,7 @@ export function MediaModelSection() {
             defaultValue={currentImage}
             defaultOptions={imageBackends}
             onDefaultChange={(v) => setFields((prev) => ({ ...prev, default_image_backend: v }))}
+            defaultConnection={connectionField("default_image_backend")}
             emptyLabel={t("auto_select")}
             emptyHint={t("auto")}
             // 默认层跨两条路径，与无用途调用方的解析口径一致，取文生图
@@ -487,6 +518,20 @@ export function MediaModelSection() {
             }}
             auto={auto?.text}
             lifecycle={lifecycle}
+            connections={{
+              value: {
+                default: fields.default_text_backend_credential_id,
+                simple: fields.text_backend_simple_credential_id,
+                complex: fields.text_backend_complex_credential_id,
+              },
+              onChange: (next) =>
+                setFields((prev) => ({
+                  ...prev,
+                  default_text_backend_credential_id: next.default ?? null,
+                  text_backend_simple_credential_id: next.simple ?? null,
+                  text_backend_complex_credential_id: next.complex ?? null,
+                })),
+            }}
           />
         ) : (
           <NoProviders message={t("no_text_providers_hint")} />
@@ -507,6 +552,12 @@ export function MediaModelSection() {
               defaultLabel={t("auto_select")}
               defaultHint={t("auto")}
               aria-label={t("default_audio_model")}
+            />
+            <ConnectionSelect
+              backendValue={currentAudioBackend}
+              value={fields.default_audio_backend_credential_id}
+              onChange={(next) => setFields((prev) => ({ ...prev, default_audio_backend_credential_id: next }))}
+              label={t("connection_field_label", { field: t("default_audio_model") })}
             />
             <ModelLifecycleNotice
               value={currentAudioBackend}

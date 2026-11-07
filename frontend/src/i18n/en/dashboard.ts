@@ -4447,4 +4447,22 @@ export default {
   'presence_title': 'Also in this project',
   'presence_view_episode': 'Viewing episode {{episode}}',
   'presence_view_project': 'In the project',
+  'connection_label': 'Connection',
+  'connection_default': 'Default connection',
+  'connection_default_named': 'Default ({{name}})',
+  'connection_missing': 'Deleted connection',
+  'connection_field_label': 'Connection for {{field}}',
+  'connection_center_title': 'Connections',
+  'connection_center_desc':
+    "All provider accounts and keys in one place. A provider can have several connections; each place that uses a model can pick which one to use, and the rest use the provider's default connection.",
+  'connection_center_add': 'Add connection',
+  'connection_center_empty': 'No connections yet. Add an account or key for a provider to start generating.',
+  'connection_center_count': '{{count}} connections',
+  'connection_center_manage': 'Manage',
+  'connection_center_make_default': 'Make default',
+  'connection_center_delete': 'Delete {{name}}',
+  'credential_delete_in_use_intro':
+    "These places use this connection. After deleting it they will use the provider's default connection:",
+  'credential_delete_in_use_global': '{{count}} default model settings',
+  'credential_delete_in_use_project': 'Project “{{name}}”',
 };

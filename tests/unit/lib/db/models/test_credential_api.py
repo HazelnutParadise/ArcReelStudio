@@ -12,6 +12,7 @@ from lib.db import get_async_session
 from lib.db.models.credential import ProviderCredential
 from lib.db.repositories.credential_repository import CredentialRepository
 from server.routers import providers
+from server.services.credential_references import CredentialReferences
 from tests.auth_deps import AUTH_DEPENDENCIES, override_auth
 
 
@@ -418,6 +419,11 @@ class TestDeleteCredential:
         mock_repo = MagicMock(spec=CredentialRepository)
         mock_repo.get_by_id = AsyncMock(return_value=_fake_cred())
         mock_repo.delete = AsyncMock()
-        with patch("server.routers.providers.CredentialRepository", return_value=mock_repo), TestClient(app) as client:
+        with (
+            patch("server.routers.providers.CredentialRepository", return_value=mock_repo),
+            # 没有设置指定这个连线：直接删除
+            patch("server.routers.providers.find_credential_references", AsyncMock(return_value=CredentialReferences())),
+            TestClient(app) as client,
+        ):
             resp = client.delete("/api/v1/providers/gemini-aistudio/credentials/1")
         assert resp.status_code == 204

@@ -407,7 +407,9 @@ class TestPatchSystemConfig:
             checked.append((backend_value, credential_id))
             return credential_id
 
-        monkeypatch.setattr(system_config_router, "validate_backend_credential", _accept)
+        from server.services import default_model_settings
+
+        monkeypatch.setattr(default_model_settings, "validate_backend_credential", _accept)
         mock_svc = _make_mock_svc()
         with TestClient(self._make_patch_app(mock_svc)) as client:
             res = client.patch(

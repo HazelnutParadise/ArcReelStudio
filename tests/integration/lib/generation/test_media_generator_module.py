@@ -2163,7 +2163,9 @@ class TestFirstFrameRatioAdaptiveOnly:
 class _BuiltinConfig:
     """内置装配的凭证来源替身：只回答 ``assemble_backend`` 装载段要的供应商配置。"""
 
-    async def provider_config_with_credential(self, provider_id: str) -> tuple[dict[str, str], None]:
+    async def provider_config_with_credential(
+        self, provider_id: str, credential_id: int | None = None
+    ) -> tuple[dict[str, str], None]:
         return {"api_key": f"TEST-{provider_id}-key"}, None
 
 
