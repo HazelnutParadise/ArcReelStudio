@@ -457,7 +457,7 @@ docker compose start arcreel
 将 Compose 中的镜像改为：
 
 ```yaml
-image: ghcr.io/hazelnutparadise/arcreel-studio:X.Y.Z
+image: ghcr.io/hazelnutparadise/arcreelstudio:X.Y.Z
 ```
 
 升级时显式修改版本，可以降低无意中拉取新版本的风险。
