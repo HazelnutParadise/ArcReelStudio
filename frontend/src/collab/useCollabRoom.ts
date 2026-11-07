@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import * as Y from "yjs";
 
 import { collabClient, type CollabRef, type CollabRoom, type RoomSnapshot } from "./collab-client";
@@ -19,21 +19,26 @@ export function useCollabRoom(ref: CollabRef | null): { room: CollabRoom | null;
   const project = ref?.project;
   const kind = ref?.kind;
   const key = ref?.key;
-  const [room, setRoom] = useState<CollabRoom | null>(null);
+  const client = collabClient();
 
-  useEffect(() => {
-    const client = collabClient();
-    if (!client || project === undefined || kind === undefined || key === undefined) {
-      setRoom(null);
-      return;
-    }
-    const acquired = client.acquire({ project, kind, key });
-    setRoom(acquired);
-    return () => {
-      client.release(acquired);
-      setRoom((current) => (current === acquired ? null : current));
-    };
-  }, [project, kind, key]);
+  // 订阅即加入房间、退订即离开；房间本身从协作客户端读，组件里不另存一份
+  const subscribeRoom = useCallback(
+    (notify: () => void) => {
+      if (!client || project === undefined || kind === undefined || key === undefined) return () => {};
+      const acquired = client.acquire({ project, kind, key });
+      notify();
+      return () => client.release(acquired);
+    },
+    [client, project, kind, key],
+  );
+  const currentRoom = useCallback(
+    () =>
+      client && project !== undefined && kind !== undefined && key !== undefined
+        ? client.peek({ project, kind, key })
+        : null,
+    [client, project, kind, key],
+  );
+  const room = useSyncExternalStore(subscribeRoom, currentRoom, () => null);
 
   const snapshot = useSyncExternalStore(
     room?.subscribe ?? noopSubscribe,

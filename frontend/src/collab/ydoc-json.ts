@@ -20,7 +20,8 @@ export function unitRoot(doc: Y.Doc): Y.Map<unknown> {
 
 /** 文档当前内容的 JSON 形态。 */
 export function unitJson(doc: Y.Doc): UnitJson {
-  return unitRoot(doc).toJSON() as UnitJson;
+  const json: UnitJson = unitRoot(doc).toJSON();
+  return json;
 }
 
 /** 把文档改成 `value`，只改有差异的部分；内容相同时不产生更新。 */
@@ -52,7 +53,7 @@ function toShared(value: JsonValue, inList: boolean): unknown {
 }
 
 function plain(value: unknown): unknown {
-  if (value instanceof Y.Text) return value.toString();
+  if (value instanceof Y.Text) return value.toJSON();
   if (value instanceof Y.Map || value instanceof Y.Array) return value.toJSON();
   return value;
 }
@@ -118,7 +119,7 @@ function isLowSurrogate(code: number): boolean {
 }
 
 function reconcileText(text: Y.Text, next: string): void {
-  const old = text.toString();
+  const old = text.toJSON();
   if (old === next) return;
   const { start, deleteCount, insert } = textSplice(old, next);
   if (deleteCount > 0) text.delete(start, deleteCount);

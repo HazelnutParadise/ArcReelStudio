@@ -74,6 +74,13 @@ const LEAVE_DELAY_MS = 3000;
 
 const PEER_COLORS = ["#e11d48", "#2563eb", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#4d7c0f"];
 
+/** 相对位置的 JSON 形态，随在线状态广播。 */
+function positionJson(position: Y.RelativePosition | null | undefined): unknown {
+  if (!position) return null;
+  const json: unknown = Y.relativePositionToJSON(position);
+  return json;
+}
+
 function roomId(ref: CollabRef): string {
   return `${ref.project}\u0000${ref.kind}\u0000${ref.key}`;
 }
@@ -201,8 +208,8 @@ export class CollabRoom {
     }
     this.awareness.setLocalStateField("focus", {
       field: presence.field,
-      anchor: presence.anchor ? Y.relativePositionToJSON(presence.anchor) : null,
-      head: presence.head ? Y.relativePositionToJSON(presence.head) : null,
+      anchor: positionJson(presence.anchor),
+      head: positionJson(presence.head),
     });
   }
 
@@ -403,6 +410,11 @@ export class CollabClient {
     }
     room.refCount++;
     return room;
+  }
+
+  /** 已加入的房间（不加计数）；没有人加入时返回 null。 */
+  peek(ref: CollabRef): CollabRoom | null {
+    return this.rooms.get(roomId(ref)) ?? null;
   }
 
   release(room: CollabRoom): void {

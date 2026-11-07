@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type ReactNode } from "react";
+import { useLayoutEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { LiveEditing } from "@/components/shared/edit-unit/useEditUnit";
@@ -29,31 +29,32 @@ export function CollabCarets({ live, path }: { live: LiveEditing | null; path: s
 
 function PeerCarets({ live, path, peers }: { live: LiveEditing; path: string; peers: CollabPeer[] }) {
   const { t } = useTranslation("dashboard");
-  const [points, setPoints] = useState<Array<{ peer: CollabPeer; caret: CaretPoint | null }>>([]);
+  const [measured, setMeasured] = useState<Array<{ peer: CollabPeer; caret: CaretPoint | null }>>([]);
   const element = live.fieldElement(path);
   const value = element?.value;
 
   useLayoutEffect(() => {
-    if (!element) {
-      setPoints(peers.map((peer) => ({ peer, caret: null })));
-      return;
-    }
+    if (!element) return;
+    // 在输入框卷动、改变大小时重量光标位置；首次量在下一帧，跟着输入框完成排版
     const measure = () =>
-      setPoints(
+      setMeasured(
         peers.map((peer) => ({
           peer,
           caret: peer.selection ? caretCoordinates(element, peer.selection.head) : null,
         })),
       );
-    measure();
+    const frame = requestAnimationFrame(measure);
     element.addEventListener("scroll", measure);
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
     observer?.observe(element);
     return () => {
+      cancelAnimationFrame(frame);
       element.removeEventListener("scroll", measure);
       observer?.disconnect();
     };
   }, [element, peers, value]);
+  // 量到之前（或找不到输入框时）先只标名字，不画光标
+  const points = element ? measured : peers.map((peer) => ({ peer, caret: null }));
 
   const names = peers.map((peer) => peer.name).join("、");
   return (
@@ -61,8 +62,8 @@ function PeerCarets({ live, path, peers }: { live: LiveEditing; path: string; pe
       {/* 外框：对方在这个字段里时，框线用对方的颜色 */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-md ring-2"
-        style={{ ["--tw-ring-color" as string]: peers[0].color }}
+        className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-(--peer-color)"
+        style={{ "--peer-color": peers[0].color } as CSSProperties}
       />
       <span className="sr-only" role="status">
         {t("collab_peers_editing_field", { names })}
@@ -72,13 +73,17 @@ function PeerCarets({ live, path, peers }: { live: LiveEditing; path: string; pe
           <span
             key={peer.clientId}
             aria-hidden
-            className="pointer-events-none absolute w-0.5"
-            style={{ top: caret.top, left: caret.left, height: caret.height, backgroundColor: peer.color }}
+            className="pointer-events-none absolute top-(--caret-top) left-(--caret-left) h-(--caret-height) w-0.5 bg-(--peer-color)"
+            style={
+              {
+                "--peer-color": peer.color,
+                "--caret-top": `${caret.top}px`,
+                "--caret-left": `${caret.left}px`,
+                "--caret-height": `${caret.height}px`,
+              } as CSSProperties
+            }
           >
-            <span
-              className="absolute -top-4 left-0 rounded-sm px-1 text-[10px] leading-4 whitespace-nowrap text-white"
-              style={{ backgroundColor: peer.color }}
-            >
+            <span className="absolute -top-4 left-0 rounded-sm bg-(--peer-color) px-1 text-xs leading-4 whitespace-nowrap text-white">
               {peer.name}
             </span>
           </span>
@@ -86,8 +91,8 @@ function PeerCarets({ live, path, peers }: { live: LiveEditing; path: string; pe
           <span
             key={peer.clientId}
             aria-hidden
-            className="pointer-events-none absolute -top-2 right-2 rounded-sm px-1 text-[10px] leading-4 text-white"
-            style={{ backgroundColor: peer.color }}
+            className="pointer-events-none absolute -top-2 right-2 rounded-sm bg-(--peer-color) px-1 text-xs leading-4 text-white"
+            style={{ "--peer-color": peer.color } as CSSProperties}
           >
             {peer.name}
           </span>
@@ -118,8 +123,8 @@ export function LiveStatus({ live }: { live: LiveEditing }) {
             <span
               key={peer.userId}
               title={peer.name}
-              className="flex size-5 items-center justify-center rounded-full text-[10px] font-medium text-white"
-              style={{ backgroundColor: peer.color }}
+              className="flex size-5 items-center justify-center rounded-full bg-(--peer-color) text-xs font-medium text-white"
+              style={{ "--peer-color": peer.color } as CSSProperties}
             >
               {peer.name.slice(0, 1).toUpperCase()}
             </span>

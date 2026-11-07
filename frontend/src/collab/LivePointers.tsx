@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 
 import type { CollabPeer, CollabRoom, PointerPosition } from "./collab-client";
@@ -10,9 +10,9 @@ const SEND_INTERVAL_MS = 50;
 /**
  * 同一页面上其他成员的鼠标指针（Figma 那样的彩色箭头加名字）。
  *
- * 位置不送屏幕坐标：两个人的窗口大小、卷动位置不同。送的是「锚点元素 + 在它内容区里的比例」：
- * 指在协作输入框上时以那个输入框为锚点；否则以所在的卷动区（或整个页面）为锚点，纵向按卷动内容的总高度算比例。
- * 对方那里找到同一个锚点才画，找不到（如对方没打开同一个面板）就不画。
+ * 位置不送屏幕坐标：两个人的窗口大小、卷动位置不同。送的是「锚点元素 + 在它里面的比例」：
+ * 指在协作输入框上时以那个输入框为锚点；否则以指针下方的元素为锚点（按从 body 往下的路径找）。
+ * 对方那里找到同一个锚点、而且锚点在画面内才画，找不到（如对方没打开同一个面板）或卷到画面外就不画。
  */
 export function LivePointers({ project, page }: { project: string | null; page: string }) {
   const ref = useMemo(() => (project ? { project, kind: "page", key: page } : null), [project, page]);
@@ -79,28 +79,30 @@ function PeerPointers({ peers }: { peers: CollabPeer[] }) {
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-[60] overflow-hidden">
+    <div aria-hidden>
       {peers.map((peer) => {
         const point = peer.pointer ? resolvePointer(peer.pointer) : null;
         if (!point) return null;
         return (
           <div
             key={peer.clientId}
-            className="absolute top-0 left-0 transition-transform duration-75 ease-linear"
-            style={{ transform: `translate(${point.left}px, ${point.top}px)` }}
+            className="pointer-events-none fixed top-0 left-0 translate-x-(--pointer-x) translate-y-(--pointer-y) transition-transform duration-fast ease-emphasized"
+            style={
+              {
+                "--peer-color": peer.color,
+                "--pointer-x": `${point.left}px`,
+                "--pointer-y": `${point.top}px`,
+              } as CSSProperties
+            }
           >
             <svg width="18" height="18" viewBox="0 0 18 18" className="drop-shadow-sm">
               <path
                 d="M2 2 L2 15 L6 11 L9 17 L11.5 16 L8.5 10 L14 10 Z"
-                fill={peer.color}
-                stroke="white"
+                className="fill-(--peer-color) stroke-card"
                 strokeWidth="1.2"
               />
             </svg>
-            <span
-              className="absolute top-4 left-3.5 rounded-sm px-1.5 py-0.5 text-[11px] leading-none whitespace-nowrap text-white shadow-sm"
-              style={{ backgroundColor: peer.color }}
-            >
+            <span className="absolute top-4 left-3.5 rounded-sm bg-(--peer-color) px-1.5 py-0.5 text-xs leading-none whitespace-nowrap text-white shadow-sm">
               {peer.name}
             </span>
           </div>
@@ -131,40 +133,31 @@ export function pointerFromEvent(event: {
       y: ratio(event.clientY - rect.top, rect.height),
     };
   }
-  const scroller = scrollContainerOf(target);
-  if (!scroller) return null;
-  const rect =
-    scroller === document.documentElement
-      ? new DOMRect(0, 0, window.innerWidth, window.innerHeight)
-      : scroller.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
   return {
-    anchor: `scroll:${domPath(scroller)}`,
+    anchor: `element:${domPath(target)}`,
     x: ratio(event.clientX - rect.left, rect.width),
-    y: ratio(event.clientY - rect.top + scroller.scrollTop, Math.max(scroller.scrollHeight, rect.height)),
+    y: ratio(event.clientY - rect.top, rect.height),
   };
 }
 
 export function resolvePointer(pointer: PointerPosition): { left: number; top: number } | null {
-  if (pointer.anchor.startsWith("field:")) {
-    const name = CSS.escape(pointer.anchor.slice("field:".length));
-    const field = document.querySelector(`[data-collab-field="${name}"],[data-collab-frame="${name}"]`);
-    if (!field) return null;
-    const rect = field.getBoundingClientRect();
-    return { left: rect.left + pointer.x * rect.width, top: rect.top + pointer.y * rect.height };
+  const element = anchorElement(pointer.anchor);
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  const left = rect.left + pointer.x * rect.width;
+  const top = rect.top + pointer.y * rect.height;
+  // 锚点卷到画面外（自己这边看不到那一段）时不画
+  if (top < 0 || left < 0 || top > window.innerHeight || left > window.innerWidth) return null;
+  return { left, top };
+}
+
+function anchorElement(anchor: string): Element | null {
+  if (anchor.startsWith("field:")) {
+    const name = CSS.escape(anchor.slice("field:".length));
+    return document.querySelector(`[data-collab-field="${name}"],[data-collab-frame="${name}"]`);
   }
-  if (pointer.anchor.startsWith("scroll:")) {
-    const scroller = elementAtPath(pointer.anchor.slice("scroll:".length));
-    if (!scroller) return null;
-    const rect =
-      scroller === document.documentElement
-        ? new DOMRect(0, 0, window.innerWidth, window.innerHeight)
-        : scroller.getBoundingClientRect();
-    const contentHeight = Math.max(scroller.scrollHeight, rect.height);
-    const top = rect.top + pointer.y * contentHeight - scroller.scrollTop;
-    // 指在对方卷不到的地方（自己这边还看不到那一段）时不画
-    if (top < rect.top - 4 || top > rect.bottom + 4) return null;
-    return { left: rect.left + pointer.x * rect.width, top };
-  }
+  if (anchor.startsWith("element:")) return elementAtPath(anchor.slice("element:".length));
   return null;
 }
 
@@ -173,19 +166,8 @@ function ratio(offset: number, size: number): number {
   return Math.min(1, Math.max(0, offset / size));
 }
 
-function scrollContainerOf(element: Element): Element | null {
-  let node: Element | null = element;
-  while (node && node !== document.body && node !== document.documentElement) {
-    const style = getComputedStyle(node);
-    if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight) return node;
-    node = node.parentElement;
-  }
-  return document.scrollingElement ?? document.documentElement;
-}
-
 /** 从 body 往下的元素路径（标签名加同类序号），两边打开同一页面时指向同一个元素。 */
 function domPath(element: Element): string {
-  if (element === document.documentElement || element === document.scrollingElement) return "";
   const parts: string[] = [];
   let node: Element | null = element;
   while (node && node !== document.body) {
@@ -202,7 +184,7 @@ function domPath(element: Element): string {
 }
 
 function elementAtPath(path: string): Element | null {
-  if (path === "") return document.scrollingElement ?? document.documentElement;
+  if (path === "") return document.body;
   let node: Element | null = document.body;
   for (const part of path.split("/")) {
     const [tag, rawIndex] = part.split(":");

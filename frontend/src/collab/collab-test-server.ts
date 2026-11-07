@@ -22,13 +22,14 @@ export class FakeCollabServer {
 
   install(): () => void {
     const original = globalThis.WebSocket;
-    const server = this;
     class Socket extends FakeSocket {
+      static owner: FakeCollabServer;
       constructor(url: string) {
-        super(url, server);
-        server.sockets.push(this);
+        super(url, Socket.owner);
+        Socket.owner.sockets.push(this);
       }
     }
+    Socket.owner = this;
     (globalThis as { WebSocket: unknown }).WebSocket = Socket;
     return () => {
       (globalThis as { WebSocket: unknown }).WebSocket = original;
