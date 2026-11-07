@@ -9,7 +9,7 @@ import type { ProviderCredential } from "@/types";
 interface ConnectionsState {
   connections: ProviderCredential[];
   loaded: boolean;
-  /** 还没载入时载入一次。 */
+  /** 还没载入时载入一次。载入失败不抛错，下次调用再试。 */
   fetch: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -26,6 +26,10 @@ export const useConnectionsStore = create<ConnectionsState>((set, get) => ({
   refresh: async () => {
     inflight ??= API.listAllCredentials()
       .then((res) => set({ connections: res.credentials, loaded: true }))
+      // 载入失败时连线下拉保持隐藏（各处改用默认连线），loaded 仍为 false，下次 fetch 会重试
+      .catch((err: unknown) => {
+        console.warn("[connections] failed to load connections", err);
+      })
       .finally(() => {
         inflight = null;
       });
