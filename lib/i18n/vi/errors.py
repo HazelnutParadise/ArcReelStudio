@@ -737,6 +737,7 @@ MESSAGES = {
     "collab_error_episode_source_empty": "Nguyên văn không được để trống",
     "collab_error_revision_conflict": "Kịch bản vừa bị thay đổi bởi thao tác khác, hãy thử lại sau",
     "collab_error_generic": "Không lưu được nội dung này vào dự án: {detail}",
+    "collab_error_invalid_settings": "Một thiết lập có giá trị sai định dạng nên chưa được lưu. Hãy kiểm tra tùy chọn bạn vừa đổi.",
     "claude_login_cli_not_found": "Không tìm thấy Claude CLI tích hợp, không thể đăng nhập gói đăng ký",
     "claude_login_no_authorize_url": "Không lấy được liên kết đăng nhập Claude, vui lòng thử lại sau",
     "claude_login_login_not_found": "Phiên đăng nhập này đã kết thúc hoặc bị thay bằng phiên mới, hãy bắt đầu lại",

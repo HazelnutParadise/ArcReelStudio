@@ -45,7 +45,16 @@ _EMPTY_UPDATE = b"\x00\x00"
 
 ChangeStream = Callable[[str], AbstractAsyncContextManager[AsyncIterator[Any]]]
 #: (原因码, 细节, 语言) → 给界面看的一句话
-ErrorText = Callable[[str, str, str], str]
+ErrorText = Callable[[str, str, str, dict[str, object]], str]
+
+
+@dataclass(frozen=True)
+class WriteFailure:
+    """最近一次写回被拒或失败的原因；下次写回成功时清除。"""
+
+    code: str
+    detail: str = ""
+    params: dict[str, object] = field(default_factory=dict)
 
 
 class Connection(Protocol):
@@ -75,7 +84,7 @@ class Room:
     dirty: bool = False
     first_dirty_at: float = 0.0
     last_change_at: float = 0.0
-    error: dict[str, str] | None = None
+    error: WriteFailure | None = None
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     persist_task: asyncio.Task | None = None
     close_task: asyncio.Task | None = None
@@ -309,12 +318,12 @@ class CollabHub:
                 await self._remove(room, "not_found")
                 return
             except UnitWriteError as exc:
-                room.error = {"code": exc.code, "detail": exc.detail}
+                room.error = WriteFailure(exc.code, exc.detail, exc.params)
                 logger.info("协作内容写回被拒绝 kind=%s code=%s", room.ref.kind, exc.code)
                 await self._broadcast_status(room)
                 return
             except Exception:
-                room.error = {"code": "save_failed", "detail": ""}
+                room.error = WriteFailure("save_failed")
                 logger.exception("协作内容写回失败 kind=%s project=%s", room.ref.kind, room.ref.project)
                 await self._broadcast_status(room)
                 return
@@ -407,8 +416,8 @@ class CollabHub:
         }
         if room.error is not None:
             message["error"] = {
-                "code": room.error["code"],
-                "message": self._error_text(room.error["code"], room.error["detail"], conn.locale),
+                "code": room.error.code,
+                "message": self._error_text(room.error.code, room.error.detail, conn.locale, room.error.params),
             }
         return message
 
@@ -433,13 +442,15 @@ def _room_id(ref: UnitRef) -> dict[str, str]:
 
 def create_collab_hub(project_events: Any) -> CollabHub:
     """按应用的单例组装中枢：项目文件经全局 ``ProjectManager`` 读写，外部改动来自项目事件流。"""
-    from lib.i18n import _, translate_or
+    from lib.i18n import DEFAULT_LOCALE, MESSAGES, _, translate_or
     from lib.project.project_manager import get_project_manager
     from server.services.collab.units import UNIT_SPECS
 
-    def error_text(code: str, detail: str, locale: str) -> str:
-        # 认得的原因码用专门的文案，其余（如剧本校验的各类问题）用通用文案带上细节
+    def error_text(code: str, detail: str, locale: str, params: dict[str, object]) -> str:
+        # 协作专用的原因码用专门的文案；与接口共用的校验错误（键即错误文案）照接口的说法；其余用通用文案带上细节
         generic = _("collab_error_generic", locale=locale, detail=detail or code)
-        return translate_or(f"collab_error_{code}", generic, locale=locale)
+        if f"collab_error_{code}" in MESSAGES[DEFAULT_LOCALE]:
+            return _(f"collab_error_{code}", locale=locale, **params)
+        return translate_or(code, generic, locale=locale, **params)
 
     return CollabHub(get_project_manager(), UNIT_SPECS, project_events.stream_events, error_text=error_text)

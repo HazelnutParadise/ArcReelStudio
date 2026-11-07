@@ -11,13 +11,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from pydantic import ValidationError
+
 from lib.episode.episode_ledger import parse_positive_episode_num
 from lib.episode.episode_paths import episode_source_path
 from lib.episode.episode_source_commands import EpisodeSourceError, set_episode_source_text
+from lib.infra.api_errors import ApiError
 from lib.project.asset_derivatives import derivative_table, ensure_derivative_table
 from lib.project.asset_types import ASSET_SPECS, asset_name_comparison_key, resolve_asset_key
 from lib.project.project_manager import ProjectManager
 from lib.script.script_batch_edit import ScriptBatchEditCommand, ScriptBatchEditor, script_revision
+from server.services.project.project_settings_patch import ProjectSettingsPatch, apply_project_settings_patch
 
 
 class UnitNotFoundError(LookupError):
@@ -25,12 +29,14 @@ class UnitNotFoundError(LookupError):
 
 
 class UnitWriteError(ValueError):
-    """内容不合规，不能写回；``code`` 是给界面本地化用的稳定键。"""
+    """内容不合规，不能写回；``code`` 是给界面本地化用的稳定键（可以直接是错误文案的 i18n key）。"""
 
-    def __init__(self, code: str, detail: str = "") -> None:
+    def __init__(self, code: str, detail: str = "", **params: object) -> None:
         super().__init__(detail or code)
         self.code = code
         self.detail = detail
+        #: 渲染错误文案的参数（如区间上下限）
+        self.params = params
 
 
 @dataclass(frozen=True)
@@ -447,6 +453,43 @@ class PageUnit:
         return
 
 
+# ── 项目设置 ─────────────────────────────────────────────────────
+
+#: 只读、跟着上传或清除变化的字段：浏览器写来的值不落盘，清空参考图除外
+_SETTINGS_DERIVED_FIELDS = ("style_image", "style_description")
+_SETTINGS_FIELDS = tuple(f for f in ProjectSettingsPatch.model_fields if f != "clear_style_image")
+
+
+class ProjectSettingsUnit:
+    """项目设置页（基础、风格、模型、配音）：字段名与项目文件、项目 PATCH 一致，写回走同一套校验。"""
+
+    kind = "project_settings"
+
+    def read(self, pm: ProjectManager, project: str, key: str) -> dict[str, Any]:
+        data = _load_project(pm, project)
+        return {field: data.get(field) for field in (*_SETTINGS_FIELDS, *_SETTINGS_DERIVED_FIELDS)}
+
+    def write(self, pm: ProjectManager, project: str, key: str, changes: dict[str, Any]) -> None:
+        values = {f: changes[f] for f in _SETTINGS_FIELDS if f in changes}
+        # 参考图只能经上传换掉；房间里清空它即取消参考图
+        if "style_image" in changes and not changes["style_image"]:
+            values["clear_style_image"] = True
+        if not values:
+            return
+        try:
+            patch = ProjectSettingsPatch.model_validate(values)
+        except ValidationError as exc:
+            raise UnitWriteError("invalid_settings", str(exc)) from exc
+
+        def _mutate(data: dict) -> None:
+            apply_project_settings_patch(data, patch)
+
+        try:
+            _update_project(pm, project, _mutate)
+        except ApiError as exc:
+            raise UnitWriteError(exc.key, **exc.params) from exc
+
+
 UNIT_SPECS: dict[str, UnitSpec] = {
     spec.kind: spec
     for spec in (
@@ -457,5 +500,6 @@ UNIT_SPECS: dict[str, UnitSpec] = {
         DerivativeUnit(),
         EpisodeSourceUnit(),
         ScriptItemUnit(),
+        ProjectSettingsUnit(),
     )
 }

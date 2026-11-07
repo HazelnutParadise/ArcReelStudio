@@ -1179,7 +1179,7 @@ class TestValidateBackendValueCustomPrefix:
 
     def test_custom_prefix_accepted(self):
         from lib.infra.api_errors import BadRequestError
-        from server.routers._validators import validate_backend_value
+        from server.services.backend_values import validate_backend_value
 
         # custom- 前缀不在 PROVIDER_REGISTRY 中，仍须放行（逐模型能力由供应商 API 把关）
         with pytest.raises(BadRequestError):
@@ -1188,7 +1188,7 @@ class TestValidateBackendValueCustomPrefix:
 
     def test_unknown_provider_rejected(self):
         from lib.infra.api_errors import BadRequestError
-        from server.routers._validators import validate_backend_value
+        from server.services.backend_values import validate_backend_value
 
         with pytest.raises(BadRequestError) as exc_info:
             validate_backend_value("nonexistent/model", "default_text_backend")

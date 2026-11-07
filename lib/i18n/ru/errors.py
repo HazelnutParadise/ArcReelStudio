@@ -733,6 +733,7 @@ MESSAGES = {
     "collab_error_episode_source_empty": "Исходный текст не может быть пустым",
     "collab_error_revision_conflict": "Сценарий только что изменили. Повторите попытку чуть позже",
     "collab_error_generic": "Не удалось сохранить этот фрагмент в проект: {detail}",
+    "collab_error_invalid_settings": "Значение настройки в неверном формате и не сохранено. Проверьте параметр, который вы только что изменили.",
     "claude_login_cli_not_found": "Встроенный Claude CLI не найден, войти в подписку невозможно",
     "claude_login_no_authorize_url": "Не удалось получить ссылку для входа в Claude, попробуйте позже",
     "claude_login_login_not_found": "Этот вход завершён или заменён новым, начните заново",

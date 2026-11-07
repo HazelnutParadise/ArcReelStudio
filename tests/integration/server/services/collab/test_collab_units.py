@@ -173,3 +173,61 @@ def test_page_rooms_carry_no_content_and_need_an_existing_project(unit_project_f
         unit.read(unit_project_files, "missing", "/app/projects/missing")
     with pytest.raises(UnitNotFoundError):
         unit.read(unit_project_files, PROJECT, "not-a-path")
+
+
+# ── 项目设置 ──────────────────────────────────────────────────────
+
+
+def test_project_settings_reads_the_settable_fields_under_their_stored_names(unit_project_files) -> None:
+    unit_project_files.update_project(
+        PROJECT, lambda data: data.update({"aspect_ratio": "16:9", "style_image": "style_reference.png"})
+    )
+
+    settings = UNIT_SPECS["project_settings"].read(unit_project_files, PROJECT, "")
+
+    assert settings["aspect_ratio"] == "16:9"
+    assert settings["style_image"] == "style_reference.png"
+    assert settings["video_backend"] is None
+    assert "clear_style_image" not in settings
+    assert "title" not in settings
+
+
+def test_project_settings_writes_through_the_same_rules_as_the_project_patch(unit_project_files) -> None:
+    unit = UNIT_SPECS["project_settings"]
+
+    unit.write(unit_project_files, PROJECT, "", {"aspect_ratio": "16:9", "speech_rate_units_per_second": 4.5})
+
+    project = unit_project_files.load_project(PROJECT)
+    assert project["aspect_ratio"] == "16:9"
+    assert project["speech_rate_units_per_second"] == 4.5
+
+
+def test_project_settings_clearing_the_style_image_removes_it_with_its_description(unit_project_files) -> None:
+    unit_project_files.update_project(
+        PROJECT, lambda data: data.update({"style_image": "style_reference.png", "style_description": "水彩"})
+    )
+
+    UNIT_SPECS["project_settings"].write(unit_project_files, PROJECT, "", {"style_image": ""})
+
+    project = unit_project_files.load_project(PROJECT)
+    assert "style_image" not in project
+    assert "style_description" not in project
+
+
+def test_project_settings_rejects_what_the_patch_rejects_with_its_message_key(unit_project_files) -> None:
+    with pytest.raises(UnitWriteError) as exc:
+        UNIT_SPECS["project_settings"].write(unit_project_files, PROJECT, "", {"speech_rate_units_per_second": 999.0})
+
+    assert exc.value.code == "speech_rate_out_of_range"
+    assert set(exc.value.params) == {"min", "max"}
+    assert "speech_rate_units_per_second" not in unit_project_files.load_project(PROJECT)
+
+
+def test_project_settings_ignores_derived_fields_written_by_the_browser(unit_project_files) -> None:
+    UNIT_SPECS["project_settings"].write(
+        unit_project_files, PROJECT, "", {"style_image": "elsewhere.png", "style_description": "改不到"}
+    )
+
+    project = unit_project_files.load_project(PROJECT)
+    assert "style_image" not in project
+    assert "style_description" not in project

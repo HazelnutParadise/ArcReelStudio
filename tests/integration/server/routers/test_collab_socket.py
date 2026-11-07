@@ -66,7 +66,7 @@ def socket_client(socket_project_files, monkeypatch):
             socket_project_files,
             UNIT_SPECS,
             _no_changes,
-            error_text=lambda code, _detail, _l: code,
+            error_text=lambda code, _detail, _l, _params: code,
             debounce=0.05,
             max_wait=0.2,
         )
