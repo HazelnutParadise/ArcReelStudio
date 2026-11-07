@@ -8,19 +8,25 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol, TypeIs
 
 from pydantic import ValidationError
 
+from lib.agent.agent_memory_store import AgentMemoryStore
+from lib.db.base import DEFAULT_USER_ID
+from lib.db.repositories.asset_repo import AssetRepository
 from lib.episode.episode_ledger import parse_positive_episode_num
 from lib.episode.episode_paths import episode_source_path
 from lib.episode.episode_source_commands import EpisodeSourceError, set_episode_source_text
-from lib.infra.api_errors import ApiError
+from lib.infra.api_errors import ApiError, NotFoundError
+from lib.infra.async_thread import run_sync_transaction
 from lib.project.asset_derivatives import derivative_table, ensure_derivative_table
 from lib.project.asset_types import ASSET_SPECS, asset_name_comparison_key, resolve_asset_key
 from lib.project.project_manager import ProjectManager
 from lib.script.script_batch_edit import ScriptBatchEditCommand, ScriptBatchEditor, script_revision
+from server.services.asset_library_fields import LIBRARY_ASSET_TEXT_FIELDS, update_library_asset_fields
 from server.services.project.project_settings_patch import ProjectSettingsPatch, apply_project_settings_patch
 
 
@@ -517,6 +523,108 @@ class ProjectSettingsUnit:
             raise UnitWriteError(exc.key, params=exc.params) from exc
 
 
+# ── Agent 记忆文件 ───────────────────────────────────────────────
+
+
+def _memory_text(store: AgentMemoryStore, filename: str) -> dict[str, Any]:
+    try:
+        raw = store.read(filename)
+    except ApiError as exc:
+        raise UnitNotFoundError(filename) from exc
+    # 记忆由 Agent 自由书写，可能混入非 UTF-8 字节：按替换字符显示，编辑后以 UTF-8 写回
+    return {"content": raw.decode("utf-8", errors="replace")}
+
+
+def _write_memory_text(store: AgentMemoryStore, filename: str, changes: dict[str, Any]) -> None:
+    if "content" not in changes:
+        return
+    try:
+        store.write(filename, _text(changes["content"]).encode("utf-8"))
+    except ApiError as exc:
+        raise UnitWriteError(exc.key, params=exc.params) from exc
+
+
+class ProjectMemoryFileUnit:
+    """项目记忆里的一个文件，键是文件名；内容只有一段正文。"""
+
+    kind = "project_memory_file"
+
+    def read(self, pm: ProjectManager, project: str, key: str) -> dict[str, Any]:
+        return _memory_text(self._store(pm, project), key)
+
+    def write(self, pm: ProjectManager, project: str, key: str, changes: dict[str, Any]) -> None:
+        _write_memory_text(self._store(pm, project), key, changes)
+
+    @staticmethod
+    def _store(pm: ProjectManager, project: str) -> AgentMemoryStore:
+        try:
+            return AgentMemoryStore.for_project(pm.get_project_path(project))
+        except (FileNotFoundError, ValueError) as exc:
+            raise UnitNotFoundError(project) from exc
+
+
+def _workspace_memory_store() -> AgentMemoryStore:
+    from lib.project.project_manager import get_project_manager
+
+    # 工作区共用一份用户记忆（与 Agent 读的同一个目录）
+    return AgentMemoryStore(get_project_manager().layout.user_memory_dir(DEFAULT_USER_ID))
+
+
+class WorkspaceMemoryFileUnit:
+    """工作区记忆（设置页的「用户记忆」）里的一个文件，不属于任何项目。"""
+
+    kind = "workspace_memory_file"
+    scope: Literal["global"] = "global"
+
+    def __init__(self, store: Callable[[], AgentMemoryStore] = _workspace_memory_store) -> None:
+        self._store = store
+
+    async def read(self, key: str) -> dict[str, Any]:
+        return await run_sync_transaction(lambda: _memory_text(self._store(), key))
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        await run_sync_transaction(lambda: _write_memory_text(self._store(), key, changes))
+
+
+# ── 全局资产库条目 ───────────────────────────────────────────────
+
+
+class LibraryAssetUnit:
+    """全局资产库的一个条目（键是条目 id）：名称、描述、声音风格。图片与衍生另有接口。"""
+
+    kind = "library_asset"
+    scope: Literal["global"] = "global"
+
+    def __init__(self, session_factory: Callable[[], Any] | None = None) -> None:
+        self._session_factory = session_factory
+
+    def _sessions(self) -> Any:
+        if self._session_factory is not None:
+            return self._session_factory()
+        from lib.db import async_session_factory
+
+        return async_session_factory()
+
+    async def read(self, key: str) -> dict[str, Any]:
+        async with self._sessions() as session:
+            asset = await AssetRepository(session).get_by_id(key)
+        if asset is None:
+            raise UnitNotFoundError(key)
+        return {field: getattr(asset, field) or "" for field in LIBRARY_ASSET_TEXT_FIELDS}
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        values = {field: _text(changes[field]) for field in LIBRARY_ASSET_TEXT_FIELDS if field in changes}
+        if not values:
+            return
+        async with self._sessions() as session:
+            try:
+                await update_library_asset_fields(session, key, values)
+            except NotFoundError as exc:
+                raise UnitNotFoundError(key) from exc
+            except ApiError as exc:
+                raise UnitWriteError(exc.key, params=exc.params) from exc
+
+
 UNIT_SPECS: dict[str, AnyUnitSpec] = {
     spec.kind: spec
     for spec in (
@@ -528,5 +636,8 @@ UNIT_SPECS: dict[str, AnyUnitSpec] = {
         EpisodeSourceUnit(),
         ScriptItemUnit(),
         ProjectSettingsUnit(),
+        ProjectMemoryFileUnit(),
+        WorkspaceMemoryFileUnit(),
+        LibraryAssetUnit(),
     )
 }
