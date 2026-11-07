@@ -674,6 +674,7 @@ MESSAGES = {
     "collab_error_episode_source_empty": "原文不能是空的",
     "collab_error_revision_conflict": "劇本剛被其他操作改過，請稍後再試",
     "collab_error_generic": "這段內容沒能寫回專案：{detail}",
+    "collab_error_invalid_settings": "有設定的值格式不對，沒能儲存，請檢查剛改的選項。",
     "claude_login_cli_not_found": "找不到內建的 Claude CLI，無法登入訂閱",
     "claude_login_no_authorize_url": "沒能取得 Claude 授權連結，請稍後再試",
     "claude_login_login_not_found": "這次登入已結束或被新的登入取代，請重新開始",

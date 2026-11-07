@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { Eraser, Loader2, MoreHorizontal, Trash2 } from "lucide-react";
 
 import { API } from "@/api";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesBar";
 import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
 import { DetailPane } from "@/components/shared/master-detail/DetailPane";
@@ -221,22 +224,38 @@ function LoadedMemoryEditor({
     },
     [scope, filename, onSaved],
   );
+  // 多人即时协作：工作区记忆不属于任何项目，房间的 project 为空串
+  const collab = useMemo(
+    () => ({
+      ref:
+        scope.level === "user"
+          ? { project: "", kind: "workspace_memory_file", key: filename }
+          : { project: scope.projectName, kind: "project_memory_file", key: filename },
+      toUnit: (text: string) => ({ content: text }),
+      fromUnit: (unit: UnitJson, fallback: string) => (typeof unit.content === "string" ? unit.content : fallback),
+    }),
+    [scope, filename],
+  );
   const unit = useEditUnit({
     source: content,
     save,
     leaveTitle: t("agent_memory_leave_title", { name: filename }),
+    collab,
   });
 
   const editor = (
-    <Textarea
-      // 记忆是 Markdown 原文，按代码类输入用等宽字体
-      mono
-      value={unit.value}
-      aria-label={filename}
-      spellCheck={false}
-      onChange={(event) => unit.setValue(event.target.value)}
-      className={layout === "pane" ? "max-h-none min-h-40 flex-1" : "max-h-[50cqh] min-h-48"}
-    />
+    <CollabField live={unit.live} path="content">
+      <Textarea
+        {...liveFieldProps(unit.live, "content")}
+        // 记忆是 Markdown 原文，按代码类输入用等宽字体
+        mono
+        value={unit.value}
+        aria-label={filename}
+        spellCheck={false}
+        onChange={(event) => unit.setValue(event.target.value)}
+        className={layout === "pane" ? "max-h-none min-h-40 flex-1" : "max-h-[50cqh] min-h-48"}
+      />
+    </CollabField>
   );
 
   const body = (

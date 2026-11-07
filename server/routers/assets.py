@@ -72,6 +72,7 @@ from lib.project.project_manager import ProjectManager, get_project_manager
 from lib.project.resource_paths import CHARACTER_DERIVATIVE_RESOURCE_TYPE
 from server.i18n import Translator
 from server.routers._asset_router_factory import localize_project_asset_name_conflict
+from server.services.asset_library_fields import update_library_asset_fields
 
 logger = logging.getLogger(__name__)
 
@@ -318,24 +319,10 @@ async def update_asset(
     req: UpdateAssetRequest,
     _t: Translator,
 ):
-    patch = {k: v for k, v in req.model_dump().items() if v is not None}
-    if "name" in patch:
-        patch["name"] = _validate_asset_name(patch["name"], _t)
+    changes = {k: v for k, v in req.model_dump().items() if v is not None}
     async with async_session_factory() as s:
-        repo = AssetRepository(s)
-        a = await repo.get_by_id(asset_id)
-        if not a:
-            raise HTTPException(status_code=404, detail=_t("asset_not_found", name=asset_id))
-        if "name" in patch and patch["name"] != a.name and await repo.exists(a.type, patch["name"]):
-            raise HTTPException(status_code=409, detail=_t("asset_already_exists", name=patch["name"]))
-        try:
-            a = await repo.update(asset_id, **patch)
-            await s.commit()
-            await s.refresh(a)
-        except IntegrityError as exc:
-            await s.rollback()
-            raise HTTPException(status_code=409, detail=_t("asset_already_exists", name=patch.get("name", ""))) from exc
-        payload = await _serialize_one(repo, a)
+        a = await update_library_asset_fields(s, asset_id, changes)
+        payload = await _serialize_one(AssetRepository(s), a)
     return {"asset": payload}
 
 

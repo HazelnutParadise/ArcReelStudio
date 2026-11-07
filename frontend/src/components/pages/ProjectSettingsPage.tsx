@@ -21,6 +21,8 @@ import { PageSidebar, type PageSidebarGroup } from "@/components/shared/page-she
 import { isValidSpeechRate } from "@/components/shared/speech-rate";
 import { useDisplayNames } from "@/hooks/useDisplayNames";
 import { useModelCandidates } from "@/hooks/useModelCandidates";
+import type { UnitJson } from "@/collab/ydoc-json";
+import { useAppStore } from "@/stores/app-store";
 import { useCapabilitiesStore } from "@/stores/capabilities-store";
 import type { CustomProviderInfo, NarrationDefaultsResponse, ProviderInfo } from "@/types";
 import { errMsg, voidCall } from "@/utils/async";
@@ -43,6 +45,7 @@ import {
   type ProjectFacts,
   type ProjectSettingsForm,
 } from "./project-settings/project-settings-form";
+import { projectSettingsFromUnit, projectSettingsToUnit } from "./project-settings/project-settings-collab";
 import { TabHeader } from "./project-settings/SettingsBlock";
 import { StyleTab } from "./project-settings/StyleTab";
 import { VoiceTab } from "./project-settings/VoiceTab";
@@ -353,7 +356,16 @@ function LoadedProjectSettings({ projectName, loaded }: { projectName: string; l
     [projectName],
   );
 
-  const unit = useEditUnit({ source: loaded.source, save, isEqual: formEqual, allowNavigation });
+  // 多人即时协作：设置页整页是一个房间，改动即时同步、由服务端按项目 PATCH 的规则写回
+  const collab = useMemo(() => {
+    const options = { projectName, facts, globals };
+    return {
+      ref: { project: projectName, kind: "project_settings", key: "" },
+      toUnit: (form: ProjectSettingsForm, current: UnitJson) => projectSettingsToUnit(form, current, options),
+      fromUnit: (unit: UnitJson) => projectSettingsFromUnit(unit, options),
+    };
+  }, [projectName, facts, globals]);
+  const unit = useEditUnit({ source: loaded.source, save, isEqual: formEqual, allowNavigation, collab });
   const { value, savedValue, setValue } = unit;
 
   // 待上传参考图的预览地址由页面持有：不再使用（换图、放弃、保存）或离开页面时收回
@@ -362,6 +374,16 @@ function LoadedProjectSettings({ projectName, loaded }: { projectName: string; l
     if (!stylePreview?.startsWith("blob:")) return;
     return () => URL.revokeObjectURL(stylePreview);
   }, [stylePreview]);
+
+  const uploadStyleNow = async (file: File, preview: string) => {
+    try {
+      await API.uploadStyleImage(projectName, file);
+    } catch (error) {
+      useAppStore.getState().pushToast(t("project_settings_style_upload_failed", { message: errMsg(error) }), "error");
+    } finally {
+      if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+    }
+  };
 
   const overrides = countModelOverrides(value.models, value.models.generateAudio);
   const badges = {
@@ -384,7 +406,16 @@ function LoadedProjectSettings({ projectName, loaded }: { projectName: string; l
       content = <BasicsTab value={value} savedValue={savedValue} onChange={setValue} facts={facts} />;
       break;
     case "style":
-      content = <StyleTab value={value.style} onChange={(style) => setValue((prev) => ({ ...prev, style }))} />;
+      content = (
+        <StyleTab
+          value={value.style}
+          onChange={(style) => {
+            // 协作中选了新参考图就直接上传：服务端改完项目后，房间里的人都会看到新图
+            if (unit.live && style.kind === "image" && style.file) void uploadStyleNow(style.file, style.preview);
+            else setValue((prev) => ({ ...prev, style }));
+          }}
+        />
+      );
       break;
     case "models":
       content = (

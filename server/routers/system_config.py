@@ -52,7 +52,7 @@ from lib.market.sources import PROXY_PREFIX_SETTING
 from lib.speech.narration_config import parse_tts_backend
 from server.dependencies import get_config_service
 from server.i18n import Locale, Translator
-from server.routers._validators import validate_backend_value
+from server.services.backend_values import validate_backend_value
 from server.services.project.model_references import project_model_references
 from server.services.project.narration_settings import default_narration_tts
 from server.services.tasks.generation_context import audio_backend_profile

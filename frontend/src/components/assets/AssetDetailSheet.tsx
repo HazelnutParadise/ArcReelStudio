@@ -2,6 +2,9 @@ import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "r
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, FolderInput, ImagePlus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { API } from "@/api";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
+import type { UnitJson } from "@/collab/ydoc-json";
 import { SaveBar } from "@/components/shared/edit-unit/SaveBar";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { useConfirmLeave, useLeaveGuard } from "@/components/shared/edit-unit/LeaveGuard";
@@ -232,7 +235,25 @@ function AssetEditForm({
     },
     [asset.id, onChanged, t],
   );
-  const unit = useEditUnit({ source, save, leaveTitle: t("edit_leave_title", { name: asset.name }) });
+  // 多人即时协作：资产库不属于任何项目，房间的 project 为空串，键是条目 id
+  const collab = useMemo(
+    () => ({
+      ref: { project: "", kind: "library_asset", key: asset.id },
+      toUnit: (fields: AssetFields) => ({ ...fields }),
+      fromUnit: (unit: UnitJson, fallback: AssetFields): AssetFields => ({
+        name: typeof unit.name === "string" ? unit.name : fallback.name,
+        description: typeof unit.description === "string" ? unit.description : fallback.description,
+        voice_style: typeof unit.voice_style === "string" ? unit.voice_style : fallback.voice_style,
+      }),
+    }),
+    [asset.id],
+  );
+  const unit = useEditUnit({ source, save, leaveTitle: t("edit_leave_title", { name: asset.name }), collab });
+  // 协作中没有保存这一步：自己改的字段直接反映到列表里的这张卡片
+  const editField = (patch: Partial<AssetFields>) => {
+    unit.setValue((prev) => ({ ...prev, ...patch }));
+    if (unit.live) onChanged({ ...asset, ...patch });
+  };
 
   useLeaveGuard({ dirty: false, saving: uploading, save: unit.save });
 
@@ -301,37 +322,37 @@ function AssetEditForm({
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={nameId}>{t("field.name")}</Label>
-            <Input
-              id={nameId}
-              value={unit.value.name}
-              onChange={(event) => {
-                const name = event.target.value;
-                unit.setValue((prev) => ({ ...prev, name }));
-              }}
-            />
+            <CollabField live={unit.live} path="name">
+              <Input
+                {...liveFieldProps(unit.live, "name")}
+                id={nameId}
+                value={unit.value.name}
+                onChange={(event) => editField({ name: event.target.value })}
+              />
+            </CollabField>
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={descriptionId}>{t("field.description")}</Label>
-            <Textarea
-              id={descriptionId}
-              value={unit.value.description}
-              onChange={(event) => {
-                const description = event.target.value;
-                unit.setValue((prev) => ({ ...prev, description }));
-              }}
-            />
+            <CollabField live={unit.live} path="description">
+              <Textarea
+                {...liveFieldProps(unit.live, "description")}
+                id={descriptionId}
+                value={unit.value.description}
+                onChange={(event) => editField({ description: event.target.value })}
+              />
+            </CollabField>
           </div>
           {isCharacter && (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={voiceId}>{t("field.voice_style")}</Label>
-              <Input
-                id={voiceId}
-                value={unit.value.voice_style}
-                onChange={(event) => {
-                  const voiceStyle = event.target.value;
-                  unit.setValue((prev) => ({ ...prev, voice_style: voiceStyle }));
-                }}
-              />
+              <CollabField live={unit.live} path="voice_style">
+                <Input
+                  {...liveFieldProps(unit.live, "voice_style")}
+                  id={voiceId}
+                  value={unit.value.voice_style}
+                  onChange={(event) => editField({ voice_style: event.target.value })}
+                />
+              </CollabField>
             </div>
           )}
           {asset.derivatives.length > 0 && (

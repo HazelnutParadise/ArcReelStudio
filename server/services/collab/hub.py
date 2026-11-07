@@ -37,7 +37,14 @@ from lib.collab.ydoc_json import apply_json, new_unit_doc, unit_json
 from lib.infra.async_thread import run_sync_transaction
 from lib.project.project_change_hints import ProjectChangeActor, project_change_actor, project_change_source
 from lib.project.project_manager import ProjectManager
-from server.services.collab.units import UnitNotFoundError, UnitRef, UnitSpec, UnitWriteError
+from server.services.collab.units import (
+    AnyUnitSpec,
+    UnitNotFoundError,
+    UnitRef,
+    UnitSpec,
+    UnitWriteError,
+    is_global,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +52,16 @@ _EMPTY_UPDATE = b"\x00\x00"
 
 ChangeStream = Callable[[str], AbstractAsyncContextManager[AsyncIterator[Any]]]
 #: (原因码, 细节, 语言) → 给界面看的一句话
-ErrorText = Callable[[str, str, str], str]
+ErrorText = Callable[[str, str, str, dict[str, object]], str]
+
+
+@dataclass(frozen=True)
+class WriteFailure:
+    """最近一次写回被拒或失败的原因；下次写回成功时清除。"""
+
+    code: str
+    detail: str = ""
+    params: dict[str, object] = field(default_factory=dict)
 
 
 class Connection(Protocol):
@@ -75,10 +91,12 @@ class Room:
     dirty: bool = False
     first_dirty_at: float = 0.0
     last_change_at: float = 0.0
-    error: dict[str, str] | None = None
+    error: WriteFailure | None = None
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     persist_task: asyncio.Task | None = None
     close_task: asyncio.Task | None = None
+    #: 不属于项目的单元：打开期间定时重读的任务
+    poll_task: asyncio.Task | None = None
     closed: bool = False
 
 
@@ -90,13 +108,14 @@ class CollabHub:
     def __init__(
         self,
         pm: ProjectManager,
-        specs: dict[str, UnitSpec],
+        specs: dict[str, AnyUnitSpec],
         change_stream: ChangeStream,
         *,
         error_text: ErrorText,
         debounce: float = 0.8,
         max_wait: float = 3.0,
         close_grace: float = 5.0,
+        poll_interval: float = 3.0,
     ) -> None:
         self._pm = pm
         self._specs = specs
@@ -105,12 +124,17 @@ class CollabHub:
         self._debounce = debounce
         self._max_wait = max_wait
         self._close_grace = close_grace
+        self._poll_interval = poll_interval
         self._rooms: dict[UnitRef, Room] = {}
         self._room_locks: dict[UnitRef, asyncio.Lock] = {}
         self._watchers: dict[str, asyncio.Task] = {}
 
     def has_kind(self, kind: str) -> bool:
         return kind in self._specs
+
+    def is_global_kind(self, kind: str) -> bool:
+        """这种单元不属于项目：房间的 ``project`` 必须是空串。"""
+        return is_global(self._specs[kind])
 
     # ── 连接进出 ─────────────────────────────────────────────────
 
@@ -205,6 +229,8 @@ class CollabHub:
                 room.persist_task.cancel()
             if room.close_task is not None:
                 room.close_task.cancel()
+            if room.poll_task is not None:
+                room.poll_task.cancel()
             await self._persist(room)
             room.closed = True
         self._rooms.clear()
@@ -224,9 +250,8 @@ class CollabHub:
             room = self._rooms.get(ref)
             if room is not None:
                 return room
-            spec = self._specs[ref.kind]
             try:
-                stored = await run_sync_transaction(spec.read, self._pm, ref.project, ref.key)
+                stored = await self._read(ref)
             except UnitNotFoundError:
                 return None
             doc = new_unit_doc(stored)
@@ -242,7 +267,10 @@ class CollabHub:
                 sent=dict(stored),
             )
             self._rooms[ref] = room
-            self._ensure_watch(ref.project)
+            if is_global(self._specs[ref.kind]):
+                room.poll_task = asyncio.create_task(self._poll(room), name=f"collab-poll-{ref.kind}")
+            else:
+                self._ensure_watch(ref.project)
             return room
 
     async def _close_later(self, room: Room) -> None:
@@ -260,6 +288,9 @@ class CollabHub:
         room.closed = True
         self._rooms.pop(room.ref, None)
         self._room_locks.pop(room.ref, None)
+        if room.poll_task is not None:
+            room.poll_task.cancel()
+            return
         if not any(ref.project == room.ref.project for ref in self._rooms):
             watcher = self._watchers.pop(room.ref.project, None)
             if watcher is not None:
@@ -300,21 +331,20 @@ class CollabHub:
             changes = {key: value for key, value in current.items() if room.sent.get(key) != value}
             if not changes:
                 return
-            spec = self._specs[room.ref.kind]
             actor = room.last_actor
             await self._broadcast(room, {"type": "status", "room": _room_id(room.ref), "state": "saving"})
             try:
-                stored = await run_sync_transaction(self._write_and_read, spec, room.ref, changes, actor)
+                stored = await self._write_and_read(room.ref, changes, actor)
             except UnitNotFoundError:
                 await self._remove(room, "not_found")
                 return
             except UnitWriteError as exc:
-                room.error = {"code": exc.code, "detail": exc.detail}
+                room.error = WriteFailure(exc.code, exc.detail, exc.params)
                 logger.info("协作内容写回被拒绝 kind=%s code=%s", room.ref.kind, exc.code)
                 await self._broadcast_status(room)
                 return
             except Exception:
-                room.error = {"code": "save_failed", "detail": ""}
+                room.error = WriteFailure("save_failed")
                 logger.exception("协作内容写回失败 kind=%s project=%s", room.ref.kind, room.ref.project)
                 await self._broadcast_status(room)
                 return
@@ -324,7 +354,22 @@ class CollabHub:
             room.stored = stored
             await self._broadcast_status(room)
 
-    def _write_and_read(
+    async def _read(self, ref: UnitRef) -> dict[str, Any]:
+        spec = self._specs[ref.kind]
+        if is_global(spec):
+            return await spec.read(ref.key)
+        return await run_sync_transaction(spec.read, self._pm, ref.project, ref.key)
+
+    async def _write_and_read(
+        self, ref: UnitRef, changes: dict[str, Any], actor: ProjectChangeActor | None
+    ) -> dict[str, Any]:
+        spec = self._specs[ref.kind]
+        if is_global(spec):
+            await spec.write(ref.key, changes)
+            return await spec.read(ref.key)
+        return await run_sync_transaction(self._write_and_read_project, spec, ref, changes, actor)
+
+    def _write_and_read_project(
         self, spec: UnitSpec, ref: UnitRef, changes: dict[str, Any], actor: ProjectChangeActor | None
     ) -> dict[str, Any]:
         with project_change_source("collab"), project_change_actor(actor):
@@ -356,11 +401,22 @@ class CollabHub:
         for room in [room for ref, room in self._rooms.items() if ref.project == project]:
             await self._refresh_room(room)
 
+    async def _poll(self, room: Room) -> None:
+        """不属于项目的单元没有事件流可订阅：打开期间定时重读，并进别处的改动。"""
+        try:
+            while not room.closed:
+                await asyncio.sleep(self._poll_interval)
+                if not room.closed:
+                    await self._refresh_room(room)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("协作房间重读失败 kind=%s", room.ref.kind)
+
     async def _refresh_room(self, room: Room) -> None:
         async with room.lock:
-            spec = self._specs[room.ref.kind]
             try:
-                latest = await run_sync_transaction(spec.read, self._pm, room.ref.project, room.ref.key)
+                latest = await self._read(room.ref)
             except UnitNotFoundError:
                 await self._remove(room, "not_found")
                 return
@@ -407,8 +463,8 @@ class CollabHub:
         }
         if room.error is not None:
             message["error"] = {
-                "code": room.error["code"],
-                "message": self._error_text(room.error["code"], room.error["detail"], conn.locale),
+                "code": room.error.code,
+                "message": self._error_text(room.error.code, room.error.detail, conn.locale, room.error.params),
             }
         return message
 
@@ -433,13 +489,15 @@ def _room_id(ref: UnitRef) -> dict[str, str]:
 
 def create_collab_hub(project_events: Any) -> CollabHub:
     """按应用的单例组装中枢：项目文件经全局 ``ProjectManager`` 读写，外部改动来自项目事件流。"""
-    from lib.i18n import _, translate_or
+    from lib.i18n import DEFAULT_LOCALE, MESSAGES, _, translate_or
     from lib.project.project_manager import get_project_manager
     from server.services.collab.units import UNIT_SPECS
 
-    def error_text(code: str, detail: str, locale: str) -> str:
-        # 认得的原因码用专门的文案，其余（如剧本校验的各类问题）用通用文案带上细节
+    def error_text(code: str, detail: str, locale: str, params: dict[str, object]) -> str:
+        # 协作专用的原因码用专门的文案；与接口共用的校验错误（键即错误文案）照接口的说法；其余用通用文案带上细节
         generic = _("collab_error_generic", locale=locale, detail=detail or code)
-        return translate_or(f"collab_error_{code}", generic, locale=locale)
+        if f"collab_error_{code}" in MESSAGES[DEFAULT_LOCALE]:
+            return _(f"collab_error_{code}", locale=locale, **params)
+        return translate_or(code, generic, locale=locale, **params)
 
     return CollabHub(get_project_manager(), UNIT_SPECS, project_events.stream_events, error_text=error_text)

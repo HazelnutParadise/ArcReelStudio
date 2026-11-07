@@ -735,6 +735,7 @@ MESSAGES = {
     "collab_error_episode_source_empty": "The source text can't be empty",
     "collab_error_revision_conflict": "The script was just changed by something else. Try again shortly",
     "collab_error_generic": "This content couldn't be saved to the project: {detail}",
+    "collab_error_invalid_settings": "A setting has a value in the wrong format and wasn't saved. Check the option you just changed.",
     "claude_login_cli_not_found": "The bundled Claude CLI was not found, so the subscription can't be signed in",
     "claude_login_no_authorize_url": "Couldn't get a Claude sign-in link. Try again later",
     "claude_login_login_not_found": "This sign-in has ended or was replaced by a newer one. Start again",

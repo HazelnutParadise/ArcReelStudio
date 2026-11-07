@@ -105,7 +105,7 @@ async def hub(hub_project_files, changes):
         hub_project_files,
         UNIT_SPECS,
         changes,
-        error_text=lambda code, _detail, locale: f"[{locale}] {code}",
+        error_text=lambda code, _detail, locale, _params: f"[{locale}] {code}",
         debounce=0.05,
         max_wait=0.2,
         close_grace=0.05,
@@ -269,3 +269,71 @@ async def test_a_missing_unit_is_reported_as_removed(hub, hub_project_files) -> 
     assert alice.messages == [
         {"type": "removed", "room": {"project": "nope", "kind": "overview", "key": ""}, "reason": "not_found"}
     ]
+
+
+# ── 不属于项目的单元（全局资产库、工作区记忆等） ─────────────────────
+
+
+class InMemoryGlobalUnit:
+    """不属于任何项目的单元替身：内容存在字典里，可以从别处直接改。"""
+
+    kind = "note"
+    scope = "global"
+
+    def __init__(self) -> None:
+        self.store: dict[str, dict[str, Any]] = {"k": {"body": "初稿"}}
+
+    async def read(self, key: str) -> dict[str, Any]:
+        if key not in self.store:
+            from server.services.collab.units import UnitNotFoundError
+
+            raise UnitNotFoundError(key)
+        return dict(self.store[key])
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        self.store[key].update(changes)
+
+
+GLOBAL_REF = UnitRef(project="", kind="note", key="k")
+
+
+@pytest.fixture
+async def global_hub(hub_project_files, changes):
+    unit = InMemoryGlobalUnit()
+    instance = CollabHub(
+        hub_project_files,
+        {**UNIT_SPECS, "note": unit},
+        changes,
+        error_text=lambda code, _detail, locale, _params: f"[{locale}] {code}",
+        debounce=0.05,
+        max_wait=0.2,
+        close_grace=0.05,
+        poll_interval=0.05,
+    )
+    yield instance, unit
+    await instance.shutdown()
+
+
+async def test_a_global_unit_is_written_back_without_a_project(global_hub) -> None:
+    hub, unit = global_hub
+    alice = FakeConn("c1", "alice")
+    await hub.join(alice, GLOBAL_REF)
+    await hub.on_sync(alice, GLOBAL_REF, create_sync_message(alice.doc))
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
+    await _settle()
+
+    assert unit.store["k"]["body"] == "新初稿"
+
+
+async def test_a_global_unit_picks_up_changes_made_elsewhere(global_hub) -> None:
+    hub, unit = global_hub
+    alice = FakeConn("c1", "alice")
+    await hub.join(alice, GLOBAL_REF)
+    await hub.on_sync(alice, GLOBAL_REF, create_sync_message(alice.doc))
+
+    # 别人经接口改了内容，没有任何项目事件
+    unit.store["k"]["body"] = "别处改的"
+    await _settle()
+
+    assert alice.text("body") == "别处改的"

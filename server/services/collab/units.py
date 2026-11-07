@@ -8,16 +8,26 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol, TypeIs
 
+from pydantic import ValidationError
+
+from lib.agent.agent_memory_store import AgentMemoryStore
+from lib.db.base import DEFAULT_USER_ID
+from lib.db.repositories.asset_repo import AssetRepository
 from lib.episode.episode_ledger import parse_positive_episode_num
 from lib.episode.episode_paths import episode_source_path
 from lib.episode.episode_source_commands import EpisodeSourceError, set_episode_source_text
+from lib.infra.api_errors import ApiError, NotFoundError
+from lib.infra.async_thread import run_sync_transaction
 from lib.project.asset_derivatives import derivative_table, ensure_derivative_table
 from lib.project.asset_types import ASSET_SPECS, asset_name_comparison_key, resolve_asset_key
 from lib.project.project_manager import ProjectManager
 from lib.script.script_batch_edit import ScriptBatchEditCommand, ScriptBatchEditor, script_revision
+from server.services.asset_library_fields import LIBRARY_ASSET_TEXT_FIELDS, update_library_asset_fields
+from server.services.project.project_settings_patch import ProjectSettingsPatch, apply_project_settings_patch
 
 
 class UnitNotFoundError(LookupError):
@@ -25,12 +35,14 @@ class UnitNotFoundError(LookupError):
 
 
 class UnitWriteError(ValueError):
-    """内容不合规，不能写回；``code`` 是给界面本地化用的稳定键。"""
+    """内容不合规，不能写回；``code`` 是给界面本地化用的稳定键（可以直接是错误文案的 i18n key）。"""
 
-    def __init__(self, code: str, detail: str = "") -> None:
+    def __init__(self, code: str, detail: str = "", params: dict[str, object] | None = None) -> None:
         super().__init__(detail or code)
         self.code = code
         self.detail = detail
+        #: 渲染错误文案的参数（如区间上下限）
+        self.params = params or {}
 
 
 @dataclass(frozen=True)
@@ -41,6 +53,8 @@ class UnitRef:
 
 
 class UnitSpec(Protocol):
+    """项目里的单元：读写是同步的文件操作，由中枢放进线程执行；外部改动来自项目事件流。"""
+
     kind: str
 
     def read(self, pm: ProjectManager, project: str, key: str) -> dict[str, Any]:
@@ -50,6 +64,31 @@ class UnitSpec(Protocol):
     def write(self, pm: ProjectManager, project: str, key: str, changes: dict[str, Any]) -> None:
         """写回改动过的顶层字段；内容不合规时抛 :class:`UnitWriteError`。"""
         ...
+
+
+class GlobalUnitSpec(Protocol):
+    """不属于项目的单元（全局资产库、工作区记忆等）：房间的 ``project`` 为空串，读写是协程。
+
+    没有项目事件流可订阅，中枢在房间打开期间定时重读，别处（接口、Agent）的改动照样并进文档。
+    """
+
+    kind: str
+    scope: Literal["global"]
+
+    async def read(self, key: str) -> dict[str, Any]:
+        """单元当前的内容；不存在时抛 :class:`UnitNotFoundError`。"""
+        ...
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        """写回改动过的顶层字段；内容不合规时抛 :class:`UnitWriteError`。"""
+        ...
+
+
+AnyUnitSpec = UnitSpec | GlobalUnitSpec
+
+
+def is_global(spec: AnyUnitSpec) -> TypeIs[GlobalUnitSpec]:
+    return getattr(spec, "scope", "project") == "global"
 
 
 # ── 项目概述 ─────────────────────────────────────────────────────
@@ -447,7 +486,147 @@ class PageUnit:
         return
 
 
-UNIT_SPECS: dict[str, UnitSpec] = {
+# ── 项目设置 ─────────────────────────────────────────────────────
+
+#: 只读、跟着上传或清除变化的字段：浏览器写来的值不落盘，清空参考图除外
+_SETTINGS_DERIVED_FIELDS = ("style_image", "style_description")
+_SETTINGS_FIELDS = tuple(f for f in ProjectSettingsPatch.model_fields if f != "clear_style_image")
+
+
+class ProjectSettingsUnit:
+    """项目设置页（基础、风格、模型、配音）：字段名与项目文件、项目 PATCH 一致，写回走同一套校验。"""
+
+    kind = "project_settings"
+
+    def read(self, pm: ProjectManager, project: str, key: str) -> dict[str, Any]:
+        data = _load_project(pm, project)
+        return {field: data.get(field) for field in (*_SETTINGS_FIELDS, *_SETTINGS_DERIVED_FIELDS)}
+
+    def write(self, pm: ProjectManager, project: str, key: str, changes: dict[str, Any]) -> None:
+        values = {f: changes[f] for f in _SETTINGS_FIELDS if f in changes}
+        # 参考图只能经上传换掉；房间里清空它即取消参考图
+        if "style_image" in changes and not changes["style_image"]:
+            values["clear_style_image"] = True
+        if not values:
+            return
+        try:
+            patch = ProjectSettingsPatch.model_validate(values)
+        except ValidationError as exc:
+            raise UnitWriteError("invalid_settings", str(exc)) from exc
+
+        def _mutate(data: dict) -> None:
+            apply_project_settings_patch(data, patch)
+
+        try:
+            _update_project(pm, project, _mutate)
+        except ApiError as exc:
+            raise UnitWriteError(exc.key, params=exc.params) from exc
+
+
+# ── Agent 记忆文件 ───────────────────────────────────────────────
+
+
+def _memory_text(store: AgentMemoryStore, filename: str) -> dict[str, Any]:
+    try:
+        raw = store.read(filename)
+    except ApiError as exc:
+        raise UnitNotFoundError(filename) from exc
+    # 记忆由 Agent 自由书写，可能混入非 UTF-8 字节：按替换字符显示，编辑后以 UTF-8 写回
+    return {"content": raw.decode("utf-8", errors="replace")}
+
+
+def _write_memory_text(store: AgentMemoryStore, filename: str, changes: dict[str, Any]) -> None:
+    if "content" not in changes:
+        return
+    try:
+        store.write(filename, _text(changes["content"]).encode("utf-8"))
+    except ApiError as exc:
+        raise UnitWriteError(exc.key, params=exc.params) from exc
+
+
+class ProjectMemoryFileUnit:
+    """项目记忆里的一个文件，键是文件名；内容只有一段正文。"""
+
+    kind = "project_memory_file"
+
+    def read(self, pm: ProjectManager, project: str, key: str) -> dict[str, Any]:
+        return _memory_text(self._store(pm, project), key)
+
+    def write(self, pm: ProjectManager, project: str, key: str, changes: dict[str, Any]) -> None:
+        _write_memory_text(self._store(pm, project), key, changes)
+
+    @staticmethod
+    def _store(pm: ProjectManager, project: str) -> AgentMemoryStore:
+        try:
+            return AgentMemoryStore.for_project(pm.get_project_path(project))
+        except (FileNotFoundError, ValueError) as exc:
+            raise UnitNotFoundError(project) from exc
+
+
+def _workspace_memory_store() -> AgentMemoryStore:
+    from lib.project.project_manager import get_project_manager
+
+    # 工作区共用一份用户记忆（与 Agent 读的同一个目录）
+    return AgentMemoryStore(get_project_manager().layout.user_memory_dir(DEFAULT_USER_ID))
+
+
+class WorkspaceMemoryFileUnit:
+    """工作区记忆（设置页的「用户记忆」）里的一个文件，不属于任何项目。"""
+
+    kind = "workspace_memory_file"
+    scope: Literal["global"] = "global"
+
+    def __init__(self, store: Callable[[], AgentMemoryStore] = _workspace_memory_store) -> None:
+        self._store = store
+
+    async def read(self, key: str) -> dict[str, Any]:
+        return await run_sync_transaction(lambda: _memory_text(self._store(), key))
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        await run_sync_transaction(lambda: _write_memory_text(self._store(), key, changes))
+
+
+# ── 全局资产库条目 ───────────────────────────────────────────────
+
+
+class LibraryAssetUnit:
+    """全局资产库的一个条目（键是条目 id）：名称、描述、声音风格。图片与衍生另有接口。"""
+
+    kind = "library_asset"
+    scope: Literal["global"] = "global"
+
+    def __init__(self, session_factory: Callable[[], Any] | None = None) -> None:
+        self._session_factory = session_factory
+
+    def _sessions(self) -> Any:
+        if self._session_factory is not None:
+            return self._session_factory()
+        from lib.db import async_session_factory
+
+        return async_session_factory()
+
+    async def read(self, key: str) -> dict[str, Any]:
+        async with self._sessions() as session:
+            asset = await AssetRepository(session).get_by_id(key)
+        if asset is None:
+            raise UnitNotFoundError(key)
+        return {field: getattr(asset, field) or "" for field in LIBRARY_ASSET_TEXT_FIELDS}
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        values = {field: _text(changes[field]) for field in LIBRARY_ASSET_TEXT_FIELDS if field in changes}
+        if not values:
+            return
+        async with self._sessions() as session:
+            try:
+                await update_library_asset_fields(session, key, values)
+            except NotFoundError as exc:
+                raise UnitNotFoundError(key) from exc
+            except ApiError as exc:
+                raise UnitWriteError(exc.key, params=exc.params) from exc
+
+
+#: 属于项目的单元：读写是同步的文件操作
+PROJECT_UNIT_SPECS: dict[str, UnitSpec] = {
     spec.kind: spec
     for spec in (
         PageUnit(),
@@ -457,5 +636,14 @@ UNIT_SPECS: dict[str, UnitSpec] = {
         DerivativeUnit(),
         EpisodeSourceUnit(),
         ScriptItemUnit(),
+        ProjectSettingsUnit(),
+        ProjectMemoryFileUnit(),
     )
 }
+
+#: 不属于项目的单元：房间的 project 为空串
+GLOBAL_UNIT_SPECS: dict[str, GlobalUnitSpec] = {
+    spec.kind: spec for spec in (WorkspaceMemoryFileUnit(), LibraryAssetUnit())
+}
+
+UNIT_SPECS: dict[str, AnyUnitSpec] = {**PROJECT_UNIT_SPECS, **GLOBAL_UNIT_SPECS}

@@ -674,6 +674,7 @@ MESSAGES = {
     "collab_error_episode_source_empty": "原文不能为空",
     "collab_error_revision_conflict": "剧本刚被其他操作改过，请稍后再试",
     "collab_error_generic": "这段内容没能写回项目：{detail}",
+    "collab_error_invalid_settings": "有设置的值格式不对，没能保存，请检查刚改的选项。",
     "claude_login_cli_not_found": "找不到内置的 Claude CLI，无法登录订阅",
     "claude_login_no_authorize_url": "没能取得 Claude 授权链接，请稍后再试",
     "claude_login_login_not_found": "这次登录已结束或被新的登录取代，请重新开始",
