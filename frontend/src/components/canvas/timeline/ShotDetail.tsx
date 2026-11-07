@@ -861,6 +861,7 @@ export function ShotDetail({
             prompt={imgValue}
             onUpdate={handleImgUpdate}
             readOnly={readOnly || formSwitching === "image"}
+            live={live}
           />
         ) : (
           <CollabField live={live} path="image_prompt">
@@ -898,6 +899,7 @@ export function ShotDetail({
             prompt={vidValue}
             onUpdate={handleVidUpdate}
             readOnly={readOnly || formSwitching === "video"}
+            live={live}
           />
         ) : (
           <CollabField live={live} path="video_prompt">
@@ -938,6 +940,7 @@ export function ShotDetail({
             onChange={(utterances) => setField("utterances", utterances)}
             disabled={editBusy || readOnly}
             speakerCandidates={speakerNames}
+            live={live}
           />
         </ShotSection>
       ) : isNarration ? (
@@ -1189,7 +1192,7 @@ export function ShotDetail({
       notes={
         // 备注只有落库才有意义：只读展示下不给入口，免得输入的备注静默丢弃
         readOnly ? null : (
-          <NotesDrawer shotId={segmentId} value={fields.note} onChange={(note) => setField("note", note)} />
+          <NotesDrawer shotId={segmentId} value={fields.note} onChange={(note) => setField("note", note)} live={live} />
         )
       }
     />
