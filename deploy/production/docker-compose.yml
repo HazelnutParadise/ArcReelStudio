@@ -5,7 +5,7 @@ services:
       POSTGRES_USER: arcreel
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env 中设置 POSTGRES_PASSWORD}
       POSTGRES_DB: arcreel
-      TZ: ${TZ:-Asia/Shanghai}
+      TZ: ${TZ:-Asia/Taipei}
     volumes:
       - ./pgdata:/var/lib/postgresql
     restart: unless-stopped
@@ -16,14 +16,15 @@ services:
       retries: 5
 
   arcreel:
-    image: arcreel/arcreel:latest
+    image: ghcr.io/hazelnutparadise/arcreelstudio:main
+    # main 标签跟随 main 分支的最新构建；生产环境建议改为固定的 Release 版本标签
     ports:
       - "1241:1241"
     # 端口发布到宿主机所有网卡：远程部署不得在 .env 中设置 AUTH_ENABLED=false。
     env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://arcreel:${POSTGRES_PASSWORD}@postgres:5432/arcreel
-      TZ: ${TZ:-Asia/Shanghai}
+      TZ: ${TZ:-Asia/Taipei}
     # Agent Bash 沙箱 (bwrap) 需要：
     # 1) 非特权 user namespace → 放开 docker 默认 seccomp/apparmor profile
     # 2) bwrap 嵌套出的 net namespace 内配置 loopback → 容器需要 NET_ADMIN cap

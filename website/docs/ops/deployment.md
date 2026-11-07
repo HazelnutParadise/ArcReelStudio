@@ -7,7 +7,7 @@ update_docs: fact-check
 
 # 部署与运维 {#deployment}
 
-本文档说明 ArcReel 的默认部署、PostgreSQL 生产部署、环境变量、数据持久化、升级、备份、恢复、反向代理和故障排查。正式支持边界见 [安全政策](https://github.com/ArcReel/ArcReel/blob/main/SECURITY.md)，完整信任边界见 [安全威胁模型](https://github.com/ArcReel/ArcReel/blob/main/docs/security/threat-model.md)。
+本文档说明 ArcReel 的默认部署、PostgreSQL 生产部署、环境变量、数据持久化、升级、备份、恢复、反向代理和故障排查。正式支持边界见 [安全政策](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/SECURITY.md)，完整信任边界见 [安全威胁模型](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/security/threat-model.md)。
 
 ## 部署方式选择 {#choose-deployment-mode}
 
@@ -15,6 +15,7 @@ update_docs: fact-check
 |---|---|---|---|
 | 首次体验、个人轻量使用 | `deploy/` | SQLite | 配置最少，启动最快 |
 | 长期运行、并发访问、正式服务 | `deploy/production/` | PostgreSQL | 更适合并发、备份和运维，但不提供用户隔离 |
+| 已有 PostgreSQL 数据库 | `deploy/` 并设置 `DATABASE_URL` | 外部 PostgreSQL | 不另外启动数据库容器，见[连接已有的 PostgreSQL](#external-postgresql) |
 | 本地开发 | 源码启动 | SQLite 或 PostgreSQL | 见[贡献指南](../dev/contributing.md) |
 
 无论选择哪种方式，项目图片、视频和其他生成资产都需要持久化保存。
@@ -26,8 +27,8 @@ ArcReel 当前按单一可信操作员设计，不支持互不信任的用户共
 ### 1.1 启动 {#sqlite-start}
 
 ```bash
-git clone https://github.com/ArcReel/ArcReel.git
-cd ArcReel/deploy
+git clone https://github.com/HazelnutParadise/ArcReelStudio.git
+cd ArcReelStudio/deploy
 
 cp .env.example .env
 ```
@@ -164,6 +165,39 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 
 升级前仍然必须备份。自动迁移解决的是结构升级，不代替可回滚的数据备份。
 
+### 2.4 连接已有的 PostgreSQL {#external-postgresql}
+
+已有 PostgreSQL 服务器时，可以不启动 Compose 自带的数据库容器。是否启动数据库容器由所用的 Compose 文件决定：`deploy/` 不启动，`deploy/production/` 一定启动。`DATABASE_URL` 只决定 ArcReel 连接哪个数据库。
+
+1. 在 PostgreSQL 中为 ArcReel 建立专用数据库和账号，账号需要建表权限。不要与其他服务共用同一个数据库。
+2. 在 `deploy/.env` 中设置 `DATABASE_URL`：
+
+   ```dotenv
+   DATABASE_URL=postgresql+asyncpg://arcreel:密码@db.example.com:5432/arcreel
+   ```
+
+3. 在 `deploy/` 中启动：
+
+   ```bash
+   docker compose up -d
+   ```
+
+4. 查看启动日志，确认迁移完成且没有连接错误：
+
+   ```bash
+   docker compose logs --tail=100 arcreel
+   ```
+
+注意：
+
+- 使用 `deploy/`，不要使用 `deploy/production/`。生产 Compose 在 `environment` 中固定了 `DATABASE_URL`，会覆盖 `.env` 中的设置，并且仍会启动自带的 PostgreSQL 容器。
+- 只支持 PostgreSQL，URL 必须以 `postgresql+asyncpg://` 开头。
+- 应用启动时自动运行数据库迁移，空数据库即可。
+- 数据库运行在同一台主机上时，主机名不能写 `localhost`，因为容器内的 `localhost` 指向容器本身。macOS 和 Windows 的 Docker Desktop 使用 `host.docker.internal`；Linux 填写主机的局域网 IP，或在 `docker-compose.yml` 的 `arcreel` 服务中加入 `extra_hosts: ["host.docker.internal:host-gateway"]`。
+- 密码含有 URL 保留字符时，URL 中的密码必须做百分号编码，规则见[生产部署的启动说明](#postgresql-start)。
+- 数据库备份由数据库管理员负责，`projects/` 数据根仍需按[默认部署](#sqlite-volumes)持久化，并与数据库配套备份。
+- 已在 SQLite 中有数据时，先按 [从 SQLite 迁移到 PostgreSQL](./migrate-to-postgres.md) 迁移数据，再切换 `DATABASE_URL`。
+
 ## 3. 环境变量 {#environment-variables}
 
 默认部署示例当前包含以下核心变量：
@@ -176,8 +210,8 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 | `AUTH_ENABLED` | `true` | 远程部署不得关闭；设为 `false` 时全部管理接口无需认证 |
 | `LOG_LEVEL` | `INFO` | 排障时临时改为 `DEBUG`，完成后恢复 |
 | `POSTGRES_PASSWORD` | 无 | 仅生产部署需要，必须设置 |
-| `TZ` | `Asia/Shanghai` | 可在 Compose 环境中覆盖 |
-| `DATABASE_URL` | SQLite 默认路径 | 生产 Compose 自动设置 PostgreSQL URL |
+| `TZ` | `Asia/Taipei` | 可在 Compose 环境中覆盖 |
+| `DATABASE_URL` | SQLite 默认路径 | 生产 Compose 自动设置 PostgreSQL URL；连接外部数据库时在默认部署的 `.env` 中设置，见[连接已有的 PostgreSQL](#external-postgresql) |
 | `ARCREEL_DATA_DIR` | `projects` | 数据根；项目、默认 SQLite 数据库、日志和 Vertex 凭据都在其下 |
 | `CORS_ORIGINS` | 通配 | 设为白名单时，浏览器型 MCP 客户端的 Origin 也须列入 |
 | `ARCREEL_OFFICIAL_SERVICE_URL` | 内置官方服务地址 | 市场安装量、评分与分享提交所用的官方服务；设为空即整体关闭，市场回到只读取市场源的形态 |
@@ -254,7 +288,7 @@ docker compose logs -f postgres
 
 ### 5.1 升级前 {#before-upgrade}
 
-1. 阅读 [CHANGELOG](https://github.com/ArcReel/ArcReel/blob/main/CHANGELOG.md) 和目标 Release 说明；
+1. 阅读 [CHANGELOG](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/CHANGELOG.md) 和目标 Release 说明；
 2. 确认是否存在破坏性变更；
 3. 备份数据根和数据库，见[备份与恢复](#backup-and-restore)；
 4. 记录当前镜像版本；
@@ -418,12 +452,12 @@ docker compose start arcreel
 
 ### 5.6 固定版本 {#pin-version}
 
-`latest` 适合快速体验，但生产环境更适合固定 Release 标签。
+默认 Compose 使用 `main` 标签，跟随 main 分支的最新构建，适合快速体验。生产环境更适合固定 Release 标签。
 
 将 Compose 中的镜像改为：
 
 ```yaml
-image: arcreel/arcreel:X.Y.Z
+image: ghcr.io/hazelnutparadise/arcreelstudio:X.Y.Z
 ```
 
 升级时显式修改版本，可以降低无意中拉取新版本的风险。

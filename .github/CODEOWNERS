@@ -1,15 +1,15 @@
 # 默认所有者
-*                       @Pollo3470
+*                       @TimLai666
 
 # 关键路径细化
-/.github/               @Pollo3470
-/lib/                   @Pollo3470
-/server/                @Pollo3470
-/frontend/              @Pollo3470
-/tests/                 @Pollo3470
-/CONTRIBUTING.md        @Pollo3470
-/CLAUDE.md              @Pollo3470
-/pyproject.toml         @Pollo3470
-/uv.lock                @Pollo3470
-/frontend/package.json  @Pollo3470
-/frontend/pnpm-lock.yaml @Pollo3470
+/.github/               @TimLai666
+/lib/                   @TimLai666
+/server/                @TimLai666
+/frontend/              @TimLai666
+/tests/                 @TimLai666
+/CONTRIBUTING.md        @TimLai666
+/CLAUDE.md              @TimLai666
+/pyproject.toml         @TimLai666
+/uv.lock                @TimLai666
+/frontend/package.json  @TimLai666
+/frontend/pnpm-lock.yaml @TimLai666

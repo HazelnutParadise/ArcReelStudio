@@ -1,8 +1,10 @@
 # Security Policy
 
+This policy covers [HazelnutParadise/ArcReelStudio](https://github.com/HazelnutParadise/ArcReelStudio), a modified version of [ArcReel](https://github.com/ArcReel/ArcReel) maintained by HazelnutParadise.
+
 ## Supported versions
 
-ArcReel provides security fixes for the latest release and the current `main` branch. Older releases do not receive guaranteed backports; users should upgrade before requesting a security fix.
+This repository provides security fixes for the latest release and the current `main` branch. Older releases do not receive guaranteed backports; users should upgrade before requesting a security fix.
 
 ## Supported deployment boundary
 
@@ -19,7 +21,7 @@ See the [security threat model](docs/security/threat-model.md) for the complete 
 
 ## Reporting a vulnerability
 
-Report suspected vulnerabilities through [GitHub Private Vulnerability Reporting](https://github.com/ArcReel/ArcReel/security/advisories/new). Include the affected version or commit, prerequisites, impact, and a minimal reproducer when possible.
+Report suspected vulnerabilities through [GitHub Private Vulnerability Reporting](https://github.com/HazelnutParadise/ArcReelStudio/security/advisories/new). Include the affected version or commit, prerequisites, impact, and a minimal reproducer when possible.
 
 Do not disclose an unresolved vulnerability through a public issue, discussion, chat group, support channel, or pull request.
 
