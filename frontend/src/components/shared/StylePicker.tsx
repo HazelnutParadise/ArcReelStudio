@@ -38,9 +38,9 @@ interface TemplateCardProps {
 function TemplateCard({ thumbnail, label, tagline, isSelected, isDefault, defaultLabel, onClick }: TemplateCardProps) {
   const [broken, setBroken] = useState(false);
   return (
+    // 名称取自卡片上看得到的名称、简介与「默认」角标，不另设 aria-label，免得与可见文字对不上
     <button
       type="button"
-      aria-label={label}
       aria-pressed={isSelected}
       onClick={onClick}
       className={cn(

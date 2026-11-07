@@ -2381,7 +2381,7 @@ export default {
   // ---- Workbench v3 ----
   'project_switcher_current': 'Current project',
   'project_switcher_new': 'New project…',
-  'project_switcher_label': 'Switch project (current: {{name}})',
+  'project_switcher_label': 'Switch project, current: {{name}}',
   'project_switcher_search': 'Search projects',
   'project_switcher_projects': 'Projects',
   'project_switcher_no_match': 'No matching projects',

@@ -7,7 +7,7 @@
 
 [[exemption]]
 key = "server/app.py::lifespan"
-reason = "应用生命周期本身：启动时的沙箱与 Docker 探测、日志文件处理器挂载、首次生成鉴权密码写 .env，关停时的收尾；每个进程各执行一次。"
+reason = "应用生命周期本身：启动时的沙箱与 Docker 探测、日志文件处理器挂载、首次生成的初始管理员密码写入数据根，关停时的收尾；每个进程各执行一次。"
 
 [[exemption]]
 key = "server/app.py::_migrate_source_encoding_on_startup"

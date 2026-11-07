@@ -21,6 +21,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       ARCREEL_LOG_FILE_DISABLED: ${ARCREEL_LOG_FILE_DISABLED:-false}
       ARCREEL_SDK_SESSION_STORE: ${ARCREEL_SDK_SESSION_STORE:-db}
+      # 留空时使用数据存放位置下的 SQLite（projects/arcreel.db）；要连外部数据库时在 .env 中设置
+      DATABASE_URL: ${DATABASE_URL:-}
       # 未设置时使用内置官方服务地址；在 .env 中设为空值即关闭官方服务
       ARCREEL_OFFICIAL_SERVICE_URL: ${ARCREEL_OFFICIAL_SERVICE_URL-https://arc-reel.com}
       TZ: ${TZ:-Asia/Shanghai}
@@ -33,7 +35,7 @@ services:
       - apparmor:unconfined
     cap_add:
       - NET_ADMIN
-    # 宿主机上的数据存放位置取 .env 的 ARCREEL_HOST_DATA_DIR（相对路径以本目录为基准），未设置时为本目录
+    # 宿主机上的数据存放位置取 .env 的 ARCREEL_HOST_DATA_DIR（绝对路径，或以 ./、../ 开头、以本目录为基准的相对路径），未设置时为本目录
     volumes:
       - ${ARCREEL_HOST_DATA_DIR:-.}/projects:/app/projects
       - ${ARCREEL_HOST_DATA_DIR:-.}/claude_data:/root/.claude

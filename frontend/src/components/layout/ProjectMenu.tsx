@@ -85,7 +85,11 @@ export function ProjectMenu() {
           <Button
             variant="ghost"
             className="h-9 min-w-0 shrink justify-start text-left"
-            aria-label={t("dashboard:project_switcher_label", { name: projectTitle })}
+            // 名称要包含按钮上看得到的全部文字（axe label-content-name-mismatch），第二行的类型与画幅也放进去；
+            // 文案不能把这些文字包在括号里：axe 比对前会去掉括号里的内容
+            aria-label={t("dashboard:project_switcher_label", {
+              name: modeLine ? `${projectTitle} ${modeLine}` : projectTitle,
+            })}
           />
         }
       >

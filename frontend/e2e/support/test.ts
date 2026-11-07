@@ -8,9 +8,11 @@ const RECORDED = loadRecordedResponses();
 
 /**
  * 场景对某个接口的替换响应，用于长文本、多条目等压力变体；键形如 `GET /api/v1/projects`，带查询串的请求写全查询串。
- * `body` 是字符串时按 text/plain 原样返回，其余按 JSON 返回。
+ * `body` 是字符串时按 text/plain 原样返回，其余按 JSON 返回。给了 `headers` 时按原样带上这些响应头，
+ * `body` 须是字符串，例如用 `Content-Disposition: attachment` 模拟下载。
  */
-export type ApiOverrides = Record<string, Pick<RecordedResponse, "status" | "body">>;
+export type ApiOverride = Pick<RecordedResponse, "status" | "body"> & { headers?: Record<string, string> };
+export type ApiOverrides = Record<string, ApiOverride>;
 
 export interface ApiStub {
   override(overrides: ApiOverrides): void;
@@ -23,7 +25,7 @@ function isLoopback(url: URL) {
 export const test = base.extend<{ api: ApiStub }>({
   api: [
     async ({ page }, use) => {
-      const overrides = new Map<string, Pick<RecordedResponse, "status" | "body">>();
+      const overrides = new Map<string, ApiOverride>();
       const unrecorded: string[] = [];
 
       await page.clock.setFixedTime(new Date(FIXED_NOW));
@@ -35,10 +37,14 @@ export const test = base.extend<{ api: ApiStub }>({
       await page.route("**/api/**", async (route) => {
         const request = route.request();
         const key = recordedKey(request.method(), request.url());
-        const response = overrides.get(key) ?? RECORDED.get(key);
+        const response: ApiOverride | undefined = overrides.get(key) ?? RECORDED.get(key);
         if (!response) {
           unrecorded.push(key);
           await route.fulfill({ status: 501, json: { detail: `没有录制 ${key}` } });
+          return;
+        }
+        if (response.headers) {
+          await route.fulfill({ status: response.status, headers: response.headers, body: String(response.body) });
           return;
         }
         // 记忆文件正文等接口按 text/plain 返回原文：替换响应的 body 写成字符串

@@ -2493,7 +2493,7 @@ export default {
   // ---- Workbench v3 ----
   'project_switcher_current': 'Текущий проект',
   'project_switcher_new': 'Новый проект…',
-  'project_switcher_label': 'Переключить проект (текущий: {{name}})',
+  'project_switcher_label': 'Переключить проект, текущий: {{name}}',
   'project_switcher_search': 'Поиск проектов',
   'project_switcher_projects': 'Проекты',
   'project_switcher_no_match': 'Нет подходящих проектов',

@@ -27,8 +27,12 @@ function exportWith(diagnosticsBody: Record<string, unknown>): ApiOverrides {
       status: 200,
       body: { download_token: "e2e-token", expires_in: 300, diagnostics: diagnosticsBody },
     },
-    // 下载链接是一次页面跳转；204 让浏览器留在当前页。
-    "GET /api/v1/projects/demo/export?download_token=e2e-token&scope=current": { status: 204, body: null },
+    // 下载链接是一次页面跳转；与后端一样以附件返回，浏览器把它当成下载、留在当前页。
+    "GET /api/v1/projects/demo/export?download_token=e2e-token&scope=current": {
+      status: 200,
+      headers: { "Content-Type": "application/zip", "Content-Disposition": 'attachment; filename="demo.zip"' },
+      body: "",
+    },
   };
 }
 

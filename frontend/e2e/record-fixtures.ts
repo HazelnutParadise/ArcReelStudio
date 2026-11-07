@@ -17,7 +17,7 @@ const DEMO_PROJECT = "demo";
 interface Recording {
   /** 替身文件名（不含扩展名）。 */
   file: string;
-  method: "GET" | "POST" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "DELETE";
   /** 页面实际请求的路径；带查询串时写全，参数顺序不限。查询串不同的请求分别录制。 */
   path: string;
   /** 不带令牌请求。 */
@@ -76,6 +76,13 @@ const RECORDINGS: Recording[] = [
     path: `/api/v1/projects/${DEMO_PROJECT}/assistant/sessions`,
   },
   { file: "project-demo-workflow-status", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/workflow-status` },
+  // 打开项目的标签页每 20 秒报到一次；录制账号只有自己，名单里没有其他成员，顶栏不显示在线头像。
+  {
+    file: "project-demo-presence",
+    method: "PUT",
+    path: `/api/v1/projects/${DEMO_PROJECT}/presence`,
+    json: { client_id: "e2e-tab", view: null },
+  },
   {
     file: "project-demo-workflow-plan",
     method: "POST",

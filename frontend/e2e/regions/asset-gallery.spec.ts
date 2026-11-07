@@ -456,7 +456,7 @@ defineRegionScenarios("资产画廊", [
     ready: galleryReady,
     act: async (page) => {
       const viewer = await openViewer(page, "林夕");
-      await viewer.getByRole("button", { name: "第 1 版", exact: true }).click();
+      await viewer.getByRole("button", { name: "v1 · 第 1 版", exact: true }).click();
       await expect(viewer.getByText("正在查看旧版本，当前是第 3 版")).toBeVisible();
       await viewer.getByRole("button", { name: "还原到此版本" }).click();
       const confirm = page.getByRole("alertdialog", { name: "还原到第 1 版？" });
@@ -477,7 +477,7 @@ defineRegionScenarios("资产画廊", [
       const viewer = await openViewer(page, LONG_NAME);
       const strip = viewer.getByRole("list", { name: "历史版本" });
       await expect(strip.getByRole("button")).toHaveCount(60);
-      const first = strip.getByRole("button", { name: "第 1 版", exact: true });
+      const first = strip.getByRole("button", { name: "v1 · 第 1 版", exact: true });
       await first.scrollIntoViewIfNeeded();
       await first.click();
       await expect(viewer.getByRole("button", { name: "还原到此版本" })).toBeInViewport({ ratio: 1 });

@@ -2279,7 +2279,7 @@ export default {
   // ---- Workbench v3 ----
   'project_switcher_current': '當前專案',
   'project_switcher_new': '新增專案…',
-  'project_switcher_label': '切換專案（當前：{{name}}）',
+  'project_switcher_label': '切換專案，目前：{{name}}',
   'project_switcher_search': '搜尋專案',
   'project_switcher_projects': '專案',
   'project_switcher_no_match': '沒有匹配的專案',

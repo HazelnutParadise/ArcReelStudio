@@ -2280,7 +2280,7 @@ export default {
   // ---- Workbench v3 ----
   'project_switcher_current': '当前项目',
   'project_switcher_new': '新建项目…',
-  'project_switcher_label': '切换项目（当前：{{name}}）',
+  'project_switcher_label': '切换项目，当前：{{name}}',
   'project_switcher_search': '搜索项目',
   'project_switcher_projects': '项目',
   'project_switcher_no_match': '没有匹配的项目',

@@ -86,6 +86,10 @@ _STDLIB_DIRS = tuple(
 # asyncpg 解析连接参数时在事件循环上探测 ~/.pgpass 与 ~/.postgresql 下的证书文件，每条新连接
 # 一次。违规会记到恰好让连接池新建连接的调用方头上，随运行顺序变化，也只在 PostgreSQL 下出现，
 # 只在 PostgreSQL 下出现的违规在 SQLite 的运行里看不到。
+# httpx2 每新建一个用户端，httpcore2 的 default_ssl_context 就在事件循环上逐个探测系统证书文件与目录
+# （isfile / isdir / listdir，只走 Linux 分支，macOS 与 Windows 用 truststore）。违规会记到恰好新建
+# 用户端的调用方头上，只在 Linux 的运行里出现。读证书内容的 load_verify_locations 不在拦截点内，
+# 换成 httpx2 之前用 certifi 时同样每个用户端读一次证书包。
 # coverage 的 tracer 每进入或恢复一个被测帧，都经 lock_data 阻塞地获取自身的数据锁（concurrency 含
 # thread 时才有这把锁），工作线程上的 tracer 恰好持锁时事件循环线程就等它。违规会随线程交错落在任意
 # 被测协程头上，常见的是生成队列 worker 主循环在 await 处恢复的那一刻；这把锁只在开 coverage 的运行里
@@ -98,6 +102,7 @@ _ALWAYS_ALLOWED_FRAMES: tuple[tuple[str, frozenset[str] | None], ...] = (
     ("<frozen importlib._bootstrap>", None),
     ("<frozen importlib._bootstrap_external>", None),
     ("asyncpg/connect_utils.py", frozenset({"_parse_connect_arguments"})),
+    ("httpcore2/_ssl.py", frozenset({"default_ssl_context"})),
     ("coverage/collector.py", frozenset({"lock_data"})),
 )
 

@@ -2755,7 +2755,7 @@ export default {
   'workspace_nav_label': 'Điều hướng không gian làm việc',
   'project_switcher_current': 'Dự án hiện tại',
   'project_switcher_new': 'Dự án mới…',
-  'project_switcher_label': 'Chuyển dự án (hiện tại: {{name}})',
+  'project_switcher_label': 'Chuyển dự án, hiện tại: {{name}}',
   'project_switcher_search': 'Tìm dự án',
   'project_switcher_projects': 'Dự án',
   'project_switcher_no_match': 'Không có dự án phù hợp',

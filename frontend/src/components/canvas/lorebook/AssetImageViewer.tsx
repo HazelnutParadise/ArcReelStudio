@@ -349,11 +349,12 @@ function VersionStrip({
               type="button"
               disabled={disabled}
               aria-pressed={active}
-              aria-label={
+              // 名称以按钮上看得到的「v2」开头，再接完整说法与是否为当前版本
+              aria-label={`v${v.version} · ${
                 v.is_current
                   ? t("assets:viewer_version_current", { version: v.version })
                   : t("assets:viewer_version", { version: v.version })
-              }
+              }`}
               onClick={() => onSelect(v.version)}
               className={cn(
                 "focus-ring relative flex w-24 flex-col overflow-hidden rounded-md border-2 bg-background transition-colors duration-fast disabled:cursor-not-allowed disabled:opacity-50",

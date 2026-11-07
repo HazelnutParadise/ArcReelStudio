@@ -596,7 +596,7 @@ describe("AssetGallery", () => {
       renderGallery({ onRestoreVersion });
       const viewer = await openViewer(user, "庭院");
 
-      await user.click(await within(viewer).findByRole("button", { name: "第 1 版" }));
+      await user.click(await within(viewer).findByRole("button", { name: "v1 · 第 1 版" }));
 
       expect(within(viewer).getByRole("img", { name: "「庭院」的资产图，第 1 版" })).toHaveAttribute(
         "src",
@@ -628,7 +628,7 @@ describe("AssetGallery", () => {
       const stage = current.closest("span")?.parentElement as HTMLElement;
       fireEvent.load(current);
 
-      await user.click(await within(viewer).findByRole("button", { name: "第 1 版" }));
+      await user.click(await within(viewer).findByRole("button", { name: "v1 · 第 1 版" }));
       fireEvent.error(within(viewer).getByRole("img", { name: "「庭院」的资产图，第 1 版" }));
 
       // 第 1 版读不出来：显示占位，不能让第 2 版的画面冒充第 1 版
@@ -640,7 +640,7 @@ describe("AssetGallery", () => {
       renderGallery({ generatingNames: new Set(["庭院"]) });
       const viewer = await openViewer(user, "庭院");
 
-      await user.click(await within(viewer).findByRole("button", { name: "第 1 版" }));
+      await user.click(await within(viewer).findByRole("button", { name: "v1 · 第 1 版" }));
 
       const restore = within(viewer).getByRole("button", { name: "还原到此版本" });
       expect(restore).toBeDisabled();
