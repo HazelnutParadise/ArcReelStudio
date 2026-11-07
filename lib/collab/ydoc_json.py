@@ -79,7 +79,7 @@ def _normalize(value: JSONValue) -> JSONValue:
 
 
 def _reconcile_map(target: Map, value: dict[str, JSONValue]) -> None:
-    for key in [k for k in target if k not in value]:
+    for key in [k for k in target.keys() if k not in value]:  # noqa: SIM118 -- pycrdt 的 Map 没有声明迭代协议，类型检查认不出直接迭代
         del target[key]
     for key, new in value.items():
         if key not in target:
