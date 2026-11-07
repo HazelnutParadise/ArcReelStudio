@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Literal
 from uuid import uuid4
 
+from lib.agent.agent_auth import DEFAULT_RETRY_AFTER_SECONDS, AuthSource, auth_availability
 from lib.agent.agent_memory_paths import project_memory_dir
 from lib.agent.credential_tiers import AgentPricing
 from lib.db.base import DEFAULT_USER_ID
@@ -49,7 +50,7 @@ from server.agent_runtime.models import (
     SubscriptionReady,
     WithdrawalIntent,
 )
-from server.agent_runtime.options_assembler import OptionsAssembler, agent_pricing_of
+from server.agent_runtime.options_assembler import OptionsAssembler, agent_pricing_of, auth_source_of
 from server.agent_runtime.result_status import resolve_result_status
 from server.agent_runtime.sdk_frames import CommandLifecycle
 from server.agent_runtime.session_actor import SessionActor, SessionCommand
@@ -331,6 +332,10 @@ class ManagedSession:
     # 会话连接时注入环境变量的 Agent 凭证及其当时的倍率与档位绑定：本连接的轮次按它计价（docs/adr/0017、0102）。
     # 回退到系统设置时为默认值（无凭证、倍率 1、没有绑定）。
     agent_pricing: AgentPricing = field(default_factory=AgentPricing)
+    # 会话连接时用的认证来源（Claude 订阅或 API Key），这段连接的轮次都用它
+    auth_source: AuthSource = "api_key"
+    # 这段连接读到额度用完或认证失败：(读到过, 到期时间)；到期时间 None 表示要等重新配置。离开 running 时结算
+    auth_failure: tuple[bool, float | None] = (False, None)
     # 本连接的用量计量：流内请求与 model_usage 的差分基线（docs/adr/0102）。
     usage_meter: TurnUsageMeter = field(default_factory=lambda: TurnUsageMeter(resumed=False))
     interrupt_requested: bool = False
@@ -562,6 +567,29 @@ class ManagedSession:
 
 # result 中随会话状态一并下发的字段（entry 流的 status 事件据此标注错误原因）。
 _RESULT_STATUS_FIELDS = ("subtype", "stop_reason", "is_error", "api_error_status")
+
+# 助手消息带上这些错误时，正在用的认证来源暂时不能用：额度类等窗口重置，认证失败要等重新配置
+_QUOTA_ERRORS = frozenset({"rate_limit", "billing_error"})
+_AUTH_ERRORS = frozenset({"authentication_failed"})
+
+
+def auth_failure_from_message(msg: dict[str, Any], *, now: float) -> tuple[bool, float | None]:
+    """从一条 SDK 消息看出认证来源是否不能用：``(是, 到期时间)``；到期时间 ``None`` 表示要等重新配置。"""
+    info = msg.get("rate_limit_info")
+    if isinstance(info, dict):
+        if info.get("status") != "rejected":
+            return False, None
+        resets_at = info.get("resets_at") or info.get("resetsAt")
+        if isinstance(resets_at, (int, float)) and not isinstance(resets_at, bool) and resets_at > now:
+            return True, float(resets_at)
+        return True, now + DEFAULT_RETRY_AFTER_SECONDS
+    if msg.get("type") == "assistant":
+        error = msg.get("error")
+        if error in _QUOTA_ERRORS:
+            return True, now + DEFAULT_RETRY_AFTER_SECONDS
+        if error in _AUTH_ERRORS:
+            return True, None
+    return False, None
 
 
 def _cli_session_state(msg: dict[str, Any]) -> str | None:
@@ -908,6 +936,7 @@ class SessionManager:
             status="running",
             project_name=project_name,
             agent_pricing=agent_pricing_of(options),
+            auth_source=auth_source_of(options),
         )
         if user_entry is not None:
             managed.pending_initial_user_entry = {"entry": user_entry, "client_key": client_key}
@@ -1308,6 +1337,7 @@ class SessionManager:
             status=resumed_status,
             project_name=meta.project_name,
             agent_pricing=agent_pricing_of(options),
+            auth_source=auth_source_of(options),
             # 恢复会话的 CLI 带着此前的累计用量，差分以恢复后第一条结果为起点
             usage_meter=TurnUsageMeter(resumed=resumable),
             resolved_sdk_id=meta.id,  # 标记为已注册，防止重复创建 DB 记录
@@ -1724,6 +1754,9 @@ class SessionManager:
 
     def _handle_special_message(self, managed: ManagedSession, msg_dict: dict[str, Any]) -> None:
         """Handle result messages before broadcast."""
+        seen, until = auth_failure_from_message(msg_dict, now=time.time())
+        if seen:
+            managed.auth_failure = (True, until)
         if msg_dict.get("type") == "result":
             msg_dict["session_status"] = self._resolve_result_status(
                 msg_dict,
@@ -1862,7 +1895,57 @@ class SessionManager:
                 **{key: result[key] for key in _RESULT_STATUS_FIELDS if key in result},
             }
         )
+        if await self._settle_auth_failure(managed):
+            return
         self._schedule_cleanup(managed.session_id)
+
+    async def _settle_auth_failure(self, managed: ManagedSession) -> bool:
+        """这段连接读到额度用完或认证失败时记下不可用；「优先」模式下另一方能接手就结束这段连接。
+
+        连接的认证来源在连接时就定了，换来源只能重连：结束后下一则消息会以新来源恢复同一个会话。
+        返回是否已安排结束连接。
+        """
+        seen, until = managed.auth_failure
+        if not seen:
+            return False
+        managed.auth_failure = (False, None)
+        auth_availability.mark_unavailable(managed.auth_source, until=until)
+        try:
+            fallback = await self._auth_fallback_for(managed.auth_source)
+        except Exception:
+            logger.warning("查询 Agent 认证改用方式失败 session_id=%s", managed.session_id, exc_info=True)
+            return False
+        if fallback is None:
+            return False
+        logger.info(
+            "Agent 认证来源暂时不可用，结束连接以便下一则消息改用另一方 session_id=%s from=%s to=%s",
+            managed.session_id,
+            managed.auth_source,
+            fallback,
+        )
+        # 与闲置清理共用一个槽位：任务有人持有，新一轮开始时也会按同样的规则取消
+        if managed._cleanup_task is not None and not managed._cleanup_task.done():
+            managed._cleanup_task.cancel()
+        managed._cleanup_task = asyncio.create_task(
+            self._close_for_auth_switch(managed.session_id), name="agent-auth-switch"
+        )
+        return True
+
+    async def _close_for_auth_switch(self, session_id: str) -> None:
+        managed = self.sessions.get(session_id)
+        if managed is None or managed.status == "running":
+            # 关闭前又有消息开了新一轮：断开会中止它，这一轮照旧用原来的来源跑完
+            return
+        # 先摘掉自己的引用，免得 _evict_one 取消清理任务时取消到自己（与 _cleanup_idle 一致）
+        managed._cleanup_task = None
+        await self.close_session(session_id, reason="agent auth switched")
+
+    async def _auth_fallback_for(self, current: AuthSource) -> AuthSource | None:
+        from lib.config.service import auth_fallback_for
+        from lib.db import async_session_factory
+
+        async with async_session_factory() as session:
+            return await auth_fallback_for(session, current)
 
     async def _record_assistant_usage(
         self,

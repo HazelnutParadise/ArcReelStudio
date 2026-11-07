@@ -24,6 +24,19 @@ The Agent is responsible for:
 
 ArcReel's Agent Runtime is based on the Claude Agent SDK and supports Anthropic's official service as well as compatible configurations supported by the project. The "Anthropic Official" preset always connects to Anthropic's official address, which cannot be changed.
 
+The Agent can also use a Claude subscription. In "Settings › ArcReel Agent › Claude subscription", an admin clicks "Sign in with Claude", signs in and approves on the Claude authorization page, then pastes the code shown there. The whole workspace shares that account's usage.
+
+After signing in, choose how the Agent signs in:
+
+| Option | What it does |
+| --- | --- |
+| Prefer the subscription (default) | When the subscription runs out, the next message uses the API key; it switches back once usage resets |
+| Prefer the API key | When the API key runs out or fails, the next message uses the subscription |
+| Subscription only | Only the subscription; when it runs out, wait for usage to reset |
+| API key only | Never use the subscription |
+
+Switching happens on the next message: the turn in progress finishes the way it started. No reference cost is recorded while the subscription is in use.
+
 The Agent provider does not necessarily handle the actual image and video generation.
 
 ### 1.2 Media and Text Providers {#media-and-text-providers}

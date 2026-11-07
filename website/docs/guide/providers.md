@@ -24,6 +24,19 @@ Agent 负责：
 
 ArcReel 的 Agent Runtime 基于 Claude Agent SDK，支持 Anthropic 官方服务以及项目所支持的兼容配置。预设的「Anthropic Official」固定连接 Anthropic 官方地址，不能修改。
 
+Agent 也可以用 Claude 订阅账号的额度。管理员在「设置 › ArcReel Agent › Claude 订阅」点「用 Claude 账号登录」，打开 Claude 授权页登录并同意授权，再把页面显示的验证码贴回来，就完成登录。整个工作区共用同一个账号的额度。
+
+登录后可以选择 Agent 的使用方式：
+
+| 方式 | 说明 |
+| --- | --- |
+| 优先用订阅（默认） | 订阅额度用完时，下一条消息改用 API Key；额度重置后再改回订阅 |
+| 优先用 API Key | API Key 额度用完或无法使用时，下一条消息改用订阅 |
+| 只用订阅 | 只用订阅额度，用完就等额度重置 |
+| 只用 API Key | 不使用订阅 |
+
+改用另一方发生在下一条消息：正在进行的那一轮仍按原来的方式跑完。使用订阅时不计算参考费用。
+
 Agent 供应商不一定承担实际图片和视频生成。
 
 ### 1.2 媒体与文本供应商 {#media-and-text-providers}

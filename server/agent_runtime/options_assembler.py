@@ -18,6 +18,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from pathlib import Path
 from typing import Any
 
+from lib.agent.agent_auth import AuthSource
 from lib.agent.agent_memory_index import INDEX_FILENAME, truncate_memory_index
 from lib.agent.agent_memory_paths import is_valid_memory_user_id, project_memory_dir
 from lib.agent.agent_session_store import (
@@ -59,15 +60,24 @@ class AgentEnv(dict[str, str]):
     会话层；没有生效凭证、env 回退到系统设置时为默认值。
     """
 
-    def __init__(self, env: dict[str, str], *, agent_pricing: AgentPricing) -> None:
+    def __init__(
+        self, env: dict[str, str], *, agent_pricing: AgentPricing, auth_source: AuthSource = "api_key"
+    ) -> None:
         super().__init__(env)
         self.agent_pricing = agent_pricing
+        self.auth_source: AuthSource = auth_source
 
 
 def agent_pricing_of(options: object) -> AgentPricing:
     """会话 options 注入的 Agent 凭证计价依据；env 不是 :class:`AgentEnv` 时取默认值。"""
     env = getattr(options, "env", None)
     return env.agent_pricing if isinstance(env, AgentEnv) else AgentPricing()
+
+
+def auth_source_of(options: object) -> AuthSource:
+    """会话 options 用的认证来源；env 不是 :class:`AgentEnv` 时视为 API Key。"""
+    env = getattr(options, "env", None)
+    return env.auth_source if isinstance(env, AgentEnv) else "api_key"
 
 
 async def load_provider_env_overrides() -> dict[str, str]:
@@ -86,9 +96,10 @@ async def load_provider_env_overrides() -> dict[str, str]:
     async with async_session_factory() as session:
         anthropic = await build_anthropic_env(session)
 
-    result = AgentEnv(anthropic.env, agent_pricing=anthropic.pricing)
+    result = AgentEnv(anthropic.env, agent_pricing=anthropic.pricing, auth_source=anthropic.source)
     for key in OTHER_PROVIDER_ENV_KEYS:
-        result[key] = ""
+        # 认证来源自己带的值（订阅令牌）保留，其余一律空值覆盖
+        result.setdefault(key, "")
     return result
 
 

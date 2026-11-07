@@ -7,6 +7,14 @@ from typing import Literal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from arcreel_market_core.video_backend_contract import DEFAULT_VIDEO_POLL_TIMEOUT_SECONDS
+from lib.agent.agent_auth import (
+    AUTH_MODE_SETTING_KEY,
+    AuthSource,
+    auth_availability,
+    choose_auth_source,
+    fallback_source,
+    parse_auth_mode,
+)
 from lib.agent.credential_tiers import TIERS, AgentPricing, Tier, agent_pricing, tier_models
 from lib.catalog import query as catalog
 from lib.catalog.builtin_models import disabled_builtin_models
@@ -77,12 +85,17 @@ _TIER_ENV_KEYS: dict[Tier, str] = {
 }
 
 
+#: Claude 订阅登录换来的长效令牌经这个环境变量交给 CLI
+OAUTH_TOKEN_ENV_KEY = "CLAUDE_CODE_OAUTH_TOKEN"
+
+
 @dataclass(frozen=True)
 class AnthropicEnv:
-    """注入 Agent 会话的 ANTHROPIC_* 环境变量，以及取自同一行凭证的计价依据（没有生效凭证时为默认值）。"""
+    """注入 Agent 会话的认证环境变量，以及计价依据（没有生效凭证时为默认值）与这次用的认证来源。"""
 
     env: dict[str, str]
     pricing: AgentPricing
+    source: AuthSource = "api_key"
 
 
 async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
@@ -95,10 +108,28 @@ async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
     :func:`lib.agent.credential_tiers.tier_models`。
     """
     # 局部 import 避免循环依赖（agent_credential_repo → agent_credential model → base）
+    from lib.db.repositories import claude_subscription_repo
     from lib.db.repositories.agent_credential_repo import AgentCredentialRepository
 
     cred = await AgentCredentialRepository(session).get_active()
     settings = await SystemSettingRepository(session).get_all()
+    subscription = await claude_subscription_repo.ClaudeSubscriptionRepository(session).get()
+
+    legacy_env = {env_key: settings.get(db_key, "").strip() for db_key, env_key in _ANTHROPIC_ENV_MAP.items()}
+    has_api_key = bool(cred.api_key if cred is not None else legacy_env["ANTHROPIC_API_KEY"])
+    source = choose_auth_source(
+        parse_auth_mode(settings.get(AUTH_MODE_SETTING_KEY)),
+        has_api_key=has_api_key,
+        has_subscription=subscription is not None,
+        availability=auth_availability,
+    )
+
+    if source == "subscription" and subscription is not None:
+        # 订阅会话只带令牌：API Key 凭证的地址、密钥与档位模型都不带进来，模型由 CLI 按订阅默认值选；
+        # 订阅额度不按 token 计费，倍率记 0
+        env = dict.fromkeys(ANTHROPIC_ENV_KEYS, "")
+        env[OAUTH_TOKEN_ENV_KEY] = subscription.oauth_token
+        return AnthropicEnv(env=env, pricing=AgentPricing(multiplier=0.0), source="subscription")
 
     if cred is not None:
         models = tier_models(cred, settings)
@@ -106,13 +137,28 @@ async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
             "ANTHROPIC_API_KEY": cred.api_key or "",
             "ANTHROPIC_BASE_URL": cred.base_url or "",
             **{_TIER_ENV_KEYS[tier]: models[tier] for tier in TIERS},
+            OAUTH_TOKEN_ENV_KEY: "",
         }
         return AnthropicEnv(env=env, pricing=agent_pricing(cred, settings))
 
     # 无 active credential — 回退 system_settings（双轨期兼容）
-    return AnthropicEnv(
-        env={env_key: settings.get(db_key, "").strip() for db_key, env_key in _ANTHROPIC_ENV_MAP.items()},
-        pricing=AgentPricing(),
+    return AnthropicEnv(env={**legacy_env, OAUTH_TOKEN_ENV_KEY: ""}, pricing=AgentPricing())
+
+
+async def auth_fallback_for(session: AsyncSession, current: AuthSource) -> AuthSource | None:
+    """``current`` 不能用时，按目前的认证方式与配置可以改用的另一方；不能改用时为 ``None``。"""
+    from lib.db.repositories import claude_subscription_repo
+    from lib.db.repositories.agent_credential_repo import AgentCredentialRepository
+
+    cred = await AgentCredentialRepository(session).get_active()
+    settings = await SystemSettingRepository(session).get_all()
+    subscription = await claude_subscription_repo.ClaudeSubscriptionRepository(session).get()
+    has_api_key = bool(cred.api_key if cred is not None else settings.get("anthropic_api_key", "").strip())
+    return fallback_source(
+        parse_auth_mode(settings.get(AUTH_MODE_SETTING_KEY)),
+        current,
+        has_api_key=has_api_key,
+        has_subscription=subscription is not None,
     )
 
 

@@ -210,8 +210,11 @@ import type {
 } from "@/types/asset-sheet";
 import type { StoryboardBatchKind, StoryboardBatchPreview, StoryboardBatchSubmitted } from "@/types/storyboard-batch";
 import type {
+  AgentAuthMode,
   AgentCredential,
   AgentCredentialTier,
+  ClaudeLoginStart,
+  ClaudeSubscriptionStatus,
   CreateAgentCredentialRequest,
   PresetProvidersResponse,
   TestConnectionRequest,
@@ -3481,6 +3484,33 @@ class API {
 
   static async listAgentPresetProviders(options: { signal?: AbortSignal } = {}): Promise<PresetProvidersResponse> {
     return this.request("/agent/preset-providers", { signal: options.signal });
+  }
+
+  static async getClaudeSubscription(options: { signal?: AbortSignal } = {}): Promise<ClaudeSubscriptionStatus> {
+    return this.request("/agent/subscription", { signal: options.signal });
+  }
+
+  static async startClaudeLogin(): Promise<ClaudeLoginStart> {
+    return this.request("/agent/subscription/login", { method: "POST" });
+  }
+
+  static async finishClaudeLogin(loginId: string, code: string): Promise<ClaudeSubscriptionStatus> {
+    return this.request(`/agent/subscription/login/${encodeURIComponent(loginId)}`, {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  static async cancelClaudeLogin(): Promise<void> {
+    await this.request("/agent/subscription/login", { method: "DELETE" });
+  }
+
+  static async logoutClaudeSubscription(): Promise<ClaudeSubscriptionStatus> {
+    return this.request("/agent/subscription", { method: "DELETE" });
+  }
+
+  static async setAgentAuthMode(mode: AgentAuthMode): Promise<ClaudeSubscriptionStatus> {
+    return this.request("/agent/subscription/mode", { method: "PUT", body: JSON.stringify({ mode }) });
   }
 
   static async listAgentCredentials(

@@ -73,6 +73,7 @@ from server.routers import (
     ad_script,
     agent_config,
     agent_memory,
+    agent_subscription,
     api_keys,
     asset_library,
     asset_sheets,
@@ -826,6 +827,9 @@ app.include_router(system.router, prefix="/api/v1", dependencies=[Depends(get_cu
 app.include_router(api_keys.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["API Key 管理"])
 app.include_router(users_router.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["成员管理"])
 app.include_router(agent_config.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["Agent 配置"])
+app.include_router(
+    agent_subscription.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["Agent 配置"]
+)
 app.include_router(
     custom_providers.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["自定义供应商"]
 )

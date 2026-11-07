@@ -5,6 +5,7 @@ import { Link } from "wouter";
 
 import { API } from "@/api";
 import { settingsSectionPath } from "@/app-routes";
+import { ClaudeSubscriptionSection } from "@/components/agent/ClaudeSubscriptionSection";
 import { CredentialsSection } from "@/components/agent/CredentialsSection";
 import { SaveBar } from "@/components/shared/edit-unit/SaveBar";
 import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
@@ -80,6 +81,7 @@ export function AgentConfigTab() {
         </p>
       </header>
       <ConfigIssueNotice issues={issues} />
+      <ClaudeSubscriptionSection />
       <CredentialsSection />
       <RuntimeSettings />
       <p className="text-sm text-muted-foreground">

@@ -123,3 +123,29 @@ export interface TestConnectionRequest {
   api_key: string;
   model?: string | null;
 }
+
+// ==================== Claude 订阅登录 ====================
+
+/** Agent 会话用哪种认证：只用 API Key、只用订阅，或优先用其中一方、不能用时改用另一方。 */
+export type AgentAuthMode = "api_key" | "subscription" | "prefer_subscription" | "prefer_api_key";
+
+/** 一方暂时不能用：`until` 是到期时间（Unix 秒），要等重新配置时为 null。 */
+export interface AgentAuthAvailability {
+  blocked: boolean;
+  until: number | null;
+}
+
+export interface ClaudeSubscriptionStatus {
+  logged_in: boolean;
+  token_masked: string | null;
+  logged_in_at: string | null;
+  mode: AgentAuthMode;
+  has_api_key: boolean;
+  subscription: AgentAuthAvailability;
+  api_key: AgentAuthAvailability;
+}
+
+export interface ClaudeLoginStart {
+  login_id: string;
+  authorize_url: string;
+}
