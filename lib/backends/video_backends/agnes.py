@@ -253,7 +253,7 @@ def _coerce_duration(value: object) -> int | None:
         if not 0 < decimal_value <= MAX_BILLED_DURATION_SECONDS:
             return None
         return int(decimal_value.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-    except (InvalidOperation, TypeError, ValueError):
+    except InvalidOperation, TypeError, ValueError:
         return None
 
 

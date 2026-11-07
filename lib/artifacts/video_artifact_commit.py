@@ -83,7 +83,7 @@ def commit_paid_video_artifact(
             return False
         try:
             current_basis = resolve_current_basis(metadata)
-        except (FileNotFoundError, KeyError, TypeError, ValueError):
+        except FileNotFoundError, KeyError, TypeError, ValueError:
             return False
         return current_basis == frozen_basis
 
@@ -127,7 +127,7 @@ def _typed_video_identity(
 ) -> VideoArtifactCurrencyFacts | None:
     try:
         return VideoArtifactCurrencyFacts.from_dict(metadata.get("artifact_video_currency"))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 

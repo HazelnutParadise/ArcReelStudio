@@ -40,7 +40,7 @@ def is_typed_media_version_restorable(resource_type: str, record: Mapping[str, A
         return True
     try:
         parse_typed_media_version_record(resource_type, record)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return False
     return True
 

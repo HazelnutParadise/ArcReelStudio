@@ -608,7 +608,7 @@ def accept_external_source_change(
         path = pm.get_project_path(project_name) / "source" / filename
         try:
             return _text_digest(normalize_source_text(path.read_text(encoding="utf-8")))
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             return ""
 
     operation = {"action": "accept_external", "file": filename, "text": current_digest()}

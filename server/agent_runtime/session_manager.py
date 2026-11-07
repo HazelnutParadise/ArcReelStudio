@@ -11,7 +11,7 @@ import time
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Optional
+from typing import Any, ClassVar, Literal
 from uuid import uuid4
 
 from lib.agent.agent_memory_paths import project_memory_dir
@@ -298,7 +298,7 @@ class ManagedSession:
     """A managed ClaudeSDKClient session."""
 
     session_id: str  # sdk_session_id（已有会话）或临时 UUID（新会话等待中）
-    actor: "SessionActor"  # per-session actor owning the SDK client
+    actor: SessionActor  # per-session actor owning the SDK client
     status: SessionStatus = "idle"
     project_name: str = ""  # 用于 _register_new_session
     sdk_id_event: asyncio.Event = field(default_factory=asyncio.Event)
@@ -744,7 +744,7 @@ class SessionManager:
             raise FileNotFoundError(f"project not found: {project_name}")
         return project_cwd
 
-    def _build_entry_pipeline(self, managed: "ManagedSession") -> SessionEntryPipeline:
+    def _build_entry_pipeline(self, managed: ManagedSession) -> SessionEntryPipeline:
         """构建会话的事件日志写入点管道。
 
         session_id 用 provider 现取：新会话在 sdk_session_id 就绪前为 None，
@@ -759,7 +759,7 @@ class SessionManager:
 
     def _make_actor_message_callback(
         self,
-        managed_ref: list["ManagedSession | None"],
+        managed_ref: list[ManagedSession | None],
     ) -> Callable[[Any], None]:
         """Sync on_message callback shared by send_new_session and get_or_connect.
 
@@ -806,7 +806,7 @@ class SessionManager:
 
     @staticmethod
     def _make_command_lifecycle_callback(
-        managed_ref: list["ManagedSession | None"],
+        managed_ref: list[ManagedSession | None],
     ) -> Callable[[CommandLifecycle], None]:
         """CLI 报告排队消息的去向：交给 inbox，排在此前读出的输出之后处理。"""
 
@@ -825,7 +825,7 @@ class SessionManager:
 
     def _make_actor_done_callback(
         self,
-        managed: "ManagedSession",
+        managed: ManagedSession,
     ) -> Callable[[asyncio.Task], None]:
         """Actor task done_callback: push inbox sentinel + persist error state.
 
@@ -1756,7 +1756,7 @@ class SessionManager:
             return
         try:
             expected = project_memory_dir(self._resolve_project_cwd(managed.project_name))
-        except (ValueError, FileNotFoundError):
+        except ValueError, FileNotFoundError:
             return
         if Path(str(reported)).resolve(strict=False) == expected.resolve(strict=False):
             return
@@ -2131,7 +2131,7 @@ class SessionManager:
 
     async def _handle_ask_user_question(
         self,
-        managed: Optional["ManagedSession"],
+        managed: ManagedSession | None,
         tool_name: str,
         input_data: dict[str, Any],
     ) -> Any:
@@ -2165,7 +2165,7 @@ class SessionManager:
     async def _build_can_use_tool_callback(
         self,
         session_id: str,
-        managed_ref: list[Optional["ManagedSession"]] | None = None,
+        managed_ref: list[ManagedSession | None] | None = None,
     ):
         """Create per-session can_use_tool callback (default-deny).
 

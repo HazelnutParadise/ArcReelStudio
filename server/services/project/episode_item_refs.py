@@ -94,14 +94,14 @@ def _thumbnail(item: Mapping[str, Any]) -> str | None:
 def _load_script(projects: ProjectManager, project_name: str, script_file: str) -> Mapping[str, Any] | None:
     try:
         return projects.load_script_readonly(project_name, script_file)
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
 
 
 def _load_project(projects: ProjectManager, project_name: str) -> Mapping[str, Any] | None:
     try:
         return projects.load_project(project_name)
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
 
 

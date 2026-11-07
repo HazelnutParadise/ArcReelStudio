@@ -364,7 +364,7 @@ def current_artifact_probe(project_dir: Path) -> CurrentArtifactProbe:
 
     try:
         resolver = ArtifactCurrencyResolver(project_dir)
-    except (ArtifactManifestError, OSError, ValueError):
+    except ArtifactManifestError, OSError, ValueError:
         return lambda _key, _path: False
 
     def is_current(key: ArtifactKey, artifact_path: object) -> bool:
@@ -378,7 +378,7 @@ def current_artifact_probe(project_dir: Path) -> CurrentArtifactProbe:
                 basis = resolver.resolve_basis(key)
                 return basis is None or basis.kind != uploaded_kind
             return True
-        except (ArtifactManifestError, OSError, RuntimeError, TypeError, ValueError):
+        except ArtifactManifestError, OSError, RuntimeError, TypeError, ValueError:
             return False
 
     return is_current
@@ -394,7 +394,7 @@ def speech_signature(kind: str, item: Mapping[str, Any]) -> str | None:
         if not admission.allowed:
             return None
         return build_video_speech_basis(admission.preparation).digest
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 
@@ -415,7 +415,7 @@ def grid_merge_references(
     }
     try:
         grids = TargetStatePlanner(project_dir).load_grid_records()
-    except (ArtifactManifestError, OSError, ValueError):
+    except ArtifactManifestError, OSError, ValueError:
         # 同 current_artifact_probe：无法读取依据的产物不计为从现行转成过期。
         return set(), {}
     outdated = {

@@ -215,7 +215,7 @@ def _rewrite_selected_versions(
                 continue
             try:
                 frozen_facts = VideoArtifactCurrencyFacts.from_dict(record.get("artifact_video_currency"))
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 withdrawn.append(key)
                 continue
             if frozen_facts.video_basis.digest == target.basis_digest:
@@ -237,7 +237,7 @@ def _rewrite_selected_versions(
             continue
         try:
             frozen = parse_image_version_basis(resource_type, resource_id, record)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             withdrawn.append(key)
             continue
         if frozen.digest == target.basis_digest:

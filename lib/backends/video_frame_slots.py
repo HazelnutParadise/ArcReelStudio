@@ -98,7 +98,7 @@ class FrameSlotPlan:
     ``reference_images``（保留 None / [] 语义）。
     """
 
-    specs: "list[ReferenceSpec]"
+    specs: list[ReferenceSpec]
     start_index: int | None = None
     end_index: int | None = None
     reference_start_index: int | None = None
@@ -113,8 +113,8 @@ def gate_video_request(
     has_image: bool = False,
     has_first_frame: bool = False,
     end_image: Path | None = None,
-    reference_images: "list[Path] | None" = None,
-    reference_audio_files: "list[Path] | None" = None,
+    reference_images: list[Path] | None = None,
+    reference_audio_files: list[Path] | None = None,
     reference_audio_total_seconds: float | None = None,
 ) -> None:
     """统一的请求期能力前置校验：违约抛 ``VideoCapabilityError``，通过则静默返回。
@@ -213,9 +213,9 @@ def gate_video_request(
 
 def plan_frame_slots(
     *,
-    start_image: "str | Path | Image.Image | None" = None,
+    start_image: str | Path | Image.Image | None = None,
     end_image: Path | None = None,
-    reference_images: "list[Path] | None" = None,
+    reference_images: list[Path] | None = None,
 ) -> FrameSlotPlan:
     """按输入组装帧/参考图槽位——纯函数，不判定能力、不抛异常。
 

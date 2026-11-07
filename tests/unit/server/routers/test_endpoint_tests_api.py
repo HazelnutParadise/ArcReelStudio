@@ -79,7 +79,7 @@ def endpoint_tests_app(file_db_engine, trial_runs: TrialRunManager) -> FastAPI:
 
 
 @pytest.fixture
-def client(endpoint_tests_app: FastAPI) -> Generator[TestClient, None, None]:
+def client(endpoint_tests_app: FastAPI) -> Generator[TestClient]:
     with TestClient(endpoint_tests_app) as test_client:
         yield test_client
 

@@ -225,7 +225,7 @@ async def _run_replan[T](name: str, user_id: str, _t: Translator, action: Callab
         return await run_sync_transaction(_sync)
     except ReplanError as exc:
         raise _replan_http_error(exc.code, _t) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")

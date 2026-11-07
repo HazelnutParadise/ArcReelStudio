@@ -826,7 +826,7 @@ async def execute_tts_task(
                         item["generated_assets"] = assets
                     assets["narration_audio"] = audio_rel
                     pm.update_scene_status(item)
-        except (EpisodeScriptReboundError, _TtsSelectionResolutionFailed):
+        except EpisodeScriptReboundError, _TtsSelectionResolutionFailed:
             committed_outcome.append(_archive_paid_history())
         except BaseException as failure:
             if staged_path.is_file():

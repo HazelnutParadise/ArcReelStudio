@@ -154,7 +154,7 @@ def image_suffix(content: bytes) -> str:
             if img.size[0] * img.size[1] > MAX_UPLOAD_PIXELS:
                 raise ImagePixelLimitError("too many pixels")
             img.verify()
-    except (UnidentifiedImageError, OSError, ValueError, SyntaxError, Image.DecompressionBombError):
+    except UnidentifiedImageError, OSError, ValueError, SyntaxError, Image.DecompressionBombError:
         raise UnprocessableError("provider_asset_import_invalid_image") from None
     if suffix is None:
         raise UnprocessableError("provider_asset_import_invalid_image")

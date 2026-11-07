@@ -51,7 +51,7 @@ def endpoints_app(db_engine, set_error_handler_sessions) -> FastAPI:
 
 
 @pytest.fixture
-def endpoints_client(endpoints_app: FastAPI) -> Generator[TestClient, None, None]:
+def endpoints_client(endpoints_app: FastAPI) -> Generator[TestClient]:
     with TestClient(endpoints_app) as client:
         yield client
 

@@ -157,7 +157,7 @@ def _encode_thumbnail(source: Path, width: int) -> bytes | None:
             buffer = BytesIO()
             thumbnail.save(buffer, format="WEBP", quality=_WEBP_QUALITY)
             return buffer.getvalue()
-    except (OSError, UnidentifiedImageError, Image.DecompressionBombError, ValueError):
+    except OSError, UnidentifiedImageError, Image.DecompressionBombError, ValueError:
         logger.warning("生成图片缩略图失败，回退原图: %s", source, exc_info=True)
         return None
 

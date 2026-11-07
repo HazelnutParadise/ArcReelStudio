@@ -199,7 +199,7 @@ def _episode_file_text(project_dir: Path, episode: int) -> str | None:
         return None
     try:
         return normalize_source_text(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError):
+    except OSError, UnicodeDecodeError:
         return None
 
 

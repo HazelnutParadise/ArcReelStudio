@@ -63,7 +63,7 @@ def resolve_project_cover(
         url = f"/api/v1/files/{project_name}/{rel.lstrip('/')}"
         try:
             project_dir = manager.get_project_path(project_name)
-        except (OSError, ValueError):
+        except OSError, ValueError:
             return url
         resolved = try_safe_join(project_dir, rel, require_file=True)
         if resolved is None:

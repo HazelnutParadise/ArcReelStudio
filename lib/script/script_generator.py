@@ -16,7 +16,7 @@ from contextlib import nullcontext
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
@@ -355,7 +355,7 @@ class ScriptGenerator:
     def __init__(
         self,
         project_path: str | Path,
-        generator: Optional["TextGenerator"] = None,
+        generator: TextGenerator | None = None,
         *,
         config_resolver: ConfigResolver | None = None,
     ):
@@ -400,7 +400,7 @@ class ScriptGenerator:
         project_path: str | Path,
         *,
         config_resolver: ConfigResolver | None = None,
-    ) -> "ScriptGenerator":
+    ) -> ScriptGenerator:
         """异步工厂方法，自动从 DB 加载供应商配置创建 TextGenerator。"""
         project_name = Path(project_path).name
         generator = await TextGenerator.create(TextTaskType.SCRIPT, project_name, purpose=CallPurpose.SCRIPT_GENERATION)

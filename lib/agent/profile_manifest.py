@@ -195,7 +195,7 @@ def _project_lock(project_dir: Path):
             try:
                 portalocker.lock(f, portalocker.LOCK_EX | portalocker.LOCK_NB)
                 break
-            except (portalocker.AlreadyLocked, portalocker.LockException):
+            except portalocker.AlreadyLocked, portalocker.LockException:
                 if time.monotonic() >= deadline:
                     raise
                 time.sleep(0.1)
@@ -813,7 +813,7 @@ def get_profile_status(
             dest = _ensure_dest_within(project_dir, rel)
             if sha256_file(dest) != entry.get("sha256"):
                 customized.add(rel)
-        except (OSError, ValueError):
+        except OSError, ValueError:
             customized.add(rel)
 
     for rel in mapping:

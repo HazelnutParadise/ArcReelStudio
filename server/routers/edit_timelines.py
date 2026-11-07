@@ -230,7 +230,7 @@ async def create_edit_timeline(
     """
     try:
         status = await asyncio.to_thread(workflow.get_status, project_name, episode)
-    except (FileNotFoundError, WorkflowRequestError):
+    except FileNotFoundError, WorkflowRequestError:
         status = None
     admission = None
     if status is not None and status.target is not None and status.target.episode == episode:

@@ -258,7 +258,7 @@ async def _apply_grid_split(
                             kind="sheet",
                         )
                     )
-                except (OSError, TypeError, ValueError):
+                except OSError, TypeError, ValueError:
                     references = None
                     break
             if references is not None:
@@ -312,7 +312,7 @@ async def _apply_grid_split(
                                 source_grid_basis_digest=source_entry.basis_digest,
                                 source_composite_digest=composite_digest,
                             )
-                        except (OSError, TypeError, ValueError):
+                        except OSError, TypeError, ValueError:
                             continue
                         manifest_entries[ArtifactKey.episode_storyboard(grid.episode, resource_id)] = (
                             ArtifactManifestEntry(
@@ -338,7 +338,7 @@ async def _apply_grid_split(
                                 source_composite_digest=composite_digest,
                                 asset_names=project_basis_records_asset_names(current_project),
                             )
-                        except (OSError, TypeError, ValueError):
+                        except OSError, TypeError, ValueError:
                             continue
                         manifest_entries[ArtifactKey.episode_storyboard(grid.episode, resource_id)] = (
                             ArtifactManifestEntry(

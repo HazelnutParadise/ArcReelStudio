@@ -144,7 +144,7 @@ def _migrated_overrides(
 
             try:
                 native = default_supported_durations(comfyui_definition)
-            except (KeyError, TypeError, ValueError):
+            except KeyError, TypeError, ValueError:
                 native = []
             if native and durations != sorted(set(native)):
                 merged["durations"] = durations

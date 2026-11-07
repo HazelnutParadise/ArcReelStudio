@@ -273,7 +273,7 @@ class ReferenceIndex:
                     return rel
                 parts.append(actual.name)
                 directory = actual
-        except (FileNotFoundError, NotADirectoryError):
+        except FileNotFoundError, NotADirectoryError:
             return rel
         return "/".join(parts)
 

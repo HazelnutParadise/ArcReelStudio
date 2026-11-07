@@ -1437,7 +1437,7 @@ class VersionManager:
             record_project_activity(self.project_path)
             return resource_data["versions"][-1]["file"]
 
-    def delete_history_version(self, snapshot_path: str) -> "TrashRecord":
+    def delete_history_version(self, snapshot_path: str) -> TrashRecord:
         """把快照路径为 ``snapshot_path`` 的一条历史版本移进项目回收站，返回删除记录；当前版本不能这样删除。
 
         调用方持有项目锁（``project_metadata_lock``）。恢复时它作为该资源的一条历史版本加回。

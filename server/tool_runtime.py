@@ -1279,7 +1279,7 @@ def _business_file_entries(
             raw, _path = _read_business_file(project_dir, relative)
             etag = prefixed(hashlib.sha256(raw).hexdigest())
             size = len(raw)
-        except (FileNotFoundError, OSError, TypeError, ValueError):
+        except FileNotFoundError, OSError, TypeError, ValueError:
             continue
         entries.append(ProjectFileEntry(path=relative, size=size, etag=etag))
     return sorted(entries, key=lambda entry: entry.path)
@@ -1775,7 +1775,7 @@ async def list_projects(
         for name in sorted(services.projects.list_projects()):
             try:
                 project = services.projects.load_project(name)
-            except (FileNotFoundError, ValueError):
+            except FileNotFoundError, ValueError:
                 continue
             result.append(
                 {
@@ -3810,7 +3810,7 @@ async def retry_project_migration(
     except Exception as exc:
         try:
             residual = await asyncio.to_thread(load_migration_failure, project_dir)
-        except (FileNotFoundError, ValueError, OSError):
+        except FileNotFoundError, ValueError, OSError:
             residual = None
         return ToolOutcome(
             problem=_migration_tool_problem(residual) if residual else _unexpected("retry_project_migration", exc)

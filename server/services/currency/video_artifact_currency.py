@@ -182,7 +182,7 @@ class VideoArtifactCommitter:
         self._current_file = current_file
         try:
             artifact_currency = VideoArtifactCurrencyFacts.from_dict(metadata.get("artifact_video_currency"))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             artifact_currency = None
         self._selected_episode = artifact_currency.episode if artifact_currency is not None else None
         self._selected_script_file = script_file if isinstance(script_file, str) and script_file else None
@@ -191,7 +191,7 @@ class VideoArtifactCommitter:
             self._selected_artifact_path = (
                 current_file.resolve(strict=False).relative_to(self._project_path.resolve(strict=True)).as_posix()
             )
-        except (FileNotFoundError, ValueError):
+        except FileNotFoundError, ValueError:
             self._selected_artifact_path = None
 
         outcome = commit_paid_video_artifact(
@@ -354,7 +354,7 @@ class VideoArtifactCommitter:
         self._prior_thumbnail = (thumbnail, present, content)
         try:
             item = _find_script_item(script, self._resource_id)
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             self._prior_assets = None
             return
         assets = item.get("generated_assets")

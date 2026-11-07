@@ -706,7 +706,7 @@ def _delete_retired(pm: ProjectManager, project_name: str, episodes: Iterable[in
             outcome = delete_episode(pm, project_name, episode)
             if isinstance(outcome, EpisodeDeletionConfirmationRequired):
                 outcome = delete_episode(pm, project_name, episode, revision=outcome.impact.revision)
-        except (EpisodeManagementError, OSError, ValueError):
+        except EpisodeManagementError, OSError, ValueError:
             logger.warning("采纳后删除退下的集失败：项目 %s，集 ID %s", project_name, episode, exc_info=True)
             continue
         if not isinstance(outcome, EpisodeDeletionConfirmationRequired):

@@ -73,7 +73,7 @@ async def _probe_or_none(path: Path) -> MediaProbe | None:
     """探测已落盘文件；随包 ffmpeg 不可用或文件无法解析时返回 None。"""
     try:
         return await probe_media(path)
-    except (FfmpegUnavailableError, MediaProbeError, OSError):
+    except FfmpegUnavailableError, MediaProbeError, OSError:
         return None
 
 
@@ -101,7 +101,7 @@ async def probe_audio_duration_seconds(content: bytes, suffix: str) -> float | N
         tmp_path = await run_sync_transaction(_write_probe_temp_file, content, suffix, created)
         try:
             probe = await probe_media(tmp_path, deadline_seconds=_UPLOAD_PROBE_DEADLINE_SECONDS)
-        except (FfmpegUnavailableError, OSError):
+        except FfmpegUnavailableError, OSError:
             logger.info("随包 ffmpeg 不可用，跳过音频时长探测", exc_info=True)
             return None
         except MediaProbeError:

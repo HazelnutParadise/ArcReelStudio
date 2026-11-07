@@ -242,7 +242,7 @@ def _units_needing_replan(project_dir: Path) -> frozenset[tuple[int, str]]:
 
     try:
         project = json.loads((project_dir / "project.json").read_bytes())
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return frozenset()
     episodes = project.get("episodes") if isinstance(project, dict) else None
     units: set[tuple[int, str]] = set()
@@ -257,7 +257,7 @@ def _units_needing_replan(project_dir: Path) -> frozenset[tuple[int, str]]:
             continue
         try:
             script = json.loads(script_path.read_bytes())
-        except (OSError, ValueError):
+        except OSError, ValueError:
             continue
         if not isinstance(script, dict):
             # 根不是对象的剧本同样读不出：迁移链失败时这里正为它写未完成的报告，不能盖过链本身的失败。

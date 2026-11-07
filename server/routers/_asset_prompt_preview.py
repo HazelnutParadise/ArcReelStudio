@@ -47,7 +47,7 @@ def register_asset_prompt_preview_routes(
                 return project, pm.get_project_path(project_name), asset_key, None
             try:
                 target = resolve_derivative_target(project, entry_name, derivative_name)
-            except (KeyError, NotFoundError):
+            except KeyError, NotFoundError:
                 return None
             return project, pm.get_project_path(project_name), target.owner_key, target.derivative_key
 

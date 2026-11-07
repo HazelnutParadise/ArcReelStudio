@@ -32,7 +32,7 @@ def inference_app() -> FastAPI:
 
 
 @pytest.fixture
-def inference_client(inference_app: FastAPI) -> Generator[TestClient, None, None]:
+def inference_client(inference_app: FastAPI) -> Generator[TestClient]:
     with TestClient(inference_app) as client:
         yield client
 

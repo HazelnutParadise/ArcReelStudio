@@ -94,7 +94,7 @@ def _storyboard_images(services: Services, project_name: str) -> dict[str, str |
         try:
             script = services.projects.load_script_readonly(project_name, script_name)
             items, id_field, *_ = get_storyboard_items(script)
-        except (ScriptEditError, ValueError, OSError):
+        except ScriptEditError, ValueError, OSError:
             # 读不出的剧本无法证明分镜存在，跳过；其余剧本照常判定
             logger.warning("查找分镜时跳过无法读取的剧本: %s", script_name, exc_info=True)
             continue

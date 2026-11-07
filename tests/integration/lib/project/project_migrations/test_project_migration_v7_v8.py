@@ -891,7 +891,7 @@ def test_v7_activation_rejects_symlinked_project_control_file_without_writes(tmp
     project_path.unlink()
     try:
         project_path.symlink_to(external)
-    except (NotImplementedError, OSError):
+    except NotImplementedError, OSError:
         pytest.skip("symlinks are unavailable on this platform")
 
     with pytest.raises(ArtifactManifestError, match=r"artifact cannot be opened safely"):

@@ -205,7 +205,7 @@ class DraftRepair:
         """
         try:
             content = await self._repaired_content(episode, doc_type, base_revision, instructions)
-        except (DraftWorkflowError, TextOutputTruncatedError, ModelNotInCatalogError):
+        except DraftWorkflowError, TextOutputTruncatedError, ModelNotInCatalogError:
             # 引用的模型已不在供应商清单中是可重选的配置问题：原样抛出，由调用方带「去配置供应商」呈现
             raise
         except Exception as exc:

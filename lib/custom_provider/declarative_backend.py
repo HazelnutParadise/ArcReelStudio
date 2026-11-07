@@ -325,7 +325,7 @@ def extract_duration(spec: object | None, body: object) -> int | None:
         value = int(Decimal(str(raw)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
     except JsonPathEvaluationError:
         raise
-    except (InvalidOperation, TypeError, ValueError):
+    except InvalidOperation, TypeError, ValueError:
         return None
     return value if 0 < value <= MAX_BILLED_DURATION_SECONDS else None
 
@@ -666,7 +666,7 @@ class DeclarativeJobEngine[StateT: JobState]:
                 retry_if=should_retry_poll,
                 max_wait=call.poll_timeout_seconds,
             )
-        except (ResumeExpiredError, DeclarativeRuntimeError, NonRetryableError):
+        except ResumeExpiredError, DeclarativeRuntimeError, NonRetryableError:
             raise
         except Exception as exc:
             raise DeclarativeRuntimeError("artifact_download_failed", detail=str(exc)) from exc

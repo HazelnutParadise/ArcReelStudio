@@ -75,7 +75,7 @@ def warn_if_auth_disabled() -> None:
     )
 
 
-def _anonymous_user() -> "CurrentUserInfo":
+def _anonymous_user() -> CurrentUserInfo:
     """关闭认证时返回的固定匿名用户。"""
     from lib.db.base import DEFAULT_USER_ID
 
@@ -204,7 +204,7 @@ def verify_token(token: str) -> dict | None:
     """
     try:
         payload = jwt.decode(token, get_token_secret(), algorithms=["HS256"])
-    except (jwt.InvalidTokenError, jwt.ExpiredSignatureError):
+    except jwt.InvalidTokenError, jwt.ExpiredSignatureError:
         return None
     if "purpose" in payload:
         return None
@@ -350,7 +350,7 @@ async def verify_api_key(token: str) -> dict | None:
             # 将过期时刻转换为 monotonic 时间戳，供缓存 TTL 上界计算
             remaining_secs = (exp_dt - datetime.now(UTC)).total_seconds()
             expires_at_monotonic = time.monotonic() + remaining_secs
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             logger.warning("API Key expires_at 值格式无法解析，忽略过期检查: %r", expires_at)
 
     payload = {"sub": f"apikey:{row['name']}", "via": "apikey", "uid": row["user_id"]}

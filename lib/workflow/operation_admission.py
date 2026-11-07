@@ -97,7 +97,7 @@ def episode_source_present(project_path: Path, episode: int, entry: Mapping[str,
         return False
     try:
         return bool(path.read_text(encoding="utf-8").strip())
-    except (OSError, UnicodeDecodeError):
+    except OSError, UnicodeDecodeError:
         return False
 
 

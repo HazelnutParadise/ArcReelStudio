@@ -1046,7 +1046,7 @@ def classify_video_resume_state(
         return VideoResumeState.IDENTITY_UNRECOVERABLE, None
     try:
         checkpoint = load_task_video_checkpoint(task)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return VideoResumeState.IDENTITY_UNRECOVERABLE, None
     return VideoResumeState.READY, checkpoint
 

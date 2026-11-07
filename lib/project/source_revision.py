@@ -213,7 +213,7 @@ def _read_sources(
             resolved.relative_to(project_real)
         except FileNotFoundError:
             return [], _blocked(scope, "source_missing", rel, "source file does not exist")
-        except (OSError, ValueError):
+        except OSError, ValueError:
             return [], _blocked(scope, "source_path_escape", rel, "source file resolves outside the project")
         try:
             mode = path.stat().st_mode

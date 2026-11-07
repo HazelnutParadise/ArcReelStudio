@@ -212,7 +212,7 @@ def _project_titles(project_names: Iterable[str]) -> dict[str, str]:
             continue
         try:
             title = projects.load_project(name).get("title")
-        except (OSError, ValueError):
+        except OSError, ValueError:
             continue
         if isinstance(title, str) and title.strip():
             titles[name] = title.strip()

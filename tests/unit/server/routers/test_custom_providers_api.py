@@ -45,7 +45,7 @@ def _example_template_definition() -> dict[str, Any]:
 
 
 @pytest.fixture
-def custom_providers_client(custom_providers_app) -> Generator[TestClient, None, None]:
+def custom_providers_client(custom_providers_app) -> Generator[TestClient]:
     with TestClient(custom_providers_app) as c:
         yield c
 

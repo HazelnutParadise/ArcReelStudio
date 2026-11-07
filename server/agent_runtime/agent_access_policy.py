@@ -122,7 +122,7 @@ class AgentAccessPolicy:
     # 校验），挡住 skills 目录里任意现有/未来文件被当作可执行入口——Windows 回退
     # 无 sandbox denyExec 兜底，仅靠前缀放行会把整棵 skills 树暴露为可执行面。
     _PYTHON_SKILLS_PREFIX: ClassVar[str] = "python .claude/skills/"
-    _SKILL_SCRIPT_RE: ClassVar["re.Pattern[str]"] = re.compile(r"^\.claude/skills/[^/]+/scripts/[^/]+\.py$")
+    _SKILL_SCRIPT_RE: ClassVar[re.Pattern[str]] = re.compile(r"^\.claude/skills/[^/]+/scripts/[^/]+\.py$")
 
     # Windows 回退（sandbox_enabled=False）的 Bash 命令白名单：等价于沙箱化前
     # settings.json permissions.allow 段。也是 can_use_tool deny hint 文案的
@@ -133,13 +133,13 @@ class AgentAccessPolicy:
     # `` ` `` ``$`` 与换行都可能在白名单前缀后挂任意命令（链式/管道/重定向/
     # 命令替换）。不解析引号语境，引号内出现也整串拒——宁可误拒（fail-closed），
     # deny 文案会引导 Agent 改写命令。
-    _BASH_METACHARS_RE: ClassVar["re.Pattern[str]"] = re.compile(r"[;&|<>`$\r\n]")
+    _BASH_METACHARS_RE: ClassVar[re.Pattern[str]] = re.compile(r"[;&|<>`$\r\n]")
 
     # ``..`` 路径段：``python .claude/skills/../../evil.py`` 不含 metachar 且满足
     # ``python .claude/skills/`` 前缀，但 ``..`` 逃出 skills 目录执行任意脚本——
     # Windows 回退无 sandbox denyWrite/denyExec 兜底，整串拒。仅匹配被分隔符/
     # 空白/串首尾界定的 ``..`` 段，``my..name`` 这类文件名不误伤。
-    _BASH_PATH_TRAVERSAL_RE: ClassVar["re.Pattern[str]"] = re.compile(r"(?:^|[\s/\\])\.\.(?:[\s/\\]|$)")
+    _BASH_PATH_TRAVERSAL_RE: ClassVar[re.Pattern[str]] = re.compile(r"(?:^|[\s/\\])\.\.(?:[\s/\\]|$)")
 
     # Bash unset 时额外匹配的环境变量名模式：兜底 SDK 子进程里可能注入或宿主机
     # 继承下来的密钥类变量（如 GEMINI_CLI_IDE_AUTH_TOKEN），名单覆盖不到时靠模式拦。
@@ -253,7 +253,7 @@ class AgentAccessPolicy:
             # 与 symlink 终点（逻辑在外、resolve 落入 protected 区）两类绕过。
             logical_norm = Path(os.path.normpath(str(logical)))
             resolved = logical.resolve()
-        except (ValueError, OSError):
+        except ValueError, OSError:
             return False, "访问被拒绝：无效的文件路径"
 
         # 规则 0: 敏感文件强制拒绝
@@ -601,7 +601,7 @@ class AgentAccessPolicy:
         """
         try:
             return self.claude_projects_dir.resolve(strict=False)
-        except (OSError, RuntimeError):
+        except OSError, RuntimeError:
             return None
 
     @staticmethod

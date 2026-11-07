@@ -72,7 +72,7 @@ async def _finish(managed):
     if managed._process_task is not None and not managed._process_task.done():
         try:
             await asyncio.wait_for(managed._process_task, timeout=2.0)
-        except (TimeoutError, BaseException):
+        except TimeoutError, BaseException:
             managed._process_task.cancel()
             with contextlib.suppress(BaseException):
                 await managed._process_task

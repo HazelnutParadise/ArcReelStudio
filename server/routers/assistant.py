@@ -78,7 +78,7 @@ def agent_startup_failure_detail(
 
 async def _validate_session_ownership(
     service: AssistantService, session_id: str, project_name: str, _t: Callable[..., str]
-) -> "SessionMeta":
+) -> SessionMeta:
     """Validate session belongs to the specified project and return it."""
     session = await service.get_session(session_id)
     if session is None:

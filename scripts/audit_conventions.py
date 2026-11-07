@@ -343,7 +343,7 @@ def _suppression_files(root: Path) -> Iterator[Path]:
 def _python_suppressions(rel: Path, source: str, out: list[Violation]) -> None:
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
-    except (tokenize.TokenError, SyntaxError):
+    except tokenize.TokenError, SyntaxError:
         return
     for token in tokens:
         if token.type != tokenize.COMMENT:
@@ -448,7 +448,7 @@ def check_bundled_ffmpeg(root: Path, out: list[Violation]) -> None:
             continue
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
-        except (SyntaxError, UnicodeDecodeError):
+        except SyntaxError, UnicodeDecodeError:
             continue
         for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and node.value in _FFMPEG_NAMES:
@@ -479,7 +479,7 @@ def check_private_imports(root: Path, out: list[Violation]) -> None:
         rel = path.relative_to(root)
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
-        except (SyntaxError, UnicodeDecodeError):
+        except SyntaxError, UnicodeDecodeError:
             continue
         source_root = next(r for r in source_roots[::-1] if path.is_relative_to(r))
         package = list(path.relative_to(source_root).parent.parts)
@@ -583,7 +583,7 @@ def _hard_delete_tags(source: str) -> tuple[dict[int, re.Match[str]], set[int]]:
     """标注所在行，以及其中独占一行的标注（作用于下一行开始的语句）。"""
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
-    except (tokenize.TokenError, SyntaxError):
+    except tokenize.TokenError, SyntaxError:
         return {}, set()
     tags: dict[int, re.Match[str]] = {}
     standalone: set[int] = set()
@@ -604,7 +604,7 @@ def check_hard_deletes(root: Path, out: list[Violation]) -> None:
         try:
             source = path.read_text(encoding="utf-8")
             tree = ast.parse(source)
-        except (SyntaxError, UnicodeDecodeError):
+        except SyntaxError, UnicodeDecodeError:
             continue
         tags, standalone = _hard_delete_tags(source)
         covered: set[int] = set()

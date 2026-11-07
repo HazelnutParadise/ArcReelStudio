@@ -165,7 +165,7 @@ def _file_content_fingerprint(path: Path) -> tuple[str | None, dict[str, Any] | 
         return None, None
     try:
         parsed = json.loads(raw)
-    except (ValueError, UnicodeDecodeError):
+    except ValueError, UnicodeDecodeError:
         return hashlib.sha256(raw).hexdigest(), None
     return canonical_json_digest(parsed), parsed if isinstance(parsed, dict) else None
 
@@ -400,7 +400,7 @@ class ProjectManager:
                 return candidate
 
     @classmethod
-    def for_project_dir(cls, project_dir: str | Path) -> "ProjectManager":
+    def for_project_dir(cls, project_dir: str | Path) -> ProjectManager:
         """由一个项目目录构造其所在数据根的 ProjectManager（数据根经布局模块推导）。"""
         return cls(DataRootLayout.for_project_dir(Path(project_dir)).root)
 
@@ -1260,7 +1260,7 @@ class ProjectManager:
         else:
             try:
                 loaded = self._script_reader(path)
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 return None
         return loaded if isinstance(loaded, dict) else None
 
@@ -3331,7 +3331,7 @@ class ProjectManager:
             for src, dst in moves
         }
 
-        def rewrite(grid: "GridGeneration") -> int:
+        def rewrite(grid: GridGeneration) -> int:
             return sum(
                 rewrite_grid_reference_images(
                     grid.reference_images or [], asset_type, old_name, new_name, path_rewrites
@@ -3339,7 +3339,7 @@ class ProjectManager:
                 for old_name, new_name in renames
             )
 
-        def mutate(grid: "GridGeneration") -> None:
+        def mutate(grid: GridGeneration) -> None:
             rewrite(grid)
 
         manager = GridManager(project_dir)
@@ -3347,7 +3347,7 @@ class ProjectManager:
             grid_id = record.name.removesuffix(".json")
             try:
                 grid = manager.get(grid_id)
-            except (OSError, KeyError, TypeError, ValueError):
+            except OSError, KeyError, TypeError, ValueError:
                 continue
             if grid is not None and rewrite(grid):
                 manager.update(grid_id, mutate, ignore_invalid=True)
@@ -3465,7 +3465,7 @@ class ProjectManager:
         *,
         as_derivative: bool = False,
         dry_run: bool = False,
-    ) -> "AssetMergeReport":
+    ) -> AssetMergeReport:
         """资产合并的单一事务入口（UI 与 Agent 共用）：把被并方并入同类型的保留方。
 
         与 :meth:`rename_asset` 同一组锁、同一套「先扫描、再落盘」：全部剧集剧本与 script_plan 草稿里

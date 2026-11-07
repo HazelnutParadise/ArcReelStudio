@@ -2332,7 +2332,7 @@ class ProjectArchiveService:
             return None
         try:
             return load_json(real)
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        except OSError, UnicodeDecodeError, json.JSONDecodeError:
             return None
 
     def _write_json_file(self, path: Path, payload: dict[str, Any]) -> None:

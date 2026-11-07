@@ -24,7 +24,7 @@ _SYSTEM_STATS = f"{_COMFY_URL}/system_stats"
 
 
 @pytest.fixture
-def comfyui_client(custom_providers_app) -> Generator[TestClient, None, None]:
+def comfyui_client(custom_providers_app) -> Generator[TestClient]:
     with TestClient(custom_providers_app) as c:
         yield c
 

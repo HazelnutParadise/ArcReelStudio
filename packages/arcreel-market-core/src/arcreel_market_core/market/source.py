@@ -118,7 +118,7 @@ def _referenced_file(
         return None
     try:
         resolved = (root / relative).resolve()
-    except (OSError, RuntimeError):
+    except OSError, RuntimeError:
         issues.append(_index_issue(location, MarketIssueCode.FILE_MISSING, value=relative))
         return None
     if not resolved.is_relative_to(root_resolved):

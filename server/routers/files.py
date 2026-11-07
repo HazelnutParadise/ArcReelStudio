@@ -148,7 +148,7 @@ def _regular_file_stat(path: Path) -> os.stat_result | None:
     """返回普通文件的 stat；不存在或不是普通文件时返回 None（与 ``Path.is_file`` 同口径）。"""
     try:
         stat_result = path.stat()
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
     return stat_result if stat.S_ISREG(stat_result.st_mode) else None
 
@@ -637,7 +637,7 @@ async def upload_file(
 
     except FileNotFoundError as exc:
         raise NotFoundError("project_not_found", name=project_name) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")

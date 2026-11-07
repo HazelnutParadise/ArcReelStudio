@@ -895,7 +895,7 @@ def is_presentation_version_available(resource_type: str, record: Mapping[str, A
         return False
     try:
         _presentation_restore_target(resource_type, record)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return False
     return True
 
@@ -906,7 +906,7 @@ def _presentation_restore_target(
 ) -> TypedMediaRestoreTarget | None:
     try:
         return parse_typed_media_version_record(resource_type, record)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         if resource_type in {"videos", "reference_videos"} and record.get("source") == "manual_upload":
             return None
         raise

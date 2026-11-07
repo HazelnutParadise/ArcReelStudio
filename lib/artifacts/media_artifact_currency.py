@@ -96,7 +96,7 @@ def build_current_audio_artifact_basis(
             settings = parse_typed_audio_settings(version_record)
         admission = admit_script_unit(skeleton_kind, item)
         current = ArtifactBasisDescriptor.from_basis(build_narration_audio_basis(admission.preparation, settings))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if target.basis.kind != current.kind:
         return None
@@ -321,7 +321,7 @@ def build_current_video_artifact_basis(
 
     try:
         artifact_currency = VideoArtifactCurrencyFacts.from_dict(version_metadata.get("artifact_video_currency"))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     episode = artifact_currency.episode
     script_file = version_metadata.get("execution_script_file")
@@ -373,7 +373,7 @@ def build_current_video_artifact_basis(
             )
             if legacy_duration is not None:
                 components = replace(components, duration=legacy_duration)
-    except (KeyError, OSError, TypeError, ValueError):
+    except KeyError, OSError, TypeError, ValueError:
         return None
     return ArtifactBasisDescriptor.from_basis(components.compose())
 
@@ -404,7 +404,7 @@ def _legacy_narrated_duration(
         current = build_current_audio_artifact_basis(
             project=project, item=item, skeleton_kind=skeleton_kind, version_record=selected
         )
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     actual = selected.get("tts_actual_duration_seconds")
     planned = item.get("duration_seconds")

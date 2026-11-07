@@ -221,7 +221,7 @@ class OptionsAssembler:
             return await asyncio.to_thread(index_path.read_text, encoding="utf-8")
         except FileNotFoundError:
             return ""
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             logger.exception("用户记忆索引读取失败，当前会话按空索引装配: %s", index_path)
             return ""
 
@@ -235,7 +235,7 @@ class OptionsAssembler:
         """
         try:
             project_cwd = self._resolve_project_cwd(project_name)
-        except (ValueError, FileNotFoundError):
+        except ValueError, FileNotFoundError:
             return ""
 
         parts = [

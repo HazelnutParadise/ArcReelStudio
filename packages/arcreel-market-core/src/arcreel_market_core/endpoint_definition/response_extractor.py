@@ -103,7 +103,7 @@ def _decode_then(item: Mapping[str, object], response_body: object, accept: str)
         return None
     try:
         decoded = json.loads(encoded)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     then = item.get("then", ["$"])
     if not isinstance(then, list):

@@ -1019,7 +1019,7 @@ class ProductionIndex:
         if path is not None:
             try:
                 tree = ast.parse(path.read_text(encoding="utf-8"))
-            except (SyntaxError, UnicodeDecodeError):  # pragma: no cover
+            except SyntaxError, UnicodeDecodeError:  # pragma: no cover
                 tree = None
             if tree is not None:
                 names: dict[str, str] = {}
@@ -1695,7 +1695,7 @@ def is_literal(node: ast.expr) -> bool:
     """节点是否静态可求值。负数是 `UnaryOp`、容器是 `List` / `Dict`，都不是 `Constant`。"""
     try:
         ast.literal_eval(node)
-    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+    except ValueError, SyntaxError, TypeError, MemoryError, RecursionError:
         return False
     return True
 

@@ -467,7 +467,7 @@ def is_valid_json(text: str) -> bool:
     try:
         json.loads(text)
         return True
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return False
 
 

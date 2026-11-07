@@ -88,7 +88,7 @@ def _render(prompt: object, render: Any) -> RenderedPrompt:
         return RenderedPrompt(unavailable=reason, is_text_form=is_text_form)
     try:
         return RenderedPrompt(text=render(prompt), is_text_form=is_text_form)
-    except (ValueError, TypeError, KeyError):
+    except ValueError, TypeError, KeyError:
         return RenderedPrompt(unavailable=UNAVAILABLE_INVALID, is_text_form=is_text_form)
 
 
@@ -174,7 +174,7 @@ async def preview_item_prompts(
     else:
         try:
             assembled = await asyncio.to_thread(_assemble)
-        except (ValueError, TypeError, KeyError):
+        except ValueError, TypeError, KeyError:
             image = RenderedPrompt(unavailable=UNAVAILABLE_INVALID, is_text_form=is_text_form)
         else:
             if (refused := assembled.refusal) is not None:
@@ -199,7 +199,7 @@ async def preview_item_prompts(
             max_reference_images, model = limit
             try:
                 rendered = generation_input.render(max_reference_images=max_reference_images, model=model)
-            except (ValueError, TypeError, KeyError):
+            except ValueError, TypeError, KeyError:
                 storyboard_image = RenderedPrompt(unavailable=UNAVAILABLE_INVALID, is_text_form=is_text_form)
             else:
                 storyboard_image = RenderedPrompt(

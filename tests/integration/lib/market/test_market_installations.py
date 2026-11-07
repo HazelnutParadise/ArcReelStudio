@@ -26,7 +26,7 @@ async def test_concurrent_install_leaves_one_endpoint_and_record(
                 )
                 await session.commit()
                 return endpoint.id
-            except (IntegrityError, ConflictError):
+            except IntegrityError, ConflictError:
                 await session.rollback()
                 return None
 

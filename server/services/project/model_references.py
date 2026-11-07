@@ -27,7 +27,7 @@ def project_model_references() -> list[ProjectModelReferences]:
     for name in pm.list_projects():
         try:
             project = pm.load_project(name)
-        except (OSError, ValueError):
+        except OSError, ValueError:
             continue
         title = project.get("title")
         found.append(

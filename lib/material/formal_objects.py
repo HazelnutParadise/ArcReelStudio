@@ -440,7 +440,7 @@ def _enter_project(stack: ExitStack, project_path: Path) -> dict[str, Any] | Non
         return None
     try:
         stack.enter_context(project_metadata_lock(project_path))
-    except (FileNotFoundError, ProjectDeletedDuringTaskError):
+    except FileNotFoundError, ProjectDeletedDuringTaskError:
         return None
     return stack.enter_context(VersionManager(project_path).locked_history())
 
@@ -638,7 +638,7 @@ def _project_paths_of(project_path_of: Callable[[str], Path], project_name: str)
     """引用方是项目时它的目录；不是项目（带冒号的键）或项目已不在时为空。"""
     try:
         return [project_path_of(project_name)]
-    except (FileNotFoundError, ValueError):
+    except FileNotFoundError, ValueError:
         return []
 
 

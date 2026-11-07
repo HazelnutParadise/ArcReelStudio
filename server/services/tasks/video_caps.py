@@ -271,7 +271,7 @@ async def resolve_audio_switch_conflict(project: dict, generation_type: VideoGen
         )
         if isinstance(result, VideoRequestFactsFailure) or audio_switch_conflict(result) is None:
             return None
-    except (ValueError, SQLAlchemyError):
+    except ValueError, SQLAlchemyError:
         return None
     return result.provider_id, result.model_id
 

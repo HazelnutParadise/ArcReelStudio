@@ -138,7 +138,7 @@ def artifact_http_client(
 def _declared_length(response: httpx2.Response) -> int | None:
     try:
         return int(response.headers["Content-Length"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return None
 
 

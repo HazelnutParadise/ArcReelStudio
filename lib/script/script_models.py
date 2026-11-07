@@ -472,7 +472,7 @@ class Utterance(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def _check_kind_speaker(self) -> "Utterance":
+    def _check_kind_speaker(self) -> Utterance:
         if self.kind == "dialogue":
             if not self.speaker:
                 raise ValueError("dialogue utterance 必须带非空 speaker")
@@ -880,7 +880,7 @@ class ReferenceVideoUnit(BaseModel):
     pending_authoring: SkipJsonSchema[bool] = Field(default=False, description="该条目待编写")
 
     @model_validator(mode="after")
-    def _validate_replan_shell(self) -> "ReferenceVideoUnit":
+    def _validate_replan_shell(self) -> ReferenceVideoUnit:
         """全悬空迁移壳可为空且为 0 秒；其余单元仍须可执行。"""
         if not self.text.strip():
             if not self.needs_replan or self.duration_seconds != 0:

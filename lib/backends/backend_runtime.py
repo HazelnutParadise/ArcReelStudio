@@ -583,7 +583,7 @@ def _strip_url_queries(text: str) -> str:
         trailing = match.group(0)[len(raw) :]
         try:
             stripped = str(httpx2.URL(raw).copy_with(query=None, fragment=None, userinfo=b""))
-        except (httpx2.InvalidURL, ValueError, UnicodeError):
+        except httpx2.InvalidURL, ValueError, UnicodeError:
             stripped = "<url>"
         return stripped + trailing
 

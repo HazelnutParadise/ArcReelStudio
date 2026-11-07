@@ -192,7 +192,7 @@ def extract_billing_duration(payload: dict) -> int | None:
         if not 0 < decimal_value <= MAX_BILLED_DURATION_SECONDS:
             return None
         value = int(decimal_value.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-    except (InvalidOperation, TypeError, ValueError):
+    except InvalidOperation, TypeError, ValueError:
         return None
     return value if value > 0 else None
 

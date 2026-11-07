@@ -110,7 +110,7 @@ def _try_encode_failure(code: str, params: dict[str, Any]) -> str | None:
     except KeyError:
         # code 未登记进 FAILURE_CODE_KEYS——两份清单靠约定同步而非运行时校验。
         logger.warning("失败 code 未登记进 FAILURE_CODE_KEYS，降级为通用失败原因: code=%s", code)
-    except (TypeError, ValueError, RecursionError):
+    except TypeError, ValueError, RecursionError:
         # params 无法 JSON 序列化（TypeError：default=str 也转不了的键类型；
         # ValueError：json.dumps 默认 check_circular 检出循环引用；
         # RecursionError：嵌套过深的容器，default=str 不接管容器本身）。

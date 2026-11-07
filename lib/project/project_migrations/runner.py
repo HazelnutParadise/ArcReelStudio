@@ -92,7 +92,7 @@ def _bound_script_sources(project_dir: Path) -> tuple[Path, ...]:
 
     try:
         project = json.loads((project_dir / "project.json").read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, ValueError):
+    except OSError, UnicodeDecodeError, ValueError:
         return ()
     episodes = project.get("episodes") if isinstance(project, dict) else None
     if not isinstance(episodes, list):

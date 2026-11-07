@@ -18,7 +18,7 @@ from tests.factories import make_test_video_with_audio_tail, run_bundled_ffmpeg,
 
 
 @contextmanager
-def _bundled_ffmpeg_unavailable() -> Generator[None, None, None]:
+def _bundled_ffmpeg_unavailable() -> Generator[None]:
     reset_for_tests()
     with (
         tempfile.TemporaryDirectory() as binaries_dir,

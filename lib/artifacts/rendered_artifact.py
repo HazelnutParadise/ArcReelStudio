@@ -84,7 +84,7 @@ def read_render_record(project_dir: Path, artifact_path: str) -> RenderRecord | 
             rendered_at=str(payload["rendered_at"]),
             basis_digest=str(payload["basis_digest"]),
         )
-    except (OSError, ValueError, KeyError, TypeError):
+    except OSError, ValueError, KeyError, TypeError:
         return None
 
 

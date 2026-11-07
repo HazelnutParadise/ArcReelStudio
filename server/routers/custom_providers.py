@@ -1281,7 +1281,7 @@ async def list_endpoint_catalog(
     for row in await CustomEndpointRepository(session).list_all():
         try:
             specs.append(endpoint_spec_from_row(row))
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             logger.warning("自定义调用端点定义无法构造 spec，已跳过: id=%s", row.id, exc_info=True)
     return EndpointCatalogResponse(
         endpoints=[EndpointDescriptor(**endpoint_spec_to_dict(spec)) for spec in specs],

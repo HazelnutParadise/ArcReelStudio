@@ -117,7 +117,7 @@ class ComfyuiExecution:
             )
             await self._verify_container(output_path, picked)
             return picked
-        except (asyncio.CancelledError, TimeoutError):
+        except asyncio.CancelledError, TimeoutError:
             await self.stop_remote(prompt_id)
             raise
 

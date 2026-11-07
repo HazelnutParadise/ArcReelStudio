@@ -180,7 +180,7 @@ def _grid_records(project_dir: Path, episode: int) -> list[str]:
     for path in sorted((project_dir / "grids").glob("grid_*.json")):
         try:
             record = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
+        except OSError, ValueError:
             continue
         if isinstance(record, dict) and parse_positive_episode_num(record.get("episode")) == episode:
             found.append(path.stem)
@@ -195,7 +195,7 @@ def episode_deletion_impact(project_dir: Path, project: Mapping[str, Any], episo
     if origin is SourceOrigin.OWN:
         try:
             text = episode_source_path(project_dir, episode).read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             text = ""
         source_units = count_reading_units(text, _language(project))
     cut_before = cut_after = None
@@ -403,7 +403,7 @@ def _versioned_resources(project_dir: Path, episode: int, grid_ids: Iterable[str
     """版本历史里属于这一集的资源：条目 ID 带这一集的前缀，或是这一集的宫格。"""
     try:
         data = json.loads((project_dir / "versions" / "versions.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return []
     if not isinstance(data, dict):
         return []

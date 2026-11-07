@@ -110,7 +110,7 @@ def _load_object(path: Path) -> dict[str, Any] | None:
 
     try:
         parsed = json.loads(path.read_bytes())
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
     return parsed if isinstance(parsed, dict) else None
 
