@@ -434,8 +434,8 @@ class TestGetProviderConfig:
     @pytest.mark.parametrize(
         ("provider_id", "expected"),
         [
-            ("gemini-aistudio", True),
-            ("openai", True),
+            ("gemini-aistudio", False),
+            ("openai", False),
             ("vidu", True),
             ("dashscope", True),
             ("ark", True),
@@ -454,6 +454,30 @@ class TestGetProviderConfig:
             resp = client.get(f"/api/v1/providers/{provider_id}/config")
         assert resp.status_code == 200
         assert resp.json()["supports_base_url"] is expected
+
+    @pytest.mark.parametrize(
+        ("provider_id", "expected"),
+        [
+            ("ark", "https://ark.ap-southeast.bytepluses.com/api/v3"),
+            ("dashscope", "https://dashscope-intl.aliyuncs.com"),
+            ("minimax", "https://api.minimax.io/v1"),
+            ("kling", "https://api-singapore.klingai.com/v1"),
+            ("vidu", "https://api.vidu.com/ent/v2"),
+            ("openai", None),
+            ("gemini-aistudio", None),
+        ],
+    )
+    def test_chinese_providers_offer_their_international_address(self, provider_id: str, expected: str | None):
+        """中国供应商另给国际站地址，密钥表单据此提供「国际站」快速选项；非中国供应商没有。"""
+        app, _ = _make_session_app()
+        with (
+            patch("server.routers.providers.ConfigService", return_value=self._mock_svc_empty()),
+            patch("server.routers.providers.CredentialRepository", return_value=self._mock_cred_repo_empty()),
+            TestClient(app) as client,
+        ):
+            resp = client.get(f"/api/v1/providers/{provider_id}/config")
+        assert resp.status_code == 200
+        assert resp.json()["international_base_url"] == expected
 
     def test_secret_fields_single_secret_provider(self):
         """单 secret provider（如 gemini-aistudio）→ secret_fields = [api_key]。"""

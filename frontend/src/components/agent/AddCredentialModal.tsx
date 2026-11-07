@@ -363,7 +363,8 @@ export function AddCredentialModal({
                 inputMode="url"
                 autoComplete="off"
                 spellCheck={false}
-                value={form.baseUrl}
+                value={selected?.fixed_endpoint ? selected.messages_url : form.baseUrl}
+                readOnly={selected?.fixed_endpoint}
                 onChange={(e) => {
                   form.setBaseUrl(e.target.value);
                   invalidateDiscoveredModels();

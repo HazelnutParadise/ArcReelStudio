@@ -78,6 +78,8 @@ export interface ProviderConfigDetail {
   fields: ProviderField[];
   // 凭证是否支持自定义 base_url（后端按 optional_keys 派生，单一真相源）
   supports_base_url: boolean;
+  /** 中国供应商的国际站地址；非中国供应商为 null。 */
+  international_base_url: string | null;
   // 凭证表单应渲染的 secret 字段（有序）
   secret_fields: CredentialSecretField[];
   // 凭证「二选一」分组：满足任一组（组内字段全填）即视为凭证完整；单组场景（绝大多数

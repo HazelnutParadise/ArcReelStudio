@@ -76,6 +76,8 @@ def _validate_endpoint(value: str) -> str:
     """Pydantic 层校验内置键或合法的自定义端点键形状；存在性由写入事务异步确认。"""
     if value not in ENDPOINT_REGISTRY and not is_custom_endpoint(value):
         raise ValueError(f"unknown endpoint: {value!r}")
+    if value in ENDPOINT_REGISTRY and not ENDPOINT_REGISTRY[value].custom_selectable:
+        raise ValueError(f"endpoint {value!r} is not available for custom providers")
     return value
 
 
@@ -369,6 +371,8 @@ class EndpointDescriptor(BaseModel):
     request_method: str
     request_path_template: str
     image_capabilities: list[str] | None = None  # image 类填能力字符串列表，其他为 None
+    # 自定义供应商能否选用；只给内置供应商用的端点（如 Veo）仍在目录里，供内置模型显示与归类
+    custom_selectable: bool = True
     # 该 endpoint 的执行层是否真的下传尾帧约束；仅 video 类有意义。前端据此收窄 last_frame
     # 覆盖控件里「强制开」的可选范围——否则用户只能撞上写入侧的 422 才知道这条路不通。
     end_image_capable: bool = False

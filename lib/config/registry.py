@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from lib.backends.agnes_shared import AGNES_BASE_URL
 from lib.backends.ark_shared import ARK_BASE_URL
 from lib.backends.dashscope_shared import DASHSCOPE_BASE_URL
-from lib.backends.minimax_shared import MINIMAX_BASE_URL
+from lib.backends.minimax_shared import MINIMAX_BASE_URL, MINIMAX_INTL_BASE_URL
 
 # 合法并发 lane 名，与 CapacityTable 的 image/video/audio 三条容量通道对齐。
 _VALID_LANES = frozenset({"image", "video", "audio"})
@@ -24,6 +24,8 @@ class ProviderMeta:
     optional_keys: list[str] = field(default_factory=list)
     secret_keys: list[str] = field(default_factory=list)
     default_base_url: str | None = None
+    # 中国供应商的国际站地址：密钥表单据此提供「国际站」快速选项，选了就把请求地址填成它。非中国供应商为 None。
+    international_base_url: str | None = None
     # 凭证「二选一」分组：非空时凭证表单按「满足任一组」校验（组内字段全填），而非默认的
     # 「required_keys ∩ secret_keys 全填」。目前仅可灵需要（api_key 单键 / access_key+secret_key
     # 双键二选一）；空列表（默认）保持原语义不变，由 router 按
@@ -35,6 +37,11 @@ class ProviderMeta:
     # lane 无害——_lane_limits 会按 media_types 把不支持的 lane 投影为 0。键名与上限值在
     # __post_init__ 校验。
     default_concurrency: dict[str, int] = field(default_factory=dict)
+
+    @property
+    def accepts_base_url(self) -> bool:
+        """能否改请求地址。非中国的内置供应商固定直连官方端点，不登记 ``base_url``，也就不能接到中转站。"""
+        return "base_url" in self.optional_keys
 
     def __post_init__(self) -> None:
         # default_concurrency 是注册表静态声明：拼错的 lane key 会被静默忽略、该 lane 漂回
@@ -83,7 +90,6 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
         display_name="AI Studio",
         required_keys=["api_key"],
         optional_keys=[
-            "base_url",
             "image_rpm",
             "video_rpm",
             "request_gap",
@@ -113,6 +119,7 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
         optional_keys=["base_url", "image_max_workers", "video_max_workers"],
         secret_keys=["api_key"],
         default_base_url=ARK_BASE_URL,
+        international_base_url="https://ark.ap-southeast.bytepluses.com/api/v3",
     ),
     "ark-agent-plan": ProviderMeta(
         display_name="火山方舟 Agent Plan",
@@ -130,7 +137,7 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
     "openai": ProviderMeta(
         display_name="OpenAI",
         required_keys=["api_key"],
-        optional_keys=["base_url", "image_max_workers"],
+        optional_keys=["image_max_workers"],
         secret_keys=["api_key"],
     ),
     "vidu": ProviderMeta(
@@ -138,6 +145,7 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
         required_keys=["api_key"],
         optional_keys=["base_url", "image_max_workers", "video_max_workers"],
         secret_keys=["api_key"],
+        international_base_url="https://api.vidu.com/ent/v2",
     ),
     "dashscope": ProviderMeta(
         display_name="阿里百炼",
@@ -148,6 +156,7 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
         optional_keys=["base_url", "wan3_base_url", "image_max_workers", "video_max_workers", "audio_max_workers"],
         secret_keys=["api_key"],
         default_base_url=DASHSCOPE_BASE_URL,
+        international_base_url="https://dashscope-intl.aliyuncs.com",
     ),
     "minimax": ProviderMeta(
         display_name="MiniMax",
@@ -155,6 +164,7 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
         optional_keys=["base_url", "image_max_workers", "video_max_workers", "audio_max_workers"],
         secret_keys=["api_key"],
         default_base_url=MINIMAX_BASE_URL,
+        international_base_url=MINIMAX_INTL_BASE_URL,
     ),
     "kling": ProviderMeta(
         display_name="可灵 Kling",
@@ -170,6 +180,7 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
         # 国内调用域名官方已由 api.klingai.com 迁移至 api-beijing.klingai.com（旧域名仍可用，
         # 未强制下线）；仅影响未显式配置 base_url 的新用户，存量显式配置不受影响。
         default_base_url="https://api-beijing.klingai.com/v1",
+        international_base_url="https://api-singapore.klingai.com/v1",
     ),
     "agnes": ProviderMeta(
         display_name="Agnes",

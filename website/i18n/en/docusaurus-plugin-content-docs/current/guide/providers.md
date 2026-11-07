@@ -22,7 +22,7 @@ The Agent is responsible for:
 - Normalizing screenplays;
 - Orchestrating subsequent generation tasks.
 
-ArcReel's Agent Runtime is based on the Claude Agent SDK and supports Anthropic's official service as well as compatible configurations supported by the project.
+ArcReel's Agent Runtime is based on the Claude Agent SDK and supports Anthropic's official service as well as compatible configurations supported by the project. The "Anthropic Official" preset always connects to Anthropic's official address, which cannot be changed.
 
 The Agent provider does not necessarily handle the actual image and video generation.
 
@@ -44,6 +44,8 @@ A complete project can use a combination of providers, for example:
 - Sample videos: a fast video model;
 - Final key shots: a high-quality video model;
 - Voice-over: a dedicated TTS provider.
+
+AI Studio, Vertex AI, OpenAI and Grok always connect to their own official addresses; the request address cannot be changed. To use a third-party platform such as OpenRouter, [add a custom provider](#custom-providers).
 
 ## 2. Preset Provider Capability Matrix {#capability-matrix}
 
@@ -126,7 +128,7 @@ unsaved changes asks first.
   - "Model ID": the model name sent to the provider with each call. After changing it, settings and projects that selected this model need to select it again;
   - "Multiplier": this model's multiplier. When the provider multiplier is not 1, the final multiplier of the two is shown;
   - "Parameters this provider supports": change these when what the provider actually supports differs from the model info, for example
-    when a relay only offers some durations or resolutions, or does not support the last frame. Each item shows its original value;
+    when a third-party platform only offers some durations or resolutions, or does not support the last frame. Each item shows its original value;
     "Change" replaces the whole item and "Restore" goes back to the original value. Models that map to no known model can be changed too;
     their original values are what ArcReel infers from the model name. For video models, "Durations by resolution" follows "Durations",
     and removing a resolution also removes its duration restriction;
@@ -148,7 +150,7 @@ length; the model maker, official model name, type, and aliases are read-only. A
   updates. If the official data later adds the same model, "Use official data" appears here: after confirmation, the information you
   entered is replaced by the official data. It takes effect immediately and cannot be undone.
 
-When a relay renames a model so it no longer matches the model catalog by name, models you added yourself and models of custom providers
+When a third-party platform renames a model so it no longer matches the model catalog by name, models you added yourself and models of custom providers
 can be linked to a catalog model by hand. "Link to another model" at the top right of the lower half opens the model catalog picker
 (it lists models of the same type by default); after you choose one, capabilities, price, and call-channel capabilities all come from
 that model. A linked model is no longer matched by name; click "Unlink" to go back. For a model that is not in the catalog, click
@@ -173,7 +175,7 @@ The "Pricing" part of "Model info" is edited as one card per billing item, and y
   prices and "Use the official pricing" takes it back; it is not shown when the currency differs from the official one.
 
 When other providers use the same model, "Model info" lists them: changes and restoring official data apply to them as well. If only one
-provider differs from the model info (for example, a relay offers only some durations), change "Parameters this provider supports"
+provider differs from the model info (for example, a third-party platform offers only some durations), change "Parameters this provider supports"
 instead of the model info.
 
 The name, base URL, key, concurrency limits, and provider multiplier of a custom provider are still saved together in the provider details,
@@ -485,7 +487,7 @@ When creating an endpoint, you can pick the video or image "submit + poll" templ
 
 For a self-hosted ComfyUI instance, you can import an API-format workflow and map prompts, assets, dimensions, duration, and output to its nodes. See [Connect a ComfyUI Workflow](./comfyui.md) for the complete setup and operational constraints.
 
-When a relay keeps an official protocol but changes the path (an added prefix, a different version segment, or a renamed path), you can change the "Request URL" in the [model settings](#model-settings). Each request the endpoint sends gets its own row; the base URL part is greyed out, and you click the path to edit it. Press Enter or click elsewhere to save, or press Esc to cancel. A changed path is appended to the base URL exactly as the provider entered it, without adding `/v1` or stripping a version segment. To drop only what was added or stripped automatically, open the path and press Enter without changing it. The path can only use placeholders the request already has, such as `{{ model }}` and `{{ task_id }}`. If the path includes a `?` query string, it replaces the original query string entirely; add any original parameters you need to keep (such as `alt=media` in the Gemini download URL) to the changed path.
+When a third-party platform keeps an official protocol but changes the path (an added prefix, a different version segment, or a renamed path), you can change the "Request URL" in the [model settings](#model-settings). Each request the endpoint sends gets its own row; the base URL part is greyed out, and you click the path to edit it. Press Enter or click elsewhere to save, or press Esc to cancel. A changed path is appended to the base URL exactly as the provider entered it, without adding `/v1` or stripping a version segment. To drop only what was added or stripped automatically, open the path and press Enter without changing it. The path can only use placeholders the request already has, such as `{{ model }}` and `{{ task_id }}`. If the path includes a `?` query string, it replaces the original query string entirely; add any original parameters you need to keep (such as `alt=media` in the Gemini download URL) to the changed path.
 
 Connection tests and real generation use the changed URLs; model discovery and connectivity checks still use the base URL. Changing the endpoint resets modified request URLs to their defaults. If you change a request URL after a video task is submitted, resuming that task after a service restart fails instead of submitting it again. Endpoints without a "Request URL" row in the model settings do not support this.
 
@@ -717,8 +719,8 @@ Costs of text, voiceover, image, and video calls on built-in providers are compu
 Models on a custom provider have no prices of their own. When a model name maps to a known model in the model catalog, its calls are charged at that model's official price, with the same rules as built-in providers;
 when it maps to nothing, its calls are recorded as "Unpriced". The model list on the settings page shows the known model each model maps to, or "Unpriced".
 
-Each provider can have a multiplier that applies to the cost of all its calls, to reflect top-up discounts or relay price differences.
-Models of custom providers, and models you added yourself under a built-in provider, can also have their own multiplier, so the final cost = official price × provider multiplier × model multiplier. For example, if a relay charges 80% of the official price across the board, set the provider multiplier to 0.8; if one model there costs 1.5× the official price, set that model's multiplier to 1.875 (0.8 × 1.875 = 1.5).
+Each provider can have a multiplier that applies to the cost of all its calls, to reflect top-up discounts or third-party price differences.
+Models of custom providers, and models you added yourself under a built-in provider, can also have their own multiplier, so the final cost = official price × provider multiplier × model multiplier. For example, if a third-party platform charges 80% of the official price across the board, set the provider multiplier to 0.8; if one model there costs 1.5× the official price, set that model's multiplier to 1.875 (0.8 × 1.875 = 1.5).
 The multiplier defaults to 1; Volcengine Ark Agent Plan is billed by subscription and ComfyUI providers run on your own hardware, so their multipliers default to 0 and no cost is computed. Changing a multiplier only affects later calls;
 costs already recorded are not recalculated.
 

@@ -83,6 +83,7 @@ function providerDetailFor(lang: string): ProviderConfigDetail {
       },
     ],
     supports_base_url: false,
+    international_base_url: null,
     secret_fields: [],
     secret_field_groups: [],
   };
@@ -110,6 +111,7 @@ const CHAT_ENDPOINT: EndpointDescriptor = {
   request_path_template: "/v1/chat/completions",
   image_capabilities: null,
   end_image_capable: false,
+  custom_selectable: true,
   size_fixed: false,
   duration_fixed: false,
   duration_frame_rate_missing: false,

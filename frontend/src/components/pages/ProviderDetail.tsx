@@ -285,6 +285,7 @@ export function ProviderDetail({ providerId, initialModelId, onSaved }: Props) {
         <CredentialList
           providerId={providerId}
           supportsBaseUrl={detail.supports_base_url}
+          internationalBaseUrl={detail.international_base_url}
           secretFields={detail.secret_fields}
           secretFieldGroups={detail.secret_field_groups}
           onChanged={handleCredentialChanged}

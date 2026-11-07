@@ -25,12 +25,14 @@ const mockCred = (overrides: Partial<ProviderCredential> = {}): ProviderCredenti
 function renderList({
   providerId = "dashscope",
   supportsBaseUrl = false,
+  internationalBaseUrl = null,
   secretFields = API_KEY_FIELDS,
   secretFieldGroups = [secretFields.map((f) => f.key)],
   onChanged,
 }: {
   providerId?: string;
   supportsBaseUrl?: boolean;
+  internationalBaseUrl?: string | null;
   secretFields?: CredentialSecretField[];
   secretFieldGroups?: string[][];
   onChanged?: () => void;
@@ -39,6 +41,7 @@ function renderList({
     <CredentialList
       providerId={providerId}
       supportsBaseUrl={supportsBaseUrl}
+      internationalBaseUrl={internationalBaseUrl}
       secretFields={secretFields}
       secretFieldGroups={secretFieldGroups}
       onChanged={onChanged}
@@ -72,6 +75,39 @@ describe("pages/CredentialList", () => {
     const dialog = await openAddDialog();
     expect(within(dialog).getByLabelText("名称")).toBeInTheDocument();
     expect(within(dialog).queryByLabelText(BASE_URL_LABEL)).not.toBeInTheDocument();
+  });
+
+  it("fills the official international address when the international site is chosen", async () => {
+    vi.spyOn(API, "listCredentials").mockResolvedValue({ credentials: [] });
+    const createSpy = vi.spyOn(API, "createCredential").mockResolvedValue(mockCred());
+    renderList({
+      providerId: "kling",
+      supportsBaseUrl: true,
+      internationalBaseUrl: "https://api-singapore.klingai.com/v1",
+    });
+    const dialog = await openAddDialog();
+    const address = within(dialog).getByLabelText(BASE_URL_LABEL);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "国际站" }));
+    expect(address).toHaveValue("https://api-singapore.klingai.com/v1");
+    expect(within(dialog).getByRole("button", { name: "国际站" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "中国站（默认）" }));
+    expect(address).toHaveValue("");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "国际站" }));
+    fireEvent.change(within(dialog).getByLabelText("名称"), { target: { value: "国际账号" } });
+    fireEvent.change(within(dialog).getByLabelText("密钥"), { target: { value: "sk-intl" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "添加密钥" }));
+    await vi.waitFor(() => expect(createSpy).toHaveBeenCalled());
+    expect(createSpy.mock.calls[0][1]).toMatchObject({ base_url: "https://api-singapore.klingai.com/v1" });
+  });
+
+  it("offers no region choice for providers without an international site", async () => {
+    vi.spyOn(API, "listCredentials").mockResolvedValue({ credentials: [] });
+    renderList({ supportsBaseUrl: true });
+    const dialog = await openAddDialog();
+    expect(within(dialog).queryByRole("button", { name: "国际站" })).not.toBeInTheDocument();
   });
 
   it("switches the active key immediately and reports the change", async () => {

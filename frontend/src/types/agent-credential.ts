@@ -17,6 +17,8 @@ export interface PresetProvider {
   notes: string | null;
   api_key_pattern: string | null;
   is_recommended: boolean;
+  /** 固定直连官方端点：地址不能改，表单里只读显示。 */
+  fixed_endpoint: boolean;
 }
 
 export interface PresetProvidersResponse {

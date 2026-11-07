@@ -331,6 +331,21 @@ class TestProviderConfig:
         assert "gemini-aistudio" in result
 
 
+class TestOfficialEndpoints:
+    """非中国的内置供应商固定连官方端点，不接受请求地址。"""
+
+    @pytest.mark.parametrize("provider", ["gemini-aistudio", "openai", "grok", "gemini-vertex"])
+    def test_official_providers_do_not_offer_a_base_url(self, provider):
+        from lib.config.registry import PROVIDER_REGISTRY
+
+        assert not PROVIDER_REGISTRY[provider].accepts_base_url
+
+    def test_chinese_providers_accept_a_base_url(self):
+        from lib.config.registry import PROVIDER_REGISTRY
+
+        assert PROVIDER_REGISTRY["ark"].accepts_base_url
+
+
 class TestSessionReuse:
     """验证 session() 上下文管理器的 session 复用行为。"""
 

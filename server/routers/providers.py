@@ -167,6 +167,8 @@ class ProviderConfigResponse(BaseModel):
     # 该供应商凭证是否接受自定义 base_url（真相源：optional_keys 含 base_url）。
     # base_url 随凭证走、不进 fields，前端据此决定是否在密钥表单渲染 URL 输入。
     supports_base_url: bool
+    # 中国供应商的国际站地址（真相源：registry international_base_url），前端据此提供「国际站」快速选项。
+    international_base_url: str | None = None
     # 凭证表单应渲染的 secret 字段（有序，真相源：registry required_keys ∩ secret_keys ∩ 凭证键）。
     secret_fields: list[CredentialSecretField]
     # 凭证「二选一」分组：前端据此校验「至少一组的字段全部填写」而非「全部字段都填写」
@@ -552,6 +554,7 @@ async def get_provider_config(
         media_types=catalog.provider_media_types(provider_id),
         fields=fields,
         supports_base_url="base_url" in meta.optional_keys,
+        international_base_url=meta.international_base_url,
         secret_fields=secret_fields,
         secret_field_groups=secret_field_groups,
     )
@@ -675,7 +678,8 @@ async def create_credential(
         provider=provider_id,
         name=body.name,
         api_key=body.api_key,
-        base_url=body.base_url,
+        # 固定直连官方端点的供应商不收请求地址，免得接到中转站
+        base_url=body.base_url if PROVIDER_REGISTRY[provider_id].accepts_base_url else None,
         access_key=body.access_key,
         secret_key=body.secret_key,
     )
@@ -709,7 +713,7 @@ async def update_credential(
         kwargs["name"] = body.name
     if "api_key" in body.model_fields_set:
         kwargs["api_key"] = body.api_key
-    if "base_url" in body.model_fields_set:
+    if "base_url" in body.model_fields_set and PROVIDER_REGISTRY[provider_id].accepts_base_url:
         kwargs["base_url"] = body.base_url
     if "access_key" in body.model_fields_set:
         kwargs["access_key"] = body.access_key

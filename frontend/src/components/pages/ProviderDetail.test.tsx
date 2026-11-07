@@ -24,6 +24,7 @@ function detailFor(language: string, maxWorkers = "2"): ProviderConfigDetail {
       },
     ],
     supports_base_url: false,
+    international_base_url: null,
     secret_fields: [],
     secret_field_groups: [],
   };

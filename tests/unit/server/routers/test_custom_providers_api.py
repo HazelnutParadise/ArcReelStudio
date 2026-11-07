@@ -278,6 +278,7 @@ class TestEndpointCatalog:
                 "request_path_template",
                 "image_capabilities",
                 "end_image_capable",
+                "custom_selectable",
                 "size_fixed",
                 "duration_fixed",
                 "duration_frame_rate_missing",
@@ -973,6 +974,26 @@ class TestUnknownEndpointRejected:
         )
         assert resp.status_code == 422
         assert "unknown endpoint" in resp.text
+
+
+class TestRetiredEndpointRejected:
+    """经 Gemini 协议中转 Veo 的端点只留给已有的模型读取，新建或修改自定义模型时不能再选。"""
+
+    def test_create_with_the_relay_veo_endpoint(self, custom_providers_client: TestClient):
+        resp = custom_providers_client.post(
+            "/api/v1/custom-providers",
+            json={
+                "display_name": "Relay",
+                "discovery_format": "google",
+                "base_url": "https://relay.example.com",
+                "api_key": "sk-key",
+                "models": [
+                    {"model_id": "veo-3", "display_name": "Veo", "endpoint": "gemini-video", "is_enabled": True},
+                ],
+            },
+        )
+        assert resp.status_code == 422
+        assert "not available for custom providers" in resp.text
 
 
 class TestDuplicateModelIdRejected:

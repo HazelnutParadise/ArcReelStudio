@@ -81,6 +81,7 @@ export function descriptor(overrides: Partial<EndpointDescriptor>): EndpointDesc
     request_path_template: "/v1/videos",
     image_capabilities: null,
     end_image_capable: false,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,

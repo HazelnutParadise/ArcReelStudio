@@ -20,6 +20,7 @@ const VIDEO_ENDPOINT: EndpointDescriptor = {
   request_path_template: "/v1/video/generations",
   image_capabilities: null,
   end_image_capable: true,
+  custom_selectable: true,
   size_fixed: false,
   duration_fixed: false,
   duration_frame_rate_missing: false,

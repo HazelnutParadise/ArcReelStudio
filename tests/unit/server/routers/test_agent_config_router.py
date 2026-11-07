@@ -691,3 +691,30 @@ async def test_test_credential_uses_stored(agent_config_client, monkeypatch) -> 
     kwargs = fake.await_args.kwargs
     assert kwargs["api_key"] == "sk-stored"
     assert kwargs["preset_id"] == "deepseek"
+
+
+@pytest.mark.asyncio
+async def test_official_anthropic_preset_ignores_a_requested_address(agent_config_client) -> None:
+    resp = await agent_config_client.post(
+        "/api/v1/agent/credentials",
+        json={"preset_id": "anthropic-official", "api_key": "sk-ant-test", "base_url": "https://relay.example.com"},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["base_url"] == "https://api.anthropic.com"
+
+    patched = await agent_config_client.patch(
+        f"/api/v1/agent/credentials/{resp.json()['id']}",
+        json={"base_url": "https://relay.example.com"},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["base_url"] == "https://api.anthropic.com"
+
+
+@pytest.mark.asyncio
+async def test_the_ark_coding_plan_has_an_international_preset(agent_config_client) -> None:
+    resp = await agent_config_client.get("/api/v1/agent/preset-providers")
+    by_id = {p["id"]: p for p in resp.json()["providers"]}
+    ids = list(by_id)
+
+    assert by_id["ark-coding-plan-intl"]["messages_url"] == "https://ark.ap-southeast.bytepluses.com/api/coding"
+    assert ids.index("ark-coding-plan-intl") == ids.index("ark-coding-plan") + 1

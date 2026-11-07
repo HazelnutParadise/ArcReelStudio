@@ -28,6 +28,8 @@ class PresetProvider:
     notes_i18n_key: str | None
     api_key_pattern: str | None
     is_recommended: bool
+    # 固定直连官方端点：非中国的官方供应商不能改成连中转站，保存与读取都以 messages_url 为准
+    fixed_endpoint: bool = False
 
 
 PRESET_PROVIDERS: dict[str, PresetProvider] = {
@@ -44,6 +46,7 @@ PRESET_PROVIDERS: dict[str, PresetProvider] = {
         notes_i18n_key=None,
         api_key_pattern=r"^sk-ant-[A-Za-z0-9_-]+$",
         is_recommended=False,
+        fixed_endpoint=True,
     ),
     "arcreel": PresetProvider(
         id="arcreel",
@@ -183,6 +186,23 @@ PRESET_PROVIDERS: dict[str, PresetProvider] = {
         api_key_pattern=None,
         is_recommended=False,
     ),
+    # 火山方舟 Coding Plan 的国际版（BytePlus ModelArk）。Base URL 来源：
+    # https://docs.byteplus.com/en/docs/ModelArk/2188959 「Claude Code」。国际版的模型清单与国内不同，
+    # 不预填模型，由用户按 BytePlus 控制台填写；密钥与国内的方舟密钥不能混用。
+    "ark-coding-plan-intl": PresetProvider(
+        id="ark-coding-plan-intl",
+        display_name="BytePlus ModelArk Coding Plan (Global)",
+        icon_key="Volcengine",
+        messages_url="https://ark.ap-southeast.bytepluses.com/api/coding",
+        discovery_url=None,
+        default_model="",
+        suggested_models=(),
+        docs_url="https://docs.byteplus.com/en/docs/ModelArk/2188959",
+        api_key_url="https://console.byteplus.com/ark/region:ap-southeast-1/overview",
+        notes_i18n_key=None,
+        api_key_pattern=None,
+        is_recommended=False,
+    ),
     # Base URL 来源：https://www.volcengine.com/docs/82379/2373740 「配置 Claude Code」
     # 模型清单来源：https://www.volcengine.com/docs/82379/2366394 「支持模型及 Harness」
     "ark-agent-plan": PresetProvider(
@@ -226,6 +246,7 @@ PRESET_ORDER: tuple[str, ...] = (
     "minimax-cn",
     "minimax-intl",
     "ark-coding-plan",
+    "ark-coding-plan-intl",
     "ark-agent-plan",
 )
 
@@ -236,3 +257,9 @@ def get_preset(preset_id: str) -> PresetProvider | None:
 
 def list_presets() -> list[PresetProvider]:
     return [PRESET_PROVIDERS[k] for k in PRESET_ORDER]
+
+
+def fixed_endpoint_url(preset_id: str | None) -> str | None:
+    """固定直连官方端点的预设返回它的官方地址，其余预设与自定义返回 ``None``。"""
+    preset = PRESET_PROVIDERS.get(preset_id or "")
+    return preset.messages_url if preset is not None and preset.fixed_endpoint else None

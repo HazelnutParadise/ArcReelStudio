@@ -216,3 +216,10 @@ class TestPrefill:
 )
 def test_new_image_model_prefill_preserves_the_name_rule(provider: str, model: str, endpoint: str):
     assert infer_builtin_endpoint(provider, "image", model) == endpoint
+
+
+def test_ai_studio_videos_default_to_gemini_omni():
+    # Google 已关闭 AI Studio 上的 Veo：只填 AI Studio 金钥时，默认的影片端点改用 Gemini Omni
+    from lib.backends.backend_assembly.specs import get_provider_endpoints
+
+    assert get_provider_endpoints("gemini-aistudio", "video").default == "gemini-interactions-video"

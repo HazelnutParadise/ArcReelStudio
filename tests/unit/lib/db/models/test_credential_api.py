@@ -85,6 +85,30 @@ class TestCreateCredential:
             )
         assert resp.status_code == 201
 
+    def test_official_providers_ignore_a_submitted_base_url(self):
+        app, _ = _make_app()
+        mock_repo = MagicMock(spec=CredentialRepository)
+        mock_repo.create = AsyncMock(return_value=_fake_cred())
+        with patch("server.routers.providers.CredentialRepository", return_value=mock_repo), TestClient(app) as client:
+            resp = client.post(
+                "/api/v1/providers/gemini-aistudio/credentials",
+                json={"name": "测试Key", "api_key": "AIza-new", "base_url": "https://relay.example.com"},
+            )
+        assert resp.status_code == 201
+        assert mock_repo.create.await_args.kwargs["base_url"] is None
+
+    def test_chinese_providers_keep_a_submitted_base_url(self):
+        app, _ = _make_app()
+        mock_repo = MagicMock(spec=CredentialRepository)
+        mock_repo.create = AsyncMock(return_value=_fake_cred(provider="ark"))
+        with patch("server.routers.providers.CredentialRepository", return_value=mock_repo), TestClient(app) as client:
+            resp = client.post(
+                "/api/v1/providers/ark/credentials",
+                json={"name": "测试Key", "api_key": "ark-key", "base_url": "https://ark.example.com"},
+            )
+        assert resp.status_code == 201
+        assert mock_repo.create.await_args.kwargs["base_url"] == "https://ark.example.com"
+
     def test_requires_name(self):
         app, _ = _make_app()
         mock_repo = MagicMock(spec=CredentialRepository)

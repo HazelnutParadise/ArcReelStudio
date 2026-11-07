@@ -1537,6 +1537,7 @@ describe("dimensions a ComfyUI workflow fixes", () => {
     request_path_template: "/prompt",
     image_capabilities: null,
     end_image_capable: false,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,

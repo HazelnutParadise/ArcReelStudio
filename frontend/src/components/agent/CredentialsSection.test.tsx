@@ -19,6 +19,7 @@ const preset: PresetProvider = {
   notes: null,
   api_key_pattern: null,
   is_recommended: true,
+  fixed_endpoint: false,
 };
 
 beforeEach(() => {

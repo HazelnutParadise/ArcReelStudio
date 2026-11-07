@@ -25,6 +25,7 @@ const presets: PresetProvider[] = [
     notes: null,
     api_key_pattern: null,
     is_recommended: true,
+    fixed_endpoint: false,
   },
 ];
 
@@ -43,6 +44,7 @@ const presetsWithSecond: PresetProvider[] = [
     notes: null,
     api_key_pattern: null,
     is_recommended: false,
+    fixed_endpoint: false,
   },
 ];
 
@@ -592,6 +594,7 @@ describe("AddCredentialModal", () => {
       default_model: "",
       suggested_models: [],
       is_recommended: false,
+      fixed_endpoint: false,
     };
     render(
       <AddCredentialModal
@@ -610,6 +613,35 @@ describe("AddCredentialModal", () => {
     fireEvent.click(screen.getByRole("button", { name: /Anthropic Official/i }));
     expect(screen.getByText(/留空的档位由 Claude Code 决定使用哪个模型/)).toBeInTheDocument();
     expect(screen.queryByText(/留空则统一使用上方的默认模型/)).not.toBeInTheDocument();
+  });
+
+  it("shows the official Anthropic address read-only, because that preset always connects to Anthropic", () => {
+    const official: PresetProvider = {
+      ...presets[0],
+      id: "anthropic-official",
+      display_name: "Anthropic Official",
+      icon_key: "Anthropic",
+      messages_url: "https://api.anthropic.com",
+      fixed_endpoint: true,
+    };
+    render(
+      <AddCredentialModal
+        open
+        presets={[...presets, official]}
+        customSentinelId="__custom__"
+        onSubmit={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Anthropic Official/i }));
+
+    const url = document.querySelector<HTMLInputElement>("#cred-url");
+    expect(url).not.toBeNull();
+    expect(url!.readOnly).toBe(true);
+    expect(url!.value).toBe("https://api.anthropic.com");
+
+    fireEvent.click(screen.getByRole("button", { name: /DeepSeek/i }));
+    expect(url!.readOnly).toBe(false);
   });
 
   it("disables preset chips in edit mode", () => {
@@ -649,6 +681,7 @@ describe("AddCredentialModal 模型下拉回退", () => {
       notes: null,
       api_key_pattern: null,
       is_recommended: false,
+      fixed_endpoint: false,
     },
   ];
 

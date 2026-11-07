@@ -54,7 +54,7 @@ def test_messages_url_https_only() -> None:
 
 
 def test_curated_preset_set() -> None:
-    """目录与用户提供的表格保持一致;11 条预设."""
+    """目录与用户提供的表格保持一致;12 条预设（含方舟 Coding Plan 的国际版）."""
     expected = {
         "anthropic-official",
         "arcreel",
@@ -66,6 +66,7 @@ def test_curated_preset_set() -> None:
         "minimax-intl",
         "kimi",
         "ark-coding-plan",
+        "ark-coding-plan-intl",
         "ark-agent-plan",
     }
     actual = {p.id for p in list_presets()}
@@ -85,6 +86,7 @@ def test_default_models_match_table() -> None:
         "minimax-intl": "MiniMax-M3",
         "kimi": "",
         "ark-coding-plan": "doubao-seed-evolving",
+        "ark-coding-plan-intl": "",
         "ark-agent-plan": "doubao-seed-evolving",
     }
     actual = {p.id: p.default_model for p in list_presets()}
