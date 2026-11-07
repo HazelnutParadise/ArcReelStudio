@@ -2,7 +2,8 @@ import { useCallback, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
-import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
 import type { UnitJson } from "@/collab/ydoc-json";
 import { DurationTierPicker } from "@/components/shared/DurationTierPicker";
 import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesBar";

@@ -23,7 +23,8 @@ import { VersionTimeMachine } from "@/components/canvas/timeline/VersionTimeMach
 import { CrossfadeImage } from "@/components/canvas/shared/CrossfadeImage";
 import { CopyButton } from "@/components/shared/CopyButton";
 import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesBar";
-import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
 import type { UnitJson } from "@/collab/ydoc-json";
 import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
 import { PromptPreviewButton } from "@/components/shared/PromptPreviewButton";

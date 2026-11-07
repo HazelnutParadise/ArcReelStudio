@@ -1,5 +1,6 @@
 import { useId } from "react";
-import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
 import type { LiveEditing } from "@/components/shared/edit-unit/useEditUnit";
 import { Input } from "@/components/ui/input";
 

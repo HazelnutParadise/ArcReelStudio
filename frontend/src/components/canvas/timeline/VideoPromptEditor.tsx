@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
 import type { LiveEditing } from "@/components/shared/edit-unit/useEditUnit";
 import { Textarea } from "@/components/ui/textarea";
 import { CAMERA_MOTIONS, CAMERA_MOTION_I18N_KEYS } from "@/types";

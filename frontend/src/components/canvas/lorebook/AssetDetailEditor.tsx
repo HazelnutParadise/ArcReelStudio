@@ -2,11 +2,12 @@ import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { API } from "@/api";
-import { CollabField, liveFieldProps } from "@/collab/CollabField";
+import { CollabField } from "@/collab/CollabField";
+import { liveFieldProps } from "@/collab/live-field-props";
 import { CrossfadeImage } from "@/components/canvas/shared/CrossfadeImage";
 import { useLeaveGuard } from "@/components/shared/edit-unit/LeaveGuard";
 import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesBar";
-import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
+import { useEditUnit, type EditUnit } from "@/components/shared/edit-unit/useEditUnit";
 import { PromptPreviewButton } from "@/components/shared/PromptPreviewButton";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { Input } from "@/components/ui/input";
@@ -109,9 +110,6 @@ export function AssetDetailEditor({
   navigation,
 }: AssetDetailEditorProps) {
   const { t } = useTranslation(["assets", "dashboard", "common"]);
-  const descriptionId = useId();
-  const brandId = useId();
-  const sellingPointsId = useId();
   const [viewingSheet, setViewingSheet] = useState(false);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const voiceBinding = useProjectsStore(
@@ -290,64 +288,15 @@ export function AssetDetailEditor({
                 </EditorSection>
               )}
 
-          <EditorSection
-            title={t("assets:field.description")}
-            htmlFor={descriptionId}
-            action={
-              readOnly ? null : (
-                <PromptPreviewButton
-                  title={t("assets:prompt_preview_title", { name })}
-                  beforeOpen={unit.save}
-                  saveFirst={unit.dirty}
-                  // 保存在途时再「保存并预览」会并发第二次保存，先后落定可能让旧草稿盖住新草稿
-                  disabled={saving}
-                  load={(signal) => API.previewAssetPrompt(projectName, assetType, name, value.description, { signal })}
-                />
-              )
-            }
-          >
-            <CollabField live={unit.live} path="description">
-              <Textarea
-                {...liveFieldProps(unit.live, "description")}
-                id={descriptionId}
-                value={value.description}
-                readOnly={readOnly}
-                onChange={(e) => setField("description", e.target.value)}
-                rows={3}
-                placeholder={t(DESCRIPTION_PLACEHOLDER[assetType])}
-              />
-            </CollabField>
-          </EditorSection>
-
-          {product && (
-            <>
-              <EditorSection title={t("dashboard:product_brand_label")} htmlFor={brandId}>
-                <CollabField live={unit.live} path="brand">
-                  <Input
-                    {...liveFieldProps(unit.live, "brand")}
-                    id={brandId}
-                    value={value.brand}
-                    readOnly={readOnly}
-                    onChange={(e) => setField("brand", e.target.value)}
-                    placeholder={t("dashboard:product_brand_placeholder")}
-                  />
-                </CollabField>
-              </EditorSection>
-              <EditorSection title={t("dashboard:product_selling_points_label")} htmlFor={sellingPointsId}>
-                <CollabField live={unit.live} path="selling_points">
-                  <Textarea
-                    {...liveFieldProps(unit.live, "selling_points")}
-                    id={sellingPointsId}
-                    value={value.sellingPoints}
-                    readOnly={readOnly}
-                    onChange={(e) => setField("sellingPoints", e.target.value)}
-                    rows={3}
-                    placeholder={t("dashboard:product_selling_points_placeholder")}
-                  />
-                </CollabField>
-              </EditorSection>
-            </>
-          )}
+          <AssetTextFields
+            unit={unit}
+            projectName={projectName}
+            assetType={assetType}
+            name={name}
+            isProduct={product !== null}
+            readOnly={readOnly}
+            setField={setField}
+          />
 
           {character && (
             <EditorSection title={t("dashboard:voice_section")}>
@@ -403,5 +352,94 @@ export function AssetDetailEditor({
       />
       {staleConfirm.dialog}
     </AssetWriteProvider>
+  );
+}
+
+/** 描述，以及商品的品牌与卖点：进入资产这个编辑单元的文字字段，协作中多人同时编辑。 */
+function AssetTextFields({
+  unit,
+  projectName,
+  assetType,
+  name,
+  isProduct,
+  readOnly,
+  setField,
+}: {
+  unit: EditUnit<AssetFields>;
+  projectName: string;
+  assetType: AssetSheetType;
+  name: string;
+  isProduct: boolean;
+  readOnly: boolean;
+  setField: <K extends keyof AssetFields>(key: K, next: AssetFields[K]) => void;
+}) {
+  const { t } = useTranslation(["assets", "dashboard", "common"]);
+  const descriptionId = useId();
+  const brandId = useId();
+  const sellingPointsId = useId();
+  const saving = unit.status === "saving";
+  return (
+    <>
+      <EditorSection
+        title={t("assets:field.description")}
+        htmlFor={descriptionId}
+        action={
+          readOnly ? null : (
+            <PromptPreviewButton
+              title={t("assets:prompt_preview_title", { name })}
+              beforeOpen={unit.save}
+              saveFirst={unit.dirty}
+              // 保存在途时再「保存并预览」会并发第二次保存，先后落定可能让旧草稿盖住新草稿
+              disabled={saving}
+              load={(signal) =>
+                API.previewAssetPrompt(projectName, assetType, name, unit.value.description, { signal })
+              }
+            />
+          )
+        }
+      >
+        <CollabField live={unit.live} path="description">
+          <Textarea
+            {...liveFieldProps(unit.live, "description")}
+            id={descriptionId}
+            value={unit.value.description}
+            readOnly={readOnly}
+            onChange={(e) => setField("description", e.target.value)}
+            rows={3}
+            placeholder={t(DESCRIPTION_PLACEHOLDER[assetType])}
+          />
+        </CollabField>
+      </EditorSection>
+
+      {isProduct && (
+        <>
+          <EditorSection title={t("dashboard:product_brand_label")} htmlFor={brandId}>
+            <CollabField live={unit.live} path="brand">
+              <Input
+                {...liveFieldProps(unit.live, "brand")}
+                id={brandId}
+                value={unit.value.brand}
+                readOnly={readOnly}
+                onChange={(e) => setField("brand", e.target.value)}
+                placeholder={t("dashboard:product_brand_placeholder")}
+              />
+            </CollabField>
+          </EditorSection>
+          <EditorSection title={t("dashboard:product_selling_points_label")} htmlFor={sellingPointsId}>
+            <CollabField live={unit.live} path="selling_points">
+              <Textarea
+                {...liveFieldProps(unit.live, "selling_points")}
+                id={sellingPointsId}
+                value={unit.value.sellingPoints}
+                readOnly={readOnly}
+                onChange={(e) => setField("sellingPoints", e.target.value)}
+                rows={3}
+                placeholder={t("dashboard:product_selling_points_placeholder")}
+              />
+            </CollabField>
+          </EditorSection>
+        </>
+      )}
+    </>
   );
 }
