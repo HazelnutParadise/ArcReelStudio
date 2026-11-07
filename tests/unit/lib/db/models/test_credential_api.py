@@ -422,7 +422,9 @@ class TestDeleteCredential:
         with (
             patch("server.routers.providers.CredentialRepository", return_value=mock_repo),
             # 没有设置指定这个连线：直接删除
-            patch("server.routers.providers.find_credential_references", AsyncMock(return_value=CredentialReferences())),
+            patch(
+                "server.routers.providers.find_credential_references", AsyncMock(return_value=CredentialReferences())
+            ),
             TestClient(app) as client,
         ):
             resp = client.delete("/api/v1/providers/gemini-aistudio/credentials/1")
