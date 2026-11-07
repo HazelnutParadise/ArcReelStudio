@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { type ComponentType, useEffect, useMemo } from "react";
 import { useSearch } from "wouter";
 import {
   AlertTriangle,
@@ -157,37 +157,25 @@ export function SystemConfigPage() {
   );
 }
 
+const SECTION_CONTENT: Record<SettingsSection, ComponentType> = {
+  providers: ProviderSection,
+  connections: ConnectionCenterSection,
+  "default-models": MediaModelSection,
+  endpoints: EndpointsSection,
+  "asset-library": AssetLibrarySection,
+  "arcreel-agent": AgentConfigTab,
+  "agent-memory": AgentMemorySection,
+  "external-agent": ExternalAgentSection,
+  "access-tokens": AccessTokensSection,
+  market: MarketSection,
+  usage: UsageRecordsSection,
+  account: AccountSection,
+  general: GeneralSection,
+  "prompt-templates": PromptTemplatesSection,
+  about: AboutSection,
+};
+
 function SectionContent({ section }: { section: SettingsSection }) {
-  switch (section) {
-    case "providers":
-      return <ProviderSection />;
-    case "connections":
-      return <ConnectionCenterSection />;
-    case "default-models":
-      return <MediaModelSection />;
-    case "endpoints":
-      return <EndpointsSection />;
-    case "asset-library":
-      return <AssetLibrarySection />;
-    case "arcreel-agent":
-      return <AgentConfigTab />;
-    case "agent-memory":
-      return <AgentMemorySection />;
-    case "external-agent":
-      return <ExternalAgentSection />;
-    case "access-tokens":
-      return <AccessTokensSection />;
-    case "market":
-      return <MarketSection />;
-    case "usage":
-      return <UsageRecordsSection />;
-    case "account":
-      return <AccountSection />;
-    case "general":
-      return <GeneralSection />;
-    case "prompt-templates":
-      return <PromptTemplatesSection />;
-    case "about":
-      return <AboutSection />;
-  }
+  const Content = SECTION_CONTENT[section];
+  return <Content />;
 }
