@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from lib.edit_timeline import EditTimelineService, RevisionAuthor
 from lib.edit_timeline.model import BgmClip, TimelineRevision

@@ -22,7 +22,9 @@ export function LobbyToolbar({ filter, onFilterChange, counts }: LobbyToolbarPro
         value={[filter]}
         onValueChange={(next: string[]) => {
           // 再次点击当前筛选不会取消选中。
-          const picked = next.find((value): value is LobbyFilter => (LOBBY_FILTERS as readonly string[]).includes(value));
+          const picked = next.find((value): value is LobbyFilter =>
+            (LOBBY_FILTERS as readonly string[]).includes(value),
+          );
           if (picked) onFilterChange(picked);
         }}
       >

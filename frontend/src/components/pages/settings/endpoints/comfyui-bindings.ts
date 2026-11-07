@@ -43,23 +43,14 @@ export function isMultiTargetBindingKey(key: ComfyuiBindingKey): boolean {
 }
 
 /** 无序多落点键的勾选与取消：在场即移除，不在场即追加，其余落点原样留着。 */
-export function toggleSetTarget(
-  current: ComfyuiBindingTarget[],
-  target: ComfyuiBindingTarget,
-): ComfyuiBindingTarget[] {
+export function toggleSetTarget(current: ComfyuiBindingTarget[], target: ComfyuiBindingTarget): ComfyuiBindingTarget[] {
   return current.some((entry) => sameTarget(entry, target))
     ? current.filter((entry) => !sameTarget(entry, target))
     : [...current, target];
 }
 
 /** 一行在绑定表里的状态。`required_unbound` 由必填键没有落点派生，不是服务端的推断状态。 */
-export type ComfyuiRowStatus =
-  | "auto"
-  | "manual"
-  | "ambiguous"
-  | "not_found"
-  | "unsupported"
-  | "required_unbound";
+export type ComfyuiRowStatus = "auto" | "manual" | "ambiguous" | "not_found" | "unsupported" | "required_unbound";
 
 // ---------------------------------------------------------------------------
 // workflow
@@ -215,10 +206,7 @@ function targetLanding(target: ComfyuiBindingTarget): string | null {
  * 推断结果的落盘形态：只有「唯一最高分」的键会自动带上条目，歧义与待确认一条也不带——
  * 那正是要用户来定的。显式不支持沿用它的空列表，其余键缺席（从未推断）。
  */
-export function bindingsFromInference(
-  inference: ComfyuiInferResponse,
-  mediaType: ComfyuiMediaType,
-): ComfyuiBindings {
+export function bindingsFromInference(inference: ComfyuiInferResponse, mediaType: ComfyuiMediaType): ComfyuiBindings {
   const bindings: ComfyuiBindings = {};
   for (const key of bindingKeysFor(mediaType)) {
     const result = inference.bindings[key];
@@ -281,10 +269,7 @@ export function rowStatus(
 }
 
 /** 这一行的条目各自是怎么来的；手选进来、不在候选列表里的条目不在其中。 */
-function boundOrigins(
-  candidates: ComfyuiBindingCandidate[],
-  targets: ComfyuiBindingTarget[],
-): ComfyuiMatchOrigin[] {
+function boundOrigins(candidates: ComfyuiBindingCandidate[], targets: ComfyuiBindingTarget[]): ComfyuiMatchOrigin[] {
   return candidates
     .filter((candidate) => targets.some((target) => sameTarget(target, candidate.target)))
     .map((candidate) => candidate.origin);

@@ -73,13 +73,34 @@ export interface ProjectChange {
   asset_fingerprints?: Record<string, number>;
 }
 
+/** 发起一批 Web 端修改的成员；后台任务、Agent 与无法归属到单一成员的批次没有。 */
+export interface ProjectChangeActor {
+  user_id: string;
+  username: string;
+}
+
 export interface ProjectChangeBatchPayload {
   project_name: string;
   batch_id: string;
   fingerprint: string;
   generated_at: string;
   source: ProjectEventSource;
+  actor?: ProjectChangeActor | null;
   changes: ProjectChange[];
+}
+
+/** 项目里在线的一位成员；同一成员开了几个标签页只列一次。 */
+export interface ProjectPresenceMember {
+  user_id: string;
+  username: string;
+  /** 各标签页正在看的工作区位置（如 `episodes/3`），去重排序；不在具体页面时为空。 */
+  views: string[];
+}
+
+/** 项目在线成员名单变化时下发。 */
+export interface ProjectPresencePayload {
+  project_name: string;
+  members: ProjectPresenceMember[];
 }
 
 export interface ProjectEventSnapshotPayload {

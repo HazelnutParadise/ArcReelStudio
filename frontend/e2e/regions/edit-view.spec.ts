@@ -11,7 +11,6 @@ const API: ApiOverrides = {
   "GET /api/v1/projects/demo/events/stream": { status: 404, body: { detail: "页面级套件不回放事件流" } },
 };
 
-
 interface RecordedProject {
   project: Record<string, unknown>;
   scripts: Record<string, Record<string, unknown>>;
@@ -81,8 +80,30 @@ const readout = {
   duration: totalDuration,
   clips,
   bgm: [
-    { id: "b1", bgm_id: "bgm-0001", name: "雨夜·城墙下的风声（循环版）", start: 0, end: 60, source_in: 0, source_out: 60, volume: 0.3, fade_in: 2, fade_out: 3 },
-    { id: "b2", bgm_id: "bgm-0002", name: "箭楼钟声", start: 60, end: totalDuration, source_in: 0, source_out: totalDuration - 60, volume: 0.25, fade_in: 1, fade_out: 4 },
+    {
+      id: "b1",
+      bgm_id: "bgm-0001",
+      name: "雨夜·城墙下的风声（循环版）",
+      start: 0,
+      end: 60,
+      source_in: 0,
+      source_out: 60,
+      volume: 0.3,
+      fade_in: 2,
+      fade_out: 3,
+    },
+    {
+      id: "b2",
+      bgm_id: "bgm-0002",
+      name: "箭楼钟声",
+      start: 60,
+      end: totalDuration,
+      source_in: 0,
+      source_out: totalDuration - 60,
+      volume: 0.25,
+      fade_in: 1,
+      fade_out: 4,
+    },
   ],
   issues: [
     ...clips
@@ -155,7 +176,10 @@ const NO_TASKS = { status: 200, body: { items: [], total: 0, page: 1, page_size:
 const TIMELINE_BASE = `/api/v1/projects/demo/edit-timelines/${TIMELINE_ID}`;
 // 播放器装载当前片段的源视频，开始播放后再预载下一段；套件不回放媒体文件，按不存在处理。
 const videoMissing = (index: number) => ({
-  [`GET /api/v1/files/demo/videos/scene_${unit(index)}.mp4?v=1`]: { status: 404, body: { detail: "页面级套件不回放媒体" } },
+  [`GET /api/v1/files/demo/videos/scene_${unit(index)}.mp4?v=1`]: {
+    status: 404,
+    body: { detail: "页面级套件不回放媒体" },
+  },
 });
 
 // 片段按视频单元在本集的当前位置指称：剧本放进时间线用到的 36 个与未使用的 30 个。
@@ -220,15 +244,12 @@ const TTS_TIMELINE: ApiOverrides = {
   },
 };
 
-
 const editView = (page: Page) => page.getByRole("tabpanel", { name: "剪辑", exact: true });
 const timelineTabs = (page: Page) => page.getByRole("tablist", { name: "剪辑时间线" });
 const tracks = (page: Page) => page.getByRole("group", { name: "时间线轨道，点击跳到对应时间" });
 const details = (page: Page) => page.getByRole("region", { name: "片段详情与问题" });
 const player = (page: Page) => page.getByRole("region", { name: "剪辑预览" });
 const renderDialog = (page: Page) => page.getByRole("dialog", { name: /^出片 · / });
-
-
 
 /** 弹层带入场动画，量尺寸、跑 axe 之前等它停下；进行中的转圈等循环动画不等。 */
 
@@ -280,7 +301,10 @@ defineRegionScenarios("剪辑视图", [
       // 选中带长说明的片段，详情栏撑到超高
       await page.getByTestId("edit-clip-c1").click();
       await expect(page.getByTestId("edit-clip-inspector")).toContainText("开场保留巡夜人");
-      await expect(timelineTabs(page).getByRole("tab", { name: timelineNames[5] })).toHaveAttribute("aria-selected", "true");
+      await expect(timelineTabs(page).getByRole("tab", { name: timelineNames[5] })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
 
       // 四条轨道完整落在视口内，轨道组的底边不超出视图
       const { height } = viewport(page);

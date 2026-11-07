@@ -1,9 +1,6 @@
 import { useState } from "react";
 
-import type {
-  CreateAgentCredentialRequest,
-  PresetProvider,
-} from "@/types/agent-credential";
+import type { CreateAgentCredentialRequest, PresetProvider } from "@/types/agent-credential";
 import { parseMultiplier } from "@/utils/multiplier";
 
 export interface CredentialForm {

@@ -314,7 +314,7 @@ async def evaluate_video_request_facts(
             selected = await resolver.resolve_video_backend(project, None, generation_type=generation_type)
         except (VideoBucketCapabilityError, ModelNotInCatalogError) as exc:
             return VideoRequestFactsFailure(exc.code, tuple(exc.params.items()))
-        except (ValueError, SQLAlchemyError):
+        except ValueError, SQLAlchemyError:
             return VideoRequestFactsFailure(codes["unavailable"], (("capability", generation_type),))
         provider_id, model_id = selected.provider_id, selected.model_id
 
@@ -324,7 +324,7 @@ async def evaluate_video_request_facts(
         )
     except VideoSupportedDurationsError as exc:
         return VideoRequestFactsFailure(codes[exc.kind], (("provider", exc.provider_id), ("model", exc.model_id)))
-    except (ValueError, SQLAlchemyError):
+    except ValueError, SQLAlchemyError:
         return VideoRequestFactsFailure(
             codes["unavailable"],
             (("capability", generation_type), ("provider", provider_id), ("model", model_id)),
@@ -352,7 +352,7 @@ async def evaluate_video_request_facts(
         saved_settings = project if resolution_override is None else {}
         try:
             resolution = await resolver.resolve_resolution(saved_settings, provider_id, model_id)
-        except (ValueError, SQLAlchemyError):
+        except ValueError, SQLAlchemyError:
             return VideoRequestFactsFailure(codes["unavailable"], (("capability", generation_type), *identity_params))
 
     # 参考图约束随桶生效：单元按可用参考图定桶，落 r2v 即带参考图、落 i2v 即不带。

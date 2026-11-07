@@ -86,7 +86,7 @@ class TestShouldRetry:
     def test_timeout_patterns(self):
         assert should_retry(RuntimeError("Connection timed out"), ()) is True
         assert should_retry(RuntimeError("read timeout"), ()) is True
-        assert should_retry(RuntimeError("httpx.ReadTimeout"), ()) is True
+        assert should_retry(RuntimeError("httpx2.ReadTimeout"), ()) is True
 
     def test_unrelated_error_message(self):
         exc = RuntimeError("Invalid API key")

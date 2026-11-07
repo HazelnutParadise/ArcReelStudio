@@ -4,7 +4,7 @@ import json
 from collections.abc import AsyncGenerator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
-import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import FastAPI
@@ -21,7 +21,7 @@ from tests.factories import custom_endpoint_definition
 OFFICIAL_SERVICE = "https://official.test"
 AGGREGATES = f"{OFFICIAL_SERVICE}/api/v1/market/aggregates"
 
-ClientFactory = Callable[..., AbstractAsyncContextManager[httpx.AsyncClient]]
+ClientFactory = Callable[..., AbstractAsyncContextManager[httpx2.AsyncClient]]
 
 
 @pytest.fixture
@@ -59,9 +59,9 @@ async def settings_client_factory(session_factory: async_sessionmaker[AsyncSessi
             yield session
 
     @asynccontextmanager
-    async def factory(base_url: str = OFFICIAL_SERVICE) -> AsyncGenerator[httpx.AsyncClient]:
+    async def factory(base_url: str = OFFICIAL_SERVICE) -> AsyncGenerator[httpx2.AsyncClient]:
         app = FastAPI()
-        async with httpx.AsyncClient() as network:
+        async with httpx2.AsyncClient() as network:
             app.dependency_overrides[get_async_session] = session_override
             app.dependency_overrides[get_official_service_gateway] = lambda: OfficialServiceGateway(
                 session_factory, base_url=base_url, http_client=lambda: network
@@ -69,17 +69,17 @@ async def settings_client_factory(session_factory: async_sessionmaker[AsyncSessi
             app.include_router(official_service.router)
             app.include_router(market.router)
             register_error_handlers(app)
-            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as client:
                 yield client
 
     return factory
 
 
-async def _query_aggregates(client: httpx.AsyncClient) -> str:
+async def _query_aggregates(client: httpx2.AsyncClient) -> str:
     """查询聚合一次，返回官方服务收到的实例标识。"""
     with respx.mock(assert_all_called=True) as remote:
         route = remote.post(AGGREGATES).mock(
-            side_effect=lambda request: httpx.Response(
+            side_effect=lambda request: httpx2.Response(
                 200,
                 json={
                     "items": [

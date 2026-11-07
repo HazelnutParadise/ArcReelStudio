@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vite-plus/test";
 import type { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
 import { API, ApiRequestError, type VideoCapabilitiesQuery } from "@/api";
@@ -84,9 +84,15 @@ const EMPTY_VALUE = {
 } as const;
 
 const EMPTY_GLOBALS = {
-  video: "", videoI2V: "", videoR2V: "",
-  image: "", imageT2I: "", imageI2I: "",
-  textDefault: "", textSimple: "", textComplex: "",
+  video: "",
+  videoI2V: "",
+  videoR2V: "",
+  image: "",
+  imageT2I: "",
+  imageI2I: "",
+  textDefault: "",
+  textSimple: "",
+  textComplex: "",
 } as const;
 
 // 服务端 video-capabilities 端点的替身：时长全集查当前测试的目录，Veo 的联动约束按上下文给出
@@ -153,9 +159,17 @@ describe("ModelConfigSection", () => {
     vi.spyOn(API, "getModelVideoCapabilities").mockRejectedValue(
       new ApiRequestError("请重新选择支持参考生视频的模型", undefined, 400),
     );
-    render(<ModelConfigSection showSubFields={false} value={{ ...EMPTY_VALUE, videoBackend: "gemini/veo-3" }}
-      onChange={() => {}} providers={PROVIDERS} options={OPTIONS} globalDefaults={EMPTY_GLOBALS}
-      usesReferenceImages />);
+    render(
+      <ModelConfigSection
+        showSubFields={false}
+        value={{ ...EMPTY_VALUE, videoBackend: "gemini/veo-3" }}
+        onChange={() => {}}
+        providers={PROVIDERS}
+        options={OPTIONS}
+        globalDefaults={EMPTY_GLOBALS}
+        usesReferenceImages
+      />,
+    );
     expect(await screen.findByRole("alert")).toHaveTextContent("请重新选择支持参考生视频的模型");
   });
   it("shows both reference-video bucket resolutions and keeps a shared model in sync", async () => {
@@ -163,9 +177,9 @@ describe("ModelConfigSection", () => {
     const onChange = vi.fn();
     const providers = PROVIDERS.map((provider) => ({
       ...provider,
-      models: Object.fromEntries(Object.entries(provider.models).map(([id, model]) => [
-        id, { ...model, resolutions: ["720p", "1080p"] },
-      ])),
+      models: Object.fromEntries(
+        Object.entries(provider.models).map(([id, model]) => [id, { ...model, resolutions: ["720p", "1080p"] }]),
+      ),
     }));
     const value = {
       ...EMPTY_VALUE,
@@ -174,8 +188,14 @@ describe("ModelConfigSection", () => {
       videoResolution: "720p",
     };
     const { rerender } = render(
-      <ModelConfigSection value={value} onChange={onChange} providers={providers} options={OPTIONS}
-        globalDefaults={EMPTY_GLOBALS} usesReferenceImages />,
+      <ModelConfigSection
+        value={value}
+        onChange={onChange}
+        providers={providers}
+        options={OPTIONS}
+        globalDefaults={EMPTY_GLOBALS}
+        usesReferenceImages
+      />,
     );
     const i2v = await screen.findByRole("combobox", { name: /图生视频.*分辨率|Image to video.*Resolution/ });
     const r2v = screen.getByRole("combobox", { name: /参考生视频.*分辨率|Reference to video.*Resolution/ });
@@ -184,8 +204,16 @@ describe("ModelConfigSection", () => {
     await user.click(i2v);
     await user.click(await screen.findByRole("option", { name: "1080p" }));
     const next = onChange.mock.lastCall?.[0];
-    rerender(<ModelConfigSection value={{ ...next, videoResolution: next.videoResolutions["gemini/veo-3"] }}
-      onChange={onChange} providers={providers} options={OPTIONS} globalDefaults={EMPTY_GLOBALS} usesReferenceImages />);
+    rerender(
+      <ModelConfigSection
+        value={{ ...next, videoResolution: next.videoResolutions["gemini/veo-3"] }}
+        onChange={onChange}
+        providers={providers}
+        options={OPTIONS}
+        globalDefaults={EMPTY_GLOBALS}
+        usesReferenceImages
+      />,
+    );
     expect(r2v).toHaveTextContent("1080p");
   });
   it("renders only the three default-layer selectors when no candidates are supplied", async () => {
@@ -325,9 +353,7 @@ describe("ModelConfigSection", () => {
       lifecycle: {},
     };
 
-    function renderWithCandidates(
-      overrides: Partial<ComponentProps<typeof ModelConfigSection>> = {},
-    ) {
+    function renderWithCandidates(overrides: Partial<ComponentProps<typeof ModelConfigSection>> = {}) {
       return render(
         <ModelConfigSection
           value={EMPTY_VALUE}
@@ -406,7 +432,8 @@ describe("ModelConfigSection", () => {
     });
 
     describe("所选视频模型已下线", () => {
-      const DISCONTINUED_ERROR = "Ark/seedance：该模型已于 2026-11-01 下线，官方建议改用 Seedance 2；请在设置中重新选择模型";
+      const DISCONTINUED_ERROR =
+        "Ark/seedance：该模型已于 2026-11-01 下线，官方建议改用 Seedance 2；请在设置中重新选择模型";
       const discontinued = (status: "discontinued" | "retiring" = "discontinued") => ({
         ...CANDIDATES,
         lifecycle: {
@@ -421,7 +448,9 @@ describe("ModelConfigSection", () => {
       });
 
       beforeEach(() => {
-        vi.spyOn(API, "getVideoCapabilities").mockRejectedValue(new ApiRequestError(DISCONTINUED_ERROR, undefined, 400));
+        vi.spyOn(API, "getVideoCapabilities").mockRejectedValue(
+          new ApiRequestError(DISCONTINUED_ERROR, undefined, 400),
+        );
       });
 
       it.each([
@@ -430,7 +459,9 @@ describe("ModelConfigSection", () => {
       ])("shows only the discontinued notice when %s references it", async (_where, value) => {
         renderWithCandidates({ projectName: "demo", value: { ...EMPTY_VALUE, ...value }, candidates: discontinued() });
 
-        expect(await screen.findByText("已下线（2026-11-01），无法继续生成，官方建议改用 Seedance 2")).toBeInTheDocument();
+        expect(
+          await screen.findByText("已下线（2026-11-01），无法继续生成，官方建议改用 Seedance 2"),
+        ).toBeInTheDocument();
         await waitFor(() => expect(API.getVideoCapabilities).toHaveBeenCalled());
         await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(1));
         expect(screen.queryByText(DISCONTINUED_ERROR)).not.toBeInTheDocument();
@@ -479,9 +510,7 @@ describe("ModelConfigSection", () => {
         globalDefaults: { ...EMPTY_GLOBALS, video: "ark/seedance", videoR2V: "ark/seedance" },
       });
       await user.click(screen.getAllByText("按用途指定模型")[0]);
-      expect(screen.getByRole("combobox", { name: "图生视频" })).toHaveTextContent(
-        /跟随默认 · Gemini · veo-3/,
-      );
+      expect(screen.getByRole("combobox", { name: "图生视频" })).toHaveTextContent(/跟随默认 · Gemini · veo-3/);
     });
 
     it("falls through to the global bucket, then the global default, when the project layer is empty", async () => {
@@ -491,12 +520,8 @@ describe("ModelConfigSection", () => {
       });
       await user.click(screen.getAllByText("按用途指定模型")[0]);
       // r2v 有全局桶 → 用桶值；i2v 无 → 落到全局默认模型
-      expect(screen.getByRole("combobox", { name: "参考生视频" })).toHaveTextContent(
-        /跟随默认 · Ark · seedance/,
-      );
-      expect(screen.getByRole("combobox", { name: "图生视频" })).toHaveTextContent(
-        /跟随默认 · Gemini · veo-3/,
-      );
+      expect(screen.getByRole("combobox", { name: "参考生视频" })).toHaveTextContent(/跟随默认 · Ark · seedance/);
+      expect(screen.getByRole("combobox", { name: "图生视频" })).toHaveTextContent(/跟随默认 · Gemini · veo-3/);
     });
 
     it("revalidates duration and resolution when a sub-field switches the executing model", async () => {
@@ -789,7 +814,13 @@ describe("ModelConfigSection", () => {
   });
 
   describe("各层全空时的自动选择", () => {
-    const AUTO = { t2i: "gemini/veo-3", i2i: "gemini/veo-3", i2v: "ark/seedance", r2v: "gemini/veo-3", text: "gemini/veo-3" };
+    const AUTO = {
+      t2i: "gemini/veo-3",
+      i2i: "gemini/veo-3",
+      i2v: "ark/seedance",
+      r2v: "gemini/veo-3",
+      text: "gemini/veo-3",
+    };
 
     it("shows the auto-selected model and asks its capabilities for durations", async () => {
       render(
@@ -801,7 +832,9 @@ describe("ModelConfigSection", () => {
           globalDefaults={{ ...EMPTY_GLOBALS, auto: AUTO }}
         />,
       );
-      expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent("自动选择（当前：Ark · seedance）");
+      expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(
+        "自动选择（当前：Ark · seedance）",
+      );
       expect(screen.getByRole("combobox", { name: "默认模型" })).toHaveTextContent("自动选择（当前：Gemini · veo-3）");
       expect(await screen.findByRole("radio", { name: "5 秒" })).toBeInTheDocument();
       expect(screen.getByRole("radio", { name: "10 秒" })).toBeInTheDocument();
@@ -819,7 +852,9 @@ describe("ModelConfigSection", () => {
           usesReferenceImages
         />,
       );
-      expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent("自动选择（当前：Ark · seedance）");
+      expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(
+        "自动选择（当前：Ark · seedance）",
+      );
       expect(await screen.findByRole("radio", { name: "5 秒" })).toBeInTheDocument();
     });
 
@@ -1502,6 +1537,7 @@ describe("dimensions a ComfyUI workflow fixes", () => {
     request_path_template: "/prompt",
     image_capabilities: null,
     end_image_capable: false,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,

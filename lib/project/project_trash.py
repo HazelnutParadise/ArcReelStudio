@@ -443,7 +443,7 @@ def _load(record_dir: Path) -> TrashRecord | None:
             has_snapshot=bool(data.get("has_snapshot", False)),
             download_only=bool(data.get("download_only", False)),
         )
-    except (OSError, ValueError, KeyError, TypeError):
+    except OSError, ValueError, KeyError, TypeError:
         return None
 
 

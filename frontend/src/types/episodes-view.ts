@@ -178,9 +178,7 @@ export type ReplanAdoptionResponse =
   | { status: "adopted"; episodes: number[]; deleted: number[] }
   | { status: "confirmation_required"; impact: ReplanAdoptionImpact & { text: string; delete_text: string } };
 
-export type AdoptSourceFileTarget =
-  | { target: "whole_source" }
-  | { target: "episode"; episode?: number | null };
+export type AdoptSourceFileTarget = { target: "whole_source" } | { target: "episode"; episode?: number | null };
 
 /**
  * 手工切分的动作：切分、拆分、移动分界、与下一集合并、清除之后的切分。偏移是 `source_file` 内的码位偏移；

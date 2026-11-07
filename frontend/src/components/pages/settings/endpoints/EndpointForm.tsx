@@ -77,8 +77,7 @@ export function EndpointForm({ definition, onChange, readOnly }: EndpointFormPro
     return [...generation, ...assets];
   }, [inputs, profile, t]);
 
-  const patchCapabilities = (partial: EndpointCapabilities) =>
-    patch({ capabilities: { ...capabilities, ...partial } });
+  const patchCapabilities = (partial: EndpointCapabilities) => patch({ capabilities: { ...capabilities, ...partial } });
 
   const setSubmitPaths = (field: "task_id" | "error", paths: EndpointPathItem[]) =>
     patch({
@@ -195,9 +194,7 @@ export function EndpointForm({ definition, onChange, readOnly }: EndpointFormPro
           label={t("ce_auth_none")}
           checked={noAuth}
           disabled={readOnly}
-          onChange={(checked) =>
-            patch({ auth: checked ? {} : { headers: { Authorization: "Bearer {{ api_key }}" } } })
-          }
+          onChange={(checked) => patch({ auth: checked ? {} : { headers: { Authorization: "Bearer {{ api_key }}" } } })}
         />
         {noAuth ? (
           <span className={HINT_CLS}>{t("ce_auth_none_hint")}</span>
@@ -256,9 +253,7 @@ export function EndpointForm({ definition, onChange, readOnly }: EndpointFormPro
                 label={t("ce_auth_header_add")}
                 disabled={"" in authHeaders}
                 disabledHint={t("ce_row_name_first")}
-                onClick={() =>
-                  patch({ auth: { ...definition.auth, headers: { ...authHeaders, "": "" } } })
-                }
+                onClick={() => patch({ auth: { ...definition.auth, headers: { ...authHeaders, "": "" } } })}
               />
             )}
             <VariableChips
@@ -311,9 +306,7 @@ export function EndpointForm({ definition, onChange, readOnly }: EndpointFormPro
                 label={t("ce_input_required")}
                 checked={spec.required ?? false}
                 disabled={readOnly}
-                onChange={(required) =>
-                  patch({ inputs: { ...inputs, [name]: { ...spec, required } } })
-                }
+                onChange={(required) => patch({ inputs: { ...inputs, [name]: { ...spec, required } } })}
               />
               {!readOnly && (
                 <RowDeleteButton
@@ -470,9 +463,7 @@ export function EndpointForm({ definition, onChange, readOnly }: EndpointFormPro
                 readOnly={readOnly}
                 mono
                 insertable
-                onChange={(url) =>
-                  definition.result && patch({ result: { ...definition.result, url } })
-                }
+                onChange={(url) => definition.result && patch({ result: { ...definition.result, url } })}
               />
               {profile.artifactKeys.map((key) => (
                 <PathsEditor
@@ -590,54 +581,52 @@ export function EndpointForm({ definition, onChange, readOnly }: EndpointFormPro
           </>
         ) : (
           <>
-          <div className="flex flex-wrap gap-x-6 gap-y-2.5">
-            <CheckboxField
-              label={t("ce_cap_text_to_video")}
-              checked={capabilities.text_to_video ?? true}
-              disabled={readOnly}
-              onChange={(text_to_video) => patchCapabilities({ text_to_video })}
-            />
-            <CheckboxField
-              label={t("ce_cap_first_frame")}
-              checked={capabilities.first_frame ?? false}
-              disabled={readOnly}
-              onChange={(first_frame) => patchCapabilities({ first_frame })}
-            />
-            <CheckboxField
-              label={t("ce_cap_last_frame")}
-              checked={capabilities.last_frame ?? false}
-              disabled={readOnly}
-              onChange={(last_frame) => patchCapabilities({ last_frame })}
-            />
-          </div>
-          <div className="mt-3 grid grid-cols-1 gap-3 @md/page:grid-cols-3">
-            {maxReferenceImagesField}
-            <div>
-              <span className={LABEL_CLS}>{t("ce_cap_reference_audio_mode")}</span>
-              <SelectField<"none" | "direct">
-                value={capabilities.reference_audio_mode ?? "none"}
+            <div className="flex flex-wrap gap-x-6 gap-y-2.5">
+              <CheckboxField
+                label={t("ce_cap_text_to_video")}
+                checked={capabilities.text_to_video ?? true}
                 disabled={readOnly}
-                ariaLabel={t("ce_cap_reference_audio_mode")}
-                options={[
-                  { value: "none", label: t("ce_cap_audio_mode_none") },
-                  { value: "direct", label: t("ce_cap_audio_mode_direct") },
-                ]}
-                onChange={(reference_audio_mode) => patchCapabilities({ reference_audio_mode })}
+                onChange={(text_to_video) => patchCapabilities({ text_to_video })}
+              />
+              <CheckboxField
+                label={t("ce_cap_first_frame")}
+                checked={capabilities.first_frame ?? false}
+                disabled={readOnly}
+                onChange={(first_frame) => patchCapabilities({ first_frame })}
+              />
+              <CheckboxField
+                label={t("ce_cap_last_frame")}
+                checked={capabilities.last_frame ?? false}
+                disabled={readOnly}
+                onChange={(last_frame) => patchCapabilities({ last_frame })}
               />
             </div>
-            <label className="block">
-              <span className={LABEL_CLS}>{t("ce_cap_max_reference_audio_count")}</span>
-              <Input
-                type="number"
-                min={0}
-                value={capabilities.max_reference_audio_count ?? 0}
-                readOnly={readOnly}
-                onChange={(e) =>
-                  patchCapabilities({ max_reference_audio_count: Number(e.target.value) || 0 })
-                }
-              />
-            </label>
-          </div>
+            <div className="mt-3 grid grid-cols-1 gap-3 @md/page:grid-cols-3">
+              {maxReferenceImagesField}
+              <div>
+                <span className={LABEL_CLS}>{t("ce_cap_reference_audio_mode")}</span>
+                <SelectField<"none" | "direct">
+                  value={capabilities.reference_audio_mode ?? "none"}
+                  disabled={readOnly}
+                  ariaLabel={t("ce_cap_reference_audio_mode")}
+                  options={[
+                    { value: "none", label: t("ce_cap_audio_mode_none") },
+                    { value: "direct", label: t("ce_cap_audio_mode_direct") },
+                  ]}
+                  onChange={(reference_audio_mode) => patchCapabilities({ reference_audio_mode })}
+                />
+              </div>
+              <label className="block">
+                <span className={LABEL_CLS}>{t("ce_cap_max_reference_audio_count")}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  value={capabilities.max_reference_audio_count ?? 0}
+                  readOnly={readOnly}
+                  onChange={(e) => patchCapabilities({ max_reference_audio_count: Number(e.target.value) || 0 })}
+                />
+              </label>
+            </div>
           </>
         )}
         <span className={HINT_CLS}>{mediaCopy("ce_capabilities_hint")}</span>

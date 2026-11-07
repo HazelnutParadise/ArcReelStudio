@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAssistantStore } from "@/stores/assistant-store";
 import { useTasksStore } from "@/stores/tasks-store";
@@ -48,7 +48,9 @@ describe("ScriptPlanStart", () => {
       .spyOn(API, "planScript")
       .mockResolvedValue({ batch: { members: [] } } as unknown as Awaited<ReturnType<typeof API.planScript>>);
     const { rerender } = render(<ScriptPlanStart projectName="p" episode={1} savedInstructions="第一集的指令" />);
-    fireEvent.change(screen.getByRole("textbox", { name: "附加指令（可选）" }), { target: { value: "第一集改到一半" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "附加指令（可选）" }), {
+      target: { value: "第一集改到一半" },
+    });
 
     rerender(<ScriptPlanStart projectName="p" episode={2} savedInstructions="第二集的指令" />);
     expect(screen.getByRole("textbox", { name: "附加指令（可选）" })).toHaveValue("第二集的指令");

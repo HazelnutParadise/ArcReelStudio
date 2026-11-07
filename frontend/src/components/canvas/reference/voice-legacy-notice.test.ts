@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vite-plus/test";
 import { computeVoiceLegacyNotice } from "./voice-legacy-notice";
 import type { ReferenceVideoUnit, UnitGeneratedAssets } from "@/types/reference-video";
 import type { Character } from "@/types/project";

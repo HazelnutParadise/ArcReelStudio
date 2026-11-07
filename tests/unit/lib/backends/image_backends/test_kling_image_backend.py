@@ -16,7 +16,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import NamedTuple
 
-import httpx
+import httpx2
 import jwt
 import pytest
 import respx
@@ -54,8 +54,8 @@ def _kling_image_api() -> Generator[_KlingImageRoutes]:
         )
 
 
-def _resp(json_body: dict, status_code: int = 200) -> httpx.Response:
-    return httpx.Response(status_code, json=json_body)
+def _resp(json_body: dict, status_code: int = 200) -> httpx2.Response:
+    return httpx2.Response(status_code, json=json_body)
 
 
 def _submit(task_id: str = "t-1") -> dict:
@@ -216,7 +216,7 @@ class TestGenerateHappyPath:
                     _resp(_query("succeed", urls=["https://x/final.png"])),
                 ]
             )
-            routes.download.mock(return_value=httpx.Response(200, content=b"png-bytes"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"png-bytes"))
 
             result = await _jwt_backend().generate(_request(tmp_path))
 
@@ -236,7 +236,7 @@ class TestGenerateHappyPath:
         with _kling_image_api() as routes:
             routes.submit.mock(return_value=_resp(_submit()))
             routes.poll.mock(return_value=_resp(_query("succeed", urls=["https://x/1.png", "https://x/2.png"])))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             result = await _jwt_backend().generate(_request(tmp_path))
 
@@ -248,7 +248,7 @@ class TestGenerateHappyPath:
         with _kling_image_api() as routes:
             routes.submit.mock(return_value=_resp(_submit()))
             routes.poll.mock(return_value=_resp(_query("succeed", urls=["https://x/v.png"])))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             await _jwt_backend().generate(_request(tmp_path))
 
@@ -261,7 +261,7 @@ class TestGenerateHappyPath:
         with _kling_image_api() as routes:
             routes.submit.mock(return_value=_resp(_submit()))
             routes.poll.mock(return_value=_resp(_query("succeed", urls=["https://x/v.png"])))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             await _bearer_backend().generate(_request(tmp_path))
 
@@ -281,9 +281,9 @@ class TestGenerateHappyPath:
         # submit 阶段 4xx 经 raise_for_status 抛 HTTPStatusError；确定性 4xx 不重试
         # （非幂等建任务 POST），提交仅发一次，不重复建任务 + 重复计费。
         with _kling_image_api() as routes, bounded_poll_clock():
-            routes.submit.mock(return_value=httpx.Response(400, text="Bad Request"))
+            routes.submit.mock(return_value=httpx2.Response(400, text="Bad Request"))
 
-            with pytest.raises(httpx.HTTPStatusError):
+            with pytest.raises(httpx2.HTTPStatusError):
                 await _jwt_backend().generate(_request(tmp_path))
 
             assert routes.submit.call_count == 1
@@ -323,7 +323,7 @@ async def test_endpoint_request_shape_and_input_metering(tmp_path, endpoint, aut
     with _kling_image_api() as routes:
         routes.submit.mock(return_value=_resp(_submit()))
         routes.poll.mock(return_value=_resp(_query("succeed", urls=["https://x/final.png"])))
-        routes.download.mock(return_value=httpx.Response(200, content=b"png-bytes"))
+        routes.download.mock(return_value=httpx2.Response(200, content=b"png-bytes"))
         result = await backend.generate(_request(tmp_path, reference_images=refs))
         payload = json.loads(only_request(routes.submit).content)
 

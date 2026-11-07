@@ -6,7 +6,7 @@ import importlib
 from pathlib import Path
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 import lib
 from server import app as app_module
@@ -94,7 +94,7 @@ async def test_deep_link_path_traversal_falls_back_to_shell(
 
     transport = ASGITransport(app=app_module.app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # 用 %2e%2e 而非字面 "../"：httpx 会在客户端就地折叠字面 "../"，
+        # 用 %2e%2e 而非字面 "../"：httpx2 会在客户端就地折叠字面 "../"，
         # 必须让 ".." 以编码形式保留到请求行，才能验证服务端（而非客户端）的越界防护。
         # 拼接顺序是 dist/app/<_rest>，需要 3 级 ".." 才能越过 app/、dist/、frontend/
         # 三层目录抵达 tmp_path/secret.txt

@@ -69,6 +69,8 @@ const LABEL_CLS = "text-sm font-medium text-foreground";
 interface Props {
   providerId: string;
   supportsBaseUrl: boolean;
+  /** 中国供应商的国际站地址：有值时地址栏下方提供「中国站 / 国际站」快速选项。 */
+  internationalBaseUrl?: string | null;
   secretFields: CredentialSecretField[];
   /** 凭证「二选一」分组：满足任一组（组内字段全填）即视为凭证完整。单组等价于「全部必填」。 */
   secretFieldGroups: string[][];
@@ -82,7 +84,14 @@ type DialogState = { mode: "add" } | { mode: "edit"; cred: ProviderCredential } 
  * 预置供应商的「密钥」区。密钥的增改在对话框里提交、删除经 AlertDialog 确认、切换生效密钥，
  * 都立即生效，不经过详情栏底部的保存栏（保存栏只管高级配置）。
  */
-export function CredentialList({ providerId, supportsBaseUrl, secretFields, secretFieldGroups, onChanged }: Props) {
+export function CredentialList({
+  providerId,
+  supportsBaseUrl,
+  internationalBaseUrl = null,
+  secretFields,
+  secretFieldGroups,
+  onChanged,
+}: Props) {
   const { t } = useTranslation(["dashboard", "common"]);
   const pushToast = useAppStore((s) => s.pushToast);
   const [credentials, setCredentials] = useState<ProviderCredential[]>([]);
@@ -122,7 +131,7 @@ export function CredentialList({ providerId, supportsBaseUrl, secretFields, secr
   }, [load]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 挂载或换供应商后异步加载，取消域覆盖后续即时动作的刷新
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 挂载或换供应商后异步加载，取消域覆盖后续即时动作的刷新
     void load();
     return () => loadController.current?.abort();
   }, [load]);
@@ -192,6 +201,7 @@ export function CredentialList({ providerId, supportsBaseUrl, secretFields, secr
           providerId={providerId}
           isVertex={isVertex}
           supportsBaseUrl={supportsBaseUrl}
+          internationalBaseUrl={internationalBaseUrl}
           secretFields={secretFields}
           secretFieldGroups={secretFieldGroups}
           onDone={() => {
@@ -363,6 +373,7 @@ interface CredentialDialogProps {
   providerId: string;
   isVertex: boolean;
   supportsBaseUrl: boolean;
+  internationalBaseUrl: string | null;
   secretFields: CredentialSecretField[];
   secretFieldGroups: string[][];
   onDone: () => void;
@@ -374,6 +385,7 @@ function CredentialDialog({
   providerId,
   isVertex,
   supportsBaseUrl,
+  internationalBaseUrl,
   secretFields,
   secretFieldGroups,
   onDone,
@@ -398,9 +410,7 @@ function CredentialDialog({
   // 只有单一必填组时组内字段才是无条件必填；多组二选一时不标必填，由组合提示说明。
   const fieldsRequired = !editing && groups.length <= 1;
   const orHint =
-    !editing && groups.length > 1
-      ? groups.map((g) => g.map(labelForKey).join(" + ")).join(` ${t("or_label")} `)
-      : null;
+    !editing && groups.length > 1 ? groups.map((g) => g.map(labelForKey).join(" + ")).join(` ${t("or_label")} `) : null;
 
   const submitAdd = async () => {
     if (isVertex) {
@@ -544,6 +554,29 @@ function CredentialDialog({
                         onChange={(e) => setBaseUrl(e.target.value)}
                         placeholder={t("default_url_placeholder")}
                       />
+                      {internationalBaseUrl && (
+                        // 中国供应商的中国站是默认地址（留空），国际站填入官方国际地址
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="xs"
+                            aria-pressed={baseUrl.trim() === ""}
+                            onClick={() => setBaseUrl("")}
+                          >
+                            {t("base_url_region_china")}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="xs"
+                            aria-pressed={baseUrl.trim() === internationalBaseUrl}
+                            onClick={() => setBaseUrl(internationalBaseUrl)}
+                          >
+                            {t("base_url_region_international")}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
@@ -622,7 +655,11 @@ function DeleteCredentialDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{t("credential_delete_title", { name: shown?.name ?? "" })}</AlertDialogTitle>
         </AlertDialogHeader>
-        <AlertDialogBody tabIndex={0} role="region" aria-label={t("credential_delete_title", { name: shown?.name ?? "" })}>
+        <AlertDialogBody
+          tabIndex={0}
+          role="region"
+          aria-label={t("credential_delete_title", { name: shown?.name ?? "" })}
+        >
           <div className="flex flex-col gap-2">
             <AlertDialogDescription>
               {shown?.is_active ? t("credential_delete_active_description") : t("credential_delete_description")}

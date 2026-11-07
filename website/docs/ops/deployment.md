@@ -20,7 +20,7 @@ update_docs: fact-check
 
 无论选择哪种方式，项目图片、视频和其他生成资产都需要持久化保存。
 
-ArcReel 当前按单一可信操作员设计，不支持互不信任的用户共享实例。PostgreSQL 生产部署不会增加租户隔离、角色权限或按用户划分的项目授权。
+一个 ArcReel 实例是一个共用工作区：可以有多个账号登录，所有成员都能看到全部项目，共用供应商凭据和设置；管理员另外可以管理成员。ArcReel 不按项目划分权限，也不隔离成员之间的数据，只应邀请可以信任的协作者。PostgreSQL 生产部署同样不提供租户隔离。
 
 ## 1. 默认部署：SQLite {#sqlite-deployment}
 
@@ -41,6 +41,8 @@ AUTH_PASSWORD=请设置强密码
 AUTH_TOKEN_SECRET=请设置长期固定的随机密钥
 # LOG_LEVEL=INFO
 ```
+
+`AUTH_USERNAME` 与 `AUTH_PASSWORD` 只在第一次启动、还没有任何账号时用来建立默认管理员，之后修改它们不会改动已有账号。`AUTH_PASSWORD` 留空时会生成初始密码，保存在数据根的 `runtime/initial-admin-password`（Docker 部署为宿主机数据存放位置下的 `projects/runtime/initial-admin-password`，默认即 Compose 目录，见[持久化目录](#sqlite-volumes)）；默认管理员修改密码后，这个文件会被删除。
 
 生成随机密钥：
 
@@ -68,9 +70,18 @@ curl http://localhost:1241/health
 
 | 宿主机路径 | 容器路径 | 内容 |
 |---|---|---|
-| `deploy/.env` | `/app/.env` | 认证和运行配置 |
 | `deploy/projects/` | `/app/projects` | 数据根：项目、生成资产、默认 SQLite 数据库、日志、Vertex AI 凭据等全部运行数据 |
 | `deploy/claude_data/` | `/root/.claude` | Agent 运行时相关数据 |
+
+表中是默认位置。在 `deploy/.env` 中设置 `ARCREEL_HOST_DATA_DIR` 后，`projects/` 与 `claude_data/` 改放在该目录下，例如 `ARCREEL_HOST_DATA_DIR=/srv/arcreel` 对应 `/srv/arcreel/projects/` 与 `/srv/arcreel/claude_data/`；相对路径以 `deploy/` 为基准，并且要以 `./` 或 `../` 开头，例如 `./data`。只写 `data` 时，Compose 会把它当成命名卷，容器无法启动。容器内的路径不变，不需要修改容器内数据根的 `ARCREEL_DATA_DIR`。
+
+已有部署更换存放位置时，按以下顺序操作：
+
+1. 在 `deploy/` 执行 `docker compose down`；
+2. 把 `projects/` 与 `claude_data/` 整个移到新目录，保留文件属主与权限（例如使用 `mv` 或 `rsync -a`）；
+3. 在 `deploy/.env` 中设置 `ARCREEL_HOST_DATA_DIR`，执行 `docker compose up -d`。
+
+`deploy/.env` 只作为 Compose 的插值来源，不挂进容器。容器收到哪些环境变量，以 `docker-compose.yml` 中 `environment` 列出的为准。
 
 `deploy/projects/` 是 ArcReel 的数据根（`ARCREEL_DATA_DIR`，容器内为 `/app/projects`）。项目收在其中的 `projects/` 子目录里，其余运行数据与之并列：
 
@@ -153,7 +164,9 @@ curl http://localhost:1241/health
 | `deploy/production/pgdata/` | PostgreSQL 数据目录 |
 | `deploy/production/projects/` | 数据根：项目、媒体资产、日志、Vertex AI 凭据等，布局与[默认部署](#sqlite-volumes)相同，不含数据库 |
 | `deploy/production/claude_data/` | Agent 运行时数据 |
-| `deploy/production/.env` | 认证和数据库配置 |
+| `deploy/production/.env` | 认证和数据库配置；只作为 Compose 的插值来源，不挂进容器 |
+
+`pgdata/`、`projects/` 与 `claude_data/` 的位置同样由 `deploy/production/.env` 中的 `ARCREEL_HOST_DATA_DIR` 决定，未设置时在 `deploy/production/` 下；更换位置的步骤与[默认部署](#sqlite-volumes)相同，三个目录都要移动。`pgdata/` 由 PostgreSQL 容器内的用户持有，移动时必须保留属主与权限，否则 PostgreSQL 无法启动。
 
 `pgdata/` 只保存 PostgreSQL 集群数据，`projects/` 是数据根，保存项目元数据、媒体资产和其余运行数据，两者都必须持久化且配套备份。生产部署通过 `DATABASE_URL` 使用 PostgreSQL，不会使用 `deploy/production/projects/arcreel.db`；不要把 SQLite 文件复制进 `pgdata/`，也不要把两个目录当成可相互替代的数据库备份。
 
@@ -204,22 +217,25 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 
 | 变量 | 默认值 | 建议 |
 |---|---|---|
-| `AUTH_USERNAME` | `admin` | 可修改管理员用户名 |
-| `AUTH_PASSWORD` | 空 | 正式部署必须显式设置强密码 |
+| `ARCREEL_IMAGE_TAG` | 默认部署 `main`，生产部署 `latest` | 镜像标签，只由 Compose 读取；生产环境建议固定版本，见[固定版本](#pin-version) |
+| `ARCREEL_HOST_DATA_DIR` | Compose 目录 | 宿主机上的数据存放位置，只由 Compose 读取，见[持久化目录](#sqlite-volumes) |
+| `AUTH_USERNAME` | `admin` | 默认管理员的用户名，只在第一次启动、还没有任何账号时使用 |
+| `AUTH_PASSWORD` | 空 | 默认管理员的密码，只在第一次启动时使用；留空则生成初始密码，见[账号与成员](#accounts) |
 | `AUTH_TOKEN_SECRET` | 空 | 建议设置长期固定随机值；留空时自动生成并保存到数据根下的 `runtime/auth-token-secret`，重启后沿用 |
 | `AUTH_ENABLED` | `true` | 远程部署不得关闭；设为 `false` 时全部管理接口无需认证 |
 | `LOG_LEVEL` | `INFO` | 排障时临时改为 `DEBUG`，完成后恢复 |
 | `POSTGRES_PASSWORD` | 无 | 仅生产部署需要，必须设置 |
 | `TZ` | `Asia/Taipei` | 可在 Compose 环境中覆盖 |
 | `DATABASE_URL` | SQLite 默认路径 | 生产 Compose 自动设置 PostgreSQL URL；连接外部数据库时在默认部署的 `.env` 中设置，见[连接已有的 PostgreSQL](#external-postgresql) |
-| `ARCREEL_DATA_DIR` | `projects` | 数据根；项目、默认 SQLite 数据库、日志和 Vertex 凭据都在其下 |
+| `ARCREEL_DATA_DIR` | `projects` | 数据根；项目、默认 SQLite 数据库、日志和 Vertex 凭据都在其下。Docker 部署的容器内固定为 `/app/projects`，要改宿主机位置请用 `ARCREEL_HOST_DATA_DIR` |
 | `CORS_ORIGINS` | 通配 | 设为白名单时，浏览器型 MCP 客户端的 Origin 也须列入 |
 | `ARCREEL_OFFICIAL_SERVICE_URL` | 内置官方服务地址 | 市场安装量、评分与分享提交所用的官方服务；设为空即整体关闭，市场回到只读取市场源的形态 |
 
 注意：
 
 - `AUTH_TOKEN_SECRET` 变化后，现有登录 Token 会失效。显式设置时以设置值为准，数据根下自动生成的密钥文件不再使用。未显式设置时，删除密钥文件并重启会生成新密钥，使现有登录失效。
-- 修改 `.env` 后，在 Compose 目录执行 `docker compose up -d` 重建容器。`docker compose restart` 与容器自动拉起沿用创建容器时的环境变量，不会重新载入 `.env`；启动时发现进程环境变量与挂载的 `.env` 取值不一致，日志会输出一条 WARNING，只列出变量名。
+- 修改 `.env` 后，在 Compose 目录执行 `docker compose up -d` 重建容器。`docker compose restart` 与容器自动拉起沿用创建容器时的环境变量，不会重新载入 `.env`。
+- Compose 只把 `docker-compose.yml` 中 `environment` 列出的变量传进容器。要传入表中未列出的变量，在 `environment` 中加一行 `变量名: ${变量名}`，再在 `.env` 中设置取值。旧版 Compose 用 `env_file` 把整份 `.env` 传进容器，升级后表中未列出的变量（例如 `HTTPS_PROXY`）不会再传入，需要的话按这个方法加回去。
 - `AUTH_ENABLED=false` 仅适用于受独立网络边界保护的本机环境。Compose 默认把 `1241` 端口发布到宿主机所有网卡，远程部署不得关闭认证。认证关闭时，启动日志会输出 WARNING。
 - `.env` 中可能包含密钥，不要提交到版本库。
 - Vertex 凭据文件应只授予运行 ArcReel 的用户读取权限。
@@ -227,6 +243,58 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 - 第三方模型 API Key 通常在 ArcReel 设置页中管理，不要写入公开文档。
 
 远程 MCP 端点为 `/mcp`，始终要求 `arc-` 前缀 API Key；即使 `AUTH_ENABLED=false` 也不会匿名放行。外部接入不需要额外的 `MCP_*` 配置：把设置页「外部 Agent 接入」给出的端点地址，与在「访问令牌」创建的 API Key 填进客户端即可，通过保留 SSE 长连接的 HTTPS 反向代理、VPN 或安全隧道访问。
+
+### 3.1 账号与成员 {#accounts}
+
+第一次启动时，ArcReel 按 `AUTH_USERNAME` / `AUTH_PASSWORD` 建立默认管理员。之后的账号都在「设置 › 账号与成员」中管理：
+
+- 每个成员都可以在这里修改自己的密码或登出。修改密码后，其他设备上的登录会失效。
+- 管理员可以新增成员、把成员设为管理员、停用账号或替成员重设密码。停用、改角色和重设密码都会让该成员现有的登录失效。
+- 至少要保留一位启用中的管理员；管理员不能停用自己，也不能取消自己的管理员身份。
+
+用户名只能使用小写英文字母、数字和 `.` `_` `@` `-`，登录时不区分大小写。`embedded-agent` 保留给内嵌 Agent，不能用作用户名。密码至少 8 个字符。
+
+忘记密码时，在 Compose 目录执行：
+
+```bash
+docker compose exec arcreel uv run python -m scripts.manage_users reset-password admin
+```
+
+命令会请你输入两次新密码，输入时不会显示；不方便交互时可以加上 `--password <新密码>`。`list` 子命令列出所有账号。源码部署在仓库根目录执行 `uv run python -m scripts.manage_users ...`。
+
+从只有一组 `.env` 账号的旧版本升级时，第一次启动会把当时的 `AUTH_USERNAME` / `AUTH_PASSWORD` 写成默认管理员，原来的密码照常可用；升级前签发的登录全部失效，需要重新登录一次。旧的 `AUTH_USERNAME` 不符合上面的用户名规则时（例如含有空格或中文），默认管理员会改名为 `admin`，启动日志会记录这次改名，之后请用 `admin` 登录。
+
+多位成员可以同时打开同一个项目：
+
+- 顶栏右侧显示也在这个项目里的其他成员，点开可以看到各自正在看哪一集。
+- 其他成员保存的修改几秒内出现在你的页面上，并提示是谁改的；你的页面不会因此跳走。
+- 你在分镜详情里还没保存时，其他成员改了另外的字段，界面直接采用对方的内容，保存时不会把它改回去。双方改的是同一个字段时，保存会被拒绝并提示；先查看最新内容，再决定放弃自己的修改，或者再次保存覆盖对方。
+- 冲突检查目前只覆盖分镜详情里的字段。角色、场景、道具的描述和项目概述等其他编辑区，同时保存时仍以后保存的一方为准。
+
+在线名单只保存在服务进程的内存里，重启服务后由各页面下一次报到恢复。
+
+### 3.2 GPU 编码 {#gpu-encoding}
+
+镜像内置支持 NVIDIA NVENC 的 ffmpeg。容器能使用 NVIDIA GPU 时，渲染成片改用 GPU 编码画面；拿不到 GPU 时自动使用 CPU 编码，不需要额外配置。
+
+在 NVIDIA GPU 主机上启用：
+
+1. 在宿主机安装 NVIDIA 驱动与 [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)。
+2. 在 Compose 目录的 `.env` 中加入：
+
+   ```dotenv
+   COMPOSE_FILE=docker-compose.yml:docker-compose.gpu.yml
+   ```
+
+   Windows 主机上 Compose 用分号分隔多个文件，改写成 `COMPOSE_FILE=docker-compose.yml;docker-compose.gpu.yml`。
+
+3. 执行 `docker compose up -d` 重建容器。
+
+启动日志出现「GPU 编码可用」即已生效。在「设置 › 通用」中可以关闭 GPU 编码，关闭后成片始终使用 CPU 编码。
+
+没有 NVIDIA GPU 的主机不要加载 `docker-compose.gpu.yml`：Docker 拿不到 GPU 时会拒绝启动容器。
+
+GPU 只负责成片的画面编码，混音、封装和其他媒体处理仍使用 CPU。GPU 编码中途失败时，该成片自动改用 CPU 重新渲染。目前只支持 NVIDIA GPU。
 
 服务端不校验请求的 `Host` 头，端点边界由每请求强制的 API Key 承担；域名归属交给部署形态，请在反向代理上限定 `server_name`（Nginx）或等价规则，只把预期域名的请求转发给 ArcReel。
 
@@ -349,7 +417,7 @@ curl -f http://localhost:1241/health
 
 **升级前备份整个数据根**，连同数据根外的旧日志目录与旧凭据目录（Docker 中为 `./logs`、`./vertex_keys` 卷，其余部署为代码目录下的 `logs/` 与数据根上一级的 `vertex_keys/`）；外部数据库另行备份。迁移会把这两处的文件搬进数据根。旧版本会把 `projects/` 当成一个项目，也不认识新的数据库文件名；降级需要恢复这份备份。
 
-新版 Compose 只挂载一个数据卷 `./projects`，外加 `.env` 和 `claude_data/`，不再挂载 `./logs` 与 `./vertex_keys`。旧卷里的文件只有在启动时仍挂着才会并入数据根，其中 Vertex 凭据只在布局迁移那一次搬入，写下完成标记后不再处理。因此 Docker 部署从旧版本升级分两个阶段（以下以 `deploy/` 为例，生产部署换成 `deploy/production/`）：
+新版 Compose 只挂载一个数据卷 `./projects`，外加 `claude_data/`，不再挂载 `./logs` 与 `./vertex_keys`。旧卷里的文件只有在启动时仍挂着才会并入数据根，其中 Vertex 凭据只在布局迁移那一次搬入，写下完成标记后不再处理。因此 Docker 部署从旧版本升级分两个阶段（以下以 `deploy/` 为例，生产部署换成 `deploy/production/`）：
 
 1. **沿用原来的 Compose 升级（零配置）。** 不改 Compose 文件，按[默认部署升级](#upgrade-sqlite-deployment)或[生产部署升级](#upgrade-postgresql-deployment)执行 `docker compose pull` 与 `docker compose up -d`。此时两个旧卷仍挂着，首次启动会把其中的文件并入数据根。在启动日志中确认出现「数据根布局迁移完成」，并确认原来的日志和凭据文件已出现在 `deploy/projects/logs/`、`deploy/projects/vertex_keys/` 下（凭据文件名可能已改为 `vertex_cred_<凭据编号>.json`）。
 2. **之后再切到单卷 Compose。** 删去 Compose 中 `./logs` 与 `./vertex_keys` 两行卷（或换用新版 Compose 文件），再执行 `docker compose up -d`。之后 `deploy/logs/`、`deploy/vertex_keys/` 可以删除；如果其中还有文件（例如数据根里已有同名文件，或旧卷是只读挂载），先确认不再需要。
@@ -452,15 +520,23 @@ docker compose start arcreel
 
 ### 5.6 固定版本 {#pin-version}
 
-默认 Compose 使用 `main` 标签，跟随 main 分支的最新构建，适合快速体验。生产环境更适合固定 Release 标签。
+Compose 使用的镜像标签由 `.env` 中的 `ARCREEL_IMAGE_TAG` 决定：
 
-将 Compose 中的镜像改为：
+| 标签 | 内容 | 发布时机 |
+|---|---|---|
+| `main` | main 分支的最新构建，默认部署的默认值 | 每次合入 main 后 |
+| `X.Y.Z`、`X.Y`、`latest` | 正式版本；`latest` 是生产部署的默认值，指向最新稳定版本 | 发布 `vX.Y.Z` 版本后 |
 
-```yaml
-image: ghcr.io/hazelnutparadise/arcreelstudio:X.Y.Z
+预发布版本（如 `vX.Y.Z-rc.1`）只发布同名版本标签，不更新 `latest`。还没有发布过正式版本时，`latest` 不存在，生产部署先设置 `ARCREEL_IMAGE_TAG=main`。
+
+生产环境建议固定到某个正式版本：
+
+```bash
+# deploy/production/.env
+ARCREEL_IMAGE_TAG=X.Y.Z
 ```
 
-升级时显式修改版本，可以降低无意中拉取新版本的风险。
+设置后执行 `docker compose up -d`。升级时修改这个值，可以降低无意中拉取新版本的风险。
 
 ## 6. 备份与恢复 {#backup-and-restore}
 
@@ -472,13 +548,14 @@ image: ghcr.io/hazelnutparadise/arcreelstudio:X.Y.Z
 
 数据根已经包含项目、默认 SQLite 数据库、日志和 Vertex 凭据，文件系统备份只需归档数据根，外加 `.env` 与 `claude_data/`。
 
-先确认宿主机上的实际数据根目录，再停止写入。默认 Compose 使用 `deploy/projects/`；如果通过 `ARCREEL_DATA_DIR` 和自定义挂载改变了容器内路径，请把 `data_dir` 改为该挂载对应的宿主机绝对路径：
+先确认宿主机上的数据存放位置，再停止写入。默认在 `deploy/` 下；在 `.env` 中设置了 `ARCREEL_HOST_DATA_DIR` 时，把 `host_dir` 改为该值：
 
 ```bash
 cd deploy
 
-data_dir="$(cd projects && pwd)"
-# 自定义数据目录示例：data_dir="/srv/arcreel/projects"
+host_dir="."
+# 设置了 ARCREEL_HOST_DATA_DIR 时改为该值，例如：host_dir="/srv/arcreel"
+data_dir="$(cd "${host_dir}/projects" && pwd)"
 
 docker compose stop arcreel
 ```
@@ -492,7 +569,7 @@ mkdir -p backups
 chmod 700 backups
 
 tar -czf "backups/arcreel-config-${backup_stamp}.tar.gz" \
-  .env claude_data
+  .env -C "${host_dir}" claude_data
 
 tar -czf "backups/arcreel-projects-${backup_stamp}.tar.gz" \
   -C "${data_dir}" .
@@ -510,16 +587,18 @@ docker compose start arcreel
 
 1. 停止 ArcReel；
 2. 备份当前目录，避免覆盖后无法回退；
-3. 将配置归档中的 `.env` 和 `claude_data/` 恢复到原位置，并将配套数据归档完整解压到空的 `data_dir`；
+3. 将配置归档中的 `.env` 恢复到 `deploy/`，`claude_data/` 恢复到 `host_dir`，并将配套数据归档完整解压到空的 `data_dir`；
 4. 启动并检查 `/health`；
 5. 打开几个项目验证图片、视频和版本历史。
 
 ### 6.2 PostgreSQL 部署备份 {#backup-postgresql}
 
-先停止 ArcReel 应用，保留 PostgreSQL 运行，避免备份数据库和项目文件期间继续产生写入：
+先停止 ArcReel 应用，保留 PostgreSQL 运行，避免备份数据库和项目文件期间继续产生写入。`host_dir` 是宿主机上的数据存放位置，在 `.env` 中设置了 `ARCREEL_HOST_DATA_DIR` 时改为该值：
 
 ```bash
 cd "$(git rev-parse --show-toplevel)/deploy/production"
+host_dir="."
+# 设置了 ARCREEL_HOST_DATA_DIR 时改为该值，例如：host_dir="/srv/arcreel"
 umask 077
 mkdir -p backups
 chmod 700 backups
@@ -532,7 +611,7 @@ docker compose exec -T postgres sh -c \
   > "backups/arcreel-db-${backup_stamp}.sql"
 
 tar -czf "backups/arcreel-files-${backup_stamp}.tar.gz" \
-  .env docker-compose.yml projects claude_data
+  .env docker-compose.yml -C "${host_dir}" projects claude_data
 
 docker compose start arcreel
 ```
@@ -549,13 +628,16 @@ docker compose start arcreel
 
 ```bash
 cd "$(git rev-parse --show-toplevel)/deploy/production"
+host_dir="."
+# 设置了 ARCREEL_HOST_DATA_DIR 时改为该值，例如：host_dir="/srv/arcreel"
 docker compose stop arcreel
 
 backup_stamp=YYYYMMDD-HHMMSS
-tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz"
+tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" .env docker-compose.yml
+tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" -C "${host_dir}" projects claude_data
 ```
 
-文件归档会恢复 `.env`、`docker-compose.yml`、数据根 `projects/` 和 `claude_data/`。以下流程还会删除目标 `arcreel` 数据库中的现有数据；先确认同一 `backup_stamp` 的数据库与文件备份完整，并在隔离环境演练恢复流程。
+文件归档会把 `.env`、`docker-compose.yml` 恢复到 `deploy/production/`，把数据根 `projects/` 和 `claude_data/` 恢复到 `host_dir`。以下流程还会删除目标 `arcreel` 数据库中的现有数据；先确认同一 `backup_stamp` 的数据库与文件备份完整，并在隔离环境演练恢复流程。
 
 重建空数据库后再导入，避免与已有表结构或数据冲突：
 
@@ -716,7 +798,7 @@ docker compose logs --tail=300 arcreel
 
 检查：
 
-- `.env` 是否存在；
+- 生产部署的 `.env` 中是否设置了 `POSTGRES_PASSWORD`；留空时 Compose 报 `必須設定 POSTGRES_PASSWORD` 并拒绝启动；
 - 端口 `1241` 是否被占用；
 - 镜像是否成功拉取；
 - 挂载目录是否可写；
@@ -733,10 +815,9 @@ docker compose logs --tail=300 arcreel
 
 ### 无法登录 {#cannot-log-in}
 
-- 检查 `AUTH_USERNAME`；
-- 检查 `.env` 中的 `AUTH_PASSWORD`；
-- 如果首次启动时密码留空，查看是否已被回写；
-- 修改 `.env` 后是否执行过 `docker compose up -d`，启动日志里是否有进程环境变量与 `.env` 不一致的 WARNING；
+- 用户名不区分大小写，确认账号没有被管理员停用；
+- 修改 `.env` 中的 `AUTH_PASSWORD` 不会改动已有账号；忘记密码时按[账号与成员](#accounts)重设；
+- 首次启动没有设置 `AUTH_PASSWORD` 时，初始密码在宿主机数据存放位置下的 `projects/runtime/initial-admin-password`；
 - 修改 `AUTH_TOKEN_SECRET` 后需要重新登录。
 
 ### Agent 请求失败 {#agent-request-fails}
@@ -769,7 +850,7 @@ find projects/projects -type f -size +500M
 
 - [ ] 使用 PostgreSQL；
 - [ ] 固定 Release 镜像版本；
-- [ ] 设置强 `AUTH_PASSWORD`；
+- [ ] 首次启动前设置强 `AUTH_PASSWORD`，或登录后立即修改初始密码；
 - [ ] 设置固定 `AUTH_TOKEN_SECRET`；
 - [ ] 配置 HTTPS；
 - [ ] 不直接暴露 `1241`；

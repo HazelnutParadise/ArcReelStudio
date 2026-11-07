@@ -139,7 +139,10 @@ export function AssetGallery<T extends GalleryAssetSource>({
   };
 
   return (
-    <section aria-label={title} className="relative flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]">
+    <section
+      aria-label={title}
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]"
+    >
       <GalleryToolbar
         assetType={assetType}
         title={title}
@@ -154,11 +157,7 @@ export function AssetGallery<T extends GalleryAssetSource>({
       </GalleryToolbar>
       <div className="flex shrink-0 flex-col px-5 py-5" data-onboarding={ONBOARDING_ANCHORS.workbenchLorebook}>
         {items.length === 0 ? (
-          <GalleryEmptyState
-            assetType={assetType}
-            onAdd={onAdd}
-            onPickFromLibrary={onPickFromLibrary}
-          />
+          <GalleryEmptyState assetType={assetType} onAdd={onAdd} onPickFromLibrary={onPickFromLibrary} />
         ) : shown.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-12 text-center text-sm text-muted-foreground">
             <p>{t("gallery_no_match")}</p>

@@ -2,15 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useState, type RefObject } from
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Film, ImageIcon, Timer } from "lucide-react";
 import type { DurationOutOfRangeReason } from "@/hooks/useModelCapabilities";
-import type {
-  NarrationSegment,
-  DramaScene,
-  AdShot,
-  ImagePrompt,
-  VideoPrompt,
-  Dialogue,
-  Utterance,
-} from "@/types";
+import type { NarrationSegment, DramaScene, AdShot, ImagePrompt, VideoPrompt, Dialogue, Utterance } from "@/types";
 import { AD_SECTION_VALUES } from "@/types";
 import { ImagePromptEditor } from "./ImagePromptEditor";
 import { VideoPromptEditor } from "./VideoPromptEditor";
@@ -97,7 +89,12 @@ interface ShotDetailProps {
    * 提交分镜字段的增量修改，失败时抛错。resolve 为保存后项目是否已刷新：
    * 为 false 时界面上的剧本还是旧的，「保存并生成」不能接着生成。缺省时只读展示。
    */
-  onUpdatePrompt?: (segmentId: string, patch: Record<string, unknown>) => Promise<boolean>;
+  /** `base` 是开始编辑时这些字段的值，起点之后被其他成员改过的字段保存时拒绝写入。 */
+  onUpdatePrompt?: (
+    segmentId: string,
+    patch: Record<string, unknown>,
+    base?: Record<string, unknown>,
+  ) => Promise<boolean>;
   /** 分镜改序：向前或向后移动一位 */
   onMoveShot?: (shotId: string, direction: "earlier" | "later") => void | Promise<void>;
   /** 分镜重排请求在途，移动按钮禁用 */
@@ -495,7 +492,8 @@ export function ShotDetail({
       ) {
         throw new Error(t("duration_locked_generating"));
       }
-      const refreshed = await onUpdatePrompt(segmentId, patch);
+      // 编辑起点：同一批字段在开始编辑时的值，服务端据此拒绝覆盖其他成员在此之后的修改
+      const refreshed = await onUpdatePrompt(segmentId, patch, shotPatch(saved, value, charField));
       // 已落盘但界面上的剧本没刷新：不能当作保存成功，否则「保存并生成」会接着用旧剧本生成
       if (!refreshed) throw new PartialSaveError(t("shot_saved_not_refreshed"), { saved: value });
     },
@@ -508,6 +506,8 @@ export function ShotDetail({
     isEqual: shotFieldsEqual,
     leaveTitle: t("shot_leave_title", { id: itemLabel }),
     allowNavigation,
+    // 分镜字段相互独立：其他成员改了我没动的字段时直接采用，保存时不把它们改回去
+    mergeExternalFields: true,
   });
   const { value: fields, setValue, dirty } = unit;
   const saving = unit.status === "saving";
@@ -518,7 +518,10 @@ export function ShotDetail({
   // PATCH 已落盘但刷新失败时 savedValue 领先于剧本；直到新 source 到达才允许再生成或预览。
   const refreshPending = !shotFieldsEqual(source, unit.savedValue);
   const saveForPreview = unit.save;
-  const preparePreview = useCallback(async () => !refreshPending && await saveForPreview(), [refreshPending, saveForPreview]);
+  const preparePreview = useCallback(
+    async () => !refreshPending && (await saveForPreview()),
+    [refreshPending, saveForPreview],
+  );
 
   const saveUnit = unit.save;
   useEffect(() => {
@@ -545,7 +548,14 @@ export function ShotDetail({
   const [endFrameSubmitting, setEndFrameSubmitting] = useState(false);
   const handleUpload = async (kind: "storyboard" | "video", file: File) => {
     // 单个分镜同时只允许一个上传：两张卡写同一后端资源族，避免并发覆写
-    if (!scriptFile || uploadingKind || restoringMedia || isResourceBusy(kind, projectName, segmentId) || isScriptFileBusy("grid", scriptFile, projectName)) return;
+    if (
+      !scriptFile ||
+      uploadingKind ||
+      restoringMedia ||
+      isResourceBusy(kind, projectName, segmentId) ||
+      isScriptFileBusy("grid", scriptFile, projectName)
+    )
+      return;
     setUploadingKind(kind);
     try {
       const result = await API.uploadShotMedia(projectName, scriptFile, segmentId, kind, file);
@@ -770,12 +780,20 @@ export function ShotDetail({
         <h3 className="text-sm font-medium text-subtle-foreground">{t("detail_section_prompts")}</h3>
         <span className="flex-1" />
         {episode !== undefined && (
-          <PromptAuthoringButton projectName={projectName} episode={episode} scope="current" currentEntryId={segmentId} />
+          <PromptAuthoringButton
+            projectName={projectName}
+            episode={episode}
+            scope="current"
+            currentEntryId={segmentId}
+          />
         )}
       </div>
 
       {segment.pending_authoring === true && (
-        <div role="status" className="rounded-lg border border-border/50 bg-warn/5 px-3 py-2 text-xs text-subtle-foreground">
+        <div
+          role="status"
+          className="rounded-lg border border-border/50 bg-warn/5 px-3 py-2 text-xs text-subtle-foreground"
+        >
           {t("detail_pending_authoring_hint")}
         </div>
       )}
@@ -796,7 +814,11 @@ export function ShotDetail({
         }
       >
         {imgValue ? (
-          <ImagePromptEditor prompt={imgValue} onUpdate={handleImgUpdate} readOnly={readOnly || formSwitching === "image"} />
+          <ImagePromptEditor
+            prompt={imgValue}
+            onUpdate={handleImgUpdate}
+            readOnly={readOnly || formSwitching === "image"}
+          />
         ) : (
           <Textarea
             aria-label={t("detail_image_prompt_title")}
@@ -826,7 +848,11 @@ export function ShotDetail({
         }
       >
         {vidValue ? (
-          <VideoPromptEditor prompt={vidValue} onUpdate={handleVidUpdate} readOnly={readOnly || formSwitching === "video"} />
+          <VideoPromptEditor
+            prompt={vidValue}
+            onUpdate={handleVidUpdate}
+            readOnly={readOnly || formSwitching === "video"}
+          />
         ) : (
           <Textarea
             aria-label={t("detail_video_prompt_title")}
@@ -848,10 +874,11 @@ export function ShotDetail({
   // 台词：ad 编辑扁平 video_prompt.dialogue；drama 编辑分镜级 utterances（台词 + 画外音）。
   // narration 不提供台词编辑（旁白正文即画外音，与台词并存会被判为混合发声）：已有台词只读列出，可清除。
   // 草稿是文本形态时台词留在渲染文本里，不算清除。
-  const savedLegacyDialogue = isNarration && isStructuredVideoPrompt(unit.savedValue.video_prompt)
-    ? unit.savedValue.video_prompt.dialogue ?? []
-    : [];
-  const legacyDialogue = isNarration ? vidValue?.dialogue ?? [] : [];
+  const savedLegacyDialogue =
+    isNarration && isStructuredVideoPrompt(unit.savedValue.video_prompt)
+      ? (unit.savedValue.video_prompt.dialogue ?? [])
+      : [];
+  const legacyDialogue = isNarration ? (vidValue?.dialogue ?? []) : [];
   const legacyDialogueCleared = vidValue !== null && savedLegacyDialogue.length > 0 && legacyDialogue.length === 0;
   const speechGroup = (
     <ShotGroup>
@@ -1015,7 +1042,9 @@ export function ShotDetail({
         generateLabel={generateLabel}
         restoring={restoringMedia}
         onRestoringChange={setRestoringMedia}
-        checkBusy={() => uploadingKind !== null || saving || endFrameSubmitting || isScriptFileBusy("grid", scriptFile, projectName)}
+        checkBusy={() =>
+          uploadingKind !== null || saving || endFrameSubmitting || isScriptFileBusy("grid", scriptFile, projectName)
+        }
         onRestore={onRestoreVideo}
         onUpload={scriptFile && !readOnly ? (file) => handleUpload("video", file) : undefined}
         uploading={uploadingKind === "video"}

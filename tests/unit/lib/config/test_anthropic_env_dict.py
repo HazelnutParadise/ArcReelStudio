@@ -7,8 +7,19 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from lib.agent.agent_auth import AuthAvailability
 from lib.agent.credential_tiers import AgentPricing
 from lib.config.service import build_anthropic_env
+
+
+@pytest.fixture(autouse=True)
+def no_subscription(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    """默认没有登录 Claude 订阅；需要订阅的用例改它的返回值。"""
+    repo = AsyncMock()
+    repo.get = AsyncMock(return_value=None)
+    monkeypatch.setattr("lib.db.repositories.claude_subscription_repo.ClaudeSubscriptionRepository", lambda _s: repo)
+    monkeypatch.setattr("lib.config.service.auth_availability", AuthAvailability())
+    return repo
 
 
 @pytest.mark.asyncio
@@ -208,3 +219,97 @@ async def test_pricing_snapshot_takes_the_multiplier_and_the_bindings_of_the_tie
     assert pricing.entry_binding_for("gw/fast-1") == "acme/fast-1"
     assert pricing.entry_binding_for("gw-main") == "acme/big"
     assert pricing.entry_binding_for("other") is None
+
+
+def _patch_repos(monkeypatch: pytest.MonkeyPatch, *, cred, settings: dict[str, str]) -> None:
+    repo_mock = AsyncMock()
+    repo_mock.get_active = AsyncMock(return_value=cred)
+    setting_repo = AsyncMock()
+    setting_repo.get_all = AsyncMock(return_value=settings)
+    monkeypatch.setattr("lib.db.repositories.agent_credential_repo.AgentCredentialRepository", lambda _s: repo_mock)
+    monkeypatch.setattr("lib.config.service.SystemSettingRepository", lambda _s: setting_repo)
+
+
+def _api_cred():
+    return type(
+        "Cred",
+        (),
+        {
+            "id": 3,
+            "preset_id": "anthropic-official",
+            "api_key": "sk-api",
+            "base_url": "https://api.anthropic.com",
+            "model": "claude-opus-4-7",
+            "haiku_model": None,
+            "sonnet_model": None,
+            "opus_model": None,
+            "subagent_model": None,
+            "multiplier": 1.0,
+            "tier_bindings": None,
+        },
+    )()
+
+
+def _subscription(token: str = "sk-ant-oat01-abc"):
+    return type("Sub", (), {"oauth_token": token})()
+
+
+@pytest.mark.asyncio
+async def test_subscription_session_carries_only_the_oauth_token(monkeypatch, no_subscription) -> None:
+    no_subscription.get = AsyncMock(return_value=_subscription())
+    _patch_repos(monkeypatch, cred=_api_cred(), settings={"agent_auth_mode": "subscription"})
+
+    built = await build_anthropic_env(AsyncMock())
+
+    assert built.source == "subscription"
+    assert built.env["CLAUDE_CODE_OAUTH_TOKEN"] == "sk-ant-oat01-abc"
+    # API Key 凭证的地址、密钥与档位模型都不带进订阅会话，模型由 CLI 按订阅默认值选
+    assert built.env["ANTHROPIC_API_KEY"] == ""
+    assert built.env["ANTHROPIC_BASE_URL"] == ""
+    assert built.env["ANTHROPIC_MODEL"] == ""
+    # 订阅额度不按 token 计费
+    assert built.pricing == AgentPricing(multiplier=0.0)
+
+
+@pytest.mark.asyncio
+async def test_api_key_session_blanks_the_oauth_token(monkeypatch, no_subscription) -> None:
+    no_subscription.get = AsyncMock(return_value=_subscription())
+    _patch_repos(monkeypatch, cred=_api_cred(), settings={"agent_auth_mode": "api_key"})
+
+    built = await build_anthropic_env(AsyncMock())
+
+    assert built.source == "api_key"
+    assert built.env["ANTHROPIC_API_KEY"] == "sk-api"
+    assert built.env["CLAUDE_CODE_OAUTH_TOKEN"] == ""
+
+
+@pytest.mark.asyncio
+async def test_default_mode_prefers_the_subscription_when_logged_in(monkeypatch, no_subscription) -> None:
+    no_subscription.get = AsyncMock(return_value=_subscription())
+    _patch_repos(monkeypatch, cred=_api_cred(), settings={})
+
+    assert (await build_anthropic_env(AsyncMock())).source == "subscription"
+
+
+@pytest.mark.asyncio
+async def test_an_exhausted_subscription_switches_to_the_api_key(monkeypatch, no_subscription) -> None:
+    availability = AuthAvailability()
+    availability.mark_unavailable("subscription", until=None)
+    monkeypatch.setattr("lib.config.service.auth_availability", availability)
+    no_subscription.get = AsyncMock(return_value=_subscription())
+    _patch_repos(monkeypatch, cred=_api_cred(), settings={"agent_auth_mode": "prefer_subscription"})
+
+    built = await build_anthropic_env(AsyncMock())
+
+    assert built.source == "api_key"
+    assert built.env["ANTHROPIC_API_KEY"] == "sk-api"
+
+
+@pytest.mark.asyncio
+async def test_without_a_subscription_the_api_key_path_is_unchanged(monkeypatch) -> None:
+    _patch_repos(monkeypatch, cred=_api_cred(), settings={})
+
+    built = await build_anthropic_env(AsyncMock())
+
+    assert built.source == "api_key"
+    assert built.env["CLAUDE_CODE_OAUTH_TOKEN"] == ""

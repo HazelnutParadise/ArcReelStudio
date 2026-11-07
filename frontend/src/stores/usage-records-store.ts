@@ -2,25 +2,13 @@ import { create } from "zustand";
 
 import { API } from "@/api";
 import type { UsageRecordsQuery, UsageSessionsQuery, UsageSummaryQuery } from "@/api";
-import type {
-  CallType,
-  UsageAgentSession,
-  UsageRecord,
-  UsageRecordDetail,
-  UsageSummary,
-  UsageView,
-} from "@/types";
+import type { CallType, UsageAgentSession, UsageRecord, UsageRecordDetail, UsageSummary, UsageView } from "@/types";
 
 /** 时间范围分段；`all` 不传 since，由服务端取最早记录日。 */
 export type UsageTimeRange = "7d" | "30d" | "90d" | "all";
 
 /** 记录表与进行中区的状态筛选；不作用于 summary。 */
-export type UsageStatusFilter =
-  | "all"
-  | "pending"
-  | "success"
-  | "failed"
-  | "cancelled";
+export type UsageStatusFilter = "all" | "pending" | "success" | "failed" | "cancelled";
 
 /** 一屏筛选；`status` 之外的维度同时作用于 summary 与记录请求。 */
 export interface UsageRecordsFilters {
@@ -66,13 +54,7 @@ const RANGE_DAYS: Record<Exclude<UsageTimeRange, "all">, number> = {
 
 const MEDIA_TYPES: readonly CallType[] = ["image", "video", "text", "audio"];
 
-const STATUS_FILTERS: readonly UsageStatusFilter[] = [
-  "all",
-  "pending",
-  "success",
-  "failed",
-  "cancelled",
-];
+const STATUS_FILTERS: readonly UsageStatusFilter[] = ["all", "pending", "success", "failed", "cancelled"];
 
 /** URL query 的键前缀，与设置页其他 section 的参数区分开。 */
 const QUERY_PREFIX = "u_";
@@ -98,9 +80,7 @@ export function parseUsageFilters(search: string): UsageRecordsFilters {
     model: get("model"),
     mediaType: MEDIA_TYPES.find((type) => type === mediaType) ?? null,
     segment: get("segment"),
-    status:
-      STATUS_FILTERS.find((value) => value === status) ??
-      DEFAULT_USAGE_FILTERS.status,
+    status: STATUS_FILTERS.find((value) => value === status) ?? DEFAULT_USAGE_FILTERS.status,
   };
 }
 
@@ -108,10 +88,7 @@ export function parseUsageFilters(search: string): UsageRecordsFilters {
  * 把筛选写回一份 URL query；等于默认值的维度删键，让干净的视图有干净的链接。
  * 就地改写传入的 params，其他 section 的参数原样保留。
  */
-export function writeUsageFilters(
-  params: URLSearchParams,
-  filters: UsageRecordsFilters,
-): URLSearchParams {
+export function writeUsageFilters(params: URLSearchParams, filters: UsageRecordsFilters): URLSearchParams {
   const set = (key: string, value: string | null) => {
     if (value === null) params.delete(`${QUERY_PREFIX}${key}`);
     else params.set(`${QUERY_PREFIX}${key}`, value);
@@ -123,10 +100,7 @@ export function writeUsageFilters(
   set("model", filters.model);
   set("media", filters.mediaType);
   set("segment", filters.segment);
-  set(
-    "status",
-    filters.status === DEFAULT_USAGE_FILTERS.status ? null : filters.status,
-  );
+  set("status", filters.status === DEFAULT_USAGE_FILTERS.status ? null : filters.status);
   return params;
 }
 
@@ -212,10 +186,7 @@ interface UsageRecordsState {
    * 应用一组筛选：回第一页重取记录与 pending，仅共用维度变化时重取 summary；
    * 区块每次打开都带 `refetchSummary`，让 KPI 与图表反映离开期间结束的调用。
    */
-  applyFilters: (
-    filters: UsageRecordsFilters,
-    options?: { refetchSummary?: boolean },
-  ) => Promise<void>;
+  applyFilters: (filters: UsageRecordsFilters, options?: { refetchSummary?: boolean }) => Promise<void>;
   /** 手动刷新：按当前筛选重取全部三项。 */
   refresh: () => Promise<void>;
   /** 只重取 summary：供应商显示名由服务端按请求语言渲染，切换语言后要重取。 */
@@ -443,13 +414,14 @@ export const useUsageRecordsStore = create<UsageRecordsState>((set, get) => {
       const first = get().summary === null && !get().summaryLoading;
       // 新查询先重置游标，避免第一页返回前的刷新沿用旧查询的分页位置。
       set({
-        filters, pageIndex: 0, cursors: [null], nextCursor: null,
+        filters,
+        pageIndex: 0,
+        cursors: [null],
+        nextCursor: null,
         ...(previous.view !== filters.view ? { records: [], sessions: [], total: 0, pendingRecords: [] } : {}),
       });
       await Promise.all([
-        summaryStale || first || options.refetchSummary
-          ? fetchSummary(filters)
-          : Promise.resolve(),
+        summaryStale || first || options.refetchSummary ? fetchSummary(filters) : Promise.resolve(),
         // 筛选变化一律回第一页：停在旧游标上会翻到一个已经不存在的位置。
         fetchPage(filters, null, 0, [null]),
         // Agent 记录是事后补录的终态行，没有进行中的调用。

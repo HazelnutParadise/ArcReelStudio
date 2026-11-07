@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor, act, within } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vite-plus/test";
 
 // Stub URL object APIs not available in jsdom
 globalThis.URL.createObjectURL ??= vi.fn(() => "blob:mock");
@@ -213,9 +213,7 @@ describe("CreateProjectModal", () => {
 
   it("ignores close requests while the project is being created", async () => {
     let resolveCreate: (value: Awaited<ReturnType<typeof API.createProject>>) => void = () => {};
-    vi.spyOn(API, "createProject").mockImplementation(
-      () => new Promise((resolve) => (resolveCreate = resolve)),
-    );
+    vi.spyOn(API, "createProject").mockImplementation(() => new Promise((resolve) => (resolveCreate = resolve)));
     render(<CreateProjectModal />);
     fillBasics();
     fireEvent.click(await walkToStyle());
@@ -385,22 +383,38 @@ describe("CreateProjectModal", () => {
     vi.spyOn(API, "getProviders").mockResolvedValue({
       providers: [
         {
-          id: "gemini-aistudio", display_name: "Gemini AI Studio", description: "", status: "ready" as const,
-          media_types: ["video", "image", "text"], capabilities: [], credential_count: 0,
+          id: "gemini-aistudio",
+          display_name: "Gemini AI Studio",
+          description: "",
+          status: "ready" as const,
+          media_types: ["video", "image", "text"],
+          capabilities: [],
+          credential_count: 0,
           models: {
             "veo-3": {
-              display_name: "veo-3", media_type: "video", capabilities: [], default: false,
+              display_name: "veo-3",
+              media_type: "video",
+              capabilities: [],
+              default: false,
               supported_durations: [4, 6, 8],
               resolutions: ["720p", "1080p"],
             },
           },
         },
         {
-          id: "ark", display_name: "Ark", description: "", status: "ready" as const,
-          media_types: ["video"], capabilities: [], credential_count: 0,
+          id: "ark",
+          display_name: "Ark",
+          description: "",
+          status: "ready" as const,
+          media_types: ["video"],
+          capabilities: [],
+          credential_count: 0,
           models: {
             seedance: {
-              display_name: "seedance", media_type: "video", capabilities: [], default: false,
+              display_name: "seedance",
+              media_type: "video",
+              capabilities: [],
+              default: false,
               supported_durations: [5, 10],
               resolutions: ["720p"],
             },
@@ -553,9 +567,7 @@ describe("CreateProjectModal language switch", () => {
     useProjectsStore.setState(useProjectsStore.getInitialState(), true);
     useProjectsStore.setState({ showCreateModal: true });
     useAppStore.setState(useAppStore.getInitialState(), true);
-    vi.spyOn(API, "getSystemConfig").mockImplementation(() =>
-      Promise.resolve(sysConfigFor(i18n.language) as never),
-    );
+    vi.spyOn(API, "getSystemConfig").mockImplementation(() => Promise.resolve(sysConfigFor(i18n.language) as never));
     vi.spyOn(API, "getProviders").mockResolvedValue(mockProviders as never);
     vi.spyOn(API, "listCustomProviders").mockResolvedValue({ providers: [] });
     vi.spyOn(API, "getNarrationDefaults").mockResolvedValue(narrationDefaults);
@@ -584,9 +596,7 @@ describe("CreateProjectModal language switch", () => {
       await i18n.changeLanguage("en");
     });
 
-    await waitFor(() =>
-      expect(screen.getAllByText(/Gemini AI Studio \(EN\)/).length).toBeGreaterThan(0),
-    );
+    await waitFor(() => expect(screen.getAllByText(/Gemini AI Studio \(EN\)/).length).toBeGreaterThan(0));
     expect(screen.queryByText(/Gemini AI Studio（中文）/)).not.toBeInTheDocument();
   });
 
@@ -615,8 +625,6 @@ describe("CreateProjectModal language switch", () => {
       releaseRefetch?.();
       await Promise.resolve();
     });
-    await waitFor(() =>
-      expect(screen.getAllByText(/Gemini AI Studio \(EN\)/).length).toBeGreaterThan(0),
-    );
+    await waitFor(() => expect(screen.getAllByText(/Gemini AI Studio \(EN\)/).length).toBeGreaterThan(0));
   });
 });

@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { useCharacterDerivativeSheets } from "./useCharacterDerivativeSheets";
 import { API } from "@/api";
 import { useTasksStore } from "@/stores/tasks-store";
@@ -43,7 +43,13 @@ describe("useCharacterDerivativeSheets", () => {
 
     spy.mockResolvedValue({
       success: true,
-      derivatives: { 战斗装: { description: "换上银色轻甲", character_sheet: "characters/derivatives/阿岚/战斗装.png", stale: false } },
+      derivatives: {
+        战斗装: {
+          description: "换上银色轻甲",
+          character_sheet: "characters/derivatives/阿岚/战斗装.png",
+          stale: false,
+        },
+      },
     });
     rerender(<Probe revision="r2" />);
 

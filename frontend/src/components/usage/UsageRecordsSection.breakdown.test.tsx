@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import i18n from "@/i18n";
@@ -78,9 +78,7 @@ describe("UsageRecordsSection breakdown", () => {
       next_cursor: null,
       total: 0,
     });
-    vi.spyOn(API, "getUsageSummary").mockResolvedValue(
-      makeUsageSummary({ breakdown: BREAKDOWN }),
-    );
+    vi.spyOn(API, "getUsageSummary").mockResolvedValue(makeUsageSummary({ breakdown: BREAKDOWN }));
   });
 
   afterEach(async () => {
@@ -198,9 +196,7 @@ describe("UsageRecordsSection attention", () => {
   });
 
   function mockAttention(attention: UsageSummary["attention"]) {
-    vi.spyOn(API, "getUsageSummary").mockResolvedValue(
-      makeUsageSummary({ breakdown: BREAKDOWN, attention }),
-    );
+    vi.spyOn(API, "getUsageSummary").mockResolvedValue(makeUsageSummary({ breakdown: BREAKDOWN, attention }));
   }
 
   it("stays hidden when nothing is wrong", async () => {
@@ -225,9 +221,7 @@ describe("UsageRecordsSection attention", () => {
     ]);
     const { location } = renderUsageRecordsSection();
 
-    await userEvent.click(
-      await screen.findByRole("button", { name: /MiniMax · hailuo-02 失败率偏高/ }),
-    );
+    await userEvent.click(await screen.findByRole("button", { name: /MiniMax · hailuo-02 失败率偏高/ }));
 
     await waitFor(() => {
       const query = lastQuery(location.history);
@@ -253,9 +247,7 @@ describe("UsageRecordsSection attention", () => {
     ]);
     const { location } = renderUsageRecordsSection("section=usage&u_status=success");
 
-    await userEvent.click(
-      await screen.findByRole("button", { name: /星海列车 · 分镜 第 1 集 · 3 连续失败/ }),
-    );
+    await userEvent.click(await screen.findByRole("button", { name: /星海列车 · 分镜 第 1 集 · 3 连续失败/ }));
 
     await waitFor(() => {
       const query = lastQuery(location.history);

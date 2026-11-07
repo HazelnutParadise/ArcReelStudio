@@ -1,19 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { DEMO_PROJECT_NAME } from "@/onboarding/demo-project";
 import { useProjectsStore } from "@/stores/projects-store";
 import { MediaCard } from "./MediaCard";
 
 function renderCard(props: Partial<Parameters<typeof MediaCard>[0]> = {}) {
   return render(
-    <MediaCard
-      kind="storyboard"
-      projectName="demo"
-      segmentId="E1S01"
-      assetPath={null}
-      aspectRatio="9:16"
-      {...props}
-    />,
+    <MediaCard kind="storyboard" projectName="demo" segmentId="E1S01" assetPath={null} aspectRatio="9:16" {...props} />,
   );
 }
 

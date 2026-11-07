@@ -10,7 +10,8 @@ providers / media_generator 等模块复用，避免循环依赖。
 - RateLimiter — 多模型滑动窗口限流器
 - _rate_limiter_limits_from_env / get_shared_rate_limiter / refresh_shared_rate_limiter
 - with_retry_async — 从 lib.infra.retry re-export 的通用重试装饰器
-- gemini_http_options — AI Studio 客户端的 http_options（base_url 与 transport 注入）
+- GEMINI_DEVELOPER_API_VERSION — AI Studio（Gemini Developer API）客户端固定使用的 API 版本
+- gemini_http_options — AI Studio 客户端的 http_options（API 版本、base_url 与 transport 注入）
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ import time
 from collections import deque
 from typing import TYPE_CHECKING
 
-import httpx
+import httpx2
 
 from lib.backends.transport_layer import TransportLayer, layer_async_client, layer_sync_client
 from lib.infra.retry import BASE_RETRYABLE_ERRORS, with_retry_async
@@ -34,6 +35,7 @@ __all__ = [
     "BASE_RETRYABLE_ERRORS",
     "GEMINI_DEFAULT_IMAGE_MODEL",
     "GEMINI_DEFAULT_VIDEO_MODEL",
+    "GEMINI_DEVELOPER_API_VERSION",
     "RETRYABLE_ERRORS",
     "VERTEX_SCOPES",
     "RateLimiter",
@@ -43,6 +45,11 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
+
+# AI Studio（Gemini Developer API）客户端的 API 版本。google-genai 3.0 起缺省为 v1，v1 不支持语音输出（Speech Config），
+# Python 端点的默认路径与路径覆盖也按 /v1beta 书写（lib/custom_provider/endpoints.py），构造客户端时显式固定。
+# Vertex 客户端不经此常量，沿用 SDK 缺省的 v1beta1。
+GEMINI_DEVELOPER_API_VERSION = "v1beta"
 
 # Vertex AI 服务账号所需 OAuth scopes（共享常量，供 gemini_client / video_backends / providers 复用）
 VERTEX_SCOPES = [
@@ -191,22 +198,24 @@ def resolve_gemini_api_key(api_key: str | None = None) -> str:
     return api_key.strip()
 
 
-def gemini_http_options(
-    base_url: str | None, transport_layer: TransportLayer | None
-) -> HttpOptions | HttpOptionsDict | None:
-    """AI Studio 客户端的 http_options；未注入时只带非空的 ``base_url``。
+def gemini_http_options(base_url: str | None, transport_layer: TransportLayer | None) -> HttpOptions | HttpOptionsDict:
+    """AI Studio 客户端的 http_options：固定 ``GEMINI_DEVELOPER_API_VERSION``，未注入时另带非空的 ``base_url``。
 
-    注入的 ``transport_layer`` 叠在同步与异步两条 httpx 通道上。异步通道必须显式交给 SDK：未传
+    注入的 ``transport_layer`` 叠在同步与异步两条 httpx2 通道上。异步通道必须显式交给 SDK：未传
     ``httpx_async_client`` 时，装有 aiohttp 的环境里异步请求走 aiohttp，注入层看不到。SDK 不关闭外部传入的客户端。
     """
     if transport_layer is None:
-        return {"base_url": base_url} if base_url else None
+        options: HttpOptionsDict = {"api_version": GEMINI_DEVELOPER_API_VERSION}
+        if base_url:
+            options["base_url"] = base_url
+        return options
     from google.genai.types import HttpOptions
 
     return HttpOptions(
+        api_version=GEMINI_DEVELOPER_API_VERSION,
         base_url=base_url or None,
-        httpx_client=layer_sync_client(httpx.Client(follow_redirects=True), transport_layer),
-        httpx_async_client=layer_async_client(httpx.AsyncClient(follow_redirects=True), transport_layer),
+        httpx_client=layer_sync_client(httpx2.Client(follow_redirects=True), transport_layer),
+        httpx_async_client=layer_async_client(httpx2.AsyncClient(follow_redirects=True), transport_layer),
     )
 
 

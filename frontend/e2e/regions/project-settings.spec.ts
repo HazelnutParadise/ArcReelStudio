@@ -40,7 +40,10 @@ function manyModelsOverrides(): ApiOverrides {
   };
   const [video, image, text, audio] = ["video", "image", "text", "audio"].map(longModels);
   const modelNames = Object.fromEntries(
-    [...video, ...image, ...text, ...audio].map((id, i) => [id, `超长模型名称 ${i + 1} · 高清长时长电影级生成（预览版）`]),
+    [...video, ...image, ...text, ...audio].map((id, i) => [
+      id,
+      `超长模型名称 ${i + 1} · 高清长时长电影级生成（预览版）`,
+    ]),
   );
   return {
     "GET /api/v1/system/config": {

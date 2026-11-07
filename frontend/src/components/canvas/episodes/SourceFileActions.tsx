@@ -396,7 +396,13 @@ function ReplaceSourceFileForm({
                   event.target.value = "";
                 }}
               />
-              <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => inputRef.current?.click()}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => inputRef.current?.click()}
+              >
                 <Upload aria-hidden data-icon="inline-start" />
                 {t("dashboard:source_file_replace_pick")}
               </Button>

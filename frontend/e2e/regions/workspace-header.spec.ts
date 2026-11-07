@@ -89,7 +89,11 @@ const EXPORT_FAILS: ApiOverrides = {
 const NOTICE_CHARACTERS = Array.from({ length: 24 }, (_, i) => `巡夜人 ${i + 1}`);
 const NOTICE_CHARACTER = NOTICE_CHARACTERS.at(-1)!;
 const NOTICE_SHOT = "E1S05";
-const projectChange = (change: Record<string, unknown>) => ({ label: String(change.entity_id), important: true, ...change });
+const projectChange = (change: Record<string, unknown>) => ({
+  label: String(change.entity_id),
+  important: true,
+  ...change,
+});
 const NOTICE_EVENTS = [
   "event: snapshot",
   `data: ${JSON.stringify({ project_name: "demo", fingerprint: "fp-1", generated_at: "2026-01-01T08:00:00Z" })}`,
@@ -274,10 +278,9 @@ defineRegionScenarios("工作区顶栏", [
       await bell(page).click();
       await view(`分镜「第一集 · 5」`).click();
       await expect(page).toHaveURL(/\/app\/projects\/demo\/episodes\/1$/);
-      await expect(page.getByRole("navigation", { name: "分镜列表" }).getByRole("button", { name: /^分镜 5(?!\d)/ })).toHaveAttribute(
-        "aria-current",
-        "true",
-      );
+      await expect(
+        page.getByRole("navigation", { name: "分镜列表" }).getByRole("button", { name: /^分镜 5(?!\d)/ }),
+      ).toHaveAttribute("aria-current", "true");
 
       await clearAgentOverlay(page);
       await bell(page).click();
@@ -301,8 +304,18 @@ defineRegionScenarios("工作区顶栏", [
     },
     screenshot: { name: "workspace-not-found", target: (page) => page.getByRole("main") },
   },
-  { name: "旧入口 lorebook 在画布里显示空状态", path: "/app/projects/demo/lorebook", api: EVENT_STREAM, ready: notFoundReady },
-  { name: "旧入口 clues 在画布里显示空状态", path: "/app/projects/demo/clues", api: EVENT_STREAM, ready: notFoundReady },
+  {
+    name: "旧入口 lorebook 在画布里显示空状态",
+    path: "/app/projects/demo/lorebook",
+    api: EVENT_STREAM,
+    ready: notFoundReady,
+  },
+  {
+    name: "旧入口 clues 在画布里显示空状态",
+    path: "/app/projects/demo/clues",
+    api: EVENT_STREAM,
+    ready: notFoundReady,
+  },
   {
     name: "侧栏集只用键盘调整播出顺序",
     path: CHARACTERS_PATH,

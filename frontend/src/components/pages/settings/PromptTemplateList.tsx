@@ -135,15 +135,9 @@ export function PromptTemplateList({ onSelect }: { onSelect: (id: string) => voi
 
       {state.status === "loading" && <LoadingCard label={t("prompt_templates_loading")} />}
       {state.status === "error" && (
-        <ErrorCard
-          title={t("prompt_templates_load_failed")}
-          message={state.message}
-          onRetry={retry}
-        />
+        <ErrorCard title={t("prompt_templates_load_failed")} message={state.message} onRetry={retry} />
       )}
-      {state.status === "ready" && templates.length === 0 && (
-        <EmptyCard>{t("prompt_templates_empty")}</EmptyCard>
-      )}
+      {state.status === "ready" && templates.length === 0 && <EmptyCard>{t("prompt_templates_empty")}</EmptyCard>}
       {axisValues.length > 0 && (
         <AxisFilterBar
           axisValues={axisValues}
@@ -151,9 +145,7 @@ export function PromptTemplateList({ onSelect }: { onSelect: (id: string) => voi
           onChange={(axis, value) => setFilter((prev) => ({ ...prev, [axis]: value }))}
         />
       )}
-      {templates.length > 0 && groups.length === 0 && (
-        <EmptyCard>{t("prompt_templates_filter_empty")}</EmptyCard>
-      )}
+      {templates.length > 0 && groups.length === 0 && <EmptyCard>{t("prompt_templates_filter_empty")}</EmptyCard>}
       {groups.map(([category, items]) => (
         <CategoryGroup
           key={category}
@@ -229,7 +221,9 @@ function CategoryGroup({
   const { t } = useTranslation("dashboard");
   const headingId = `prompt-template-category-${category}`;
   const label = categoryLabel(t, category);
-  const count = <span className="text-xs text-muted-foreground">{t("prompt_templates_count", { count: items.length })}</span>;
+  const count = (
+    <span className="text-xs text-muted-foreground">{t("prompt_templates_count", { count: items.length })}</span>
+  );
 
   // 画风等长尾类别默认收起为两列紧凑表；其余类别平铺带说明的行。
   if (compact) {

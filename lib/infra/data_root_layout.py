@@ -169,6 +169,11 @@ class DataRootLayout:
         return self.runtime_dir / "auth-token-secret"
 
     @property
+    def initial_admin_password_path(self) -> Path:
+        """未设置 ``AUTH_PASSWORD`` 时首次启动生成的默认管理员密码；仅属主可读写，管理员改密码后删除。"""
+        return self.runtime_dir / "initial-admin-password"
+
+    @property
     def image_thumbnail_cache_dir(self) -> Path:
         """公开媒体端点按 ``?w=`` 生成的图片缩略图缓存，可随时整目录删除。
 

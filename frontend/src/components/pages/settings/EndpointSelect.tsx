@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { DiscoveryFormat, EndpointDescriptor, EndpointKey, ImageCap, MediaType } from "@/types";
 import { useEndpointCatalogStore } from "@/stores/endpoint-catalog-store";
 import { isComfyuiEndpoint, isComfyuiProtocol } from "./customProviderHelpers";
@@ -67,7 +75,8 @@ export function EndpointSelect({
 
   const groups = useMemo(() => {
     const wantsComfyui = isComfyuiProtocol(protocol);
-    const usable = endpoints.filter((e) => isComfyuiEndpoint(e) === wantsComfyui);
+    // 只给内置供应商用的端点（如 Veo）不提供给自定义供应商
+    const usable = endpoints.filter((e) => isComfyuiEndpoint(e) === wantsComfyui && e.custom_selectable);
     return MEDIA_ORDER.map((media) => ({ media, options: usable.filter((e) => e.media_type === media) })).filter(
       (group) => group.options.length > 0,
     );

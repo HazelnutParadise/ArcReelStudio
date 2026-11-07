@@ -49,7 +49,7 @@ def parse_aspect_ratio(aspect_ratio: str) -> tuple[int, int]:
         aw, ah = int(parts[0]), int(parts[1])
         if aw <= 0 or ah <= 0:
             raise ValueError(aspect_ratio)
-    except (AttributeError, ValueError, IndexError):
+    except AttributeError, ValueError, IndexError:
         logger.warning("无法解析 aspect_ratio=%r，回退默认 %d:%d", aspect_ratio, *_DEFAULT_ASPECT)
         return _DEFAULT_ASPECT
     g = math.gcd(aw, ah)

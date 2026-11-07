@@ -1,5 +1,5 @@
 import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -26,7 +26,19 @@ const view: EpisodesView = {
       length: 30,
       units: 0,
       cut_units: 0,
-      segments: [{ kind: "unsplit", start: 0, end: 30, text: "", episode: null, gap: false, units: 0, continued: false, continues: false }],
+      segments: [
+        {
+          kind: "unsplit",
+          start: 0,
+          end: 30,
+          text: "",
+          episode: null,
+          gap: false,
+          units: 0,
+          continued: false,
+          continues: false,
+        },
+      ],
       source_kind: null,
     },
   ],
@@ -114,7 +126,11 @@ describe("useManualSplit keyboard", () => {
     const crossing: EpisodesView = {
       ...view,
       files: [
-        { ...view.files[0], length: 10, segments: [{ ...episodeSegment, start: 0, end: 10, continued: false, continues: true }] },
+        {
+          ...view.files[0],
+          length: 10,
+          segments: [{ ...episodeSegment, start: 0, end: 10, continued: false, continues: true }],
+        },
         {
           ...view.files[0],
           source_file: "source/b.txt",

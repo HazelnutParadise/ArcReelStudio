@@ -57,7 +57,7 @@ export function AssetLibraryBindingsBlock({
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 挂载与账号变化后拉取绑定列表回写，属于受控加载
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 挂载与账号变化后拉取绑定列表回写，属于受控加载
     void fetchBindings();
     return () => loadController.current?.abort();
   }, [fetchBindings, reloadToken]);
@@ -100,7 +100,10 @@ export function AssetLibraryBindingsBlock({
           {t("common:loading")}
         </p>
       ) : load.status === "error" ? (
-        <RequestErrorNotice error={load.error} action={{ label: t("common:retry"), onClick: () => void fetchBindings() }} />
+        <RequestErrorNotice
+          error={load.error}
+          action={{ label: t("common:retry"), onClick: () => void fetchBindings() }}
+        />
       ) : load.credentials.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
           {t("asset_library_bindings_empty")}

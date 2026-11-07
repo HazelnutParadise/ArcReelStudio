@@ -9,7 +9,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any, cast
 
-import httpx
+import httpx2
 
 from lib.custom_provider.endpoints import declarative_endpoint_spec
 from server.services.tasks.image_edit_tasks import execute_image_edit_task
@@ -53,14 +53,14 @@ async def test_image_edit_on_a_declarative_image_to_image_endpoint_produces_a_ne
     edited = solid_png_bytes((240, 120, 20))
     with capture_http() as router, bounded_poll_clock():
         submit = router.post("https://relay.test/v1/images/generations").mock(
-            return_value=httpx.Response(200, json={"data": [{"task_id": "task_9"}]})
+            return_value=httpx2.Response(200, json={"data": [{"task_id": "task_9"}]})
         )
         router.get("https://relay.test/v1/tasks/task_9").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"data": {"status": "completed", "result": {"images": [{"url": [_RESULT_URL]}]}}}
             )
         )
-        router.get(_RESULT_URL).mock(return_value=httpx.Response(200, content=edited))
+        router.get(_RESULT_URL).mock(return_value=httpx2.Response(200, content=edited))
 
         result = await execute_image_edit_task(
             "demo", "阿岚", {"resource_type": "character", "prompt": "把头发改成红色"}, task_id="task-1"

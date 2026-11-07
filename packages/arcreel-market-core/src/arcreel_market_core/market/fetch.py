@@ -14,7 +14,7 @@ from enum import StrEnum
 from typing import Any
 from urllib.parse import urlsplit
 
-import httpx
+import httpx2
 
 from arcreel_market_core.validation_messages import Translator, code_translator
 
@@ -72,7 +72,7 @@ class MarketFetchError(Exception):
 class RawResponse:
     status_code: int
     content: bytes
-    headers: httpx.Headers
+    headers: httpx2.Headers
 
 
 @dataclass(frozen=True)
@@ -94,7 +94,7 @@ def with_proxy_prefix(url: str, proxy_prefix: str) -> str:
 
 
 async def fetch_bytes(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     url: str,
     *,
     max_bytes: int,
@@ -123,7 +123,7 @@ async def fetch_bytes(
 
 
 async def _follow_redirects(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     url: str,
     *,
     max_bytes: int,
@@ -149,17 +149,17 @@ async def _follow_redirects(
                 return RawResponse(status_code=response.status_code, content=content, headers=response.headers)
             finally:
                 await response.aclose()
-        except httpx.InvalidURL as exc:
+        except httpx2.InvalidURL as exc:
             raise MarketTransportError(f"invalid URL: {exc}") from exc
-        except httpx.TimeoutException as exc:
+        except httpx2.TimeoutException as exc:
             raise MarketTransportError(_timed_out(deadline_seconds)) from exc
-        except httpx.HTTPError as exc:
+        except httpx2.HTTPError as exc:
             raise MarketTransportError(f"request failed: {type(exc).__name__}") from exc
     raise MarketTransportError(f"too many redirects (limit {MAX_REDIRECTS})")
 
 
 async def fetch_index(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     index_url: str,
     *,
     proxy_prefix: str = "",
@@ -207,7 +207,7 @@ async def fetch_index(
     return FetchedIndex(not_modified=False, document=document, index=index, etag=etag)
 
 
-async def _read_limited(response: httpx.Response, max_bytes: int) -> bytes:
+async def _read_limited(response: httpx2.Response, max_bytes: int) -> bytes:
     too_large = MarketPayloadTooLargeError(f"response exceeds {max_bytes} bytes")
     declared = response.headers.get("content-length")
     if declared is not None and declared.isdigit() and int(declared) > max_bytes:
@@ -241,9 +241,18 @@ def decode_json_payload(content: bytes) -> Any:
         raise MarketPayloadNotJsonError(f"is not valid JSON: {exc}") from exc
     except RecursionError as exc:
         raise MarketPayloadNotJsonError(_too_deep()) from exc
-    if _nesting_exceeds(document, MAX_JSON_DEPTH):
+    if exceeds_max_json_depth(document):
         raise MarketPayloadNotJsonError(_too_deep())
     return document
+
+
+def exceeds_max_json_depth(document: Any) -> bool:
+    """``document`` 的容器嵌套是否超过 :data:`MAX_JSON_DEPTH`。
+
+    逐层迭代判断，不依赖解析器的递归上限：Python 3.14 的 ``json`` 按 C 栈空间判断递归，
+    在 Linux 上能解析出很深的嵌套而不抛 ``RecursionError``。
+    """
+    return _nesting_exceeds(document, MAX_JSON_DEPTH)
 
 
 def _reject_constant(name: str) -> Any:

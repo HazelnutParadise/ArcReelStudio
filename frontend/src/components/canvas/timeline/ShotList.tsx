@@ -8,15 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { SortableHandle, SortableItem, SortableList, type SortableMove } from "@/components/shared/sortable/SortableList";
+import {
+  SortableHandle,
+  SortableItem,
+  SortableList,
+  type SortableMove,
+} from "@/components/shared/sortable/SortableList";
 import { useProjectsStore } from "@/stores/projects-store";
 import { statusFromAssets } from "@/components/canvas/timeline/shot-status";
 import { StatusBadge } from "@/components/canvas/timeline/StatusBadge";
-import {
-  getScriptItemId,
-  type EditorContentMode,
-  type ScriptItem,
-} from "@/utils/script-shape";
+import { getScriptItemId, type EditorContentMode, type ScriptItem } from "@/utils/script-shape";
 import { ItemPositionBadge } from "@/components/shared/episode-item/ItemPositionBadge";
 import { InsertShotButton, type InsertShotHandler } from "./ShotStructureActions";
 
@@ -146,7 +147,9 @@ export function ShotList({
       >
         <Tooltip>
           <TooltipTrigger
-            render={<Button variant="ghost" size="icon-sm" aria-label={t("shot_list_expand")} onClick={onToggleCollapse} />}
+            render={
+              <Button variant="ghost" size="icon-sm" aria-label={t("shot_list_expand")} onClick={onToggleCollapse} />
+            }
           >
             <ChevronRight aria-hidden />
           </TooltipTrigger>
@@ -181,7 +184,10 @@ export function ShotList({
   }
 
   return (
-    <nav aria-label={t("shot_list_label")} className="flex min-h-0 min-w-0 flex-col border-r border-border/50 bg-sidebar/40">
+    <nav
+      aria-label={t("shot_list_label")}
+      className="flex min-h-0 min-w-0 flex-col border-r border-border/50 bg-sidebar/40"
+    >
       <div className="flex shrink-0 items-center gap-1 px-3 pt-3 pb-2">
         <h2 className="text-xs font-medium text-muted-foreground">{t("shots_section_title")}</h2>
         <span className="num text-xs text-muted-foreground">{visibleIds.length}</span>
@@ -198,7 +204,9 @@ export function ShotList({
         )}
         <Tooltip>
           <TooltipTrigger
-            render={<Button variant="ghost" size="icon-sm" aria-label={t("shot_list_collapse")} onClick={onToggleCollapse} />}
+            render={
+              <Button variant="ghost" size="icon-sm" aria-label={t("shot_list_collapse")} onClick={onToggleCollapse} />
+            }
           >
             <ChevronLeft aria-hidden />
           </TooltipTrigger>
@@ -282,7 +290,9 @@ export function ShotList({
                         </span>
                       ) : null}
                       <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className="num">{t("duration_seconds_value_text", { value: seg.duration_seconds ?? 0 })}</span>
+                        <span className="num">
+                          {t("duration_seconds_value_text", { value: seg.duration_seconds ?? 0 })}
+                        </span>
                         {section ? <Badge variant="outline">{section}</Badge> : null}
                         {seg.pending_authoring === true ? (
                           <span className="text-warn">{t("shot_pending_authoring")}</span>

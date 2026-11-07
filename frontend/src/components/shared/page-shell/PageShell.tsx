@@ -58,9 +58,7 @@ export function PageShell({ header, sidebar, tier, children }: PageShellProps) {
             ) : (
               <main className="relative min-h-0 min-w-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
                 <div className="p-6 xl:p-8">
-                  <div className={cn("@container/page min-w-0", tier === "constrained" && "max-w-190")}>
-                    {children}
-                  </div>
+                  <div className={cn("@container/page min-w-0", tier === "constrained" && "max-w-190")}>{children}</div>
                 </div>
               </main>
             )}

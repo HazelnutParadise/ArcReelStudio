@@ -9,13 +9,7 @@
  */
 
 /** 编排步骤自身的进度，与产物、任务两轴无关。 */
-export type WorkflowStepState =
-  | "completed"
-  | "ready"
-  | "active"
-  | "blocked"
-  | "pending"
-  | "skipped";
+export type WorkflowStepState = "completed" | "ready" | "active" | "blocked" | "pending" | "skipped";
 
 /** 产物时效。stale 是「可继续使用的告警」，不是缺失，也不授权自动重生。 */
 export type ArtifactStatus = "current" | "stale" | "missing" | "blocked";

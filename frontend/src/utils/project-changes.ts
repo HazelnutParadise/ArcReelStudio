@@ -31,16 +31,11 @@ export interface GroupedProjectChange {
   changes: ProjectChange[];
 }
 
-export function buildEntityRevisionKey(
-  entityType: ProjectChange["entity_type"],
-  entityId: string,
-): string {
+export function buildEntityRevisionKey(entityType: ProjectChange["entity_type"], entityId: string): string {
   return `${entityType}:${entityId}`;
 }
 
-export function groupChangesByType(
-  changes: ProjectChange[],
-): GroupedProjectChange[] {
+export function groupChangesByType(changes: ProjectChange[]): GroupedProjectChange[] {
   const groups = new Map<string, GroupedProjectChange>();
 
   for (const change of changes) {
@@ -67,7 +62,12 @@ const EPISODE_ITEM_ENTITY_TYPES = new Set(["segment", "drama_scene", "shot", "re
 // 事件携带的稳定 label_key + label_params 是文案真相源；label 是后端按默认语言渲染的兜底，
 // 只在事件来自不认识该 key 的旧发布方时兜住，不参与常规渲染。
 // 集 ID 与带集前缀的条目 ID 不直接露给创作者：集换成标题（或播出位置），条目换成「标题 · 5」（本集里的当前位置）。
-function resolveChangeLabel(change: ProjectChange, t: EventsT, episodes: EpisodeLedger, scripts: ProjectScripts): string {
+function resolveChangeLabel(
+  change: ProjectChange,
+  t: EventsT,
+  episodes: EpisodeLedger,
+  scripts: ProjectScripts,
+): string {
   if (!change.label_key) {
     return change.label;
   }
@@ -105,7 +105,12 @@ function getEntityLabel(group: GroupedProjectChange, t: EventsT): string {
   });
 }
 
-function getChangeListLabel(change: ProjectChange, t: EventsT, episodes: EpisodeLedger, scripts: ProjectScripts): string {
+function getChangeListLabel(
+  change: ProjectChange,
+  t: EventsT,
+  episodes: EpisodeLedger,
+  scripts: ProjectScripts,
+): string {
   if (
     change.entity_type === "character" ||
     change.entity_type === "scene" ||

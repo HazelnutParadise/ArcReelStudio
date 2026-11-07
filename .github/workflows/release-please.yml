@@ -4,17 +4,29 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    # 仓库配置了 release-please GitHub App 时用 App token：它建立的 tag 会触发 docker-release.yml。
+    # 没有配置（如 fork）时退回 GITHUB_TOKEN：它建立的 tag 不触发其他工作流，镜像改由下方
+    # publish-image job 直接调用 docker-release.yml 发布。用 GITHUB_TOKEN 建立发版 PR，需在仓库
+    # Settings › Actions › General 勾选「Allow GitHub Actions to create and approve pull requests」
+    env:
+      HAS_RELEASE_APP: ${{ secrets.RELEASE_PLEASE_APP_CLIENT_ID != '' && secrets.RELEASE_PLEASE_APP_PRIVATE_KEY != '' }}
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      used_release_app: ${{ env.HAS_RELEASE_APP }}
     steps:
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app-token
+        if: env.HAS_RELEASE_APP == 'true'
         with:
           client-id: ${{ secrets.RELEASE_PLEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
@@ -25,7 +37,7 @@ jobs:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -38,13 +50,13 @@ jobs:
         with:
           ref: ${{ fromJson(steps.release.outputs.pr).headBranchName }}
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
           # 凭据不写进工作树的 .git/config；推送在下方单条命令里自带远程 URL
           persist-credentials: false
 
       - name: Set up uv
         if: ${{ steps.release.outputs.pr }}
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           # 本 job 持有可写 token 并向 release PR 分支推送提交，恢复的缓存条目会带着
           # 该写权限执行，故不启用缓存
@@ -53,7 +65,7 @@ jobs:
       - name: Sync uv.lock
         if: ${{ steps.release.outputs.pr }}
         env:
-          PUSH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PUSH_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
           # release PR 无变化时 action 不输出 pr，取值为空串。step 级 env 先于 if 求值，
           # 直接 fromJson 会解析空串失败并让整个 job 红；短路后 fromJson 只在有值时调用
           PR_BRANCH: ${{ steps.release.outputs.pr && fromJson(steps.release.outputs.pr).headBranchName }}
@@ -73,7 +85,7 @@ jobs:
       - name: Refresh catalog snapshot
         if: ${{ steps.release.outputs.pr }}
         env:
-          PUSH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PUSH_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
           PR_BRANCH: ${{ steps.release.outputs.pr && fromJson(steps.release.outputs.pr).headBranchName }}
           CATALOG_BASE_URL: https://raw.githubusercontent.com/ArcReel/arcreel-catalog/main
         run: |
@@ -102,3 +114,18 @@ jobs:
           git add "$snapshot"
           git commit -m "chore(catalog): 更新出厂快照"
           git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${PR_BRANCH}"
+
+  # 用 GITHUB_TOKEN 发版时，tag 推送不会触发 docker-release.yml，在这里直接调用它发布版本镜像。
+  # 用 App token 发版时由 tag 推送触发，这里跳过，避免同一版本发布两次
+  publish-image:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true' && needs.release-please.outputs.used_release_app != 'true'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker-release.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

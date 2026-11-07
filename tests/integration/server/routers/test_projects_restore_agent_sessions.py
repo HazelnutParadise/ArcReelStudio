@@ -9,7 +9,7 @@ from urllib.parse import quote
 import pytest
 from claude_agent_sdk import ClaudeAgentOptions, get_session_messages
 from claude_agent_sdk._internal.session_resume import materialize_resume_session
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from lib.agent.agent_session_store import make_project_key
 from lib.agent.agent_session_store.import_local import migrate_local_transcripts_to_store

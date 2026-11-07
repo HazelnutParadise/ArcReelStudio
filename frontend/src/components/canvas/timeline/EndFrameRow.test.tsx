@@ -1,5 +1,5 @@
 import { act, fireEvent, render, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useCapabilitiesStore } from "@/stores/capabilities-store";
@@ -93,7 +93,6 @@ beforeEach(() => {
             generated_assets: { storyboard_image: "storyboards/E1S01_v1.png" },
           },
         ],
-         
       } as any,
     },
     refreshProject,
@@ -343,9 +342,7 @@ describe("EndFrameRow 占用态", () => {
 
   it("写入成功但刷新项目失败：提示刷新失败而非写入失败", async () => {
     refreshProject.mockResolvedValueOnce("failed" satisfies RefreshProjectResult);
-    vi
-      .spyOn(API, "selectEndFrame")
-      .mockResolvedValue({ success: true, end_frame_image: "end_frames/scene_E1S01.png" });
+    vi.spyOn(API, "selectEndFrame").mockResolvedValue({ success: true, end_frame_image: "end_frames/scene_E1S01.png" });
     const { getByRole, findByText, findByRole } = renderRow();
     await findByText("未设置");
 
@@ -361,9 +358,7 @@ describe("EndFrameRow 占用态", () => {
 
   it("写入成功但刷新恰好被项目切换取消：不误报刷新失败", async () => {
     refreshProject.mockResolvedValueOnce("cancelled" satisfies RefreshProjectResult);
-    vi
-      .spyOn(API, "selectEndFrame")
-      .mockResolvedValue({ success: true, end_frame_image: "end_frames/scene_E1S01.png" });
+    vi.spyOn(API, "selectEndFrame").mockResolvedValue({ success: true, end_frame_image: "end_frames/scene_E1S01.png" });
     const { getByRole, findByText, findByRole } = renderRow();
     await findByText("未设置");
 

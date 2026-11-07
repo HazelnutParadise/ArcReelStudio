@@ -1,15 +1,11 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useTasksStore } from "@/stores/tasks-store";
 import { useUsageRecordsStore } from "@/stores/usage-records-store";
-import {
-  makeUsageAgentSession,
-  makeUsageAgentSessionRecord,
-  makeUsageSummary,
-} from "./usage-fixtures";
+import { makeUsageAgentSession, makeUsageAgentSessionRecord, makeUsageSummary } from "./usage-fixtures";
 import { renderUsageRecordsSection } from "./usage-test-utils";
 
 const EMPTY_RECORDS = { items: [], next_cursor: null, total: 0 };
@@ -43,10 +39,7 @@ describe("UsageRecordsSection Agent sessions view", () => {
 
     await waitFor(() => expect(lastQuery(location.history).get("u_view")).toBe("agent"));
     expect(await screen.findByText("分镜讨论")).toBeInTheDocument();
-    expect(API.getUsageSummary).toHaveBeenLastCalledWith(
-      expect.objectContaining({ view: "agent" }),
-      expect.anything(),
-    );
+    expect(API.getUsageSummary).toHaveBeenLastCalledWith(expect.objectContaining({ view: "agent" }), expect.anything());
   });
 
   it("drops filters that do not exist in the other view when switching", async () => {
@@ -149,9 +142,7 @@ describe("UsageRecordsSection Agent sessions view", () => {
   it("keeps the two cache-write tiers in the single-row details", async () => {
     vi.spyOn(API, "getUsageSession").mockResolvedValue({
       session_id: "sess-1",
-      items: [
-        makeUsageAgentSessionRecord({ id: 1, cache_write_5m_tokens: 100, cache_write_1h_tokens: 50 }),
-      ],
+      items: [makeUsageAgentSessionRecord({ id: 1, cache_write_5m_tokens: 100, cache_write_1h_tokens: 50 })],
     });
     renderUsageRecordsSection("section=usage&u_view=agent");
     await userEvent.click(await screen.findByRole("button", { name: "展开「分镜讨论」的明细" }));

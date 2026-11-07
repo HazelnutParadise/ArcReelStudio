@@ -29,7 +29,8 @@ export default {
   'instruction_label': 'Дополнительные указания (необязательно)',
   'instruction_label_saved': 'Дополнительные указания (необязательно, сохраняются для этой серии)',
   'instruction_placeholder': 'Дополнительные указания (необязательно)',
-  'instruction_placeholder_saved': 'Дополнительные указания (необязательно, сохраняются и подставляются в следующий раз)',
+  'instruction_placeholder_saved':
+    'Дополнительные указания (необязательно, сохраняются и подставляются в следующий раз)',
   'agent_prefill_instructions': 'Дополнительные указания: {{instructions}}',
   'row_brief': 'Творческий бриф и товары',
   'row_source': 'Исходный текст серии',
@@ -113,8 +114,10 @@ export default {
   'note_final_cut_stale_other': '{{count}} финальных монтажа старше своих таймлайнов монтажа: {{names}}',
   'note_assets_without_description_one': '{{count}} материал без описания, лист для него не сгенерировать: {{names}}',
   'note_assets_without_description_few': '{{count}} материала без описания, листы для них не сгенерировать: {{names}}',
-  'note_assets_without_description_many': '{{count}} материалов без описания, листы для них не сгенерировать: {{names}}',
-  'note_assets_without_description_other': '{{count}} материала без описания, листы для них не сгенерировать: {{names}}',
+  'note_assets_without_description_many':
+    '{{count}} материалов без описания, листы для них не сгенерировать: {{names}}',
+  'note_assets_without_description_other':
+    '{{count}} материала без описания, листы для них не сгенерировать: {{names}}',
   'note_unregistered_references_one': '{{count}} референс не зарегистрирован: {{names}}',
   'note_unregistered_references_few': '{{count}} референса не зарегистрированы: {{names}}',
   'note_unregistered_references_many': '{{count}} референсов не зарегистрированы: {{names}}',
@@ -124,14 +127,22 @@ export default {
   'note_products_without_selling_points_many': '{{count}} товаров без преимуществ: {{names}}',
   'note_products_without_selling_points_other': '{{count}} товара без преимуществ: {{names}}',
   'hint_fill_brief': 'Сначала заполните творческий бриф или добавьте товар.',
-  'hint_assets_without_sheet_storyboard_one': '{{count}} материал без листа, поэтому кадры, которые на него ссылаются, не сгенерировать.',
-  'hint_assets_without_sheet_storyboard_few': '{{count}} материала без листа, поэтому кадры, которые на них ссылаются, не сгенерировать.',
-  'hint_assets_without_sheet_storyboard_many': '{{count}} материалов без листа, поэтому кадры, которые на них ссылаются, не сгенерировать.',
-  'hint_assets_without_sheet_storyboard_other': '{{count}} материала без листа, поэтому кадры, которые на них ссылаются, не сгенерировать.',
-  'hint_assets_without_sheet_unit_one': '{{count}} материал без листа, поэтому видеофрагменты, которые на него ссылаются, не сгенерировать.',
-  'hint_assets_without_sheet_unit_few': '{{count}} материала без листа, поэтому видеофрагменты, которые на них ссылаются, не сгенерировать.',
-  'hint_assets_without_sheet_unit_many': '{{count}} материалов без листа, поэтому видеофрагменты, которые на них ссылаются, не сгенерировать.',
-  'hint_assets_without_sheet_unit_other': '{{count}} материала без листа, поэтому видеофрагменты, которые на них ссылаются, не сгенерировать.',
+  'hint_assets_without_sheet_storyboard_one':
+    '{{count}} материал без листа, поэтому кадры, которые на него ссылаются, не сгенерировать.',
+  'hint_assets_without_sheet_storyboard_few':
+    '{{count}} материала без листа, поэтому кадры, которые на них ссылаются, не сгенерировать.',
+  'hint_assets_without_sheet_storyboard_many':
+    '{{count}} материалов без листа, поэтому кадры, которые на них ссылаются, не сгенерировать.',
+  'hint_assets_without_sheet_storyboard_other':
+    '{{count}} материала без листа, поэтому кадры, которые на них ссылаются, не сгенерировать.',
+  'hint_assets_without_sheet_unit_one':
+    '{{count}} материал без листа, поэтому видеофрагменты, которые на него ссылаются, не сгенерировать.',
+  'hint_assets_without_sheet_unit_few':
+    '{{count}} материала без листа, поэтому видеофрагменты, которые на них ссылаются, не сгенерировать.',
+  'hint_assets_without_sheet_unit_many':
+    '{{count}} материалов без листа, поэтому видеофрагменты, которые на них ссылаются, не сгенерировать.',
+  'hint_assets_without_sheet_unit_other':
+    '{{count}} материала без листа, поэтому видеофрагменты, которые на них ссылаются, не сгенерировать.',
   'act_agent': 'Передать агенту',
   'act_agent_edit': 'Передать агенту на монтаж',
   'act_create_edit_timeline': 'Новый таймлайн монтажа',
@@ -172,10 +183,13 @@ export default {
   'next_title_generate_videos': 'Сгенерировать видео',
   'next_title_create_edit_timeline': 'Монтаж',
   'next_title_wait_for_task': 'Дождаться завершения генерации',
-  'next_detail_resolve_draft_repair': 'Часть результатов ИИ не соответствует требованиям. Пока черновик не исправлен, итоговое содержимое не меняется.',
-  'next_detail_resolve_draft_agent': 'Завершить эту правку может только агент. Можно также отменить её и вернуться к прежнему содержимому.',
+  'next_detail_resolve_draft_repair':
+    'Часть результатов ИИ не соответствует требованиям. Пока черновик не исправлен, итоговое содержимое не меняется.',
+  'next_detail_resolve_draft_agent':
+    'Завершить эту правку может только агент. Можно также отменить её и вернуться к прежнему содержимому.',
   'next_detail_resolve_draft_unknown': 'В этой серии есть черновик, который нужно обработать.',
-  'next_detail_prepare_script_plan': 'Спланируйте сценарий по исходному тексту серии. После планирования нужно проверить содержание.',
+  'next_detail_prepare_script_plan':
+    'Спланируйте сценарий по исходному тексту серии. После планирования нужно проверить содержание.',
   'next_detail_start_blank_script_storyboard': 'Создайте пустой готовый сценарий, затем добавляйте кадры по одному.',
   'next_detail_start_blank_script_unit': 'Создайте пустой готовый сценарий, затем добавляйте видеофрагменты по одному.',
   'next_detail_provide_episode_source': 'После добавления исходного текста серии ИИ сможет спланировать сценарий.',
@@ -183,19 +197,28 @@ export default {
   'next_detail_generate_script': 'Напишите полный сценарий по брифу и товарам.',
   'next_detail_add_script_items_storyboard': 'Готовый сценарий пуст. Сначала добавьте кадры.',
   'next_detail_add_script_items_unit': 'Готовый сценарий пуст. Сначала добавьте видеофрагменты.',
-  'next_detail_author_prompts_one': 'Напишите промпты изображения и видео для {{count}} записи, которая ждёт промпта. Готовые промпты сохраняются.',
-  'next_detail_author_prompts_few': 'Напишите промпты изображения и видео для {{count}} записей, которые ждут промпта. Готовые промпты сохраняются.',
-  'next_detail_author_prompts_many': 'Напишите промпты изображения и видео для {{count}} записей, которые ждут промпта. Готовые промпты сохраняются.',
-  'next_detail_author_prompts_other': 'Напишите промпты изображения и видео для {{count}} записей, которые ждут промпта. Готовые промпты сохраняются.',
+  'next_detail_author_prompts_one':
+    'Напишите промпты изображения и видео для {{count}} записи, которая ждёт промпта. Готовые промпты сохраняются.',
+  'next_detail_author_prompts_few':
+    'Напишите промпты изображения и видео для {{count}} записей, которые ждут промпта. Готовые промпты сохраняются.',
+  'next_detail_author_prompts_many':
+    'Напишите промпты изображения и видео для {{count}} записей, которые ждут промпта. Готовые промпты сохраняются.',
+  'next_detail_author_prompts_other':
+    'Напишите промпты изображения и видео для {{count}} записей, которые ждут промпта. Готовые промпты сохраняются.',
   'next_detail_repair_video_units_one': '{{ids}}: перед генерацией видео нужны правки.',
   'next_detail_repair_video_units_few': '{{ids}}: перед генерацией видео нужны правки.',
   'next_detail_repair_video_units_many': '{{ids}}: перед генерацией видео нужны правки.',
   'next_detail_repair_video_units_other': '{{ids}}: перед генерацией видео нужны правки.',
-  'next_detail_patch_episode_script': 'Некоторые поля готового сценария не соответствуют требованиям. Проблемы перечислены в этой строке.',
-  'next_detail_generate_asset_sheets_one': '{{count}} материал, на который ссылается эта серия, без листа: {{names}}. Производные генерируются после базового материала.',
-  'next_detail_generate_asset_sheets_few': '{{count}} материала, на которые ссылается эта серия, без листа: {{names}}. Производные генерируются после базового материала.',
-  'next_detail_generate_asset_sheets_many': '{{count}} материалов, на которые ссылается эта серия, без листа: {{names}}. Производные генерируются после базового материала.',
-  'next_detail_generate_asset_sheets_other': '{{count}} материала, на которые ссылается эта серия, без листа: {{names}}. Производные генерируются после базового материала.',
+  'next_detail_patch_episode_script':
+    'Некоторые поля готового сценария не соответствуют требованиям. Проблемы перечислены в этой строке.',
+  'next_detail_generate_asset_sheets_one':
+    '{{count}} материал, на который ссылается эта серия, без листа: {{names}}. Производные генерируются после базового материала.',
+  'next_detail_generate_asset_sheets_few':
+    '{{count}} материала, на которые ссылается эта серия, без листа: {{names}}. Производные генерируются после базового материала.',
+  'next_detail_generate_asset_sheets_many':
+    '{{count}} материалов, на которые ссылается эта серия, без листа: {{names}}. Производные генерируются после базового материала.',
+  'next_detail_generate_asset_sheets_other':
+    '{{count}} материала, на которые ссылается эта серия, без листа: {{names}}. Производные генерируются после базового материала.',
   'next_detail_generate_storyboards_one': '{{count}} кадр без раскадровки.',
   'next_detail_generate_storyboards_few': '{{count}} кадра без раскадровки.',
   'next_detail_generate_storyboards_many': '{{count}} кадров без раскадровки.',
@@ -208,7 +231,8 @@ export default {
   'next_detail_generate_videos_few': '{{count}} позиции без видео.',
   'next_detail_generate_videos_many': '{{count}} позиций без видео.',
   'next_detail_generate_videos_other': '{{count}} позиции без видео.',
-  'next_detail_create_edit_timeline': 'Все видео этой серии готовы. Передайте монтаж агенту или создайте таймлайн монтажа по сценарию: каждый видеофрагмент используется целиком, между фрагментами — жёсткие склейки.',
+  'next_detail_create_edit_timeline':
+    'Все видео этой серии готовы. Передайте монтаж агенту или создайте таймлайн монтажа по сценарию: каждый видеофрагмент используется целиком, между фрагментами — жёсткие склейки.',
   'next_detail_wait_for_task': 'Идёт генерация. Статус обновится после завершения.',
   'next_title_wait_for_episode_planning': 'Идёт планирование серий',
   'next_detail_wait_for_episode_planning': 'ИИ планирует серии по разделам. Статус обновится после завершения.',
@@ -217,13 +241,16 @@ export default {
   'agent_prefill_add_script_items_storyboard': 'Добавьте кадры в готовый сценарий {{episodeRef}}',
   'agent_prefill_add_script_items_unit': 'Добавьте видеофрагменты в готовый сценарий {{episodeRef}}',
   'agent_prefill_repair_video_units': 'Исправьте {{ids}} в {{episodeRef}}, чтобы видео можно было сгенерировать',
-  'agent_prefill_patch_episode_script': 'Исправьте в готовом сценарии {{episodeRef}} поля, которые не соответствуют требованиям',
-  'agent_prefill_generate_asset_sheets': 'Сгенерируйте листы материалов для ожидающих материалов, на которые ссылается {{episodeRef}}',
+  'agent_prefill_patch_episode_script':
+    'Исправьте в готовом сценарии {{episodeRef}} поля, которые не соответствуют требованиям',
+  'agent_prefill_generate_asset_sheets':
+    'Сгенерируйте листы материалов для ожидающих материалов, на которые ссылается {{episodeRef}}',
   'agent_prefill_generate_storyboards': 'Сгенерируйте раскадровки для кадров {{episodeRef}}, у которых их нет',
   'agent_prefill_generate_grid': 'Сгенерируйте сетки для кадров {{episodeRef}} без раскадровки',
   'agent_prefill_generate_videos': 'Сгенерируйте видео для позиций {{episodeRef}}, у которых его нет',
   'agent_prefill_create_edit_timeline': 'Смонтируйте {{episodeRef}} в готовое видео',
-  'agent_prefill_admission': 'Устраните проблемы, которые блокируют генерацию видео для {{episodeRef}}, по данным статуса производства',
+  'agent_prefill_admission':
+    'Устраните проблемы, которые блокируют генерацию видео для {{episodeRef}}, по данным статуса производства',
   'refusal_whole_source_missing': 'Сначала загрузите исходный текст',
   'refusal_replan_candidate_pending': 'Сначала примите или отклоните новый план серий',
   'refusal_episode_source_missing': 'Сначала добавьте исходный текст серии',
@@ -244,7 +271,8 @@ export default {
   'stale_title_few': '{{count}} результата старше текущего содержимого',
   'stale_title_many': '{{count}} результатов старше текущего содержимого',
   'stale_title_other': '{{count}} результата старше текущего содержимого',
-  'stale_still_usable': 'Эти файлы сохраняются. Их можно открыть на холсте, и они по-прежнему входят в эту серию. Хранение ничего не стоит; при повторной генерации провайдер спишет деньги снова.',
+  'stale_still_usable':
+    'Эти файлы сохраняются. Их можно открыть на холсте, и они по-прежнему входят в эту серию. Хранение ничего не стоит; при повторной генерации провайдер спишет деньги снова.',
   'stale_view': 'Открыть',
   'stale_view_unit': 'Открыть {{id}} на холсте',
   'stale_regenerate': 'Сгенерировать заново',
@@ -285,16 +313,22 @@ export default {
   'checkpoint_submitted': 'Уже отправлено провайдеру — повторная попытка может быть списана ещё раз.',
 
   // ---- Batch admission ----
-  'admission_blocked_intro': 'Этот пакет не создал ни одной задачи, списаний не было. Исправьте пункты ниже и отправьте заново.',
+  'admission_blocked_intro':
+    'Этот пакет не создал ни одной задачи, списаний не было. Исправьте пункты ниже и отправьте заново.',
   'admission_withheld_title_one': '{{count}} видеофрагмент в порядке, но задержан вместе с пакетом:',
   'admission_withheld_title_few': '{{count}} видеофрагмента в порядке, но задержаны вместе с пакетом:',
   'admission_withheld_title_many': '{{count}} видеофрагментов в порядке, но задержаны вместе с пакетом:',
   'admission_withheld_title_other': '{{count}} видеофрагмента в порядке, но задержаны вместе с пакетом:',
-  'admission_confirm_intro_one': '{{count}} видеофрагмент будет сгенерирован с длительностью ниже. Пока вы не подтвердите, задачи не создаются.',
-  'admission_confirm_intro_few': '{{count}} видеофрагмента будут сгенерированы с длительностями ниже. Пока вы не подтвердите, задачи не создаются.',
-  'admission_confirm_intro_many': '{{count}} видеофрагментов будут сгенерированы с длительностями ниже. Пока вы не подтвердите, задачи не создаются.',
-  'admission_confirm_intro_other': '{{count}} видеофрагмента будут сгенерированы с длительностями ниже. Пока вы не подтвердите, задачи не создаются.',
-  'admission_confirm_note': 'Видео генерируется с длительностью провайдера, указанной выше; после этого обрезка не выполняется.',
+  'admission_confirm_intro_one':
+    '{{count}} видеофрагмент будет сгенерирован с длительностью ниже. Пока вы не подтвердите, задачи не создаются.',
+  'admission_confirm_intro_few':
+    '{{count}} видеофрагмента будут сгенерированы с длительностями ниже. Пока вы не подтвердите, задачи не создаются.',
+  'admission_confirm_intro_many':
+    '{{count}} видеофрагментов будут сгенерированы с длительностями ниже. Пока вы не подтвердите, задачи не создаются.',
+  'admission_confirm_intro_other':
+    '{{count}} видеофрагмента будут сгенерированы с длительностями ниже. Пока вы не подтвердите, задачи не создаются.',
+  'admission_confirm_note':
+    'Видео генерируется с длительностью провайдера, указанной выше; после этого обрезка не выполняется.',
   'admission_confirm_cta': 'Подтвердить эти длительности',
   'admission_skipped_one': '{{count}} видеофрагмент уже имеет видео и пропущен.',
   'admission_skipped_few': '{{count}} видеофрагмента уже имеют видео и пропущены.',
@@ -355,7 +389,8 @@ export default {
   'problem_generation_unit_request_invalid': 'Запрос для этого фрагмента некорректен.',
   'problem_generation_artifact_state_unavailable': 'Не удаётся прочитать существующий файл этого фрагмента.',
   'problem_generation_enqueue_failed': 'Не удалось поставить этот фрагмент в очередь.',
-  'problem_generation_enqueue_interrupted': 'Постановка в очередь прервалась до того, как этот фрагмент получил задачу; уже поставленные задачи продолжают выполняться.',
+  'problem_generation_enqueue_interrupted':
+    'Постановка в очередь прервалась до того, как этот фрагмент получил задачу; уже поставленные задачи продолжают выполняться.',
   'problem_generation_active_task_conflict': 'У этого фрагмента уже выполняется попытка.',
   'problem_generation_batch_admission_withheld': 'Отложено: другой фрагмент пакета не прошёл проверку.',
   'problem_generation_task_failed': 'Последняя попытка не удалась.',
@@ -364,14 +399,21 @@ export default {
   'problem_generation_post_processing_failed': 'Видео сгенерировано, но постобработка не удалась.',
   'problem_reference_asset_unregistered': 'Этот фрагмент ссылается на незарегистрированные материалы.',
   'problem_reference_asset_missing': 'У материала из ссылки ещё нет листа.',
-  'problem_video_capability_unavailable': 'Не удалось прочитать возможности выбранной модели видео. Проверьте настройки провайдера и модели.',
-  'problem_video_supported_durations_missing': 'Выбранная модель видео не объявляет поддерживаемые градации длительности.',
+  'problem_video_capability_unavailable':
+    'Не удалось прочитать возможности выбранной модели видео. Проверьте настройки провайдера и модели.',
+  'problem_video_supported_durations_missing':
+    'Выбранная модель видео не объявляет поддерживаемые градации длительности.',
   'problem_video_supported_durations_invalid': 'Метаданные градаций длительности выбранной модели видео некорректны.',
-  'problem_video_supported_durations_incompatible': 'У выбранной модели видео нет градации длительности, совместимой с текущим разрешением.',
-  'problem_reference_capability_unavailable': 'Не удалось прочитать возможности выбранной модели видео. Проверьте настройки провайдера и модели.',
-  'problem_reference_supported_durations_missing': 'Выбранная модель видео не объявляет поддерживаемые градации длительности.',
-  'problem_reference_supported_durations_invalid': 'Метаданные градаций длительности выбранной модели видео некорректны.',
-  'problem_reference_supported_durations_incompatible': 'У выбранной модели видео нет градации длительности, совместимой с текущим разрешением и референсами.',
+  'problem_video_supported_durations_incompatible':
+    'У выбранной модели видео нет градации длительности, совместимой с текущим разрешением.',
+  'problem_reference_capability_unavailable':
+    'Не удалось прочитать возможности выбранной модели видео. Проверьте настройки провайдера и модели.',
+  'problem_reference_supported_durations_missing':
+    'Выбранная модель видео не объявляет поддерживаемые градации длительности.',
+  'problem_reference_supported_durations_invalid':
+    'Метаданные градаций длительности выбранной модели видео некорректны.',
+  'problem_reference_supported_durations_incompatible':
+    'У выбранной модели видео нет градации длительности, совместимой с текущим разрешением и референсами.',
   'problem_mixed_speech': 'В этом фрагменте смешаны реплики персонажей и закадровый текст; их нужно разделить.',
   'problem_needs_replan': 'Этот фрагмент длиннее максимальной градации выбранной модели; перепланируйте его.',
   'problem_parse_failed': 'Реплики этого фрагмента не читаются; проверьте, как они записаны.',
@@ -379,14 +421,17 @@ export default {
   'problem_project_migration_failed': 'Обновление данных проекта не завершилось, поэтому генерация пока недоступна.',
   'problem_video_audio_switch_not_supported': 'Выбранная модель видео всегда создаёт звук, отключить его нельзя.',
   'problem_reference_capability_changed': 'Референсы не соответствуют заявленному способу генерации.',
-  'problem_reference_duration_confirmation_required': 'Этот фрагмент будет сгенерирован с другой градацией длительности, нужно подтверждение.',
+  'problem_reference_duration_confirmation_required':
+    'Этот фрагмент будет сгенерирован с другой градацией длительности, нужно подтверждение.',
   'problem_video_capability_missing_i2v': 'Выбранная модель видео не поддерживает генерацию видео из изображения.',
   'problem_video_capability_missing_r2v': 'Выбранная модель видео не поддерживает генерацию видео по референсу.',
-  'problem_video_capability_missing_t2v': 'Выбранная модель видео не поддерживает генерацию видео из текста; нужно изображение первого кадра.',
+  'problem_video_capability_missing_t2v':
+    'Выбранная модель видео не поддерживает генерацию видео из текста; нужно изображение первого кадра.',
   'problem_video_capability_reference_unavailable': 'Модель видео, выбранная в настройках, больше недоступна.',
   'problem_model_not_in_provider_catalog': 'Модели, выбранной в настройках, больше нет в списке моделей провайдера.',
   'problem_model_discontinued': 'Модель, выбранная в настройках, снята с поддержки.',
-  'problem_generation_dependency_failed': 'Фрагмент, от которого зависит этот, в том же пакете не сгенерировался, поэтому этот фрагмент не отправлен.',
+  'problem_generation_dependency_failed':
+    'Фрагмент, от которого зависит этот, в том же пакете не сгенерировался, поэтому этот фрагмент не отправлен.',
   'problem_fallback_retry': 'Последняя попытка не удалась.',
   'problem_fallback_fix_input': 'Содержимое этого фрагмента нужно изменить, прежде чем генерировать.',
   'problem_fallback_generate_dependency': 'Отсутствует референс, который нужно сгенерировать заранее.',

@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 
@@ -36,7 +36,7 @@ def sheet_projects(tmp_path: Path) -> ProjectManager:
 @pytest.fixture
 async def sheet_client(
     session_factory, sheet_projects: ProjectManager, monkeypatch
-) -> AsyncIterator[httpx.AsyncClient]:
+) -> AsyncIterator[httpx2.AsyncClient]:
     queue = GenerationQueue(session_factory=session_factory, project_manager=sheet_projects)
     await queue.acquire_or_renew_worker_lease(name="default", owner_id="worker-a", ttl_seconds=60)
 
@@ -82,7 +82,7 @@ async def sheet_client(
     register_error_handlers(app)
     override_auth(app)
     app.include_router(asset_sheets.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as http:
+    async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as http:
         yield http
 
 
@@ -100,7 +100,7 @@ def _seed_pending_cast(sheet_projects: ProjectManager) -> None:
 
 
 async def test_status_reports_every_sheet_with_its_description_gap(
-    sheet_client: httpx.AsyncClient, sheet_projects
+    sheet_client: httpx2.AsyncClient, sheet_projects
 ) -> None:
     _seed_pending_cast(sheet_projects)
 
@@ -116,7 +116,7 @@ async def test_status_reports_every_sheet_with_its_description_gap(
 
 
 async def test_preview_lists_targets_skips_and_cost_without_queueing(
-    sheet_client: httpx.AsyncClient, sheet_projects
+    sheet_client: httpx2.AsyncClient, sheet_projects
 ) -> None:
     _seed_pending_cast(sheet_projects)
 
@@ -156,7 +156,7 @@ async def test_preview_lists_targets_skips_and_cost_without_queueing(
 
 
 async def test_submit_returns_member_tasks_and_a_second_run_reports_them_generating(
-    sheet_client: httpx.AsyncClient, sheet_projects
+    sheet_client: httpx2.AsyncClient, sheet_projects
 ) -> None:
     _seed_pending_cast(sheet_projects)
     url = f"/api/v1/projects/{PROJECT}/asset-sheets/batch"
@@ -182,26 +182,26 @@ async def test_submit_returns_member_tasks_and_a_second_run_reports_them_generat
 
 
 @pytest.mark.parametrize("body", [{}, {"asset_type": "character", "episode_id": 1}])
-async def test_a_batch_needs_exactly_one_scope(sheet_client: httpx.AsyncClient, body: dict) -> None:
+async def test_a_batch_needs_exactly_one_scope(sheet_client: httpx2.AsyncClient, body: dict) -> None:
     response = await sheet_client.post(f"/api/v1/projects/{PROJECT}/asset-sheets/batch/preview", json=body)
 
     assert response.status_code == 422
 
 
-async def test_an_unknown_episode_is_not_found(sheet_client: httpx.AsyncClient) -> None:
+async def test_an_unknown_episode_is_not_found(sheet_client: httpx2.AsyncClient) -> None:
     response = await sheet_client.post(f"/api/v1/projects/{PROJECT}/asset-sheets/batch/preview", json={"episode_id": 7})
 
     assert response.status_code == 404
 
 
-async def test_regeneration_impact_of_an_unknown_asset_is_not_found(sheet_client: httpx.AsyncClient) -> None:
+async def test_regeneration_impact_of_an_unknown_asset_is_not_found(sheet_client: httpx2.AsyncClient) -> None:
     response = await sheet_client.get(f"/api/v1/projects/{PROJECT}/asset-sheets/scene/不存在/regeneration-impact")
 
     assert response.status_code == 404
 
 
 async def test_status_reports_every_sheet_blocked_when_the_manifest_is_unreadable(
-    sheet_client: httpx.AsyncClient, sheet_projects
+    sheet_client: httpx2.AsyncClient, sheet_projects
 ) -> None:
     _seed_pending_cast(sheet_projects)
     (sheet_projects.get_project_path(PROJECT) / MANIFEST_FILENAME).write_text("{", encoding="utf-8")

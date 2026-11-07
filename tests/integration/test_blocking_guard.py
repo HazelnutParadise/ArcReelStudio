@@ -9,7 +9,8 @@
 - 同步用例经 ``TestClient`` 进入的应用代码同样受检。
 - lib/server 的 async 函数经 ``tests/`` 下的替身触发的阻塞记到该 async 函数名下；测试直接调用同步
   lib 代码、测试内联 ``to_thread`` 的阻塞不计。
-- asyncpg 建连时解析连接参数的文件探测、coverage 等待自身数据锁，都不记到调用方头上。
+- asyncpg 建连时解析连接参数的文件探测、httpx2 新建用户端时探测系统证书路径、coverage 等待自身数据锁，
+  都不记到调用方头上。
 - 报错的栈预览除 lib/server/tests 帧外，按真实调用顺序保留拦截点到第一个仓库帧之间最内层的几条
   非仓库帧（标准库、``site-packages`` 下的第三方代码），路径取相对形式；超出上限的注明省略条数。
 - 在事件循环线程上阻塞地获取项目文件锁、版本管理锁记为违规，非阻塞的尝试加锁不算。
@@ -43,6 +44,7 @@ from pathlib import Path
 
 import asyncpg
 import blocking_vendor
+import httpx2
 import portalocker
 
 from lib.artifacts.formal_write import project_metadata_lock
@@ -116,6 +118,11 @@ async def read_versions(project_dir: Path) -> dict:
 async def connect_unreachable_postgres() -> None:
     with contextlib.suppress(OSError):
         await asyncpg.connect("postgresql://arcreel@127.0.0.1:1/arcreel", timeout=5)
+
+
+async def open_http_client() -> None:
+    async with httpx2.AsyncClient():
+        pass
 
 
 async def measured_noop() -> None:
@@ -254,6 +261,14 @@ async def test_postgres_connect():
     await samples.connect_unreachable_postgres()
 
 
+async def test_http_client_ssl_setup(monkeypatch):
+    # httpcore2 只在 Linux 分支逐个探测系统证书路径；强制走这条分支，macOS 上也能复现
+    monkeypatch.setattr("platform.system", lambda: "Linux")
+    monkeypatch.delenv("SSL_CERT_FILE", raising=False)
+    monkeypatch.delenv("SSL_CERT_DIR", raising=False)
+    await samples.open_http_client()
+
+
 def _held_lock():
     # 一把已被持有、不再释放的锁：样本带超时去拿，护栏一定看到它被占用，结果不取决于线程交错。
     lock = threading.Lock()
@@ -334,8 +349,21 @@ def _make_session_dir(root: Path, exemptions: dict[str, str]) -> Path:
 def _run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(_REPO_ROOT), env.get("PYTHONPATH")]))
+    # 与仓库 pytest 配置一致禁用 respx 插件：它先 import httpx，lib 包初始化时的 httpx2.alias_httpx() 就会失败
     return subprocess.run(
-        [sys.executable, "-m", "pytest", "-p", "tests.blocking_guard", "-p", "no:cacheprovider", "-rA", *args],
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-p",
+            "tests.blocking_guard",
+            "-p",
+            "no:cacheprovider",
+            "-p",
+            "no:respx",
+            "-rA",
+            *args,
+        ],
         cwd=root,
         capture_output=True,
         text=True,
@@ -405,6 +433,12 @@ def test_postgres_driver_connection_setup_is_not_charged_to_the_caller(probe_run
     # asyncpg 建连时在事件循环上探测 ~/.pgpass 与 ~/.postgresql 下的证书文件，每条新连接一次，
     # 归属落在恰好让连接池新建连接的那个调用方上，随运行顺序变化。
     assert _outcomes(probe_run.stdout)["test_postgres_connect"] == "PASSED", probe_run.stdout
+
+
+def test_http_client_certificate_path_probe_is_not_charged_to_the_caller(probe_run):
+    # httpx2 每建一个用户端，httpcore2 就在事件循环上探测一次系统证书文件与目录（Linux 分支），
+    # 归属落在恰好新建用户端的调用方上；读证书内容的 load_verify_locations 不在拦截点内。
+    assert _outcomes(probe_run.stdout)["test_http_client_ssl_setup"] == "PASSED", probe_run.stdout
 
 
 def test_coverage_waiting_for_its_own_data_lock_is_not_charged_to_the_measured_code(probe_run):

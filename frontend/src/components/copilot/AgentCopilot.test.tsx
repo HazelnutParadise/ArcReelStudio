@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { useAssistantSession } from "@/hooks/useAssistantSession";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
@@ -138,7 +138,11 @@ describe("AgentCopilot", () => {
   describe("questions", () => {
     it("takes the composer's place, answers a single and a multi choice by number keys, then submits", async () => {
       const user = userEvent.setup();
-      useAssistantStore.setState({ currentSessionId: "session-1", sessionStatus: "running", pendingQuestion: makePendingQuestion() });
+      useAssistantStore.setState({
+        currentSessionId: "session-1",
+        sessionStatus: "running",
+        pendingQuestion: makePendingQuestion(),
+      });
       render(<AgentCopilot />);
 
       expect(screen.queryByRole("combobox", { name: "Agent 输入" })).not.toBeInTheDocument();
@@ -244,7 +248,9 @@ describe("AgentCopilot", () => {
 
     it.each(["queued", "unsent"] as const)("returns from history when sending a %s tray message", async (state) => {
       const user = userEvent.setup();
-      useAssistantStore.setState({ queuedMessages: [{ id: "q-1", content: [{ type: "text", text: "改结局" }], state }] });
+      useAssistantStore.setState({
+        queuedMessages: [{ id: "q-1", content: [{ type: "text", text: "改结局" }], state }],
+      });
       render(<AgentCopilot />);
       const toggle = screen.getByRole("button", { name: "会话历史" });
       await user.click(toggle);

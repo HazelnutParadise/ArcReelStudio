@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Generator
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -292,7 +292,7 @@ class TestBrowseAssets:
     def test_network_failure(self, asset_api: TestClient):
         account = _create_account(asset_api)
         with capture_http() as router:
-            router.post(VOLC_HOST).mock(side_effect=httpx.ConnectError("boom"))
+            router.post(VOLC_HOST).mock(side_effect=httpx2.ConnectError("boom"))
             resp = asset_api.get(
                 f"/api/v1/asset-library/accounts/{account['id']}/assets", headers={"Accept-Language": "zh"}
             )

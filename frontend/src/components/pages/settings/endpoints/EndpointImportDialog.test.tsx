@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
 import { newEndpointDefinition } from "./endpoint-definition-draft";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import type { ComfyuiEndpointDefinition, EndpointValidateResponse } from "@/types";
 import { EndpointImportDialog } from "./EndpointImportDialog";
 
@@ -59,12 +59,15 @@ describe("EndpointImportDialog", () => {
     const onOverwrite = vi.fn();
     const onCreateCopy = vi.fn();
     const onCancel = vi.fn();
-    renderDialog(validation({ duplicates: [{ id: 7, key: "ce-7", display_name: "Demo", version: "1.0.0", relation: "same" }] }), {
-      definition: newEndpointDefinition("Demo"),
-      onOverwrite,
-      onCreateCopy,
-      onCancel,
-    });
+    renderDialog(
+      validation({ duplicates: [{ id: 7, key: "ce-7", display_name: "Demo", version: "1.0.0", relation: "same" }] }),
+      {
+        definition: newEndpointDefinition("Demo"),
+        onOverwrite,
+        onCreateCopy,
+        onCancel,
+      },
+    );
     await userEvent.click(screen.getByRole("button", { name: "覆盖" }));
     expect(onOverwrite).toHaveBeenCalledWith(7);
     await userEvent.click(screen.getByRole("button", { name: "导入为副本" }));
@@ -101,7 +104,9 @@ describe("EndpointImportDialog", () => {
   it("tells the user which ArcReel version the definition needs when the app is older", () => {
     renderDialog(validation({ min_app_version: { required: "0.31.0", current: "0.30.0", satisfied: false } }));
 
-    expect(screen.getByText("该定义需要 ArcReel ≥ 0.31.0，当前为 0.30.0，导入后可能无法正常使用。")).toBeInTheDocument();
+    expect(
+      screen.getByText("该定义需要 ArcReel ≥ 0.31.0，当前为 0.30.0，导入后可能无法正常使用。"),
+    ).toBeInTheDocument();
   });
 
   it("stays quiet when the app meets the requirement", () => {
@@ -120,7 +125,9 @@ describe("EndpointImportDialog", () => {
     renderDialog(
       validation({
         import_shape: "comfyui_ui_workflow",
-        errors: [{ path: "$", code: "comfyui_ui_format_workflow", message: "这是 ComfyUI 的 UI 格式 workflow，提交不了" }],
+        errors: [
+          { path: "$", code: "comfyui_ui_format_workflow", message: "这是 ComfyUI 的 UI 格式 workflow，提交不了" },
+        ],
       }),
     );
 
@@ -263,7 +270,9 @@ describe("EndpointImportDialog", () => {
     const onBindNodes = vi.fn();
     const onCreateCopy = vi.fn();
     renderDialog(
-      validation({ duplicates: [{ id: 7, key: "ce-7", display_name: "ComfyUI workflow", version: "1.0.0", relation: "same" }] }),
+      validation({
+        duplicates: [{ id: 7, key: "ce-7", display_name: "ComfyUI workflow", version: "1.0.0", relation: "same" }],
+      }),
       { definition: COMFYUI_DEFINITION, onBindNodes, onCreateCopy },
     );
 

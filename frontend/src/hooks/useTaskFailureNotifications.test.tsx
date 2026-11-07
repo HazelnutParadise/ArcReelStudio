@@ -1,5 +1,5 @@
 import { act, render, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { useTaskFailureNotifications } from "@/hooks/useTaskFailureNotifications";
 import { useTasksStore } from "@/stores/tasks-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -239,7 +239,9 @@ describe("useTaskFailureNotifications", () => {
     // 下一轮 poll：一个新任务在两 poll 间快速失败，首次被观测即 failed
     act(() => {
       useTasksStore.setState({
-        tasks: [task({ task_id: "fast-after-reconnect", project_name: "other", status: "failed", resource_id: "E1S04" })],
+        tasks: [
+          task({ task_id: "fast-after-reconnect", project_name: "other", status: "failed", resource_id: "E1S04" }),
+        ],
       });
     });
     await waitFor(() => expect(useAppStore.getState().workspaceNotifications).toHaveLength(1));

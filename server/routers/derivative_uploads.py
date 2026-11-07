@@ -79,7 +79,7 @@ async def upload_derivative_sheet(
 
     except UploadValidationError as e:
         raise HTTPException(status_code=e.status_code, detail=_t(e.key, **e.params)) from e
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as e:
         # 不回传 str(e)：未预期异常的消息可能含服务器路径等内部细节，堆栈进日志即可

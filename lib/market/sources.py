@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import httpx
+import httpx2
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -96,7 +96,7 @@ class MarketSourceService:
         self,
         session_factory: async_sessionmaker[AsyncSession],
         *,
-        http_client: Callable[[], httpx.AsyncClient] = get_http_client,
+        http_client: Callable[[], httpx2.AsyncClient] = get_http_client,
         clock: Callable[[], datetime] = utc_now,
     ) -> None:
         self._session_factory = session_factory

@@ -39,7 +39,12 @@ interface CreateEpisodeDialogProps {
  * 新建一集：选位置（插在任意一集之后，默认放在末尾），标题、钩子和原文都可选。
  * 标题留空时界面按播出位置显示「第 N 集」，插入或调序后随之变化。挂载即打开，关闭由调用方卸载。
  */
-export function CreateEpisodeDialog({ projectName, initialAfter = null, onClose, onCreated }: CreateEpisodeDialogProps) {
+export function CreateEpisodeDialog({
+  projectName,
+  initialAfter = null,
+  onClose,
+  onCreated,
+}: CreateEpisodeDialogProps) {
   const [busy, setBusy] = useState(false);
   return (
     <Dialog

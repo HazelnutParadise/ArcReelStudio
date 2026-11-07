@@ -32,7 +32,9 @@ function failureOf(task: TaskItem): PlanningFailure {
  * 逐窗串联时，出错那一窗之后排着的窗口随之以「依赖任务失败」收尾，这时沿依赖找回真正出错的那一窗。
  */
 export function lastPlanningFailure(tasks: TaskItem[], projectName: string): PlanningFailure | null {
-  const planning = tasks.filter((task) => task.project_name === projectName && task.task_type === EPISODE_PLAN_TASK_TYPE);
+  const planning = tasks.filter(
+    (task) => task.project_name === projectName && task.task_type === EPISODE_PLAN_TASK_TYPE,
+  );
   const latest = planning.reduce<TaskItem | null>(
     (acc, task) => (acc === null || task.queued_at > acc.queued_at ? task : acc),
     null,

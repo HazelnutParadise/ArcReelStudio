@@ -216,8 +216,9 @@ class TestAssembleBuiltinEndToEnd:
             await assemble_backend(provider_id="ark", media_type="audio", model_id="x", resolver=resolver)
 
     async def test_gemini_aistudio_image_end_to_end(self, db_factory):
-        # gemini 特例族：provider_id 直接决定 backend_type，凭证 overlay + 共享 rate_limiter 经装载进闭包
-        await _seed_provider_config(db_factory, "gemini-aistudio", api_key="g-secret", base_url="https://g.relay.test")
+        # gemini 特例族：provider_id 直接决定 backend_type，凭证 overlay + 共享 rate_limiter 经装载进闭包。
+        # AI Studio 固定直连官方端点，不收请求地址
+        await _seed_provider_config(db_factory, "gemini-aistudio", api_key="g-secret")
         sentinel = object()
         resolver = ConfigResolver(db_factory)
         with captured_backend_construction() as built:
@@ -235,7 +236,7 @@ class TestAssembleBuiltinEndToEnd:
                 "kwargs": {
                     "backend_type": "aistudio",
                     "api_key": "g-secret",
-                    "base_url": "https://g.relay.test",
+                    "base_url": None,
                     "rate_limiter": sentinel,
                     "image_model": "gemini-3.1-flash-image",
                 },

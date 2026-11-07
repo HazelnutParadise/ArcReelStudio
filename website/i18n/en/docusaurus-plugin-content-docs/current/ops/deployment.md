@@ -20,7 +20,7 @@ This document covers ArcReel's default deployment, PostgreSQL production deploym
 
 Regardless of the method you choose, project images, videos, and other generated assets must be stored persistently.
 
-ArcReel is currently designed for a single trusted operator and does not support sharing an instance among mutually untrusted users. A PostgreSQL production deployment does not add tenant isolation, role-based permissions, or per-user project authorization.
+An ArcReel instance is one shared workspace: several accounts can sign in, every member sees all projects and shares the provider credentials and settings, and administrators can also manage members. ArcReel has no per-project permissions and does not isolate members' data from each other, so invite only collaborators you trust. A PostgreSQL production deployment does not add tenant isolation either.
 
 ## 1. Default Deployment: SQLite {#sqlite-deployment}
 
@@ -41,6 +41,8 @@ AUTH_PASSWORD=set a strong password
 AUTH_TOKEN_SECRET=set a long-lived random secret
 # LOG_LEVEL=INFO
 ```
+
+`AUTH_USERNAME` and `AUTH_PASSWORD` only create the default administrator on first startup, while no account exists yet; changing them later does not affect existing accounts. If `AUTH_PASSWORD` is empty, ArcReel generates an initial password and saves it to `runtime/initial-admin-password` in the data root (`projects/runtime/initial-admin-password` under the host data location for Docker deployments, which is the Compose directory by default; see [Persistent Directories](#sqlite-volumes)). The file is deleted once the default administrator changes the password.
 
 Generate a random secret:
 
@@ -68,9 +70,18 @@ The default Compose configuration mounts:
 
 | Host Path | Container Path | Contents |
 |---|---|---|
-| `deploy/.env` | `/app/.env` | Authentication and runtime configuration |
 | `deploy/projects/` | `/app/projects` | Data root: projects, generated assets, the default SQLite database, logs, Vertex AI credentials, and all other runtime data |
 | `deploy/claude_data/` | `/root/.claude` | Agent runtime data |
+
+The table shows the default locations. After you set `ARCREEL_HOST_DATA_DIR` in `deploy/.env`, `projects/` and `claude_data/` are placed under that directory instead. For example, `ARCREEL_HOST_DATA_DIR=/srv/arcreel` maps to `/srv/arcreel/projects/` and `/srv/arcreel/claude_data/`. A relative path is resolved against `deploy/` and must start with `./` or `../`, for example `./data`. A bare `data` is read by Compose as a named volume, and the container does not start. The paths inside the container stay the same, so you do not need to change the in-container data root `ARCREEL_DATA_DIR`.
+
+To move an existing deployment to a new location:
+
+1. Run `docker compose down` in `deploy/`;
+2. Move `projects/` and `claude_data/` to the new directory as a whole, preserving file ownership and permissions (for example with `mv` or `rsync -a`);
+3. Set `ARCREEL_HOST_DATA_DIR` in `deploy/.env`, then run `docker compose up -d`.
+
+`deploy/.env` only supplies Compose interpolation values and is not mounted into the container. The container receives exactly the environment variables listed under `environment` in `docker-compose.yml`.
 
 `deploy/projects/` is ArcReel's data root (`ARCREEL_DATA_DIR`, `/app/projects` inside the container). Projects live in its `projects/` subdirectory, and all other runtime data sits alongside it:
 
@@ -153,7 +164,9 @@ curl http://localhost:1241/health
 | `deploy/production/pgdata/` | PostgreSQL data directory |
 | `deploy/production/projects/` | Data root: projects, media assets, logs, Vertex AI credentials, and so on; same layout as the [default deployment](#sqlite-volumes), without the database |
 | `deploy/production/claude_data/` | Agent runtime data |
-| `deploy/production/.env` | Authentication and database configuration |
+| `deploy/production/.env` | Authentication and database configuration; only supplies Compose interpolation values and is not mounted into the container |
+
+The locations of `pgdata/`, `projects/`, and `claude_data/` are likewise set by `ARCREEL_HOST_DATA_DIR` in `deploy/production/.env`; when it is not set, they are under `deploy/production/`. Move them with the same steps as the [default deployment](#sqlite-volumes), and move all three directories. `pgdata/` is owned by the user inside the PostgreSQL container, so preserve its ownership and permissions when moving it; otherwise PostgreSQL cannot start.
 
 `pgdata/` stores only the PostgreSQL cluster, while `projects/` is the data root and stores project metadata, media assets, and the remaining runtime data. Both directories must be persisted and backed up together. The production deployment uses PostgreSQL through `DATABASE_URL` and does not use `deploy/production/projects/arcreel.db`. Do not copy SQLite files into `pgdata/`, and do not treat these two directories as interchangeable database backups.
 
@@ -204,22 +217,25 @@ The default deployment examples currently include these core variables:
 
 | Variable | Default | Recommendation |
 |---|---|---|
-| `AUTH_USERNAME` | `admin` | Change the administrator username if needed |
-| `AUTH_PASSWORD` | Empty | Explicitly set a strong password for production deployments |
+| `ARCREEL_IMAGE_TAG` | `main` for the default deployment, `latest` for the production deployment | Image tag, read only by Compose; pin a version in production, see [Pin a Version](#pin-version) |
+| `ARCREEL_HOST_DATA_DIR` | The Compose directory | Data location on the host, read only by Compose; see [Persistent Directories](#sqlite-volumes) |
+| `AUTH_USERNAME` | `admin` | Username of the default administrator, used only on first startup while no account exists |
+| `AUTH_PASSWORD` | Empty | Password of the default administrator, used only on first startup; when empty an initial password is generated, see [Accounts and Members](#accounts) |
 | `AUTH_TOKEN_SECRET` | Empty | Set a fixed, long-lived random value; if left empty, ArcReel generates one, saves it to `runtime/auth-token-secret` under the data root, and reuses it after restarts |
 | `AUTH_ENABLED` | `true` | Never disable for remote deployments; `false` leaves every management endpoint unauthenticated |
 | `LOG_LEVEL` | `INFO` | Temporarily change to `DEBUG` while troubleshooting, then restore it |
 | `POSTGRES_PASSWORD` | None | Required and must be set only for production deployments |
 | `TZ` | `Asia/Taipei` | Can be overridden in the Compose environment |
 | `DATABASE_URL` | Default SQLite path | Production Compose sets the PostgreSQL URL automatically; to use an external database, set it in the default deployment's `.env` (see [Connect to an Existing PostgreSQL](#external-postgresql)) |
-| `ARCREEL_DATA_DIR` | `projects` | Data root; projects, the default SQLite database, logs, and Vertex credentials all live under it |
+| `ARCREEL_DATA_DIR` | `projects` | Data root; projects, the default SQLite database, logs, and Vertex credentials all live under it. Docker deployments fix it to `/app/projects` inside the container; use `ARCREEL_HOST_DATA_DIR` to change the location on the host |
 | `CORS_ORIGINS` | Wildcard | When narrowed to an allowlist, browser MCP client origins must be listed too |
 | `ARCREEL_OFFICIAL_SERVICE_URL` | Built-in official service address | The official service behind market install counts, ratings, and submissions; set it to empty to turn it off entirely, leaving the market to read market sources only |
 
 Notes:
 
 - Changing `AUTH_TOKEN_SECRET` invalidates existing login tokens. A value you set takes precedence, and the secret file generated under the data root is no longer used. When no value is explicitly set, deleting the secret file and restarting generates a new secret and invalidates existing logins.
-- After editing `.env`, run `docker compose up -d` in the Compose directory to recreate the container. `docker compose restart` and automatic container restarts keep the environment variables captured when the container was created and do not reload `.env`. If startup finds that a process environment variable differs from the mounted `.env`, the log shows one WARNING that lists only the variable names.
+- After editing `.env`, run `docker compose up -d` in the Compose directory to recreate the container. `docker compose restart` and automatic container restarts keep the environment variables captured when the container was created and do not reload `.env`.
+- Compose passes only the variables listed under `environment` in `docker-compose.yml` into the container. To pass a variable not listed in the table, add a line `NAME: ${NAME}` under `environment` and set its value in `.env`. Earlier Compose files passed the whole `.env` into the container through `env_file`; after the upgrade, variables not listed in the table (for example `HTTPS_PROXY`) are no longer passed in, so add back the ones you need this way.
 - `AUTH_ENABLED=false` is only for a local machine protected by its own network boundary. Compose publishes port `1241` on all host interfaces by default, so never disable authentication for remote deployments. While authentication is off, startup logs a WARNING.
 - `.env` may contain secrets. Do not commit it to version control.
 - Vertex credential files should be readable only by the user who runs ArcReel.
@@ -227,6 +243,58 @@ Notes:
 - Third-party model API keys are normally managed on the ArcReel Settings page. Do not include them in public documentation.
 
 The remote MCP endpoint is `/mcp` and always requires an API Key with an `arc-` prefix; it never permits anonymous access, even when `AUTH_ENABLED=false`. Remote access needs no extra `MCP_*` configuration: paste the endpoint URL shown under "External agent access" in Settings, together with an API Key created under "Access tokens", into your client, and connect through an HTTPS reverse proxy, VPN, or secure tunnel that preserves long-lived SSE connections.
+
+### 3.1 Accounts and Members {#accounts}
+
+On first startup, ArcReel creates the default administrator from `AUTH_USERNAME` / `AUTH_PASSWORD`. After that, manage accounts under Settings › Accounts & members:
+
+- Every member can change their own password or sign out there. Changing the password signs out the member's other devices.
+- Administrators can add members, make a member an administrator, disable accounts, or reset a member's password. Disabling, changing the role, and resetting the password all end that member's existing sessions.
+- At least one active administrator must remain; administrators cannot disable themselves or remove their own administrator role.
+
+Usernames may contain only lowercase letters, digits, and `.` `_` `@` `-`, and sign-in is case-insensitive. `embedded-agent` is reserved for the embedded Agent and cannot be used as a username. Passwords must be at least 8 characters.
+
+If you forget the password, run this in the Compose directory:
+
+```bash
+docker compose exec arcreel uv run python -m scripts.manage_users reset-password admin
+```
+
+The command asks you to enter the new password twice and does not show what you type; when you cannot answer prompts, add `--password <new password>` instead. The `list` subcommand lists all accounts. For source deployments, run `uv run python -m scripts.manage_users ...` from the repository root.
+
+When you upgrade from an earlier version that had only one `.env` account, the first startup turns the current `AUTH_USERNAME` / `AUTH_PASSWORD` into the default administrator, so the existing password keeps working. Sessions issued before the upgrade all end, and everyone needs to sign in again once. If the old `AUTH_USERNAME` does not meet the username rules above (for example, it contains spaces or Chinese characters), the default administrator is renamed to `admin` and the startup log records the change; sign in as `admin` from then on.
+
+Several members can open the same project at the same time:
+
+- The right side of the top bar shows the other members in the project; open it to see which episode each of them is viewing.
+- Changes other members save appear on your page within a few seconds, with a note saying who made them; your page does not move away from what you are viewing.
+- If another member changes a different field while you have unsaved edits in the shot details, the page takes their content directly, and saving does not change it back. If both of you changed the same field, your save is refused with a notice; review the latest content first, then either discard your edits or save again to overwrite theirs.
+- The conflict check currently covers only the fields in the shot details. In other editors, such as character, scene and prop descriptions or the project overview, the later save still wins when two members save at the same time.
+
+The list of online members lives only in the service process's memory; after a restart, each page restores it with its next check-in.
+
+### 3.2 GPU Encoding {#gpu-encoding}
+
+The image ships an ffmpeg build with NVIDIA NVENC support. When the container can use an NVIDIA GPU, final cuts encode their video on the GPU; without a GPU they fall back to CPU encoding automatically, with no extra configuration.
+
+To enable it on an NVIDIA GPU host:
+
+1. Install the NVIDIA driver and the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on the host.
+2. Add the following to `.env` in the Compose directory:
+
+   ```dotenv
+   COMPOSE_FILE=docker-compose.yml:docker-compose.gpu.yml
+   ```
+
+   On Windows hosts Compose separates files with a semicolon, so write `COMPOSE_FILE=docker-compose.yml;docker-compose.gpu.yml` instead.
+
+3. Run `docker compose up -d` to recreate the container.
+
+GPU encoding is active once the startup log reports that it is available. You can turn it off under Settings › General; final cuts then always encode on the CPU.
+
+Do not load `docker-compose.gpu.yml` on hosts without an NVIDIA GPU: Docker refuses to start the container when it cannot provide a GPU.
+
+The GPU only encodes final-cut video; mixing, muxing, and other media processing still run on the CPU. If GPU encoding fails midway, that final cut is re-rendered on the CPU automatically. Only NVIDIA GPUs are supported.
 
 The server does not validate the request `Host` header; the endpoint boundary rests on the API Key enforced on every request. Host ownership belongs to the deployment: restrict `server_name` (Nginx) or the equivalent rule on your reverse proxy so only requests for the expected domain reach ArcReel.
 
@@ -349,7 +417,7 @@ Two more items are not governed by the completion marker and are checked on ever
 
 **Back up the entire data root before upgrading**, together with the old log and credential directories outside it (the `./logs` and `./vertex_keys` volumes in Docker; otherwise `logs/` under the code directory and `vertex_keys/` one level above the data root). Back up an external database separately. The migration moves files from those two directories into the data root. Older versions treat `projects/` as a project and do not recognize the new database file name; downgrading requires restoring that backup.
 
-The new Compose files mount a single data volume, `./projects`, plus `.env` and `claude_data/`; they no longer mount `./logs` or `./vertex_keys`. Files in the old volumes are merged into the data root only while those volumes are still mounted at startup, and Vertex credentials are moved only once, during the layout migration; after the completion marker is written they are no longer processed. A Docker deployment therefore upgrades from an older version in two phases (the examples use `deploy/`; for the production deployment use `deploy/production/`):
+The new Compose files mount a single data volume, `./projects`, plus `claude_data/`; they no longer mount `./logs` or `./vertex_keys`. Files in the old volumes are merged into the data root only while those volumes are still mounted at startup, and Vertex credentials are moved only once, during the layout migration; after the completion marker is written they are no longer processed. A Docker deployment therefore upgrades from an older version in two phases (the examples use `deploy/`; for the production deployment use `deploy/production/`):
 
 1. **Upgrade with your existing Compose file (no configuration changes).** Leave the Compose file as it is and run `docker compose pull` and `docker compose up -d` as described in [Upgrade the Default Deployment](#upgrade-sqlite-deployment) or [Upgrade the Production Deployment](#upgrade-postgresql-deployment). Both old volumes are still mounted, so the first startup merges their files into the data root. Confirm that the startup log contains the data root layout migration completion message (「数据根布局迁移完成」), and that the original log and credential files now appear under `deploy/projects/logs/` and `deploy/projects/vertex_keys/` (credential files may have been renamed to `vertex_cred_<credential-id>.json`).
 2. **Then switch to the single-volume Compose file.** Remove the `./logs` and `./vertex_keys` volume lines from the Compose file (or switch to the new Compose file), then run `docker compose up -d` again. You can then delete `deploy/logs/` and `deploy/vertex_keys/`; if files remain in them (for example because a file with the same name already existed in the data root, or because the old volume was mounted read-only), first confirm that you no longer need them.
@@ -452,15 +520,23 @@ If a project migration fails, preserve the files and inspect the startup logs. D
 
 ### 5.6 Pin a Version {#pin-version}
 
-The default Compose files use the `main` tag, which follows the latest build of the main branch and suits a quick evaluation. Pinning a release tag is a better choice for production.
+The image tag used by Compose is set by `ARCREEL_IMAGE_TAG` in `.env`:
 
-Change the image in Compose to:
+| Tag | Content | Published |
+|---|---|---|
+| `main` | Latest build of the main branch; default for the default deployment | After every merge into main |
+| `X.Y.Z`, `X.Y`, `latest` | Releases; `latest` is the default for the production deployment and points to the latest stable release | After a `vX.Y.Z` release |
 
-```yaml
-image: ghcr.io/hazelnutparadise/arcreelstudio:X.Y.Z
+A pre-release (such as `vX.Y.Z-rc.1`) only publishes its own version tag and does not update `latest`. Until the first release has been published, `latest` does not exist; set `ARCREEL_IMAGE_TAG=main` for the production deployment until then.
+
+For production, pin a specific release:
+
+```bash
+# deploy/production/.env
+ARCREEL_IMAGE_TAG=X.Y.Z
 ```
 
-Explicitly changing the version when upgrading reduces the risk of unintentionally pulling a new version.
+Run `docker compose up -d` after setting it. Changing this value explicitly when upgrading reduces the risk of unintentionally pulling a new version.
 
 ## 6. Backup and Restore {#backup-and-restore}
 
@@ -472,13 +548,14 @@ After object storage is enabled under **Save new images to**, the content of rem
 
 The data root already contains projects, the default SQLite database, logs, and Vertex credentials, so a file-system backup only needs to archive the data root plus `.env` and `claude_data/`.
 
-First identify the actual data root on the host, then stop writes. Default Compose uses `deploy/projects/`. If you changed the container path with `ARCREEL_DATA_DIR` and a custom mount, set `data_dir` to the corresponding absolute host path:
+First identify the data location on the host, then stop writes. It is `deploy/` by default; if you set `ARCREEL_HOST_DATA_DIR` in `.env`, set `host_dir` to that value:
 
 ```bash
 cd deploy
 
-data_dir="$(cd projects && pwd)"
-# Custom data directory example: data_dir="/srv/arcreel/projects"
+host_dir="."
+# Set to ARCREEL_HOST_DATA_DIR if you set it, for example: host_dir="/srv/arcreel"
+data_dir="$(cd "${host_dir}/projects" && pwd)"
 
 docker compose stop arcreel
 ```
@@ -492,7 +569,7 @@ mkdir -p backups
 chmod 700 backups
 
 tar -czf "backups/arcreel-config-${backup_stamp}.tar.gz" \
-  .env claude_data
+  .env -C "${host_dir}" claude_data
 
 tar -czf "backups/arcreel-projects-${backup_stamp}.tar.gz" \
   -C "${data_dir}" .
@@ -510,16 +587,18 @@ To restore:
 
 1. Stop ArcReel;
 2. Back up the current directory so you can roll back if files are overwritten;
-3. Restore `.env` and `claude_data/` from the configuration archive, then extract the paired data archive completely into an empty `data_dir`;
+3. Restore `.env` from the configuration archive to `deploy/` and `claude_data/` to `host_dir`, then extract the paired data archive completely into an empty `data_dir`;
 4. Start the service and check `/health`;
 5. Open several projects and verify their images, videos, and version history.
 
 ### 6.2 Back Up a PostgreSQL Deployment {#backup-postgresql}
 
-Stop the ArcReel application first, but leave PostgreSQL running, so no new writes occur while you back up the database and project files:
+Stop the ArcReel application first, but leave PostgreSQL running, so no new writes occur while you back up the database and project files. `host_dir` is the data location on the host; if you set `ARCREEL_HOST_DATA_DIR` in `.env`, set it to that value:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)/deploy/production"
+host_dir="."
+# Set to ARCREEL_HOST_DATA_DIR if you set it, for example: host_dir="/srv/arcreel"
 umask 077
 mkdir -p backups
 chmod 700 backups
@@ -532,7 +611,7 @@ docker compose exec -T postgres sh -c \
   > "backups/arcreel-db-${backup_stamp}.sql"
 
 tar -czf "backups/arcreel-files-${backup_stamp}.tar.gz" \
-  .env docker-compose.yml projects claude_data
+  .env docker-compose.yml -C "${host_dir}" projects claude_data
 
 docker compose start arcreel
 ```
@@ -549,13 +628,16 @@ Before restoring, stop ArcReel but leave PostgreSQL running:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)/deploy/production"
+host_dir="."
+# Set to ARCREEL_HOST_DATA_DIR if you set it, for example: host_dir="/srv/arcreel"
 docker compose stop arcreel
 
 backup_stamp=YYYYMMDD-HHMMSS
-tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz"
+tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" .env docker-compose.yml
+tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" -C "${host_dir}" projects claude_data
 ```
 
-The file archive restores `.env`, `docker-compose.yml`, the data root `projects/`, and `claude_data/`. The following procedure also deletes the existing data in the target `arcreel` database. First verify that the database and file backups with the same `backup_stamp` are complete, and rehearse the restoration procedure in an isolated environment.
+The file archive restores `.env` and `docker-compose.yml` to `deploy/production/`, and the data root `projects/` and `claude_data/` to `host_dir`. The following procedure also deletes the existing data in the target `arcreel` database. First verify that the database and file backups with the same `backup_stamp` are complete, and rehearse the restoration procedure in an isolated environment.
 
 Recreate an empty database before importing to avoid conflicts with existing schemas or data:
 
@@ -716,7 +798,7 @@ docker compose logs --tail=300 arcreel
 
 Check:
 
-- Whether `.env` exists;
+- Whether the production `.env` sets `POSTGRES_PASSWORD`; when it is empty, Compose reports `必須設定 POSTGRES_PASSWORD` and refuses to start;
 - Whether port `1241` is already in use;
 - Whether the image was pulled successfully;
 - Whether the mounted directories are writable;
@@ -733,10 +815,9 @@ If the container has just started, check whether database migrations are still r
 
 ### Cannot Log In {#cannot-log-in}
 
-- Check `AUTH_USERNAME`;
-- Check `AUTH_PASSWORD` in `.env`;
-- If the password was left empty on first startup, check whether it was written back to the file;
-- Check whether you ran `docker compose up -d` after editing `.env`, and whether the startup log has a WARNING that process environment variables differ from `.env`;
+- Usernames are case-insensitive; confirm that an administrator has not disabled the account;
+- Changing `AUTH_PASSWORD` in `.env` does not affect existing accounts; if you forgot the password, reset it as described in [Accounts and Members](#accounts);
+- If `AUTH_PASSWORD` was empty on first startup, the initial password is in `projects/runtime/initial-admin-password` under the host data location;
 - Log in again after changing `AUTH_TOKEN_SECRET`.
 
 ### Agent Requests Fail {#agent-request-fails}
@@ -769,7 +850,7 @@ Do not directly delete files referenced by current projects. Prefer archiving pr
 
 - [ ] Use PostgreSQL;
 - [ ] Pin the release image version;
-- [ ] Set a strong `AUTH_PASSWORD`;
+- [ ] Set a strong `AUTH_PASSWORD` before the first startup, or change the initial password right after signing in;
 - [ ] Set a fixed `AUTH_TOKEN_SECRET`;
 - [ ] Configure HTTPS;
 - [ ] Do not expose `1241` directly;

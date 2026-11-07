@@ -24,10 +24,10 @@ class _FakeWorker:
 
 
 def stub_lifespan_dependencies(monkeypatch) -> _FakeWorker:
-    """lifespan 里与被测步骤无关的依赖（建库、鉴权口令、生成 worker、助手服务）换成空实现，返回 worker 替身。"""
+    """lifespan 里与被测步骤无关的依赖（建库、默认管理员初始化、生成 worker、助手服务）换成空实现，返回 worker 替身。"""
     worker = _FakeWorker()
     monkeypatch.setattr(app_module, "create_generation_worker", lambda: worker)
-    monkeypatch.setattr(app_module, "ensure_auth_password", lambda: "test")
+    monkeypatch.setattr(app_module, "bootstrap_admin", _noop_async)
     monkeypatch.setattr(app_module, "init_db", _noop_async)
     monkeypatch.setattr(lib.db, "init_db", _noop_async)
     monkeypatch.setattr(assistant_router.assistant_service, "startup", _noop_async)

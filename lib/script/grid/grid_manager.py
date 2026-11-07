@@ -138,7 +138,7 @@ class GridManager:
                 return False
             try:
                 grid = self._get_unlocked(path)
-            except (OSError, UnicodeDecodeError, ValueError, KeyError, TypeError):
+            except OSError, UnicodeDecodeError, ValueError, KeyError, TypeError:
                 grid = None  # 读不出的旧记录没有可证明的清单登记
             # 回收站的落地规则依赖 ProjectManager，顶层导入会成环。
             from lib.project.media_trash import trash_grid

@@ -109,9 +109,7 @@ export function RequestPreview({ label, request }: { label: string; request: Pre
         {Object.entries(request.headers)
           .map(([k, v]) => `${k}: ${v}`)
           .join("\n")}
-        {request.body === null || request.body === undefined
-          ? ""
-          : `\n\n${JSON.stringify(request.body, null, 2)}`}
+        {request.body === null || request.body === undefined ? "" : `\n\n${JSON.stringify(request.body, null, 2)}`}
       </pre>
     </div>
   );

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API, type AssetRenameResult } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -48,7 +48,13 @@ describe("EditableAssetName", () => {
 
     const onRenamed = vi.fn();
     render(
-      <EditableAssetName projectName="demo" name="李白" assetType="character" renderTitle={title} onRenamed={onRenamed} />,
+      <EditableAssetName
+        projectName="demo"
+        name="李白"
+        assetType="character"
+        renderTitle={title}
+        onRenamed={onRenamed}
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "重命名" }));
@@ -57,21 +63,15 @@ describe("EditableAssetName", () => {
     await userEvent.type(input, "{Enter}");
 
     // dry-run 预览先行，确认框展示影响数字
-    await waitFor(() =>
-      expect(renameSpy).toHaveBeenCalledWith("demo", "character", "李白", "青莲", { dryRun: true }),
-    );
+    await waitFor(() => expect(renameSpy).toHaveBeenCalledWith("demo", "character", "李白", "青莲", { dryRun: true }));
     expect(await screen.findByText("将更新 2 集共 5 处引用，重命名 3 个文件。")).toBeInTheDocument();
 
     // 编辑态下铅笔已隐藏，此时唯一名为「重命名」的按钮是确认框的确认按钮
     const dialogButtons = screen.getAllByRole("button", { name: "重命名" });
     fireEvent.click(dialogButtons[dialogButtons.length - 1]);
 
-    await waitFor(() =>
-      expect(renameSpy).toHaveBeenCalledWith("demo", "character", "李白", "青莲"),
-    );
-    await waitFor(() =>
-      expect(useProjectsStore.getState().refreshProject).toHaveBeenCalledWith("demo"),
-    );
+    await waitFor(() => expect(renameSpy).toHaveBeenCalledWith("demo", "character", "李白", "青莲"));
+    await waitFor(() => expect(useProjectsStore.getState().refreshProject).toHaveBeenCalledWith("demo"));
     // 调用方据此把选中项改到新名称上；改名是立即执行的动作，成功不弹提示
     expect(onRenamed).toHaveBeenCalledWith("李白", "青莲");
     expect(useAppStore.getState().toast).toBeNull();
@@ -210,9 +210,7 @@ describe("EditableAssetName", () => {
     fireEvent.change(input, { target: { value: "青莲" } });
     await userEvent.type(input, "{Enter}");
 
-    await waitFor(() =>
-      expect(useAppStore.getState().toast?.text).toContain("同名冲突"),
-    );
+    await waitFor(() => expect(useAppStore.getState().toast?.text).toContain("同名冲突"));
     expect(screen.getByRole("textbox", { name: "重命名" })).toBeInTheDocument();
   });
 });

@@ -251,7 +251,7 @@ async def _relativize_call_output_paths(context: DataRootMigrationContext) -> No
         ).all()
         rewritten = 0
         for call_id, project_name, stored in rows:
-            if not project_name or not _ABSOLUTE_PATH_PREFIX.match(stored):
+            if not project_name or stored is None or not _ABSOLUTE_PATH_PREFIX.match(stored):
                 continue
             relative = _project_relative_output_path(
                 stored,
@@ -319,6 +319,8 @@ async def _rename_global_assets_dir(context: DataRootMigrationContext) -> None:
                 await session.execute(select(table.id, column).where(column.startswith(legacy_prefix, autoescape=True)))
             ).all()
             for row_id, stored in rows:
+                if stored is None:
+                    continue
                 legacy_file = layout.root / stored
                 if legacy_file.exists() or legacy_file.is_symlink():
                     continue

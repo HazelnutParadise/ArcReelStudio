@@ -254,7 +254,7 @@ def stage_preserved_artifact_claims(project_dir: Path, preserved: ArtifactManife
         project = json.loads((project_dir / "project.json").read_bytes().decode("utf-8"))
         if not isinstance(project, Mapping) or parse_project_schema_version(project) < ARTIFACT_MANIFEST_SCHEMA_VERSION:
             return False
-    except (OSError, UnicodeError, ValueError):
+    except OSError, UnicodeError, ValueError:
         return False
     ProjectArtifactManifestAdapter(project_dir).replace_entries_atomically(preserved.entries)
     return True
@@ -599,7 +599,7 @@ def _ensure_activation_backup(source: Path, *, stamp: int, from_version: int) ->
             if candidate.read_bytes() == content:
                 try:
                     os.utime(candidate, None, follow_symlinks=False)
-                except (NotImplementedError, OSError):
+                except NotImplementedError, OSError:
                     continue
                 return
         except OSError:

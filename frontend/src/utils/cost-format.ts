@@ -39,18 +39,16 @@ export function costEntries(breakdown: CostBreakdown | undefined): [string, numb
       const leftIndex = CURRENCY_ORDER.indexOf(left);
       const rightIndex = CURRENCY_ORDER.indexOf(right);
       if (leftIndex !== -1 || rightIndex !== -1) {
-        return (leftIndex === -1 ? CURRENCY_ORDER.length : leftIndex) -
-          (rightIndex === -1 ? CURRENCY_ORDER.length : rightIndex);
+        return (
+          (leftIndex === -1 ? CURRENCY_ORDER.length : leftIndex) -
+          (rightIndex === -1 ? CURRENCY_ORDER.length : rightIndex)
+        );
       }
       return left.localeCompare(right);
     });
 }
 
-export function formatCurrencyAmount(
-  currency: string,
-  amount: number,
-  options: CurrencyFormatOptions = {},
-): string {
+export function formatCurrencyAmount(currency: string, amount: number, options: CurrencyFormatOptions = {}): string {
   const minimumFractionDigits = options.minimumFractionDigits ?? DEFAULT_FRACTION_DIGITS;
   const maximumFractionDigits = options.maximumFractionDigits ?? DEFAULT_FRACTION_DIGITS;
   const normalizedMinimumFractionDigits = Math.min(minimumFractionDigits, maximumFractionDigits);

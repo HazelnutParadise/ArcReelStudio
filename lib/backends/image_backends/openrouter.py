@@ -3,7 +3,7 @@
 OpenRouter 的图片 API 与 OpenAI 官方不同源：不提供 /images/edits，T2I 与
 I2I 统一走 ``POST {base_url}/images`` 的 JSON 端点——参考图以 data URI 进
 ``input_references``，响应 ``data[].b64_json``。本后端因此不复用 OpenAI SDK，请求构造
-仿 MiniMax 的 raw httpx 模式，落盘在不可中断段内解码并统一转为 PNG。
+仿 MiniMax 的 raw httpx2 模式，落盘在不可中断段内解码并统一转为 PNG。
 
 模型能力取自 ``GET {base_url}/images/models`` 里该模型声明的 ``supported_parameters``（缓存在 backend
 实例上：查到的结果 1h，查询失败 60s）。参考图上限（``input_references``）经 :meth:`reference_image_limit`
@@ -32,7 +32,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, ClassVar
 
-import httpx
+import httpx2
 
 from arcreel_market_core.aspect_size import (
     IMAGE_TIER_SHORT_EDGE,
@@ -76,9 +76,9 @@ _PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 _RASTER_OUTPUT_FORMATS = frozenset({"png", "jpeg", "jpg", "webp"})
 
 #: 生成耗时可达 90s+，超时须远大于常规请求
-_HTTP_TIMEOUT = httpx.Timeout(300.0, connect=15.0)
+_HTTP_TIMEOUT = httpx2.Timeout(300.0, connect=15.0)
 #: 模型目录查询是轻量元数据请求，超时收紧；失败只影响参数精化，不影响生成
-_MODELS_TIMEOUT = httpx.Timeout(15.0, connect=5.0)
+_MODELS_TIMEOUT = httpx2.Timeout(15.0, connect=5.0)
 
 # 档位 → quality 大小写不敏感（与 OpenAIImageBackend 同口径）：自定义档位词可能写
 # "2k"/"4K "，不归一会让 size 解析成功但 quality 静默丢失。自定义 WxH（无档位）→ None。

@@ -19,11 +19,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from mcp import types
+from mcp.client import Client
 from PIL import Image
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -136,26 +137,26 @@ class ControlPlane:
     def actions(self, name: str) -> list[dict[str, Any]]:
         return [body for action, body in self.calls if action == name]
 
-    def __call__(self, request: httpx.Request) -> httpx.Response:
+    def __call__(self, request: httpx2.Request) -> httpx2.Response:
         action = request.url.params["Action"]
         body = request_json(request)
         self.calls.append((action, body))
         if action == "ListAssetGroups":
-            return httpx.Response(200, json={"Result": {"Items": []}})
+            return httpx2.Response(200, json={"Result": {"Items": []}})
         if action == "CreateAssetGroup":
-            return httpx.Response(200, json={"Result": {"Id": "group-arcreel"}})
+            return httpx2.Response(200, json={"Result": {"Id": "group-arcreel"}})
         if action == "CreateAsset":
             if isinstance(self.create_error, Exception):
                 raise self.create_error
             if isinstance(self.create_error, dict):
-                return httpx.Response(400, json={"ResponseMetadata": {"Error": self.create_error}})
-            return httpx.Response(200, json={"Result": {"Id": "asset-20261103-a"}})
+                return httpx2.Response(400, json={"ResponseMetadata": {"Error": self.create_error}})
+            return httpx2.Response(200, json={"Result": {"Id": "asset-20261103-a"}})
         if action == "GetAsset":
             status = self.asset_status.pop(0) if self.asset_status else {"Status": "Processing"}
-            return httpx.Response(200, json={"Result": {"Id": body["Id"], **status}})
+            return httpx2.Response(200, json={"Result": {"Id": body["Id"], **status}})
         if action == "ListAssets":
-            return httpx.Response(200, json={"Result": {"Items": self.listed_assets, "TotalCount": 1}})
-        return httpx.Response(404, json={"ResponseMetadata": {"Error": {"Code": "UnknownAction"}}})
+            return httpx2.Response(200, json={"Result": {"Items": self.listed_assets, "TotalCount": 1}})
+        return httpx2.Response(404, json={"ResponseMetadata": {"Error": {"Code": "UnknownAction"}}})
 
 
 @pytest.fixture
@@ -513,7 +514,7 @@ async def test_uncertain_submission_is_recovered_by_name_without_recreating(api,
     _upload_sheet(api, solid_png_bytes((9, 9, 9), size=(400, 400)))
     job = _start_upload(api, account_id)
 
-    control = ControlPlane(create_error=httpx.ReadTimeout("timed out"))
+    control = ControlPlane(create_error=httpx2.ReadTimeout("timed out"))
     t0 = utc_now()
     await _run(sessions, control, t0)
     link = await _link(sessions, job["id"])
@@ -831,7 +832,7 @@ def _active_image(url: str = f"{ASSET_URL}?{ASSET_SIGNATURE}", **overrides: Any)
     }
 
 
-def _import(api: TestClient, account_id: int, asset_id: str = "asset-20261103-b") -> httpx.Response:
+def _import(api: TestClient, account_id: int, asset_id: str = "asset-20261103-b") -> httpx2.Response:
     return api.post(
         IMPORT,
         json={"resource_type": "characters", "resource_id": "Alice", "account_id": account_id, "asset_id": asset_id},
@@ -870,7 +871,7 @@ async def test_import_saves_provider_image_as_uploaded_version_with_active_link(
     control = ControlPlane(asset_status=[_active_image()])
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
-        download = router.get(ASSET_URL).mock(return_value=httpx.Response(200, content=image_b))
+        download = router.get(ASSET_URL).mock(return_value=httpx2.Response(200, content=image_b))
         resp = _import(api, account_id)
     assert resp.status_code == 201, resp.text
     body = resp.json()
@@ -946,9 +947,9 @@ def _fail_after_link(monkeypatch) -> None:
             False,
             id="internal-destination",
         ),
-        pytest.param(_active_image(), httpx.Response(403), 502, "无法取回", True, id="download-denied"),
+        pytest.param(_active_image(), httpx2.Response(403), 502, "无法取回", True, id="download-denied"),
         pytest.param(
-            _active_image(), httpx.Response(200, content=b"<html>expired</html>"), 422, "PNG", True, id="not-an-image"
+            _active_image(), httpx2.Response(200, content=b"<html>expired</html>"), 422, "PNG", True, id="not-an-image"
         ),
     ],
 )
@@ -963,7 +964,7 @@ async def test_import_that_cannot_get_real_content_is_refused(
     control = ControlPlane(asset_status=[status])
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
-        route = router.get(ASSET_URL).mock(return_value=download or httpx.Response(500))
+        route = router.get(ASSET_URL).mock(return_value=download or httpx2.Response(500))
         resp = _import(api, account_id)
     assert resp.status_code == status_code, resp.text
     assert detail in resp.json()["detail"]
@@ -987,7 +988,7 @@ async def test_import_refuses_a_hostname_that_resolves_to_a_private_address(api,
     control = ControlPlane(asset_status=[_active_image()])
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
-        route = router.get(ASSET_URL).mock(return_value=httpx.Response(200))
+        route = router.get(ASSET_URL).mock(return_value=httpx2.Response(200))
         resp = _import(api, account_id)
 
     assert resp.status_code == 502, resp.text
@@ -1011,7 +1012,7 @@ async def test_import_commit_failure_keeps_selected_version_and_no_link(
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
         router.get(ASSET_URL).mock(
-            return_value=httpx.Response(200, content=solid_png_bytes((9, 9, 9), size=(400, 400)))
+            return_value=httpx2.Response(200, content=solid_png_bytes((9, 9, 9), size=(400, 400)))
         )
         with pytest.raises(RuntimeError):
             _import(api, account_id)
@@ -1027,9 +1028,9 @@ async def test_import_into_an_asset_deleted_during_download_writes_nothing(api, 
     sheet = project.get_project_path("demo") / "characters" / "Alice.png"
     assert not sheet.exists()
 
-    async def _download(_request: httpx.Request) -> httpx.Response:
+    async def _download(_request: httpx2.Request) -> httpx2.Response:
         await run_sync_transaction(project.delete_asset, "demo", "characters", "Alice")
-        return httpx.Response(200, content=solid_png_bytes((9, 9, 9), size=(400, 400)))
+        return httpx2.Response(200, content=solid_png_bytes((9, 9, 9), size=(400, 400)))
 
     control = ControlPlane(asset_status=[_active_image()])
     with capture_http() as router:
@@ -1060,7 +1061,7 @@ async def test_import_follows_the_storage_choice_and_keeps_the_original_bytes(
     control = ControlPlane(asset_status=[_active_image(), _active_image()])
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
-        router.get(ASSET_URL).mock(return_value=httpx.Response(200, content=original))
+        router.get(ASSET_URL).mock(return_value=httpx2.Response(200, content=original))
         resp = _import(api, account_id)
         assert resp.status_code == 201, resp.text
         before = _versions(api)
@@ -1081,7 +1082,7 @@ async def test_import_follows_the_storage_choice_and_keeps_the_original_bytes(
 
         bucket["fail_put"] = True
         router.get(ASSET_URL).mock(
-            return_value=httpx.Response(200, content=solid_png_bytes((9, 9, 9), size=(400, 400)))
+            return_value=httpx2.Response(200, content=solid_png_bytes((9, 9, 9), size=(400, 400)))
         )
         failed = _import(api, account_id, asset_id="asset-20261103-c")
     assert failed.status_code == 502, failed.text
@@ -1126,7 +1127,7 @@ def _derivative_versions(api: TestClient) -> dict[str, Any]:
     return resp.json()
 
 
-def _import_derivative(api: TestClient, account_id: int) -> httpx.Response:
+def _import_derivative(api: TestClient, account_id: int) -> httpx2.Response:
     return api.post(IMPORT, json={**DERIVATIVE, "account_id": account_id, "asset_id": "asset-20261103-b"})
 
 
@@ -1157,7 +1158,7 @@ async def test_derivative_import_saves_original_pixels_as_uploaded_version_with_
     control = ControlPlane(asset_status=[_active_image()])
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
-        router.get(ASSET_URL).mock(return_value=httpx.Response(200, content=original))
+        router.get(ASSET_URL).mock(return_value=httpx2.Response(200, content=original))
         resp = _import_derivative(api, account_id)
     assert resp.status_code == 201, resp.text
     body = resp.json()
@@ -1215,7 +1216,7 @@ async def test_import_cancellation_after_link_preserves_committed_image_and_link
     control = ControlPlane(asset_status=[_active_image()])
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
-        router.get(ASSET_URL).mock(return_value=httpx.Response(200, content=original))
+        router.get(ASSET_URL).mock(return_value=httpx2.Response(200, content=original))
         async with sessions() as session:
             task = asyncio.create_task(
                 import_provider_asset(
@@ -1257,7 +1258,7 @@ async def test_derivative_import_failing_after_link_keeps_selected_version_and_n
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
         router.get(ASSET_URL).mock(
-            return_value=httpx.Response(200, content=solid_png_bytes((9, 9, 9), size=(400, 400)))
+            return_value=httpx2.Response(200, content=solid_png_bytes((9, 9, 9), size=(400, 400)))
         )
         with pytest.raises(RuntimeError):
             _import_derivative(api, account_id)
@@ -1297,9 +1298,8 @@ async def _embedded(services: Services, name: str, arguments: dict[str, Any]) ->
         caller=CallerContext(user_id="default", source="embedded"),
         services=services,
     )["instance"]
-    request = types.CallToolRequest(params=types.CallToolRequestParams(name=name, arguments=arguments))
-    result = (await server.request_handlers[types.CallToolRequest](request)).root
-    assert isinstance(result, types.CallToolResult)
+    async with Client(server) as client:
+        result = await client.call_tool(name, arguments)
     texts = [block.text for block in result.content if isinstance(block, types.TextContent)]
     return result, json.loads(texts[-1])
 
@@ -1311,7 +1311,7 @@ async def _remote(services: Services, name: str, arguments: dict[str, Any]) -> t
         services=services,
         caller=lambda: CallerContext(user_id="default", source="mcp"),
     )
-    result = await tool.run({"project": "demo", **arguments})
+    result = await tool.run({"project": "demo", **arguments}, None)
     assert isinstance(result, types.CallToolResult)
     return result
 
@@ -1328,14 +1328,14 @@ async def test_agent_uploads_only_on_explicit_request_and_shares_the_web_links(a
 
     # 没有用户明确要求（例如只是生成被拒）时，入口拒绝，不创建入库任务
     refused, refused_json = await _embedded(agent_services, "upload_to_provider_asset_library", target)
-    assert refused.isError is True
+    assert refused.is_error is True
     assert refused_json["problem"]["code"] == "invalid_request"
     assert await _all_links(sessions) == []
 
     started, started_json = await _embedded(
         agent_services, "upload_to_provider_asset_library", {**target, "user_requested": True}
     )
-    assert started.isError is False
+    assert started.is_error is False
     job = started_json["provider_asset_link"]
     # 不等待供应商：后台尚未推进，返回的是待上传的任务
     assert (job["state"], job["usable"], job["polling"]) == ("pending", False, True)
@@ -1343,9 +1343,9 @@ async def test_agent_uploads_only_on_explicit_request_and_shares_the_web_links(a
 
     # 同一范围重复上传：沿用领域层的冲突判断与错误码
     again = await _remote(agent_services, "upload_to_provider_asset_library", {**target, "user_requested": True})
-    assert again.isError is True
-    assert again.structuredContent is not None
-    assert again.structuredContent["problem"]["code"] == "provider_asset_link_exists"
+    assert again.is_error is True
+    assert again.structured_content is not None
+    assert again.structured_content["problem"]["code"] == "provider_asset_link_exists"
 
     control = ControlPlane(asset_status=[{"Status": "Active", "Name": "x", "AssetType": "Image"}])
     t0 = utc_now()
@@ -1357,8 +1357,8 @@ async def test_agent_uploads_only_on_explicit_request_and_shares_the_web_links(a
 
     embedded, embedded_json = await _embedded(agent_services, "get_provider_asset_links", query)
     remote = await _remote(agent_services, "get_provider_asset_links", query)
-    assert embedded.isError is remote.isError is False
-    assert embedded_json == remote.structuredContent
+    assert embedded.is_error is remote.is_error is False
+    assert embedded_json == remote.structured_content
     panel = embedded_json["provider_asset_links"]
     assert panel == _panel(api)
     [shown] = panel["links"]
@@ -1366,9 +1366,9 @@ async def test_agent_uploads_only_on_explicit_request_and_shares_the_web_links(a
     assert [a["id"] for a in panel["accounts"]] == [account_id]
 
     released = await _remote(agent_services, "release_provider_asset_link", {"link_id": job["id"]})
-    assert released.isError is False
-    assert released.structuredContent is not None
-    assert released.structuredContent["provider_asset_link"]["selected"] is False
+    assert released.is_error is False
+    assert released.structured_content is not None
+    assert released.structured_content["provider_asset_link"]["selected"] is False
     assert _panel(api)["links"] == []
     assert _panel(api)["content_version"] is not None
     assert control.actions("DeleteAsset") == []
@@ -1393,7 +1393,7 @@ async def test_agent_selects_an_existing_library_image_as_a_new_version(api, ses
 
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
-        router.get(ASSET_URL).mock(return_value=httpx.Response(200, content=image_b))
+        router.get(ASSET_URL).mock(return_value=httpx2.Response(200, content=image_b))
         listed, listed_json = await _embedded(
             agent_services, "list_provider_library_assets", {"account_id": account_id}
         )
@@ -1408,9 +1408,9 @@ async def test_agent_selects_an_existing_library_image_as_a_new_version(api, ses
             },
         )
 
-    assert listed.isError is False
+    assert listed.is_error is False
     assert [item["id"] for item in listed_json["provider_library_assets"]["items"]] == ["asset-20261103-b"]
-    assert selected.isError is False
+    assert selected.is_error is False
     chosen = selected_json["provider_asset_selection"]
     assert chosen["content_version"]["version"] == 2
     assert (chosen["link"]["state"], chosen["link"]["usable"]) == ("active", True)
@@ -1430,7 +1430,7 @@ async def test_agent_selects_a_library_image_for_a_character_derivative(
     with capture_http() as router:
         router.post(VOLC_HOST).mock(side_effect=control)
         router.get(ASSET_URL).mock(
-            return_value=httpx.Response(200, content=solid_png_bytes((10, 10, 200), size=(400, 400)))
+            return_value=httpx2.Response(200, content=solid_png_bytes((10, 10, 200), size=(400, 400)))
         )
         selected, selected_json = await _embedded(
             agent_services,
@@ -1443,7 +1443,7 @@ async def test_agent_selects_a_library_image_for_a_character_derivative(
             },
         )
 
-    assert selected.isError is False
+    assert selected.is_error is False
     chosen = selected_json["provider_asset_selection"]
     assert chosen["content_version"]["version"] == 1
     assert (chosen["link"]["state"], chosen["link"]["usable"]) == ("active", True)

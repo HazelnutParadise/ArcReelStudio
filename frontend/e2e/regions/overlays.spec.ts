@@ -27,8 +27,12 @@ function exportWith(diagnosticsBody: Record<string, unknown>): ApiOverrides {
       status: 200,
       body: { download_token: "e2e-token", expires_in: 300, diagnostics: diagnosticsBody },
     },
-    // 下载链接是一次页面跳转；204 让浏览器留在当前页。
-    "GET /api/v1/projects/demo/export?download_token=e2e-token&scope=current": { status: 204, body: null },
+    // 下载链接是一次页面跳转；与后端一样以附件返回，浏览器把它当成下载、留在当前页。
+    "GET /api/v1/projects/demo/export?download_token=e2e-token&scope=current": {
+      status: 200,
+      headers: { "Content-Type": "application/zip", "Content-Disposition": 'attachment; filename="demo.zip"' },
+      body: "",
+    },
   };
 }
 
@@ -116,9 +120,13 @@ defineRegionScenarios("弹层与提示", [
       await toast.hover();
 
       await expect
-        .poll(() => page.evaluate(() => (window as unknown as { __toastSampling: { done: boolean } }).__toastSampling.done))
+        .poll(() =>
+          page.evaluate(() => (window as unknown as { __toastSampling: { done: boolean } }).__toastSampling.done),
+        )
         .toBe(true);
-      const tops = await page.evaluate(() => (window as unknown as { __toastSampling: { tops: number[] } }).__toastSampling.tops);
+      const tops = await page.evaluate(
+        () => (window as unknown as { __toastSampling: { tops: number[] } }).__toastSampling.tops,
+      );
       expect(Math.max(...tops) - Math.min(...tops), "提示在进场过程中发生了位移").toBeLessThanOrEqual(1);
 
       await expect(region.getByRole("button", { name: "关闭提示" })).toBeVisible();

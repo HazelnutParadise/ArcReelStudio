@@ -1,7 +1,7 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n";
 import { API } from "@/api";
 import { ROUTE_APP_ASSETS } from "@/app-routes";
@@ -410,9 +410,7 @@ describe("OnboardingTour", () => {
 
     await waitFor(() => expect(popoverTitle()).toBe("配置供应商"), { timeout: 3000 });
     // 讲解照常进行，丢的只是高亮——driver 顶上自己的占位元素，气泡回到屏幕中央。
-    expect(document.getElementById("driver-dummy-element")?.classList.contains("driver-active-element")).toBe(
-      true,
-    );
+    expect(document.getElementById("driver-dummy-element")?.classList.contains("driver-active-element")).toBe(true);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining(ONBOARDING_ANCHORS.settingsProviders));
 
     warn.mockRestore();

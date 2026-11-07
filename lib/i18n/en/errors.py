@@ -225,6 +225,7 @@ MESSAGES = {
     "draft_invalid_json": "The script plan draft has an invalid structure; please check and retry",
     "draft_not_found": "Episode (id={episode}) has no such draft; it may already have been adopted or discarded",
     "draft_revision_conflict": "The draft changed while you were editing, so this action was not applied; review the latest content and retry",
+    "edit_conflict": "Someone else changed this content while you were editing, so your save was not applied; review the latest content before deciding whether to overwrite it",
     "draft_formal_revision_conflict": (
         "The formal content changed after this draft was produced, so the save was not adopted; "
         "discard the draft or hand it to the agent to merge"
@@ -494,6 +495,15 @@ MESSAGES = {
     ),
     # API Keys
     "jwt_auth_required": "API Key is not authorized to perform this action, please use JWT authentication",
+    "admin_only_operation": "Only administrators can manage members",
+    "username_invalid": "Usernames may contain only lowercase letters, digits, and . _ @ -, must start with a letter or digit, and can be up to 64 characters",
+    "password_too_short": "Passwords must be at least {min} characters",
+    "user_role_invalid": "Unsupported role: {role}",
+    "username_exists": "The username {username} is already taken",
+    "user_not_found": "Member not found",
+    "cannot_change_own_admin_access": "You can't disable your own account or remove your own administrator role. Ask another administrator",
+    "last_admin_required": "At least one active administrator is required",
+    "current_password_incorrect": "The current password is incorrect",
     "api_key_name_exists": "Name '{name}' already exists",
     "api_key_not_found": "API Key {key_id} not found",
     # Agent Chat
@@ -700,6 +710,7 @@ MESSAGES = {
     "video_first_frame_unsupported": "{provider}/{model} does not support a first frame under the current configuration; generation aborted. Remove the shot's first frame, or switch to a model or tier that supports it",
     "video_last_frame_unsupported": "{provider}/{model} does not support a last frame under the current configuration; generation aborted. Remove the shot's last frame, or switch to a model or tier that supports it",
     "video_reference_audio_unsupported": "{provider}/{model} does not support reference audio; generation aborted. Remove the character's reference audio, or switch to a model that supports voice reference",
+    "video_veo_api_key_mode_unsupported": "{provider}/{model} cannot generate video: Veo is no longer available through the Gemini Developer API (API Key). Use Vertex AI credentials for Veo, or switch to a Gemini Omni video model",
     "video_reference_route_audio_unsupported": "{provider}/{model} cannot send the audio switch when generating from reference images, so the video would be silent; generation aborted. Turn off the audio switch, remove the audio track override for the reference-image route, or remove the reference images and try again",
     "video_reference_audio_exceeded": "Model {model} supports at most {limit} reference audio clips but received {count}; reduce the number of characters with reference audio",
     "video_reference_audio_duration_exceeded": "Model {model} supports at most {limit:g} seconds of combined reference audio but received {total:.1f} seconds; use fewer reference audio clips or shorter clips",
@@ -718,6 +729,13 @@ MESSAGES = {
     "agent_base_url_invalid": "Agent credential URLs cannot carry query strings, fragments or userinfo; use a plain https://host/path address",
     "agent_no_fields_to_update": "No fields to update",
     "agent_credential_not_found": "Credential not found",
+    "claude_login_cli_not_found": "The bundled Claude CLI was not found, so the subscription can't be signed in",
+    "claude_login_no_authorize_url": "Couldn't get a Claude sign-in link. Try again later",
+    "claude_login_login_not_found": "This sign-in has ended or was replaced by a newer one. Start again",
+    "claude_login_login_expired": "The sign-in expired. Start again",
+    "claude_login_invalid_code": "The code isn't in a valid format",
+    "claude_login_code_rejected": "Claude didn't accept this code. Sign in again and retry",
+    "claude_subscription_required": "Sign in to a Claude subscription before choosing subscription only",
     "agent_tier_binding_invalid": "The model bound to this tier is not in the model catalog",
     "agent_cannot_delete_active": "Cannot delete the active credential; activate another first",
     "agent_test_validation_error": "Test connection failed; please check the configuration and retry",

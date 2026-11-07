@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
@@ -55,8 +55,8 @@ def factory(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
 
 
 @pytest.fixture
-async def http_client() -> AsyncGenerator[httpx.AsyncClient]:
-    async with httpx.AsyncClient() as client:
+async def http_client() -> AsyncGenerator[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient() as client:
         yield client
 
 
@@ -75,7 +75,7 @@ def clock() -> Clock:
 
 @pytest.fixture
 def service(
-    factory: async_sessionmaker[AsyncSession], http_client: httpx.AsyncClient, clock: Clock
+    factory: async_sessionmaker[AsyncSession], http_client: httpx2.AsyncClient, clock: Clock
 ) -> MarketSourceService:
     return MarketSourceService(factory, http_client=lambda: http_client, clock=clock)
 
@@ -273,13 +273,13 @@ async def test_concurrent_adds_of_case_variants_store_only_one_source(
     both_fetching = asyncio.Event()
     fetching = 0
 
-    async def index_after_both_started(request: httpx.Request) -> httpx.Response:
+    async def index_after_both_started(request: httpx2.Request) -> httpx2.Response:
         nonlocal fetching
         fetching += 1
         if fetching == 2:
             both_fetching.set()
         await both_fetching.wait()
-        return httpx.Response(200, json=_index())
+        return httpx2.Response(200, json=_index())
 
     with capture_http() as http:
         http.get(url__startswith=TEAM_URL).mock(side_effect=index_after_both_started)
@@ -340,7 +340,7 @@ async def test_failed_refresh_keeps_last_snapshot_and_records_status(
 async def test_successful_refresh_after_failure_clears_error(service: MarketSourceService, clock: Clock) -> None:
     added = await _add_team_source(service)
     with capture_http() as http:
-        http.get(url__startswith=TEAM_URL).mock(side_effect=httpx.ConnectError("down"))
+        http.get(url__startswith=TEAM_URL).mock(side_effect=httpx2.ConnectError("down"))
         failed = await service.refresh_source(added.id, manual=True)
     assert failed is not None
     assert failed.status == SourceStatus.UNREACHABLE
@@ -486,14 +486,14 @@ async def test_manual_refresh_during_an_automatic_one_runs_again_without_etag(
     clock.now = NOW + timedelta(hours=2)
     started = asyncio.Event()
     release = asyncio.Event()
-    requests: list[httpx.Request] = []
+    requests: list[httpx2.Request] = []
 
-    async def index(request: httpx.Request) -> httpx.Response:
+    async def index(request: httpx2.Request) -> httpx2.Response:
         requests.append(request)
         if len(requests) == 1:
             started.set()
             await release.wait()
-        return httpx.Response(200, json=_index(), headers={"ETag": '"v2"'})
+        return httpx2.Response(200, json=_index(), headers={"ETag": '"v2"'})
 
     with capture_http() as http:
         http.get(url__startswith=TEAM_URL).mock(side_effect=index)
@@ -516,10 +516,10 @@ async def test_refresh_result_is_not_applied_when_the_row_now_points_elsewhere(
     started = asyncio.Event()
     release = asyncio.Event()
 
-    async def slow_index(request: httpx.Request) -> httpx.Response:
+    async def slow_index(request: httpx2.Request) -> httpx2.Response:
         started.set()
         await release.wait()
-        return httpx.Response(200, json=_index("旧地址的索引", "stale-entry"))
+        return httpx2.Response(200, json=_index("旧地址的索引", "stale-entry"))
 
     with capture_http() as http:
         http.get(url__startswith=TEAM_URL).mock(side_effect=slow_index)
@@ -544,10 +544,10 @@ async def test_concurrent_refreshes_of_one_source_share_a_single_request(service
     started = asyncio.Event()
     release = asyncio.Event()
 
-    async def slow_index(request: httpx.Request) -> httpx.Response:
+    async def slow_index(request: httpx2.Request) -> httpx2.Response:
         started.set()
         await release.wait()
-        return httpx.Response(200, json=_index())
+        return httpx2.Response(200, json=_index())
 
     with capture_http() as http:
         route = http.get(url__startswith=TEAM_URL).mock(side_effect=slow_index)

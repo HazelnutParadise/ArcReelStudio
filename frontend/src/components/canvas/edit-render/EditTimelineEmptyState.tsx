@@ -25,11 +25,7 @@ interface EditTimelineEmptyStateProps {
  * 两个入口与 WorkflowPanel「剪辑」行同一套：「交给 Agent 剪辑」只把请求预填进对话输入框并打开面板，
  * 由用户确认发送；「新建剪辑时间线」直接按脚本机械新建，不经过 Agent。出片从不自动新建剪辑时间线。
  */
-export function EditTimelineEmptyState({
-  projectName,
-  episode,
-  onCreated,
-}: EditTimelineEmptyStateProps) {
+export function EditTimelineEmptyState({ projectName, episode, onCreated }: EditTimelineEmptyStateProps) {
   const { t } = useTranslation(["dashboard", "workflow"]);
   const ledger = useEpisodeLedger();
   const [creating, setCreating] = useState(false);

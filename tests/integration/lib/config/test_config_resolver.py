@@ -147,6 +147,22 @@ class TestVideoGenerateAudio:
         assert result is False
 
 
+class TestGpuEncodingEnabled:
+    """成片 GPU 编码开关：未设置时为开，系统设置可以关掉。"""
+
+    async def test_defaults_to_enabled_on_empty_db(self, db_factory):
+        assert await ConfigResolver(db_factory).gpu_encoding_enabled() is True
+
+    async def test_reads_the_stored_setting(self, db_factory):
+        from lib.config.service import ConfigService
+
+        for stored, expected in (("false", False), ("true", True)):
+            async with db_factory() as session:
+                await ConfigService(session).set_setting("gpu_encoding_enabled", stored)
+                await session.commit()
+            assert await ConfigResolver(db_factory).gpu_encoding_enabled() is expected
+
+
 class TestDefaultBackends:
     """验证 video/image 后端解析：显式值 vs auto-resolve。"""
 
@@ -313,6 +329,21 @@ class TestProviderConfig:
         async with db_factory() as session:
             result = await resolver._resolve_all_provider_configs(fake_svc, session)
         assert "gemini-aistudio" in result
+
+
+class TestOfficialEndpoints:
+    """非中国的内置供应商固定连官方端点，不接受请求地址。"""
+
+    @pytest.mark.parametrize("provider", ["gemini-aistudio", "openai", "grok", "gemini-vertex"])
+    def test_official_providers_do_not_offer_a_base_url(self, provider):
+        from lib.config.registry import PROVIDER_REGISTRY
+
+        assert not PROVIDER_REGISTRY[provider].accepts_base_url
+
+    def test_chinese_providers_accept_a_base_url(self):
+        from lib.config.registry import PROVIDER_REGISTRY
+
+        assert PROVIDER_REGISTRY["ark"].accepts_base_url
 
 
 class TestSessionReuse:

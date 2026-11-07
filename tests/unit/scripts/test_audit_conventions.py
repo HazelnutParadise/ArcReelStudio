@@ -159,7 +159,7 @@ def test_missing_generation_markers_are_reported(repo: Path) -> None:
 
 
 def test_dependency_matching_only_the_catch_all_group_is_reported_at_its_declaration(repo: Path) -> None:
-    _write(repo, "pyproject.toml", _PYPROJECT.replace('    "demo-core",\n', '    "demo-core",\n    "httpx>=0.27",\n'))
+    _write(repo, "pyproject.toml", _PYPROJECT.replace('    "demo-core",\n', '    "demo-core",\n    "httpx2>=0.27",\n'))
     _write(repo, "frontend/package.json", json.dumps({"dependencies": {"react": "^19", "zustand": "^5"}}, indent=2))
 
     violations = audit(repo)
@@ -168,7 +168,7 @@ def test_dependency_matching_only_the_catch_all_group_is_reported_at_its_declara
         ("DEPENDABOT-GROUP", "pyproject.toml", 6),
         ("DEPENDABOT-GROUP", "frontend/package.json", 4),
     ]
-    assert "`httpx`" in violations[0].guidance
+    assert "`httpx2`" in violations[0].guidance
     assert "`zustand`" in violations[1].guidance
 
 
@@ -247,6 +247,8 @@ def test_frontend_and_workflow_suppressions_without_reason_are_reported(repo: Pa
 /** @public */
 /** @public 供外部 Agent skill 动态导入 */
 /* eslint-enable react-hooks/refs */
+// oxlint-disable-next-line react/exhaustive-deps
+// oxlint-disable-next-line react/exhaustive-deps -- 理由
 """,
     )
     _write(
@@ -264,6 +266,7 @@ jobs: # zizmor: ignore[excessive-permissions]  # 理由
         ("frontend/src/demo.tsx", 3),
         ("frontend/src/demo.tsx", 5),
         ("frontend/src/demo.tsx", 7),
+        ("frontend/src/demo.tsx", 10),
     ]
 
 

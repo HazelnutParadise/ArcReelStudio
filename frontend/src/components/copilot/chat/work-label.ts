@@ -165,7 +165,8 @@ export function createSummaryFormat(t: TFunction, episodes: EpisodeRefs, scripts
     arrow: (from, to) => (str(from) && str(to) ? `${str(from)} → ${str(to)}` : ""),
     revision: (value) => (typeof value === "number" ? t("dashboard:tool_summary_revision", { revision: value }) : ""),
     version: (value) => (typeof value === "number" ? t("dashboard:tool_summary_version", { version: value }) : ""),
-    count: (key, value) => (Array.isArray(value) && value.length > 0 ? t(`dashboard:${key}`, { count: value.length }) : ""),
+    count: (key, value) =>
+      Array.isArray(value) && value.length > 0 ? t(`dashboard:${key}`, { count: value.length }) : "",
     projectFields: (input) => {
       if (input.overview != null) return t("dashboard:tool_summary_project_overview");
       if (input.settings != null) return t("dashboard:tool_summary_project_settings");
@@ -197,7 +198,8 @@ const BUILTIN_TOOLS: Record<string, { key: string; icon: LucideIcon }> = {
 function arcreelToolIcon(id: string): LucideIcon {
   if (id.startsWith("generate") || id.startsWith("edit_images")) return Sparkles;
   if (id.startsWith("inspect") || id.startsWith("get") || id.startsWith("list") || id.startsWith("read")) return Eye;
-  if (id.includes("timeline") || id.includes("revision") || id.includes("final_cut") || id.includes("jianying")) return Film;
+  if (id.includes("timeline") || id.includes("revision") || id.includes("final_cut") || id.includes("jianying"))
+    return Film;
   if (id.includes("draft") || id.startsWith("patch") || id.startsWith("edit")) return FilePen;
   return Wrench;
 }

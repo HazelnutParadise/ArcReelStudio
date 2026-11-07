@@ -19,6 +19,11 @@ DB fixture 一律派生自唯一的 engine 构造点 `make_test_engine`：
 
 from __future__ import annotations
 
+# 须先于任何 `import httpx` 执行：respx 与仍按 httpx 编写的依赖（方舟 SDK）由此拿到 httpx2 的类，见 docs/agents/dependencies.md。
+import httpx2
+
+httpx2.alias_httpx()
+
 import asyncio
 import atexit
 import ipaddress
@@ -99,9 +104,8 @@ if not os.environ.get("AUTH_TOKEN_SECRET"):
 # 验证读取规则的用例自行 delenv。
 os.environ["PYTHON_DOTENV_DISABLED"] = "1"
 
-# lifespan 的 `ensure_auth_password` 在 AUTH_PASSWORD 未设置时生成口令并回写项目根的 .env。
-# 钉一个固定值，未替换该步骤的 lifespan 用例不再改写仓库里的 .env；验证生成与回写的用例
-# 自行清掉 AUTH_PASSWORD 并传入 tmp 下的 env_path。
+# lifespan 的默认管理员初始化在 AUTH_PASSWORD 未设置时会生成随机口令；钉一个固定值，走真实 lifespan 的用例
+# 能用它登录。验证生成口令的用例自行清掉 AUTH_PASSWORD 并直接调用 ``server.services.accounts``。
 if not os.environ.get("AUTH_PASSWORD"):
     os.environ["AUTH_PASSWORD"] = "arcreel-test-password"
 
@@ -277,6 +281,36 @@ def offline_official_catalog_sync(isolated_data_root, monkeypatch):
         return asyncio.get_running_loop().create_task(asyncio.Event().wait(), name="catalog-official-sync-offline")
 
     monkeypatch.setattr("server.app.start_official_sync", start_offline)
+
+
+@pytest.fixture(autouse=True)
+def deterministic_admin_bootstrap(isolated_data_root, monkeypatch):
+    """lifespan 的默认管理员初始化改成每次都按当前 env 重设全局测试库里的默认管理员。
+
+    真实初始化只在库里还没有可登录账号时生效，全局测试库跨用例共享，哪条 lifespan 用例先跑就由谁定下
+    用户名与密码。这里每次都按用例当时的 ``AUTH_USERNAME`` / ``AUTH_PASSWORD`` 重设，且不改令牌版本，
+    其他用例按 ``token_version=0`` 签发的默认管理员 token 不受影响。真实初始化的规则由
+    ``tests/integration/server/services/test_accounts.py`` 直接调用覆盖。
+    """
+    from lib.db.base import DEFAULT_USER_ID
+    from lib.db.repositories.user_repo import UserRepository
+    from server.services import accounts
+
+    async def bootstrap(session_factory, *, initial_password_path):
+        username = accounts.normalize_username(os.environ.get("AUTH_USERNAME") or "admin")
+        password_hash = accounts.hash_password(os.environ.get("AUTH_PASSWORD") or "arcreel-test-password")
+        async with session_factory() as session, session.begin():
+            repo = UserRepository(session)
+            admin = await repo.get(DEFAULT_USER_ID)
+            if admin is None:
+                await repo.create(username=username, password_hash=password_hash, role="admin", user_id=DEFAULT_USER_ID)
+                return
+            admin.username = username
+            admin.role = "admin"
+            admin.is_active = True
+            admin.password_hash = password_hash
+
+    monkeypatch.setattr("server.app.bootstrap_admin", bootstrap)
 
 
 @pytest.fixture(autouse=True)

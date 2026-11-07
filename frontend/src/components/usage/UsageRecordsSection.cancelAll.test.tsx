@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useTasksStore } from "@/stores/tasks-store";
@@ -81,9 +81,7 @@ describe("UsageRecordsSection cancel-all", () => {
     fireEvent.click(screen.getByRole("button", { name: "确认取消" }));
 
     await waitFor(() => expect(cancelAllSpy).toHaveBeenCalledWith(PROJECT));
-    await waitFor(() =>
-      expect(screen.queryByRole("button", { name: "全部取消" })).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByRole("button", { name: "全部取消" })).not.toBeInTheDocument());
   });
 
   it("hides the action when the in-progress block holds no queued task", async () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { computeGridSize, matchGridsForGroup } from "./grid-layout";
 
 interface FakeGrid {
@@ -8,12 +8,7 @@ interface FakeGrid {
   created_at: string;
 }
 
-function grid(
-  id: string,
-  scene_ids: string[],
-  created_at: string,
-  episode = 1,
-): FakeGrid {
+function grid(id: string, scene_ids: string[], created_at: string, episode = 1): FakeGrid {
   return { id, episode, scene_ids, created_at };
 }
 

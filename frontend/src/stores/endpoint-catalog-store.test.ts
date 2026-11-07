@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import type { EndpointDescriptor } from "@/types";
 import { useEndpointCatalogStore } from "./endpoint-catalog-store";
@@ -16,6 +16,7 @@ const FIXTURE: EndpointDescriptor[] = [
     request_path_template: "/v1/chat/completions",
     image_capabilities: null,
     end_image_capable: false,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,
@@ -35,6 +36,7 @@ const FIXTURE: EndpointDescriptor[] = [
     request_path_template: "/v1/video/generations",
     image_capabilities: null,
     end_image_capable: true,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,
@@ -54,6 +56,7 @@ const FIXTURE: EndpointDescriptor[] = [
     request_path_template: "/v1/images/{generations,edits}",
     image_capabilities: ["text_to_image", "image_to_image"],
     end_image_capable: false,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,
@@ -73,6 +76,7 @@ const FIXTURE: EndpointDescriptor[] = [
     request_path_template: "/v1/images/generations",
     image_capabilities: ["text_to_image"],
     end_image_capable: false,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,
@@ -92,6 +96,7 @@ const FIXTURE: EndpointDescriptor[] = [
     request_path_template: "/v1/images/edits",
     image_capabilities: ["image_to_image"],
     end_image_capable: false,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,

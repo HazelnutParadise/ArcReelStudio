@@ -124,7 +124,11 @@ export function SourceManuscript({
   );
   const caretMark = (fileIndex: number): CaretMark =>
     caret !== null && caret.point.file === fileIndex
-      ? { key: "caret", offset: caret.point.offset, node: <CaretMarker episode={caret.episode}>{caret.toolbar}</CaretMarker> }
+      ? {
+          key: "caret",
+          offset: caret.point.offset,
+          node: <CaretMarker episode={caret.episode}>{caret.toolbar}</CaretMarker>,
+        }
       : null;
 
   const onMouseUp = (event: MouseEvent) => {
@@ -161,7 +165,10 @@ export function SourceManuscript({
               const hosted = hostRun !== null && segment.start <= hostRun && hostRun < segment.end ? mark : null;
               const dimmed =
                 movingPair != null &&
-                !(segment.kind === "episode" && (segment.episode === movingPair.left || segment.episode === movingPair.right));
+                !(
+                  segment.kind === "episode" &&
+                  (segment.episode === movingPair.left || segment.episode === movingPair.right)
+                );
               if (segment.kind === "episode" && segment.episode !== null) {
                 const boundary = segment.continued ? undefined : boundaries.get(segment.episode);
                 const episodeInfo = info.get(segment.episode);
@@ -430,8 +437,7 @@ const EpisodeBlock = memo(function EpisodeBlock({
   const { t } = useTranslation(["dashboard", "common"]);
   const id = segment.episode ?? 0;
   const title = episode?.title?.trim();
-  const name =
-    position === null ? t("common:episode_unlisted_name") : t("common:episode_position_name", { position });
+  const name = position === null ? t("common:episode_unlisted_name") : t("common:episode_position_name", { position });
   const blockCls = cn("mb-6 transition-opacity duration-fast", dimmed && "opacity-45");
   // 跨文件的一集只在起点所在文件里显示完整集头（也只有它登记为滚动目标）；后续文件里的部分只标明接续
   if (segment.continued) {

@@ -19,10 +19,7 @@ export function voidPromise<Args extends unknown[]>(
   };
 }
 
-export function voidCall<T>(
-  promise: Promise<T>,
-  onError: (err: unknown) => void = console.error,
-): void {
+export function voidCall<T>(promise: Promise<T>, onError: (err: unknown) => void = console.error): void {
   promise.catch(onError);
 }
 

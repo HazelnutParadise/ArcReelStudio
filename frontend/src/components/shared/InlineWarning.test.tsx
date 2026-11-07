@@ -1,5 +1,5 @@
 import { fireEvent, render, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { InlineWarning } from "./InlineWarning";
 
 describe("InlineWarning", () => {
@@ -15,9 +15,7 @@ describe("InlineWarning", () => {
 
   it("action 以可访问名暴露并可点击", () => {
     const onClick = vi.fn();
-    const { getByRole } = render(
-      <InlineWarning message="时长超出范围" action={{ label: "恢复自动", onClick }} />,
-    );
+    const { getByRole } = render(<InlineWarning message="时长超出范围" action={{ label: "恢复自动", onClick }} />);
     const button = within(getByRole("alert")).getByRole("button", { name: "恢复自动" });
     fireEvent.click(button);
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -37,5 +35,4 @@ describe("InlineWarning", () => {
     fireEvent.click(button);
     expect(onClick).not.toHaveBeenCalled();
   });
-
 });

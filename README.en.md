@@ -106,7 +106,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Open <http://localhost:1241>. The default username is `admin`. If `AUTH_PASSWORD` is empty, ArcReel generates a password on first startup and writes it back to `deploy/.env`.
+Open <http://localhost:1241>. The default username is `admin`. If `AUTH_PASSWORD` is empty, ArcReel generates an initial password on first startup and saves it to `deploy/projects/runtime/initial-admin-password`. After signing in, change the password and add members under Settings › Accounts & members.
 
 > Default Compose publishes port `1241` on all host interfaces. Do not expose ArcReel directly to the public Internet; before enabling remote access, configure authentication and use HTTPS, a VPN, or a secure tunnel. See [Reverse Proxy and HTTPS](https://docs.arc-reel.com/en/ops/deployment#reverse-proxy-and-https).
 

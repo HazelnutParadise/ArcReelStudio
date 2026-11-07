@@ -171,7 +171,10 @@ export function ProjectsPage() {
             </EmptyContent>
           </Empty>
         ) : (
-          <ul aria-label={t("lobby_projects_label")} className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 pt-5">
+          <ul
+            aria-label={t("lobby_projects_label")}
+            className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 pt-5"
+          >
             {shown.map((project) => (
               <li key={project.name} className="flex min-w-0 flex-col">
                 <ProjectCard project={project} actions={actions} />

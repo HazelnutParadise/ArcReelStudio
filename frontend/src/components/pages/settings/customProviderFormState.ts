@@ -110,7 +110,10 @@ export function fetchedToRow(selection: FetchSelection, isDefault: boolean): Mod
 }
 
 /** 新建表单的模型发现结果转成「获取模型」对话框的行；自定义供应商以名字对应上条目为已识别。 */
-export function discoveredToFetched(m: DiscoveredModel, mediaOf: (endpoint: EndpointKey) => MediaType | undefined): FetchedProviderModel {
+export function discoveredToFetched(
+  m: DiscoveredModel,
+  mediaOf: (endpoint: EndpointKey) => MediaType | undefined,
+): FetchedProviderModel {
   return {
     model_id: m.model_id,
     display_name: m.display_name,
@@ -201,7 +204,9 @@ export function parseOptionalMultiplier(s: string): number | null | undefined {
  * 对应结果要重新算，前端不猜，按「还不知道」（undefined）处理；改回原值即取回加载时的结果。
  */
 export function matchedEntryFor(row: ModelRow): MatchedCatalogEntry | null | undefined {
-  return row.model_id === row.original_model_id && row.endpoint === row.original_endpoint ? row.matched_entry : undefined;
+  return row.model_id === row.original_model_id && row.endpoint === row.original_endpoint
+    ? row.matched_entry
+    : undefined;
 }
 
 export interface RowToInputOptions {

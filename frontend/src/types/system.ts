@@ -13,6 +13,8 @@ export interface SystemConfigSettings {
   text_backend_complex: string;
   video_generate_audio: boolean;
   video_poll_timeout_seconds: number;
+  /** 成片在 GPU 可用时是否用 GPU 编码；未设置时为 true。 */
+  gpu_encoding_enabled: boolean;
   anthropic_api_key: { is_set: boolean; masked: string | null };
   anthropic_base_url: string;
   anthropic_model: string;
@@ -34,6 +36,8 @@ export interface SystemConfigOptions {
   provider_names?: Record<string, string>;
   /** "provider_id/model_id" → 按 Accept-Language 成文的模型名；缺键即退回 model id。 */
   model_names?: Record<string, string>;
+  /** 本机可用的成片 GPU 编码器（如 h264_nvenc）；null 表示 GPU 编码不可用。 */
+  gpu_encoder?: string | null;
 }
 
 /** 新建 TTS 项目的预填值；未配置任何音频供应商时 audio_backend 为 null。 */
@@ -159,6 +163,7 @@ export interface SystemConfigPatch {
   text_backend_complex?: string;
   video_generate_audio?: boolean;
   video_poll_timeout_seconds?: number;
+  gpu_encoding_enabled?: boolean;
   anthropic_api_key?: string;
   anthropic_base_url?: string;
   anthropic_model?: string;

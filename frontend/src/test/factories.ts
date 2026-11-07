@@ -1,12 +1,6 @@
 import type { NarrationSegment, ScriptOverwrite, ScriptOverwriteEntry, TaskItem } from "@/types";
 import type { ReferenceUnitCapability } from "@/types/reference-video";
-import type {
-  WorkflowContent,
-  WorkflowPlan,
-  WorkflowPlanStep,
-  WorkflowStatus,
-} from "@/types/workflow";
-
+import type { WorkflowContent, WorkflowPlan, WorkflowPlanStep, WorkflowStatus } from "@/types/workflow";
 
 /** Shared test factory for `TaskItem`. Defaults model a freshly-queued
  *  reference_video task; callers override fields relevant to each scenario. */
@@ -82,7 +76,12 @@ export function makeStatus(overrides: Partial<WorkflowStatus> = {}): WorkflowSta
     project_revision: "sha256-v1:project",
     source_revision: "sha256-v1:source",
     project: { content_mode: "narration", generation_mode: "storyboard", grid_storyboard: false },
-    target: { episode: 1, script: "scripts/episode_1.json", script_filename: "episode_1.json", source: "source/episode_1.txt" },
+    target: {
+      episode: 1,
+      script: "scripts/episode_1.json",
+      script_filename: "episode_1.json",
+      source: "source/episode_1.txt",
+    },
     blockers: [],
     issues: [],
     content: makeContent(),

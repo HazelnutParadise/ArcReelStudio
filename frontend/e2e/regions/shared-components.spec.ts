@@ -166,7 +166,15 @@ const INVALID_DRAFT: ApiOverrides = {
             item_index: index,
           })),
         ],
-        soft_violations: [{ code: "long_text", params: {}, item_id: "E1S02", message: `E1S02 的原文偏长，可能难以在一个分镜里讲完。`, item_index: 1 }],
+        soft_violations: [
+          {
+            code: "long_text",
+            params: {},
+            item_id: "E1S02",
+            message: `E1S02 的原文偏长，可能难以在一个分镜里讲完。`,
+            item_index: 1,
+          },
+        ],
         formal_exists: true,
       },
     },
@@ -174,8 +182,34 @@ const INVALID_DRAFT: ApiOverrides = {
 };
 
 // 内容确认页的「本集新增资产」压力：十二项，长依据、长描述与多处出场。
-const NEW_ASSET_NAMES = ["沈砚", "守备", "说书人", "档房老吏", "渡口茶棚", "护城河", "旧档房", "铜牌", "私印", "马灯", "箭楼", "茶楼"];
-const NEW_ASSET_TYPES = ["character", "character", "character", "character", "scene", "scene", "scene", "prop", "prop", "prop", "scene", "scene"];
+const NEW_ASSET_NAMES = [
+  "沈砚",
+  "守备",
+  "说书人",
+  "档房老吏",
+  "渡口茶棚",
+  "护城河",
+  "旧档房",
+  "铜牌",
+  "私印",
+  "马灯",
+  "箭楼",
+  "茶楼",
+];
+const NEW_ASSET_TYPES = [
+  "character",
+  "character",
+  "character",
+  "character",
+  "scene",
+  "scene",
+  "scene",
+  "prop",
+  "prop",
+  "prop",
+  "scene",
+  "scene",
+];
 const NEW_ASSETS: ApiOverrides = {
   ...SCRIPTED,
   [SCRIPT_REVIEW]: {
@@ -314,7 +348,10 @@ defineRegionScenarios("共享组件：待修复草稿与新增资产", [
       await expect(section.getByRole("combobox", { name: "本体角色" })).toBeVisible();
       await section.getByRole("heading", { name: "本集新增资产" }).scrollIntoViewIfNeeded();
     },
-    screenshot: { name: "shared-new-assets", target: (page) => newAssets(page).getByRole("region", { name: "角色", exact: true }) },
+    screenshot: {
+      name: "shared-new-assets",
+      target: (page) => newAssets(page).getByRole("region", { name: "角色", exact: true }),
+    },
   },
 ]);
 
@@ -343,7 +380,10 @@ defineRegionScenarios("共享组件：集页对话框与提示", [
     path: EPISODE_PATH,
     api: SCRIPTED,
     ready: async (page) => {
-      await page.getByRole("button", { name: /查看「.*」的大图/ }).first().waitFor({ state: "attached" });
+      await page
+        .getByRole("button", { name: /查看「.*」的大图/ })
+        .first()
+        .waitFor({ state: "attached" });
     },
     act: async (page) => {
       await clearAgentOverlay(page);
@@ -407,7 +447,9 @@ defineRegionScenarios("共享组件：集页对话框与提示", [
       await expect(composer).toHaveValue(new RegExp(instruction));
       await expect.poll(() => composer.evaluate((el) => el.clientHeight)).toBeGreaterThan(emptyHeight);
       const sizing = await composer.evaluate((el) => ({
-        content: el.scrollHeight, visible: el.clientHeight, overflow: getComputedStyle(el).overflowY,
+        content: el.scrollHeight,
+        visible: el.clientHeight,
+        overflow: getComputedStyle(el).overflowY,
       }));
       if (sizing.content > sizing.visible + 1) {
         expect(["auto", "scroll"]).toContain(sizing.overflow);

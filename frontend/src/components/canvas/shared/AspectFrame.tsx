@@ -24,11 +24,5 @@ interface AspectFrameProps {
 export function AspectFrame({ ratio, children, className }: AspectFrameProps) {
   const ratioClass = RATIO_CLASSES[ratio] ?? RATIO_CLASSES["16:9"];
 
-  return (
-    <div
-      className={cn("overflow-hidden rounded-lg bg-background/50", ratioClass, className)}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cn("overflow-hidden rounded-lg bg-background/50", ratioClass, className)}>{children}</div>;
 }

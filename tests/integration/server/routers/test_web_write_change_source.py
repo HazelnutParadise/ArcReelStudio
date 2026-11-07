@@ -24,7 +24,7 @@ from typing import Any
 
 import pytest
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from lib.artifacts.artifact_activation import register_current_artifact, register_current_resource_artifact
 from lib.artifacts.artifact_manifest import ArtifactKey

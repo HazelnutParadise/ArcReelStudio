@@ -15,6 +15,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 import server.auth as auth_module
+from lib.db.base import DEFAULT_USER_ID
+from tests.auth_deps import seed_login_account
 
 # 穿过生产 app 的完整路由与认证栈，不是隔离单元，按 pytest markers 纪律属 integration。
 
@@ -59,23 +61,26 @@ _PARAM_RE = re.compile(r"\{([^}]+)\}")
 _PARAM_PLACEHOLDERS = {"path": "x/y.png"}
 
 
+_PASSWORD = "auth-coverage-pass"
+_USERNAME = ""
+"""登录用的账号，由 ``auth_env`` 在全局测试库里建好后填入。"""
+
+
 # module 级：整个文件共用一套认证环境；私有缓存在进出时清空，不污染其它测试模块。
 @pytest.fixture(scope="module", autouse=True)
 def auth_env():
     auth_module._cached_token_secret = None
-    auth_module._cached_password_hash = None
     with patch.dict(
         os.environ,
         {
             "AUTH_ENABLED": "true",
-            "AUTH_USERNAME": "testuser",
-            "AUTH_PASSWORD": "testpass",
             "AUTH_TOKEN_SECRET": "test-auth-coverage-secret-key-at-least-32-bytes",
         },
     ):
+        global _USERNAME
+        _USERNAME = seed_login_account(_PASSWORD, prefix="auth-coverage")
         yield
     auth_module._cached_token_secret = None
-    auth_module._cached_password_hash = None
 
 
 @pytest.fixture(scope="module")
@@ -134,7 +139,7 @@ def test_public_endpoints_stay_reachable(auth_coverage_client):
     assert (
         auth_coverage_client.post(
             "/api/v1/auth/token",
-            data={"username": "testuser", "password": "testpass"},
+            data={"username": _USERNAME, "password": _PASSWORD},
         ).status_code
         == 200
     )
@@ -146,7 +151,7 @@ def test_public_endpoints_stay_reachable(auth_coverage_client):
 def _login_token(client: TestClient) -> str:
     return client.post(
         "/api/v1/auth/token",
-        data={"username": "testuser", "password": "testpass"},
+        data={"username": _USERNAME, "password": _PASSWORD},
     ).json()["access_token"]
 
 
@@ -175,7 +180,7 @@ def test_sse_endpoints_accept_api_key(auth_coverage_client, path):
     """带 ``arc-`` API Key 时 router 级依赖放行。"""
     key = "arc-auth-coverage-key"
     key_hash = auth_module.hash_api_key(key)
-    auth_module._set_api_key_cache(key_hash, {"sub": "apikey:coverage", "via": "apikey"})
+    auth_module._set_api_key_cache(key_hash, {"sub": "apikey:coverage", "via": "apikey", "uid": DEFAULT_USER_ID})
     try:
         response = auth_coverage_client.get(path, headers={"Authorization": f"Bearer {key}"})
         assert response.status_code != 401
@@ -194,7 +199,7 @@ def test_trial_artifact_rejects_query_token(auth_coverage_client):
     """试跑产物不应让可复用的会话凭据出现在 URL 里。"""
     token = auth_coverage_client.post(
         "/api/v1/auth/token",
-        data={"username": "testuser", "password": "testpass"},
+        data={"username": _USERNAME, "password": _PASSWORD},
     ).json()["access_token"]
     response = auth_coverage_client.get(
         "/api/v1/custom-endpoints/trial-runs/missing/artifact",
@@ -206,7 +211,7 @@ def test_trial_artifact_rejects_query_token(auth_coverage_client):
 def test_trial_artifact_accepts_bearer_token(auth_coverage_client):
     token = auth_coverage_client.post(
         "/api/v1/auth/token",
-        data={"username": "testuser", "password": "testpass"},
+        data={"username": _USERNAME, "password": _PASSWORD},
     ).json()["access_token"]
     response = auth_coverage_client.get(
         "/api/v1/custom-endpoints/trial-runs/missing/artifact",
@@ -232,7 +237,7 @@ def test_authenticated_request_passes(auth_coverage_client):
     """带合法 token 时 router 级依赖放行。"""
     token = auth_coverage_client.post(
         "/api/v1/auth/token",
-        data={"username": "testuser", "password": "testpass"},
+        data={"username": _USERNAME, "password": _PASSWORD},
     ).json()["access_token"]
     assert auth_coverage_client.get(_PROBE_ENDPOINT, headers={"Authorization": f"Bearer {token}"}).status_code == 200
 

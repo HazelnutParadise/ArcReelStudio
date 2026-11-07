@@ -24,7 +24,10 @@ interface AssetAliasesFieldProps {
   busy?: boolean;
 }
 
-const UPDATE: Record<AliasAssetType, (project: string, name: string, updates: Record<string, unknown>) => Promise<unknown>> = {
+const UPDATE: Record<
+  AliasAssetType,
+  (project: string, name: string, updates: Record<string, unknown>) => Promise<unknown>
+> = {
   character: (project, name, updates) => API.updateCharacter(project, name, updates),
   scene: (project, name, updates) => API.updateProjectScene(project, name, updates),
   prop: (project, name, updates) => API.updateProjectProp(project, name, updates),
@@ -61,7 +64,12 @@ export function AssetAliasesField({
    * 此时列表仍是旧数据，基于它的后续动作（如撤销）不再可靠。
    */
   const save = async (target: string, next: string[]): Promise<"saved" | "stale" | "failed"> => {
-    if (latest.current.busy || latest.current.saving || rejectIfAssetBusy(assetType, projectName, target, t, "assets:gallery_busy_hint")) return "failed";
+    if (
+      latest.current.busy ||
+      latest.current.saving ||
+      rejectIfAssetBusy(assetType, projectName, target, t, "assets:gallery_busy_hint")
+    )
+      return "failed";
     setSaving(true);
     try {
       const refreshed = await track(
@@ -87,7 +95,13 @@ export function AssetAliasesField({
   };
 
   const remove = async (alias: string) => {
-    if ((await save(name, aliases.filter((item) => item !== alias))) !== "saved") return;
+    if (
+      (await save(
+        name,
+        aliases.filter((item) => item !== alias),
+      )) !== "saved"
+    )
+      return;
     useAppStore.getState().pushToast(t("assets:aliases_removed", { alias }), "info", {
       action: {
         label: t("common:undo"),
@@ -120,7 +134,10 @@ export function AssetAliasesField({
         {aliases.length > 0 && (
           <ul className="contents">
             {aliases.map((alias) => (
-              <li key={alias} className="inline-flex h-7 items-center gap-0.5 rounded-md border border-border pr-0.5 pl-2 text-sm">
+              <li
+                key={alias}
+                className="inline-flex h-7 items-center gap-0.5 rounded-md border border-border pr-0.5 pl-2 text-sm"
+              >
                 {alias}
                 <Button
                   variant="ghost"

@@ -44,7 +44,7 @@ export function useDisplayNames(
     void API.getProviders({ signal: controller.signal }).then(
       (res) => {
         if (controller.signal.aborted) return;
-         
+
         setSnapshot({ language, names: catalogDisplayNames(res.providers) });
       },
       // 失败保留上一份快照：名字停留在旧语言，好过退回裸 provider id。
@@ -53,10 +53,7 @@ export function useDisplayNames(
     return () => controller.abort();
   }, [language]);
 
-  const catalog = useMemo(
-    () => catalogDisplayNames(providers, customProviders),
-    [providers, customProviders],
-  );
+  const catalog = useMemo(() => catalogDisplayNames(providers, customProviders), [providers, customProviders]);
   const localized = snapshot?.language === language ? snapshot.names : null;
   return useMemo(
     () => ({

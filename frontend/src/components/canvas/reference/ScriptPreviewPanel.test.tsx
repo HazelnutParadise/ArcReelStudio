@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vite-plus/test";
 import { render, screen, waitFor } from "@testing-library/react";
 import { ScriptPreviewPanel } from "./ScriptPreviewPanel";
 import { API } from "@/api";
@@ -16,9 +16,7 @@ function mkPreview(overrides: Partial<ScriptPreview> = {}): ScriptPreview {
 }
 
 function renderPanel(text: string) {
-  return render(
-    <ScriptPreviewPanel projectName="demo" episode={1} text={text} lookup={LOOKUP} />,
-  );
+  return render(<ScriptPreviewPanel projectName="demo" episode={1} text={text} lookup={LOOKUP} />);
 }
 
 beforeEach(() => {

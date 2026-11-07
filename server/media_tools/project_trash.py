@@ -70,7 +70,7 @@ async def delete_project_file(
     path = request.value.path
     try:
         project_dir = await asyncio.to_thread(services.projects.get_project_path, scope.project_name)
-    except (FileNotFoundError, NotADirectoryError):
+    except FileNotFoundError, NotADirectoryError:
         return _problem(NotFoundError("file_not_found", path=path))
     except Exception as exc:
         return tool_error("delete_project_file", exc)

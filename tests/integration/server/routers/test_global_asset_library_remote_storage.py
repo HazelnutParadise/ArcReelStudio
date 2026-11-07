@@ -21,7 +21,7 @@ from types import SimpleNamespace
 from typing import Any
 from urllib.parse import quote
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -451,7 +451,9 @@ async def test_concurrent_replacements_of_a_library_image_each_retire_the_image_
         return put(bucket=bucket, key=key, content=content, content_type=content_type)
 
     monkeypatch.setattr(library_bucket, "put_object", paused_put)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=library_api.app), base_url="http://test") as client:
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=library_api.app), base_url="http://test"
+    ) as client:
         created = await client.post(
             "/api/v1/assets",
             data={"type": "character", "name": "Alice"},

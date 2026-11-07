@@ -171,7 +171,9 @@ export function projectNextGuide(
         title: t("dashboard:guide_upload_title"),
         detail: t("dashboard:guide_upload_detail"),
         instruction: false,
-        primary: [{ kind: "nav", label: t("dashboard:guide_upload_title"), to: episodesViewPath({ upload: "whole_source" }) }],
+        primary: [
+          { kind: "nav", label: t("dashboard:guide_upload_title"), to: episodesViewPath({ upload: "whole_source" }) },
+        ],
         alternatives,
         episodeId: null,
       };

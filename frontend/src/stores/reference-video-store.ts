@@ -38,7 +38,12 @@ interface ReferenceVideoStore {
 
   loadUnits: (projectName: string, episode: number) => Promise<void>;
   addUnit: (projectName: string, episode: number, payload: AddUnitPayload) => Promise<ReferenceVideoUnit>;
-  patchUnit: (projectName: string, episode: number, unitId: string, patch: PatchUnitPayload) => Promise<ReferenceVideoUnit>;
+  patchUnit: (
+    projectName: string,
+    episode: number,
+    unitId: string,
+    patch: PatchUnitPayload,
+  ) => Promise<ReferenceVideoUnit>;
   deleteUnit: (projectName: string, episode: number, unitId: string) => Promise<void>;
   moveUnit: (projectName: string, episode: number, unitId: string, afterUnitId: string | null) => Promise<void>;
   select: (unitId: string | null) => void;
@@ -97,7 +102,8 @@ export const useReferenceVideoStore = create<ReferenceVideoStore>((set) => ({
     set((s) => {
       const key = referenceVideoCacheKey(projectName, episode);
       const list = s.unitsByEpisode[key] ?? [];
-      const anchor = payload.after_unit_id === undefined ? -1 : list.findIndex((u) => u.unit_id === payload.after_unit_id);
+      const anchor =
+        payload.after_unit_id === undefined ? -1 : list.findIndex((u) => u.unit_id === payload.after_unit_id);
       const next = anchor === -1 ? [...list, unit] : [...list.slice(0, anchor + 1), unit, ...list.slice(anchor + 1)];
       return {
         unitsByEpisode: { ...s.unitsByEpisode, [key]: next },

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vite-plus/test";
 import { taskElapsed, elapsedDisplay } from "./task-elapsed";
 import type { TaskTiming } from "./task-elapsed";
 
@@ -39,14 +39,9 @@ describe("taskElapsed", () => {
   });
 
   it("时间戳缺失或不可解析的终态不给时长", () => {
+    expect(taskElapsed(timing({ status: "failed", started_at: "2026-01-01T00:01:00" }), NOW)).toBeNull();
     expect(
-      taskElapsed(timing({ status: "failed", started_at: "2026-01-01T00:01:00" }), NOW),
-    ).toBeNull();
-    expect(
-      taskElapsed(
-        timing({ status: "cancelled", started_at: "not-a-date", finished_at: "also-not" }),
-        NOW,
-      ),
+      taskElapsed(timing({ status: "cancelled", started_at: "not-a-date", finished_at: "also-not" }), NOW),
     ).toBeNull();
   });
 

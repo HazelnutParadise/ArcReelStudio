@@ -92,7 +92,7 @@ def without_asset_names_in_versions(versions: dict[str, Any]) -> bool:
                     continue
                 try:
                     frozen = ArtifactBasis.from_evidence_dict(record.get(IMAGE_ARTIFACT_BASIS_FIELD))
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     continue
                 if frozen.kind not in ASSET_NAME_FREE_IMAGE_BASIS_KINDS:
                     continue
@@ -105,7 +105,7 @@ def without_asset_names_in_versions(versions: dict[str, Any]) -> bool:
                         kind_version=frozen.kind_version,
                         inputs=without_asset_names(frozen.kind, inputs),
                     )
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     continue
                 if rewritten.digest != frozen.digest:
                     record[IMAGE_ARTIFACT_BASIS_FIELD] = rewritten.to_evidence_dict()

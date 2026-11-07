@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useTaskRefresh } from "@/hooks/useTaskRefresh";
 import { useTasksStore } from "@/stores/tasks-store";
@@ -56,9 +56,7 @@ describe("useTaskRefresh", () => {
       page: 1,
       page_size: 200,
     });
-    const statsSpy = vi.spyOn(API, "getTaskStats").mockResolvedValue(
-      { stats } as any,
-    );
+    const statsSpy = vi.spyOn(API, "getTaskStats").mockResolvedValue({ stats } as any);
 
     const { unmount } = renderHook(() => useTaskRefresh("demo"));
 
@@ -95,7 +93,9 @@ describe("useTaskRefresh", () => {
 
     // Recover on next poll
     listSpy.mockResolvedValueOnce({ items: [], total: 0, page: 1, page_size: 200 });
-    vi.spyOn(API, "getTaskStats").mockResolvedValueOnce({ stats: { queued: 0, running: 0, succeeded: 0, failed: 0, total: 0 } } as any);
+    vi.spyOn(API, "getTaskStats").mockResolvedValueOnce({
+      stats: { queued: 0, running: 0, succeeded: 0, failed: 0, total: 0 },
+    } as any);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(3000);

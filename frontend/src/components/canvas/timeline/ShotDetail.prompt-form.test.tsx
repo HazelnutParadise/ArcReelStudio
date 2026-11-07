@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { ShotDetail } from "./ShotDetail";
 import { API } from "@/api";
 import type { ItemPromptPreview, NarrationSegment } from "@/types";
@@ -19,10 +19,7 @@ function makeSegment(overrides: Partial<NarrationSegment> = {}): NarrationSegmen
   });
 }
 
-function renderDetail(
-  segment: NarrationSegment,
-  props: Partial<Parameters<typeof ShotDetail>[0]> = {},
-) {
+function renderDetail(segment: NarrationSegment, props: Partial<Parameters<typeof ShotDetail>[0]> = {}) {
   return render(
     <ShotDetail
       segment={segment}
@@ -69,6 +66,7 @@ describe("ShotDetail 提示词形态切换", () => {
     expect(onUpdatePrompt).toHaveBeenCalledWith(
       "E1S01",
       expect.objectContaining({ image_prompt: RENDERED_IMAGE_PROMPT }),
+      expect.anything(),
     );
   });
 
@@ -89,7 +87,12 @@ describe("ShotDetail 提示词形态切换", () => {
 
   it("渲染不出最终提示词时不切换形态，就地给出后端的不可用原因", async () => {
     const unavailable = { ...preview() };
-    unavailable.storyboard_image = { text: null, unavailable: "该分镜没有分镜图提示词", is_text_form: false, warnings: [] };
+    unavailable.storyboard_image = {
+      text: null,
+      unavailable: "该分镜没有分镜图提示词",
+      is_text_form: false,
+      warnings: [],
+    };
     const spy = vi.spyOn(API, "previewScriptItemPrompts").mockResolvedValue(unavailable);
     renderDetail(makeSegment());
 
@@ -140,10 +143,17 @@ describe("ShotDetail 结构化 → 文本切换在途", () => {
     [
       "渲染不出文本",
       (d: ReturnType<typeof createDeferred<ItemPromptPreview>>) =>
-        d.resolve({ ...preview(), video: { text: null, unavailable: "该分镜没有视频提示词", is_text_form: false, warnings: [] } }),
+        d.resolve({
+          ...preview(),
+          video: { text: null, unavailable: "该分镜没有视频提示词", is_text_form: false, warnings: [] },
+        }),
       "该分镜没有视频提示词",
     ],
-    ["请求报错", (d: ReturnType<typeof createDeferred<ItemPromptPreview>>) => d.reject(new Error("网络中断")), "网络中断"],
+    [
+      "请求报错",
+      (d: ReturnType<typeof createDeferred<ItemPromptPreview>>) => d.reject(new Error("网络中断")),
+      "网络中断",
+    ],
   ])("切换失败（%s）时结构化编辑入口恢复可用", async (_label, settle, message) => {
     const pending = createDeferred<ItemPromptPreview>();
     vi.spyOn(API, "previewScriptItemPrompts").mockReturnValue(pending.promise);
@@ -197,7 +207,11 @@ describe("ShotDetail 最终提示词预览", () => {
     const dialog = await screen.findByRole("dialog", { name: "分镜图最终提示词" });
     expect(await within(dialog).findByText(/Scene: 雨夜街道/)).toBeInTheDocument();
     expect(save.mock.invocationCallOrder[0]).toBeLessThan(request.mock.invocationCallOrder[0]);
-    expect(save).toHaveBeenCalledWith("E1S01", expect.objectContaining({ image_prompt: expect.objectContaining({ scene: "改过的画面" }) }));
+    expect(save).toHaveBeenCalledWith(
+      "E1S01",
+      expect.objectContaining({ image_prompt: expect.objectContaining({ scene: "改过的画面" }) }),
+      expect.anything(),
+    );
   });
 
   it.each([false, new Error("写入失败")])("保存或刷新失败时不打开预览（%s）", async (result) => {

@@ -160,9 +160,7 @@ export interface UsageConsecutiveFailuresAttention {
   last_error_code: string | null;
 }
 
-export type UsageAttention =
-  | UsageFailureRateAttention
-  | UsageConsecutiveFailuresAttention;
+export type UsageAttention = UsageFailureRateAttention | UsageConsecutiveFailuresAttention;
 
 /** 筛选候选值取全表 distinct，不随筛选变化。 */
 export interface UsageFilterOptions {

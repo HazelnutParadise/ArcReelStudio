@@ -1,5 +1,5 @@
 import { act, render, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAssetSheetBatchNotifications } from "@/hooks/useAssetSheetBatchNotifications";
 import { useTaskFailureNotifications } from "@/hooks/useTaskFailureNotifications";
@@ -28,7 +28,13 @@ function member(overrides: Partial<AssetSheetBatchMember>): AssetSheetBatchMembe
   };
 }
 
-const OWNER = { task_id: "t1", project_name: "demo", task_type: "character", media_type: "image", resource_id: "Alice" } as const;
+const OWNER = {
+  task_id: "t1",
+  project_name: "demo",
+  task_type: "character",
+  media_type: "image",
+  resource_id: "Alice",
+} as const;
 const DERIVATIVE = {
   task_id: "t2",
   project_name: "demo",
@@ -140,7 +146,13 @@ describe("useAssetSheetBatchNotifications", () => {
       projectName: "demo",
       members: [
         member({ task_id: queued ? "t1" : null, status: queued ? "queued" : "failed" }),
-        member({ unit_id: "character/Alice/战损", derivative: "战损", task_id: null, status: "failed", problem_code: "generation_dependency_failed" }),
+        member({
+          unit_id: "character/Alice/战损",
+          derivative: "战损",
+          task_id: null,
+          status: "failed",
+          problem_code: "generation_dependency_failed",
+        }),
       ],
     });
     if (queued) useTasksStore.setState({ tasks: [makeTask({ ...OWNER, status: "running" })] });

@@ -2,7 +2,7 @@
 
 schema 头部追加必填 ``project``，每次调用显式定位项目；任何定位失败统一返回 ``invalid_project``。
 无 scope 声明（列出、创建项目）不追加 ``project``，也不定位项目。
-长任务声明在描述末尾追加统一的批次句柄与轮询说明。结果写进 ``structuredContent``，content（文本块与图片块）
+长任务声明在描述末尾追加统一的批次句柄与轮询说明。结果写进 ``structured_content``（线上字段 ``structuredContent``），content（文本块与图片块）
 与内嵌宿主相同。
 """
 
@@ -15,7 +15,7 @@ from dataclasses import replace
 from typing import Any
 
 from mcp.server.auth.middleware.auth_context import get_access_token
-from mcp.server.fastmcp.tools import Tool as FastMCPTool
+from mcp.server.mcpserver.tools import Tool as MCPServerTool
 from mcp.types import CallToolResult, ImageContent, TextContent
 from pydantic import Field
 
@@ -110,17 +110,17 @@ def remote_result(declaration: AgentToolDeclaration, outcome: ToolOutcome[Any]) 
         content=[
             *(TextContent(type="text", text=text) for text in envelope.texts),
             *(
-                ImageContent(type="image", data=image.base64_data, mimeType=image.mime_type)
+                ImageContent(type="image", data=image.base64_data, mime_type=image.mime_type)
                 for image in envelope.images
             ),
         ],
-        structuredContent=envelope.structured,
-        isError=envelope.is_error,
+        structured_content=envelope.structured,
+        is_error=envelope.is_error,
     )
 
 
-class _DeclaredRemoteTool(FastMCPTool):
-    """绕过 FastMCP 的签名推导：参数由声明的请求模型校验，``project`` 由本 adapter 定位。"""
+class _DeclaredRemoteTool(MCPServerTool):
+    """绕过 MCPServer 的签名推导：参数由声明的请求模型校验，``project`` 由本 adapter 定位。"""
 
     invoke: Callable[[dict[str, Any]], Awaitable[CallToolResult]] = Field(exclude=True)
 
@@ -140,7 +140,7 @@ def remote_tool(
     projects: ProjectManager,
     services: Services,
     caller: Callable[[], CallerContext] = authenticated_caller,
-) -> FastMCPTool:
+) -> MCPServerTool:
     async def invoke(arguments: dict[str, Any]) -> CallToolResult:
         if isinstance(declaration, UnscopedToolDeclaration):
             return remote_result(
@@ -158,7 +158,7 @@ def remote_tool(
     async def unused() -> CallToolResult:
         raise RuntimeError("declared remote tools override run")
 
-    metadata = FastMCPTool.from_function(unused, structured_output=False)
+    metadata = MCPServerTool.from_function(unused, structured_output=False)
     return _DeclaredRemoteTool(
         fn=unused,
         name=declaration.name,
@@ -178,7 +178,7 @@ def remote_tools(
     *,
     projects: ProjectManager,
     services: Services,
-) -> list[FastMCPTool]:
+) -> list[MCPServerTool]:
     return [remote_tool(declaration, projects=projects, services=services) for declaration in declarations]
 
 

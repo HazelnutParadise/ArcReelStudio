@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Link, Route, Router, Switch, useLocation } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
@@ -541,7 +541,7 @@ describe("外部更新", () => {
     rerender(<NoteEditor source="Agent 改写的备注" save={save} inline />);
 
     expect(note()).toHaveValue("Agent 改写的备注");
-    expect(screen.queryByText("此内容已被 Agent 更新")).not.toBeInTheDocument();
+    expect(screen.queryByText("此内容已被其他成员或 Agent 更新")).not.toBeInTheDocument();
   });
 
   it("有未保存修改时保留修改并提示，可以采用新内容", async () => {
@@ -553,11 +553,11 @@ describe("外部更新", () => {
     rerender(<NoteEditor source="Agent 改写的备注" save={save} inline />);
 
     expect(note()).toHaveValue("原始备注，补充");
-    expect(screen.getByText("此内容已被 Agent 更新")).toBeInTheDocument();
+    expect(screen.getByText("此内容已被其他成员或 Agent 更新")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "采用新内容" }));
 
     expect(note()).toHaveValue("Agent 改写的备注");
-    expect(screen.queryByText("此内容已被 Agent 更新")).not.toBeInTheDocument();
+    expect(screen.queryByText("此内容已被其他成员或 Agent 更新")).not.toBeInTheDocument();
   });
 });

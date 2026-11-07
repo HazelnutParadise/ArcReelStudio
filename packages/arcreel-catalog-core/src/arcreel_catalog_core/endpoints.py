@@ -142,7 +142,10 @@ BUILTIN_PROVIDER_ENDPOINTS: Final[Mapping[str, Mapping[str, ProviderEndpointOpti
         "gemini-aistudio": {
             "text": _single("gemini-generate"),
             "image": _single("gemini-image"),
-            "video": ProviderEndpointOptions(("gemini-video", "gemini-interactions-video"), "gemini-video"),
+            # Google 已关闭 AI Studio 上的 Veo，默认改用 Gemini Omni
+            "video": ProviderEndpointOptions(
+                ("gemini-video", "gemini-interactions-video"), "gemini-interactions-video"
+            ),
             "audio": _single("gemini-tts"),
         },
         "gemini-vertex": {

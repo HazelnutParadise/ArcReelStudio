@@ -13,7 +13,7 @@ export const AssetWriteProvider = AssetWriteContext.Provider;
  */
 export function useAssetWrites(): { writing: boolean; track: TrackWrite } {
   const [count, setCount] = useState(0);
-  const track = useCallback(async <T,>(work: Promise<T>) => {
+  const track = useCallback(async <T>(work: Promise<T>) => {
     setCount((c) => c + 1);
     try {
       return await work;
@@ -27,5 +27,5 @@ export function useAssetWrites(): { writing: boolean; track: TrackWrite } {
 /** 区块内登记一次写请求；不在详情编辑器里时原样返回。 */
 export function useTrackWrite(): TrackWrite {
   const track = useContext(AssetWriteContext);
-  return useCallback(<T,>(work: Promise<T>) => (track ? track(work) : work), [track]);
+  return useCallback(<T>(work: Promise<T>) => (track ? track(work) : work), [track]);
 }

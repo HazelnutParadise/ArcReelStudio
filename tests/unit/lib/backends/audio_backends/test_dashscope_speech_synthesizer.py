@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import NamedTuple
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -56,13 +56,13 @@ class _Routes(NamedTuple):
 
 @contextmanager
 def _routes(
-    *, synth: httpx.Response | None = None, synth_url: str = _SYNTH_URL, download: bytes = b"RIFFwav"
+    *, synth: httpx2.Response | None = None, synth_url: str = _SYNTH_URL, download: bytes = b"RIFFwav"
 ) -> Generator[_Routes]:
     with capture_http() as router:
         synth_route = router.post(synth_url)
-        synth_route.mock(return_value=synth or httpx.Response(200, json=_official_response({"characters": 15})))
+        synth_route.mock(return_value=synth or httpx2.Response(200, json=_official_response({"characters": 15})))
         download_route = router.get(_AUDIO_URL)
-        download_route.mock(return_value=httpx.Response(200, content=download))
+        download_route.mock(return_value=httpx2.Response(200, content=download))
         yield _Routes(synthesize=synth_route, download=download_route)
 
 
@@ -136,7 +136,7 @@ class TestRequest:
 
     async def test_reports_token_usage_of_31_models(self, tmp_path: Path):
         usage = {"characters": 15, "input_tokens": 12, "output_tokens": 340, "total_tokens": 352}
-        with _routes(synth=httpx.Response(200, json=_official_response(usage))):
+        with _routes(synth=httpx2.Response(200, json=_official_response(usage))):
             result = await DashScopeSpeechSynthesizerBackend(api_key="sk").synthesize(_request(tmp_path))
         assert result.input_tokens == 12
         assert result.audio_output_tokens == 340
@@ -144,7 +144,7 @@ class TestRequest:
     @pytest.mark.parametrize("bad", [None, "12", True, -1, 1.5])
     async def test_malformed_token_fields_are_treated_as_unreported(self, tmp_path: Path, bad: object):
         usage = {"characters": 15, "input_tokens": bad, "output_tokens": bad}
-        with _routes(synth=httpx.Response(200, json=_official_response(usage))):
+        with _routes(synth=httpx2.Response(200, json=_official_response(usage))):
             result = await DashScopeSpeechSynthesizerBackend(api_key="sk").synthesize(_request(tmp_path))
         assert result.input_tokens is None
         assert result.audio_output_tokens is None
@@ -152,7 +152,7 @@ class TestRequest:
     async def test_missing_audio_url_fails_without_download(self, tmp_path: Path):
         error = {"code": "InvalidParameter", "message": "[cosyvoice:]Engine error [411]", "request_id": "r"}
         with (
-            _routes(synth=httpx.Response(200, json=error)) as routes,
+            _routes(synth=httpx2.Response(200, json=error)) as routes,
             pytest.raises(RuntimeError, match="InvalidParameter"),
         ):
             await DashScopeSpeechSynthesizerBackend(api_key="sk").synthesize(_request(tmp_path))
@@ -160,8 +160,8 @@ class TestRequest:
 
     async def test_client_error_is_not_retried(self, tmp_path: Path):
         with (
-            _routes(synth=httpx.Response(400, json={"code": "InvalidParameter"})) as routes,
-            pytest.raises(httpx.HTTPStatusError),
+            _routes(synth=httpx2.Response(400, json={"code": "InvalidParameter"})) as routes,
+            pytest.raises(httpx2.HTTPStatusError),
         ):
             await DashScopeSpeechSynthesizerBackend(api_key="sk").synthesize(_request(tmp_path))
         assert routes.synthesize.call_count == 1
@@ -229,8 +229,8 @@ class TestCustomProviderEndpoint:
         backend = self._build({"generate": "/proxy/tts"})
         with capture_http() as router:
             synth = router.post("https://relay.test/proxy/tts").mock(
-                return_value=httpx.Response(200, json=_official_response({"characters": 15}))
+                return_value=httpx2.Response(200, json=_official_response({"characters": 15}))
             )
-            router.get(_AUDIO_URL).mock(return_value=httpx.Response(200, content=b"ok"))
+            router.get(_AUDIO_URL).mock(return_value=httpx2.Response(200, content=b"ok"))
             await backend.synthesize(_request(tmp_path))
         assert synth.call_count == 1

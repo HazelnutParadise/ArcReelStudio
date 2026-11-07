@@ -24,9 +24,7 @@ async function loadStreamdownComponent(): Promise<LoadedStreamdown | null> {
   streamdownPromise = import("streamdown")
     .then((mod) => {
       // The named export `Streamdown` is a MemoExoticComponent
-      const Comp = (mod as Record<string, unknown>).Streamdown ??
-        (mod as Record<string, unknown>).default ??
-        null;
+      const Comp = (mod as Record<string, unknown>).Streamdown ?? (mod as Record<string, unknown>).default ?? null;
       if (!Comp) return null;
       return {
         Component: Comp as ComponentType<Record<string, unknown>>,
@@ -75,7 +73,14 @@ function AppLink({ href, children }: { href?: string; children?: ReactNode }) {
   if (!href || !link) return <span>{children}</span>;
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     // 带修饰键或非左键时保留浏览器默认行为（新标签页打开等）。
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
       return;
     }
     event.preventDefault();
@@ -161,9 +166,10 @@ function useKeepCodeBlockFocus(root: HTMLElement | null): void {
 
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target;
-      focused = target instanceof HTMLElement && target.matches(CODE_BLOCK_BODY)
-        ? { node: target, index: codeBlocks().indexOf(target) }
-        : null;
+      focused =
+        target instanceof HTMLElement && target.matches(CODE_BLOCK_BODY)
+          ? { node: target, index: codeBlocks().indexOf(target) }
+          : null;
     };
     const onFocusOut = () => {
       // 节点被移除时不算离开：替换后的恢复由下面的观察者处理
@@ -245,10 +251,12 @@ export function StreamMarkdown({ content, size = "default" }: StreamMarkdownProp
   useEffect(() => {
     let mounted = true;
 
-    voidCall(loadStreamdownComponent().then((component) => {
-      if (!mounted || !component) return;
-      setStreamdown(component);
-    }));
+    voidCall(
+      loadStreamdownComponent().then((component) => {
+        if (!mounted || !component) return;
+        setStreamdown(component);
+      }),
+    );
 
     return () => {
       mounted = false;

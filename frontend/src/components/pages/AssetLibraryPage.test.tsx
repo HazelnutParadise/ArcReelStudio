@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { createDeferred } from "@/test/deferred";
@@ -44,7 +44,10 @@ class FakeIntersectionObserver {
   }
   static reachBottom() {
     for (const observer of FakeIntersectionObserver.instances.filter((o) => o.connected)) {
-      observer.callback([{ isIntersecting: true } as IntersectionObserverEntry], observer as unknown as IntersectionObserver);
+      observer.callback(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        observer as unknown as IntersectionObserver,
+      );
     }
   }
 }
@@ -126,7 +129,9 @@ describe("AssetLibraryPage", { timeout: 15_000 }, () => {
     const asset = makeAsset();
     const other = makeAsset({ id: "a2", name: "李四" });
     const pending = createDeferred<{ asset: Asset }>();
-    vi.spyOn(API, "listAssets").mockImplementation(async (params) => (params?.q === "李" ? page([other]) : page([asset])));
+    vi.spyOn(API, "listAssets").mockImplementation(async (params) =>
+      params?.q === "李" ? page([other]) : page([asset]),
+    );
     vi.spyOn(API, "updateAsset").mockReturnValue(pending.promise);
     const location = renderPage("/app/assets?q=王");
     await user.click(await screen.findByRole("button", { name: "王小明" }));
@@ -291,9 +296,11 @@ describe("AssetLibraryPage", { timeout: 15_000 }, () => {
   it("loads the next page when the end of the grid scrolls into view, until the total is reached", async () => {
     const first = Array.from({ length: 60 }, (_, i) => makeAsset({ id: `a${i}`, name: `角色${i}` }));
     const second = [makeAsset({ id: "a60", name: "角色60" })];
-    const listSpy = vi.spyOn(API, "listAssets").mockImplementation(async (params) =>
-      page(params?.offset ? second : first, { total: 61, counts: { character: 61, scene: 0, prop: 0 } }),
-    );
+    const listSpy = vi
+      .spyOn(API, "listAssets")
+      .mockImplementation(async (params) =>
+        page(params?.offset ? second : first, { total: 61, counts: { character: 61, scene: 0, prop: 0 } }),
+      );
     renderPage();
 
     await screen.findByRole("button", { name: "角色59" });
@@ -330,10 +337,16 @@ describe("AssetLibraryPage", { timeout: 15_000 }, () => {
     await user.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() =>
-      expect(updateSpy).toHaveBeenCalledWith("a1", { name: "王小明", description: "黑衣剑客", voice_style: "清亮少年音" }),
+      expect(updateSpy).toHaveBeenCalledWith("a1", {
+        name: "王小明",
+        description: "黑衣剑客",
+        voice_style: "清亮少年音",
+      }),
     );
     await user.click(screen.getByRole("button", { name: "返回详情" }));
-    expect(await within(await screen.findByRole("dialog", { name: "王小明" })).findByText("黑衣剑客")).toBeInTheDocument();
+    expect(
+      await within(await screen.findByRole("dialog", { name: "王小明" })).findByText("黑衣剑客"),
+    ).toBeInTheDocument();
   });
 
   it("deletes from the card menu after confirming, and lowers the tab count", async () => {

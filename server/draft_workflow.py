@@ -1475,7 +1475,7 @@ class DraftWorkflow:
                         **promote_kwargs,
                     )
                     message = f"✅ 提示词编写晋升（正式剧本）已保存: {_project_relative(result_path, project_path)}"
-            except (DraftWorkflowError, ModelNotInCatalogError):
+            except DraftWorkflowError, ModelNotInCatalogError:
                 # ModelNotInCatalogError 原样上抛：调用方据此给出「重新选择模型」指引
                 raise
             except ScriptWriteConflict as exc:

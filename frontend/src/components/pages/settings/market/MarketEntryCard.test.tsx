@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import "@/i18n";
 import { API } from "@/api";
 import type { MarketEntry, MarketEntryInstallation } from "@/types";
@@ -37,7 +37,13 @@ describe("MarketEntryCard", () => {
   it("shows the capitalised initial without requesting an icon when the entry has none", () => {
     const getIcon = vi.spyOn(API, "getMarketEntryIcon");
     const { container } = render(
-      <MarketEntryCard entry={makeEntry()} sourceName="团队市场" sourceKind="custom" onOpen={vi.fn()} onInstalledOpen={vi.fn()} />,
+      <MarketEntryCard
+        entry={makeEntry()}
+        sourceName="团队市场"
+        sourceKind="custom"
+        onOpen={vi.fn()}
+        onInstalledOpen={vi.fn()}
+      />,
     );
 
     expect(container.querySelector("img")).toBeNull();
@@ -59,7 +65,12 @@ describe("MarketEntryCard", () => {
     );
 
     await waitFor(() => expect(container.querySelector("img")).toHaveAttribute("src", "blob:icon"));
-    expect(getIcon).toHaveBeenCalledWith(2, "kling-master", "2.1.0", expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(getIcon).toHaveBeenCalledWith(
+      2,
+      "kling-master",
+      "2.1.0",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
     expect(URL.createObjectURL).toHaveBeenCalledWith(blob);
     const signal = getIcon.mock.calls[0][3]?.signal;
 
@@ -120,35 +131,44 @@ describe("MarketEntryCard", () => {
   });
 
   it.each([
-    { state: "update_available", modified: true, badges: ["视频", "可更新", "已修改"], action: "更新", opens: "dialog" },
+    {
+      state: "update_available",
+      modified: true,
+      badges: ["视频", "可更新", "已修改"],
+      action: "更新",
+      opens: "dialog",
+    },
     { state: "current", modified: true, badges: ["视频", "已安装", "已修改"], action: "打开端点", opens: "endpoint" },
     { state: "current", modified: false, badges: ["视频", "已安装"], action: "打开端点", opens: "endpoint" },
-  ] as const)("shows $badges badges and routes the $action action", async ({ state, modified, badges, action, opens }) => {
-    const installation: MarketEntryInstallation = {
-      endpoint_id: 7,
-      endpoint_key: "ce-7",
-      endpoint_display_name: "kling Master",
-      installed_version: "2.0.0",
-      state,
-      modified,
-    };
-    const onOpen = vi.fn();
-    const onInstalledOpen = vi.fn();
-    render(
-      <MarketEntryCard
-        entry={makeEntry({ installation })}
-        sourceName="团队市场"
-        sourceKind="custom"
-        onOpen={onOpen}
-        onInstalledOpen={onInstalledOpen}
-      />,
-    );
+  ] as const)(
+    "shows $badges badges and routes the $action action",
+    async ({ state, modified, badges, action, opens }) => {
+      const installation: MarketEntryInstallation = {
+        endpoint_id: 7,
+        endpoint_key: "ce-7",
+        endpoint_display_name: "kling Master",
+        installed_version: "2.0.0",
+        state,
+        modified,
+      };
+      const onOpen = vi.fn();
+      const onInstalledOpen = vi.fn();
+      render(
+        <MarketEntryCard
+          entry={makeEntry({ installation })}
+          sourceName="团队市场"
+          sourceKind="custom"
+          onOpen={onOpen}
+          onInstalledOpen={onInstalledOpen}
+        />,
+      );
 
-    const card = screen.getByRole("article", { name: "kling Master" });
-    const badgeTexts = Array.from(card.querySelectorAll('[data-slot="badge"]'), (el) => el.textContent);
-    expect(badgeTexts).toEqual(badges);
-    await userEvent.click(within(card).getByRole("button", { name: action }));
-    expect(onOpen).toHaveBeenCalledTimes(opens === "dialog" ? 1 : 0);
-    expect(onInstalledOpen).toHaveBeenCalledTimes(opens === "endpoint" ? 1 : 0);
-  });
+      const card = screen.getByRole("article", { name: "kling Master" });
+      const badgeTexts = Array.from(card.querySelectorAll('[data-slot="badge"]'), (el) => el.textContent);
+      expect(badgeTexts).toEqual(badges);
+      await userEvent.click(within(card).getByRole("button", { name: action }));
+      expect(onOpen).toHaveBeenCalledTimes(opens === "dialog" ? 1 : 0);
+      expect(onInstalledOpen).toHaveBeenCalledTimes(opens === "endpoint" ? 1 : 0);
+    },
+  );
 });

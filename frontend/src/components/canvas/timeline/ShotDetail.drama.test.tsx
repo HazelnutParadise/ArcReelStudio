@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vite-plus/test";
 import { ShotDetail } from "./ShotDetail";
 import { useProjectsStore } from "@/stores/projects-store";
 import type { DramaScene, ProjectData, Utterance } from "@/types";
@@ -63,7 +63,9 @@ describe("ShotDetail 剧情演绎", () => {
 
   it("说话人输入框以已登记角色作候选，仍可写其他名字", () => {
     useProjectsStore.setState({
-      currentProjectData: { characters: { 阿离: { description: "少女" }, 裴与: { description: "将军" } } } as unknown as ProjectData,
+      currentProjectData: {
+        characters: { 阿离: { description: "少女" }, 裴与: { description: "将军" } },
+      } as unknown as ProjectData,
     });
     try {
       renderDetail();
@@ -92,6 +94,7 @@ describe("ShotDetail 剧情演绎", () => {
           { kind: "dialogue", speaker: "阿离", text: "我回来了。" },
         ],
       }),
+      expect.anything(),
     );
   });
 
@@ -106,6 +109,7 @@ describe("ShotDetail 剧情演绎", () => {
       expect.objectContaining({
         utterances: [...sampleUtterances, { kind: "voiceover", speaker: null, text: "" }],
       }),
+      expect.anything(),
     );
   });
 
@@ -205,7 +209,11 @@ describe("ShotDetail 剧情演绎", () => {
       // 标题按本集位置称呼分镜：E1S01 排在第 2 位
       useProjectsStore.setState({
         currentScripts: {
-          "episode_1.json": { episode: 1, content_mode: "drama", scenes: [makeScene({ scene_id: "E1S00" }), makeScene()] } as never,
+          "episode_1.json": {
+            episode: 1,
+            content_mode: "drama",
+            scenes: [makeScene({ scene_id: "E1S00" }), makeScene()],
+          } as never,
         },
       });
       onTestFinished(() => useProjectsStore.setState(useProjectsStore.getInitialState(), true));

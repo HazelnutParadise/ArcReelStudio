@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useCostStore } from "@/stores/cost-store";
 import { useTasksStore } from "@/stores/tasks-store";
@@ -37,10 +37,18 @@ vi.mock("../timeline/ShotSplitView", () => ({
       >
         generate-video
       </button>
-      <button type="button" onClick={() => onGenerateStoryboard?.("SEG-2")}>generate-storyboard</button>
-      <button type="button" onClick={() => void onInsertShot?.("SEG-1")}>insert</button>
-      <button type="button" onClick={() => void onMoveShot?.("SEG-2", null)}>move</button>
-      <button type="button" onClick={() => void onRemoveShot?.("SEG-1")}>remove</button>
+      <button type="button" onClick={() => onGenerateStoryboard?.("SEG-2")}>
+        generate-storyboard
+      </button>
+      <button type="button" onClick={() => void onInsertShot?.("SEG-1")}>
+        insert
+      </button>
+      <button type="button" onClick={() => void onMoveShot?.("SEG-2", null)}>
+        move
+      </button>
+      <button type="button" onClick={() => void onRemoveShot?.("SEG-1")}>
+        remove
+      </button>
     </>
   ),
 }));
@@ -120,13 +128,18 @@ describe("GridImageToVideoCanvas", () => {
     render(
       <GridImageToVideoCanvas
         {...BOARD}
-        projectName="demo" episode={1} hasDraft episodeScript={makeScript()}
-        scriptFile="scripts/episode_1.json" projectData={makeProjectData()}
+        projectName="demo"
+        episode={1}
+        hasDraft
+        episodeScript={makeScript()}
+        scriptFile="scripts/episode_1.json"
+        projectData={makeProjectData()}
         durationEndpointFixed
       />,
     );
     expect(screen.getByRole("button", { name: "generate-video" })).toHaveAttribute(
-      "data-duration-endpoint-fixed", "yes",
+      "data-duration-endpoint-fixed",
+      "yes",
     );
   });
 
@@ -138,9 +151,14 @@ describe("GridImageToVideoCanvas", () => {
     render(
       <GridImageToVideoCanvas
         {...BOARD}
-        projectName="demo" episode={1} episodeScript={makeScript()}
-        scriptFile="scripts/episode_1.json" projectData={makeProjectData()}
-        onMoveShot={onMoveShot} onInsertShot={onInsertShot} onRemoveShot={onRemoveShot}
+        projectName="demo"
+        episode={1}
+        episodeScript={makeScript()}
+        scriptFile="scripts/episode_1.json"
+        projectData={makeProjectData()}
+        onMoveShot={onMoveShot}
+        onInsertShot={onInsertShot}
+        onRemoveShot={onRemoveShot}
         onGenerateStoryboard={onGenerateStoryboard}
       />,
     );

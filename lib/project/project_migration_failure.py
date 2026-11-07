@@ -123,7 +123,7 @@ def _readable_schema_version(project_dir: Path) -> int | None:
 
     try:
         data = json.loads((project_dir / "project.json").read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, ValueError):
+    except OSError, UnicodeDecodeError, ValueError:
         return None
     if not isinstance(data, dict):
         return None

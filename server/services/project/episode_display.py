@@ -68,6 +68,6 @@ async def present_request_diagnostics(value: Any, request: Request, translate: C
         return value
     try:
         project = await asyncio.to_thread(lambda: get_project_manager().load_project(project_name))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         project = {}
     return present_episode_diagnostics(value, project, translate)

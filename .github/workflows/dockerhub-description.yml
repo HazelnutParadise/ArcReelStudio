@@ -25,6 +25,9 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    # 没有配置 Docker Hub 凭据的仓库（如只发布 ghcr 的 fork）跳过同步
+    env:
+      DOCKERHUB_ENABLED: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -37,6 +40,7 @@ jobs:
           REPO: ${{ github.repository }}
 
       - name: Sync repository description to Docker Hub
+        if: env.DOCKERHUB_ENABLED == 'true'
         uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa # v5.0.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}

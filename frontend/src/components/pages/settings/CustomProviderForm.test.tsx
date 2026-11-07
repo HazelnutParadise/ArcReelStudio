@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
@@ -30,6 +30,7 @@ const CHAT_ENDPOINT: EndpointDescriptor = {
   request_path_template: "/v1/chat/completions",
   image_capabilities: null,
   end_image_capable: false,
+  custom_selectable: true,
   size_fixed: false,
   duration_fixed: false,
   duration_frame_rate_missing: false,

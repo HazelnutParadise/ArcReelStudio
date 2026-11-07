@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import i18n from "@/i18n";
 import { formatElapsedMs } from "@/utils/task-elapsed";
@@ -86,9 +86,7 @@ describe("formatDurationMs", () => {
     // 记录行的耗时与任务读数共用 `common:elapsed_*`：同一段时长全站只有一种写法，
     // 且超过一小时后给时分而不是「90 分 0 秒」。
     expect(formatDurationMs(5_400_000, dashboardT())).toBe("1时30分");
-    expect(formatDurationMs(5_400_000, dashboardT())).toBe(
-      formatElapsedMs(5_400_000, dashboardT()),
-    );
+    expect(formatDurationMs(5_400_000, dashboardT())).toBe(formatElapsedMs(5_400_000, dashboardT()));
   });
 
   it("shows a dash when there is no duration to show", () => {

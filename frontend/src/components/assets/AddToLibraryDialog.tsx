@@ -166,7 +166,12 @@ function AddToLibraryForm({
           <AssetThumb
             imageUrl={imageUrl}
             alt={t("asset_image_alt", { name: resourceId })}
-            fallback={<span className="flex flex-col items-center gap-2 text-sm"><Icon aria-hidden className="size-8" />{t("no_sheet")}</span>}
+            fallback={
+              <span className="flex flex-col items-center gap-2 text-sm">
+                <Icon aria-hidden className="size-8" />
+                {t("no_sheet")}
+              </span>
+            }
             className="rounded-lg border border-border"
           />
           <div className="flex flex-col gap-1.5">

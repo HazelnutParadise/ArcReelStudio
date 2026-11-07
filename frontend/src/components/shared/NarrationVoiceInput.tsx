@@ -16,7 +16,13 @@ interface Props {
 /** 音色表只作候选，克隆音色与表外系统音色照常手填。 */
 export function NarrationVoiceInput({ id, value, onChange, voices, ...aria }: Props) {
   return (
-    <Autocomplete.Root items={voices} itemToStringValue={(voice) => voice.id} value={value} onValueChange={onChange} openOnInputClick>
+    <Autocomplete.Root
+      items={voices}
+      itemToStringValue={(voice) => voice.id}
+      value={value}
+      onValueChange={onChange}
+      openOnInputClick
+    >
       <InputGroup>
         <Autocomplete.Input id={id} autoComplete="off" spellCheck={false} render={<InputGroupInput />} {...aria} />
       </InputGroup>

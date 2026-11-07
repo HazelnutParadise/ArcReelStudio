@@ -204,7 +204,7 @@ async def quote_video_request(
         async with session_factory() as session:
             source = await load_video_price_source(session, facts.provider_id, facts.model_id)
         return quote_video_request_from_price(facts, source)
-    except (SQLAlchemyError, ValueError):
+    except SQLAlchemyError, ValueError:
         logger.warning(
             "无法为 current video request 计算精确费用 provider=%s model=%s duration=%s",
             facts.provider_id,
@@ -417,7 +417,7 @@ class CostEstimationService:
             try:
                 resolved_image = await r.resolve_image_backend(project_data, None, generation_type="t2i")
                 image_provider, image_model = resolved_image.provider_id, resolved_image.model_id
-            except (ValueError, SQLAlchemyError):
+            except ValueError, SQLAlchemyError:
                 image_provider, image_model = "unknown", "unknown"
 
             # T2I 槽分辨率档：与路由入队、Agent 工具共用 ``grid_resolution`` 的取档，估算的宫格
@@ -450,7 +450,7 @@ class CostEstimationService:
                             project_data, None, generation_type=generation_type
                         )
                         bucket_provider, bucket_model = resolved_video.provider_id, resolved_video.model_id
-                    except (ValueError, SQLAlchemyError):
+                    except ValueError, SQLAlchemyError:
                         bucket_provider, bucket_model = "unknown", "unknown"
                     # 事实解析不出的桶只保留模型展示坐标；分镜按分镜返回阻断问题，参考生视频逐 unit
                     # 的阻断由 request projector 给出，两者都不产生视频报价。
@@ -461,7 +461,7 @@ class CostEstimationService:
                             bucket_provider,
                             bucket_model or "",
                         )
-                    except (ValueError, SQLAlchemyError):
+                    except ValueError, SQLAlchemyError:
                         bucket_resolution = None
                 video_identity[generation_type] = (
                     bucket_provider,
@@ -974,7 +974,7 @@ class CostEstimationService:
                         availability,
                         catalog=expansion.catalog if expansion is not None else None,
                     )
-                except (ValueError, TypeError):
+                except ValueError, TypeError:
                     logger.warning("费用估算跳过时长非法的 unit %s", unit_id, exc_info=True)
                 hydrations.append(hydration)
             return candidates, hydrations
@@ -996,7 +996,7 @@ class CostEstimationService:
                             hydration=hydration,
                             options=ReferenceRequestOptions(),
                         )
-                    except (ValueError, TypeError):
+                    except ValueError, TypeError:
                         logger.warning("费用估算跳过时长非法的 unit %s", unit_id, exc_info=True)
                         projection = None
                 if projection is not None:
@@ -1114,7 +1114,7 @@ async def _quote_image_lane(
             provider, model = resolved.provider_id, resolved.model_id or ""
             try:
                 resolution = await r.resolve_resolution(project, provider, model)
-            except (ValueError, SQLAlchemyError):
+            except ValueError, SQLAlchemyError:
                 resolution = None
         async with session_factory() as session:
             return _quote_image(
@@ -1127,6 +1127,6 @@ async def _quote_image_lane(
                 # 图生图只知道走参考图，不知道几张：需要参考图张数的价目表记为未定价。
                 reference_count=0 if lane == "t2i" else None,
             )
-    except (ValueError, SQLAlchemyError):
+    except ValueError, SQLAlchemyError:
         logger.debug("无法估算这批图片的费用 lane=%s", lane, exc_info=True)
         return None

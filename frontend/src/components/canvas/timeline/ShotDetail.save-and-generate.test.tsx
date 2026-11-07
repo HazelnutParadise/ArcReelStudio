@@ -1,12 +1,15 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { ShotDetail } from "./ShotDetail";
 import type { NarrationSegment } from "@/types";
 import { makeNarrationSegment } from "@/test/factories";
 
 /** 有未保存修改时，生成按钮先保存再生成；保存没有完整生效时不生成。 */
 
-function renderDetail(props: Partial<Parameters<typeof ShotDetail>[0]> = {}, segment: NarrationSegment = makeNarrationSegment()) {
+function renderDetail(
+  props: Partial<Parameters<typeof ShotDetail>[0]> = {},
+  segment: NarrationSegment = makeNarrationSegment(),
+) {
   return render(
     <ShotDetail
       segment={segment}
@@ -36,7 +39,7 @@ describe("ShotDetail 保存并生成", () => {
     fireEvent.click(screen.getByRole("button", { name: /保存并生成/ }));
 
     await waitFor(() => expect(onGenerateStoryboard).toHaveBeenCalledWith("E1S01"));
-    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道" });
+    expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道" }, expect.anything());
     expect(onUpdatePrompt.mock.invocationCallOrder[0]).toBeLessThan(onGenerateStoryboard.mock.invocationCallOrder[0]);
     // 保存成功后提示条收起，按钮回到普通文案
     await waitFor(() => expect(screen.queryByRole("button", { name: /保存并生成/ })).not.toBeInTheDocument());
@@ -76,7 +79,12 @@ describe("ShotDetail 保存并生成", () => {
 
   it("视频「保存并生成」等保存落定期间，尾帧不能更换或清除，落定后再生成", async () => {
     let finishSave: (refreshed: boolean) => void = () => {};
-    const onUpdatePrompt = vi.fn(() => new Promise<boolean>((resolve) => { finishSave = resolve; }));
+    const onUpdatePrompt = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finishSave = resolve;
+        }),
+    );
     const onGenerateVideo = vi.fn();
     const segment = makeNarrationSegment({
       end_frame_image: "end_frames/E1S01.png",
@@ -129,7 +137,11 @@ describe("ShotDetail 备注与引用进入未保存修改", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() =>
-      expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道", note: "换成雨后" }),
+      expect(onUpdatePrompt).toHaveBeenCalledWith(
+        "E1S01",
+        { image_prompt: "雨后的街道", note: "换成雨后" },
+        expect.anything(),
+      ),
     );
   });
 });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import "@/i18n";
 import type { EndpointDefinition } from "@/types";
 import { EndpointForm } from "./EndpointForm";
@@ -83,7 +83,9 @@ describe("EndpointForm", () => {
 
     it("keeps the remaining rows and focus in place when a middle mapping is deleted", () => {
       render(
-        <Harness initial={{ ...IMAGE_DEFINITION, status_map: { queued: "running", busy: "running", done: "succeeded" } }} />,
+        <Harness
+          initial={{ ...IMAGE_DEFINITION, status_map: { queued: "running", busy: "running", done: "succeeded" } }}
+        />,
       );
       const last = statusInputs()[2];
       last.focus();

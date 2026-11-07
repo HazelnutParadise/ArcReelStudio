@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { beforeEach, describe, expect, it, vi, type MockInstance } from "vite-plus/test";
 import { AgentFailureError, API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
@@ -93,7 +93,10 @@ describe("useAssistantSession", () => {
   });
 
   it("loads idle session timeline from the entries endpoint (cold read)", async () => {
-    mockIdleSession([userEntry(0, "历史消息"), { seq: 1, type: "assistant", content: [{ type: "text", text: "回复" }], uuid: "a-1" }]);
+    mockIdleSession([
+      userEntry(0, "历史消息"),
+      { seq: 1, type: "assistant", content: [{ type: "text", text: "回复" }], uuid: "a-1" },
+    ]);
 
     renderHook(() => useAssistantSession("demo"));
 
@@ -233,79 +236,104 @@ describe("useAssistantSession", () => {
       expect(useAssistantStore.getState().composerAppends).toEqual([]);
     });
 
-    it.each(["session", "project"] as const)("returns a late edit to the shared input after switching %s, without changing its tray or error", async (navigation) => {
-      const { result, rerender } = await openRunningSession();
-      vi.mocked(API.getAssistantSession).mockImplementation(async (_project, sessionId) => ({
-        session: makeSession(sessionId, "running"),
-      }));
-      const delayed = createDeferred<QueuedMessageWithdrawalResponse>();
-      vi.spyOn(API, "withdrawQueuedMessage").mockReturnValue(delayed.promise);
-      let editing = Promise.resolve();
-      act(() => { editing = result.current.withdrawQueuedMessage("u-1", "edit"); });
-
-      if (navigation === "session") {
-        await act(async () => { await result.current.switchSession("session-2"); });
-      } else {
-        rerender({ projectName: "other" });
-      }
-      await waitFor(() => expect(FakeSseStream.instances).toHaveLength(2));
-      const nextMessage = queuedMessage("u-2", "当前会话消息");
-      act(() => {
-        useAssistantStore.getState().setQueuedMessages([nextMessage]);
-        useAssistantStore.getState().setError("当前会话错误");
-      });
-      await act(async () => {
-        delayed.resolve({
-          session_id: "session-1", id: "u-1", outcome: "withdrawn",
-          message: queuedMessage("u-1", "第 3 镜改成黄昏"),
+    it.each(["session", "project"] as const)(
+      "returns a late edit to the shared input after switching %s, without changing its tray or error",
+      async (navigation) => {
+        const { result, rerender } = await openRunningSession();
+        vi.mocked(API.getAssistantSession).mockImplementation(async (_project, sessionId) => ({
+          session: makeSession(sessionId, "running"),
+        }));
+        const delayed = createDeferred<QueuedMessageWithdrawalResponse>();
+        vi.spyOn(API, "withdrawQueuedMessage").mockReturnValue(delayed.promise);
+        let editing = Promise.resolve();
+        act(() => {
+          editing = result.current.withdrawQueuedMessage("u-1", "edit");
         });
-        await editing;
-      });
 
-      expect(useAssistantStore.getState().currentSessionId).toBe(navigation === "session" ? "session-2" : "session-1");
-      expect(useAssistantStore.getState().composerAppends).toEqual([[{ type: "text", text: "第 3 镜改成黄昏" }]]);
-      expect(useAssistantStore.getState().queuedMessages).toEqual([nextMessage]);
-      expect(useAssistantStore.getState().error).toBe("当前会话错误");
-    });
+        if (navigation === "session") {
+          await act(async () => {
+            await result.current.switchSession("session-2");
+          });
+        } else {
+          rerender({ projectName: "other" });
+        }
+        await waitFor(() => expect(FakeSseStream.instances).toHaveLength(2));
+        const nextMessage = queuedMessage("u-2", "当前会话消息");
+        act(() => {
+          useAssistantStore.getState().setQueuedMessages([nextMessage]);
+          useAssistantStore.getState().setError("当前会话错误");
+        });
+        await act(async () => {
+          delayed.resolve({
+            session_id: "session-1",
+            id: "u-1",
+            outcome: "withdrawn",
+            message: queuedMessage("u-1", "第 3 镜改成黄昏"),
+          });
+          await editing;
+        });
+
+        expect(useAssistantStore.getState().currentSessionId).toBe(
+          navigation === "session" ? "session-2" : "session-1",
+        );
+        expect(useAssistantStore.getState().composerAppends).toEqual([[{ type: "text", text: "第 3 镜改成黄昏" }]]);
+        expect(useAssistantStore.getState().queuedMessages).toEqual([nextMessage]);
+        expect(useAssistantStore.getState().error).toBe("当前会话错误");
+      },
+    );
 
     it("keeps a later CLI exit ahead of a delayed resend response", async () => {
       const { result, stream } = await openRunningSession();
       const unsent = { ...queuedMessage("u-1", "第 3 镜改成黄昏"), state: "unsent" as const };
       const delayed = createDeferred<QueuedMessageResendResponse>();
       vi.spyOn(API, "resendQueuedMessage").mockReturnValue(delayed.promise);
-      act(() => { stream.emit("queue_upsert", { session_id: "session-1", message: unsent }); });
+      act(() => {
+        stream.emit("queue_upsert", { session_id: "session-1", message: unsent });
+      });
       let resending = Promise.resolve();
-      act(() => { resending = result.current.resendQueuedMessage("u-1"); });
+      act(() => {
+        resending = result.current.resendQueuedMessage("u-1");
+      });
       act(() => {
         stream.emit("queue_upsert", { session_id: "session-1", message: queuedMessage("u-1", "第 3 镜改成黄昏") });
         stream.emit("queue_upsert", { session_id: "session-1", message: unsent });
       });
       await act(async () => {
-        delayed.resolve({ session_id: "session-1", id: "u-1", queued_message: queuedMessage("u-1", "第 3 镜改成黄昏") });
+        delayed.resolve({
+          session_id: "session-1",
+          id: "u-1",
+          queued_message: queuedMessage("u-1", "第 3 镜改成黄昏"),
+        });
         await resending;
       });
       expect(useAssistantStore.getState().queuedMessages).toEqual([unsent]);
     });
 
-    it.each(["withdraw", "resend", "send-now"] as const)("ignores a late %s error after closing the panel", async (action) => {
-      const { result, unmount } = await openRunningSession();
-      const delayed = createDeferred<never>();
-      vi.spyOn(API, "withdrawQueuedMessage").mockReturnValue(delayed.promise);
-      vi.spyOn(API, "resendQueuedMessage").mockReturnValue(delayed.promise);
-      vi.spyOn(API, "sendQueuedMessageNow").mockReturnValue(delayed.promise);
-      let request = Promise.resolve();
-      act(() => {
-        request = action === "withdraw" ? result.current.withdrawQueuedMessage("u-1", "edit")
-          : action === "resend" ? result.current.resendQueuedMessage("u-1")
-          : result.current.sendQueuedMessageNow("u-1");
-      });
-      unmount();
-      await act(async () => {
-        delayed.reject(new Error("old request failed"));
-        await request;
-      });
-      expect(useAssistantStore.getState().error).toBeNull();
-    });
+    it.each(["withdraw", "resend", "send-now"] as const)(
+      "ignores a late %s error after closing the panel",
+      async (action) => {
+        const { result, unmount } = await openRunningSession();
+        const delayed = createDeferred<never>();
+        vi.spyOn(API, "withdrawQueuedMessage").mockReturnValue(delayed.promise);
+        vi.spyOn(API, "resendQueuedMessage").mockReturnValue(delayed.promise);
+        vi.spyOn(API, "sendQueuedMessageNow").mockReturnValue(delayed.promise);
+        let request = Promise.resolve();
+        act(() => {
+          request =
+            action === "withdraw"
+              ? result.current.withdrawQueuedMessage("u-1", "edit")
+              : action === "resend"
+                ? result.current.resendQueuedMessage("u-1")
+                : result.current.sendQueuedMessageNow("u-1");
+        });
+        unmount();
+        await act(async () => {
+          delayed.reject(new Error("old request failed"));
+          await request;
+        });
+        expect(useAssistantStore.getState().error).toBeNull();
+      },
+    );
 
     it("follows a later cancel back to the input even after sending another message", async () => {
       const { result, stream } = await openRunningSession();
@@ -323,10 +351,14 @@ describe("useAssistantSession", () => {
       expect(useAppStore.getState().toast?.text).toBe("已被 Agent 接收，这条消息会照常进入对话");
       expect(useAssistantStore.getState().queuedMessages.map((m) => m.id)).toEqual(["u-1"]);
       vi.spyOn(API, "sendAssistantMessage").mockResolvedValue({
-        session_id: "session-1", status: "accepted", entry: null,
+        session_id: "session-1",
+        status: "accepted",
+        entry: null,
         queued_message: queuedMessage("u-2", "再加一段旁白"),
       });
-      await act(async () => { await result.current.sendMessage("再加一段旁白"); });
+      await act(async () => {
+        await result.current.sendMessage("再加一段旁白");
+      });
       // Agent 最终没有处理它：按编辑退回输入框
       act(() => {
         stream.emit("queue_remove", {
@@ -373,7 +405,12 @@ describe("useAssistantSession", () => {
     expect(useAssistantStore.getState().sending).toBe(true);
     await act(async () => {
       expect(await result.current.sendMessage("补充要求")).toBe(false);
-      pending.resolve({ session_id: "session-1", status: "accepted", entry: null, queued_message: queuedMessage("u-1", "补充要求") });
+      pending.resolve({
+        session_id: "session-1",
+        status: "accepted",
+        entry: null,
+        queued_message: queuedMessage("u-1", "补充要求"),
+      });
       expect(await first).toBe(true);
     });
     expect(send).toHaveBeenCalledTimes(1);
@@ -595,7 +632,12 @@ describe("useAssistantSession", () => {
       stream.emit("status", { status: "completed" });
     });
     await act(async () => {
-      deferred.resolve({ session_id: "session-1", status: "accepted", entry: userEntry(0, "hello"), queued_message: null });
+      deferred.resolve({
+        session_id: "session-1",
+        status: "accepted",
+        entry: userEntry(0, "hello"),
+        queued_message: null,
+      });
       expect(await send).toBe(true);
     });
 
@@ -627,7 +669,12 @@ describe("useAssistantSession", () => {
       stream.emit("status", { status: "error" });
     });
     await act(async () => {
-      deferred.resolve({ session_id: "session-1", status: "accepted", entry: null, queued_message: queuedMessage("u-0", "hello") });
+      deferred.resolve({
+        session_id: "session-1",
+        status: "accepted",
+        entry: null,
+        queued_message: queuedMessage("u-0", "hello"),
+      });
       expect(await send).toBe(true);
     });
 
@@ -649,7 +696,12 @@ describe("useAssistantSession", () => {
       FakeSseStream.instances[0].emit("status", { status: "completed" });
     });
     await act(async () => {
-      deferred.resolve({ session_id: "session-1", status: "accepted", entry: userEntry(1, "hello"), queued_message: null });
+      deferred.resolve({
+        session_id: "session-1",
+        status: "accepted",
+        entry: userEntry(1, "hello"),
+        queued_message: null,
+      });
       await deferred.promise;
     });
 
@@ -680,9 +732,7 @@ describe("useAssistantSession", () => {
 
   it("submits answers successfully and clears pendingQuestion", async () => {
     mockIdleSession();
-    const answerSpy = vi
-      .spyOn(API, "answerAssistantQuestion")
-      .mockResolvedValue({ success: true });
+    const answerSpy = vi.spyOn(API, "answerAssistantQuestion").mockResolvedValue({ success: true });
 
     const { result } = renderHook(() => useAssistantSession("demo"));
 
@@ -730,10 +780,7 @@ describe("useAssistantSession", () => {
 
   it("clears pendingQuestion when creating or switching sessions", async () => {
     vi.spyOn(API, "listAssistantSessions").mockResolvedValue({
-      sessions: [
-        makeSession("session-1", "idle"),
-        makeSession("session-2", "idle"),
-      ],
+      sessions: [makeSession("session-1", "idle"), makeSession("session-2", "idle")],
     });
     vi.spyOn(API, "getAssistantSession").mockImplementation(async (_projectName, sessionId) => ({
       session: makeSession(sessionId, "idle"),
@@ -812,7 +859,12 @@ describe("useAssistantSession", () => {
     const sendSpy = vi
       .spyOn(API, "sendAssistantMessage")
       .mockRejectedValueOnce(new Error("发送失败"))
-      .mockResolvedValueOnce({ session_id: "session-1", status: "accepted", entry: userEntry(0, "hello"), queued_message: null });
+      .mockResolvedValueOnce({
+        session_id: "session-1",
+        status: "accepted",
+        entry: userEntry(0, "hello"),
+        queued_message: null,
+      });
 
     const { result } = renderHook(() => useAssistantSession("demo"));
 
@@ -860,9 +912,7 @@ describe("useAssistantSession", () => {
         sdk_stderr: "observed stderr",
       },
     };
-    vi.spyOn(API, "sendAssistantMessage").mockRejectedValue(
-      new AgentFailureError("Agent 启动失败", failure),
-    );
+    vi.spyOn(API, "sendAssistantMessage").mockRejectedValue(new AgentFailureError("Agent 启动失败", failure));
 
     const { result } = renderHook(() => useAssistantSession("demo"));
     await waitFor(() => {
@@ -883,7 +933,12 @@ describe("useAssistantSession", () => {
     const sendSpy = vi
       .spyOn(API, "sendAssistantMessage")
       .mockRejectedValueOnce(new Error("发送失败"))
-      .mockResolvedValueOnce({ session_id: "session-1", status: "accepted", entry: userEntry(0, "另一条"), queued_message: null });
+      .mockResolvedValueOnce({
+        session_id: "session-1",
+        status: "accepted",
+        entry: userEntry(0, "另一条"),
+        queued_message: null,
+      });
 
     const { result } = renderHook(() => useAssistantSession("demo"));
 
@@ -908,7 +963,12 @@ describe("useAssistantSession", () => {
     const sendSpy = vi
       .spyOn(API, "sendAssistantMessage")
       .mockRejectedValueOnce(new Error("发送失败")) // 项目 A：失败并缓存 clientKey
-      .mockResolvedValueOnce({ session_id: "session-1", status: "accepted", entry: userEntry(0, "hello"), queued_message: null });
+      .mockResolvedValueOnce({
+        session_id: "session-1",
+        status: "accepted",
+        entry: userEntry(0, "hello"),
+        queued_message: null,
+      });
 
     const { result, rerender } = renderHook(({ p }) => useAssistantSession(p), {
       initialProps: { p: "proj_a" },
@@ -938,10 +998,7 @@ describe("useAssistantSession", () => {
 
   it("ignores delayed send completions after switching sessions", async () => {
     vi.spyOn(API, "listAssistantSessions").mockResolvedValue({
-      sessions: [
-        makeSession("session-1", "idle"),
-        makeSession("session-2", "idle"),
-      ],
+      sessions: [makeSession("session-1", "idle"), makeSession("session-2", "idle")],
     });
     vi.spyOn(API, "getAssistantSession").mockImplementation(async (_projectName, sessionId) => ({
       session: makeSession(sessionId, "idle"),
@@ -949,9 +1006,10 @@ describe("useAssistantSession", () => {
     vi.spyOn(API, "listAssistantEntries").mockImplementation(async (_projectName, sessionId) =>
       makeEntriesResponse({
         session_id: sessionId,
-        entries: sessionId === "session-2"
-          ? [{ seq: 0, type: "assistant", content: [{ type: "text", text: "session-2" }], uuid: "a-1" }]
-          : [],
+        entries:
+          sessionId === "session-2"
+            ? [{ seq: 0, type: "assistant", content: [{ type: "text", text: "session-2" }], uuid: "a-1" }]
+            : [],
       }),
     );
     const deferred = createDeferred<AcceptedMessageResponse>();
@@ -982,7 +1040,12 @@ describe("useAssistantSession", () => {
     ]);
 
     await act(async () => {
-      deferred.resolve({ session_id: "session-1", status: "accepted", entry: userEntry(0, "hello"), queued_message: null });
+      deferred.resolve({
+        session_id: "session-1",
+        status: "accepted",
+        entry: userEntry(0, "hello"),
+        queued_message: null,
+      });
       await deferred.promise;
     });
 
@@ -997,10 +1060,7 @@ describe("useAssistantSession", () => {
     // 版本失配分支必须与失败路径一致返回 false：调用方（AgentCopilot.handleSend）
     // 依据返回值清空输入框，误返回 true 会清空用户已切换到的新会话里刚输入的内容。
     vi.spyOn(API, "listAssistantSessions").mockResolvedValue({
-      sessions: [
-        makeSession("session-1", "idle"),
-        makeSession("session-2", "idle"),
-      ],
+      sessions: [makeSession("session-1", "idle"), makeSession("session-2", "idle")],
     });
     vi.spyOn(API, "getAssistantSession").mockImplementation(async (_projectName, sessionId) => ({
       session: makeSession(sessionId, "idle"),
@@ -1031,7 +1091,12 @@ describe("useAssistantSession", () => {
     });
 
     await act(async () => {
-      deferred.resolve({ session_id: "session-1", status: "accepted", entry: userEntry(0, "hello"), queued_message: null });
+      deferred.resolve({
+        session_id: "session-1",
+        status: "accepted",
+        entry: userEntry(0, "hello"),
+        queued_message: null,
+      });
       await deferred.promise;
     });
 
@@ -1070,7 +1135,12 @@ describe("useAssistantSession", () => {
     });
 
     await act(async () => {
-      deferred.resolve({ session_id: "session-1", status: "accepted", entry: userEntry(0, "hello"), queued_message: null });
+      deferred.resolve({
+        session_id: "session-1",
+        status: "accepted",
+        entry: userEntry(0, "hello"),
+        queued_message: null,
+      });
       await deferred.promise;
     });
 
@@ -1129,9 +1199,7 @@ describe("useAssistantSession", () => {
       sessions: projectName === "project-a" ? [makeSession("session-a", "idle")] : [],
     }));
     vi.spyOn(API, "getAssistantSession").mockResolvedValue({ session: makeSession("session-a", "idle") });
-    vi.spyOn(API, "listAssistantEntries").mockResolvedValue(
-      makeEntriesResponse({ entries: [userEntry(0, "A-0")] }),
-    );
+    vi.spyOn(API, "listAssistantEntries").mockResolvedValue(makeEntriesResponse({ entries: [userEntry(0, "A-0")] }));
 
     const { rerender } = renderHook(({ projectName }) => useAssistantSession(projectName), {
       initialProps: { projectName: "project-a" as string | null },
@@ -1157,7 +1225,12 @@ describe("useAssistantSession", () => {
       sessions: [makeSession("session-1", "running")],
     });
     vi.spyOn(API, "getAssistantSession").mockResolvedValue({ session: makeSession("session-1", "running") });
-    vi.spyOn(API, "sendAssistantMessage").mockResolvedValue({ session_id: "session-1", status: "accepted", entry: null, queued_message: null });
+    vi.spyOn(API, "sendAssistantMessage").mockResolvedValue({
+      session_id: "session-1",
+      status: "accepted",
+      entry: null,
+      queued_message: null,
+    });
 
     const { result } = renderHook(() => useAssistantSession("demo"));
 
@@ -1249,21 +1322,19 @@ describe("useAssistantSession", () => {
     // abort，迟到的 entries 不得覆盖新会话时间线。
     const deferred2 = createDeferred<EntriesResponse>();
     vi.spyOn(API, "listAssistantSessions").mockResolvedValue({
-      sessions: [
-        makeSession("session-1", "idle"),
-        makeSession("session-2", "idle"),
-        makeSession("session-3", "idle"),
-      ],
+      sessions: [makeSession("session-1", "idle"), makeSession("session-2", "idle"), makeSession("session-3", "idle")],
     });
     vi.spyOn(API, "getAssistantSession").mockImplementation(async (_projectName, sessionId) => ({
       session: makeSession(sessionId, "idle"),
     }));
     vi.spyOn(API, "listAssistantEntries").mockImplementation((_projectName, sessionId) => {
       if (sessionId === "session-2") return deferred2.promise;
-      return Promise.resolve(makeEntriesResponse({
-        session_id: sessionId,
-        entries: sessionId === "session-3" ? [userEntry(0, "S3-0")] : [],
-      }));
+      return Promise.resolve(
+        makeEntriesResponse({
+          session_id: sessionId,
+          entries: sessionId === "session-3" ? [userEntry(0, "S3-0")] : [],
+        }),
+      );
     });
 
     const { result } = renderHook(() => useAssistantSession("demo"));
@@ -1391,34 +1462,37 @@ describe("useAssistantSession", () => {
     expect(streamOptions(0)).toMatchObject({ sessionId: "session-1", after: 0 });
   });
 
-  it.each(["metadata", "entries"])("opens the stream when the session resumes mid-load and the %s read fails", async (phase) => {
-    mockIdleSession();
-    const deferredRead = createDeferred<never>();
-    if (phase === "metadata") {
-      vi.spyOn(API, "getAssistantSession").mockReturnValue(deferredRead.promise);
-    } else {
-      vi.spyOn(API, "listAssistantEntries").mockReturnValue(deferredRead.promise);
-    }
+  it.each(["metadata", "entries"])(
+    "opens the stream when the session resumes mid-load and the %s read fails",
+    async (phase) => {
+      mockIdleSession();
+      const deferredRead = createDeferred<never>();
+      if (phase === "metadata") {
+        vi.spyOn(API, "getAssistantSession").mockReturnValue(deferredRead.promise);
+      } else {
+        vi.spyOn(API, "listAssistantEntries").mockReturnValue(deferredRead.promise);
+      }
 
-    renderHook(() => useAssistantSession("demo"));
-    await waitFor(() => {
-      expect(phase === "metadata" ? API.getAssistantSession : API.listAssistantEntries).toHaveBeenCalled();
-    });
-    act(() => {
-      useAssistantStore.getState().notifySessionResumed("demo", "session-1");
-    });
-    await act(async () => {
-      deferredRead.reject(new Error("network unavailable"));
-      await deferredRead.promise.catch(() => {});
-    });
+      renderHook(() => useAssistantSession("demo"));
+      await waitFor(() => {
+        expect(phase === "metadata" ? API.getAssistantSession : API.listAssistantEntries).toHaveBeenCalled();
+      });
+      act(() => {
+        useAssistantStore.getState().notifySessionResumed("demo", "session-1");
+      });
+      await act(async () => {
+        deferredRead.reject(new Error("network unavailable"));
+        await deferredRead.promise.catch(() => {});
+      });
 
-    expect(FakeSseStream.instances).toHaveLength(1);
-    expect(streamOptions(0)).toMatchObject({ sessionId: "session-1", after: -1 });
-    act(() => {
-      FakeSseStream.instances[0].emit("entry", userEntry(0, "自主轮次"));
-    });
-    expect(useAssistantStore.getState().entries).toHaveLength(1);
-  });
+      expect(FakeSseStream.instances).toHaveLength(1);
+      expect(streamOptions(0)).toMatchObject({ sessionId: "session-1", after: -1 });
+      act(() => {
+        FakeSseStream.instances[0].emit("entry", userEntry(0, "自主轮次"));
+      });
+      expect(useAssistantStore.getState().entries).toHaveLength(1);
+    },
+  );
 
   it("does not let a delayed idle cold-read overwrite state set by a concurrent sendMessage", async () => {
     // 冷读 listAssistantEntries 挂起期间，用户在同一会话内发送消息：sendMessage
@@ -1925,14 +1999,7 @@ describe("useAssistantSession", () => {
       await result.current.rewriteMessage("u-0", "改写后的消息");
     });
 
-    expect(rewriteSpy).toHaveBeenCalledWith(
-      "demo",
-      "session-1",
-      "u-0",
-      "改写后的消息",
-      undefined,
-      expect.any(String),
-    );
+    expect(rewriteSpy).toHaveBeenCalledWith("demo", "session-1", "u-0", "改写后的消息", undefined, expect.any(String));
 
     const state = useAssistantStore.getState();
     expect(state.currentSessionId).toBe("session-2");
@@ -2022,9 +2089,7 @@ describe("useAssistantSession", () => {
 
   it("mints a new idempotency key when only the attachments differ", async () => {
     mockIdleSession([userEntry(0, "原始消息")]);
-    const rewriteSpy = vi
-      .spyOn(API, "rewriteAssistantMessage")
-      .mockRejectedValue(new Error("改写失败"));
+    const rewriteSpy = vi.spyOn(API, "rewriteAssistantMessage").mockRejectedValue(new Error("改写失败"));
 
     const { result } = renderHook(() => useAssistantSession("demo"));
     await waitFor(() => {
@@ -2032,14 +2097,10 @@ describe("useAssistantSession", () => {
     });
 
     await act(async () => {
-      await result.current.rewriteMessage("u-0", "改写后的消息", [
-        { data: "AAAA", media_type: "image/png" },
-      ]);
+      await result.current.rewriteMessage("u-0", "改写后的消息", [{ data: "AAAA", media_type: "image/png" }]);
     });
     await act(async () => {
-      await result.current.rewriteMessage("u-0", "改写后的消息", [
-        { data: "BBBB", media_type: "image/png" },
-      ]);
+      await result.current.rewriteMessage("u-0", "改写后的消息", [{ data: "BBBB", media_type: "image/png" }]);
     });
 
     expect(rewriteSpy.mock.calls[0][5]).not.toBe(rewriteSpy.mock.calls[1][5]);
@@ -2180,7 +2241,9 @@ describe("useAssistantSession", () => {
     vi.spyOn(API, "getAssistantSession").mockImplementation(async (_projectName, sessionId) => ({
       session: makeSession(sessionId, "idle"),
     }));
-    vi.spyOn(API, "listAssistantEntries").mockResolvedValue(makeEntriesResponse({ entries: [userEntry(0, "原始消息")] }));
+    vi.spyOn(API, "listAssistantEntries").mockResolvedValue(
+      makeEntriesResponse({ entries: [userEntry(0, "原始消息")] }),
+    );
     let listCalls = 0;
     vi.spyOn(API, "listAssistantSessions").mockImplementation(() => {
       listCalls += 1;
@@ -2238,7 +2301,9 @@ describe("useAssistantSession", () => {
     vi.spyOn(API, "getAssistantSession").mockImplementation(async (_projectName, sessionId) => ({
       session: makeSession(sessionId, "idle"),
     }));
-    vi.spyOn(API, "listAssistantEntries").mockResolvedValue(makeEntriesResponse({ entries: [userEntry(0, "原始消息")] }));
+    vi.spyOn(API, "listAssistantEntries").mockResolvedValue(
+      makeEntriesResponse({ entries: [userEntry(0, "原始消息")] }),
+    );
     let listCalls = 0;
     vi.spyOn(API, "listAssistantSessions").mockImplementation(() => {
       listCalls += 1;
@@ -2587,16 +2652,22 @@ describe("useAssistantSession", () => {
       });
       await waitFor(() => expect(FakeSseStream.instances).toHaveLength(1));
 
-      await act(async () => { await result.current.interrupt(); });
+      await act(async () => {
+        await result.current.interrupt();
+      });
       // 同一会话内错误照常显示
       expect(useAssistantStore.getState().error).toBe("中断请求失败");
 
       if (navigation === "project") {
         rerender({ projectName: "other" });
       } else if (navigation === "new-session") {
-        act(() => { result.current.createNewSession(); });
+        act(() => {
+          result.current.createNewSession();
+        });
       } else {
-        await act(async () => { await result.current.deleteSession("session-1"); });
+        await act(async () => {
+          await result.current.deleteSession("session-1");
+        });
       }
       // 切项目后新项目的会话载入完成（接上新流）；新建与删光后落在无会话状态
       await waitFor(() => expect(FakeSseStream.instances).toHaveLength(navigation === "project" ? 2 : 1));
@@ -2617,12 +2688,16 @@ describe("useAssistantSession", () => {
       });
       await waitFor(() => expect(FakeSseStream.instances).toHaveLength(1));
       let request: Promise<void>;
-      act(() => { request = result.current.interrupt(); });
+      act(() => {
+        request = result.current.interrupt();
+      });
 
       if (navigation === "project") {
         rerender({ projectName: "other" });
       } else {
-        act(() => { result.current.createNewSession(); });
+        act(() => {
+          result.current.createNewSession();
+        });
       }
       await waitFor(() => expect(FakeSseStream.instances).toHaveLength(navigation === "project" ? 2 : 1));
       expect(useAssistantStore.getState().interrupting).toBe(false);
@@ -2731,9 +2806,7 @@ describe("useAssistantSession", () => {
       },
       raw: {},
     };
-    vi.spyOn(API, "rewriteAssistantMessage").mockRejectedValue(
-      new AgentFailureError("Agent 启动失败", failure),
-    );
+    vi.spyOn(API, "rewriteAssistantMessage").mockRejectedValue(new AgentFailureError("Agent 启动失败", failure));
 
     const { result } = renderHook(() => useAssistantSession("demo"));
     await waitFor(() => {

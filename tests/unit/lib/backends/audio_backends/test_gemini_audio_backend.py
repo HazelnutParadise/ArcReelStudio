@@ -5,22 +5,23 @@ from __future__ import annotations
 import base64
 import wave
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.audio_backends import AudioCapability, AudioSynthesisRequest
 from lib.backends.audio_backends.gemini import GeminiAudioBackend
+from lib.backends.gemini_shared import GEMINI_DEVELOPER_API_VERSION
 from tests.http_capture import capture_http, only_request, request_json
 
 _URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent"
 
 
-def _audio_response(data: bytes, mime_type: str, usage: dict | None = None) -> httpx.Response:
+def _audio_response(data: bytes, mime_type: str, usage: dict | None = None) -> httpx2.Response:
     part = {"inlineData": {"mimeType": mime_type, "data": base64.b64encode(data).decode()}}
     body: dict = {"candidates": [{"content": {"role": "model", "parts": [part]}}]}
     if usage is not None:
         body["usageMetadata"] = usage
-    return httpx.Response(200, json=body)
+    return httpx2.Response(200, json=body)
 
 
 def _field(obj: dict, snake: str):
@@ -37,9 +38,12 @@ async def backend():
     from google import genai
 
     backend = GeminiAudioBackend(api_key="sk-test", model="gemini-3.8-flash-tts", provider_name="custom-7")
-    # SDK 装有 aiohttp 时默认不走 httpx，注入 httpx 客户端让 respx 截获
-    async with httpx.AsyncClient() as http_client:
-        backend._client = genai.Client(api_key="sk-test", http_options={"httpx_async_client": http_client})
+    # SDK 装有 aiohttp 时默认不走 httpx2，注入 httpx2 客户端让 respx 截获；API 版本与生产客户端一致
+    async with httpx2.AsyncClient() as http_client:
+        backend._client = genai.Client(
+            api_key="sk-test",
+            http_options={"api_version": GEMINI_DEVELOPER_API_VERSION, "httpx_async_client": http_client},
+        )
         yield backend
 
 
@@ -94,7 +98,7 @@ async def test_compressed_audio_is_rejected_instead_of_wrapped_as_pcm(backend, t
 
 
 async def test_no_audio_fails_without_writing(backend, tmp_path):
-    empty = httpx.Response(200, json={"candidates": [{"content": {"role": "model", "parts": [{"text": "no"}]}}]})
+    empty = httpx2.Response(200, json={"candidates": [{"content": {"role": "model", "parts": [{"text": "no"}]}}]})
     with capture_http() as router:
         route = router.post(_URL).mock(return_value=empty)
         with pytest.raises(RuntimeError, match="未返回音频"):

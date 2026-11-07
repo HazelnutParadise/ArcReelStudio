@@ -173,7 +173,7 @@ def dispose_pool() -> None:
     async_engine.sync_engine.dispose()
 
 
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session() -> AsyncGenerator[AsyncSession]:
     """FastAPI Depends generator for per-request AsyncSession."""
     async with async_session_factory() as session:
         yield session

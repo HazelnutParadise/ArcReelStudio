@@ -174,6 +174,6 @@ def _require(layout: DataRootLayout, entry_id: str) -> tuple[Path, str]:
 def _title(project_dir: Path) -> str | None:
     try:
         title = json.loads((project_dir / PROJECT_FILENAME).read_text(encoding="utf-8")).get("title")
-    except (OSError, ValueError, AttributeError):
+    except OSError, ValueError, AttributeError:
         return None
     return title if isinstance(title, str) and title.strip() else None

@@ -8,7 +8,6 @@ import { expect, type ApiOverrides } from "../support/test.ts";
 const UNITS_PATH = "/app/projects/demo/episodes/1?view=board";
 const UNITS_API = "/api/v1/projects/demo/reference-videos/episodes/1/units";
 
-
 interface RecordedProject {
   project: Record<string, unknown>;
 }
@@ -99,7 +98,6 @@ const EDITOR_MIN_HEIGHT = 192;
 const workbench = (page: Page) => page.getByRole("tabpanel", { name: "视频单元" });
 const editor = (page: Page) => page.getByRole("combobox", { name: "视频单元提示词" });
 const previewFrame = (page: Page) => page.getByTestId("reference-preview-frame");
-
 
 async function workbenchReady(page: Page) {
   await page.getByRole("tab", { name: "视频单元" }).waitFor();

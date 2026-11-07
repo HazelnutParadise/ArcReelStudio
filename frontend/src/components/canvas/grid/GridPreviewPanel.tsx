@@ -89,13 +89,7 @@ const REF_ICON: Record<ReferenceImage["ref_type"], typeof User> = {
   prop: Package,
 };
 
-function ReferenceImages({
-  references,
-  projectName,
-}: {
-  references: ReferenceImage[];
-  projectName: string;
-}) {
+function ReferenceImages({ references, projectName }: { references: ReferenceImage[]; projectName: string }) {
   const { t } = useTranslation("dashboard");
   const fingerprints = useProjectsStore((s) => s.assetFingerprints);
   return (
@@ -165,7 +159,7 @@ export function GridPreviewPanel({
       // 切换宫格时清空旧数据并展示加载状态，再触发异步 fetch。清空同时会卸载下方的
       // 版本时光机——它按 resourceId 拉版本列表且无取消，若改成加载期间留着旧数据渲染，
       // 上一张在途的版本列表会落进新宫格的面板，选中即按新宫格 ID + 旧版本号发起还原。
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 切换宫格是动作驱动重置，须先清空旧数据再发起拉取
+      // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 切换宫格是动作驱动重置，须先清空旧数据再发起拉取
       setLoading(true);
       setGrid(null);
     }
@@ -197,14 +191,13 @@ export function GridPreviewPanel({
     grid != null &&
     (grid.status === "pending" || grid.status === "generating") &&
     !isInProgress;
-  const displayStatus: GridDisplayStatus = isInterrupted ? "interrupted" : grid?.status ?? "pending";
+  const displayStatus: GridDisplayStatus = isInterrupted ? "interrupted" : (grid?.status ?? "pending");
   // 面板动作（重生成/切分/上传/版本恢复）互斥：都写同一份联合图或分镜格，
   // 任一在途时兄弟控件同步禁用。
   const actionBusy = busy || regenerating || splitting || uploading || restoring || isInProgress;
 
   // 提交时刻的占用新鲜读：渲染快照（isInProgress）之外复核 tasks store 最新状态
-  const freshBusy = () =>
-    selectedGridId != null && isResourceBusy("grid", projectName, selectedGridId);
+  const freshBusy = () => selectedGridId != null && isResourceBusy("grid", projectName, selectedGridId);
 
   const rejectBusy = () => {
     if (!freshBusy()) return false;
@@ -223,9 +216,7 @@ export function GridPreviewPanel({
         // 只回写发起切分的那个宫格：切换宫格不受动作禁用限制，请求在途时用户可能已切到
         // 别的宫格，无条件回写会把该请求的 split_at 记到另一个宫格上。
         setGrid((prev) => (prev && prev.id === selectedGridId ? { ...prev, split_at: res.split_at } : prev));
-        useAppStore
-          .getState()
-          .pushToast(t("grid_split_success", { count: res.updated_scene_ids.length }), "success");
+        useAppStore.getState().pushToast(t("grid_split_success", { count: res.updated_scene_ids.length }), "success");
         if (res.missing_scene_ids.length > 0) {
           useAppStore
             .getState()
@@ -348,9 +339,7 @@ export function GridPreviewPanel({
 
         {isInterrupted && <p className="text-xs text-warn">{t("grid_interrupted_hint")}</p>}
         {unsplit && <p className="text-xs text-muted-foreground">{t("grid_unsplit_detail")}</p>}
-        {grid.error_message && (
-          <p className="text-xs wrap-anywhere text-destructive">{grid.error_message}</p>
-        )}
+        {grid.error_message && <p className="text-xs wrap-anywhere text-destructive">{grid.error_message}</p>}
 
         <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           <span className="shrink-0">
@@ -369,12 +358,7 @@ export function GridPreviewPanel({
             )}
             {regenerating ? t("grid_regenerating") : isInProgress ? t("generating_grid") : t("grid_regenerate_btn")}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={actionBusy || !grid.grid_image_path}
-            onClick={handleSplit}
-          >
+          <Button variant="outline" size="sm" disabled={actionBusy || !grid.grid_image_path} onClick={handleSplit}>
             {splitting ? (
               <Loader2 aria-hidden data-icon="inline-start" className="animate-spin" />
             ) : (
@@ -382,12 +366,7 @@ export function GridPreviewPanel({
             )}
             {splitting ? t("grid_splitting") : t("grid_split_btn")}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={actionBusy}
-            onClick={() => fileInputRef.current?.click()}
-          >
+          <Button variant="outline" size="sm" disabled={actionBusy} onClick={() => fileInputRef.current?.click()}>
             {uploading ? (
               <Loader2 aria-hidden data-icon="inline-start" className="animate-spin" />
             ) : (
@@ -422,9 +401,7 @@ export function GridPreviewPanel({
           />
         </div>
 
-        {refs.length > 0 && (
-          <ReferenceImages references={refs} projectName={projectName} />
-        )}
+        {refs.length > 0 && <ReferenceImages references={refs} projectName={projectName} />}
       </div>
 
       {imageUrl ? (

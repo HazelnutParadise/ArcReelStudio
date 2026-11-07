@@ -40,7 +40,10 @@ export function AssetProgressLine({ data }: { data: ProjectData }) {
               href={`/${kind.route}`}
               className="focus-ring rounded-sm px-1 text-subtle-foreground hover:text-foreground hover:underline"
             >
-              {t(kind.labelKey)} <span className="num">{count.available}/{count.total}</span>
+              {t(kind.labelKey)}{" "}
+              <span className="num">
+                {count.available}/{count.total}
+              </span>
               {count.stale > 0 ? (
                 <>
                   {" "}

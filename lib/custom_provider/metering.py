@@ -123,7 +123,7 @@ def custom_video_usage(
     if metering is not None:
         try:
             return metering(model, request, result, entry=entry)
-        except (ValueError, KeyError):
+        except ValueError, KeyError:
             logger.debug("调用通道不认得模型 %s 的计量，改按通用口径上报", model, exc_info=True)
     return generic_video_usage(request, result)
 
@@ -136,7 +136,7 @@ def custom_image_estimate(metering_backend: object | None, facts: ImageRequestFa
     if callable(estimate):
         try:
             estimated = estimate(facts)
-        except (ValueError, KeyError):
+        except ValueError, KeyError:
             logger.debug("调用通道不认得模型 %s 的预估用量，改按通用口径", facts.model, exc_info=True)
         else:
             usage = estimated if isinstance(estimated, Usage) else None

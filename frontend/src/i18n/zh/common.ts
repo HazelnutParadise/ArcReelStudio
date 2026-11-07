@@ -54,7 +54,7 @@ export default {
   'save_and_leave': '保存并离开',
   'save_and_switch': '保存并切换',
   'save_and_generate': '保存并生成',
-  'updated_by_agent': '此内容已被 Agent 更新',
+  'updated_externally': '此内容已被其他成员或 Agent 更新',
   'adopt_new_content': '采用新内容',
   'leave_dialog_description': '放弃的修改无法恢复。',
   'undo': '撤销',
@@ -87,5 +87,5 @@ export default {
   'item_position_of_total': '{{position}} / {{total}}',
   'item_internal_id': '内部编号 {{id}}',
   'item_agent_ref': '{{label}}（ID {{id}}）',
-  "error_details": "详情",
+  'error_details': '详情',
 } satisfies Record<keyof typeof enCommon, string>;

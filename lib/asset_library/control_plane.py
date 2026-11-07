@@ -26,7 +26,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import quote
 
-import httpx
+import httpx2
 
 from lib.asset_library.sites import ASSET_API_SERVICE, ASSET_API_VERSION, control_plane_host
 from lib.infra.api_errors import BadGatewayError
@@ -35,7 +35,7 @@ from lib.infra.logging_utils import redact_diagnostic_text
 if TYPE_CHECKING:
     from lib.db.models.asset_library import AssetLibraryAccount
 
-_TIMEOUT = httpx.Timeout(20.0, connect=10.0)
+_TIMEOUT = httpx2.Timeout(20.0, connect=10.0)
 # 素材库只有 AIGC 类素材组能经 CreateAsset 写入；真人认证（LivenessFace）素材组在供应商控制台管理。
 _GROUP_TYPE = "AIGC"
 
@@ -219,7 +219,7 @@ async def call_action(
     action: str,
     payload: dict[str, Any],
     *,
-    client: httpx.AsyncClient | None = None,
+    client: httpx2.AsyncClient | None = None,
 ) -> dict[str, Any]:
     """调用一个控制面 Action，返回 ``Result``；HTTP 失败或响应带 ``ResponseMetadata.Error`` 时抛错。"""
     host = control_plane_host(credentials.site, credentials.region)
@@ -245,12 +245,12 @@ async def call_action(
     )
     url = f"https://{host}/"
     owned = client is None
-    http = client or httpx.AsyncClient(timeout=_TIMEOUT, follow_redirects=False)
+    http = client or httpx2.AsyncClient(timeout=_TIMEOUT, follow_redirects=False)
     try:
         response = await http.post(url, params=query, content=body, headers={**content_headers, **auth_headers})
-    except httpx.HTTPError as exc:
+    except httpx2.HTTPError as exc:
         # 连接没有建立时请求一定没有到达供应商；其余网络失败（读超时、连接中断）结果未知。
-        unknown = not isinstance(exc, httpx.ConnectError | httpx.ConnectTimeout)
+        unknown = not isinstance(exc, httpx2.ConnectError | httpx2.ConnectTimeout)
         raise AssetLibraryRequestError("network", message=type(exc).__name__, outcome_unknown=unknown) from exc
     finally:
         if owned:
@@ -306,7 +306,7 @@ async def list_assets(
     *,
     page_number: int,
     page_size: int,
-    client: httpx.AsyncClient | None = None,
+    client: httpx2.AsyncClient | None = None,
 ) -> ProviderAssetPage:
     """按页列出账号项目范围内 AIGC 素材组的素材，按创建时间倒序。
 
@@ -351,7 +351,7 @@ class ProviderAssetDetail:
 
 
 async def get_asset(
-    credentials: ControlPlaneCredentials, asset_id: str, *, client: httpx.AsyncClient | None = None
+    credentials: ControlPlaneCredentials, asset_id: str, *, client: httpx2.AsyncClient | None = None
 ) -> ProviderAssetDetail:
     """查询一个素材的处理状态。处理失败的素材 HTTP 仍为 200，失败原因在 ``Error`` 里。"""
     result = await call_action(
@@ -375,7 +375,7 @@ class ProviderAssetDownload:
 
 
 async def get_asset_download(
-    credentials: ControlPlaneCredentials, asset_id: str, *, client: httpx.AsyncClient | None = None
+    credentials: ControlPlaneCredentials, asset_id: str, *, client: httpx2.AsyncClient | None = None
 ) -> ProviderAssetDownload:
     """查询一个素材，并取出供应商返回的签名访问地址，供导入时取回实际内容。"""
     result = await call_action(
@@ -409,7 +409,7 @@ async def create_asset(
     url: str,
     name: str,
     asset_type: Literal["Image", "Video", "Audio"] = "Image",
-    client: httpx.AsyncClient | None = None,
+    client: httpx2.AsyncClient | None = None,
 ) -> str:
     """提交一个素材入库，返回素材 ID。返回时素材还在处理中，可用与否以 :func:`get_asset` 为准。"""
     result = await call_action(
@@ -435,7 +435,7 @@ async def find_assets_by_name(
     *,
     group_id: str,
     name: str,
-    client: httpx.AsyncClient | None = None,
+    client: httpx2.AsyncClient | None = None,
 ) -> list[ProviderAssetItem]:
     """在素材组里按名称找素材。供应商按名称模糊匹配，这里只保留名称完全相同的条目。"""
     result = await call_action(
@@ -459,7 +459,7 @@ async def ensure_asset_group(
     name: str,
     *,
     description: str = "",
-    client: httpx.AsyncClient | None = None,
+    client: httpx2.AsyncClient | None = None,
 ) -> str:
     """账号项目范围里名为 ``name`` 的 AIGC 素材组 ID；没有时创建。
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { makeUsageDaily } from "./usage-fixtures";
 import {
@@ -60,9 +60,7 @@ describe("bucketSuccessRate", () => {
   });
 
   it("has no rate when nothing settled", () => {
-    const { buckets } = buildTrendBuckets(
-      makeUsageDaily(1, "2026-03-01", () => ({ cancelled: 2 })),
-    );
+    const { buckets } = buildTrendBuckets(makeUsageDaily(1, "2026-03-01", () => ({ cancelled: 2 })));
 
     expect(bucketSuccessRate(buckets[0])).toBeNull();
   });
@@ -93,17 +91,8 @@ describe("amountTicks", () => {
 
 describe("series", () => {
   it("stacks calls by outcome and cost by media type", () => {
-    expect(seriesFor("calls").map((entry) => entry.key)).toEqual([
-      "success",
-      "failed",
-      "cancelled",
-    ]);
-    expect(seriesFor("cost").map((entry) => entry.key)).toEqual([
-      "image",
-      "audio",
-      "video",
-      "text",
-    ]);
+    expect(seriesFor("calls").map((entry) => entry.key)).toEqual(["success", "failed", "cancelled"]);
+    expect(seriesFor("cost").map((entry) => entry.key)).toEqual(["image", "audio", "video", "text"]);
   });
 });
 

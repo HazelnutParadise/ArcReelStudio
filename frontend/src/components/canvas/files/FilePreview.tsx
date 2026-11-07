@@ -57,7 +57,11 @@ export function FilePreview({ projectName, entry }: { projectName: string; entry
   if (tooLarge) return <p className="text-sm text-muted-foreground">{t("file_view_preview_too_large")}</p>;
   if (state.status === "loading") return <p className="text-sm text-muted-foreground">{t("file_view_loading")}</p>;
   if (state.status === "error") {
-    return <p className="wrap-break-word text-sm text-destructive">{t("file_view_preview_failed", { message: state.message })}</p>;
+    return (
+      <p className="wrap-break-word text-sm text-destructive">
+        {t("file_view_preview_failed", { message: state.message })}
+      </p>
+    );
   }
   const label = t("file_view_preview_label", { name: entry.name });
   if (state.status === "text") {
@@ -72,10 +76,24 @@ export function FilePreview({ projectName, entry }: { projectName: string; entry
       </pre>
     );
   }
-  if (kind === "image") return <img src={state.url} alt={label} className="max-h-120 max-w-full rounded-md border border-border object-contain" />;
+  if (kind === "image")
+    return (
+      <img
+        src={state.url}
+        alt={label}
+        className="max-h-120 max-w-full rounded-md border border-border object-contain"
+      />
+    );
   if (kind === "video") {
-    // eslint-disable-next-line jsx-a11y/media-has-caption -- 项目里的生成视频没有字幕轨，预览只用于确认内容
-    return <video src={state.url} controls aria-label={label} className="max-h-120 max-w-full rounded-md border border-border" />;
+    return (
+      // eslint-disable-next-line jsx-a11y/media-has-caption -- 项目里的生成视频没有字幕轨，预览只用于确认内容
+      <video
+        src={state.url}
+        controls
+        aria-label={label}
+        className="max-h-120 max-w-full rounded-md border border-border"
+      />
+    );
   }
   // eslint-disable-next-line jsx-a11y/media-has-caption -- 同上：音频预览没有字幕轨
   return <audio src={state.url} controls aria-label={label} className="w-full" />;

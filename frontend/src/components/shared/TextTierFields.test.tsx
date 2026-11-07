@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import userEvent from "@testing-library/user-event";
 import { TextTierFields, type TextTierValue } from "./TextTierFields";
 
@@ -50,9 +50,7 @@ describe("TextTierFields", () => {
       />,
     );
     // 默认档留空 → 生效值来自全局层
-    expect(screen.getByRole("combobox", { name: "默认模型" })).toHaveTextContent(
-      /跟随全局默认 · Gemini · g25/,
-    );
+    expect(screen.getByRole("combobox", { name: "默认模型" })).toHaveTextContent(/跟随全局默认 · Gemini · g25/);
 
     await expandTiers(user);
     // 细分档回退的是同层默认模型，措辞为「跟随默认」

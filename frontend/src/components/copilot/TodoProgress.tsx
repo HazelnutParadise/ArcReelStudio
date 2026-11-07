@@ -107,7 +107,11 @@ function TodoRow({ todo }: { todo: TodoItem }) {
         {status === "completed" ? (
           <Check aria-label={t("todo_status_completed")} className="size-3.5 text-muted-foreground" />
         ) : status === "in_progress" ? (
-          <span role="img" aria-label={t("todo_status_in_progress")} className="size-1.5 animate-breath rounded-full bg-primary" />
+          <span
+            role="img"
+            aria-label={t("todo_status_in_progress")}
+            className="size-1.5 animate-breath rounded-full bg-primary"
+          />
         ) : (
           <Circle aria-label={t("todo_status_pending")} className="size-3 text-muted-foreground" />
         )}

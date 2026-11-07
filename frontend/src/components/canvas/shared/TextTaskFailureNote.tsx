@@ -20,7 +20,9 @@ const FAILURE_KEYS: Record<EpisodeTextTaskKind, string> = {
 
 function paramsText(params: Record<string, unknown> | undefined): string {
   return Object.entries(params ?? {})
-    .map(([key, value]) => `${key}=${typeof value === "object" && value !== null ? JSON.stringify(value) : String(value)}`)
+    .map(
+      ([key, value]) => `${key}=${typeof value === "object" && value !== null ? JSON.stringify(value) : String(value)}`,
+    )
     .join(", ");
 }
 
@@ -51,8 +53,7 @@ export function TextTaskFailureNote({
   if (failure === null || failure.task.task_id === dismissedTaskId) return null;
   const truncation = outputTruncationOf(failure.task);
   const reason = failure.task.error_message ?? t("script_plan_failed_unknown");
-  const adScript =
-    failure.kind === "text_episode_script" && isAd && (!hasScript || isAdScriptTask(failure.task));
+  const adScript = failure.kind === "text_episode_script" && isAd && (!hasScript || isAdScriptTask(failure.task));
   return (
     <div
       role="alert"
@@ -60,7 +61,9 @@ export function TextTaskFailureNote({
     >
       <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
       <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
-        <p className="m-0 text-destructive">{t(adScript ? "ad_script_failed" : FAILURE_KEYS[failure.kind], { reason })}</p>
+        <p className="m-0 text-destructive">
+          {t(adScript ? "ad_script_failed" : FAILURE_KEYS[failure.kind], { reason })}
+        </p>
         {truncation ? <OutputTruncationHint truncation={truncation} /> : null}
         {failure.task.error_detail ? (
           <Collapsible render={<div className="flex w-full min-w-0 flex-col gap-1" />}>

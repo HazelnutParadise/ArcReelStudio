@@ -57,7 +57,10 @@ export function CredentialsSection() {
     const controller = new AbortController();
     loadController.current = controller;
     try {
-      const [c, p] = await Promise.all([API.listAgentCredentials({ signal: controller.signal }), API.listAgentPresetProviders({ signal: controller.signal })]);
+      const [c, p] = await Promise.all([
+        API.listAgentCredentials({ signal: controller.signal }),
+        API.listAgentPresetProviders({ signal: controller.signal }),
+      ]);
       if (controller.signal.aborted) return;
       setCredentials(c.credentials);
       setPresets(p.providers);
@@ -69,7 +72,7 @@ export function CredentialsSection() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount 时异步拉取 Agent 供应商后回写，属于受控的初始化加载
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- mount 时异步拉取 Agent 供应商后回写，属于受控的初始化加载
     void loadCreds();
     return () => loadController.current?.abort();
   }, [loadCreds]);
@@ -159,8 +162,7 @@ export function CredentialsSection() {
   );
 
   const handleUnbindTier = useCallback(
-    (id: number, tier: AgentCredentialTier) =>
-      changeTierBinding(id, () => API.unbindAgentCredentialTier(id, tier)),
+    (id: number, tier: AgentCredentialTier) => changeTierBinding(id, () => API.unbindAgentCredentialTier(id, tier)),
     [changeTierBinding],
   );
 

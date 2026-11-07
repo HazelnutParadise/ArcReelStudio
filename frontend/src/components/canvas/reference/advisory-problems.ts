@@ -8,8 +8,6 @@ import type { ReferenceDurationPrecheck, ReferenceProjectionProblem } from "@/ty
  *
  * 没有 `message` 的条目跳过：可读文本由服务端按当前语言渲染，缺它就没有可展示的内容。
  */
-export function advisoryProblems(
-  precheck: ReferenceDurationPrecheck,
-): ReferenceProjectionProblem[] {
+export function advisoryProblems(precheck: ReferenceDurationPrecheck): ReferenceProjectionProblem[] {
   return precheck.problems.filter((problem) => !problem.blocking && Boolean(problem.message));
 }

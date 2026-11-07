@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { TFunction } from "i18next";
 import { videoOptionMetaRenderer } from "./video-option-meta";
 import { VideoModelSpecBar, VoiceConsistencyBadge } from "./VideoModelSpecBar";
@@ -116,10 +116,7 @@ describe("VoiceConsistencyBadge", () => {
 
   it("shows the soft tier's non-guarantee wording in the hover description", () => {
     render(<VoiceConsistencyBadge tier="soft" />);
-    expect(screen.getByText("软约束").closest("span")).toHaveAttribute(
-      "title",
-      expect.stringContaining("不保证"),
-    );
+    expect(screen.getByText("软约束").closest("span")).toHaveAttribute("title", expect.stringContaining("不保证"));
   });
 
   it("shows the none tier's unsupported-dialogue wording in the hover description", () => {

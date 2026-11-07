@@ -6,7 +6,7 @@ from collections.abc import AsyncGenerator
 from io import BytesIO
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from PIL import Image
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -72,14 +72,14 @@ def market_sessions(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
 
 
 @pytest.fixture
-async def asset_http() -> AsyncGenerator[httpx.AsyncClient]:
-    async with httpx.AsyncClient() as client:
+async def asset_http() -> AsyncGenerator[httpx2.AsyncClient]:
+    async with httpx2.AsyncClient() as client:
         yield client
 
 
 @pytest.fixture
 def entry_service(
-    market_sessions: async_sessionmaker[AsyncSession], asset_http: httpx.AsyncClient
+    market_sessions: async_sessionmaker[AsyncSession], asset_http: httpx2.AsyncClient
 ) -> MarketEntryService:
     return MarketEntryService(market_sessions, http_client=lambda: asset_http, icon_cache_size=2)
 

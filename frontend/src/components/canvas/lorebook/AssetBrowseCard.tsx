@@ -364,9 +364,24 @@ export const AssetBrowseCard = memo(function AssetBrowseCard({
 function CardCounts({ asset }: { asset: GalleryAsset }) {
   const { t } = useTranslation("assets");
   const items = [
-    { key: "derivatives", count: asset.derivativeCount, Icon: Layers, label: t("derivatives_count", { count: asset.derivativeCount }) },
-    { key: "aliases", count: asset.aliasCount, Icon: Tags, label: t("gallery_alias_count", { count: asset.aliasCount }) },
-    { key: "references", count: asset.referenceCount, Icon: Images, label: t("gallery_reference_count", { count: asset.referenceCount }) },
+    {
+      key: "derivatives",
+      count: asset.derivativeCount,
+      Icon: Layers,
+      label: t("derivatives_count", { count: asset.derivativeCount }),
+    },
+    {
+      key: "aliases",
+      count: asset.aliasCount,
+      Icon: Tags,
+      label: t("gallery_alias_count", { count: asset.aliasCount }),
+    },
+    {
+      key: "references",
+      count: asset.referenceCount,
+      Icon: Images,
+      label: t("gallery_reference_count", { count: asset.referenceCount }),
+    },
   ].filter((item) => item.count > 0);
   if (items.length === 0) return null;
   return (

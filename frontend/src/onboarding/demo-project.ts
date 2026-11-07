@@ -150,8 +150,7 @@ const SEGMENT_SKELETONS: {
 
 type DemoT = TFunction<"onboarding">;
 
-const characterNames = (t: DemoT): string[] =>
-  [1, 2, 3, 4].map((n) => t(`demo_character_${n}_name`));
+const characterNames = (t: DemoT): string[] => [1, 2, 3, 4].map((n) => t(`demo_character_${n}_name`));
 const sceneNames = (t: DemoT): string[] => [1, 2, 3].map((n) => t(`demo_scene_${n}_name`));
 const propNames = (t: DemoT): string[] => [1, 2, 3].map((n) => t(`demo_prop_${n}_name`));
 
@@ -280,9 +279,7 @@ export function buildDemoScripts(t: DemoT): Record<string, NarrationEpisodeScrip
         dialogue: [],
       },
       generated_assets: {
-        storyboard_image: skeleton.hasStoryboard
-          ? demoPlaceholder(segmentId, "storyboard")
-          : null,
+        storyboard_image: skeleton.hasStoryboard ? demoPlaceholder(segmentId, "storyboard") : null,
         storyboard_last_image: null,
         grid_id: null,
         grid_cell_index: null,

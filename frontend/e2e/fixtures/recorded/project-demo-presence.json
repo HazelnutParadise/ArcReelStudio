@@ -1,0 +1,14 @@
+{
+  "method": "PUT",
+  "path": "/api/v1/projects/demo/presence",
+  "status": 200,
+  "body": {
+    "members": [
+      {
+        "user_id": "default",
+        "username": "e2e",
+        "views": []
+      }
+    ]
+  }
+}

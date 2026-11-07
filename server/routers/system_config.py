@@ -18,7 +18,7 @@ from functools import lru_cache
 from typing import Annotated, Any, Literal, TypedDict
 from urllib.parse import urlsplit
 
-import httpx
+import httpx2
 from fastapi import APIRouter, Depends, HTTPException
 from packaging.version import InvalidVersion, Version
 from pydantic import BaseModel
@@ -47,6 +47,7 @@ from lib.db import async_session_factory, get_async_session
 from lib.i18n import DEFAULT_LOCALE, translate_or
 from lib.infra.api_errors import UnprocessableError
 from lib.infra.httpx_shared import get_http_client
+from lib.infra.video_encoder import GPU_ENCODING_SETTING, gpu_encoder_status
 from lib.market.sources import PROXY_PREFIX_SETTING
 from lib.speech.narration_config import parse_tts_backend
 from server.dependencies import get_config_service
@@ -80,6 +81,8 @@ class _OptionsDict(TypedDict):
     audio_backends: list[str]
     provider_names: dict[str, str]
     model_names: dict[str, str]
+    # 本机可用的成片 GPU 编码器（如 h264_nvenc）；None 表示 GPU 编码不可用
+    gpu_encoder: str | None
 
 
 _MEDIA_TO_OPTION_LIST = {
@@ -124,7 +127,7 @@ def _build_latest_release_payload(data: dict[str, Any]) -> dict[str, str]:
 
 async def _get_latest_release(
     *,
-    http_client: httpx.AsyncClient | None = None,
+    http_client: httpx2.AsyncClient | None = None,
     now: datetime | None = None,
 ) -> tuple[dict[str, str], datetime]:
     """Fetch latest GitHub release with a 5-minute cache.
@@ -427,6 +430,7 @@ async def _build_options(svc: ConfigService, session: AsyncSession, locale: str 
         audio_backends=by_media["audio_backends"],
         provider_names=provider_names,
         model_names=_model_names(candidates),
+        gpu_encoder=(await asyncio.to_thread(gpu_encoder_status)).encoder,
     )
 
 
@@ -481,6 +485,8 @@ class SystemConfigPatchRequest(BaseModel):
     market_github_proxy_prefix: str | None = None
     video_generate_audio: bool | None = None
     video_poll_timeout_seconds: int | None = None
+    # 成片在 GPU 可用时是否用 GPU 编码；关闭后始终用 CPU 编码
+    gpu_encoding_enabled: bool | None = None
     anthropic_api_key: str | None = None
     anthropic_base_url: str | None = None
     anthropic_model: str | None = None
@@ -531,6 +537,7 @@ async def get_system_config(
         if video_generate_audio_raw
         else ConfigResolver._DEFAULT_VIDEO_GENERATE_AUDIO
     )
+    gpu_encoding_raw = all_s.get(GPU_ENCODING_SETTING, "")
     anthropic_key = all_s.get("anthropic_api_key", "")
     # 兼容新凭证目录：旧 system_settings 没填但 agent_anthropic_credentials 有 active 时
     # 也算 is_set，避免 dashboard "未配置" 红点误报
@@ -558,6 +565,11 @@ async def get_system_config(
         "video_generate_audio": video_generate_audio,
         "video_poll_timeout_seconds": ConfigService.parse_video_poll_timeout_seconds(
             all_s.get("video_poll_timeout_seconds") or str(DEFAULT_VIDEO_POLL_TIMEOUT_SECONDS)
+        ),
+        "gpu_encoding_enabled": (
+            gpu_encoding_raw.lower() in ("true", "1", "yes")
+            if gpu_encoding_raw
+            else ConfigResolver._DEFAULT_GPU_ENCODING_ENABLED
         ),
         "anthropic_api_key": {
             "is_set": bool(anthropic_key),
@@ -814,6 +826,9 @@ async def patch_system_config(
     # Boolean settings
     if "video_generate_audio" in patch and patch["video_generate_audio"] is not None:
         await svc.set_setting("video_generate_audio", "true" if patch["video_generate_audio"] else "false")
+
+    if "gpu_encoding_enabled" in patch and patch["gpu_encoding_enabled"] is not None:
+        await svc.set_setting(GPU_ENCODING_SETTING, "true" if patch["gpu_encoding_enabled"] else "false")
 
     if "video_poll_timeout_seconds" in patch and patch["video_poll_timeout_seconds"] is not None:
         try:

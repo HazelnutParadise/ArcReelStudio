@@ -140,7 +140,7 @@ curl http://localhost:1241/health
 http://localhost:1241
 ```
 
-> `AUTH_PASSWORD` 留空时，首次启动会自动生成密码并回写到 `.env`。正式使用时仍建议主动设置强密码并妥善保存。
+> `AUTH_USERNAME` 与 `AUTH_PASSWORD` 只在第一次启动时用来建立默认管理员。`AUTH_PASSWORD` 留空时会生成初始密码，保存在 `deploy/projects/runtime/initial-admin-password`。登录后可以在「设置 › 账号与成员」中修改密码、新增成员。
 
 ### 2.3 使用 PostgreSQL 生产部署 {#deploy-with-postgresql}
 

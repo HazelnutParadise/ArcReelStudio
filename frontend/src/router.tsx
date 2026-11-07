@@ -13,12 +13,7 @@ import { LazyBoundary } from "@/components/shared/LazyBoundary";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { LeaveGuardProvider } from "@/components/shared/edit-unit/LeaveGuard";
 import { useTrackReturnTo } from "@/components/shared/page-shell/return-to";
-import {
-  buildDemoProjectData,
-  buildDemoScripts,
-  DEMO_PROJECT_NAME,
-  isDemoProject,
-} from "@/onboarding/demo-project";
+import { buildDemoProjectData, buildDemoScripts, DEMO_PROJECT_NAME, isDemoProject } from "@/onboarding/demo-project";
 import { setApiReadOnly } from "@/api";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useAppStore } from "@/stores/app-store";
@@ -39,10 +34,7 @@ import {
 // 首屏之外的整页按路由拆 chunk：项目大厅、项目工作区与登录页是落地页，保持随入口加载；
 // 全局设置（含用量图表 Recharts）、项目设置与资产库进入时再拉取。
 const SystemConfigPage = lazyNamed(() => import("@/components/pages/SystemConfigPage"), "SystemConfigPage");
-const ProjectSettingsPage = lazyNamed(
-  () => import("@/components/pages/ProjectSettingsPage"),
-  "ProjectSettingsPage",
-);
+const ProjectSettingsPage = lazyNamed(() => import("@/components/pages/ProjectSettingsPage"), "ProjectSettingsPage");
 const AssetLibraryPage = lazyNamed(() => import("@/components/pages/AssetLibraryPage"), "AssetLibraryPage");
 // 引导（driver.js）不参与首屏绘制，拆出后与页面并行加载；它自身不渲染 DOM，加载期间无需占位。
 const OnboardingTour = lazyNamed(() => import("@/onboarding/OnboardingTour"), "OnboardingTour");
@@ -177,7 +169,9 @@ function StudioWorkspace() {
       .getState()
       .refreshProject(projectName, {
         onError: (err) =>
-          useAppStore.getState().pushToast(tRef.current("dashboard:project_load_failed", { message: errMsg(err) }), "error"),
+          useAppStore
+            .getState()
+            .pushToast(tRef.current("dashboard:project_load_failed", { message: errMsg(err) }), "error"),
       })
       .then((result) => {
         // "cancelled" 代表本轮未同步（项目已被切走、取消域已轮换），loading 状态交由

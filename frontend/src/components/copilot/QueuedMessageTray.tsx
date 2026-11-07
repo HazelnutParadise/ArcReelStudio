@@ -155,7 +155,13 @@ function QueuedMessageItem({
           onPointerDown={keepFocusInside}
         >
           <span className="text-muted-foreground">{t("queued_message_delete_prompt")}</span>
-          <Button variant="destructive" size="xs" disabled={busy} onKeyDown={(event) => dismissOnEscape(event, dismissDelete)} onClick={() => withdraw("delete")}>
+          <Button
+            variant="destructive"
+            size="xs"
+            disabled={busy}
+            onKeyDown={(event) => dismissOnEscape(event, dismissDelete)}
+            onClick={() => withdraw("delete")}
+          >
             {t("queued_message_delete_confirm")}
           </Button>
           <Button
@@ -177,7 +183,13 @@ function QueuedMessageItem({
           {/* 「未发送」消息的发送与排队中消息的立即发送都排在最前 */}
           <div className="-my-0.5 flex shrink-0 items-center">
             {unsent && (
-              <Button variant="ghost" size="icon-xs" disabled={busy} onClick={resend} aria-label={t("queued_message_resend")}>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                disabled={busy}
+                onClick={resend}
+                aria-label={t("queued_message_resend")}
+              >
                 <Send aria-hidden />
               </Button>
             )}

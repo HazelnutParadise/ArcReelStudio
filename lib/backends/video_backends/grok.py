@@ -138,7 +138,7 @@ class GrokVideoBackend(EntryBoundCapabilities):
                     rounded = int(parsed + 0.5)
                     if rounded > 0:
                         actual_duration = rounded
-        except (TypeError, ValueError, OverflowError):
+        except TypeError, ValueError, OverflowError:
             # 解析失败属预期内回落（SDK 字段未类型化），保留请求时长即可，无需上抛
             logger.debug("Grok 回报的 duration 无法解析: %r，回落请求时长 %s 秒", raw_duration, actual_duration)
 

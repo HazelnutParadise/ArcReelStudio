@@ -38,7 +38,7 @@ def decode_txt(raw: bytes) -> tuple[str, str]:
         detected_enc = best.encoding
         try:
             return raw.decode(best.encoding), best.encoding
-        except (UnicodeDecodeError, LookupError):
+        except UnicodeDecodeError, LookupError:
             pass
 
     decoded = raw.decode("gb18030", errors="replace")

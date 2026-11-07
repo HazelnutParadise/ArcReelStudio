@@ -19,11 +19,7 @@ export interface EpisodeDurationSummaryProps {
   className?: string;
 }
 
-export function EpisodeDurationSummary({
-  totalSeconds,
-  targetSeconds,
-  className,
-}: EpisodeDurationSummaryProps) {
+export function EpisodeDurationSummary({ totalSeconds, targetSeconds, className }: EpisodeDurationSummaryProps) {
   const { t } = useTranslation("dashboard");
   if (targetSeconds == null) return null;
 
@@ -31,9 +27,7 @@ export function EpisodeDurationSummary({
   const exceeded = over > 0;
 
   return (
-    <p
-      className={cn("flex items-center gap-1.5 text-xs", exceeded ? "text-warn" : "text-muted-foreground", className)}
-    >
+    <p className={cn("flex items-center gap-1.5 text-xs", exceeded ? "text-warn" : "text-muted-foreground", className)}>
       {exceeded && <AlertTriangle aria-hidden className="size-3.5 shrink-0 text-warn" />}
       {exceeded
         ? t("episode_duration_over_target", { total: totalSeconds, target: targetSeconds, over })

@@ -11,7 +11,6 @@ const API: ApiOverrides = {
   "GET /api/v1/projects/demo/events/stream": { status: 404, body: { detail: "页面级套件不回放事件流" } },
 };
 
-
 interface RecordedProject {
   project: { episodes: Record<string, unknown>[] } & Record<string, unknown>;
   scripts: Record<string, Record<string, unknown>>;
@@ -195,7 +194,14 @@ const PROGRESS_STRESS: ApiOverrides = {
                   withheld: index % 3 !== 0,
                   problems:
                     index % 3 === 0
-                      ? [{ code: "video_capability_missing_i2v", action: "configure_provider", params: {}, message: index === 0 ? LONG_MESSAGE : null }]
+                      ? [
+                          {
+                            code: "video_capability_missing_i2v",
+                            action: "configure_provider",
+                            params: {},
+                            message: index === 0 ? LONG_MESSAGE : null,
+                          },
+                        ]
                       : [{ code: "generation_batch_admission_withheld", action: "none", params: {} }],
                 })),
               },
@@ -233,12 +239,14 @@ const NO_SCRIPT_PLAN: ApiOverrides = {
 const HEADER_HEIGHT = 85;
 
 const viewTabs = (page: Page) => page.getByRole("tablist", { name: "集视图" });
-const header = (page: Page) => page.getByRole("main").locator("header").filter({ has: viewTabs(page) });
+const header = (page: Page) =>
+  page
+    .getByRole("main")
+    .locator("header")
+    .filter({ has: viewTabs(page) });
 const viewArea = (page: Page) => page.getByRole("tabpanel");
 const progress = (page: Page) => page.getByTestId("workflow-panel");
 const progressPopover = (page: Page) => page.getByRole("dialog", { name: "制作进度" });
-
-
 
 /** 弹层带入场动画，量尺寸、跑 axe 之前等它停下；进行中的转圈等循环动画不等。 */
 

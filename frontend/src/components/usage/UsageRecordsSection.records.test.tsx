@@ -1,6 +1,6 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import type { UsageRecordsQuery } from "@/api";
@@ -270,8 +270,20 @@ describe("UsageRecordsSection records", () => {
   it("keeps only running tasks whose model matches the model filter", async () => {
     useTasksStore.setState({
       tasks: [
-        makeTask({ task_id: "t-match", status: "running", model: "veo-3", resource_id: "E1S01", resource_ref: itemRef("S01", 1) }),
-        makeTask({ task_id: "t-other", status: "running", model: "kling", resource_id: "E1S02", resource_ref: itemRef("S02", 2) }),
+        makeTask({
+          task_id: "t-match",
+          status: "running",
+          model: "veo-3",
+          resource_id: "E1S01",
+          resource_ref: itemRef("S01", 1),
+        }),
+        makeTask({
+          task_id: "t-other",
+          status: "running",
+          model: "kling",
+          resource_id: "E1S02",
+          resource_ref: itemRef("S02", 2),
+        }),
         makeTask({ task_id: "t-queued", status: "queued", resource_id: "E1S03", resource_ref: itemRef("S03", 3) }),
       ],
     });
@@ -379,9 +391,7 @@ describe("UsageRecordsSection records", () => {
     renderUsageRecordsSection();
     await waitFor(() => expect(useUsageRecordsStore.getState().pendingRecords).toHaveLength(1));
     const summaryCalls = vi.mocked(API.getUsageSummary).mock.calls.length;
-    const recordCalls = vi
-      .mocked(API.getUsageRecords)
-      .mock.calls.filter(([query]) => !isPendingQuery(query)).length;
+    const recordCalls = vi.mocked(API.getUsageRecords).mock.calls.filter(([query]) => !isPendingQuery(query)).length;
 
     // 下一次兜底轮询发现这条调用已经落账：记录表与 KPI 也要重取，它才会出现在表里。
     pendingPage = EMPTY_PAGE;
@@ -391,12 +401,10 @@ describe("UsageRecordsSection records", () => {
       await vi.advanceTimersByTimeAsync(3000);
     });
 
-    await waitFor(() =>
-      expect(vi.mocked(API.getUsageSummary).mock.calls.length).toBe(summaryCalls + 1),
+    await waitFor(() => expect(vi.mocked(API.getUsageSummary).mock.calls.length).toBe(summaryCalls + 1));
+    expect(vi.mocked(API.getUsageRecords).mock.calls.filter(([query]) => !isPendingQuery(query)).length).toBe(
+      recordCalls + 1,
     );
-    expect(
-      vi.mocked(API.getUsageRecords).mock.calls.filter(([query]) => !isPendingQuery(query)).length,
-    ).toBe(recordCalls + 1);
     await waitFor(() => {
       const state = useUsageRecordsStore.getState();
       expect(state.pendingRecords).toEqual([]);

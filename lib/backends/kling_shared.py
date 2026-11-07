@@ -171,7 +171,7 @@ def _code_error(scope: dict, message_key: str) -> str | None:
         return None
     try:
         is_error = int(float(code)) != 0
-    except (TypeError, ValueError, OverflowError):
+    except TypeError, ValueError, OverflowError:
         is_error = True
     if is_error:
         return f"Kling API code={code}: {_as_str(scope.get(message_key))}".strip()
@@ -350,6 +350,6 @@ def kling_model_path_output_duration(payload: dict) -> int | None:
         if not 0 < value <= MAX_BILLED_DURATION_SECONDS:
             return None
         seconds = int(value.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-    except (InvalidOperation, TypeError, ValueError):
+    except InvalidOperation, TypeError, ValueError:
         return None
     return seconds if seconds > 0 else None

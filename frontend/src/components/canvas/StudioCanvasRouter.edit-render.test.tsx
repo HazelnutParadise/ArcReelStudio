@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
@@ -144,7 +144,9 @@ describe("StudioCanvasRouter edit view mounts", () => {
 
   it("disables the empty-state actions when the workflow refuses to create an edit timeline", async () => {
     vi.spyOn(API, "listEditTimelines").mockResolvedValue({ timelines: [] });
-    const status = makeStatus({ operations: { create_edit_timeline: { state: "refused", reason: "no_available_video" } } });
+    const status = makeStatus({
+      operations: { create_edit_timeline: { state: "refused", reason: "no_available_video" } },
+    });
     useWorkflowStore.setState({ plan: makePlan({ status }), planKey: "demo::1" });
 
     renderEditView(makeScript(null));

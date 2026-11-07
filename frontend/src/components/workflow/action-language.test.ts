@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "vite-plus/test";
 import enWorkflow from "@/i18n/en/workflow";
 import viWorkflow from "@/i18n/vi/workflow";
 import zhWorkflow from "@/i18n/zh/workflow";

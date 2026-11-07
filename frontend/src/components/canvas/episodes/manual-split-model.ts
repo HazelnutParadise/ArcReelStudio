@@ -129,9 +129,9 @@ function episodeSpans(view: EpisodesView): Span[] {
 function kindWalls(view: EpisodesView): number[] {
   const base = bases(view);
   const readable = view.files.map((file, index) => ({ file, index })).filter(({ file }) => !file.missing);
-  return readable.slice(1).flatMap(({ file, index }, i) =>
-    file.source_kind !== readable[i].file.source_kind ? [base[index]] : [],
-  );
+  return readable
+    .slice(1)
+    .flatMap(({ file, index }, i) => (file.source_kind !== readable[i].file.source_kind ? [base[index]] : []));
 }
 
 function wallsInside(walls: number[], start: number, end: number): number[] {
@@ -216,7 +216,15 @@ export function resolvePointAction(
   const spans = episodeSpans(view);
   const inside = spans.find((span) => span.start < at && at < span.end);
   if (inside) {
-    return { kind: "split", file: fileIndex, offset, episode: inside.episode, start: inside.start, at, end: inside.end };
+    return {
+      kind: "split",
+      file: fileIndex,
+      offset,
+      episode: inside.episode,
+      start: inside.start,
+      at,
+      end: inside.end,
+    };
   }
   if (offset === 0) return null;
   const start = Math.max(

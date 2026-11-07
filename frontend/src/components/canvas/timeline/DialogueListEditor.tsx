@@ -68,11 +68,7 @@ function nextKey(keys: string[]): string {
 }
 
 /** Editable list of speaker/line dialogue pairs. */
-export function DialogueListEditor({
-  dialogue,
-  onChange,
-  readOnly,
-}: DialogueListEditorProps) {
+export function DialogueListEditor({ dialogue, onChange, readOnly }: DialogueListEditorProps) {
   const { t } = useTranslation("dashboard");
 
   // 数据模型无 id：在编辑态派生与条目一一绑定的稳定 key，增删时同步搬运，使受控输入
@@ -89,9 +85,7 @@ export function DialogueListEditor({
   }
 
   const update = (index: number, patch: Partial<Dialogue>) => {
-    const next = dialogue.map((d, i) =>
-      i === index ? { ...d, ...patch } : d
-    );
+    const next = dialogue.map((d, i) => (i === index ? { ...d, ...patch } : d));
     onChange(next);
   };
 

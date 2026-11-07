@@ -11,7 +11,9 @@ export function draftFixRequestText(
   violations: ScriptReviewViolation[],
 ): string {
   const draftName = t(
-    docType === "reference_prompt_authoring" ? "dashboard:draft_name_prompt_authoring" : "dashboard:draft_name_script_plan",
+    docType === "reference_prompt_authoring"
+      ? "dashboard:draft_name_prompt_authoring"
+      : "dashboard:draft_name_script_plan",
   );
   if (violations.length === 0) {
     return t("dashboard:draft_fix_request_promote_prefill", { episodeRef, docType, draftName });

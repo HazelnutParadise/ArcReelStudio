@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { UtteranceListEditor } from "./UtteranceListEditor";
 import type { Utterance } from "@/types";
@@ -55,20 +55,14 @@ describe("UtteranceListEditor", () => {
     render(<UtteranceListEditor utterances={sample} onChange={onChange} />);
     // 第一条是画外音，其类型按钮文案为「画外音」
     fireEvent.click(screen.getByText("画外音"));
-    expect(onChange).toHaveBeenCalledWith([
-      { kind: "dialogue", speaker: "", text: "三年后。" },
-      sample[1],
-    ]);
+    expect(onChange).toHaveBeenCalledWith([{ kind: "dialogue", speaker: "", text: "三年后。" }, sample[1]]);
   });
 
   it("editing a dialogue speaker preserves kind and text", () => {
     const onChange = vi.fn();
     render(<UtteranceListEditor utterances={sample} onChange={onChange} />);
     fireEvent.change(screen.getByDisplayValue("阿离"), { target: { value: "阿离 " } });
-    expect(onChange).toHaveBeenCalledWith([
-      sample[0],
-      { kind: "dialogue", speaker: "阿离 ", text: "你终于回来了。" },
-    ]);
+    expect(onChange).toHaveBeenCalledWith([sample[0], { kind: "dialogue", speaker: "阿离 ", text: "你终于回来了。" }]);
   });
 
   it("shows an empty hint when there are no utterances", () => {

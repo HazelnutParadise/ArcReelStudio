@@ -170,7 +170,7 @@ def _load_object(path: Path) -> dict[str, Any] | None:
 
     try:
         parsed = json.loads(path.read_bytes())
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
     return parsed if isinstance(parsed, dict) else None
 
@@ -231,7 +231,7 @@ def _rebase_video_duration_entries(
         try:
             frozen = parse_typed_media_version_target(resource_type, record)
             facts = VideoArtifactCurrencyFacts.from_dict(record.get("artifact_video_currency"))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             continue
         if frozen.basis.digest == target.basis_digest:
             replacements[key] = target
@@ -432,7 +432,7 @@ def _with_explicit_episode_sources(
             continue
         try:
             text = normalize_source_text(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
         fingerprint = recorded_fingerprints.get(rel)
         if isinstance(fingerprint, str) and fingerprint != hashlib.sha256(text.encode("utf-8")).hexdigest():
@@ -572,7 +572,7 @@ def _legacy_presentation(project_dir: Path, path: Path) -> _PresentationRewrite 
             provider_audio_enabled=provider_audio_enabled,
         )
         legacy = build_legacy_transition_presentation_basis(current, transition)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
     if presentation.get("presentation_basis") != ArtifactBasisDescriptor.from_basis(legacy).to_dict():
         return None
@@ -654,7 +654,7 @@ def _latest_registered_tts_settings(project_dir: Path) -> TtsSynthesisSettings |
         try:
             target = parse_typed_media_version_target("audio", record)
             settings = parse_typed_audio_settings(record)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             continue
         if target.episode == episode:
             candidates.append((target.created_at or "", episode, resource_id, settings))

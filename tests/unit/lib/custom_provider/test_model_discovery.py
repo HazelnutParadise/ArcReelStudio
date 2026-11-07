@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 
 from tests.http_capture import capture_http, only_request
@@ -338,7 +338,7 @@ class TestDiscoverModelsGoogle:
         by_id = {m["model_id"]: m for m in result}
         assert by_id["gemini-3-flash"]["endpoint"] == "gemini-generate"
         assert by_id["gemini-3-flash-image-preview"]["endpoint"] == "gemini-image"
-        assert by_id["veo-3"]["endpoint"] == "gemini-video"  # google 发现协议下的 Veo 走原生端点
+        assert by_id["veo-3"]["endpoint"] == "openai-video"  # 不再经 Gemini 协议中转 Veo
 
     @patch("lib.custom_provider.discovery.genai")
     async def test_default_marking_google(self, mock_genai):
@@ -404,7 +404,7 @@ class TestDiscoverModelsGoogle:
         }
 
     async def test_no_base_url(self):
-        """base_url 为 None 时不传 http_options。"""
+        """base_url 为 None 时 http_options 只固定 API 版本。"""
         from lib.custom_provider.discovery import discover_models
 
         with _recorded_genai_clients() as created:
@@ -414,10 +414,10 @@ class TestDiscoverModelsGoogle:
                 api_key="test-key",
             )
 
-        assert created == [{"api_key": "test-key"}]
+        assert created == [{"api_key": "test-key", "http_options": {"api_version": "v1beta"}}]
 
     async def test_with_base_url(self):
-        """base_url 不为空时传 http_options。"""
+        """base_url 不为空时 http_options 另带 base_url。"""
         from lib.custom_provider.discovery import discover_models
 
         with _recorded_genai_clients() as created:
@@ -427,7 +427,12 @@ class TestDiscoverModelsGoogle:
                 api_key="test-key",
             )
 
-        assert created == [{"api_key": "test-key", "http_options": {"base_url": "https://custom-endpoint.com/"}}]
+        assert created == [
+            {
+                "api_key": "test-key",
+                "http_options": {"api_version": "v1beta", "base_url": "https://custom-endpoint.com/"},
+            }
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -541,7 +546,7 @@ class TestDiscoverModelsAnthropic:
 
         with capture_http() as http:
             http.get(host="relay.example.com").respond(status_code=401, text="unauthorized sk-body-secret")
-            with pytest.raises(httpx.HTTPStatusError) as exc_info:
+            with pytest.raises(httpx2.HTTPStatusError) as exc_info:
                 await discover_models(discovery_format="anthropic", base_url=base_url, api_key="sk-ant")
 
         assert str(exc_info.value) == "401 response for https://relay.example.com/anthropic/v1/models"

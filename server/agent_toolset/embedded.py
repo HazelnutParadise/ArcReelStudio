@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable
 from typing import Any
 
@@ -26,6 +27,8 @@ from server.agent_toolset.declaration import (
 from server.agent_toolset.envelope import encode_outcome
 from server.tool_runtime import CallerContext, ProjectScope, Services, ToolOutcome
 
+logger = logging.getLogger(__name__)
+
 
 def embedded_result(declaration: AgentToolDeclaration, outcome: ToolOutcome[Any]) -> types.CallToolResult:
     envelope = encode_outcome(declaration, outcome)
@@ -33,11 +36,11 @@ def embedded_result(declaration: AgentToolDeclaration, outcome: ToolOutcome[Any]
         content=[
             *(types.TextContent(type="text", text=text) for text in envelope.texts),
             *(
-                types.ImageContent(type="image", data=image.base64_data, mimeType=image.mime_type)
+                types.ImageContent(type="image", data=image.base64_data, mime_type=image.mime_type)
                 for image in envelope.images
             ),
         ],
-        isError=envelope.is_error,
+        is_error=envelope.is_error,
     )
 
 
@@ -52,32 +55,45 @@ def embedded_server(
 ) -> McpSdkServerConfig:
     """以会话项目暴露已声明工具的 in-process MCP server。"""
     declared = {declaration.name: declaration for declaration in declarations}
-    listed = [
-        types.Tool(
-            name=declaration.name,
-            description=tool_description(declaration),
-            inputSchema=declaration.input_schema,
-        )
-        for declaration in declared.values()
-    ]
-    server = Server(name, version=version)
+    listed = types.ListToolsResult(
+        tools=[
+            types.Tool(
+                name=declaration.name,
+                description=tool_description(declaration),
+                input_schema=declaration.input_schema,
+            )
+            for declaration in declared.values()
+        ]
+    )
 
-    @server.list_tools()
-    async def list_tools() -> list[types.Tool]:
+    async def on_list_tools(ctx: Any, params: types.PaginatedRequestParams | None) -> types.ListToolsResult:
+        del ctx, params
         return listed
 
-    @server.call_tool(validate_input=False)
-    async def call_tool(tool_name: str, arguments: dict[str, Any]) -> types.CallToolResult:
-        declaration = declared.get(tool_name)
+    async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.CallToolResult:
+        del ctx
+        declaration = declared.get(params.name)
+        # 低层 Server 不再把处理函数的异常转成 is_error 结果；未知工具与意外异常在此转换，模型照旧读到错误文本
         if declaration is None:
-            raise ValueError(f"Tool '{tool_name}' not found")
-        if isinstance(declaration, UnscopedToolDeclaration):
-            outcome = await invoke_unscoped_declaration(declaration, arguments, caller, services)
-        else:
-            outcome = await invoke_declaration(declaration, arguments, scope, caller, services)
+            return _error_result(f"Tool '{params.name}' not found")
+        arguments = params.arguments or {}
+        try:
+            if isinstance(declaration, UnscopedToolDeclaration):
+                outcome = await invoke_unscoped_declaration(declaration, arguments, caller, services)
+            else:
+                outcome = await invoke_declaration(declaration, arguments, scope, caller, services)
+        except Exception as exc:
+            logger.exception("内嵌工具 %s 抛出意外异常", params.name)
+            return _error_result(str(exc))
         return embedded_result(declaration, outcome)
 
+    # 不传 get_tool_input_schema：低层 Server 不做 inputSchema 预校验，参数由声明的请求模型校验
+    server = Server(name, version=version, on_list_tools=on_list_tools, on_call_tool=on_call_tool)
     return McpSdkServerConfig(type="sdk", name=name, instance=server)
+
+
+def _error_result(text: str) -> types.CallToolResult:
+    return types.CallToolResult(content=[types.TextContent(type="text", text=text)], is_error=True)
 
 
 __all__ = ["embedded_result", "embedded_server"]

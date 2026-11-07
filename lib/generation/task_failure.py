@@ -59,6 +59,7 @@ CAPABILITY_FAILURE_CODES: frozenset[str] = frozenset(
         "video_reference_audio_slots_insufficient",
         "video_reference_audio_unreadable",
         "video_reference_audio_unsupported",
+        "video_veo_api_key_mode_unsupported",
         "video_reference_route_audio_unsupported",
         "video_aspect_ratio_not_supported",
         "video_audio_switch_not_supported",
@@ -304,7 +305,7 @@ def bound_reason(reason: str, limit: int) -> str:
         return reason[:limit]
     try:
         parsed = json.loads(raw_params)
-    except (ValueError, RecursionError):
+    except ValueError, RecursionError:
         # 畸形 JSON，以及嵌套过深到 ``json.loads`` 自身撞递归上限的 params。裁剪发生在落库
         # 路径上，异常逸出会让任务卡在 running，因此一并按不可解析处理，退回按字符裁剪。
         return reason[:limit]
@@ -440,7 +441,7 @@ def parse_failure(error_message: str | None) -> tuple[str, dict[str, Any]] | Non
         return code, {}
     try:
         parsed = json.loads(raw_params)
-    except (ValueError, RecursionError):
+    except ValueError, RecursionError:
         # 畸形 JSON，以及嵌套过深到 ``json.loads`` 自身撞递归上限的 payload。渲染发生在
         # HTTP 请求内，异常逸出就是 500，因此一并按无法识别处理：调用方原样透传，原因不丢。
         return None

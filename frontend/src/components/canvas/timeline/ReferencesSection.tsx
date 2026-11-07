@@ -5,10 +5,7 @@ import { InfoTip, InfoTipContent, InfoTipTrigger } from "@/components/ui/info-ti
 import { TooltipIconButton } from "./TooltipIconButton";
 import { AvatarStack } from "@/components/canvas/timeline/AvatarStack";
 import { ClueStack } from "@/components/canvas/timeline/ClueStack";
-import {
-  SegmentRefsEditModal,
-  type SegmentRefsChanges,
-} from "@/components/canvas/timeline/SegmentRefsEditModal";
+import { SegmentRefsEditModal, type SegmentRefsChanges } from "@/components/canvas/timeline/SegmentRefsEditModal";
 import { useProjectsStore } from "@/stores/projects-store";
 import type { Character, PlanNewAsset } from "@/types";
 import { planReferenceCandidates } from "@/utils/plan-new-assets";
@@ -173,7 +170,9 @@ export function ReferencesSection({
               <AlertTriangle aria-hidden className="size-3" />
               {t("segment_refs_stale_badge", { count: totalStale })}
             </InfoTipTrigger>
-            <InfoTipContent title={t("segment_refs_stale_badge", { count: totalStale })}>{t("segment_refs_stale_hint")}</InfoTipContent>
+            <InfoTipContent title={t("segment_refs_stale_badge", { count: totalStale })}>
+              {t("segment_refs_stale_hint")}
+            </InfoTipContent>
           </InfoTip>
         )}
         <span className="flex-1" />
@@ -201,12 +200,7 @@ export function ReferencesSection({
             label={t("references_badge_character")}
             count={characterNames.length}
           >
-            <AvatarStack
-              names={characterNames}
-              characters={characters}
-              projectName={projectName}
-              maxShow={4}
-            />
+            <AvatarStack names={characterNames} characters={characters} projectName={projectName} maxShow={4} />
           </Group>
         )}
         {sceneNames.length > 0 && (

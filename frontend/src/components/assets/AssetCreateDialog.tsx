@@ -89,7 +89,7 @@ function AssetCreateForm({
   useEffect(() => {
     if (!image) return;
     const url = URL.createObjectURL(image);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- object URL 随所选文件创建并在替换或卸载时回收
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- object URL 随所选文件创建并在替换或卸载时回收
     setPreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [image]);

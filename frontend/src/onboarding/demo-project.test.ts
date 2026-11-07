@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import i18n from "@/i18n";
 import {
   DEMO_PROJECT_NAME,
@@ -42,8 +42,7 @@ describe("demo project data", () => {
   it("matches the episode statuses against the summary counts", () => {
     const data = buildDemoProjectData(t);
     const summary = data.status?.episodes_summary;
-    const count = (status: string) =>
-      data.episodes.filter((e) => e.status === status).length;
+    const count = (status: string) => data.episodes.filter((e) => e.status === status).length;
     // scripted 统计的是"有生成剧本"的分集数（对齐 lib/workflow/workflow_state.py 的 script_status
     // 口径），不是 status 字段字面等于 "scripted" 的分集数——没剧本的分集永远只能是 draft
     const scriptedCount = data.episodes.filter((e) => e.script_file !== "").length;
@@ -62,9 +61,7 @@ describe("demo project data", () => {
     const props = Object.values(data.props ?? {});
 
     expect(characters).toHaveLength(status.assets.character.total);
-    expect(characters.filter((c) => c.character_sheet).length).toBe(
-      status.assets.character.available,
-    );
+    expect(characters.filter((c) => c.character_sheet).length).toBe(status.assets.character.available);
     expect(props).toHaveLength(status.assets.prop.total);
     expect(props.filter((p) => p.prop_sheet).length).toBe(status.assets.prop.available);
     expect(scenes).toHaveLength(status.assets.scene.total);
@@ -109,9 +106,7 @@ describe("demo project data", () => {
     const data = buildDemoProjectData(t);
     const episode = data.episodes.find((e) => e.episode === DEMO_SCRIPTED_EPISODE)!;
     const segments = buildDemoScripts(t)["E1.json"].segments;
-    const withStoryboard = segments.filter(
-      (s) => s.generated_assets?.storyboard_image,
-    );
+    const withStoryboard = segments.filter((s) => s.generated_assets?.storyboard_image);
 
     expect(segments.length).toBe(episode.item_count);
     expect(segments.length).toBeGreaterThanOrEqual(6);

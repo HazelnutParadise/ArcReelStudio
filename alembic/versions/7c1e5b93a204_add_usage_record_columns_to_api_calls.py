@@ -38,7 +38,7 @@ def _backfill_task_id_from_task_payload() -> None:
     for task_id, payload_json in rows:
         try:
             payload = json.loads(payload_json)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             continue
         if not isinstance(payload, dict):
             continue

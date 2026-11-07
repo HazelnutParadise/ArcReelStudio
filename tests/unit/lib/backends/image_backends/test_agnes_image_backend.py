@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -26,12 +26,12 @@ from tests.http_capture import capture_http, only_request, request_json
 _ENDPOINT = "https://apihub.agnes-ai.com/v1/images/generations"
 
 
-def _img_response(url: str = "https://x/out.png") -> httpx.Response:
-    return httpx.Response(200, json={"created": 1, "data": [{"url": url}]})
+def _img_response(url: str = "https://x/out.png") -> httpx2.Response:
+    return httpx2.Response(200, json={"created": 1, "data": [{"url": url}]})
 
 
-def _b64_response(b64: str) -> httpx.Response:
-    return httpx.Response(200, json={"created": 1, "data": [{"b64_json": b64}]})
+def _b64_response(b64: str) -> httpx2.Response:
+    return httpx2.Response(200, json={"created": 1, "data": [{"b64_json": b64}]})
 
 
 def _make_ref(tmp_path: Path, name: str) -> ReferenceImage:
@@ -41,7 +41,7 @@ def _make_ref(tmp_path: Path, name: str) -> ReferenceImage:
 
 
 @contextmanager
-def _generate_route(response: httpx.Response, download: AsyncMock | None = None) -> Generator[respx.Route]:
+def _generate_route(response: httpx2.Response, download: AsyncMock | None = None) -> Generator[respx.Route]:
     """拦截建图 POST 并（可选）挡住产物下载，产出该路由供断言真实请求。"""
     with capture_http() as router:
         route = router.post(_ENDPOINT).mock(return_value=response)
@@ -299,7 +299,7 @@ class TestResponseHandling:
 
     async def test_empty_data_raises_runtime(self, tmp_path: Path):
         download = AsyncMock()
-        with _generate_route(httpx.Response(200, json={"created": 1, "data": []}), download):
+        with _generate_route(httpx2.Response(200, json={"created": 1, "data": []}), download):
             from lib.backends.image_backends.agnes import AgnesImageBackend
 
             b = AgnesImageBackend(api_key="sk")
@@ -310,7 +310,7 @@ class TestResponseHandling:
         # URL 下载失败但同响应带 b64_json：回退落盘，不丢弃已计费的成功生成
         raw = b"\x89PNG\r\nfallback"
         b64 = base64.b64encode(raw).decode("ascii")
-        response = httpx.Response(200, json={"created": 1, "data": [{"url": "https://x/out.png", "b64_json": b64}]})
+        response = httpx2.Response(200, json={"created": 1, "data": [{"url": "https://x/out.png", "b64_json": b64}]})
         download = AsyncMock(side_effect=RuntimeError("download boom"))
         out = tmp_path / "o.png"
         with _generate_route(response, download):
@@ -336,7 +336,7 @@ class TestResponseHandling:
 
     async def test_missing_url_b64_log_redacts_body(self, tmp_path: Path, caplog):
         # 响应缺 url/b64 时只记键名与 data 条数，敏感字段值不落日志
-        response = httpx.Response(
+        response = httpx2.Response(
             200,
             json={
                 "created": 1,
@@ -362,11 +362,11 @@ class TestResponseHandling:
 class TestHttpErrors:
     async def test_400_surfaces_httpstatuserror_single_call(self, tmp_path: Path):
         download = AsyncMock()
-        with _generate_route(httpx.Response(400, text="boom"), download) as route:
+        with _generate_route(httpx2.Response(400, text="boom"), download) as route:
             from lib.backends.image_backends.agnes import AgnesImageBackend
 
             b = AgnesImageBackend(api_key="sk")
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.generate(ImageGenerationRequest(prompt="p", output_path=tmp_path / "o.png"))
         assert ei.value.response.status_code == 400
         assert route.call_count == 1
@@ -378,7 +378,7 @@ class TestRetryScope:
         # 下载阶段瞬态失败只在下载层重试，绝不回退到重跑非幂等的生成 POST（防重复建图 + 重复计费）。
         from lib.backends.backend_runtime import VIDEO_POLL_MAX_CONSECUTIVE_FAILURES
 
-        download = AsyncMock(side_effect=httpx.ConnectError("conn reset"))
+        download = AsyncMock(side_effect=httpx2.ConnectError("conn reset"))
         with bounded_poll_clock(), _generate_route(_img_response(), download) as route:
             from lib.backends.image_backends.agnes import AgnesImageBackend
 

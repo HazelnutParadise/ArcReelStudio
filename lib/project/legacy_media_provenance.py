@@ -166,7 +166,7 @@ def _bound_scripts(project_dir: Path, project: dict[str, Any]) -> list[tuple[int
             continue
         try:
             script = load_json(script_path)
-        except (OSError, ValueError):
+        except OSError, ValueError:
             continue
         if not isinstance(script, dict):
             continue
@@ -190,7 +190,7 @@ def _selected_record(versions_data: dict[str, Any], resource_type: str, resource
 def _is_typed(resource_type: str, record: Mapping[str, Any]) -> bool:
     try:
         parse_typed_media_version_target(resource_type, record)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return False
     return True
 

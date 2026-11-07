@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API, ReferenceProjectionError, SpeechAdmissionError } from "@/api";
 import { useReferenceDurationGate } from "@/hooks/useReferenceDurationGate";
 import { useAppStore } from "@/stores/app-store";
@@ -196,7 +196,11 @@ describe("useReferenceDurationGate", () => {
     const { result } = renderHook(() => useReferenceDurationGate({ projectName: "demo", episode: 1 }));
 
     await act(async () => {
-      await result.current.run(["E1U1"], vi.fn(async () => {}), () => true);
+      await result.current.run(
+        ["E1U1"],
+        vi.fn(async () => {}),
+        () => true,
+      );
     });
 
     expect(pushToast).toHaveBeenCalledWith(expect.stringContaining("1 个单元"), "error");

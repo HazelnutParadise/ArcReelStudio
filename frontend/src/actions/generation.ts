@@ -13,7 +13,7 @@
  * 失败一律向上抛，由调用方决定错误提示。返回值统一归一化为 EnqueueResult，
  * 屏蔽各端点 task_id / task_ids 的形状差异。
  *
- * 组件禁止绕过本层直调入队类 API 方法（ESLint no-restricted-syntax 强制）。
+ * 组件禁止绕过本层直调入队类 API 方法（lint 规则 arcreel/no-direct-enqueue 强制）。
  */
 import { API, derivativeResourceId } from "@/api";
 import i18n from "@/i18n";
@@ -77,9 +77,7 @@ function markResource(
   resourceId: string,
   pendingTaskType: string,
 ): OptimisticHandle {
-  return useTasksStore
-    .getState()
-    .beginOptimisticActive(projectName, resourceKind, resourceId, pendingTaskType);
+  return useTasksStore.getState().beginOptimisticActive(projectName, resourceKind, resourceId, pendingTaskType);
 }
 
 /** scriptFile 粒度乐观标记的简写（请求发出前调用）。 */
@@ -183,10 +181,7 @@ export async function enqueueNarration(
   return { taskIds: [res.task_id], deduped: res.deduped };
 }
 
-export async function enqueueEpisodeNarration(
-  projectName: string,
-  scriptFile: string,
-): Promise<EnqueueResult> {
+export async function enqueueEpisodeNarration(projectName: string, scriptFile: string): Promise<EnqueueResult> {
   const res = await API.generateEpisodeNarrationAudio(projectName, scriptFile);
   // 入队哪几段由服务端筛选（缺旁白且有原文），请求发出前无从打标，故按响应映射逐段补打。
   markResourcesByTaskId(projectName, "tts", "tts", res.task_ids_by_segment);
@@ -199,10 +194,7 @@ export async function enqueueEpisodeNarration(
   return { taskIds: res.task_ids, deduped: res.deduped };
 }
 
-export async function enqueueCharacter(
-  projectName: string,
-  name: string,
-): Promise<EnqueueResult> {
+export async function enqueueCharacter(projectName: string, name: string): Promise<EnqueueResult> {
   const res = await submit(
     [markResource(projectName, "character", name, "character")],
     () => API.generateCharacter(projectName, name),
@@ -248,10 +240,7 @@ export async function enqueueCharacterVoiceSample(
   return { taskIds: [res.task_id], deduped: res.deduped };
 }
 
-export async function enqueueScene(
-  projectName: string,
-  name: string,
-): Promise<EnqueueResult> {
+export async function enqueueScene(projectName: string, name: string): Promise<EnqueueResult> {
   const res = await submit(
     [markResource(projectName, "scene", name, "scene")],
     () => API.generateProjectScene(projectName, name),
@@ -261,10 +250,7 @@ export async function enqueueScene(
   return { taskIds: [res.task_id], deduped: res.deduped };
 }
 
-export async function enqueueProp(
-  projectName: string,
-  name: string,
-): Promise<EnqueueResult> {
+export async function enqueueProp(projectName: string, name: string): Promise<EnqueueResult> {
   const res = await submit(
     [markResource(projectName, "prop", name, "prop")],
     () => API.generateProjectProp(projectName, name),
@@ -274,10 +260,7 @@ export async function enqueueProp(
   return { taskIds: [res.task_id], deduped: res.deduped };
 }
 
-export async function enqueueProduct(
-  projectName: string,
-  name: string,
-): Promise<EnqueueResult> {
+export async function enqueueProduct(projectName: string, name: string): Promise<EnqueueResult> {
   const res = await submit(
     [markResource(projectName, "product", name, "product")],
     () => API.generateProjectProduct(projectName, name),
@@ -373,9 +356,7 @@ export async function enqueueReferenceVideoBatch(
   payload: ReferenceBatchGenerateRequest,
 ): Promise<ReferenceBatchAdmission> {
   const unitIds = payload.unit_ids ?? [];
-  const marks = unitIds.map((unitId) =>
-    markResource(projectName, "reference_video", unitId, "reference_video"),
-  );
+  const marks = unitIds.map((unitId) => markResource(projectName, "reference_video", unitId, "reference_video"));
   const res = await submit(
     marks,
     () => API.generateReferenceVideoBatch(projectName, episode, payload),
@@ -389,22 +370,18 @@ export async function enqueueReferenceVideoBatch(
     notifyEnqueued(
       res.deduped,
       // 首个目标就没入队时一个任务也没建，「已提交 0 个」只会和下面那句中断提示打架。
-      res.task_ids.length > 0
-        ? i18n.t("dashboard:reference_batch_queued", { count: res.task_ids.length })
-        : null,
+      res.task_ids.length > 0 ? i18n.t("dashboard:reference_batch_queued", { count: res.task_ids.length }) : null,
       "info",
     );
     // 入队中断不撤销已建的任务，所以「建了几个」与「哪些没建」要一起说：只报成功数
     // 会让用户以为整批都在跑，回头发现少了几条却不知道为什么。
     if (res.enqueue_failures.length > 0) {
-      useAppStore
-        .getState()
-        .pushToast(
-          i18n.t("dashboard:reference_batch_enqueue_interrupted", {
-            count: res.enqueue_failures.length,
-          }),
-          "error",
-        );
+      useAppStore.getState().pushToast(
+        i18n.t("dashboard:reference_batch_enqueue_interrupted", {
+          count: res.enqueue_failures.length,
+        }),
+        "error",
+      );
     }
   }
   return res;
@@ -426,10 +403,7 @@ export async function enqueueStoryboardBatch(
   const taskType = kind === "storyboards" ? "storyboard" : "video";
   markResourcesByTaskId(projectName, taskType, taskType, res.task_ids_by_unit);
   const queued = Object.keys(res.task_ids_by_unit).length;
-  notifyEnqueued(
-    false,
-    queued > 0 ? i18n.t(`dashboard:storyboard_batch_submitted.${kind}`, { count: queued }) : null,
-  );
+  notifyEnqueued(false, queued > 0 ? i18n.t(`dashboard:storyboard_batch_submitted.${kind}`, { count: queued }) : null);
   if (res.enqueue_failures.length > 0) {
     useAppStore
       .getState()

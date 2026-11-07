@@ -24,7 +24,11 @@ function overwriteFromError(err: unknown): ScriptOverwrite | null {
 function isScriptPlanConfirmedError(err: unknown): boolean {
   if (!(err instanceof ApiRequestError) || err.status !== 409) return false;
   const diagnostic = err.diagnostic;
-  return diagnostic != null && typeof diagnostic === "object" && (diagnostic as { code?: unknown }).code === "script_plan_confirmed";
+  return (
+    diagnostic != null &&
+    typeof diagnostic === "object" &&
+    (diagnostic as { code?: unknown }).code === "script_plan_confirmed"
+  );
 }
 
 /** 已确认、无待修复草稿的脚本规划只读，本地未保存的编辑无处可存，外部刷新时直接采用服务端内容。 */
@@ -159,7 +163,7 @@ export function useScriptReviewDraft<TDraft extends ScriptReviewContent>({
     const hadResponse = state != null;
     // 屏上有真实内容可保留时，刷新失败静默保留、不破坏用户视图；无内容（首屏，或空态）时失败才进错误态。
     const hasContent = draft != null;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 首屏拉取前须同步点亮加载态，已有响应时静默刷新
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 首屏拉取前须同步点亮加载态，已有响应时静默刷新
     if (!hadResponse) setLoading(true);
     API.getScriptReview(projectName, episode, { signal })
       .then((next) => {
@@ -208,26 +212,29 @@ export function useScriptReviewDraft<TDraft extends ScriptReviewContent>({
     }
   }, [draft, baseFingerprint, projectName, episode, adopt, pushToast, t]);
 
-  const confirm = useCallback(async (options: { overwriteRevision?: string } = {}): Promise<boolean> => {
-    setConfirming(true);
-    try {
-      if (dirty && draft) {
-        adopt(await API.saveScriptReviewContent(projectName, episode, draft, baseFingerprint));
+  const confirm = useCallback(
+    async (options: { overwriteRevision?: string } = {}): Promise<boolean> => {
+      setConfirming(true);
+      try {
+        if (dirty && draft) {
+          adopt(await API.saveScriptReviewContent(projectName, episode, draft, baseFingerprint));
+        }
+        adopt(await API.confirmScriptReview(projectName, episode, options));
+        onConfirmed();
+        return true;
+      } catch (err) {
+        const overwrite = overwriteFromError(err);
+        if (overwrite) {
+          setState((prev) => (prev ? { ...prev, script_overwrite: overwrite } : prev));
+        }
+        pushToast(scriptReviewErrorMessage(err) || t("dashboard:review_confirm_failed"), "error");
+        return false;
+      } finally {
+        setConfirming(false);
       }
-      adopt(await API.confirmScriptReview(projectName, episode, options));
-      onConfirmed();
-      return true;
-    } catch (err) {
-      const overwrite = overwriteFromError(err);
-      if (overwrite) {
-        setState((prev) => (prev ? { ...prev, script_overwrite: overwrite } : prev));
-      }
-      pushToast(scriptReviewErrorMessage(err) || t("dashboard:review_confirm_failed"), "error");
-      return false;
-    } finally {
-      setConfirming(false);
-    }
-  }, [dirty, draft, baseFingerprint, projectName, episode, adopt, onConfirmed, pushToast, t]);
+    },
+    [dirty, draft, baseFingerprint, projectName, episode, adopt, onConfirmed, pushToast, t],
+  );
 
   return {
     state,

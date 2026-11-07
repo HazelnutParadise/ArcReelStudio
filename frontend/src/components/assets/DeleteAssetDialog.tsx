@@ -70,7 +70,11 @@ export function DeleteAssetDialog({
             {t("delete_title", { type: shown ? t(`type.${shown.type}`) : "", name: shown?.name ?? "" })}
           </AlertDialogTitle>
         </AlertDialogHeader>
-        <AlertDialogBody tabIndex={0} role="region" aria-label={t("delete_title", { type: shown ? t(`type.${shown.type}`) : "", name: shown?.name ?? "" })}>
+        <AlertDialogBody
+          tabIndex={0}
+          role="region"
+          aria-label={t("delete_title", { type: shown ? t(`type.${shown.type}`) : "", name: shown?.name ?? "" })}
+        >
           <div className="flex flex-col gap-3">
             <AlertDialogDescription>
               {t(shown?.audio_path ? "delete_description_with_audio" : "delete_description")}

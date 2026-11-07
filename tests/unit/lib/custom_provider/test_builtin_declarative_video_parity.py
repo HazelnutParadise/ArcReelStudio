@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import ResumeExpiredError, VideoCapabilityError, VideoGenerationRequest
@@ -466,16 +466,16 @@ async def test_builtin_declarative_runtime_matches_python_backend_fixtures(
 
     with capture_http() as router, bounded_poll_clock():
         submit = router.post(url__regex=r"^https://(?:x|api\.aimlapi\.com|api\.minimaxi\.com)/.+").mock(
-            return_value=httpx.Response(200, json=submit_response)
+            return_value=httpx2.Response(200, json=submit_response)
         )
         poll = router.get(
             url__regex=r"^https://(?:x|api\.aimlapi\.com|api\.minimaxi\.com)/.+(?:query|generations).*$"
-        ).mock(side_effect=[httpx.Response(200, json=value) for value in poll_responses])
+        ).mock(side_effect=[httpx2.Response(200, json=value) for value in poll_responses])
         if endpoint.startswith("minimax-") and endpoint != "minimax-h3" and video_url:
             router.get(url__regex=r"^https://api\.minimaxi\.com/v1/files/retrieve").mock(
-                return_value=httpx.Response(200, json={"file": {"download_url": video_url}})
+                return_value=httpx2.Response(200, json={"file": {"download_url": video_url}})
             )
-        router.get(url__regex=r"^https://cdn\.test/").mock(return_value=httpx.Response(200, content=b"mp4"))
+        router.get(url__regex=r"^https://cdn\.test/").mock(return_value=httpx2.Response(200, content=b"mp4"))
 
         if error:
             with pytest.raises(RuntimeError, match=error):
@@ -500,12 +500,12 @@ async def test_newapi_reaches_v1_path_whether_or_not_the_stored_base_url_carries
     )
     with capture_http() as router, bounded_poll_clock():
         submit = router.post("https://x/v1/video/generations").mock(
-            return_value=httpx.Response(200, json={"task_id": "task-42"})
+            return_value=httpx2.Response(200, json={"task_id": "task-42"})
         )
         router.get("https://x/v1/video/generations/task-42").mock(
-            return_value=httpx.Response(200, json={"status": "completed", "url": "https://cdn.test/na/out.mp4"})
+            return_value=httpx2.Response(200, json={"status": "completed", "url": "https://cdn.test/na/out.mp4"})
         )
-        router.get("https://cdn.test/na/out.mp4").mock(return_value=httpx.Response(200, content=b"mp4"))
+        router.get("https://cdn.test/na/out.mp4").mock(return_value=httpx2.Response(200, content=b"mp4"))
 
         await backend.generate(
             VideoGenerationRequest(prompt="cat", output_path=tmp_path / "out.mp4", aspect_ratio="9:16")
@@ -515,7 +515,7 @@ async def test_newapi_reaches_v1_path_whether_or_not_the_stored_base_url_carries
 
 
 async def test_v2_host_only_base_url_gains_the_https_scheme(tmp_path: Path):
-    """存量 v2 供应商允许配纯域名（如 ``api.aimlapi.com``）；缺协议的 URL httpx 直接拒收。"""
+    """存量 v2 供应商允许配纯域名（如 ``api.aimlapi.com``）；缺协议的 URL httpx2 直接拒收。"""
     definition = ENDPOINT_REGISTRY["v2-video-generations"].definition
     assert definition is not None
     backend = DeclarativeVideoBackend(
@@ -523,14 +523,14 @@ async def test_v2_host_only_base_url_gains_the_https_scheme(tmp_path: Path):
     )
     with capture_http() as router, bounded_poll_clock():
         submit = router.post("https://api.aimlapi.com/v2/video/generations").mock(
-            return_value=httpx.Response(200, json={"id": "task-42"})
+            return_value=httpx2.Response(200, json={"id": "task-42"})
         )
         router.get(url__regex=r"^https://api\.aimlapi\.com/v2/video/generations").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"status": "completed", "video": {"url": "https://cdn.test/v2/out.mp4"}}
             )
         )
-        router.get("https://cdn.test/v2/out.mp4").mock(return_value=httpx.Response(200, content=b"mp4"))
+        router.get("https://cdn.test/v2/out.mp4").mock(return_value=httpx2.Response(200, content=b"mp4"))
 
         await backend.generate(
             VideoGenerationRequest(prompt="cat", output_path=tmp_path / "out.mp4", aspect_ratio="9:16")
@@ -547,12 +547,12 @@ async def test_newapi_same_origin_download_sends_auth_instead_of_repeating_bare_
     )
     with capture_http() as router, bounded_poll_clock():
         router.post("https://x/v1/video/generations").mock(
-            return_value=httpx.Response(200, json={"task_id": "task-42"})
+            return_value=httpx2.Response(200, json={"task_id": "task-42"})
         )
         router.get("https://x/v1/video/generations/task-42").mock(
-            return_value=httpx.Response(200, json={"status": "completed", "url": "https://x/v1/files/out.mp4"})
+            return_value=httpx2.Response(200, json={"status": "completed", "url": "https://x/v1/files/out.mp4"})
         )
-        download = router.get("https://x/v1/files/out.mp4").mock(return_value=httpx.Response(200, content=b"mp4"))
+        download = router.get("https://x/v1/files/out.mp4").mock(return_value=httpx2.Response(200, content=b"mp4"))
 
         await backend.generate(
             VideoGenerationRequest(prompt="cat", output_path=tmp_path / "out.mp4", aspect_ratio="9:16")
@@ -587,8 +587,8 @@ async def test_existing_newapi_and_v2_endpoint_keys_resume_in_flight_jobs(
         api_key="K", base_url=base_url, model="model", definition=definition, provider=endpoint
     )
     with capture_http() as router, bounded_poll_clock():
-        poll = router.get(poll_url).mock(return_value=httpx.Response(200, json=response))
-        router.get("https://cdn.test/resumed.mp4").mock(return_value=httpx.Response(200, content=b"mp4"))
+        poll = router.get(poll_url).mock(return_value=httpx2.Response(200, json=response))
+        router.get("https://cdn.test/resumed.mp4").mock(return_value=httpx2.Response(200, content=b"mp4"))
 
         result = await backend.resume_video("job-old", _request(tmp_path))
 
@@ -610,8 +610,8 @@ async def test_minimax_resume_retries_a_transient_poll_404_instead_of_expiring(t
     with capture_http() as router, bounded_poll_clock():
         poll = router.get(url__regex=r"^https://api\.minimaxi\.com/v1/query/video_generation").mock(
             side_effect=[
-                httpx.Response(404, json={"base_resp": {"status_code": 1004}}),
-                httpx.Response(
+                httpx2.Response(404, json={"base_resp": {"status_code": 1004}}),
+                httpx2.Response(
                     200,
                     json={
                         "status": "Success",
@@ -622,11 +622,11 @@ async def test_minimax_resume_retries_a_transient_poll_404_instead_of_expiring(t
             ]
         )
         router.get(url__regex=r"^https://api\.minimaxi\.com/v1/files/retrieve").mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"file": {"download_url": "https://cdn.test/resumed.mp4"}, "base_resp": {"status_code": 0}}
             )
         )
-        router.get("https://cdn.test/resumed.mp4").mock(return_value=httpx.Response(200, content=b"mp4"))
+        router.get("https://cdn.test/resumed.mp4").mock(return_value=httpx2.Response(200, content=b"mp4"))
 
         result = await backend.resume_video("job-old", _request(tmp_path))
 
@@ -643,7 +643,7 @@ async def test_newapi_resume_poll_404_expires_immediately(tmp_path: Path):
     )
     with capture_http() as router, bounded_poll_clock():
         poll = router.get("https://x/v1/video/generations/job-old").mock(
-            return_value=httpx.Response(404, json={"error": "not found"})
+            return_value=httpx2.Response(404, json={"error": "not found"})
         )
 
         with pytest.raises(ResumeExpiredError):

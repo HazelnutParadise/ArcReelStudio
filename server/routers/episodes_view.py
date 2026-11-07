@@ -109,7 +109,7 @@ async def get_episodes_view(name: str, _t: Translator) -> dict[str, Any]:
 
     try:
         return await run_sync_transaction(_sync)
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -145,7 +145,7 @@ async def adopt_source_file(name: str, filename: str, req: AdoptSourceFileReques
         return await run_sync_transaction(_sync)
     except EpisodeSourceError as exc:
         raise episode_source_http_error(exc, _t, episode=req.episode, filename=filename) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -262,7 +262,7 @@ async def manual_split(name: str, req: ManualSplitRequest, _t: Translator) -> di
         raise HTTPException(
             status_code=_MANUAL_SPLIT_STATUS.get(exc.code, 409), detail=_t(f"manual_split_{exc.code}")
         ) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -305,7 +305,7 @@ async def set_source_file_kind(
         return await run_sync_transaction(_sync)
     except EpisodeSourceError as exc:
         raise episode_source_http_error(exc, _t, filename=filename) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -360,7 +360,7 @@ async def _run_source_file_change(
         return await run_sync_transaction(_sync)
     except SourceFileChangeError as exc:
         raise source_file_change_http_error(exc, _t) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")

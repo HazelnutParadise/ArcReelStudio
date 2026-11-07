@@ -11,6 +11,7 @@ from openai import OpenAI
 
 from arcreel_catalog_core import MEDIA_TYPES, CatalogEntry
 from lib.backends.artifact_download_guard import artifact_http_client
+from lib.backends.gemini_shared import GEMINI_DEVELOPER_API_VERSION
 from lib.backends.http_status_errors import raise_for_status_redacted
 from lib.catalog import query as catalog
 from lib.config.anthropic_probe import anthropic_auth_headers
@@ -66,11 +67,11 @@ async def _discover_google(base_url: str | None, api_key: str) -> list[dict]:
     def _sync():
         from lib.config.url_utils import ensure_google_base_url
 
-        kwargs: dict = {"api_key": api_key}
+        http_options: genai.types.HttpOptionsDict = {"api_version": GEMINI_DEVELOPER_API_VERSION}
         effective_url = ensure_google_base_url(base_url) if base_url else None
         if effective_url:
-            kwargs["http_options"] = {"base_url": effective_url}
-        client = genai.Client(**kwargs)
+            http_options["base_url"] = effective_url
+        client = genai.Client(api_key=api_key, http_options=http_options)
         raw_models = client.models.list()
 
         model_ids: list[str] = []

@@ -10,6 +10,7 @@ import re
 import shutil
 import struct
 import subprocess
+import sys
 import wave
 from array import array
 from datetime import UTC, datetime
@@ -39,6 +40,7 @@ from lib.final_cut.errors import FinalCutError
 from lib.final_cut.service import FinalCutService
 from lib.infra.ffmpeg import ffmpeg_executable
 from lib.infra.media_probe import probe_media
+from lib.infra.video_encoder import NVENC_CODEC_ARGS, NVENC_ENCODER, VideoEncoding
 from lib.project.project_manager import ProjectManager
 from lib.project.resource_paths import resource_relative_path
 from tests.factories import install_current_video, make_test_clip, wav_bytes
@@ -468,3 +470,34 @@ async def test_a_bgm_missing_from_the_project_blocks_the_final_cut(render_projec
         await FinalCutService(render_project).check("demo", timeline_id)
 
     assert caught.value.code == "final_cut_blocked"
+
+
+@pytest.mark.usefixtures("media")
+async def test_a_failed_gpu_encode_rerenders_the_whole_final_cut_on_the_cpu(render_project: ProjectManager) -> None:
+    timeline_id = await _create_timeline(render_project)
+    gpu_ffmpeg = "/opt/arcreel/ffmpeg-gpu/ffmpeg-under-test"
+    gpu_calls: list[tuple[str, ...]] = []
+    cpu_codecs: list[str] = []
+
+    async def spawn_with_a_broken_gpu(*args: Any, **kwargs: Any) -> Any:
+        if args[0] == gpu_ffmpeg:
+            # GPU 编码失败（如驱动或会话数上限），由一个立即以退出码 1 结束的进程模拟。
+            gpu_calls.append(tuple(str(arg) for arg in args))
+            return await asyncio.create_subprocess_exec(sys.executable, "-c", "import sys; sys.exit(1)", **kwargs)
+        if "-c:v" in args:
+            cpu_codecs.append(str(args[args.index("-c:v") + 1]))
+        return await asyncio.create_subprocess_exec(*args, **kwargs)
+
+    gpu = VideoEncoding(encoder=NVENC_ENCODER, codec_args=NVENC_CODEC_ARGS, executable=gpu_ffmpeg)
+    result = await FinalCutService(render_project, spawn=spawn_with_a_broken_gpu, video_encoding=gpu).render(
+        "demo", timeline_id, **PLAIN
+    )
+
+    assert len(gpu_calls) == 1
+    assert gpu_calls[0][gpu_calls[0].index("-c:v") + 1] == NVENC_ENCODER
+    assert cpu_codecs
+    assert set(cpu_codecs) == {"libx264"}
+    output = render_project.get_project_path("demo") / result.artifact_path
+    probe = await probe_media(output)
+    assert probe.first_stream("video") is not None
+    assert _status(render_project, timeline_id, result.artifact_path) is ArtifactStatus.CURRENT

@@ -22,7 +22,7 @@ import uuid
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from PIL import Image
 
@@ -129,8 +129,8 @@ def _is_413(exc: BaseException) -> bool:
     """识别请求体超限（HTTP 413）。
 
     先从异常通用属性提取状态码：``status_code``（OpenAI/xai SDK + 规整后的 vidu/dashscope）/
-    ``response.status_code``（httpx.HTTPStatusError）/ ``code``（google-genai APIError）——
-    覆盖默认 provider gemini 及各 SDK 类后端，而非只认 httpx（与 lib/backends/video_backends/ark.py 的
+    ``response.status_code``（httpx2.HTTPStatusError）/ ``code``（google-genai APIError）——
+    覆盖默认 provider gemini 及各 SDK 类后端，而非只认 httpx2（与 lib/backends/video_backends/ark.py 的
     状态码提取口径一致）。状态码缺失时退回短语匹配，但不用裸 "413" 子串——避免被字节数 /
     请求 ID（如 "41300 bytes"）误命中。
     """
@@ -144,7 +144,7 @@ def _is_413(exc: BaseException) -> bool:
     try:
         if status is not None and int(status) == 413:
             return True
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         pass
     msg = str(exc).lower()
     return "request entity too large" in msg or "payload too large" in msg
@@ -216,7 +216,7 @@ def _aligned_reference_asset_uris(
     return list(asset_uris)
 
 
-def _merge_result_provenance(version_metadata: dict[str, Any], result: "VideoGenerationResult") -> None:
+def _merge_result_provenance(version_metadata: dict[str, Any], result: VideoGenerationResult) -> None:
     """把只有生成过一次才知道的事实并进版本元数据，在落盘之前。
 
     元数据的其余部分在提交之前就已定稿（它们是请求的一部分），而实发种子与实发 workflow 的指纹
@@ -231,7 +231,7 @@ def _merge_result_provenance(version_metadata: dict[str, Any], result: "VideoGen
     version_metadata.update(result.provenance or {})
 
 
-def _collect_result_warnings(warnings: list[dict[str, Any]] | None, result: "VideoGenerationResult") -> None:
+def _collect_result_warnings(warnings: list[dict[str, Any]] | None, result: VideoGenerationResult) -> None:
     """把 backend 执行期产生的提示并进调用方的收集器，交由它落到任务 ``result.warnings``。
 
     收集器由调用方传入而不是从这里返回：视频两条路的返回值都是定死的四元组，再加一位会波及每一个
@@ -270,11 +270,11 @@ class MediaGenerator:
         self,
         project_path: Path,
         rate_limiter: RateLimiter | None = None,
-        image_backend: Optional["ImageBackend"] = None,
+        image_backend: ImageBackend | None = None,
         video_backend=None,
-        audio_backend: Optional["AudioBackend"] = None,
+        audio_backend: AudioBackend | None = None,
         *,
-        config_resolver: Optional["ConfigResolver"] = None,
+        config_resolver: ConfigResolver | None = None,
         user_id: str = DEFAULT_USER_ID,
         image_provider_id: str | None = None,
         video_provider_id: str | None = None,
@@ -578,7 +578,7 @@ class MediaGenerator:
         """确保输出目录存在"""
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    async def _reference_limits(self, provider_id: str | None) -> "PayloadLimits":
+    async def _reference_limits(self, provider_id: str | None) -> PayloadLimits:
         """解析参考上传副本的 PayloadLimits。
 
         无 config_resolver（零配置场景）→ 保守通用默认，不触 DB。其余情形统一交给
@@ -595,9 +595,9 @@ class MediaGenerator:
     async def _run_with_reference_compression(
         self,
         *,
-        specs: "list[ReferenceSpec]",
+        specs: list[ReferenceSpec],
         provider_id: str | None,
-        build_and_call: "Callable[[list[CompressedRef]], Awaitable[Any]]",
+        build_and_call: Callable[[list[CompressedRef]], Awaitable[Any]],
         before_submit: Callable[[], Awaitable[None]] | None = None,
         provider_resubmit_is_unsafe: Callable[[], bool] | None = None,
     ) -> Any:
@@ -615,7 +615,7 @@ class MediaGenerator:
 
         submit_boundary_crossed = False
 
-        async def _call_once(compressed: "list[CompressedRef]") -> Any:
+        async def _call_once(compressed: list[CompressedRef]) -> Any:
             nonlocal submit_boundary_crossed
             if not submit_boundary_crossed:
                 # Mark before awaiting so cancellation/failure cannot cause a later retry to rewrite an immutable
@@ -762,7 +762,7 @@ class MediaGenerator:
                 # 所有图像参考图都走数组角色（完整基线 + 降档梯子 + 字节预算）。
                 specs = [ReferenceSpec(source=Path(r.path), role=RefRole.ARRAY) for r in ref_images]
 
-                def _call_image(compressed: "list[CompressedRef]"):
+                def _call_image(compressed: list[CompressedRef]):
                     return image_backend.generate(
                         ImageGenerationRequest(
                             prompt=prompt,
@@ -923,8 +923,8 @@ class MediaGenerator:
             await _discard_staged_output(staged_path)
 
     async def choose_reference_image_assets(
-        self, sources: "Sequence[ReferenceImageSource]"
-    ) -> "tuple[ReferenceAssetChoice | None, ...]":
+        self, sources: Sequence[ReferenceImageSource]
+    ) -> tuple[ReferenceAssetChoice | None, ...]:
         """按视频 backend 实际使用的推理凭证，为将要发出的参考图选用供应商素材关联。
 
         与 ``sources`` 等长同序；可用关联给出素材引用，没有适用关联为 None。适用关联尚未可用或入库失败时抛
@@ -1002,7 +1002,7 @@ class MediaGenerator:
         # 避免 versions.json 落字符串而 ApiCall 落 int 的类型漂移。
         try:
             duration_int = int(float(duration_seconds)) if duration_seconds else DEFAULT_PLANNED_DURATION_SECONDS
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             duration_int = DEFAULT_PLANNED_DURATION_SECONDS
 
         # 1. 若已存在，确保旧文件被记录（只登记未知来源的旧文件，见 _prepare_video_target_sync）。
@@ -1165,7 +1165,7 @@ class MediaGenerator:
                 nonlocal provider_resubmit_unsafe
                 provider_resubmit_unsafe = True
 
-            def _call_video(compressed: "list[CompressedRef]"):
+            def _call_video(compressed: list[CompressedRef]):
                 start_arg = compressed[start_spec_idx].path if start_spec_idx is not None else None
                 end_arg = compressed[end_spec_idx].path if end_spec_idx is not None else None
                 # 数组参考图恒在 specs 末段（append start/end 之后），故 [ref_start_idx:] 精确取它们；
@@ -1305,7 +1305,7 @@ class MediaGenerator:
         # 与 provider 请求里的 duration_seconds 类型一致（都是 int，避免 versions.json 落字符串）。
         try:
             duration_int = int(float(duration_seconds)) if duration_seconds else DEFAULT_PLANNED_DURATION_SECONDS
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             duration_int = DEFAULT_PLANNED_DURATION_SECONDS
 
         if self._video_backend is None:

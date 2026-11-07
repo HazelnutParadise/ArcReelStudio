@@ -235,7 +235,7 @@ def episode_ids_on_disk(project_dir: Path) -> set[int]:
         for path in directory.rglob("*.json"):
             try:
                 record = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
+            except OSError, ValueError:
                 continue
             if isinstance(record, dict) and directory.name == "versions":
                 record = {key: value for key, value in record.items() if not _is_asset_resource_type(key)}

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { Route } from "wouter";
 
@@ -53,8 +53,22 @@ const INITIAL_CUT: EditTimelineReadout = {
   latest_revision: 3,
   duration: 7.8,
   clips: [
-    clip({ id: "c1", unit_id: "E1U1", start: 0, duration: 2.8, trim: { source_in: 1.2, source_out: 4, basis_version: 1 } }),
-    clip({ id: "c2", unit_id: "E1U2", start: 2.8, duration: 0, status: "unit_deleted", video_version: null, source_duration: null }),
+    clip({
+      id: "c1",
+      unit_id: "E1U1",
+      start: 0,
+      duration: 2.8,
+      trim: { source_in: 1.2, source_out: 4, basis_version: 1 },
+    }),
+    clip({
+      id: "c2",
+      unit_id: "E1U2",
+      start: 2.8,
+      duration: 0,
+      status: "unit_deleted",
+      video_version: null,
+      source_duration: null,
+    }),
     clip({
       id: "c3",
       unit_id: "E1U3",
@@ -338,7 +352,18 @@ describe("EditTimelineView", () => {
     vi.spyOn(API, "getEditTimeline").mockResolvedValue({
       ...INITIAL_CUT,
       bgm: [
-        { id: "b1", bgm_id: "bgm-0009", name: null, start: 0, end: 7.8, source_in: 0, source_out: 30, volume: 1, fade_in: 0, fade_out: 0 },
+        {
+          id: "b1",
+          bgm_id: "bgm-0009",
+          name: null,
+          start: 0,
+          end: 7.8,
+          source_in: 0,
+          source_out: 30,
+          volume: 1,
+          fade_in: 0,
+          fade_out: 0,
+        },
       ],
       issues: [
         {
@@ -534,12 +559,28 @@ describe("EditTimelineView", () => {
     const narrated: EditTimelineReadout = {
       ...INITIAL_CUT,
       clips: [
-        { ...INITIAL_CUT.clips[0], carries_narration: true, narration: { start: 0, end: 4.5 }, transition_to_next: { type: "dissolve", duration: 1 } },
+        {
+          ...INITIAL_CUT.clips[0],
+          carries_narration: true,
+          narration: { start: 0, end: 4.5 },
+          transition_to_next: { type: "dissolve", duration: 1 },
+        },
         INITIAL_CUT.clips[1],
         INITIAL_CUT.clips[2],
       ],
       bgm: [
-        { id: "b1", bgm_id: "bgm-0001", name: "雨夜", start: 0, end: 7.8, source_in: 0, source_out: 30, volume: 0.25, fade_in: 1, fade_out: 1 },
+        {
+          id: "b1",
+          bgm_id: "bgm-0001",
+          name: "雨夜",
+          start: 0,
+          end: 7.8,
+          source_in: 0,
+          source_out: 30,
+          volume: 0.25,
+          fade_in: 1,
+          fade_out: 1,
+        },
       ],
     };
     const media: EditTimelinePreviewMedia = {
@@ -568,10 +609,7 @@ describe("EditTimelineView", () => {
     const span = await screen.findByTestId("edit-narration-c1");
     expect(span).toHaveAttribute("title", "视频单元 1 的旁白，挂在 c1 上：0～4.5s");
     expect(await screen.findByTestId("edit-player-subtitle")).toHaveTextContent("门后传来脚步声。");
-    expect(screen.getByTestId("edit-bgm-b1")).toHaveAttribute(
-      "title",
-      "雨夜：0～7.8s，音量 0.25，淡入 1s，淡出 1s",
-    );
+    expect(screen.getByTestId("edit-bgm-b1")).toHaveAttribute("title", "雨夜：0～7.8s，音量 0.25，淡入 1s，淡出 1s");
     expect(screen.getByText("转场效果以成片为准")).toBeInTheDocument();
 
     await waitFor(() => expect(screen.getByRole("button", { name: "播放" })).toBeEnabled());
@@ -612,7 +650,14 @@ describe("EditTimelineView", () => {
     vi.spyOn(API, "getEditTimeline").mockResolvedValue(INITIAL_CUT);
     const upload = vi.spyOn(API, "uploadBgm").mockResolvedValue({
       success: true,
-      bgm: { id: "bgm-0001", name: "雨夜", duration: 30, gain: 1, path: "bgm/bgm-0001.mp3", url: "/api/v1/files/demo/bgm/bgm-0001.mp3" },
+      bgm: {
+        id: "bgm-0001",
+        name: "雨夜",
+        duration: 30,
+        gain: 1,
+        path: "bgm/bgm-0001.mp3",
+        url: "/api/v1/files/demo/bgm/bgm-0001.mp3",
+      },
     });
 
     renderView();
@@ -658,8 +703,22 @@ describe("EditTimelineView", () => {
       ...INITIAL_CUT,
       duration: 25,
       clips: [
-        clip({ id: "c1", unit_id: "E1U1", start: 0, duration: 20, carries_narration: true, narration: { start: 0, end: 3 } }),
-        clip({ id: "c2", unit_id: "E1U3", start: 20, duration: 5, carries_narration: true, narration: { start: 20, end: 23 } }),
+        clip({
+          id: "c1",
+          unit_id: "E1U1",
+          start: 0,
+          duration: 20,
+          carries_narration: true,
+          narration: { start: 0, end: 3 },
+        }),
+        clip({
+          id: "c2",
+          unit_id: "E1U3",
+          start: 20,
+          duration: 5,
+          carries_narration: true,
+          narration: { start: 20, end: 23 },
+        }),
       ],
       issues: [],
     };
@@ -720,7 +779,10 @@ describe("EditTimelineView", () => {
       ...INITIAL_CUT,
       timeline: { id: "tl-00000001", name: "按脚本顺序", episode: 1 },
       duration: 4,
-      clips: [clip({ id: "d1", unit_id: "E1U1", start: 0, duration: 2 }), clip({ id: "d2", unit_id: "E1U3", start: 2, duration: 2 })],
+      clips: [
+        clip({ id: "d1", unit_id: "E1U1", start: 0, duration: 2 }),
+        clip({ id: "d2", unit_id: "E1U3", start: 2, duration: 2 }),
+      ],
       issues: [],
     };
 
@@ -743,7 +805,6 @@ describe("EditTimelineView", () => {
     afterEach(() => {
       window.history.replaceState(null, "", "/");
     });
-
 
     it("打开链接指向的剪辑时间线，播放头移到该时间并选中落在其中的片段，地址栏的一次性参数随即去掉", async () => {
       mockTimelines();

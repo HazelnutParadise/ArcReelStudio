@@ -340,7 +340,7 @@ def plan_item_ids(path: Path) -> list[str]:
             items, id_field = content["units"], "unit_id"
         else:
             items, id_field, _kind = resolve_kind_items(content)
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return []
     if not isinstance(items, list):
         return []
@@ -841,7 +841,7 @@ def _rewritten_mention_warnings(
     try:
         project = projects.load_project(project_name)
         script = projects.load_script_readonly(project_name, result_path.name)
-    except (OSError, ValueError):
+    except OSError, ValueError:
         # 剧本已落盘，回执不能因为读回失败（文件缺失、I/O 故障、JSON 不合法）而失败。
         return []
     return storyboard_mention_warnings(project, script, unit_ids=rewritten)
@@ -1090,7 +1090,7 @@ async def generate_drama_script_plan(
         return TextGenerationResult(
             drama_script_plan_result_text(script_plan_path.relative_to(project_path), raw_scenes, action="生成")
         )
-    except (TextGenerationError, TextOutputTruncatedError, ModelNotInCatalogError):
+    except TextGenerationError, TextOutputTruncatedError, ModelNotInCatalogError:
         raise
     except VideoRequestFactsError as exc:
         raise VideoRequestFactsUnavailableError(exc.failure) from exc
@@ -1860,7 +1860,7 @@ async def generate_reference_script_plan(
                 action="拆分",
             )
         )
-    except (TextGenerationError, TextOutputTruncatedError, ModelNotInCatalogError):
+    except TextGenerationError, TextOutputTruncatedError, ModelNotInCatalogError:
         raise
     except VideoRequestFactsError as exc:
         raise VideoRequestFactsUnavailableError(exc.failure) from exc
@@ -2008,7 +2008,7 @@ async def generate_narration_script_plan(
         return TextGenerationResult(
             narration_script_plan_result_text(script_plan_path.relative_to(project_path), raw_segments, action="拆分")
         )
-    except (TextGenerationError, TextOutputTruncatedError, ModelNotInCatalogError):
+    except TextGenerationError, TextOutputTruncatedError, ModelNotInCatalogError:
         raise
     except VideoRequestFactsError as exc:
         raise VideoRequestFactsUnavailableError(exc.failure) from exc

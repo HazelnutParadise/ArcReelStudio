@@ -14,7 +14,8 @@ import type { NextStepView, StepAct, StepNote, StepRowTone, StepRowView } from "
 
 /** 行首圆点：已齐实心、还没有虚线空心、部分半填、进行中呼吸。形状先于颜色，灰度下仍可区分。 */
 function ToneDot({ tone }: { tone: StepRowTone }) {
-  if (tone === "todo") return <span aria-hidden className="size-2 rounded-full border border-dashed border-muted-foreground" />;
+  if (tone === "todo")
+    return <span aria-hidden className="size-2 rounded-full border border-dashed border-muted-foreground" />;
   if (tone === "partial") {
     return (
       <span aria-hidden className="relative size-2 overflow-hidden rounded-full border border-subtle-foreground">
@@ -123,7 +124,13 @@ const REGENERABLE_STEPS = new Set(["storyboard", "video"]);
  * 归到这一行的后端步骤的明细：过期产物、进行中的任务、步骤自己的问题与视频整批准入。
  * 每条提示只出自一处——视频整批准入的逐单元问题只在准入结论里，计划不再把它复制到步骤问题。
  */
-function StepDetails({ step, onViewUnit, onRegenerate, onConfirmDurations, busy }: {
+function StepDetails({
+  step,
+  onViewUnit,
+  onRegenerate,
+  onConfirmDurations,
+  busy,
+}: {
   step: WorkflowPlanStep;
   onViewUnit?: (unitId: string) => void;
   onRegenerate?: (stepId: string, unitIds: string[]) => void;
@@ -131,7 +138,8 @@ function StepDetails({ step, onViewUnit, onRegenerate, onConfirmDurations, busy 
   busy: boolean;
 }) {
   const { t } = useTranslation("workflow");
-  const staleIds = REGENERABLE_STEPS.has(step.id) && Array.isArray(step.artifacts.stale_ids) ? step.artifacts.stale_ids : [];
+  const staleIds =
+    REGENERABLE_STEPS.has(step.id) && Array.isArray(step.artifacts.stale_ids) ? step.artifacts.stale_ids : [];
   const admission = step.admission;
   const tiers = admission?.confirmation?.tiers ?? [];
   const confirm = () => {
@@ -169,7 +177,17 @@ function StepDetails({ step, onViewUnit, onRegenerate, onConfirmDurations, busy 
 }
 
 /** 一行内容：现状一句话、提醒、常驻入口；下一步属于这一行时就地展开，行首加强调色竖条。 */
-export function StepListRow({ row, next, instruction, onInstructionChange, onRun, onViewUnit, onRegenerate, onConfirmDurations, busy }: Props) {
+export function StepListRow({
+  row,
+  next,
+  instruction,
+  onInstructionChange,
+  onRun,
+  onViewUnit,
+  onRegenerate,
+  onConfirmDurations,
+  busy,
+}: Props) {
   const owns = next !== null;
   return (
     <li

@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { Route, Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { useProjectsStore } from "@/stores/projects-store";

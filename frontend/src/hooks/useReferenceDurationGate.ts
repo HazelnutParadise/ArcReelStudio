@@ -64,11 +64,7 @@ export function useReferenceDurationGate({ projectName, episode }: Options) {
   }, [projectName, episode]);
 
   const run = useCallback(
-    async (
-      unitIds: string[],
-      commit: Commit,
-      canEnqueue: CanEnqueue,
-    ) => {
+    async (unitIds: string[], commit: Commit, canEnqueue: CanEnqueue) => {
       if (unitIds.length === 0) return;
       // 接管方轮换 controller：新一轮预检作废前任，未决的确认弹窗随之被新一轮替换。
       // 弹窗与 commit 必须在此刻一并清掉，不能等新一轮的结果来覆盖——新一轮若全部无需
@@ -84,12 +80,7 @@ export function useReferenceDurationGate({ projectName, episode }: Options) {
       const results = await Promise.all(
         unitIds.map(async (unitId) => {
           try {
-            const precheck = await API.precheckReferenceVideoDuration(
-              projectName,
-              episode,
-              unitId,
-              { signal },
-            );
+            const precheck = await API.precheckReferenceVideoDuration(projectName, episode, unitId, { signal });
             return { unitId, precheck };
           } catch (e) {
             if (signal.aborted) return null;
@@ -119,9 +110,7 @@ export function useReferenceDurationGate({ projectName, episode }: Options) {
         useAppStore.getState().pushToast(Array.from(admissionMessages).join("\n"), "error");
       }
       if (failed > 0) {
-        useAppStore
-          .getState()
-          .pushToast(t("reference_duration_precheck_failed", { count: failed }), "error");
+        useAppStore.getState().pushToast(t("reference_duration_precheck_failed", { count: failed }), "error");
       }
       if (ok.length === 0) return;
 
@@ -167,9 +156,7 @@ export function useReferenceDurationGate({ projectName, episode }: Options) {
         .map((item) => [item.unitId, item.precheck.request_duration]),
     );
     void commit(targets, confirmedDurations).catch((e: unknown) => {
-      useAppStore
-        .getState()
-        .pushToast(t("reference_generate_request_failed", { error: errMsg(e) }), "error");
+      useAppStore.getState().pushToast(t("reference_generate_request_failed", { error: errMsg(e) }), "error");
     });
   }, [pending, t]);
 

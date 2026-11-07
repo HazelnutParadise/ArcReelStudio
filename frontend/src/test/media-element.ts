@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from "vite-plus/test";
 
 /**
  * jsdom 的 HTMLMediaElement 不实现播放：play/pause/load 会抛 "Not implemented"。

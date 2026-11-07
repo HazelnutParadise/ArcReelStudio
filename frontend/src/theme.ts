@@ -27,7 +27,10 @@ function systemPrefersDark(): boolean {
 
 function applyTheme() {
   const preference = getThemePreference();
-  document.documentElement.classList.toggle("dark", preference === "dark" || (preference === "system" && systemPrefersDark()));
+  document.documentElement.classList.toggle(
+    "dark",
+    preference === "dark" || (preference === "system" && systemPrefersDark()),
+  );
 }
 
 function applyAndNotify() {

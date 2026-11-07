@@ -23,7 +23,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import ClassVar, Literal
 
-import httpx
+import httpx2
 
 from arcreel_catalog_core import CatalogEntry
 from arcreel_market_core.video_backend_contract import (
@@ -732,7 +732,7 @@ class DashScopeVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixi
         retry_if=should_retry_submit,
     )
     async def _create_task(
-        self, client: httpx.AsyncClient, payload: dict, request: VideoGenerationRequest | None = None
+        self, client: httpx2.AsyncClient, payload: dict, request: VideoGenerationRequest | None = None
     ) -> str:
         # 创建任务是非幂等的「建任务 + 计费」POST：submit_post 把歧义传输错误（请求可能已送达
         # 服务端但响应在途丢失）转 AmbiguousSubmitError 终态失败，避免自动重试重复建任务 + 重复计费；
@@ -749,7 +749,7 @@ class DashScopeVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixi
         )
         return extract_task_id(resp.json())
 
-    async def _poll_once(self, client: httpx.AsyncClient, task_id: str, base_url: str) -> dict:
+    async def _poll_once(self, client: httpx2.AsyncClient, task_id: str, base_url: str) -> dict:
         resp = await client.get(
             f"{base_url}/tasks/{task_id}",
             headers=dashscope_headers(self._api_key),
@@ -759,7 +759,7 @@ class DashScopeVideoBackend(EntryBoundCapabilities, ProviderJobIdPersistenceMixi
 
     async def _poll_and_build(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         task_id: str,
         request: VideoGenerationRequest,
         *,

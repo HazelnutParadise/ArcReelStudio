@@ -6,11 +6,7 @@ import { cn } from "cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DEFAULT_TEMPLATE_ID,
-  getTemplatesByCategory,
-  type StyleCategory,
-} from "@/data/style-templates";
+import { DEFAULT_TEMPLATE_ID, getTemplatesByCategory, type StyleCategory } from "@/data/style-templates";
 
 export interface StylePickerValue {
   mode: "template" | "custom";
@@ -42,9 +38,9 @@ interface TemplateCardProps {
 function TemplateCard({ thumbnail, label, tagline, isSelected, isDefault, defaultLabel, onClick }: TemplateCardProps) {
   const [broken, setBroken] = useState(false);
   return (
+    // 名称取自卡片上看得到的名称、简介与「默认」角标，不另设 aria-label，免得与可见文字对不上
     <button
       type="button"
-      aria-label={label}
       aria-pressed={isSelected}
       onClick={onClick}
       className={cn(
@@ -91,7 +87,7 @@ function useFilePreview(file: File | null): string | null {
   useLayoutEffect(() => {
     if (!file) return;
     const url = URL.createObjectURL(file);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- object URL 随文件创建并在换文件或卸载时回收（同 AssetCreateDialog）
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- object URL 随文件创建并在换文件或卸载时回收（同 AssetCreateDialog）
     setPreview({ file, url });
     return () => URL.revokeObjectURL(url);
   }, [file]);
@@ -160,8 +156,12 @@ export function StylePicker({ value, onChange }: StylePickerProps) {
         <TabsTrigger value="custom">{t("templates:category.custom")}</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="live" className="mt-2">{templateGrid("live")}</TabsContent>
-      <TabsContent value="anim" className="mt-2">{templateGrid("anim")}</TabsContent>
+      <TabsContent value="live" className="mt-2">
+        {templateGrid("live")}
+      </TabsContent>
+      <TabsContent value="anim" className="mt-2">
+        {templateGrid("anim")}
+      </TabsContent>
       <TabsContent value="custom" className="mt-2">
         <div className="flex flex-col gap-3">
           <p className="text-sm text-muted-foreground">{t("templates:tab_custom_desc")}</p>

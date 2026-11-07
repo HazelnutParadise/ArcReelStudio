@@ -7,7 +7,7 @@ import json
 from types import SimpleNamespace
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from pydantic import BaseModel
 
@@ -42,7 +42,7 @@ def _response(
     output_tokens: int = 20,
     incomplete_reason: str | None = None,
     error: str | None = None,
-) -> httpx.Response:
+) -> httpx2.Response:
     body: dict[str, Any] = {
         "id": "resp_1",
         "object": "response",
@@ -71,7 +71,7 @@ def _response(
             "total_tokens": input_tokens + output_tokens,
         },
     }
-    return httpx.Response(200, json=body)
+    return httpx2.Response(200, json=body)
 
 
 async def test_structured_output_encodes_text_format(tmp_path):
@@ -136,7 +136,7 @@ async def test_rejected_text_format_falls_back_to_prompt_injection():
     with capture_http() as router:
         route = router.post(_RESPONSES_URL).mock(
             side_effect=[
-                httpx.Response(400, json={"error": {"message": "Invalid schema for response_format 'response'"}}),
+                httpx2.Response(400, json={"error": {"message": "Invalid schema for response_format 'response'"}}),
                 _response('{"title": "雪夜", "episode_count": 3}'),
             ]
         )

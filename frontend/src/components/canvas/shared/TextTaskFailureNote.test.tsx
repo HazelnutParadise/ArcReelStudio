@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
@@ -28,7 +28,12 @@ function renderNote(episode = 1, ad?: { hasScript: boolean }) {
   const location = memoryLocation({ path: "/episodes/1", record: true });
   render(
     <Router hook={location.hook} searchHook={location.searchHook}>
-      <TextTaskFailureNote projectName="demo" episode={episode} isAd={ad !== undefined} hasScript={ad?.hasScript ?? true} />
+      <TextTaskFailureNote
+        projectName="demo"
+        episode={episode}
+        isAd={ad !== undefined}
+        hasScript={ad?.hasScript ?? true}
+      />
     </Router>,
   );
   return location;
@@ -54,7 +59,9 @@ describe("TextTaskFailureNote", () => {
   });
 
   it("asks to switch models when a built-in model is truncated", () => {
-    useTasksStore.setState({ tasks: [truncated({ task_type: "text_episode_script", resource_id: "episode-1" }, false)] });
+    useTasksStore.setState({
+      tasks: [truncated({ task_type: "text_episode_script", resource_id: "episode-1" }, false)],
+    });
     renderNote();
 
     expect(screen.getByText(/请在设置中换一个文本模型后再试/)).toBeInTheDocument();
@@ -62,7 +69,8 @@ describe("TextTaskFailureNote", () => {
   });
 
   it("keeps the problem code, params and server text of a localized failure behind its details", () => {
-    const summary = "custom-2/I2V_H3 不支持参考生视频；请在设置中为「参考生视频」单独指定支持该用途的模型，或更换默认视频模型";
+    const summary =
+      "custom-2/I2V_H3 不支持参考生视频；请在设置中为「参考生视频」单独指定支持该用途的模型，或更换默认视频模型";
     useTasksStore.setState({
       tasks: [
         failed({
@@ -90,7 +98,12 @@ describe("TextTaskFailureNote", () => {
   it("shows only the latest text task of this episode, until it is dismissed", () => {
     useTasksStore.setState({
       tasks: [
-        failed({ task_id: "old", task_type: "text_episode_script", resource_id: "episode-1", error_message: "旧的失败" }),
+        failed({
+          task_id: "old",
+          task_type: "text_episode_script",
+          resource_id: "episode-1",
+          error_message: "旧的失败",
+        }),
         failed({
           task_id: "other-episode",
           task_type: "text_episode_script",

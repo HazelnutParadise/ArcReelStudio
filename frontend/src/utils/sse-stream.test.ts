@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n";
 import { flushStream, stubSseFetch } from "@/test/fakeSseFetch";
 import { openSseStream, SseStreamError, type SseMessage } from "./sse-stream";
@@ -38,7 +38,7 @@ describe("openSseStream", () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
 
     fake.latest.emit("entry", { seq: 0 }, "0");
-    fake.latest.write("data: {\"plain\":true}\n\n");
+    fake.latest.write('data: {"plain":true}\n\n');
     await flushStream();
 
     expect(messages).toEqual([

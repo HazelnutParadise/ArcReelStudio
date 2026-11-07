@@ -6,14 +6,7 @@ import { API } from "@/api";
 import { ROUTE_APP_PROJECTS, projectSettingsPath } from "@/app-routes";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDemoWorkbench } from "@/onboarding/use-demo-workbench";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -27,7 +20,10 @@ const CONTENT_MODE_LABEL_KEY = {
   ad: "dashboard:ad_short_video",
 } as const;
 
-type ProjectList = { status: "loading" } | { status: "ready"; projects: ProjectSummary[] } | { status: "error"; message: string };
+type ProjectList =
+  | { status: "loading" }
+  | { status: "ready"; projects: ProjectSummary[] }
+  | { status: "error"; message: string };
 
 /** 打开切换器时拉取一次全部项目；先用大厅已经拉到的列表顶上，新列表到达后替换。 */
 function useProjectList(open: boolean): ProjectList {
@@ -89,7 +85,11 @@ export function ProjectMenu() {
           <Button
             variant="ghost"
             className="h-9 min-w-0 shrink justify-start text-left"
-            aria-label={t("dashboard:project_switcher_label", { name: projectTitle })}
+            // 名称要包含按钮上看得到的全部文字（axe label-content-name-mismatch），第二行的类型与画幅也放进去；
+            // 文案不能把这些文字包在括号里：axe 比对前会去掉括号里的内容
+            aria-label={t("dashboard:project_switcher_label", {
+              name: modeLine ? `${projectTitle} ${modeLine}` : projectTitle,
+            })}
           />
         }
       >

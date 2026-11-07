@@ -28,6 +28,8 @@ export interface EndpointDescriptor {
   image_capabilities: ImageCap[] | null;
   /** 执行层是否真的下传尾帧约束；仅 video 类有意义，其余恒为 false。 */
   end_image_capable: boolean;
+  /** 自定义供应商能否选用；只给内置供应商用的端点（如 Veo）为 false。 */
+  custom_selectable: boolean;
   /** 尺寸由端点固定（ComfyUI 端点上宽高不是两侧都绑了节点）：比例与分辨率选择对它无效。 */
   size_fixed: boolean;
   /** 时长由端点固定（ComfyUI 端点上 frames 未绑定节点）：决定只读态的文案说哪一句。 */

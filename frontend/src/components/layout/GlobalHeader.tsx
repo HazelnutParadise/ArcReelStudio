@@ -17,6 +17,7 @@ import { useUsageHeaderStore } from "@/stores/usage-header-store";
 import type { WorkspaceNotification } from "@/types";
 import { episodeDisplayName } from "@/utils/episode-display";
 import { AgentPanelToggle } from "./AgentPanelToggle";
+import { PresenceAvatars } from "./PresenceAvatars";
 import { ProjectMenu } from "./ProjectMenu";
 import { ProjectStatusBar } from "./ProjectStatusBar";
 import { useProjectExport } from "./useProjectExport";
@@ -26,7 +27,7 @@ import { WorkspaceNotifications } from "./WorkspaceNotificationsDrawer";
  * 工作区顶栏，三段：
  * - 左：回到项目大厅 + 项目切换器（演示项目另带「演示 · 只读」徽标）
  * - 中：ProjectStatusBar（集进度与项目层的下一步；数据升级失败时是迁移重试）
- * - 右：通知 / 使用记录 / 导出 / 资产库 / 全局设置 / Agent 面板开关
+ * - 右：通知 / 在线成员 / 使用记录 / 导出 / 资产库 / 全局设置 / Agent 面板开关
  */
 export function GlobalHeader() {
   const { t } = useTranslation(["dashboard", "common", "assets", "onboarding"]);
@@ -111,6 +112,7 @@ export function GlobalHeader() {
 
       <div className="flex items-center justify-end gap-1">
         <WorkspaceNotifications onNavigate={handleNotificationNavigate} />
+        {usageProjectName && <PresenceAvatars />}
         {usageProjectName && <UsageHeaderEntry projectName={usageProjectName} />}
         <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-border" />
         <span className="flex" data-onboarding={ONBOARDING_ANCHORS.workbenchExport}>
@@ -167,7 +169,7 @@ function IconLink({ href, label, children }: { href: string; label: string; chil
           <Link
             href={href}
             aria-label={label}
-            // eslint-disable-next-line shadcn/require-static-classes -- 链接借用 buttonVariants 的 ghost/icon 外观；Button 渲染为链接会被 Base UI 加上 role="button"，故不能换成 render={<Button />}，TooltipTrigger 自身不带样式（见 eslint.config.js 的 UNSTYLED_PRIMITIVES）
+            // eslint-disable-next-line shadcn/require-static-classes -- 链接借用 buttonVariants 的 ghost/icon 外观；Button 渲染为链接会被 Base UI 加上 role="button"，故不能换成 render={<Button />}，TooltipTrigger 自身不带样式（见 lint/config.ts 的 UNSTYLED_PRIMITIVES）
             className={buttonVariants({ variant: "ghost", size: "icon", className: "relative" })}
           />
         }

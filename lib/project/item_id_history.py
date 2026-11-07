@@ -28,7 +28,7 @@ _SCRIPT_ENTRY_KIND = "script_entry"
 def _load(path: Path) -> Any:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
 
 

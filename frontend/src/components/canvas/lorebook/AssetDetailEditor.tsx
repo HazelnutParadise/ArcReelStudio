@@ -163,14 +163,17 @@ export function AssetDetailEditor({
     if (busy || rejectIfAssetBusy(assetType, projectName, name, t, "assets:gallery_busy_hint")) return;
     // 资产图只由描述与原图生成：改了描述，保存后这张图就会过期，服务端此刻的判定还看不到
     const willBeStale = value.description !== unit.savedValue.description;
-    void unit.saveAndGenerate(() => {
-      if (!rejectIfAssetBusy(assetType, projectName, name, t, "assets:gallery_busy_hint")) return onGenerate(name);
-    }, {
-      confirm: async () => {
-        if (!(await staleConfirm.confirm({ willBeStale }))) return false;
-        return !rejectIfAssetBusy(assetType, projectName, name, t, "assets:gallery_busy_hint");
+    void unit.saveAndGenerate(
+      () => {
+        if (!rejectIfAssetBusy(assetType, projectName, name, t, "assets:gallery_busy_hint")) return onGenerate(name);
       },
-    });
+      {
+        confirm: async () => {
+          if (!(await staleConfirm.confirm({ willBeStale }))) return false;
+          return !rejectIfAssetBusy(assetType, projectName, name, t, "assets:gallery_busy_hint");
+        },
+      },
+    );
   };
 
   const setField = <K extends keyof AssetFields>(key: K, next: AssetFields[K]) =>

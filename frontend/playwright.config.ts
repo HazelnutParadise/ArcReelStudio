@@ -57,7 +57,7 @@ export default defineConfig({
     })),
   ],
   webServer: {
-    command: `pnpm exec vite build && pnpm exec vite preview --host 127.0.0.1 --port ${PORT} --strictPort`,
+    command: `pnpm exec vp build && pnpm exec vp preview --host 127.0.0.1 --port ${PORT} --strictPort`,
     url: BASE_URL,
     reuseExistingServer: !isCI,
     timeout: 180_000,

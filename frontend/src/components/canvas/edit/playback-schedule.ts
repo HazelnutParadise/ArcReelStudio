@@ -133,10 +133,7 @@ export function locate(plan: PlaybackPlan, t: number): PlaybackLocation | null {
 }
 
 /** 空闲的那个 `<video>` 该预载什么：下一个有可用视频的片段的入点；后面没有时为 null。 */
-export function preloadTarget(
-  plan: PlaybackPlan,
-  index: number,
-): { index: number; sourceTime: number } | null {
+export function preloadTarget(plan: PlaybackPlan, index: number): { index: number; sourceTime: number } | null {
   for (let next = index + 1; next < plan.segments.length; next += 1) {
     const segment = plan.segments[next];
     if (segment.hasVideo) return { index: next, sourceTime: segment.sourceIn };

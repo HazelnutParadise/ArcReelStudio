@@ -16,7 +16,11 @@ export function SourceStatusDot({ source, refreshing }: { source: MarketSourceIn
   const { t } = useTranslation("dashboard");
   if (refreshing) {
     return (
-      <Loader2 className="size-3 shrink-0 animate-spin text-muted-foreground" role="img" aria-label={t("market_refreshing")} />
+      <Loader2
+        className="size-3 shrink-0 animate-spin text-muted-foreground"
+        role="img"
+        aria-label={t("market_refreshing")}
+      />
     );
   }
   if (!source.is_enabled) {

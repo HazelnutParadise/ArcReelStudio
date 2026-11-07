@@ -56,8 +56,7 @@ export function StoryboardBatchDialog({
     return () => controller.abort();
   }, [projectName, episode, kind]);
 
-  const blockedAdmission =
-    refusal ?? (preview?.admission?.decision === "blocked" ? preview.admission : null);
+  const blockedAdmission = refusal ?? (preview?.admission?.decision === "blocked" ? preview.admission : null);
 
   const cost = costEntries(preview?.estimated_cost ?? undefined)
     .map(([currency, amount]) => formatCurrencyAmount(currency, amount))
@@ -122,9 +121,7 @@ export function StoryboardBatchDialog({
           preview.targets.length > 0 && (
             <>
               <p>{cost ? t("storyboard_batch_cost", { cost }) : t("storyboard_batch_cost_unknown")}</p>
-              {preview.unpriced_count > 0 && (
-                <p>{t("storyboard_batch_unpriced", { count: preview.unpriced_count })}</p>
-              )}
+              {preview.unpriced_count > 0 && <p>{t("storyboard_batch_unpriced", { count: preview.unpriced_count })}</p>}
             </>
           )
         )}

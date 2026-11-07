@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 from typing import ClassVar
 
-import httpx
+import httpx2
 
 from lib.backends.backend_runtime import (
     is_provider_rejection,
@@ -178,7 +178,7 @@ class ViduImageBackend:
         logger.info("调用 Vidu 图片 API kwargs=%s", format_kwargs_for_log(safe_body_for_log(body)))
         resp = await client.post("/reference2image", json=body)
         if resp.status_code >= 400:
-            # redacted_status_error 透出 httpx.HTTPStatusError，保留 .response.status_code，
+            # redacted_status_error 透出 httpx2.HTTPStatusError，保留 .response.status_code，
             # 让咽喉层能识别 413 走降档重试；4xx 另带脱敏截断后的拒因摘要，供任务失败信封取用。
             # body 先经脱敏后落日志，保留可诊断性。
             logger.warning(
@@ -188,7 +188,7 @@ class ViduImageBackend:
             )
             try:
                 resp.raise_for_status()
-            except httpx.HTTPStatusError as exc:
+            except httpx2.HTTPStatusError as exc:
                 if is_provider_rejection(resp.status_code):
                     raise provider_rejected_error(exc, provider_reason=provider_reason_summary(resp)) from None
                 raise redacted_status_error(exc) from None

@@ -2,12 +2,7 @@ import { Fragment, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { assetColor } from "@/components/canvas/reference/asset-colors";
-import {
-  toScriptLines,
-  type MentionLookup,
-  type ScriptLine,
-  type Token,
-} from "@/hooks/useUnitPromptHighlight";
+import { toScriptLines, type MentionLookup, type ScriptLine, type Token } from "@/hooks/useUnitPromptHighlight";
 
 /**
  * Read-only rendering of a unit body, laid out the way the parser reads it.
@@ -73,13 +68,8 @@ function LineRow({ line, index }: { line: ScriptLine; index: number }) {
   if (line.kind === "dialogue") {
     const palette = assetColor(line.speakerKind);
     return (
-      <div
-        className={`flex items-baseline gap-2 border-l-2 py-0.5 pl-2.5 ${palette.borderClass} bg-foreground/3`}
-      >
-        <span
-          translate="no"
-          className={`shrink-0 rounded-sm px-1 ${palette.textClass} ${palette.bgClass}`}
-        >
+      <div className={`flex items-baseline gap-2 border-l-2 py-0.5 pl-2.5 ${palette.borderClass} bg-foreground/3`}>
+        <span translate="no" className={`shrink-0 rounded-sm px-1 ${palette.textClass} ${palette.bgClass}`}>
           {line.speaker}
         </span>
         <span className="min-w-0 flex-1 break-words text-foreground">{line.text}</span>

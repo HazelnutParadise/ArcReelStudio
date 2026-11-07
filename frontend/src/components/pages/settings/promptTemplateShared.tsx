@@ -4,10 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export type Load<T> =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; data: T };
+export type Load<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
 
 /**
  * 模版正文、片段正文共用的代码块外观：保留换行，长行折行而不横向撑开内容列。
@@ -35,15 +32,7 @@ export function EmptyCard({ children }: { children: ReactNode }) {
   );
 }
 
-export function ErrorCard({
-  title,
-  message,
-  onRetry,
-}: {
-  title: string;
-  message: string;
-  onRetry: () => void;
-}) {
+export function ErrorCard({ title, message, onRetry }: { title: string; message: string; onRetry: () => void }) {
   const { t } = useTranslation("common");
   return (
     <div role="alert" className="flex flex-wrap items-start gap-3 rounded-lg border border-warn/30 bg-warn/10 p-4">

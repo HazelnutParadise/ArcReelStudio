@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { ContentBlock, Turn } from "@/types";
 import { buildDisplayItems } from "./display-items";
 
@@ -53,7 +53,11 @@ describe("buildDisplayItems", () => {
 
   it("drops signed thinking from replies that have visible content, so no empty step group renders", () => {
     const items = buildDisplayItems(
-      [user("u-1", "你好"), assistant("a-1", [signedThinking, text("第一段")]), assistant("a-2", [signedThinking, text("第二段")])],
+      [
+        user("u-1", "你好"),
+        assistant("a-1", [signedThinking, text("第一段")]),
+        assistant("a-2", [signedThinking, text("第二段")]),
+      ],
       null,
     );
 

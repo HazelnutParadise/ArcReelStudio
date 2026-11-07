@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { LeaveGuardProvider, useLeaveGuard } from "@/components/shared/edit-unit/LeaveGuard";
@@ -110,7 +110,10 @@ describe("EpisodeHead", () => {
     const remove = vi.spyOn(API, "deleteEpisode").mockImplementation(async (_project, episode, revision) =>
       revision
         ? { status: "deleted", impact: { episode, recoverable: true, revision } }
-        : { status: "confirmation_required", impact: { episode, recoverable: true, revision: "r1", text: "将删除本集剧本" } },
+        : {
+            status: "confirmation_required",
+            impact: { episode, recoverable: true, revision: "r1", text: "将删除本集剧本" },
+          },
     );
     const discard = vi.fn();
     function DirtyUnit() {
@@ -127,8 +130,15 @@ describe("EpisodeHead", () => {
     render(
       <LeaveGuardProvider>
         <DirtyUnit />
-        <EpisodeHead projectName="demo" episode={1} meta={FIRST} route="storyboard" canEditTitle={false}
-          onSaveTitle={vi.fn()} canDelete />
+        <EpisodeHead
+          projectName="demo"
+          episode={1}
+          meta={FIRST}
+          route="storyboard"
+          canEditTitle={false}
+          onSaveTitle={vi.fn()}
+          canDelete
+        />
       </LeaveGuardProvider>,
     );
 
@@ -137,7 +147,11 @@ describe("EpisodeHead", () => {
     expect(discard).not.toHaveBeenCalled();
 
     fireEvent.click(within(await openDeletion()).getByRole("button", { name: "移入项目回收站" }));
-    fireEvent.click(within(await screen.findByRole("alertdialog", { name: "有未保存的修改" })).getByRole("button", { name: "放弃修改" }));
+    fireEvent.click(
+      within(await screen.findByRole("alertdialog", { name: "有未保存的修改" })).getByRole("button", {
+        name: "放弃修改",
+      }),
+    );
 
     await waitFor(() => expect(remove).toHaveBeenCalledWith("demo", 1, "r1"));
     expect(discard).toHaveBeenCalledTimes(1);
@@ -154,8 +168,15 @@ describe("EpisodeHead", () => {
       render(
         <LeaveGuardProvider>
           <DirtyUnit />
-          <EpisodeHead projectName="demo" episode={1} meta={FIRST} route="storyboard" canEditTitle={false}
-            onSaveTitle={vi.fn()} canDelete />
+          <EpisodeHead
+            projectName="demo"
+            episode={1}
+            meta={FIRST}
+            route="storyboard"
+            canEditTitle={false}
+            onSaveTitle={vi.fn()}
+            canDelete
+          />
         </LeaveGuardProvider>,
       );
     }
@@ -164,7 +185,11 @@ describe("EpisodeHead", () => {
       fireEvent.click(screen.getByRole("button", { name: "这一集的更多操作" }));
       fireEvent.click(await screen.findByRole("menuitem", { name: "删除这一集" }));
       fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "移入项目回收站" }));
-      fireEvent.click(within(await screen.findByRole("alertdialog", { name: "有未保存的修改" })).getByRole("button", { name: "放弃修改" }));
+      fireEvent.click(
+        within(await screen.findByRole("alertdialog", { name: "有未保存的修改" })).getByRole("button", {
+          name: "放弃修改",
+        }),
+      );
     }
 
     it("删除请求失败时未保存修改原样保留", async () => {

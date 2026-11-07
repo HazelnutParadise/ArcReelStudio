@@ -14,12 +14,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { voidCall } from "@/utils/async";
-import type {
-  AnyEndpointDefinition,
-  ComfyuiMediaType,
-  EndpointImportShape,
-  EndpointValidateResponse,
-} from "@/types";
+import type { AnyEndpointDefinition, ComfyuiMediaType, EndpointImportShape, EndpointValidateResponse } from "@/types";
 import { formatNameList } from "@/utils/list-format";
 import { EndpointDuplicateChoices } from "./EndpointDuplicateChoices";
 
@@ -132,12 +127,7 @@ export function EndpointImportDialog({
             <div className="flex flex-col gap-2">
               <p className="text-sm text-muted-foreground">{t("ce_import_source_desc")}</p>
               <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={busy || pending}
-                  onClick={() => fileRef.current?.click()}
-                >
+                <Button variant="outline" size="sm" disabled={busy || pending} onClick={() => fileRef.current?.click()}>
                   <Upload aria-hidden data-icon="inline-start" />
                   {t("ce_import_pick_file")}
                 </Button>
@@ -196,7 +186,11 @@ export function EndpointImportDialog({
               </p>
             )}
 
-            {shapeNoticeKey && <p className="rounded-md border border-border px-3 py-2 text-sm text-subtle-foreground">{t(shapeNoticeKey)}</p>}
+            {shapeNoticeKey && (
+              <p className="rounded-md border border-border px-3 py-2 text-sm text-subtle-foreground">
+                {t(shapeNoticeKey)}
+              </p>
+            )}
 
             {schemaVersion && schemaVersion.level !== "direct" && (
               <p className="rounded-md border border-border px-3 py-2 text-sm text-subtle-foreground">
@@ -249,13 +243,19 @@ export function EndpointImportDialog({
             {result && (errors.length > 0 || result.warnings.length > 0) && (
               <ul className="flex flex-col gap-1.5">
                 {errors.map((issue) => (
-                  <li key={`e-${issue.path}-${issue.code}`} className="flex items-start gap-2 text-sm text-subtle-foreground">
+                  <li
+                    key={`e-${issue.path}-${issue.code}`}
+                    className="flex items-start gap-2 text-sm text-subtle-foreground"
+                  >
                     <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />
                     <span>{issue.message}</span>
                   </li>
                 ))}
                 {result.warnings.map((issue) => (
-                  <li key={`w-${issue.path}-${issue.code}`} className="flex items-start gap-2 text-sm text-subtle-foreground">
+                  <li
+                    key={`w-${issue.path}-${issue.code}`}
+                    className="flex items-start gap-2 text-sm text-subtle-foreground"
+                  >
                     <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     <span>{issue.message}</span>
                   </li>

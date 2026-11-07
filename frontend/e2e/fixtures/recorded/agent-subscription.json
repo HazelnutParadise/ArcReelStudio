@@ -1,0 +1,20 @@
+{
+  "method": "GET",
+  "path": "/api/v1/agent/subscription",
+  "status": 200,
+  "body": {
+    "logged_in": false,
+    "token_masked": null,
+    "logged_in_at": null,
+    "mode": "prefer_subscription",
+    "has_api_key": false,
+    "subscription": {
+      "blocked": false,
+      "until": null
+    },
+    "api_key": {
+      "blocked": false,
+      "until": null
+    }
+  }
+}

@@ -7,13 +7,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 import { audioPreload, mediaWaiting, syncAudio, trackStall } from "./audio-sync";
-import {
-  advancePlayhead,
-  locate,
-  preloadTarget,
-  type PlaybackPlan,
-  type PlaybackSegment,
-} from "./playback-schedule";
+import { advancePlayhead, locate, preloadTarget, type PlaybackPlan, type PlaybackSegment } from "./playback-schedule";
 import type { AudioPlacement } from "./preview-tracks";
 
 type Slot = 0 | 1;
@@ -243,24 +237,27 @@ export function useTimelinePlayback(
     }
   }, []);
 
-  const syncAudioTo = useCallback((at: number, running: boolean) => {
-    preloadAudioAround(at);
-    for (const placement of audioRef.current) {
-      const media = audioPool.current.get(placement.id)?.element;
-      if (!media) continue;
-      const directive = syncAudio(placement, at, running, {
-        currentTime: media.currentTime,
-        paused: media.paused,
-        seeking: media.seeking,
-        ended: media.ended,
-      });
-      if (directive.seekTo !== null) media.currentTime = directive.seekTo;
-      if (Math.abs(media.playbackRate - directive.playbackRate) > 1e-3) media.playbackRate = directive.playbackRate;
-      if (Math.abs(media.volume - directive.volume) > 1e-3) media.volume = directive.volume;
-      if (directive.play && media.paused) startMedia(media);
-      else if (!directive.play && !media.paused) media.pause();
-    }
-  }, [preloadAudioAround, startMedia]);
+  const syncAudioTo = useCallback(
+    (at: number, running: boolean) => {
+      preloadAudioAround(at);
+      for (const placement of audioRef.current) {
+        const media = audioPool.current.get(placement.id)?.element;
+        if (!media) continue;
+        const directive = syncAudio(placement, at, running, {
+          currentTime: media.currentTime,
+          paused: media.paused,
+          seeking: media.seeking,
+          ended: media.ended,
+        });
+        if (directive.seekTo !== null) media.currentTime = directive.seekTo;
+        if (Math.abs(media.playbackRate - directive.playbackRate) > 1e-3) media.playbackRate = directive.playbackRate;
+        if (Math.abs(media.volume - directive.volume) > 1e-3) media.volume = directive.volume;
+        if (directive.play && media.paused) startMedia(media);
+        else if (!directive.play && !media.paused) media.pause();
+      }
+    },
+    [preloadAudioAround, startMedia],
+  );
 
   const seek = useCallback(
     (to: number) => {
@@ -413,8 +410,7 @@ export function useTimelinePlayback(
       state.lastFrame = now;
       const video = element(state.slot);
       const holding = locate(currentPlan, state.t)?.holding ?? false;
-      const inPicture =
-        segment.hasVideo && !holding && video !== null && state.loaded[state.slot] === segment.clipId;
+      const inPicture = segment.hasVideo && !holding && video !== null && state.loaded[state.slot] === segment.clipId;
 
       const videoWaiting =
         inPicture &&

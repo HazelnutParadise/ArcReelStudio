@@ -1,5 +1,5 @@
 import { render, screen, waitFor, within, act, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import i18n from "@/i18n";
@@ -83,6 +83,7 @@ function providerDetailFor(lang: string): ProviderConfigDetail {
       },
     ],
     supports_base_url: false,
+    international_base_url: null,
     secret_fields: [],
     secret_field_groups: [],
   };
@@ -110,6 +111,7 @@ const CHAT_ENDPOINT: EndpointDescriptor = {
   request_path_template: "/v1/chat/completions",
   image_capabilities: null,
   end_image_capable: false,
+  custom_selectable: true,
   size_fixed: false,
   duration_fixed: false,
   duration_frame_rate_missing: false,
@@ -148,12 +150,8 @@ describe("ProviderSection", () => {
     useAppStore.setState(useAppStore.getInitialState(), true);
     useConfigStatusStore.setState(useConfigStatusStore.getInitialState(), true);
     vi.spyOn(useConfigStatusStore.getState(), "refresh").mockResolvedValue();
-    vi.spyOn(API, "getProviders").mockImplementation(() =>
-      Promise.resolve(providersFor(i18n.language)),
-    );
-    vi.spyOn(API, "listCustomProviders").mockImplementation(() =>
-      Promise.resolve(customFor(i18n.language)),
-    );
+    vi.spyOn(API, "getProviders").mockImplementation(() => Promise.resolve(providersFor(i18n.language)));
+    vi.spyOn(API, "listCustomProviders").mockImplementation(() => Promise.resolve(customFor(i18n.language)));
     vi.spyOn(API, "getProviderConfig").mockRejectedValue(new Error("detail not under test"));
     vi.spyOn(API, "listCredentials").mockResolvedValue({ credentials: [] });
     vi.spyOn(API, "patchProviderConfig").mockResolvedValue();
@@ -180,9 +178,7 @@ describe("ProviderSection", () => {
     });
 
     // 切换语言后目录须按新语言重取，否则停留在切换前的译名
-    await waitFor(() =>
-      expect(within(nav()).getAllByText("Gemini AI Studio (EN)")[0]).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(within(nav()).getAllByText("Gemini AI Studio (EN)")[0]).toBeInTheDocument());
     expect(within(nav()).getAllByText("My Endpoint (EN)")[0]).toBeInTheDocument();
     expect(within(nav()).queryAllByText("Gemini AI Studio（中文）")).toHaveLength(0);
   });
@@ -206,18 +202,14 @@ describe("ProviderSection", () => {
 
     // 语言切换是静默刷新：不回到 loading 面板，详情面板不被卸载
     expect(screen.queryByText(/加载供应商列表|Loading providers/)).not.toBeInTheDocument();
-    expect(
-      within(screen.getByRole("navigation")).getAllByText("Gemini AI Studio（中文）")[0],
-    ).toBeInTheDocument();
+    expect(within(screen.getByRole("navigation")).getAllByText("Gemini AI Studio（中文）")[0]).toBeInTheDocument();
 
     await act(async () => {
       releaseRefetch?.();
       await Promise.resolve();
     });
     await waitFor(() =>
-      expect(
-        within(screen.getByRole("navigation")).getAllByText("Gemini AI Studio (EN)")[0],
-      ).toBeInTheDocument(),
+      expect(within(screen.getByRole("navigation")).getAllByText("Gemini AI Studio (EN)")[0]).toBeInTheDocument(),
     );
   });
 
@@ -237,9 +229,7 @@ describe("ProviderSection", () => {
 
     // 静默刷新失败不得把整个小节换成错误面板：那会卸载详情面板、丢掉未保存的表单输入
     await waitFor(() =>
-      expect(
-        within(screen.getByRole("navigation")).getAllByText("Gemini AI Studio（中文）")[0],
-      ).toBeInTheDocument(),
+      expect(within(screen.getByRole("navigation")).getAllByText("Gemini AI Studio（中文）")[0]).toBeInTheDocument(),
     );
     expect(screen.queryByText("network down")).not.toBeInTheDocument();
   });
@@ -268,7 +258,10 @@ describe("ProviderSection", () => {
     // 兜底选中以 replace 写回 URL，并在目录里点亮首个 preset
     const panel = await screen.findByRole("tabpanel");
     await waitFor(() =>
-      expect(within(panel).getByRole("link", { name: /Gemini AI Studio（中文）/ })).toHaveAttribute("aria-current", "page"),
+      expect(within(panel).getByRole("link", { name: /Gemini AI Studio（中文）/ })).toHaveAttribute(
+        "aria-current",
+        "page",
+      ),
     );
     // replace 写回：历史里只剩替换后的一条，不追加
     expect(location.history).toEqual(["/app/settings?section=providers&provider=gemini-aistudio"]);
@@ -331,7 +324,13 @@ describe("ProviderSection", () => {
     vi.mocked(API.getProviders).mockResolvedValue({
       providers: [
         { ...providersFor("zh").providers[0], credential_count: 2 },
-        { ...providersFor("zh").providers[0], id: "grok", display_name: "Grok", status: "unconfigured", credential_count: 0 },
+        {
+          ...providersFor("zh").providers[0],
+          id: "grok",
+          display_name: "Grok",
+          status: "unconfigured",
+          credential_count: 0,
+        },
       ],
     });
     renderAt();

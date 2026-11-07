@@ -24,9 +24,10 @@ export function buildDisplayItems(turns: Turn[], draftTurn: Turn | null): Displa
     const streaming = composed === draftTurn;
     if (!streaming && !hasVisibleContent(composed)) return;
     // 已落库的回复去掉看不见的块：签名空思考块留在里面会自成一段空工序，多出一道段距
-    const turn = composed.type === "assistant" && !streaming
-      ? { ...composed, content: composed.content.filter(isVisibleBlock) }
-      : composed;
+    const turn =
+      composed.type === "assistant" && !streaming
+        ? { ...composed, content: composed.content.filter(isVisibleBlock) }
+        : composed;
 
     const previous = items.at(-1);
     if (turn.type === "assistant" && previous?.turn.type === "assistant") {
@@ -41,9 +42,7 @@ export function buildDisplayItems(turns: Turn[], draftTurn: Turn | null): Displa
 
     // 一轮回复跟在用户消息或系统事件之后，以前一项为锚命名：草稿落库后首条 turn 换成
     // 条目 uuid，身份若跟着变，整轮会重新挂载，展开中的工序随之收起
-    const key = turn.type === "assistant"
-      ? `${previous?.key ?? "start"}:reply`
-      : (turn.uuid ?? `turn-${index}`);
+    const key = turn.type === "assistant" ? `${previous?.key ?? "start"}:reply` : (turn.uuid ?? `turn-${index}`);
     items.push({ key, turn, streaming });
   });
   return items;

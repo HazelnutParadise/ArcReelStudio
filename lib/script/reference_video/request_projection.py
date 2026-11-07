@@ -395,7 +395,7 @@ class FilesystemReferenceAssets:
     def is_available(self, asset: ResolvedReferenceAsset) -> bool:
         try:
             path = safe_join(self._project_path, asset.path)
-        except (OSError, PathTraversalError, TypeError):
+        except OSError, PathTraversalError, TypeError:
             return False
         # 缓存已清理的远端内容版本仍可取回，不算缺图
         return material_file_present(path)
@@ -406,7 +406,7 @@ def _candidate_path(project_path: Path, value: object) -> Path | None:
         return None
     try:
         return safe_join(project_path, value)
-    except (OSError, PathTraversalError, TypeError):
+    except OSError, PathTraversalError, TypeError:
         return None
 
 

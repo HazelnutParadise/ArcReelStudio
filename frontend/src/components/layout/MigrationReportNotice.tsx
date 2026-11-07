@@ -56,7 +56,9 @@ export function MigrationReportNotice({
       if (acknowledged) setDismissedAt(report.migrated_at);
       else await refreshAfterWrite(projectName, t);
     } catch (err) {
-      useAppStore.getState().pushToast(t("dashboard:migration_report_dismiss_failed", { message: errMsg(err) }), "error");
+      useAppStore
+        .getState()
+        .pushToast(t("dashboard:migration_report_dismiss_failed", { message: errMsg(err) }), "error");
     } finally {
       setDismissing(false);
     }

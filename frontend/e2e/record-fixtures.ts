@@ -7,12 +7,7 @@ import { mkdtempSync, mkdirSync, readdirSync, realpathSync, rmSync, writeFileSyn
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import {
-  FIXED_NOW,
-  RECORDED_ACCESS_TOKEN,
-  RECORDED_DIR,
-  type RecordedResponse,
-} from "./support/recorded.ts";
+import { FIXED_NOW, RECORDED_ACCESS_TOKEN, RECORDED_DIR, type RecordedResponse } from "./support/recorded.ts";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..");
 const USERNAME = "e2e";
@@ -22,7 +17,7 @@ const DEMO_PROJECT = "demo";
 interface Recording {
   /** 替身文件名（不含扩展名）。 */
   file: string;
-  method: "GET" | "POST" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "DELETE";
   /** 页面实际请求的路径；带查询串时写全，参数顺序不限。查询串不同的请求分别录制。 */
   path: string;
   /** 不带令牌请求。 */
@@ -63,16 +58,45 @@ const RECORDINGS: Recording[] = [
     method: "GET",
     path: `/api/v1/usage/records?limit=10&project_name=${DEMO_PROJECT}&status=success,failed,cancelled`,
   },
-  { file: "project-demo-usage-records-pending", method: "GET", path: `/api/v1/usage/records?project_name=${DEMO_PROJECT}&status=pending` },
-  { file: "project-demo-video-capabilities", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/video-capabilities`, status: 422 },
+  {
+    file: "project-demo-usage-records-pending",
+    method: "GET",
+    path: `/api/v1/usage/records?project_name=${DEMO_PROJECT}&status=pending`,
+  },
+  {
+    file: "project-demo-video-capabilities",
+    method: "GET",
+    path: `/api/v1/projects/${DEMO_PROJECT}/video-capabilities`,
+    status: 422,
+  },
   { file: "project-demo-assistant-skills", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/assistant/skills` },
-  { file: "project-demo-assistant-sessions", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/assistant/sessions` },
+  {
+    file: "project-demo-assistant-sessions",
+    method: "GET",
+    path: `/api/v1/projects/${DEMO_PROJECT}/assistant/sessions`,
+  },
   { file: "project-demo-workflow-status", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/workflow-status` },
-  { file: "project-demo-workflow-plan", method: "POST", path: `/api/v1/projects/${DEMO_PROJECT}/workflow-plan`, json: { episode_id: 1 } },
+  // 打开项目的标签页每 20 秒报到一次；录制账号只有自己，名单里没有其他成员，顶栏不显示在线头像。
+  {
+    file: "project-demo-presence",
+    method: "PUT",
+    path: `/api/v1/projects/${DEMO_PROJECT}/presence`,
+    json: { client_id: "e2e-tab", view: null },
+  },
+  {
+    file: "project-demo-workflow-plan",
+    method: "POST",
+    path: `/api/v1/projects/${DEMO_PROJECT}/workflow-plan`,
+    json: { episode_id: 1 },
+  },
   { file: "project-demo-cost-estimate", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/cost-estimate` },
   // 全局设置：默认落地的供应商详情（列表第一项）与默认模型的候选。
   { file: "provider-gemini-aistudio-config", method: "GET", path: "/api/v1/providers/gemini-aistudio/config" },
-  { file: "provider-gemini-aistudio-credentials", method: "GET", path: "/api/v1/providers/gemini-aistudio/credentials" },
+  {
+    file: "provider-gemini-aistudio-credentials",
+    method: "GET",
+    path: "/api/v1/providers/gemini-aistudio/credentials",
+  },
   { file: "provider-gemini-aistudio-multiplier", method: "GET", path: "/api/v1/providers/gemini-aistudio/multiplier" },
   { file: "provider-gemini-aistudio-models", method: "GET", path: "/api/v1/providers/gemini-aistudio/models" },
   { file: "system-config-model-candidates", method: "GET", path: "/api/v1/system/config/model-candidates" },
@@ -83,10 +107,17 @@ const RECORDINGS: Recording[] = [
   // 全局设置「ArcReel Agent」：Agent 供应商列表（录制环境为空）与添加对话框的预设供应商目录。
   { file: "agent-credentials", method: "GET", path: "/api/v1/agent/credentials" },
   { file: "agent-preset-providers", method: "GET", path: "/api/v1/agent/preset-providers" },
+  // 「Claude 订阅」区块：订阅状态（录制环境未登录）与当前账号（决定能否登录、改使用方式）。
+  { file: "agent-subscription", method: "GET", path: "/api/v1/agent/subscription" },
+  { file: "auth-me", method: "GET", path: "/api/v1/auth/me" },
   // 全局设置「Agent 记忆」：用户记忆目录（录制环境没有记忆文件，多条目与正文由场景替换）。
   { file: "agent-memory", method: "GET", path: "/api/v1/agent/memory" },
   // 全局设置「使用记录」：默认最近 30 天（起点由固定时间与 Asia/Shanghai 推出）与进行中的调用。
-  { file: "usage-summary-30d", method: "GET", path: "/api/v1/usage/summary?since=2025-12-02T16:00:00.000Z&tz=Asia/Shanghai" },
+  {
+    file: "usage-summary-30d",
+    method: "GET",
+    path: "/api/v1/usage/summary?since=2025-12-02T16:00:00.000Z&tz=Asia/Shanghai",
+  },
   {
     file: "usage-records-30d",
     method: "GET",
@@ -122,8 +153,16 @@ const RECORDINGS: Recording[] = [
   { file: "narration-defaults", method: "GET", path: "/api/v1/system/narration-defaults" },
   // 资产库：默认的「角色」标签首页（项目画廊「从资产库导入」同一请求）、画廊的资产图状态，以及入库预览按名称查重。
   { file: "assets-character", method: "GET", path: "/api/v1/assets?limit=60&type=character" },
-  { file: "project-demo-asset-sheets-status", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/asset-sheets/status` },
-  { file: "assets-character-search-lin-xi", method: "GET", path: `/api/v1/assets?q=${encodeURIComponent("林夕")}&type=character` },
+  {
+    file: "project-demo-asset-sheets-status",
+    method: "GET",
+    path: `/api/v1/projects/${DEMO_PROJECT}/asset-sheets/status`,
+  },
+  {
+    file: "assets-character-search-lin-xi",
+    method: "GET",
+    path: `/api/v1/assets?q=${encodeURIComponent("林夕")}&type=character`,
+  },
   // 项目设置：Agent 配置状态与项目记忆（演示项目没有定制配置与记忆文件，多条目由场景替换）。
   { file: "project-demo-agent-profile", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/agent-profile` },
   { file: "project-demo-agent-memory", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/agent-memory` },
@@ -131,19 +170,32 @@ const RECORDINGS: Recording[] = [
   { file: "project-demo-episodes-view", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/episodes-view` },
   // 项目「文件」视图：项目根与 scripts 目录（演示项目只有一集的空正式脚本；多文件、长文件名与预览正文由场景替换）。
   { file: "project-demo-file-view", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/file-view?path=` },
-  { file: "project-demo-file-view-scripts", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/file-view?path=scripts` },
+  {
+    file: "project-demo-file-view-scripts",
+    method: "GET",
+    path: `/api/v1/projects/${DEMO_PROJECT}/file-view?path=scripts`,
+  },
   // 文件视图的「项目回收站」分区：演示项目没有删除记录，多条记录由场景替换。
   { file: "project-demo-trash", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/trash` },
   // 集页「多宫格分镜图」：宫格档位上限与宫格记录（演示项目没有宫格，多组联合图由场景替换）。
   { file: "project-demo-grid-capability", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/grid-capability` },
   { file: "project-demo-grids", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/grids` },
   // 集页剪辑视图：演示集还没有视频，也就没有剪辑时间线，显示空状态；有剪辑时间线的读取结果与出片现状由场景替换。
-  { file: "project-demo-edit-timelines", method: "GET", path: `/api/v1/projects/${DEMO_PROJECT}/edit-timelines?episode=1` },
+  {
+    file: "project-demo-edit-timelines",
+    method: "GET",
+    path: `/api/v1/projects/${DEMO_PROJECT}/edit-timelines?episode=1`,
+  },
 ];
 
 // 资产库里的演示资产：两个角色、一个场景、一个道具，都没有图片。
 const LIBRARY_ASSETS: Record<string, string>[] = [
-  { type: "character", name: "林夕", description: "二十出头的旧城茶馆老板娘，短发，常穿靛蓝布衫。", voice_style: "温和、语速偏慢" },
+  {
+    type: "character",
+    name: "林夕",
+    description: "二十出头的旧城茶馆老板娘，短发，常穿靛蓝布衫。",
+    voice_style: "温和、语速偏慢",
+  },
   { type: "character", name: "陈默", description: "沉默寡言的修表匠，左手腕上有一道旧疤。", voice_style: "" },
   { type: "scene", name: "旧城茶馆", description: "临街的两层木楼，一楼摆着八张方桌。", voice_style: "" },
   { type: "prop", name: "青铜罗盘", description: "巴掌大的罗盘，指针总是指向茶馆。", voice_style: "" },
@@ -174,7 +226,9 @@ function normalize(value: unknown, dataDir: string): unknown {
   if (typeof value === "string") {
     if (ISO_TIMESTAMP.test(value)) return FIXED_NOW;
     if (UUID.test(value)) return fixedUuid(value);
-    return value.replaceAll(dataDir, "<data-dir>").replaceAll(REPO_ROOT, "<repo-root>")
+    return value
+      .replaceAll(dataDir, "<data-dir>")
+      .replaceAll(REPO_ROOT, "<repo-root>")
       .replace(/#deleted-\d{8}T\d{6}Z$/, "#deleted-20260101T080000Z");
   }
   if (Array.isArray(value)) return value.map((item) => normalize(item, dataDir));
@@ -244,7 +298,11 @@ async function postJson(baseUrl: string, token: string, path: string, payload: u
 async function postForm(baseUrl: string, token: string, path: string, fields: Record<string, string>) {
   const form = new FormData();
   for (const [key, value] of Object.entries(fields)) form.append(key, value);
-  const resp = await fetch(`${baseUrl}${path}`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+  const resp = await fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
   if (!resp.ok) throw new Error(`POST ${path} 返回 ${resp.status}：${await resp.text()}`);
 }
 
@@ -287,11 +345,19 @@ async function main() {
     const token = (login.body as { access_token: string }).access_token;
 
     await postJson(baseUrl, token, "/api/v1/onboarding/seen", {});
-    await postJson(baseUrl, token, "/api/v1/projects", { name: DEMO_PROJECT, title: "演示项目", generation_mode: "storyboard" });
+    await postJson(baseUrl, token, "/api/v1/projects", {
+      name: DEMO_PROJECT,
+      title: "演示项目",
+      generation_mode: "storyboard",
+    });
     // 一集还没有分镜的空正式脚本，集页显示「新增第一个分镜」。
     await postJson(baseUrl, token, `/api/v1/projects/${DEMO_PROJECT}/episodes`, { title: "第一集" });
     await postJson(baseUrl, token, `/api/v1/projects/${DEMO_PROJECT}/episodes/1/blank-script`, {});
-    await postJson(baseUrl, token, "/api/v1/projects", { name: "deleted-demo", title: "已删除演示项目", generation_mode: "storyboard" });
+    await postJson(baseUrl, token, "/api/v1/projects", {
+      name: "deleted-demo",
+      title: "已删除演示项目",
+      generation_mode: "storyboard",
+    });
     await request(baseUrl, token, { method: "DELETE", path: "/api/v1/projects/deleted-demo" });
     // 资产库按更新时间倒序列出，逐个创建使顺序与 LIBRARY_ASSETS 相反、且每次录制一致。
     for (const asset of LIBRARY_ASSETS) await postForm(baseUrl, token, "/api/v1/assets", asset);

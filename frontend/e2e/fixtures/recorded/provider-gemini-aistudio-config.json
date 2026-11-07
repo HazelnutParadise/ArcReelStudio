@@ -75,7 +75,8 @@
         "placeholder": null
       }
     ],
-    "supports_base_url": true,
+    "supports_base_url": false,
+    "international_base_url": null,
     "secret_fields": [
       {
         "key": "api_key",

@@ -93,7 +93,11 @@ export function ShotSourceCollapsible({ children }: { children: ReactNode }) {
   return (
     <Collapsible>
       <CollapsibleTrigger render={<Button variant="ghost" size="sm" className="-ml-2" />}>
-        <ChevronRight aria-hidden data-icon="inline-start" className="transition-transform group-aria-expanded/button:rotate-90" />
+        <ChevronRight
+          aria-hidden
+          data-icon="inline-start"
+          className="transition-transform group-aria-expanded/button:rotate-90"
+        />
         {t("detail_section_source_and_refs")}
       </CollapsibleTrigger>
       <CollapsibleContent>

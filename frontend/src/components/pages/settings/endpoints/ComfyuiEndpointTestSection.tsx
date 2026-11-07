@@ -101,9 +101,7 @@ export function ComfyuiEndpointTestSection({ definition, providers, blocked }: C
   // 文件输入框自己显示选中的文件，这份记录只在发请求时读，不需要重渲
   const assetFiles = useRef<Partial<Record<ComfyuiAssetKey, File[]>>>({});
 
-  const [credSource, setCredSource] = useState<"provider" | "inline">(
-    providers.length > 0 ? "provider" : "inline",
-  );
+  const [credSource, setCredSource] = useState<"provider" | "inline">(providers.length > 0 ? "provider" : "inline");
   const [providerId, setProviderId] = useState(() => (providers[0] ? String(providers[0].id) : ""));
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -158,7 +156,10 @@ export function ComfyuiEndpointTestSection({ definition, providers, blocked }: C
     setPreviewing(true);
     try {
       setPreview(
-        await API.previewEndpointRequest({ definition, parameters, credentials: credentials() }, { assets: pickAssets() }),
+        await API.previewEndpointRequest(
+          { definition, parameters, credentials: credentials() },
+          { assets: pickAssets() },
+        ),
       );
     } catch (e) {
       setPreview(null);
@@ -185,7 +186,11 @@ export function ComfyuiEndpointTestSection({ definition, providers, blocked }: C
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-3 @2xl/page:grid-cols-2 @4xl/page:grid-cols-4">
-        <TestField label={t("ce_trial_prompt")} htmlFor={ids.prompt} className="@2xl/page:col-span-2 @4xl/page:col-span-4">
+        <TestField
+          label={t("ce_trial_prompt")}
+          htmlFor={ids.prompt}
+          className="@2xl/page:col-span-2 @4xl/page:col-span-4"
+        >
           <Textarea
             id={ids.prompt}
             value={prompt}
@@ -302,7 +307,9 @@ export function ComfyuiEndpointTestSection({ definition, providers, blocked }: C
             </TestField>
           </>
         )}
-        <p className="self-end text-xs text-muted-foreground @2xl/page:col-span-2">{t("ce_cf_test_credentials_note")}</p>
+        <p className="self-end text-xs text-muted-foreground @2xl/page:col-span-2">
+          {t("ce_cf_test_credentials_note")}
+        </p>
       </div>
 
       {blocked && (
@@ -395,7 +402,8 @@ function ConversionsTable({
       key: "size",
       label: t("ce_cf_test_conv_size"),
       from: source,
-      to: conversions.width === null || conversions.height === null ? null : `${conversions.width}×${conversions.height}`,
+      to:
+        conversions.width === null || conversions.height === null ? null : `${conversions.width}×${conversions.height}`,
     },
   ];
   if (mediaType === "video") {
@@ -506,9 +514,7 @@ function TrialRunReport({
             prompt_id {run.provider_job_id}
           </span>
         )}
-        {run.duration_seconds !== null && (
-          <span>{t("ce_cf_test_clip_length", { seconds: run.duration_seconds })}</span>
-        )}
+        {run.duration_seconds !== null && <span>{t("ce_cf_test_clip_length", { seconds: run.duration_seconds })}</span>}
         {run.api_call_id !== null && (
           <a
             href={settingsSectionPath("usage", { record: String(run.api_call_id) })}

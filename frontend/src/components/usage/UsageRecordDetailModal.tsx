@@ -11,7 +11,14 @@ import { API } from "@/api";
 import { providerSettingsPath } from "@/app-routes";
 import { Button } from "@/components/ui/button";
 import { InfoTip, InfoTipContent, InfoTipTrigger } from "@/components/ui/info-tip";
-import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { UsageRecordDetail } from "@/types";
 import { formatCurrencyAmount } from "@/utils/cost-format";
 import { formatShortDateTime } from "@/utils/date-format";
@@ -91,7 +98,11 @@ function Field({
       <span className={cn("w-24 shrink-0 text-muted-foreground", indent && "pl-3")}>
         {hint ? (
           <InfoTip>
-            <InfoTipTrigger render={<button type="button" className="cursor-help underline decoration-dotted underline-offset-4" />}>{label}</InfoTipTrigger>
+            <InfoTipTrigger
+              render={<button type="button" className="cursor-help underline decoration-dotted underline-offset-4" />}
+            >
+              {label}
+            </InfoTipTrigger>
             <InfoTipContent title={label}>{hint}</InfoTipContent>
           </InfoTip>
         ) : (
@@ -104,15 +115,7 @@ function Field({
 }
 
 /** 项目内相对路径的缩略图；文件已不存在时换成占位，历史记录也能照常打开。 */
-function Thumbnail({
-  projectName,
-  path,
-  caption,
-}: {
-  projectName: string;
-  path: string;
-  caption?: string | null;
-}) {
+function Thumbnail({ projectName, path, caption }: { projectName: string; path: string; caption?: string | null }) {
   const { t } = useTranslation("dashboard");
   const [broken, setBroken] = useState(false);
   return (
@@ -130,7 +133,9 @@ function Thumbnail({
           className="size-24 rounded-md border border-border object-cover"
         />
       )}
-      {caption && <figcaption className="truncate text-xs text-muted-foreground">{itemIdsInEpisodeText(caption)}</figcaption>}
+      {caption && (
+        <figcaption className="truncate text-xs text-muted-foreground">{itemIdsInEpisodeText(caption)}</figcaption>
+      )}
     </figure>
   );
 }
@@ -193,28 +198,15 @@ function InputsGroup({ detail }: { detail: UsageRecordDetail }) {
       <div>
         {inputs?.voice && <Field label={t("usage_field_voice")} value={inputs.voice} />}
         {referenceAudio.length > 0 && (
-          <Field
-            label={t("usage_field_reference_audio")}
-            value={referenceAudio.map(itemIdsInEpisodeText).join("\n")}
-          />
+          <Field label={t("usage_field_reference_audio")} value={referenceAudio.map(itemIdsInEpisodeText).join("\n")} />
         )}
-        {detail.resolution && (
-          <Field label={t("usage_field_resolution")} value={detail.resolution} />
-        )}
-        {detail.aspect_ratio && (
-          <Field label={t("usage_field_aspect_ratio")} value={detail.aspect_ratio} />
-        )}
+        {detail.resolution && <Field label={t("usage_field_resolution")} value={detail.resolution} />}
+        {detail.aspect_ratio && <Field label={t("usage_field_aspect_ratio")} value={detail.aspect_ratio} />}
         {detail.duration_seconds !== null && (
-          <Field
-            label={t("usage_field_duration_seconds")}
-            value={`${detail.duration_seconds} s`}
-          />
+          <Field label={t("usage_field_duration_seconds")} value={`${detail.duration_seconds} s`} />
         )}
         {params && Object.keys(params).length > 0 && (
-          <Field
-            label={t("usage_field_params")}
-            value={JSON.stringify(params, null, 2)}
-          />
+          <Field label={t("usage_field_params")} value={JSON.stringify(params, null, 2)} />
         )}
       </div>
     </div>
@@ -238,8 +230,7 @@ function UsageGroup({ detail }: { detail: UsageRecordDetail }) {
   }
   const hasWrite = write5m !== null || write1h !== null;
   // 记录里的总输入含缓存读写；对外的「输入」只指没有命中也没有写入缓存的那部分。
-  const uncachedInput =
-    input === null ? null : Math.max(0, input - (cacheRead ?? 0) - (write5m ?? 0) - (write1h ?? 0));
+  const uncachedInput = input === null ? null : Math.max(0, input - (cacheRead ?? 0) - (write5m ?? 0) - (write1h ?? 0));
   const show = (value: number | null) => (value === null ? "—" : formatTokens(value));
   return (
     <div>
@@ -332,7 +323,9 @@ export function UsageRecordDetailModal({
               </span>
             </DialogDescription>
           ) : (
-            <DialogDescription className="sr-only">{t("dashboard:usage_detail_title", { id: recordId })}</DialogDescription>
+            <DialogDescription className="sr-only">
+              {t("dashboard:usage_detail_title", { id: recordId })}
+            </DialogDescription>
           )}
         </DialogHeader>
 

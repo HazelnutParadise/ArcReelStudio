@@ -2,7 +2,7 @@
 
 import json
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import VideoGenerationRequest
@@ -44,14 +44,14 @@ async def test_vidu_endpoint_request_and_metering_ignore_name(endpoint, route, s
         backend = VIDU_BACKENDS[endpoint](api_key="test", model=model, base_url="https://vidu.test/ent/v2")
         with capture_http() as router:
             submit = router.post(f"https://vidu.test/ent/v2/{route}").mock(
-                return_value=httpx.Response(200, json={"task_id": "job"})
+                return_value=httpx2.Response(200, json={"task_id": "job"})
             )
             router.get("https://vidu.test/ent/v2/tasks/job/creations").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"state": "success", "creations": [{"url": "https://cdn.test/v.mp4"}]}
                 )
             )
-            router.get("https://cdn.test/v.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://cdn.test/v.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
             result = await backend.generate(request)
         body = json.loads(submit.calls[0].request.content)
         assert body["model"] == model
@@ -81,10 +81,10 @@ async def test_kling_endpoint_request_and_metering_ignore_name(endpoint, audio, 
         )
         with capture_http() as router:
             submit = router.post("https://kling.test/v1/videos/text2video").mock(
-                return_value=httpx.Response(200, json={"code": 0, "data": {"task_id": "job"}})
+                return_value=httpx2.Response(200, json={"code": 0, "data": {"task_id": "job"}})
             )
             router.get("https://kling.test/v1/videos/text2video/job").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={
                         "code": 0,
@@ -95,7 +95,7 @@ async def test_kling_endpoint_request_and_metering_ignore_name(endpoint, audio, 
                     },
                 )
             )
-            router.get("https://cdn.test/v.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://cdn.test/v.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
             result = await backend.generate(request)
         body = json.loads(submit.calls[0].request.content)
         assert body["model_name"] == model

@@ -57,7 +57,7 @@ def _raster_size(data: bytes, expected_format: str) -> tuple[float, float] | Non
             width, height = image.size
             image.verify()
     # 解码器以 SyntaxError / ValueError 报告结构损坏（如 chunk 校验和不符、头部字段过长），verify() 会原样抛出。
-    except (Image.DecompressionBombError, UnidentifiedImageError, OSError, SyntaxError, ValueError):
+    except Image.DecompressionBombError, UnidentifiedImageError, OSError, SyntaxError, ValueError:
         return None
     return float(width), float(height)
 
@@ -100,7 +100,7 @@ def _svg_root_attributes(data: bytes) -> dict[str, str] | None:
     parser.StartDoctypeDeclHandler = start_doctype
     try:
         parser.Parse(data, True)
-    except (expat.ExpatError, _DtdDeclared):
+    except expat.ExpatError, _DtdDeclared:
         return None
     root_name, attributes = elements[0]
     return attributes if root_name in _SVG_ROOT_NAMES else None

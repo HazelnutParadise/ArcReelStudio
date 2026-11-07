@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { AgentCredential } from "@/types/agent-credential";
 
@@ -92,9 +92,7 @@ describe("CredentialList", () => {
         onUnbindTier={vi.fn()}
       />,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "测试连接" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "测试连接" }));
     expect(onTest).toHaveBeenCalledWith(1);
   });
 

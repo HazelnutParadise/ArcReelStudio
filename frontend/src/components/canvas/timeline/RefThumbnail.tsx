@@ -16,10 +16,7 @@ type Asset = Character | CharacterDerivative | Scene | Prop;
 interface KindMeta {
   shape: string;
   Icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-  badgeKey:
-    | "segment_refs_badge_character"
-    | "segment_refs_badge_scene"
-    | "segment_refs_badge_prop";
+  badgeKey: "segment_refs_badge_character" | "segment_refs_badge_scene" | "segment_refs_badge_prop";
 }
 
 const KIND_META: Record<ThumbnailAssetKind, KindMeta> = {
@@ -38,10 +35,7 @@ function badgeKeyFor(kind: ThumbnailAssetKind, name: string): BadgeKey {
   return KIND_META[kind].badgeKey;
 }
 
-function getSheetPath(
-  kind: ThumbnailAssetKind,
-  asset: Asset | undefined,
-): string | undefined {
+function getSheetPath(kind: ThumbnailAssetKind, asset: Asset | undefined): string | undefined {
   if (!asset) return undefined;
   const value = (asset as unknown as Record<string, unknown>)[SHEET_FIELD[kind]];
   return typeof value === "string" ? value : undefined;
@@ -110,9 +104,7 @@ export function RefThumbnail({
   projectName: string;
 }) {
   const sheetPath = getSheetPath(kind, asset);
-  const sheetFp = useProjectsStore((s) =>
-    sheetPath ? s.getAssetFingerprint(sheetPath) : null,
-  );
+  const sheetFp = useProjectsStore((s) => (sheetPath ? s.getAssetFingerprint(sheetPath) : null));
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const meta = KIND_META[kind];
   const currentKey = sheetPath ? `${sheetPath}#${sheetFp ?? ""}` : null;

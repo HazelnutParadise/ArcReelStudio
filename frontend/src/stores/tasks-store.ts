@@ -90,15 +90,16 @@ interface TasksState {
     resourceId: string,
     pendingTaskType: string,
   ) => OptimisticHandle;
-  beginOptimisticActiveForScriptFile: (
-    projectName: string,
-    taskType: string,
-    scriptFile: string,
-  ) => OptimisticHandle;
+  beginOptimisticActiveForScriptFile: (projectName: string, taskType: string, scriptFile: string) => OptimisticHandle;
 }
 
 export const defaultTaskStats: TaskStats = {
-  queued: 0, running: 0, succeeded: 0, failed: 0, cancelled: 0, total: 0,
+  queued: 0,
+  running: 0,
+  succeeded: 0,
+  failed: 0,
+  cancelled: 0,
+  total: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -225,10 +226,7 @@ export const useTasksStore = create<TasksState>((set, get) => {
    * 作用域的第一轮只建基线、不判定：那一轮的旧快照要么是空的、要么属于上一个项目，把历史
    * 成功任务全当成刚完成没有意义。基线由 `baselineScopeKey` 标记，切项目或停用后重置。
    */
-  const hasNewlySucceededReferenceUnitAsset = (
-    prev: readonly TaskItem[],
-    next: readonly TaskItem[],
-  ): boolean => {
+  const hasNewlySucceededReferenceUnitAsset = (prev: readonly TaskItem[], next: readonly TaskItem[]): boolean => {
     const prevStatus = new Map(prev.map((t) => [t.task_id, t.status]));
     return next.some(
       (t) =>
@@ -259,8 +257,7 @@ export const useTasksStore = create<TasksState>((set, get) => {
       if (!scopeUnchanged()) return;
       const scopeKey = projectName ?? "";
       const unitsStale =
-        baselineScopeKey === scopeKey &&
-        hasNewlySucceededReferenceUnitAsset(get().tasks, tasksRes.items);
+        baselineScopeKey === scopeKey && hasNewlySucceededReferenceUnitAsset(get().tasks, tasksRes.items);
       baselineScopeKey = scopeKey;
       get().setTasks(tasksRes.items);
       get().setStats(statsRes.stats);
@@ -404,10 +401,7 @@ export function isActiveStatus(status: TaskStatus): boolean {
  * 按作用域筛而非直接看 `size`：标记只在同项目的真实任务行落地时才被修剪，切到别的项目
  * 后原项目的残留标记永远等不到修剪，若计入判据会把兜底轮询永久钉在高频档。
  */
-function hasOptimisticInScope(
-  marks: ReadonlySet<string>,
-  scopeProjectName: string | null,
-): boolean {
+function hasOptimisticInScope(marks: ReadonlySet<string>, scopeProjectName: string | null): boolean {
   if (marks.size === 0) return false;
   if (scopeProjectName === null) return true;
   const prefix = `${scopeProjectName}\0`;
@@ -635,13 +629,7 @@ export function isScriptFileBusy(
 ): boolean {
   if (!scriptFile || !projectName) return false;
   const { tasks, optimisticActiveScriptFile } = useTasksStore.getState();
-  return selectHasActiveTaskForScriptFile(
-    tasks,
-    taskType,
-    scriptFile,
-    projectName,
-    optimisticActiveScriptFile,
-  );
+  return selectHasActiveTaskForScriptFile(tasks, taskType, scriptFile, projectName, optimisticActiveScriptFile);
 }
 
 /** hook 版 {@link selectHasActiveTaskForScriptFile}；scriptFile/projectName 缺失时返回 false。 */
@@ -652,13 +640,7 @@ export function useHasActiveTaskForScriptFile(
 ): boolean {
   return useTasksStore((s) =>
     scriptFile && projectName
-      ? selectHasActiveTaskForScriptFile(
-          s.tasks,
-          taskType,
-          scriptFile,
-          projectName,
-          s.optimisticActiveScriptFile,
-        )
+      ? selectHasActiveTaskForScriptFile(s.tasks, taskType, scriptFile, projectName, s.optimisticActiveScriptFile)
       : false,
   );
 }
@@ -667,27 +649,17 @@ export function useHasActiveTaskForScriptFile(
 const EMPTY_ACTIVE_IDS: Set<string> = new Set();
 
 /** hook 版 {@link selectActiveResourceIds}；projectName 缺失时返回稳定空集。 */
-export function useActiveResourceIds(
-  taskType: ResourceKind,
-  projectName: string | undefined | null,
-): Set<string> {
+export function useActiveResourceIds(taskType: ResourceKind, projectName: string | undefined | null): Set<string> {
   return useTasksStore(
     useShallow((s) =>
-      projectName
-        ? selectActiveResourceIds(s.tasks, taskType, projectName, s.optimisticActive)
-        : EMPTY_ACTIVE_IDS,
+      projectName ? selectActiveResourceIds(s.tasks, taskType, projectName, s.optimisticActive) : EMPTY_ACTIVE_IDS,
     ),
   );
 }
 
 /** hook 版 {@link selectLatestTaskByResource}，按 project + type 预筛。 */
-export function useLatestTasksByResource(
-  projectName: string,
-  taskType: string,
-): Map<string, TaskItem> {
-  return useTasksStore(
-    useShallow((s) => selectLatestTaskByResource(s.tasks, { projectName, taskType })),
-  );
+export function useLatestTasksByResource(projectName: string, taskType: string): Map<string, TaskItem> {
+  return useTasksStore(useShallow((s) => selectLatestTaskByResource(s.tasks, { projectName, taskType })));
 }
 
 /**

@@ -130,7 +130,9 @@ export function useStaleRegenerateConfirm({
           storyboards: state.impact.storyboards,
           videos: state.impact.videos,
         })}
-        {state.impact.derivatives > 0 && <> {t("sheet_regenerate_stale_derivatives", { count: state.impact.derivatives })}</>}
+        {state.impact.derivatives > 0 && (
+          <> {t("sheet_regenerate_stale_derivatives", { count: state.impact.derivatives })}</>
+        )}
       </>
     );
   } else if (state.phase === "failed") {

@@ -1,0 +1,14 @@
+# 让容器使用宿主机的 NVIDIA GPU，成片渲染随之改用 GPU 编码（可在「设置 › 通用」中关闭）。
+# 宿主机需要安装 NVIDIA 驱动与 NVIDIA Container Toolkit。没有 NVIDIA GPU 的主机不要加载本文件：
+# Docker 拿不到 GPU 时会拒绝启动容器；不加载时成片照常用 CPU 编码。
+# 启用：在 .env 中设置 COMPOSE_FILE=docker-compose.yml:docker-compose.gpu.yml，再执行 docker compose up -d。
+services:
+  arcreel:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              # NVENC 需要 video（编码库）与 compute（CUDA 驱动）两项能力
+              capabilities: [gpu, compute, video, utility]

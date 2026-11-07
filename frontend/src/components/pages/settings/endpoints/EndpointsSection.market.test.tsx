@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import type { EndpointInstallation, MarketEntry } from "@/types";
@@ -77,9 +77,7 @@ describe("EndpointsSection", () => {
 
       withInstallation({ state: "unavailable", source_id: null, source_display_name: null, source_enabled: null });
       renderSection("section=endpoints&endpoint=ce-7");
-      expect(
-        await screen.findByText("来自市场 github:arcreel/arcreel-market@HEAD（来源已删除）"),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("来自市场 github:arcreel/arcreel-market@HEAD（来源已删除）")).toBeInTheDocument();
     });
 
     it("opens the install dialog in update mode from the update action", async () => {

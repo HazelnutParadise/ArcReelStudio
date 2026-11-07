@@ -61,30 +61,15 @@ import { useReferenceDurationGate } from "@/hooks/useReferenceDurationGate";
 import { ReferenceScriptPlanPreviewPanel } from "@/components/canvas/reference/ReferenceScriptPlanPreviewPanel";
 import { PromptAuthoringDraftPanel, usePromptAuthoringDraft } from "./PromptAuthoringDraftPanel";
 import { API } from "@/api";
-import {
-  enqueueNarration,
-  enqueueReferenceVideoBatch,
-  enqueueReferenceVideoUnit,
-} from "@/actions/generation";
-import {
-  useReferenceVideoStore,
-  referenceVideoCacheKey,
-} from "@/stores/reference-video-store";
-import {
-  isResourceBusy,
-  useActiveResourceIds,
-  useLatestTasksByResource,
-} from "@/stores/tasks-store";
+import { enqueueNarration, enqueueReferenceVideoBatch, enqueueReferenceVideoUnit } from "@/actions/generation";
+import { useReferenceVideoStore, referenceVideoCacheKey } from "@/stores/reference-video-store";
+import { isResourceBusy, useActiveResourceIds, useLatestTasksByResource } from "@/stores/tasks-store";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useCostStore } from "@/stores/cost-store";
 import { errMsg } from "@/utils/async";
 import { PromptAuthoringButton } from "@/components/canvas/shared/PromptAuthoringButton";
-import {
-  buildMentionLookup,
-  lineSpeechMarks,
-  splitScriptLines,
-} from "@/utils/reference-mentions";
+import { buildMentionLookup, lineSpeechMarks, splitScriptLines } from "@/utils/reference-mentions";
 import type {
   ReferenceBatchAdmission,
   ReferenceUnitCapabilityMap,
@@ -222,8 +207,7 @@ function FreeDurationInput({
   const seconds = Number(draft);
   const valid = Number.isInteger(seconds) && seconds >= 1 && seconds <= FREE_DURATION_MAX;
   // 与已保存值相同的显式提交也有意义：它确认了只差时长的重新规划标记
-  const dirty =
-    draft !== null && (!valid || seconds !== unit.duration_seconds || Boolean(unit.needs_replan));
+  const dirty = draft !== null && (!valid || seconds !== unit.duration_seconds || Boolean(unit.needs_replan));
 
   const discard = useCallback(() => setDraft(null), []);
   const commit = useCallback(async () => {
@@ -264,7 +248,11 @@ function FreeDurationInput({
         }}
         className="h-7 w-20"
       />
-      {notice ? <span role="status" className="text-subtle-foreground">{notice}</span> : null}
+      {notice ? (
+        <span role="status" className="text-subtle-foreground">
+          {notice}
+        </span>
+      ) : null}
     </>
   );
 }
@@ -317,9 +305,8 @@ export function ReferenceVideoCanvas({
     useReferenceVideoStore((s) => s.unitsByEpisode[referenceVideoCacheKey(projectName, episode)]) ??
     (EMPTY_UNITS as ReferenceVideoUnit[]);
   const unitCapabilities =
-    useReferenceVideoStore(
-      (s) => s.unitCapabilitiesByEpisode[referenceVideoCacheKey(projectName, episode)],
-    ) ?? EMPTY_CAPABILITIES;
+    useReferenceVideoStore((s) => s.unitCapabilitiesByEpisode[referenceVideoCacheKey(projectName, episode)]) ??
+    EMPTY_CAPABILITIES;
   const selectedUnitId = useReferenceVideoStore((s) => s.selectedUnitId);
   const error = useReferenceVideoStore((s) => s.error);
   const loading = useReferenceVideoStore((s) => s.loading);
@@ -372,10 +359,7 @@ export function ReferenceVideoCanvas({
     void loadUnits(projectName, episode);
   }, [loadUnits, projectName, episode, hasScript, unitsRevision]);
 
-  const selected = useMemo(
-    () => units.find((u) => u.unit_id === selectedUnitId) ?? null,
-    [units, selectedUnitId],
-  );
+  const selected = useMemo(() => units.find((u) => u.unit_id === selectedUnitId) ?? null, [units, selectedUnitId]);
 
   // 单元落哪个桶、可选哪些档位，由服务端按此刻可用的参考图逐单元判定（与执行侧
   // ReferenceUnitRequestProjector 同一判据），随单元列表与写入响应到达；画布不按正文里
@@ -388,7 +372,8 @@ export function ReferenceVideoCanvas({
     selectedCapability?.problem != null
       ? tierProblemText(t, selectedCapability.problem, selectedCapability.hydrated_capability)
       : null;
-  const selectedSplit = selectedCapability != null && selectedCapability.problems.length > 0 ? selectedCapability : null;
+  const selectedSplit =
+    selectedCapability != null && selectedCapability.problems.length > 0 ? selectedCapability : null;
 
   // selectedUnitId is a global singleton; validate against current episode's units.
   useEffect(() => {
@@ -500,17 +485,20 @@ export function ReferenceVideoCanvas({
 
   // 改序不弹确认；请求在途时丢弃后续操作，避免基于过期顺序计算锚点。
   const [movingUnit, setMovingUnit] = useState(false);
-  const handleMove = useCallback(async (unitId: string, afterUnitId: string | null) => {
-    if (movingUnit) return;
-    setMovingUnit(true);
-    try {
-      await moveUnit(projectName, episode, unitId, afterUnitId);
-    } catch (e) {
-      toastError(e);
-    } finally {
-      setMovingUnit(false);
-    }
-  }, [moveUnit, projectName, episode, movingUnit]);
+  const handleMove = useCallback(
+    async (unitId: string, afterUnitId: string | null) => {
+      if (movingUnit) return;
+      setMovingUnit(true);
+      try {
+        await moveUnit(projectName, episode, unitId, afterUnitId);
+      } catch (e) {
+        toastError(e);
+      } finally {
+        setMovingUnit(false);
+      }
+    },
+    [moveUnit, projectName, episode, movingUnit],
+  );
 
   // 移除比其他写入多挡一类占用：在跑的配音任务同样指向该单元（与时间线分镜的移除守卫一致）。
   const isUnitRemovalBlocked = useCallback(
@@ -654,12 +642,12 @@ export function ReferenceVideoCanvas({
   const makeEnqueueSerially = useCallback(
     (canEnqueue: (unitId: string) => boolean) =>
       async (unitIds: string[], confirmedDurations: ReadonlyMap<string, number>) => {
-      for (const id of unitIds) {
-        if (!canEnqueue(id)) continue;
-        // react-doctor-disable-next-line react-doctor/async-await-in-loop -- 有意串行：每次入队前按最新状态复核，让后端依次做去重检查
-        await enqueue(id, confirmedDurations.get(id));
-      }
-    },
+        for (const id of unitIds) {
+          if (!canEnqueue(id)) continue;
+          // react-doctor-disable-next-line react-doctor/async-await-in-loop -- 有意串行：每次入队前按最新状态复核，让后端依次做去重检查
+          await enqueue(id, confirmedDurations.get(id));
+        }
+      },
     [enqueue],
   );
 
@@ -674,20 +662,9 @@ export function ReferenceVideoCanvas({
         useAppStore.getState().pushToast(t("reference_needs_replan"), "error");
         return;
       }
-      await durationGate.run(
-        [unitId],
-        makeEnqueueSerially(canEnqueueUnit),
-        canEnqueueUnit,
-      );
+      await durationGate.run([unitId], makeEnqueueSerially(canEnqueueUnit), canEnqueueUnit);
     },
-    [
-      durationGate,
-      makeEnqueueSerially,
-      isUnitLocked,
-      isUnitGenerationBlocked,
-      canEnqueueUnit,
-      t,
-    ],
+    [durationGate, makeEnqueueSerially, isUnitLocked, isUnitGenerationBlocked, canEnqueueUnit, t],
   );
 
   const handleUploadVideo = useCallback(
@@ -721,10 +698,7 @@ export function ReferenceVideoCanvas({
     [projectName, episode, loadUnits, isUnitLocked, setUploading, unitPositionOf, t],
   );
 
-  const handleUnitsRefresh = useCallback(
-    () => loadUnits(projectName, episode),
-    [loadUnits, projectName, episode],
-  );
+  const handleUnitsRefresh = useCallback(() => loadUnits(projectName, episode), [loadUnits, projectName, episode]);
 
   const handleGenerateNarration = useCallback(
     async (unitId: string) => {
@@ -755,10 +729,7 @@ export function ReferenceVideoCanvas({
   // 批量生成的作用对象：全部尚无成片的 unit（含 needs_replan、在途、失败重试）。按钮禁用须与
   // 它同一口径——只看当前选中 unit 是否在跑、与作用对象无关的判定会脱节：选中项空闲时按钮会在
   // 没有任何待生成 unit 的情况下仍可点击，选中项在跑时又会挡住其余 unit 的批量生成。
-  const batchTargets = useMemo(
-    () => units.filter((u) => statusMap[u.unit_id] !== "ready"),
-    [units, statusMap],
-  );
+  const batchTargets = useMemo(() => units.filter((u) => statusMap[u.unit_id] !== "ready"), [units, statusMap]);
 
   /**
    * 一次请求走服务端的全有或全无准入，{@link referenceBatchOutcome} 的五种结局都是评估
@@ -823,9 +794,9 @@ export function ReferenceVideoCanvas({
         if (tier.request_duration_seconds == null) continue;
         for (const unitId of tier.unit_ids) durationByUnit.set(unitId, tier.request_duration_seconds);
       }
-      const targets = Array.from(
-        new Set([...admission.units.map((u) => u.unit_id), ...durationByUnit.keys()]),
-      ).filter((unitId) => batchSkipReason(unitId) === null);
+      const targets = Array.from(new Set([...admission.units.map((u) => u.unit_id), ...durationByUnit.keys()])).filter(
+        (unitId) => batchSkipReason(unitId) === null,
+      );
       if (targets.length === 0) {
         setBatchPlan(null);
         // 弹窗此刻已关闭，不给反馈的话界面只是静静地什么也没发生。
@@ -938,9 +909,7 @@ export function ReferenceVideoCanvas({
 
   const [listSheetOpen, setListSheetOpen] = useState(false);
 
-  const segCost = useCostStore((s) =>
-    selected ? s._segmentIndex.get(selected.unit_id) : undefined,
-  );
+  const segCost = useCostStore((s) => (selected ? s._segmentIndex.get(selected.unit_id) : undefined));
   const estimatedCost = segCost?.estimate.video;
   const actualCost = segCost?.actual.video;
   const narrationEstimatedCost = segCost?.estimate.audio;
@@ -957,7 +926,11 @@ export function ReferenceVideoCanvas({
   }, [selectUnit, units, selectedIndex]);
   const moveStep = useCallback(
     (direction: "earlier" | "later") => {
-      const afterId = stepAnchor(units.map((u) => u.unit_id), selectedIndex, direction);
+      const afterId = stepAnchor(
+        units.map((u) => u.unit_id),
+        selectedIndex,
+        direction,
+      );
       if (afterId !== undefined) void handleMove(units[selectedIndex].unit_id, afterId);
     },
     [handleMove, units, selectedIndex],
@@ -1034,7 +1007,11 @@ export function ReferenceVideoCanvas({
       narrationText={selectedNarrationText}
       narrationGenerating={selected ? ttsBusyUnitIds.has(selected.unit_id) : false}
       narrationEstimatedCost={narrationEstimatedCost}
-      onGenerateNarration={onGenerateNarration && edit ? (id) => void edit.saveAndGenerate(() => onGenerateNarration(id)) : onGenerateNarration}
+      onGenerateNarration={
+        onGenerateNarration && edit
+          ? (id) => void edit.saveAndGenerate(() => onGenerateNarration(id))
+          : onGenerateNarration
+      }
       // 正文有未保存修改时先保存再生成，生成用的是服务端上的正文
       onGenerate={edit ? (id) => void edit.saveAndGenerate(() => handleGenerate(id)) : onGenerateVoid}
       saveFirst={edit?.dirty}
@@ -1153,36 +1130,36 @@ export function ReferenceVideoCanvas({
           className="col-start-2 row-start-2 flex min-h-0 min-w-0 flex-col data-inactive:hidden @4xl/canvas:data-inactive:flex"
         >
           <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
-          <Tabs
-            value={editorView}
-            onValueChange={(next: "script" | "parse") => setEditorView(next)}
-            className="flex-1"
-          >
-            <TabsList aria-label={t("reference_editor_view_aria")}>
-              <TabsTrigger value="script">{t("reference_editor_view_script")}</TabsTrigger>
-              <TabsTrigger value="parse">{t("reference_editor_view_parse")}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="script" className="flex flex-col">
-              <ReferenceVideoCard
-                unit={unit}
-                projectName={projectName}
-                episode={episode}
-                value={edit.value}
-                onChange={edit.setValue}
-                beforePreview={edit.save}
-                dirty={edit.dirty}
-                saving={edit.status === "saving"}
-              />
-            </TabsContent>
-            <TabsContent value="parse">
-              <ScriptPreviewPanel
-                projectName={projectName}
-                episode={episode}
-                text={edit.value}
-                lookup={mentionLookup}
-              />
-            </TabsContent>
-          </Tabs>
+            <Tabs
+              value={editorView}
+              onValueChange={(next: "script" | "parse") => setEditorView(next)}
+              className="flex-1"
+            >
+              <TabsList aria-label={t("reference_editor_view_aria")}>
+                <TabsTrigger value="script">{t("reference_editor_view_script")}</TabsTrigger>
+                <TabsTrigger value="parse">{t("reference_editor_view_parse")}</TabsTrigger>
+              </TabsList>
+              <TabsContent value="script" className="flex flex-col">
+                <ReferenceVideoCard
+                  unit={unit}
+                  projectName={projectName}
+                  episode={episode}
+                  value={edit.value}
+                  onChange={edit.setValue}
+                  beforePreview={edit.save}
+                  dirty={edit.dirty}
+                  saving={edit.status === "saving"}
+                />
+              </TabsContent>
+              <TabsContent value="parse">
+                <ScriptPreviewPanel
+                  projectName={projectName}
+                  episode={episode}
+                  text={edit.value}
+                  lookup={mentionLookup}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
           <UnsavedChangesBar unit={edit} className="mx-3 mb-3 shrink-0" />
         </div>
@@ -1203,9 +1180,7 @@ export function ReferenceVideoCanvas({
       {view === "board" && (
         <EpisodeHeaderActions>
           {/* 没有预处理的参考画布只用于广告/短片：有正式脚本时可整份重新生成。 */}
-          {hasScript && !showPreprocess && (
-            <AdScriptButton projectName={projectName} episode={episode} regenerate />
-          )}
+          {hasScript && !showPreprocess && <AdScriptButton projectName={projectName} episode={episode} regenerate />}
           {hasScript && (
             <PromptAuthoringButton
               projectName={projectName}
@@ -1264,108 +1239,116 @@ export function ReferenceVideoCanvas({
         </section>
       )}
 
-      <RetainedEditUnit identity={promptDraft?.editable_by === "user" ? "draft" : "workbench"} message={t("reference_prompt_draft_replaced")} value={view === "plan" ? (
-        <div className="relative min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-3xl px-6 py-5">
-            <ReferenceScriptPlanPreviewPanel
-              key={`${projectName}:${episode}`}
-              projectName={projectName}
-              episode={episode}
-              lookup={mentionLookup}
-              videoModelUnresolved={videoModelUnresolved}
-              planningDurations={planDurationOptions}
-              onOpenTimeline={() => onViewChange("board")}
-            />
-          </div>
-        </div>
-      ) : promptDraft?.editable_by === "user" ? (
-        <div className="relative min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-3xl px-6 py-5">
-            <PromptAuthoringDraftPanel
-              key={`${projectName}:${episode}`}
-              projectName={projectName}
-              episode={episode}
-              view={promptDraft}
-              onSettled={refreshPromptDraft}
-            />
-          </div>
-        </div>
-      ) : (
-        // 工作台按画布宽度分档，列宽固定：
-        //   窄于 4xl：单元图标栏 + 中栏，预览叠进中栏；4xl 起预览单独成栏；
-        //   6xl 起图标栏换成完整列表；7xl 起预览栏加宽。
-        <div className="grid min-h-0 flex-1 grid-cols-[3.5rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] @4xl/canvas:grid-cols-[3.5rem_minmax(0,1fr)_20rem] @6xl/canvas:grid-cols-[20rem_minmax(0,1fr)_20rem] @7xl/canvas:grid-cols-[20rem_minmax(0,1fr)_22.5rem]">
-          <div className="col-start-1 row-start-1 row-end-3 flex min-h-0 @6xl/canvas:hidden">
-            <UnitRail
-              units={units}
-              selectedId={selectedUnitId}
-              onSelect={selectUnit}
-              onExpand={() => setListSheetOpen(true)}
-              statusMap={statusMap}
-              className="min-w-0 flex-1"
-            />
-          </div>
-          <div className="col-start-1 row-start-1 row-end-3 hidden min-h-0 @6xl/canvas:flex">
-            <UnitList
-              units={units}
-              selectedId={selectedUnitId}
-              onSelect={selectUnit}
-              onAdd={onAdd}
-              onMove={handleMove}
-              statusMap={statusMap}
-              className="min-w-0 flex-1"
-            />
-          </div>
-
-          <RetainedEditUnit identity={selected?.unit_id ?? "missing"} value={selected ? (
-            <UnitPromptEdit
-              key={selected.unit_id}
-              unit={selected}
-              unitLabel={unitPositionOf(selected.unit_id)}
-              onSave={handlePromptSave}
-              allowNavigation={allowNavigation}
-            >
-              {(edit) => renderSelectedUnit(selected, edit)}
-            </UnitPromptEdit>
+      <RetainedEditUnit
+        identity={promptDraft?.editable_by === "user" ? "draft" : "workbench"}
+        message={t("reference_prompt_draft_replaced")}
+        value={
+          view === "plan" ? (
+            <div className="relative min-h-0 flex-1 overflow-y-auto">
+              <div className="mx-auto w-full max-w-3xl px-6 py-5">
+                <ReferenceScriptPlanPreviewPanel
+                  key={`${projectName}:${episode}`}
+                  projectName={projectName}
+                  episode={episode}
+                  lookup={mentionLookup}
+                  videoModelUnresolved={videoModelUnresolved}
+                  planningDurations={planDurationOptions}
+                  onOpenTimeline={() => onViewChange("board")}
+                />
+              </div>
+            </div>
+          ) : promptDraft?.editable_by === "user" ? (
+            <div className="relative min-h-0 flex-1 overflow-y-auto">
+              <div className="mx-auto w-full max-w-3xl px-6 py-5">
+                <PromptAuthoringDraftPanel
+                  key={`${projectName}:${episode}`}
+                  projectName={projectName}
+                  episode={episode}
+                  view={promptDraft}
+                  onSettled={refreshPromptDraft}
+                />
+              </div>
+            </div>
           ) : (
-            <>
-              <div className="col-start-2 row-start-1 row-end-3 flex min-h-0 flex-col">
-                {!hasScript && !showPreprocess ? (
-                  // 广告/短片没有脚本规划：没有正式脚本时直接从空白开始。
-                  <NoScriptBlankState projectName={projectName} episode={episode} className="flex-1 text-xs" />
-                ) : hasScript && units.length === 0 ? (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-sm text-muted-foreground">
-                    <p>{t("reference_canvas_empty")}</p>
-                    <Button onClick={onAdd}>
-                      <Plus aria-hidden data-icon="inline-start" />
-                      {t("reference_unit_add_first")}
-                    </Button>
-                  </div>
-                ) : (
-                  <p className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground">
-                    {t("reference_canvas_empty")}
-                  </p>
-                )}
+            // 工作台按画布宽度分档，列宽固定：
+            //   窄于 4xl：单元图标栏 + 中栏，预览叠进中栏；4xl 起预览单独成栏；
+            //   6xl 起图标栏换成完整列表；7xl 起预览栏加宽。
+            <div className="grid min-h-0 flex-1 grid-cols-[3.5rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] @4xl/canvas:grid-cols-[3.5rem_minmax(0,1fr)_20rem] @6xl/canvas:grid-cols-[20rem_minmax(0,1fr)_20rem] @7xl/canvas:grid-cols-[20rem_minmax(0,1fr)_22.5rem]">
+              <div className="col-start-1 row-start-1 row-end-3 flex min-h-0 @6xl/canvas:hidden">
+                <UnitRail
+                  units={units}
+                  selectedId={selectedUnitId}
+                  onSelect={selectUnit}
+                  onExpand={() => setListSheetOpen(true)}
+                  statusMap={statusMap}
+                  className="min-w-0 flex-1"
+                />
               </div>
-              <div className="col-start-3 row-start-1 row-end-3 hidden min-h-0 flex-col border-l border-border @4xl/canvas:flex">
-                {renderPreview(null)}
+              <div className="col-start-1 row-start-1 row-end-3 hidden min-h-0 @6xl/canvas:flex">
+                <UnitList
+                  units={units}
+                  selectedId={selectedUnitId}
+                  onSelect={selectUnit}
+                  onAdd={onAdd}
+                  onMove={handleMove}
+                  statusMap={statusMap}
+                  className="min-w-0 flex-1"
+                />
               </div>
-            </>
-          )} message={t("reference_unit_externally_removed")}>
-            {(detail) => detail}
-          </RetainedEditUnit>
-        </div>
-      )}>
+
+              <RetainedEditUnit
+                identity={selected?.unit_id ?? "missing"}
+                value={
+                  selected ? (
+                    <UnitPromptEdit
+                      key={selected.unit_id}
+                      unit={selected}
+                      unitLabel={unitPositionOf(selected.unit_id)}
+                      onSave={handlePromptSave}
+                      allowNavigation={allowNavigation}
+                    >
+                      {(edit) => renderSelectedUnit(selected, edit)}
+                    </UnitPromptEdit>
+                  ) : (
+                    <>
+                      <div className="col-start-2 row-start-1 row-end-3 flex min-h-0 flex-col">
+                        {!hasScript && !showPreprocess ? (
+                          // 广告/短片没有脚本规划：没有正式脚本时直接从空白开始。
+                          <NoScriptBlankState projectName={projectName} episode={episode} className="flex-1 text-xs" />
+                        ) : hasScript && units.length === 0 ? (
+                          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-sm text-muted-foreground">
+                            <p>{t("reference_canvas_empty")}</p>
+                            <Button onClick={onAdd}>
+                              <Plus aria-hidden data-icon="inline-start" />
+                              {t("reference_unit_add_first")}
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground">
+                            {t("reference_canvas_empty")}
+                          </p>
+                        )}
+                      </div>
+                      <div className="col-start-3 row-start-1 row-end-3 hidden min-h-0 flex-col border-l border-border @4xl/canvas:flex">
+                        {renderPreview(null)}
+                      </div>
+                    </>
+                  )
+                }
+                message={t("reference_unit_externally_removed")}
+              >
+                {(detail) => detail}
+              </RetainedEditUnit>
+            </div>
+          )
+        }
+      >
         {(content) => content}
       </RetainedEditUnit>
 
       {/* 图标栏展开的完整列表：搜索、新增与排序 */}
       <Sheet open={listSheetOpen} onOpenChange={setListSheetOpen}>
-        <SheetContent
-          side="left"
-          showCloseButton={false}
-          className="data-[side=left]:w-80"
-        >
+        <SheetContent side="left" showCloseButton={false} className="data-[side=left]:w-80">
           <SheetTitle className="sr-only">{t("reference_unit_list_title")}</SheetTitle>
           <UnitList
             units={units}

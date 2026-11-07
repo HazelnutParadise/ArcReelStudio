@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import asyncio
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from sqlalchemy import func, select
@@ -66,7 +66,7 @@ async def test_concurrent_first_saves_leave_one_connection(
     monkeypatch.setattr(ObjectStorageConnectionRepository, "get", _get_after_both_read)
     monkeypatch.setattr(object_storage, "connection_change_lock", asyncio.Lock)
 
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+    async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as client:
         responses = await asyncio.wait_for(
             asyncio.gather(
                 client.put("/api/v1/object-storage/connection", json=_body("bucket-a", "A")),

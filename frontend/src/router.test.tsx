@@ -1,5 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import i18n from "@/i18n";
 import { DEMO_PROJECT_NAME } from "@/onboarding/demo-project";
 import { Router } from "wouter";
@@ -13,9 +13,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { AppRoutes } from "@/router";
 
 vi.mock("@/components/layout", () => ({
-  StudioLayout: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="studio-layout">{children}</div>
-  ),
+  StudioLayout: ({ children }: { children: React.ReactNode }) => <div data-testid="studio-layout">{children}</div>,
 }));
 
 vi.mock("@/components/canvas/StudioCanvasRouter", () => ({
@@ -85,7 +83,15 @@ describe("AppRoutes", () => {
     "keeps the workspace shell for the unregistered workspace path %s",
     async (path) => {
       vi.spyOn(API, "getProject").mockResolvedValue({
-        project: { title: "Demo", content_mode: "narration", style: "Anime", episodes: [], characters: {}, scenes: {}, props: {} },
+        project: {
+          title: "Demo",
+          content_mode: "narration",
+          style: "Anime",
+          episodes: [],
+          characters: {},
+          scenes: {},
+          props: {},
+        },
         scripts: {},
       });
       renderAt(path);
@@ -236,17 +242,13 @@ describe("AppRoutes", () => {
       resolveA = res;
     });
     vi.spyOn(API, "getProject").mockImplementation((name) =>
-      name === "A"
-        ? pendingA
-        : Promise.resolve({ project: { title: "B-数据" } as never, scripts: {} }),
+      name === "A" ? pendingA : Promise.resolve({ project: { title: "B-数据" } as never, scripts: {} }),
     );
 
     // 只看最终态不足以证伪「迟到覆盖」——A 的数据即便写进去了，也会被随后跑完的 B 盖回
     // 去。订阅整段过程，断言 A 的数据一次都没有落进 store。
     const seenTitles: Array<string | undefined> = [];
-    const unsubscribe = useProjectsStore.subscribe((s) =>
-      seenTitles.push(s.currentProjectData?.title),
-    );
+    const unsubscribe = useProjectsStore.subscribe((s) => seenTitles.push(s.currentProjectData?.title));
 
     const { hook, navigate } = memoryLocation({ path: "/app/projects/A" });
     render(

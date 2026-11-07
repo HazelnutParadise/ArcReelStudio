@@ -112,7 +112,7 @@ export function EditTimelineView({
   const [jump, setJump] = useState<LinkJump | null>(null);
   useEffect(() => {
     if (linkForOtherProject || (linkTimeline === null && linkTime === null)) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 订阅地址栏的一次性参数：读入后清掉，再点同一条链接才能重新触发
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 订阅地址栏的一次性参数：读入后清掉，再点同一条链接才能重新触发
     setJump({ timelineId: linkTimeline || null, seconds: parseSeconds(linkTime) });
     setSearchParams(
       (params) => {
@@ -165,7 +165,7 @@ export function EditTimelineView({
     if (!jump || !timelines) return;
     if (timelines.length === 0) {
       // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change -- 定位指令来自地址栏、列表异步到达，两者齐备时才能判定作废
-      setJump(null); // eslint-disable-line react-hooks/set-state-in-effect -- 没有剪辑时间线可定位，作废这次定位
+      setJump(null); // eslint-disable-line react-hooks-js/set-state-in-effect -- 没有剪辑时间线可定位，作废这次定位
       return;
     }
     if (jumpTimelineId !== null && jumpTarget === null && listFresh) {
@@ -389,7 +389,7 @@ function TimelinePreview({
     if (seekRequest.seconds !== null) {
       seek(seekRequest.seconds);
       const location = locate(plan, seekRequest.seconds);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 一次性的链接定位：移动播放头的同时选中对应片段
+      // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 一次性的链接定位：移动播放头的同时选中对应片段
       if (location) setSelectedClipId(plan.segments[location.index].clipId);
     }
     // 处理完立即作废，plan 随后的刷新不会再把播放头拉回去。

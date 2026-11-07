@@ -1,7 +1,7 @@
 """
 认证核心模块测试
 
-测试 server.auth 中的密码生成、JWT token、凭据校验等功能。
+测试 server.auth 中的 JWT token、签名密钥与当前账号解析。账号登录与成员管理见 tests/integration/server/services/test_accounts.py。
 """
 
 import os
@@ -12,20 +12,6 @@ import pytest
 from fastapi import HTTPException
 
 import server.auth as auth_module
-
-
-class TestGeneratePassword:
-    def test_generate_password(self):
-        """默认长度 16，仅字母数字"""
-        pwd = auth_module.generate_password()
-        assert len(pwd) == 16
-        assert pwd.isalnum()
-
-    def test_generate_password_custom_length(self):
-        """自定义长度"""
-        pwd = auth_module.generate_password(length=32)
-        assert len(pwd) == 32
-        assert pwd.isalnum()
 
 
 class TestTokenSecret:
@@ -56,7 +42,6 @@ class TestTokenSecret:
 def _simulate_restart() -> None:
     """进程重启：进程内缓存全部丢失，数据目录与 .env 保留。"""
     auth_module.reset_token_secret_for_tests()
-    auth_module._cached_password_hash = None
 
 
 class TestTokenSecretPersistence:
@@ -197,144 +182,6 @@ class TestCreateAndVerifyToken:
             assert payload["sub"] == "embedded-agent"
 
 
-class TestCheckCredentials:
-    def setup_method(self):
-        auth_module._cached_password_hash = None
-
-    def test_check_credentials_valid(self):
-        """正确凭据返回 True"""
-        with patch.dict(os.environ, {"AUTH_USERNAME": "admin", "AUTH_PASSWORD": "pass123"}):
-            assert auth_module.check_credentials("admin", "pass123") is True
-
-    def test_check_credentials_invalid(self):
-        """错误凭据返回 False"""
-        with patch.dict(os.environ, {"AUTH_USERNAME": "admin", "AUTH_PASSWORD": "pass123"}):
-            assert auth_module.check_credentials("admin", "wrong") is False
-            assert auth_module.check_credentials("nobody", "pass123") is False
-
-    def test_check_credentials_default_username(self):
-        """AUTH_USERNAME 未设置时默认为 admin"""
-        env = os.environ.copy()
-        env.pop("AUTH_USERNAME", None)
-        env["AUTH_PASSWORD"] = "secret"
-        with patch.dict(os.environ, env, clear=True):
-            assert auth_module.check_credentials("admin", "secret") is True
-
-
-class TestEnsureAuthPassword:
-    def setup_method(self):
-        """每个测试前重置缓存"""
-        auth_module._cached_token_secret = None
-
-    def test_existing_password_returned(self):
-        """AUTH_PASSWORD 已存在时直接返回现有密码"""
-        with patch.dict(os.environ, {"AUTH_PASSWORD": "existing-pwd"}):
-            result = auth_module.ensure_auth_password()
-            assert result == "existing-pwd"
-
-    def test_auto_generate_when_empty(self, tmp_path):
-        """AUTH_PASSWORD 为空时自动生成密码并写入 os.environ"""
-        env = os.environ.copy()
-        env.pop("AUTH_PASSWORD", None)
-        env_file = tmp_path / ".env"
-        env_file.write_text("SOME_VAR=value\n")
-        with patch.dict(os.environ, env, clear=True):
-            result = auth_module.ensure_auth_password(env_path=str(env_file))
-            assert len(result) == 16
-            assert result.isalnum()
-            # 应该同步写入 os.environ
-            assert os.environ["AUTH_PASSWORD"] == result
-
-    def test_writeback_replace_existing_line(self, tmp_path):
-        """回写 .env 文件：替换已有 AUTH_PASSWORD= 行"""
-        env_file = tmp_path / ".env"
-        env_file.write_text("SOME_VAR=hello\nAUTH_PASSWORD=\nOTHER=world\n")
-        env = os.environ.copy()
-        env.pop("AUTH_PASSWORD", None)
-        with patch.dict(os.environ, env, clear=True):
-            password = auth_module.ensure_auth_password(env_path=str(env_file))
-            content = env_file.read_text()
-            assert f"AUTH_PASSWORD={password}" in content
-            # 原有的其他行应保留
-            assert "SOME_VAR=hello" in content
-            assert "OTHER=world" in content
-
-    def test_writeback_append_when_no_line(self, tmp_path):
-        """回写 .env 文件：追加，原文件无 AUTH_PASSWORD 行"""
-        env_file = tmp_path / ".env"
-        env_file.write_text("SOME_VAR=hello\n")
-        env = os.environ.copy()
-        env.pop("AUTH_PASSWORD", None)
-        with patch.dict(os.environ, env, clear=True):
-            password = auth_module.ensure_auth_password(env_path=str(env_file))
-            content = env_file.read_text()
-            assert f"AUTH_PASSWORD={password}" in content
-            # 原有内容应保留
-            assert "SOME_VAR=hello" in content
-
-    def test_env_file_not_exist_no_error(self, tmp_path):
-        """.env 文件不存在时不抛异常，并创建新文件"""
-        env_file = tmp_path / "nonexistent" / ".env"
-        env = os.environ.copy()
-        env.pop("AUTH_PASSWORD", None)
-        with patch.dict(os.environ, env, clear=True):
-            # 父目录不存在会触发 OSError，函数不应抛异常
-            password = auth_module.ensure_auth_password(env_path=str(env_file))
-            assert len(password) == 16
-            assert password.isalnum()
-
-    def test_env_file_non_utf8_does_not_block_startup(self, tmp_path):
-        """历史 .env 用 cp936 / ANSI 等本地编码时，``read_text(encoding="utf-8")``
-        会抛 ``UnicodeDecodeError``。该函数被 server lifespan 启动期调用，必须捕获
-        并降级（不持久化、保留进程内密码），否则服务无法启动。
-        """
-        env_file = tmp_path / ".env"
-        # cp936 编码的中文注释 + 现有 AUTH_PASSWORD，UTF-8 解码必失败
-        env_file.write_bytes("# 注释\nAUTH_PASSWORD=old\n".encode("cp936"))
-        env = os.environ.copy()
-        env.pop("AUTH_PASSWORD", None)
-        with patch.dict(os.environ, env, clear=True):
-            password = auth_module.ensure_auth_password(env_path=str(env_file))
-            assert len(password) == 16
-            assert password.isalnum()
-            # .env 内容未被破坏（不强制覆写避免丢用户内容）
-            assert env_file.read_bytes() == "# 注释\nAUTH_PASSWORD=old\n".encode("cp936")
-
-
-class TestPasswordAcrossRestarts:
-    """Docker 重启不重建容器时，compose 注入的 AUTH_PASSWORD 一直是空串。"""
-
-    def _restart(self, env_file, monkeypatch) -> str:
-        from lib.infra.env_init import load_env_file
-
-        _simulate_restart()
-        monkeypatch.delenv("PYTHON_DOTENV_DISABLED", raising=False)  # 根 conftest 关掉了 .env 读取
-        monkeypatch.setenv("AUTH_PASSWORD", "")  # 容器创建时由模板 `AUTH_PASSWORD=` 固定下来的值
-        load_env_file(env_file)
-        return auth_module.ensure_auth_password(env_path=str(env_file))
-
-    def test_password_edited_in_env_file_is_kept(self, tmp_path, monkeypatch):
-        env_file = tmp_path / ".env"
-        env_file.write_text("AUTH_USERNAME=admin\nAUTH_PASSWORD=my-new-pass\n", encoding="utf-8")
-
-        assert self._restart(env_file, monkeypatch) == "my-new-pass"
-        assert env_file.read_text(encoding="utf-8") == "AUTH_USERNAME=admin\nAUTH_PASSWORD=my-new-pass\n"
-        assert auth_module.check_credentials("admin", "my-new-pass") is True
-
-    def test_generated_once_on_first_start_then_stable(self, tmp_path, monkeypatch):
-        env_file = tmp_path / ".env"
-        env_file.write_text("AUTH_USERNAME=admin\nAUTH_PASSWORD=\n", encoding="utf-8")
-
-        generated = self._restart(env_file, monkeypatch)
-        assert len(generated) == 16
-        written = env_file.read_text(encoding="utf-8")
-        assert f"AUTH_PASSWORD={generated}" in written
-
-        assert self._restart(env_file, monkeypatch) == generated
-        assert self._restart(env_file, monkeypatch) == generated
-        assert env_file.read_text(encoding="utf-8") == written
-
-
 class TestDownloadToken:
     def setup_method(self):
         auth_module._cached_token_secret = None
@@ -392,31 +239,6 @@ class TestDownloadToken:
                 auth_module.verify_download_token(token, "demo")
 
 
-class TestPasswordHash:
-    """密码哈希功能测试"""
-
-    def setup_method(self):
-        auth_module._cached_password_hash = None
-
-    def test_check_credentials_wrong_password_with_hash(self):
-        """错误密码哈希比对失败"""
-        with patch.dict(os.environ, {"AUTH_USERNAME": "admin", "AUTH_PASSWORD": "pass123"}):
-            assert auth_module.check_credentials("admin", "wrong") is False
-
-    def test_check_credentials_wrong_username_timing_safe(self):
-        """错误用户名也执行哈希验证（防时序攻击）"""
-        with patch.dict(os.environ, {"AUTH_USERNAME": "admin", "AUTH_PASSWORD": "pass123"}):
-            assert auth_module.check_credentials("nobody", "pass123") is False
-
-    def test_password_hash_cached(self):
-        """哈希值应被缓存"""
-        with patch.dict(os.environ, {"AUTH_USERNAME": "admin", "AUTH_PASSWORD": "pass123"}):
-            auth_module.check_credentials("admin", "pass123")
-            first_hash = auth_module._cached_password_hash
-            auth_module.check_credentials("admin", "pass123")
-            assert auth_module._cached_password_hash is first_hash  # 同一对象
-
-
 class TestGetCurrentUser:
     """FastAPI 依赖函数测试"""
 
@@ -424,13 +246,37 @@ class TestGetCurrentUser:
         auth_module._cached_token_secret = None
 
     async def test_get_current_user_valid_token(self):
+        """会话 token 解析成库里的账号：用户名与角色取自账号，不取自 token。"""
         with patch.dict(os.environ, {"AUTH_TOKEN_SECRET": "test-secret-key-that-is-at-least-32-bytes"}):
-            token = auth_module.create_token("admin")
+            token = auth_module.create_token("someone-else", user_id="default", token_version=0)
             result = await auth_module.get_current_user(token)
             assert isinstance(result, auth_module.CurrentUserInfo)
-            assert result.sub == "admin"
+            # 用户名取自库里的默认管理员（走 lifespan 的用例会按各自的 AUTH_USERNAME 重设它），不取 token 的 sub
+            assert result.sub != "someone-else"
             assert result.id == "default"
             assert result.role == "admin"
+
+    @pytest.mark.parametrize(
+        "claims",
+        [
+            {},
+            {"user_id": "missing-user"},
+            {"user_id": "default", "token_version": 99},
+        ],
+        ids=["no-account", "unknown-account", "stale-version"],
+    )
+    async def test_get_current_user_rejects_tokens_without_a_current_account(self, claims):
+        with patch.dict(os.environ, {"AUTH_TOKEN_SECRET": "test-secret-key-that-is-at-least-32-bytes"}):
+            token = auth_module.create_token("admin", **claims)
+            with pytest.raises(HTTPException) as exc_info:
+                await auth_module.get_current_user(token)
+        assert exc_info.value.status_code == 401
+
+    async def test_embedded_agent_token_is_a_regular_member_without_an_account(self):
+        with patch.dict(os.environ, {"AUTH_TOKEN_SECRET": "test-secret-key-that-is-at-least-32-bytes"}):
+            token = auth_module.create_token(auth_module.EMBEDDED_AGENT_SUB, expiry_seconds=900)
+            result = await auth_module.get_current_user(token)
+        assert (result.id, result.sub, result.role) == ("default", auth_module.EMBEDDED_AGENT_SUB, "user")
 
     async def test_get_current_user_invalid_token(self):
 

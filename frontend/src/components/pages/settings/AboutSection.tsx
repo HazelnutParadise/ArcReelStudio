@@ -72,7 +72,7 @@ export function AboutSection() {
   }, [t]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount 后异步拉取版本，回调内回写状态
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- mount 后异步拉取版本，回调内回写状态
     void fetchVersion();
   }, [fetchVersion]);
 
@@ -129,7 +129,10 @@ export function AboutSection() {
         </div>
 
         {checkError && (
-          <p role="alert" className="mx-4 mb-4 flex items-start gap-2 rounded-md bg-warn/10 px-3 py-2 text-sm text-warn">
+          <p
+            role="alert"
+            className="mx-4 mb-4 flex items-start gap-2 rounded-md bg-warn/10 px-3 py-2 text-sm text-warn"
+          >
             <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
             <span className="min-w-0 break-words">{checkError}</span>
           </p>

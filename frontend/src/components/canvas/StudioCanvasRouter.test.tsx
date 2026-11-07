@@ -1,9 +1,10 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Route, Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
+import { ApiRequestError } from "@/api/errors";
 import { useAppStore } from "@/stores/app-store";
 import { useConfigStatusStore } from "@/stores/config-status-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -15,11 +16,7 @@ import type { AdEpisodeScript, EpisodeScript, ProjectData } from "@/types";
 
 // 面板自身的行为在 WorkflowPanel.test.tsx 覆盖；这里只关心路由层递给它什么回调。
 vi.mock("@/components/workflow/WorkflowPanel", () => ({
-  WorkflowPanel: ({
-    onRegenerate,
-  }: {
-    onRegenerate?: (stepId: string, unitIds: string[]) => void;
-  }) => (
+  WorkflowPanel: ({ onRegenerate }: { onRegenerate?: (stepId: string, unitIds: string[]) => void }) => (
     <div data-testid="workflow-panel" data-can-regenerate={onRegenerate ? "yes" : "no"}>
       <button onClick={() => onRegenerate?.("storyboard", ["SEG-1"])}>workflow-regenerate</button>
       <button onClick={() => onRegenerate?.("video", ["SEG-1"])}>workflow-regenerate-video</button>
@@ -29,9 +26,7 @@ vi.mock("@/components/workflow/WorkflowPanel", () => ({
 
 // 剪辑视图自己读取剪辑时间线，行为在 EditTimelineView.test.tsx 覆盖；这里只关心集页何时挂载它。
 vi.mock("./edit/EditTimelineView", () => ({
-  EditTimelineView: ({ episode }: { episode: number }) => (
-    <div data-testid="edit-timeline-view">episode {episode}</div>
-  ),
+  EditTimelineView: ({ episode }: { episode: number }) => <div data-testid="edit-timeline-view">episode {episode}</div>,
 }));
 
 vi.mock("./overview/OverviewCanvas", () => ({
@@ -39,9 +34,7 @@ vi.mock("./overview/OverviewCanvas", () => ({
 }));
 
 vi.mock("./episodes/EpisodesView", () => ({
-  EpisodesView: ({ projectName }: { projectName: string }) => (
-    <div data-testid="episodes-view">{projectName}</div>
-  ),
+  EpisodesView: ({ projectName }: { projectName: string }) => <div data-testid="episodes-view">{projectName}</div>,
 }));
 
 vi.mock("./timeline/TimelineCanvas", () => ({
@@ -90,9 +83,7 @@ vi.mock("./timeline/TimelineCanvas", () => ({
         onClick={(e) => {
           const el = e.currentTarget;
           el.setAttribute("data-update-pending", "true");
-          void Promise.resolve(
-            onUpdatePrompt?.("SEG-1", { image_prompt: "new prompt" }, scriptFile),
-          ).then(() => {
+          void Promise.resolve(onUpdatePrompt?.("SEG-1", { image_prompt: "new prompt" }, scriptFile)).then(() => {
             el.setAttribute("data-update-pending", "false");
           });
         }}
@@ -172,11 +163,7 @@ vi.mock("./grid/GridImageToVideoCanvas", () => ({
     view,
   }: {
     view: string;
-    onGenerateGrid?: (
-      episode: number,
-      scriptFile: string,
-      sceneIds?: string[],
-    ) => void | Promise<void>;
+    onGenerateGrid?: (episode: number, scriptFile: string, sceneIds?: string[]) => void | Promise<void>;
     onGenerateVideo?: (segmentId: string, scriptFile?: string) => void | Promise<void>;
   }) => (
     <div data-testid="grid-canvas" data-view={view}>
@@ -185,9 +172,7 @@ vi.mock("./grid/GridImageToVideoCanvas", () => ({
         onClick={(event) => {
           const button = event.currentTarget;
           button.dataset.videoResult = "pending";
-          void Promise.resolve(
-            onGenerateVideo?.("SEG-1", "episode_1.json"),
-          ).then(
+          void Promise.resolve(onGenerateVideo?.("SEG-1", "episode_1.json")).then(
             () => {
               button.dataset.videoResult = "resolved";
             },
@@ -517,9 +502,7 @@ describe("StudioCanvasRouter", () => {
     renderAtProjectRoute("real-project", "/episodes/1");
     await waitFor(() => {
       // 精确比对而非包含：全集 "4,6,8" 也含子串 "8"
-      expect(screen.getByTestId("timeline-duration-options")).toHaveTextContent(
-        new RegExp(`^${allowed.join(",")}$`),
-      );
+      expect(screen.getByTestId("timeline-duration-options")).toHaveTextContent(new RegExp(`^${allowed.join(",")}$`));
     });
     expect(capabilitiesSpy).toHaveBeenCalledWith("real-project", expect.anything());
     const query = capabilitiesSpy.mock.calls[0]?.[1];
@@ -534,9 +517,7 @@ describe("StudioCanvasRouter", () => {
   it("skips the video-capabilities lookup for the stale demo project name after navigating to a real project, before the store catches up", async () => {
     const capabilitiesSpy = vi
       .spyOn(API, "getVideoCapabilities")
-      .mockResolvedValue({ supported_durations: [5, 10] } as Awaited<
-        ReturnType<typeof API.getVideoCapabilities>
-      >);
+      .mockResolvedValue({ supported_durations: [5, 10] } as Awaited<ReturnType<typeof API.getVideoCapabilities>>);
     useProjectsStore.setState({
       currentProjectName: DEMO_PROJECT_NAME,
       currentProjectData: makeProjectData(),
@@ -576,9 +557,7 @@ describe("StudioCanvasRouter", () => {
     useProjectsStore.setState({
       currentProjectName: "demo",
       currentProjectData: makeProjectData({
-        episodes: [
-          { episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "segmented" },
-        ],
+        episodes: [{ episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "segmented" }],
       }),
       currentScripts: {},
     });
@@ -594,9 +573,7 @@ describe("StudioCanvasRouter", () => {
     useProjectsStore.setState({
       currentProjectName: "demo",
       currentProjectData: makeProjectData({
-        episodes: [
-          { episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" },
-        ],
+        episodes: [{ episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" }],
       }),
       currentScripts: { "episode_1.json": makeScript() },
     });
@@ -612,9 +589,7 @@ describe("StudioCanvasRouter", () => {
     useProjectsStore.setState({
       currentProjectName: "demo",
       currentProjectData: makeProjectData({
-        episodes: [
-          { episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" },
-        ],
+        episodes: [{ episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" }],
       }),
       currentScripts: { "episode_1.json": makeScript() },
     });
@@ -657,9 +632,7 @@ describe("StudioCanvasRouter", () => {
       currentProjectName: "demo",
       currentProjectData: makeProjectData({
         grid_storyboard: true,
-        episodes: [
-          { episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" },
-        ],
+        episodes: [{ episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" }],
       }),
       currentScripts: { "episode_1.json": makeScript() },
     });
@@ -688,9 +661,7 @@ describe("StudioCanvasRouter", () => {
     useProjectsStore.setState({
       currentProjectName: "demo",
       currentProjectData: makeProjectData({
-        episodes: [
-          { episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "segmented" },
-        ],
+        episodes: [{ episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "segmented" }],
       }),
       currentScripts: {},
     });
@@ -711,9 +682,7 @@ describe("StudioCanvasRouter", () => {
       currentProjectName: "demo",
       currentProjectData: makeProjectData({
         generation_mode: "reference_video",
-        episodes: [
-          { episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" },
-        ],
+        episodes: [{ episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" }],
       }),
       currentScripts: { "episode_1.json": makeScript() },
     });
@@ -729,9 +698,7 @@ describe("StudioCanvasRouter", () => {
     useProjectsStore.setState({
       currentProjectName: "demo",
       currentProjectData: makeProjectData({
-        episodes: [
-          { episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" },
-        ],
+        episodes: [{ episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" }],
       }),
       currentScripts: { "episode_1.json": makeScript() },
     });
@@ -763,9 +730,7 @@ describe("StudioCanvasRouter", () => {
     useProjectsStore.setState({
       currentProjectName: "demo",
       currentProjectData: makeProjectData({
-        episodes: [
-          { episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" },
-        ],
+        episodes: [{ episode: 1, title: "EP1", script_file: "scripts/episode_1.json", script_status: "generated" }],
       }),
       currentScripts: { "episode_1.json": makeScript() },
     });
@@ -805,7 +770,12 @@ describe("StudioCanvasRouter", () => {
       currentProjectData: makeProjectData(),
       currentScripts: { "episode_1.json": makeScript() },
     });
-    vi.spyOn(API, "generateCharacter").mockResolvedValue({ success: true, task_id: "t-1", deduped: false, message: "已提交" });
+    vi.spyOn(API, "generateCharacter").mockResolvedValue({
+      success: true,
+      task_id: "t-1",
+      deduped: false,
+      message: "已提交",
+    });
 
     renderAt("/characters");
 
@@ -858,7 +828,12 @@ describe("StudioCanvasRouter", () => {
       project: makeProjectData(),
       scripts: { "episode_1.json": makeScript() },
     });
-    vi.spyOn(API, "generateProjectScene").mockResolvedValue({ success: true, task_id: "t-1", deduped: false, message: "已提交" });
+    vi.spyOn(API, "generateProjectScene").mockResolvedValue({
+      success: true,
+      task_id: "t-1",
+      deduped: false,
+      message: "已提交",
+    });
 
     renderAt("/scenes");
     fireEvent.click(screen.getByText("generate-scene"));
@@ -880,7 +855,12 @@ describe("StudioCanvasRouter", () => {
       project: makeProjectData(),
       scripts: { "episode_1.json": makeScript() },
     });
-    vi.spyOn(API, "generateProjectProp").mockResolvedValue({ success: true, task_id: "t-1", deduped: false, message: "已提交" });
+    vi.spyOn(API, "generateProjectProp").mockResolvedValue({
+      success: true,
+      task_id: "t-1",
+      deduped: false,
+      message: "已提交",
+    });
 
     renderAt("/props");
     fireEvent.click(screen.getByText("generate-prop"));
@@ -924,6 +904,34 @@ describe("StudioCanvasRouter", () => {
     });
   });
 
+  it("保存被其他成员抢先改过时先拉取最新剧本，再把冲突错误交给分镜详情", async () => {
+    useProjectsStore.setState({
+      currentProjectName: "demo",
+      currentProjectData: makeProjectData(),
+      currentScripts: { "episode_1.json": makeScript() },
+    });
+    const getProject = vi.spyOn(API, "getProject").mockResolvedValue({
+      project: makeProjectData(),
+      scripts: { "episode_1.json": makeScript() },
+    });
+    vi.spyOn(API, "updateSegment").mockRejectedValue(
+      new ApiRequestError(
+        "这段内容在你编辑期间已被其他成员修改",
+        { code: "edit_conflict", fields: ["image_prompt"] },
+        409,
+      ),
+    );
+
+    renderAt("/episodes/1");
+    getProject.mockClear();
+
+    fireEvent.click(screen.getByText("update-prompt"));
+    await waitFor(() => {
+      expect(screen.getByText("update-prompt")).toHaveAttribute("data-error", "这段内容在你编辑期间已被其他成员修改");
+    });
+    expect(getProject).toHaveBeenCalledTimes(1);
+  });
+
   it("runs timeline callbacks and handles generation failures", async () => {
     useProjectsStore.setState({
       currentProjectName: "demo",
@@ -954,24 +962,13 @@ describe("StudioCanvasRouter", () => {
 
     fireEvent.click(screen.getByText("generate-storyboard"));
     await waitFor(() => {
-      expect(API.generateStoryboard).toHaveBeenCalledWith(
-        "demo",
-        "SEG-1",
-        "image prompt",
-        "episode_1.json",
-      );
+      expect(API.generateStoryboard).toHaveBeenCalledWith("demo", "SEG-1", "image prompt", "episode_1.json");
       expect(useAppStore.getState().toast?.text).toContain("生成分镜失败");
     });
 
     fireEvent.click(screen.getByText("generate-video"));
     await waitFor(() => {
-      expect(API.generateVideo).toHaveBeenCalledWith(
-        "demo",
-        "SEG-1",
-        "video prompt",
-        "episode_1.json",
-        4,
-      );
+      expect(API.generateVideo).toHaveBeenCalledWith("demo", "SEG-1", "video prompt", "episode_1.json", 4);
       expect(useAppStore.getState().toast?.text).toContain("生成视频失败");
     });
   });
@@ -1010,10 +1007,7 @@ describe("StudioCanvasRouter", () => {
     resolveUpdate({ success: true });
 
     await waitFor(() => {
-      expect(screen.getByText("update-prompt-await")).toHaveAttribute(
-        "data-update-pending",
-        "false",
-      );
+      expect(screen.getByText("update-prompt-await")).toHaveAttribute("data-update-pending", "false");
     });
   });
 
@@ -1045,25 +1039,14 @@ describe("StudioCanvasRouter", () => {
 
     fireEvent.click(screen.getByText("generate-storyboard"));
     await waitFor(() => {
-      expect(API.generateStoryboard).toHaveBeenCalledWith(
-        "demo",
-        "SEG-1",
-        "ad image prompt",
-        "episode_1.json",
-      );
+      expect(API.generateStoryboard).toHaveBeenCalledWith("demo", "SEG-1", "ad image prompt", "episode_1.json");
       expect(useAppStore.getState().toast?.tone).toBe("success");
     });
 
     fireEvent.click(screen.getByText("generate-video"));
     await waitFor(() => {
       // duration 取分镜自身 duration_seconds(5),不回退默认值 4
-      expect(API.generateVideo).toHaveBeenCalledWith(
-        "demo",
-        "SEG-1",
-        "ad video prompt",
-        "episode_1.json",
-        5,
-      );
+      expect(API.generateVideo).toHaveBeenCalledWith("demo", "SEG-1", "ad video prompt", "episode_1.json", 5);
     });
   });
 
@@ -1086,9 +1069,13 @@ describe("StudioCanvasRouter", () => {
 
     fireEvent.click(screen.getByText("update-prompt"));
     await waitFor(() => {
-      expect(updateShotSpy).toHaveBeenCalledWith("demo", "SEG-1", "episode_1.json", {
-        image_prompt: "new prompt",
-      });
+      expect(updateShotSpy).toHaveBeenCalledWith(
+        "demo",
+        "SEG-1",
+        "episode_1.json",
+        { image_prompt: "new prompt" },
+        undefined,
+      );
     });
     expect(updateSceneSpy).not.toHaveBeenCalled();
     expect(updateSegmentSpy).not.toHaveBeenCalled();
@@ -1294,12 +1281,7 @@ describe("StudioCanvasRouter", () => {
 
     fireEvent.click(screen.getByText("workflow-regenerate"));
     await waitFor(() => {
-      expect(API.generateStoryboard).toHaveBeenCalledWith(
-        "demo",
-        "SEG-1",
-        "image prompt",
-        "episode_2.json",
-      );
+      expect(API.generateStoryboard).toHaveBeenCalledWith("demo", "SEG-1", "image prompt", "episode_2.json");
     });
   });
 
@@ -1405,12 +1387,7 @@ describe("StudioCanvasRouter", () => {
 
     fireEvent.click(screen.getByText("generate-storyboard"));
     await waitFor(() => {
-      expect(API.generateStoryboard).toHaveBeenCalledWith(
-        "demo",
-        "SEG-1",
-        "drama image prompt",
-        "episode_1.json",
-      );
+      expect(API.generateStoryboard).toHaveBeenCalledWith("demo", "SEG-1", "drama image prompt", "episode_1.json");
       const { tasks, optimisticActive } = useTasksStore.getState();
       expect(selectActiveResourceIds(tasks, "storyboard", "demo", optimisticActive).has("SEG-1")).toBe(true);
     });
@@ -1476,9 +1453,7 @@ describe("StudioCanvasRouter", () => {
     renderAt("/episodes/1");
 
     await renameEpisode("新标题");
-    await waitFor(() =>
-      expect(useAppStore.getState().toast).toMatchObject({ text: REFRESH_FAILED, tone: "warning" }),
-    );
+    await waitFor(() => expect(useAppStore.getState().toast).toMatchObject({ text: REFRESH_FAILED, tone: "warning" }));
     // 标题已保存，不停在编辑态引人重复提交
     await waitFor(() => expect(screen.queryByRole("textbox", { name: "编辑分集标题" })).not.toBeInTheDocument());
   });
@@ -1752,13 +1727,7 @@ describe("StudioCanvasRouter", () => {
     await waitFor(() => {
       expect(button).toHaveAttribute("data-video-result", "resolved");
     });
-    expect(API.generateVideo).toHaveBeenCalledWith(
-      "demo",
-      "SEG-1",
-      "video prompt",
-      "episode_1.json",
-      4,
-    );
+    expect(API.generateVideo).toHaveBeenCalledWith("demo", "SEG-1", "video prompt", "episode_1.json", 4);
   });
 
   it("marks the scriptFile as optimistically active on grid generation submit success", async () => {
@@ -1824,8 +1793,8 @@ describe("StudioCanvasRouter", () => {
     });
 
     const { tasks, optimisticActiveScriptFile } = useTasksStore.getState();
-    expect(
-      selectHasActiveTaskForScriptFile(tasks, "grid", "episode_1.json", "demo", optimisticActiveScriptFile),
-    ).toBe(false);
+    expect(selectHasActiveTaskForScriptFile(tasks, "grid", "episode_1.json", "demo", optimisticActiveScriptFile)).toBe(
+      false,
+    );
   });
 });

@@ -4,7 +4,7 @@ mutmut 在一个父进程里跑过 stats 之后，按 mutant fork 出多个 pyte
 继承父进程的 atexit 登记表与 conftest 模块状态。三条契约：走正常退出路径的子进程不得
 删掉各子进程共用的临时库（根 conftest）；mutmut 会话各用私有 basetemp，不进共享的
 ``pytest-of-<user>`` 根，多个会话收尾时不再竞争同一条软链；mutmut 会话在 macOS 上不经
-``_scproxy`` 读系统代理，构造 httpx / openai 客户端不会在 fork 出的子进程里段错误
+``_scproxy`` 读系统代理，构造 httpx2 / openai 客户端不会在 fork 出的子进程里段错误
 （后两条在 `tests/mutmut_plugin.py`，经 ``[tool.mutmut] pytest_add_cli_args`` 加载）。
 """
 

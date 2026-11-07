@@ -74,7 +74,7 @@ def _episode_scripts(
             continue
         try:
             yield episode, projects.load_script_readonly(project_name, script_file)
-        except (FileNotFoundError, ValueError):
+        except FileNotFoundError, ValueError:
             continue
 
 

@@ -7,7 +7,7 @@ from functools import partial
 
 import pytest
 from fastapi import FastAPI, HTTPException
-from httpx import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient
 
 from server.app import request_logging_middleware
 

@@ -49,7 +49,7 @@ def output_profile_for_aspect_ratio(aspect_ratio: str) -> OutputProfile:
     width_part, _, height_part = aspect_ratio.partition(":")
     try:
         ratio = Fraction(int(width_part), int(height_part))
-    except (ValueError, ZeroDivisionError):
+    except ValueError, ZeroDivisionError:
         ratio = Fraction(16, 9)
     if ratio <= 0:
         ratio = Fraction(16, 9)

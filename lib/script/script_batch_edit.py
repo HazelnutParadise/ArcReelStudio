@@ -913,7 +913,7 @@ def _anchor_sources(project_dir: Path, project: Mapping[str, Any], episode: int 
     if episode_source is not None:
         try:
             text = normalize_source_text(episode_source.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             text = ""
         if text.strip():
             return [text]

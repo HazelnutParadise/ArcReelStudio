@@ -21,7 +21,7 @@ from types import SimpleNamespace
 from typing import Any
 from urllib.parse import quote
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -441,8 +441,8 @@ async def test_media_response_holds_remote_cache_until_the_body_is_sent(
 
         await api.app(scope, receive, send_with_cleanup)
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=clean_before_body), base_url="http://test"
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=clean_before_body), base_url="http://test"
     ) as client:
         try:
             response = await client.get(url)
@@ -1370,8 +1370,8 @@ async def test_remote_upload_published_while_the_project_is_being_deleted_is_ref
     upload_url = "/api/v1/projects/demo/upload/character?name=Alice"
     image = solid_png_bytes((10, 200, 10), size=(64, 64))
     async with (
-        httpx.AsyncClient(transport=httpx.ASGITransport(app=api.app), base_url="http://test") as client,
-        httpx.AsyncClient(transport=httpx.ASGITransport(app=projects_app), base_url="http://test") as projects_client,
+        httpx2.AsyncClient(transport=httpx2.ASGITransport(app=api.app), base_url="http://test") as client,
+        httpx2.AsyncClient(transport=httpx2.ASGITransport(app=projects_app), base_url="http://test") as projects_client,
     ):
         deleting = asyncio.create_task(projects_client.delete("/api/v1/projects/demo"))
         await asyncio.wait_for(filled.wait(), 10)
@@ -1409,7 +1409,7 @@ async def test_choosing_remote_storage_and_deleting_the_connection_do_not_both_s
         await save_target(session, target)
 
     monkeypatch.setattr(object_storage, "set_new_content_target", _paused)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=api.app), base_url="http://test") as client:
+    async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=api.app), base_url="http://test") as client:
         selecting = asyncio.create_task(
             client.put("/api/v1/object-storage/new-image-target", json={"target": "object_storage"})
         )
@@ -1549,11 +1549,11 @@ async def test_generation_from_evicted_remote_sheet_fetches_it_and_saves_the_new
     result = solid_png_bytes(RESULT_IMAGE_RGB)
     with capture_http() as router:
         submit = router.post(GENERATION_URL).mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"output": {"choices": [{"message": {"content": [{"image": RESULT_URL}]}}]}}
             )
         )
-        router.get(RESULT_URL).mock(return_value=httpx.Response(200, content=result))
+        router.get(RESULT_URL).mock(return_value=httpx2.Response(200, content=result))
         await derivative_sheet_tasks.execute_character_derivative_task("demo", "Alice/战斗装", {}, task_id="task-1")
 
     content = request_json(only_request(submit))["input"]["messages"][0]["content"]
@@ -1580,11 +1580,11 @@ async def test_image_edit_of_evicted_remote_sheet_edits_the_fetched_image_and_sa
     edited = solid_png_bytes(RESULT_IMAGE_RGB)
     with capture_http() as router:
         submit = router.post(GENERATION_URL).mock(
-            return_value=httpx.Response(
+            return_value=httpx2.Response(
                 200, json={"output": {"choices": [{"message": {"content": [{"image": RESULT_URL}]}}]}}
             )
         )
-        router.get(RESULT_URL).mock(return_value=httpx.Response(200, content=edited))
+        router.get(RESULT_URL).mock(return_value=httpx2.Response(200, content=edited))
         outcome = await execute_image_edit_task(
             "demo", "Alice", {"resource_type": "character", "prompt": "把头发改成红色"}, task_id="task-1"
         )

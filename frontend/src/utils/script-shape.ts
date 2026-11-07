@@ -17,10 +17,7 @@ import type {
 export type EditorContentMode = "narration" | "drama" | "ad";
 export type ScriptItem = NarrationSegment | DramaScene | AdShot;
 
-export type CharactersField =
-  | "characters_in_segment"
-  | "characters_in_scene"
-  | "characters_in_shot";
+export type CharactersField = "characters_in_segment" | "characters_in_scene" | "characters_in_shot";
 
 /** 取条目 ID（segment_id / scene_id / shot_id）。 */
 export function getScriptItemId(item: ScriptItem, mode: EditorContentMode): string {
@@ -34,10 +31,7 @@ export function getScriptItemId(item: ScriptItem, mode: EditorContentMode): stri
  *
  * 未注册的模式返回空数组：以其他模式的形状渲染会让保存分派到错误端点。
  */
-export function getScriptItems(
-  script: EpisodeScript | null | undefined,
-  mode: EditorContentMode,
-): ScriptItem[] {
+export function getScriptItems(script: EpisodeScript | null | undefined, mode: EditorContentMode): ScriptItem[] {
   if (!script) return [];
   if (mode === "narration") return (script as NarrationEpisodeScript).segments ?? [];
   if (mode === "ad") return (script as AdEpisodeScript).shots ?? [];
@@ -58,9 +52,7 @@ export function charactersFieldFor(mode: EditorContentMode): CharactersField {
  * 它是派生值，剧本不落盘一份（服务端由项目摘要按同一口径读时计算）。各画布共用这一份
  * 实现，避免同一个数在时间线与宫格两处各写一遍、健壮度还不一致。
  */
-export function sumItemDuration(
-  items: readonly { duration_seconds?: number | null }[],
-): number {
+export function sumItemDuration(items: readonly { duration_seconds?: number | null }[]): number {
   return items.reduce((sum, item) => {
     const d = item.duration_seconds;
     return sum + (typeof d === "number" && Number.isFinite(d) ? d : 0);

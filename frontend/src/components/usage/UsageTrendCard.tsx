@@ -52,7 +52,10 @@ export function UsageTrendCard({ summary }: { summary: UsageSummary | null }) {
   const name = t(NAME_KEYS[metric][weekly ? "weekly" : "daily"]);
 
   return (
-    <section aria-label={t("usage_trend_title")} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+    <section
+      aria-label={t("usage_trend_title")}
+      className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-medium">{t("usage_trend_title")}</h3>
         {weekly && (

@@ -101,7 +101,12 @@ function MessageFlowBody({ ref, onSubmitEdit, onRetryStartup }: MessageFlowProps
                   turn={turn}
                   streaming={streaming}
                   announce={turn.uuid !== undefined && arrived.has(turn.uuid)}
-                  editable={canEditUserTurn(turn, { sessionStatus, hasPendingQuestion, isSending: sending, hasQueuedMessages })}
+                  editable={canEditUserTurn(turn, {
+                    sessionStatus,
+                    hasPendingQuestion,
+                    isSending: sending,
+                    hasQueuedMessages,
+                  })}
                   editing={Boolean(turn.uuid) && turn.uuid === editingTurnUuid}
                   submitting={sending}
                   onStartEdit={setEditingTurnUuid}

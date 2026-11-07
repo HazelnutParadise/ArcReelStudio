@@ -256,7 +256,7 @@ class TestGeminiSpec:
         }
 
     def test_aistudio_video_sets_base_url_uses_video_model(self):
-        spec = get_provider_spec("gemini-aistudio", "video")
+        spec = get_provider_spec("gemini-aistudio", "video", "gemini-video")
         assert spec.registry_backend == "gemini"
         limiter = object()
         config = LoadedConfig(
@@ -337,8 +337,7 @@ class TestGeminiSpec:
     def test_interactions_video_endpoint_builds_its_own_backend_with_the_same_credentials(
         self, provider_id, endpoint, backend_type, credentials, extra
     ):
-        # Veo 仍是默认端点；Interactions 端点按端点名建对应后端，凭证与 backend_type 与 Veo 一致
-        assert get_provider_spec(provider_id, "video").endpoint != endpoint
+        # Interactions 端点按端点名建对应后端，凭证与 backend_type 与 Veo 一致
         config = LoadedConfig(
             credentials=credentials, provider_meta=PROVIDER_REGISTRY.get(provider_id), rate_limiter=None
         )

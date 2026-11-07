@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Textarea } from "./textarea";
 
 // jsdom 不排版：内容高度按「行数 × 每行像素」模拟，每行像素随宽度变化模拟换行。

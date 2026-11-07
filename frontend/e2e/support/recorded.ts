@@ -30,7 +30,9 @@ export function recordedKey(method: string, url: string): string {
 
 export function loadRecordedResponses(): Map<string, RecordedResponse> {
   const responses = new Map<string, RecordedResponse>();
-  for (const file of readdirSync(RECORDED_DIR).filter((name) => name.endsWith(".json")).sort()) {
+  for (const file of readdirSync(RECORDED_DIR)
+    .filter((name) => name.endsWith(".json"))
+    .sort()) {
     const recorded = JSON.parse(readFileSync(join(RECORDED_DIR, file), "utf8")) as RecordedResponse;
     responses.set(recordedKey(recorded.method, recorded.path), recorded);
   }

@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,7 +45,7 @@ def _example_template_definition() -> dict[str, Any]:
 
 
 @pytest.fixture
-def custom_providers_client(custom_providers_app) -> Generator[TestClient, None, None]:
+def custom_providers_client(custom_providers_app) -> Generator[TestClient]:
     with TestClient(custom_providers_app) as c:
         yield c
 
@@ -278,6 +278,7 @@ class TestEndpointCatalog:
                 "request_path_template",
                 "image_capabilities",
                 "end_image_capable",
+                "custom_selectable",
                 "size_fixed",
                 "duration_fixed",
                 "duration_frame_rate_missing",
@@ -759,7 +760,7 @@ class TestConnectionTest:
     def test_connection_failure(self, custom_providers_client: TestClient):
         """探测抛错时端点软失败：仍返回 200，success=False 且带上游错误摘要。"""
         with capture_http(assert_all_called=True) as http:
-            http.get("https://api.example.com/v1/models").mock(side_effect=httpx.ConnectError("Connection refused"))
+            http.get("https://api.example.com/v1/models").mock(side_effect=httpx2.ConnectError("Connection refused"))
             resp = custom_providers_client.post(
                 "/api/v1/custom-providers/test",
                 json={
@@ -973,6 +974,26 @@ class TestUnknownEndpointRejected:
         )
         assert resp.status_code == 422
         assert "unknown endpoint" in resp.text
+
+
+class TestRetiredEndpointRejected:
+    """经 Gemini 协议中转 Veo 的端点只留给已有的模型读取，新建或修改自定义模型时不能再选。"""
+
+    def test_create_with_the_relay_veo_endpoint(self, custom_providers_client: TestClient):
+        resp = custom_providers_client.post(
+            "/api/v1/custom-providers",
+            json={
+                "display_name": "Relay",
+                "discovery_format": "google",
+                "base_url": "https://relay.example.com",
+                "api_key": "sk-key",
+                "models": [
+                    {"model_id": "veo-3", "display_name": "Veo", "endpoint": "gemini-video", "is_enabled": True},
+                ],
+            },
+        )
+        assert resp.status_code == 422
+        assert "not available for custom providers" in resp.text
 
 
 class TestDuplicateModelIdRejected:

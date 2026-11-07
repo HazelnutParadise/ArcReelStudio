@@ -1,8 +1,9 @@
 """
 认证核心模块
 
-提供密码生成、JWT token 创建/验证、凭据校验等功能。
-同时支持 API Key 认证（`arc-` 前缀的 Bearer token）。
+提供 JWT token 创建/验证与当前用户解析。账号与密码存在 ``users`` 表，登录校验与成员管理见
+:mod:`server.services.accounts`。会话 token 带账号 id（``uid``）与签发时的令牌版本（``ver``），
+每次请求都核对账号仍启用、版本未变；API Key（`arc-` 前缀的 Bearer token）按创建它的账号解析。
 
 凭证只经 ``Authorization`` header 传递，不接受 query param 形态的会话凭证。
 浏览器原生请求（``<img>`` / ``<video>`` src 与原生下载导航）带不了该 header：
@@ -15,7 +16,6 @@ import hashlib
 import logging
 import os
 import secrets
-import string
 import time
 from collections import OrderedDict
 from datetime import UTC
@@ -25,12 +25,11 @@ from typing import Annotated
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from pwdlib import PasswordHash
 from pydantic import BaseModel, ConfigDict
 
-from lib import PROJECT_ROOT
 from lib.infra.api_errors import ApiError
 from lib.infra.data_root_layout import DataRootLayout
+from lib.project.project_change_hints import ProjectChangeActor, set_project_change_actor
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +40,8 @@ class CurrentUserInfo(BaseModel):
     id: str
     sub: str
     role: str = "admin"
+    # 账号的用户名；API Key 调用时 ``sub`` 是密钥标识，这里仍是持有者的用户名。内嵌 Agent 与匿名用户为空。
+    username: str | None = None
 
     model_config = ConfigDict(frozen=True)
 
@@ -77,7 +78,7 @@ def warn_if_auth_disabled() -> None:
     )
 
 
-def _anonymous_user() -> "CurrentUserInfo":
+def _anonymous_user() -> CurrentUserInfo:
     """关闭认证时返回的固定匿名用户。"""
     from lib.db.base import DEFAULT_USER_ID
 
@@ -87,16 +88,6 @@ def _anonymous_user() -> "CurrentUserInfo":
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=False)
-
-# 密码哈希
-_password_hash = PasswordHash.recommended()
-_cached_password_hash: str | None = None
-
-
-def generate_password(length: int = 16) -> str:
-    """生成随机字母数字密码"""
-    alphabet = string.ascii_letters + string.digits
-    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 def get_token_secret() -> str:
@@ -173,22 +164,33 @@ def _write_owner_only(path: Path, content: str) -> None:
         raise
 
 
-def create_token(username: str, *, expiry_seconds: int = TOKEN_EXPIRY_SECONDS) -> str:
+def create_token(
+    username: str,
+    *,
+    user_id: str | None = None,
+    token_version: int = 0,
+    expiry_seconds: int = TOKEN_EXPIRY_SECONDS,
+) -> str:
     """创建 JWT token
 
     Args:
-        username: 用户名
+        username: 用户名，写入 ``sub``
+        user_id: 账号 id；会话 token 必须给出，不带账号的 token 只有内嵌 Agent 的会被接受
+        token_version: 签发时账号的令牌版本，账号改密码、停用或改角色后旧 token 失效
         expiry_seconds: token 有效秒数；网页登录沿用 7 天，内嵌 Agent 使用短时效。
 
     Returns:
         JWT token 字符串
     """
     now = time.time()
-    payload = {
+    payload: dict[str, object] = {
         "sub": username,
         "iat": now,
         "exp": now + expiry_seconds,
     }
+    if user_id is not None:
+        payload["uid"] = user_id
+        payload["ver"] = token_version
     return jwt.encode(payload, get_token_secret(), algorithm="HS256")
 
 
@@ -205,7 +207,7 @@ def verify_token(token: str) -> dict | None:
     """
     try:
         payload = jwt.decode(token, get_token_secret(), algorithms=["HS256"])
-    except (jwt.InvalidTokenError, jwt.ExpiredSignatureError):
+    except jwt.InvalidTokenError, jwt.ExpiredSignatureError:
         return None
     if "purpose" in payload:
         return None
@@ -251,100 +253,6 @@ def verify_download_token(token: str, project_name: str) -> dict:
     if payload.get("project") != project_name:
         raise ValueError("token project 不匹配")
     return payload
-
-
-def _get_password_hash() -> str:
-    """获取当前密码的哈希值（缓存）"""
-    global _cached_password_hash
-    if _cached_password_hash is None:
-        raw = os.environ.get("AUTH_PASSWORD", "")
-        _cached_password_hash = _password_hash.hash(raw)
-    return _cached_password_hash
-
-
-def check_credentials(username: str, password: str) -> bool:
-    """校验用户名密码（使用哈希比对）
-
-    从 AUTH_USERNAME（默认 admin）和 AUTH_PASSWORD 环境变量读取。
-    即使用户名不匹配也执行哈希验证，防止时序攻击。
-
-    ``AUTH_ENABLED=false`` 时无条件返回 True。
-    """
-    if not is_auth_enabled():
-        return True
-    expected_username = os.environ.get("AUTH_USERNAME", "admin")
-    pw_hash = _get_password_hash()
-    username_ok = secrets.compare_digest(username, expected_username)
-    password_ok = _password_hash.verify(password, pw_hash)
-    return username_ok and password_ok
-
-
-def ensure_auth_password(env_path: str | None = None) -> str:
-    """确保 AUTH_PASSWORD 已设置
-
-    如果 AUTH_PASSWORD 环境变量为空，自动生成密码，写入环境变量，
-    回写到 .env 文件，并用 logger.warning 输出到控制台。
-
-    ``AUTH_ENABLED=false`` 时整个步骤跳过（不生成、不回写）。
-
-    Args:
-        env_path: .env 文件路径，默认为项目根目录的 .env
-
-    Returns:
-        当前的 AUTH_PASSWORD 值；关闭认证时返回空串。
-    """
-    if not is_auth_enabled():
-        return ""
-    password = os.environ.get("AUTH_PASSWORD")
-    if password:
-        return password
-
-    # 自动生成密码
-    password = generate_password()
-    os.environ["AUTH_PASSWORD"] = password
-
-    # 回写到 .env 文件
-    if env_path is None:
-        env_path = str(PROJECT_ROOT / ".env")
-
-    env_file = Path(env_path)
-    try:
-        if env_file.exists():
-            try:
-                lines = env_file.read_text(encoding="utf-8").splitlines()
-            except UnicodeDecodeError:
-                # 历史 .env 可能用 cp936 / ANSI 等本地编码（早期 Windows 用户写过中文注释/值）；
-                # 不强制覆写以免丢失用户内容，仅 log 并跳过自动回写。
-                # 进程内 password 已 set 到 os.environ，本次启动仍可用，只是不持久化。
-                logger.warning(
-                    "无法以 UTF-8 解码 %s，跳过 AUTH_PASSWORD 自动回写；"
-                    "请将该文件转存为 UTF-8 后重启以持久化生成的密码",
-                    env_path,
-                )
-                return password
-            new_lines = []
-            found = False
-            for line in lines:
-                if not found and line.strip().startswith("AUTH_PASSWORD="):
-                    new_lines.append(f"AUTH_PASSWORD={password}")
-                    found = True
-                else:
-                    new_lines.append(line)
-            if not found:
-                new_lines.append(f"AUTH_PASSWORD={password}")
-            new_content = "\n".join(new_lines) + "\n"
-            # 使用原地写入（truncate + write）保留 inode，兼容 Docker bind mount
-            with open(env_file, "r+", encoding="utf-8") as f:
-                f.seek(0)
-                f.write(new_content)
-                f.truncate()
-        else:
-            env_file.write_text(f"AUTH_PASSWORD={password}\n", encoding="utf-8")
-    except OSError:
-        logger.warning("无法写入 .env 文件: %s", env_path)
-
-    logger.warning("已自动生成认证密码，请查看 .env 文件中的 AUTH_PASSWORD 字段")
-    return password
 
 
 # ---------------------------------------------------------------------------
@@ -445,10 +353,10 @@ async def verify_api_key(token: str) -> dict | None:
             # 将过期时刻转换为 monotonic 时间戳，供缓存 TTL 上界计算
             remaining_secs = (exp_dt - datetime.now(UTC)).total_seconds()
             expires_at_monotonic = time.monotonic() + remaining_secs
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             logger.warning("API Key expires_at 值格式无法解析，忽略过期检查: %r", expires_at)
 
-    payload = {"sub": f"apikey:{row['name']}", "via": "apikey"}
+    payload = {"sub": f"apikey:{row['name']}", "via": "apikey", "uid": row["user_id"]}
     _set_api_key_cache(key_hash, payload, expires_at_ts=expires_at_monotonic)
 
     # 异步更新 last_used_at（不阻塞，保存引用防止 GC）
@@ -465,6 +373,26 @@ async def verify_api_key(token: str) -> dict | None:
     _touch_task.add_done_callback(lambda _: None)  # suppress "never retrieved" warning
 
     return payload
+
+
+async def verify_active_api_key(token: str) -> dict | None:
+    """验证 API Key，并确认它所属的账号仍存在且启用；远程 MCP 等不经 ``get_current_user`` 的入口用它。
+
+    ``verify_api_key`` 的缓存只记 key 本身，账号状态每次都查库，停用成员后立即生效。
+    """
+    payload = await verify_api_key(token)
+    if payload is None:
+        return None
+    uid = payload.get("uid")
+    if not isinstance(uid, str):
+        return None
+
+    from lib.db import async_session_factory
+    from lib.db.repositories.user_repo import UserRepository
+
+    async with async_session_factory() as session:
+        owner = await UserRepository(session).get(uid)
+    return payload if owner is not None and owner.is_active else None
 
 
 def _verify_and_get_payload(token: str) -> dict:
@@ -494,12 +422,40 @@ async def _verify_and_get_payload_async(token: str) -> dict:
     return _verify_and_get_payload(token)
 
 
-def _payload_to_user(payload: dict) -> CurrentUserInfo:
-    """Convert a verified JWT/API-key payload to CurrentUserInfo."""
+def _unauthorized(detail: str) -> HTTPException:
+    return HTTPException(status_code=401, detail=detail, headers={"WWW-Authenticate": "Bearer"})
+
+
+async def _payload_to_user(payload: dict) -> CurrentUserInfo:
+    """把已验签的 JWT / API Key payload 解析成当前账号；账号不存在、已停用或令牌版本过时即 401。"""
+    from lib.db import async_session_factory
     from lib.db.base import DEFAULT_USER_ID
+    from lib.db.repositories.user_repo import UserRepository
+    from server.services.accounts import resolve_session_user
 
     sub = payload.get("sub", "")
-    return CurrentUserInfo(id=DEFAULT_USER_ID, sub=sub, role="admin")
+    uid = payload.get("uid")
+    if uid is None and sub == EMBEDDED_AGENT_SUB:
+        # 内嵌 Agent 在共用工作区里代创作者调用本地接口，不具备成员管理权限。
+        return CurrentUserInfo(id=DEFAULT_USER_ID, sub=sub, role="user")
+    if not isinstance(uid, str):
+        raise _unauthorized("token 无效或已过期")
+    async with async_session_factory() as session:
+        if payload.get("via") == "apikey":
+            user = await UserRepository(session).get(uid)
+            if user is not None and not user.is_active:
+                user = None
+        else:
+            version = payload.get("ver")
+            user = await resolve_session_user(session, uid, version) if isinstance(version, int) else None
+    if user is None:
+        raise _unauthorized("账号不存在、已停用，或登录已失效")
+    return CurrentUserInfo(
+        id=user.id,
+        sub=sub if payload.get("via") == "apikey" else user.username,
+        role=user.role,
+        username=user.username,
+    )
 
 
 async def get_current_user(
@@ -511,6 +467,7 @@ async def get_current_user(
     启用时缺 token 抛 401（与旧 oauth2_scheme auto_error 行为等价）。
     """
     if not is_auth_enabled():
+        set_project_change_actor(None)
         return _anonymous_user()
     if not token:
         raise HTTPException(
@@ -519,7 +476,13 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     payload = await _verify_and_get_payload_async(token)
-    return _payload_to_user(payload)
+    user = await _payload_to_user(payload)
+    # 本次请求里的项目写入归到这位成员名下：事件流据此让其他成员看到是谁改的。
+    actor: ProjectChangeActor | None = None
+    if user.sub != EMBEDDED_AGENT_SUB and user.username:
+        actor = {"user_id": user.id, "username": user.username}
+    set_project_change_actor(actor)
+    return user
 
 
 # Type aliases for FastAPI dependency injection
@@ -527,6 +490,18 @@ CurrentUser = Annotated[CurrentUserInfo, Depends(get_current_user)]
 
 #: 内嵌 Agent 调用本地服务所用令牌的 sub（见 ``server/agent_runtime/options_assembler.py``）。
 EMBEDDED_AGENT_SUB = "embedded-agent"
+
+
+async def require_admin(user: CurrentUser) -> CurrentUserInfo:
+    """成员管理只属于管理员本人：拒绝非管理员、内嵌 Agent 与 API Key。"""
+    if user.sub == EMBEDDED_AGENT_SUB or user.sub.startswith("apikey:"):
+        raise ApiError("jwt_auth_required", status_code=403)
+    if user.role != "admin":
+        raise ApiError("admin_only_operation", status_code=403)
+    return user
+
+
+AdminUser = Annotated[CurrentUserInfo, Depends(require_admin)]
 
 
 async def reject_embedded_agent(user: CurrentUser) -> None:

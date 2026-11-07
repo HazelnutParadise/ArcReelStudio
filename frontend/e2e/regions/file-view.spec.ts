@@ -125,7 +125,10 @@ defineRegionScenarios("文件视图", [
     name: "项目根：目录树与空的详情栏",
     path: PATH,
     api: EVENT_STREAM,
-    ready: (page) => tree(page).getByRole("button", { name: /project\.json/ }).waitFor(),
+    ready: (page) =>
+      tree(page)
+        .getByRole("button", { name: /project\.json/ })
+        .waitFor(),
     act: async (page) => {
       await expect(page.getByText("选择一个文件查看详情")).toBeVisible();
     },
@@ -140,10 +143,17 @@ defineRegionScenarios("文件视图", [
         body: JSON.stringify({ episode: 1, segments: [] }),
       },
     },
-    ready: (page) => tree(page).getByRole("button", { name: /scripts/ }).waitFor(),
+    ready: (page) =>
+      tree(page)
+        .getByRole("button", { name: /scripts/ })
+        .waitFor(),
     act: async (page) => {
-      await tree(page).getByRole("button", { name: /scripts/ }).click();
-      await tree(page).getByRole("button", { name: new RegExp(String(scriptFile.name)) }).click();
+      await tree(page)
+        .getByRole("button", { name: /scripts/ })
+        .click();
+      await tree(page)
+        .getByRole("button", { name: new RegExp(String(scriptFile.name)) })
+        .click();
       await expect(page.getByRole("heading", { level: 2, name: String(scriptFile.name) })).toBeVisible();
       await expect(page.getByRole("link", { name: "打开这一集" })).toBeVisible();
       await expect(page.getByLabel(`${String(scriptFile.name)} 的内容`)).toContainText('"segments": []');
@@ -155,7 +165,10 @@ defineRegionScenarios("文件视图", [
     path: PATH,
     api: STRESS,
     slow: true,
-    ready: (page) => tree(page).getByRole("button", { name: /storyboards/ }).waitFor(),
+    ready: (page) =>
+      tree(page)
+        .getByRole("button", { name: /storyboards/ })
+        .waitFor(),
     act: async (page) => {
       const nav = tree(page);
       await nav.getByRole("button", { name: /storyboards/ }).click();
@@ -174,7 +187,10 @@ defineRegionScenarios("文件视图", [
     name: "多选未引用文件：选择数量、取消选择与受保护文件",
     path: PATH,
     api: STRESS,
-    ready: (page) => tree(page).getByRole("button", { name: /storyboards/ }).waitFor(),
+    ready: (page) =>
+      tree(page)
+        .getByRole("button", { name: /storyboards/ })
+        .waitFor(),
     act: async (page) => {
       const nav = tree(page);
       await nav.getByRole("button", { name: /storyboards/ }).click();
@@ -225,7 +241,10 @@ defineRegionScenarios("文件视图", [
       ...EVENT_STREAM,
       "GET /api/v1/projects/demo": {
         status: 200,
-        body: { ...project, project: { ...project.project, episodes: [{ ...project.project.episodes[0], title: LONG_EPISODE_TITLE }] } },
+        body: {
+          ...project,
+          project: { ...project.project, episodes: [{ ...project.project.episodes[0], title: LONG_EPISODE_TITLE }] },
+        },
       },
       "GET /api/v1/projects/demo/trash": {
         status: 200,
@@ -234,8 +253,21 @@ defineRegionScenarios("文件视图", [
           total_size: 0,
           records: [5, 6].map((position) => ({
             id: `deleted-shot-${position}`,
-            object: { kind: "script_entry", id: `E1S0${position + 2}`, episode: 1, item_kind: "segments", item_position: position, item_excerpt: "他推开门…" },
-            files: [], schema_version: 19, deleted_at: "2026-10-24T08:00:00+00:00", origin: "user", size: 0, has_snapshot: true, download_only: false,
+            object: {
+              kind: "script_entry",
+              id: `E1S0${position + 2}`,
+              episode: 1,
+              item_kind: "segments",
+              item_position: position,
+              item_excerpt: "他推开门…",
+            },
+            files: [],
+            schema_version: 19,
+            deleted_at: "2026-10-24T08:00:00+00:00",
+            origin: "user",
+            size: 0,
+            has_snapshot: true,
+            download_only: false,
           })),
         },
       },
@@ -246,7 +278,9 @@ defineRegionScenarios("文件视图", [
       for (const position of [5, 6]) {
         const title = page.getByText(`分镜 ${LONG_EPISODE_TITLE} · ${position}：他推开门…`, { exact: true });
         await expect(title).toBeVisible();
-        await expect.poll(() => title.evaluate((el) => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight)).toBe(true);
+        await expect
+          .poll(() => title.evaluate((el) => el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight))
+          .toBe(true);
       }
     },
   },

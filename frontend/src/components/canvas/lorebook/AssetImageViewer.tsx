@@ -181,7 +181,9 @@ export function AssetImageViewer({
             </DialogTitle>
             <p className="flex shrink-0 items-center gap-3 text-sm text-muted-foreground">
               <span>{t(`assets:viewer_type.${asset.type}`)}</span>
-              <span className="tabular-nums">{t("assets:viewer_position", { index: index + 1, total: assets.length })}</span>
+              <span className="tabular-nums">
+                {t("assets:viewer_position", { index: index + 1, total: assets.length })}
+              </span>
             </p>
             {shownVersion !== null && (
               <span className="flex shrink-0 items-center gap-2">
@@ -261,12 +263,7 @@ export function AssetImageViewer({
         </DialogBody>
 
         <DialogFooter>
-          <VersionStrip
-            state={versions}
-            shownVersion={shownVersion}
-            disabled={restoring}
-            onSelect={setViewing}
-          />
+          <VersionStrip state={versions} shownVersion={shownVersion} disabled={restoring} onSelect={setViewing} />
         </DialogFooter>
 
         <AlertDialog
@@ -279,7 +276,11 @@ export function AssetImageViewer({
             <AlertDialogHeader>
               <AlertDialogTitle>{t("assets:viewer_restore_title", { version: confirming ?? 0 })}</AlertDialogTitle>
             </AlertDialogHeader>
-            <AlertDialogBody tabIndex={0} role="region" aria-label={t("assets:viewer_restore_title", { version: confirming ?? 0 })}>
+            <AlertDialogBody
+              tabIndex={0}
+              role="region"
+              aria-label={t("assets:viewer_restore_title", { version: confirming ?? 0 })}
+            >
               <div className="flex flex-col gap-3">
                 <AlertDialogDescription>
                   {t("assets:viewer_restore_description", { name: asset.name, version: confirming ?? 0 })}
@@ -348,11 +349,12 @@ function VersionStrip({
               type="button"
               disabled={disabled}
               aria-pressed={active}
-              aria-label={
+              // 名称以按钮上看得到的「v2」开头，再接完整说法与是否为当前版本
+              aria-label={`v${v.version} · ${
                 v.is_current
                   ? t("assets:viewer_version_current", { version: v.version })
                   : t("assets:viewer_version", { version: v.version })
-              }
+              }`}
               onClick={() => onSelect(v.version)}
               className={cn(
                 "focus-ring relative flex w-24 flex-col overflow-hidden rounded-md border-2 bg-background transition-colors duration-fast disabled:cursor-not-allowed disabled:opacity-50",

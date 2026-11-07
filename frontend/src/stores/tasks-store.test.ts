@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vite-plus/test";
 import { act, renderHook } from "@testing-library/react";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -118,12 +118,12 @@ describe("taskResourceKind", () => {
   });
 
   it("returns resource_type for image_edit tasks so edits land in the target resource slot", () => {
-    expect(
-      taskResourceKind(task({ task_id: "a", task_type: "image_edit", resource_type: "character" })),
-    ).toBe("character");
-    expect(
-      taskResourceKind(task({ task_id: "b", task_type: "image_edit", resource_type: "storyboard" })),
-    ).toBe("storyboard");
+    expect(taskResourceKind(task({ task_id: "a", task_type: "image_edit", resource_type: "character" }))).toBe(
+      "character",
+    );
+    expect(taskResourceKind(task({ task_id: "b", task_type: "image_edit", resource_type: "storyboard" }))).toBe(
+      "storyboard",
+    );
   });
 
   it("falls back to empty string when an image_edit task has no resource_type", () => {
@@ -432,9 +432,7 @@ describe("useTasksStore.setTasks prunes stale optimistic markers", () => {
     const key = settledKey("character", "A", "image_edit", ["edit-A"]);
     useTasksStore.setState({ tasks: [], optimisticActive: new Set([key]) });
 
-    useTasksStore.getState().setTasks([
-      task({ task_id: "unrelated", resource_id: "B", task_type: "character" }),
-    ]);
+    useTasksStore.getState().setTasks([task({ task_id: "unrelated", resource_id: "B", task_type: "character" })]);
 
     expect([...useTasksStore.getState().optimisticActive]).toEqual([key]);
   });
@@ -514,9 +512,7 @@ describe("selectHasActiveTaskForScriptFile", () => {
         status: "running",
       }),
     ];
-    expect(selectHasActiveTaskForScriptFile(prefixedTaskTasks, "grid", "episode_1.json", "proj")).toBe(
-      true,
-    );
+    expect(selectHasActiveTaskForScriptFile(prefixedTaskTasks, "grid", "episode_1.json", "proj")).toBe(true);
 
     const bareTaskTasks = [
       task({
@@ -527,9 +523,7 @@ describe("selectHasActiveTaskForScriptFile", () => {
         status: "running",
       }),
     ];
-    expect(
-      selectHasActiveTaskForScriptFile(bareTaskTasks, "grid", "scripts/episode_1.json", "proj"),
-    ).toBe(true);
+    expect(selectHasActiveTaskForScriptFile(bareTaskTasks, "grid", "scripts/episode_1.json", "proj")).toBe(true);
   });
 
   it("does not merge to a latest row — a terminal grid task for the scriptFile stays inactive", () => {
@@ -549,9 +543,7 @@ describe("selectHasActiveTaskForScriptFile", () => {
     it("counts the scriptFile active via an in-flight marker when no real grid row exists yet", () => {
       // 宫格请求发出到轮询写回新 grid 任务行之间的空窗：仅凭乐观标记也应判定本集占用中
       const key = pendingScriptFileKey("grid", "episode_1.json");
-      expect(
-        selectHasActiveTaskForScriptFile([], "grid", "episode_1.json", "proj", new Set([key])),
-      ).toBe(true);
+      expect(selectHasActiveTaskForScriptFile([], "grid", "episode_1.json", "proj", new Set([key]))).toBe(true);
     });
 
     it("lets the marker's own grid row supersede it regardless of that row's status", () => {
@@ -565,9 +557,7 @@ describe("selectHasActiveTaskForScriptFile", () => {
           status: "succeeded",
         }),
       ];
-      expect(
-        selectHasActiveTaskForScriptFile(tasks, "grid", "episode_1.json", "proj", new Set([key])),
-      ).toBe(false);
+      expect(selectHasActiveTaskForScriptFile(tasks, "grid", "episode_1.json", "proj", new Set([key]))).toBe(false);
     });
 
     it("releases only after all of the marker's rows land", () => {
@@ -583,9 +573,7 @@ describe("selectHasActiveTaskForScriptFile", () => {
           status: "succeeded",
         }),
       ];
-      expect(
-        selectHasActiveTaskForScriptFile(landedOne, "grid", "episode_1.json", "proj", new Set([key])),
-      ).toBe(true); // 仅一条落地且已终态，标记继续守住剩余那条
+      expect(selectHasActiveTaskForScriptFile(landedOne, "grid", "episode_1.json", "proj", new Set([key]))).toBe(true); // 仅一条落地且已终态，标记继续守住剩余那条
 
       const landedAll = [
         ...landedOne,
@@ -597,9 +585,7 @@ describe("selectHasActiveTaskForScriptFile", () => {
           status: "succeeded",
         }),
       ];
-      expect(
-        selectHasActiveTaskForScriptFile(landedAll, "grid", "episode_1.json", "proj", new Set([key])),
-      ).toBe(false); // 全部落地且均已终态，标记让位
+      expect(selectHasActiveTaskForScriptFile(landedAll, "grid", "episode_1.json", "proj", new Set([key]))).toBe(false); // 全部落地且均已终态，标记让位
     });
 
     it("does not let another submission's grid row supersede the marker", () => {
@@ -614,22 +600,14 @@ describe("selectHasActiveTaskForScriptFile", () => {
           updated_at: "2026-07-16T00:00:00Z",
         }),
       ];
-      expect(
-        selectHasActiveTaskForScriptFile(tasks, "grid", "episode_1.json", "proj", new Set([key])),
-      ).toBe(true);
+      expect(selectHasActiveTaskForScriptFile(tasks, "grid", "episode_1.json", "proj", new Set([key]))).toBe(true);
     });
 
     it("ignores a marker scoped to a different project, task type, or scriptFile", () => {
       const key = pendingScriptFileKey("grid", "episode_1.json");
-      expect(
-        selectHasActiveTaskForScriptFile([], "storyboard", "episode_1.json", "proj", new Set([key])),
-      ).toBe(false);
-      expect(
-        selectHasActiveTaskForScriptFile([], "grid", "episode_1.json", "other-proj", new Set([key])),
-      ).toBe(false);
-      expect(
-        selectHasActiveTaskForScriptFile([], "grid", "episode_2.json", "proj", new Set([key])),
-      ).toBe(false);
+      expect(selectHasActiveTaskForScriptFile([], "storyboard", "episode_1.json", "proj", new Set([key]))).toBe(false);
+      expect(selectHasActiveTaskForScriptFile([], "grid", "episode_1.json", "other-proj", new Set([key]))).toBe(false);
+      expect(selectHasActiveTaskForScriptFile([], "grid", "episode_2.json", "proj", new Set([key]))).toBe(false);
     });
   });
 });
@@ -837,10 +815,7 @@ describe("selectLatestTaskByResource", () => {
   });
 
   it("groups distinct resources independently", () => {
-    const tasks = [
-      task({ task_id: "a", resource_id: "u1" }),
-      task({ task_id: "b", resource_id: "u2" }),
-    ];
+    const tasks = [task({ task_id: "a", resource_id: "u1" }), task({ task_id: "b", resource_id: "u2" })];
     expect(selectLatestTaskByResource(tasks).size).toBe(2);
   });
 });
@@ -922,9 +897,7 @@ describe("isScriptFileBusy", () => {
     // 与 isResourceBusy 同理：提交那一刻必须拿最新占用态，而非渲染期捕获的快照。
     expect(isScriptFileBusy("grid", "episode_1.json", "proj")).toBe(false);
     useTasksStore.setState({
-      tasks: [
-        task({ task_id: "g1", task_type: "grid", script_file: "episode_1.json", status: "running" }),
-      ],
+      tasks: [task({ task_id: "g1", task_type: "grid", script_file: "episode_1.json", status: "running" })],
     });
     expect(isScriptFileBusy("grid", "episode_1.json", "proj")).toBe(true);
   });
@@ -932,18 +905,14 @@ describe("isScriptFileBusy", () => {
   it("normalizes the scripts/ prefix on both sides", () => {
     // episode 元数据带 scripts/ 前缀、任务行不一定带，两边都要归一后再比。
     useTasksStore.setState({
-      tasks: [
-        task({ task_id: "g1", task_type: "grid", script_file: "episode_1.json", status: "running" }),
-      ],
+      tasks: [task({ task_id: "g1", task_type: "grid", script_file: "episode_1.json", status: "running" })],
     });
     expect(isScriptFileBusy("grid", "scripts/episode_1.json", "proj")).toBe(true);
   });
 
   it("returns false when scriptFile or projectName is missing", () => {
     useTasksStore.setState({
-      tasks: [
-        task({ task_id: "g1", task_type: "grid", script_file: "episode_1.json", status: "running" }),
-      ],
+      tasks: [task({ task_id: "g1", task_type: "grid", script_file: "episode_1.json", status: "running" })],
     });
     expect(isScriptFileBusy("grid", undefined, "proj")).toBe(false);
     expect(isScriptFileBusy("grid", "episode_1.json", null)).toBe(false);
@@ -1177,9 +1146,7 @@ describe("selectNeedsFastPolling", () => {
   });
 
   it("有任务未落终态时留在高频档", () => {
-    expect(
-      selectNeedsFastPolling({ ...idle, stats: { ...defaultTaskStats, running: 1 } }),
-    ).toBe(true);
+    expect(selectNeedsFastPolling({ ...idle, stats: { ...defaultTaskStats, running: 1 } })).toBe(true);
   });
 
   it("上一轮拉取失败时留在高频档", () => {
@@ -1230,10 +1197,7 @@ describe("selectNeedsFastPolling", () => {
     expect(
       selectNeedsFastPolling({
         ...idle,
-        tasks: [
-          task({ task_id: "t-done", status: "succeeded" }),
-          task({ task_id: "t-fail", status: "failed" }),
-        ],
+        tasks: [task({ task_id: "t-done", status: "succeeded" }), task({ task_id: "t-fail", status: "failed" })],
       }),
     ).toBe(false);
   });

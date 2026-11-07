@@ -6,7 +6,7 @@
   - POST /projects/{project_name}/tasks/cancel-all
 """
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -213,8 +213,8 @@ class TestRunningTaskNotCancellable:
         self, running_task, locale, method, path
     ):
         queue, task_id = running_task
-        transport = httpx.ASGITransport(app=_make_app())
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        transport = httpx2.ASGITransport(app=_make_app())
+        async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.request(method, path.format(id=task_id), headers={"Accept-Language": locale})
 
         assert resp.status_code == 409
@@ -234,8 +234,8 @@ class TestRunningTaskNotCancellable:
             script_file="episode_01.json",
             dependency_task_id=task_id,
         )
-        transport = httpx.ASGITransport(app=_make_app())
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        transport = httpx2.ASGITransport(app=_make_app())
+        async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.post(f"/api/v1/tasks/{task_id}/cancel")
 
         assert resp.status_code == 409

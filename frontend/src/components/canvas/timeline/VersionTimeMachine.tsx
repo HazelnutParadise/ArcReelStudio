@@ -16,7 +16,17 @@ import { PresentationPlayer } from "@/components/shared/PresentationPlayer";
 
 interface VersionTimeMachineProps {
   projectName: string;
-  resourceType: "storyboards" | "videos" | "audio" | "characters" | "character_derivatives" | "scenes" | "props" | "products" | "reference_videos" | "grids";
+  resourceType:
+    | "storyboards"
+    | "videos"
+    | "audio"
+    | "characters"
+    | "character_derivatives"
+    | "scenes"
+    | "props"
+    | "products"
+    | "reference_videos"
+    | "grids";
   resourceId: string;
   onRestore?: (version: number) => void | Promise<unknown>;
   /** Icon-only trigger button: hides label and chevron for narrow card headers. */
@@ -50,9 +60,7 @@ interface VersionTimeMachineProps {
   anchor?: RefObject<HTMLElement | null>;
 }
 
-function getImagePreviewHeightClass(
-  resourceType: VersionTimeMachineProps["resourceType"],
-): string {
+function getImagePreviewHeightClass(resourceType: VersionTimeMachineProps["resourceType"]): string {
   if (resourceType === "characters" || resourceType === "character_derivatives") return "h-80";
   if (resourceType === "scenes" || resourceType === "props" || resourceType === "products") return "h-56";
   return "h-64";
@@ -89,17 +97,26 @@ export function VersionTimeMachine({
   const titleId = useId();
   const busyHintId = useId();
   const resourcePath =
-    resourceType === "storyboards" ? `storyboards/scene_${resourceId}.png` :
-    resourceType === "videos" ? `videos/scene_${resourceId}.mp4` :
-    resourceType === "reference_videos" ? `reference_videos/${resourceId}.mp4` :
-    resourceType === "audio" ? `audio/segment_${resourceId}.wav` :
-    resourceType === "characters" ? `characters/${resourceId}.png` :
-    // 衍生的 resource id 本身是 `本体/衍生`，两段原样成为路径层级。
-    resourceType === "character_derivatives" ? `characters/derivatives/${resourceId}.png` :
-    resourceType === "scenes" ? `scenes/${resourceId}.png` :
-    resourceType === "grids" ? `grids/${resourceId}.png` :
-    resourceType === "products" ? `products/${resourceId}.png` :
-    `props/${resourceId}.png`;
+    resourceType === "storyboards"
+      ? `storyboards/scene_${resourceId}.png`
+      : resourceType === "videos"
+        ? `videos/scene_${resourceId}.mp4`
+        : resourceType === "reference_videos"
+          ? `reference_videos/${resourceId}.mp4`
+          : resourceType === "audio"
+            ? `audio/segment_${resourceId}.wav`
+            : resourceType === "characters"
+              ? `characters/${resourceId}.png`
+              : // 衍生的 resource id 本身是 `本体/衍生`，两段原样成为路径层级。
+                resourceType === "character_derivatives"
+                ? `characters/derivatives/${resourceId}.png`
+                : resourceType === "scenes"
+                  ? `scenes/${resourceId}.png`
+                  : resourceType === "grids"
+                    ? `grids/${resourceId}.png`
+                    : resourceType === "products"
+                      ? `products/${resourceId}.png`
+                      : `props/${resourceId}.png`;
   const resourceFp = useProjectsStore((s) => s.getAssetFingerprint(resourcePath));
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const controlled = controlledOpen !== undefined;
@@ -123,29 +140,31 @@ export function VersionTimeMachine({
     else setUncontrolledOpen(next);
   };
 
-  const loadVersions = useCallback(async (signal: AbortSignal) => {
-    setLoading(true);
-    try {
-      const data = await API.getVersions(projectName, resourceType, resourceId, { signal });
-      if (signal.aborted) return;
-      setVersions(data.versions);
-      setCurrentVersion(data.current_version);
-    } catch {
-      if (!signal.aborted) setVersions([]);
-    } finally {
-      // react-doctor-disable-next-line react-doctor/no-loading-flag-reset-outside-finally -- 已在 finally 中复位；被 abort 时由接管的新一轮加载负责复位
-      if (!signal.aborted) setLoading(false);
-    }
-  }, [projectName, resourceType, resourceId]);
+  const loadVersions = useCallback(
+    async (signal: AbortSignal) => {
+      setLoading(true);
+      try {
+        const data = await API.getVersions(projectName, resourceType, resourceId, { signal });
+        if (signal.aborted) return;
+        setVersions(data.versions);
+        setCurrentVersion(data.current_version);
+      } catch {
+        if (!signal.aborted) setVersions([]);
+      } finally {
+        // react-doctor-disable-next-line react-doctor/no-loading-flag-reset-outside-finally -- 已在 finally 中复位；被 abort 时由接管的新一轮加载负责复位
+        if (!signal.aborted) setLoading(false);
+      }
+    },
+    [projectName, resourceType, resourceId],
+  );
 
   useEffect(() => {
     if (!open || !resourceId) return;
     const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 打开或资源更新时启动带取消信号的版本加载，并同步展示加载状态
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 打开或资源更新时启动带取消信号的版本加载，并同步展示加载状态
     void loadVersions(controller.signal);
     return () => controller.abort();
   }, [open, resourceId, resourceFp, reload, loadVersions]);
-
 
   async function handleRestore(version: number) {
     // disabled 是响应式的 restoringVersion/busy：面板打开期间资源转为占用中时随之更新，
@@ -159,25 +178,25 @@ export function VersionTimeMachine({
     setRestoringVersion(version);
     onRestoringChange?.(true);
     try {
-      await track((async () => {
-        const result = await API.restoreVersion(projectName, resourceType, resourceId, version);
-        if (result.asset_fingerprints) {
-          useProjectsStore.getState().updateAssetFingerprints(result.asset_fingerprints);
-        }
-        await onRestore?.(version);
-        setReload((current) => current + 1);
-        // 切换结果直接体现在「当前」标记与媒体上，成功时不弹提示；恢复已换了指纹，按最新指纹记选中
-        setSelection({
-          projectName,
-          resourcePath,
-          fingerprint: useProjectsStore.getState().getAssetFingerprint(resourcePath),
-          version,
-        });
-      })());
+      await track(
+        (async () => {
+          const result = await API.restoreVersion(projectName, resourceType, resourceId, version);
+          if (result.asset_fingerprints) {
+            useProjectsStore.getState().updateAssetFingerprints(result.asset_fingerprints);
+          }
+          await onRestore?.(version);
+          setReload((current) => current + 1);
+          // 切换结果直接体现在「当前」标记与媒体上，成功时不弹提示；恢复已换了指纹，按最新指纹记选中
+          setSelection({
+            projectName,
+            resourcePath,
+            fingerprint: useProjectsStore.getState().getAssetFingerprint(resourcePath),
+            version,
+          });
+        })(),
+      );
     } catch (err) {
-      useAppStore
-        .getState()
-        .pushToast(t("switch_version_failed", { message: errMsg(err) }), "error");
+      useAppStore.getState().pushToast(t("switch_version_failed", { message: errMsg(err) }), "error");
     } finally {
       setRestoringVersion(null);
       onRestoringChange?.(false);
@@ -187,17 +206,12 @@ export function VersionTimeMachine({
   if (!resourceId) return null;
 
   // Derive the selected version's full info from the latest `versions` array
-  const selectedInfo =
-    selectedVersion != null
-      ? versions.find((v) => v.version === selectedVersion) ?? null
-      : null;
+  const selectedInfo = selectedVersion != null ? (versions.find((v) => v.version === selectedVersion) ?? null) : null;
   const label = t("version_mgmt");
 
   const trigger = controlled ? null : iconOnly ? (
     <Tooltip>
-      <TooltipTrigger
-        render={<PopoverTrigger render={<Button variant="ghost" size="icon-sm" aria-label={label} />} />}
-      >
+      <TooltipTrigger render={<PopoverTrigger render={<Button variant="ghost" size="icon-sm" aria-label={label} />} />}>
         <History aria-hidden />
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
@@ -243,7 +257,9 @@ export function VersionTimeMachine({
               className="flex-wrap"
               value={selectedVersion != null ? [String(selectedVersion)] : []}
               onValueChange={(next: string[]) =>
-                setSelection(next[0] ? { projectName, resourcePath, fingerprint: resourceFp, version: Number(next[0]) } : null)
+                setSelection(
+                  next[0] ? { projectName, resourcePath, fingerprint: resourceFp, version: Number(next[0]) } : null,
+                )
               }
             >
               {versions.map((v) => (
@@ -343,9 +359,7 @@ export function VersionTimeMachine({
 
                 <p className="line-clamp-4 text-xs text-subtle-foreground">
                   {selectedInfo.prompt ||
-                    (selectedInfo.source === "manual_upload"
-                      ? t("version_manual_upload")
-                      : t("version_no_notes"))}
+                    (selectedInfo.source === "manual_upload" ? t("version_manual_upload") : t("version_no_notes"))}
                 </p>
               </div>
             ) : (

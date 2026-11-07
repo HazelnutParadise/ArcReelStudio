@@ -54,7 +54,7 @@ jobs:
         with:
           directory: frontend
           # CI 不安装依赖，不写 version 会运行 npm 上的 latest；升级 frontend/package.json 的 react-doctor 时同步修改
-          version: "0.9.18"
+          version: "0.9.22"
         #   blocking: error          # Gate level: "none" (advisory, the default) | "warning" | "error"
         #   scope: full              # On PRs, scan the whole project instead of just changed files
         #   comment: false           # Disable the sticky PR summary comment

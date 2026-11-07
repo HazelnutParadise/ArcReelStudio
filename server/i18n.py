@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Callable
 from typing import Annotated, Any
 
@@ -21,6 +22,9 @@ from lib.i18n.display_names import DisplayNames
 logger = logging.getLogger(__name__)
 
 
+_TRADITIONAL_CHINESE = re.compile(r"^zh-(tw|hk|mo|hant)\b")
+
+
 def get_locale(request: Request) -> str:
     """Get locale from Accept-Language header."""
     accept_lang = request.headers.get("accept-language", "")
@@ -30,7 +34,11 @@ def get_locale(request: Request) -> str:
     # Simple parser for Accept-Language header
     # e.g., "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7"
     for lang_range in accept_lang.split(","):
-        lang = lang_range.split(";")[0].split("-")[0].strip().lower()
+        tag = lang_range.split(";")[0].strip().lower()
+        # 台湾、香港、澳门与标明繁体的中文用繁体，其余中文用简体
+        if _TRADITIONAL_CHINESE.match(tag):
+            return "zh-TW"
+        lang = tag.split("-")[0]
         if lang in SUPPORTED_LOCALES:
             return lang
 

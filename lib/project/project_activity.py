@@ -37,7 +37,7 @@ def recorded_project_activity(project_dir: Path) -> datetime | None:
     """账本里的最近活动时间（UTC）；没有账本或内容无法解析时为 None。"""
     try:
         raw = (project_dir / ACTIVITY_FILENAME).read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError):
+    except OSError, UnicodeDecodeError:
         return None
     try:
         parsed = datetime.fromisoformat(raw.strip())

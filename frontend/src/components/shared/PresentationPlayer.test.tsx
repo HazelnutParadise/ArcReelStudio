@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useProjectsStore } from "@/stores/projects-store";
 import type { EpisodeScript, ProjectData } from "@/types";
@@ -92,15 +92,10 @@ describe("PresentationPlayer", () => {
   });
 
   it("renders the selected immutable video, explicit audio-off, subtitle track, and status", async () => {
-    render(
-      <PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />);
 
     const video = await screen.findByLabelText("分镜 2 成片预览");
-    expect(video).toHaveAttribute(
-      "src",
-      "/api/v1/files/demo/versions/videos/E1S01_v3.mp4?v=sha256-v1%3Avideo",
-    );
+    expect(video).toHaveAttribute("src", "/api/v1/files/demo/versions/videos/E1S01_v3.mp4?v=sha256-v1%3Avideo");
     expect(video).toHaveProperty("muted", true);
     await waitFor(() => expect(video).toHaveProperty("volume", 0));
     Object.defineProperty(video, "muted", { configurable: true, writable: true, value: false });
@@ -123,9 +118,7 @@ describe("PresentationPlayer", () => {
   it("switches to TTS, synchronizes its unity track, and pins bundle versions", async () => {
     const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
     const user = userEvent.setup();
-    render(
-      <PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />);
     await screen.findByLabelText("分镜 2 成片预览");
 
     await user.click(screen.getByRole("button", { name: "TTS 叠加" }));
@@ -134,10 +127,7 @@ describe("PresentationPlayer", () => {
     expect(screen.getByText("当前版本")).toBeInTheDocument();
     expect(screen.getByText("与当前内容一致")).toBeInTheDocument();
     expect(video).toHaveProperty("muted", false);
-    expect(audio).toHaveAttribute(
-      "src",
-      "/api/v1/files/demo/versions/audio/E1S01_v2.wav?v=sha256-v1%3Aaudio",
-    );
+    expect(audio).toHaveAttribute("src", "/api/v1/files/demo/versions/audio/E1S01_v2.wav?v=sha256-v1%3Aaudio");
     fireEvent.play(video);
     await waitFor(() => expect(play).toHaveBeenCalled());
 
@@ -160,14 +150,7 @@ describe("PresentationPlayer", () => {
   });
 
   it("reloads the shared model when the selected narration audio changes", async () => {
-    render(
-      <PresentationPlayer
-        projectName="demo"
-        resourceType="videos"
-        resourceId="E1S01"
-        initialVariant="use_tts"
-      />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" initialVariant="use_tts" />);
     await screen.findByLabelText("分镜 2 TTS 音轨");
     expect(API.getPresentation).toHaveBeenCalledTimes(1);
 
@@ -181,9 +164,7 @@ describe("PresentationPlayer", () => {
   });
 
   it("reloads the shared model when canonical project or script input refreshes", async () => {
-    render(
-      <PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />);
     await screen.findByLabelText("分镜 2 成片预览");
     expect(API.getPresentation).toHaveBeenCalledTimes(1);
 
@@ -199,14 +180,7 @@ describe("PresentationPlayer", () => {
       ...tts,
       video: { ...tts.video, audio_enabled: false, gain: 0 },
     });
-    render(
-      <PresentationPlayer
-        projectName="demo"
-        resourceType="videos"
-        resourceId="E1S01"
-        initialVariant="use_tts"
-      />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" initialVariant="use_tts" />);
 
     const video = await screen.findByLabelText("分镜 2 成片预览");
     const audio = await screen.findByLabelText("分镜 2 TTS 音轨");
@@ -227,14 +201,7 @@ describe("PresentationPlayer", () => {
   it("pauses TTS while video buffers and resynchronizes when playback resumes", async () => {
     const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
     const pause = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => undefined);
-    render(
-      <PresentationPlayer
-        projectName="demo"
-        resourceType="videos"
-        resourceId="E1S01"
-        initialVariant="use_tts"
-      />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" initialVariant="use_tts" />);
 
     const video = await screen.findByLabelText("分镜 2 成片预览");
     const audio = await screen.findByLabelText("分镜 2 TTS 音轨");
@@ -261,9 +228,7 @@ describe("PresentationPlayer", () => {
       return post;
     });
     const user = userEvent.setup();
-    render(
-      <PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />);
     await screen.findByLabelText("分镜 2 成片预览");
 
     await user.click(screen.getByRole("button", { name: "TTS 叠加" }));
@@ -283,12 +248,7 @@ describe("PresentationPlayer", () => {
       } as unknown as Record<string, EpisodeScript>,
     });
     render(
-      <PresentationPlayer
-        projectName="demo"
-        resourceType="reference_videos"
-        resourceId="E1U01"
-        videoVersion={7}
-      />,
+      <PresentationPlayer projectName="demo" resourceType="reference_videos" resourceId="E1U01" videoVersion={7} />,
     );
 
     await screen.findByLabelText("视频单元 2 成片预览");
@@ -310,13 +270,9 @@ describe("PresentationPlayer", () => {
           else resolveSecond = resolve;
         }),
     );
-    const { rerender } = render(
-      <PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />,
-    );
+    const { rerender } = render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />);
 
-    rerender(
-      <PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S02" />,
-    );
+    rerender(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S02" />);
     resolveSecond?.({
       ...post,
       unit_id: "E1S02",
@@ -335,14 +291,7 @@ describe("PresentationPlayer", () => {
   it("pauses active media before loading another rendition", async () => {
     const pause = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => undefined);
     const user = userEvent.setup();
-    render(
-      <PresentationPlayer
-        projectName="demo"
-        resourceType="videos"
-        resourceId="E1S01"
-        initialVariant="use_tts"
-      />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" initialVariant="use_tts" />);
     await screen.findByLabelText("分镜 2 TTS 音轨");
     pause.mockClear();
 
@@ -353,14 +302,7 @@ describe("PresentationPlayer", () => {
 
   it("stops browser playback at the modeled video-stream boundary", async () => {
     const pause = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => undefined);
-    render(
-      <PresentationPlayer
-        projectName="demo"
-        resourceType="videos"
-        resourceId="E1S01"
-        initialVariant="use_tts"
-      />,
-    );
+    render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" initialVariant="use_tts" />);
     const video = await screen.findByLabelText("分镜 2 成片预览");
     await screen.findByLabelText("分镜 2 TTS 音轨");
     Object.defineProperty(video, "currentTime", { configurable: true, writable: true, value: 6.2 });
@@ -396,9 +338,7 @@ describe("PresentationPlayer", () => {
         return element;
       });
     try {
-      render(
-        <PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />,
-      );
+      render(<PresentationPlayer projectName="demo" resourceType="videos" resourceId="E1S01" />);
       await screen.findByLabelText("分镜 2 成片预览");
       expect(screen.getByText("机械字幕")).toBeInTheDocument();
       await waitFor(() => expect(changeSubscriptions).toBeGreaterThan(0));

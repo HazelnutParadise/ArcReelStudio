@@ -43,7 +43,7 @@ def load_json_or_none(path: Path) -> Any | None:
     """容错加载 JSON：读取或解析失败返回 None。"""
     try:
         return load_json(path)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+    except OSError, UnicodeDecodeError, json.JSONDecodeError:
         return None
 
 

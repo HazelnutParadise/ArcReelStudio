@@ -150,7 +150,7 @@ import sys
 import arcreel_market_core.video_backend_contract
 
 forbidden = {
-    "httpx",
+    "httpx2",
     "sqlalchemy",
     "lib.backends.backend_runtime",
     "lib.backends.video_backends",

@@ -479,7 +479,7 @@ def _video_skip_reason(
         )
     except StoryboardImageUnavailable:
         return BatchSkipReason.MISSING_STORYBOARD
-    except (OSError, ValueError):
+    except OSError, ValueError:
         # 尾帧等其余输入不可用由构造 spec 的那一步拒绝，整批准入如实报出。
         return None
     return None

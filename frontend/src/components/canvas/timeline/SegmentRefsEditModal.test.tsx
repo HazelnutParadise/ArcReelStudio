@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { SegmentRefsEditModal } from "./SegmentRefsEditModal";
 import type { Character, Prop, Scene } from "@/types";
 
@@ -30,9 +30,7 @@ const baseProps = {
 
 describe("SegmentRefsEditModal", () => {
   it("does not render when open=false", () => {
-    const { container } = render(
-      <SegmentRefsEditModal {...baseProps} open={false} />,
-    );
+    const { container } = render(<SegmentRefsEditModal {...baseProps} open={false} />);
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -87,9 +85,7 @@ describe("SegmentRefsEditModal", () => {
   it("cancel does not call onSave and triggers onClose", () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
-    render(
-      <SegmentRefsEditModal {...baseProps} onSave={onSave} onClose={onClose} />,
-    );
+    render(<SegmentRefsEditModal {...baseProps} onSave={onSave} onClose={onClose} />);
 
     fireEvent.click(screen.getByRole("button", { name: /Villain/ }));
     fireEvent.click(screen.getByRole("button", { name: "取消" }));
@@ -98,12 +94,7 @@ describe("SegmentRefsEditModal", () => {
   });
 
   it("renders stale references that exist in initial props but not in dictionaries", () => {
-    render(
-      <SegmentRefsEditModal
-        {...baseProps}
-        initialCharacters={["Hero", "Ghost"]}
-      />,
-    );
+    render(<SegmentRefsEditModal {...baseProps} initialCharacters={["Hero", "Ghost"]} />);
     const ghostRow = screen.getByRole("button", { name: /Ghost/ });
     expect(ghostRow).toBeInTheDocument();
     // 失效说明写在行内，读屏随按钮名称一起读出
@@ -116,12 +107,7 @@ describe("SegmentRefsEditModal", () => {
   it("empty dictionary shows manage link button (kind passed to callback)", () => {
     const onManageClick = vi.fn();
     render(
-      <SegmentRefsEditModal
-        {...baseProps}
-        characters={{}}
-        initialCharacters={[]}
-        onManageClick={onManageClick}
-      />,
+      <SegmentRefsEditModal {...baseProps} characters={{}} initialCharacters={[]} onManageClick={onManageClick} />,
     );
     const manageLinks = screen.getAllByRole("button", { name: /前往管理/ });
     expect(manageLinks.length).toBeGreaterThan(0);
@@ -145,14 +131,7 @@ describe("SegmentRefsEditModal", () => {
       },
     };
     const onSave = vi.fn();
-    render(
-      <SegmentRefsEditModal
-        {...baseProps}
-        characters={withDerivative}
-        initialCharacters={[]}
-        onSave={onSave}
-      />,
-    );
+    render(<SegmentRefsEditModal {...baseProps} characters={withDerivative} initialCharacters={[]} onSave={onSave} />);
 
     fireEvent.click(screen.getByRole("button", { name: /Hero \/ Armored/ }));
     fireEvent.click(screen.getByRole("button", { name: "确定" }));
@@ -164,13 +143,7 @@ describe("SegmentRefsEditModal", () => {
     const withDerivative: Record<string, Character> = {
       Hero: { description: "main protagonist", derivatives: { Armored: { description: "in black armor" } } },
     };
-    render(
-      <SegmentRefsEditModal
-        {...baseProps}
-        characters={withDerivative}
-        initialCharacters={["Hero/Armored"]}
-      />,
-    );
+    render(<SegmentRefsEditModal {...baseProps} characters={withDerivative} initialCharacters={["Hero/Armored"]} />);
 
     expect(screen.queryByText("此引用已失效，点击可移除")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Hero \/ Armored/ })).toHaveAttribute("aria-pressed", "true");

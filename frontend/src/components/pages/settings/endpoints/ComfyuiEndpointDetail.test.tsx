@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import "@/i18n";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -128,7 +128,10 @@ const INSTALLATION: EndpointInstallation = {
   modified: false,
 };
 
-function installedRecord(defn: ComfyuiEndpointDefinition, overrides?: Partial<EndpointInstallation>): CustomEndpointInfo {
+function installedRecord(
+  defn: ComfyuiEndpointDefinition,
+  overrides?: Partial<EndpointInstallation>,
+): CustomEndpointInfo {
   return { ...savedRecord(defn), installation: { ...INSTALLATION, ...overrides } };
 }
 
@@ -459,9 +462,9 @@ describe("ComfyuiEndpointDetail", () => {
   });
 
   it("re-runs recognition for one semantic with that binding dropped from the payload", async () => {
-    const infer = vi.spyOn(API, "inferComfyuiBindings").mockResolvedValue(
-      inference({ bindings: { prompt: picked(NEGATIVE), output: picked(OUTPUT) } }),
-    );
+    const infer = vi
+      .spyOn(API, "inferComfyuiBindings")
+      .mockResolvedValue(inference({ bindings: { prompt: picked(NEGATIVE), output: picked(OUTPUT) } }));
     renderDetail();
 
     await userEvent.click(within(row("prompt")).getByRole("button", { name: "候选 1" }));
@@ -584,7 +587,9 @@ describe("ComfyuiEndpointDetail", () => {
 
   it("passes a whole-graph note through instead of swallowing it", () => {
     renderDetail({
-      inference: inference({ notes: [{ code: "batch_size_above_one", message: "这份 workflow 一次出多张，只取第一张" }] }),
+      inference: inference({
+        notes: [{ code: "batch_size_above_one", message: "这份 workflow 一次出多张，只取第一张" }],
+      }),
     });
 
     expect(screen.getByText("这份 workflow 一次出多张，只取第一张")).toBeInTheDocument();

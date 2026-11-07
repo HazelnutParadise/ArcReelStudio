@@ -184,6 +184,9 @@ class EndpointSpec:
     # ``metered_usage``、图片预估取 ``estimate_usage``（见 :mod:`lib.custom_provider.metering`）。须与
     # ``build_backend`` 构造的 delegate 同类，端点注册表测试守着。None = 按定义或通用口径计量。
     metering_backend: type | None = None
+    # 自定义供应商能否选用。Veo 只给内置的 Vertex/AI Studio 用：自定义供应商经 Gemini 协议接 Veo 等于连 Google
+    # 却绕道第三方代理，不提供这条路，也不会被推断或当作默认。
+    custom_selectable: bool = True
 
     @property
     def kind(self) -> str:
@@ -558,7 +561,7 @@ def _python_requests(rule: BaseUrlRule, *requests: tuple[str, str, str]) -> tupl
     )
 
 
-# 直连 httpx 与方舟 SDK 的端点各自发出的请求；取自响应的下载地址不提供请求名（docs/adr/0101）。
+# 直连 httpx2 与方舟 SDK 的端点各自发出的请求；取自响应的下载地址不提供请求名（docs/adr/0101）。
 _ARK_SEEDANCE_REQUESTS = _python_requests(
     "ensure_api_v3",
     ("submit", "cp_request_submit", "/contents/generations/tasks"),
@@ -1093,6 +1096,7 @@ ENDPOINT_REGISTRY: dict[str, EndpointSpec] = {
         video_caps_for_model=GeminiVideoBackend.video_capabilities_for_model,
         # generate() 把 end_image 下传为 config.last_frame
         end_image_capable=True,
+        custom_selectable=False,
     ),
     "gemini-interactions-video": EndpointSpec(
         key="gemini-interactions-video",
@@ -1672,7 +1676,7 @@ _FAMILY_ENDPOINTS: tuple[tuple[str, Mapping[str, str]], ...] = (
 _DEFAULT_ENDPOINTS: Mapping[str, tuple[str, str]] = {
     "text": ("gemini-generate", "openai-chat"),
     "image": ("gemini-image", "openai-images"),
-    "video": ("gemini-video", "openai-video"),
+    "video": ("gemini-interactions-video", "openai-video"),
     "audio": ("gemini-tts", "openai-tts"),
 }
 
@@ -1760,7 +1764,7 @@ def _infer_endpoint_by_name(model_id: str, discovery_format: str) -> str:
     3) gemini-omni → "gemini-interactions-video"；其余 gemini 原生模型（非 video）→ TTS 走 "gemini-tts"，
        image 形态走 "gemini-image"，否则文本走 "gemini-generate"（不分 discovery_format）
     4) 视频家族 → seedance 按名字里的代际取 "ark-seedance-2-5" / "ark-seedance-2"，没写明代际取
-       "ark-seedance-1"；viduq3 / viduq4→"vidu-video"、Veo 且 discovery_format=google→"gemini-video"、否则 "openai-video"
+       "ark-seedance-1"；viduq3 / viduq4→"vidu-video"、否则 "openai-video"
     5) 图像家族 → seedream→"ark-seedream-3" / "ark-seedream-4"（不分 discovery_format），其余 discovery_format=google 走
        "gemini-image" 否则 "openai-images"（imagen 随图像家族推断，不再单独拦截）
     6) TTS 家族（tts/speech/cosyvoice）→ qwen-audio-<版本>-tts 走 "dashscope-speech-synthesizer"，
@@ -1873,9 +1877,6 @@ def _infer_endpoint_by_name(model_id: str, discovery_format: str) -> str:
             return _seedance_endpoint(model_id)
         if "viduq3" in lowered or "viduq4" in lowered:
             return _request_profile_endpoint("vidu", model_id)
-        # Veo 的 OpenAI 兼容层沿用 /v1/videos，只有 google 发现协议才是原生 predictLongRunning
-        if "veo" in lowered and discovery_format == "google":
-            return "gemini-video"
         return "openai-video"
     if is_image:
         # 方舟 Seedream 没有 /images/edits，带参考图的生成也走 /images/generations；不分 discovery_format

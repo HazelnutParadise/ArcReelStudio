@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vite-plus/test";
 
 import i18n from "@/i18n";
 import { UsageKpiStrip } from "./UsageKpiStrip";
@@ -29,9 +29,7 @@ describe("UsageKpiStrip", () => {
       await i18n.changeLanguage(language);
       const summary = makeUsageSummary();
       const { unmount } = render(
-        <UsageKpiStrip
-          summary={{ ...summary, kpi: { ...summary.kpi, calls: 12_340, failed: 1_205 } }}
-        />,
+        <UsageKpiStrip summary={{ ...summary, kpi: { ...summary.kpi, calls: 12_340, failed: 1_205 } }} />,
       );
       expect(screen.getByText(calls)).toBeInTheDocument();
       expect(screen.getByText(failed)).toBeInTheDocument();

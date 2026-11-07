@@ -96,21 +96,25 @@ export function CharacterDerivativesField({
                 value={row ?? null}
                 message={t("assets:editor_derivative_removed")}
               >
-                {(shown) => shown ? (
-                  <CharacterDerivativeRow
-                    projectName={projectName}
-                    characterName={characterName}
-                    name={shown.name}
-                    derivative={shown.derivative}
-                    status={statuses[shown.name]}
-                    ownerHasSheet={Boolean(ownerSheet)}
-                    readOnly={readOnly}
-                    busy={busy}
-                    onView={(image) => setViewing({ ...image, open: true })}
-                    onRenamed={handleRenamed}
-                    onSheetsChanged={refresh}
-                  />
-                ) : <RemovedRow rowKey={key} onRemoved={removeRow} />}
+                {(shown) =>
+                  shown ? (
+                    <CharacterDerivativeRow
+                      projectName={projectName}
+                      characterName={characterName}
+                      name={shown.name}
+                      derivative={shown.derivative}
+                      status={statuses[shown.name]}
+                      ownerHasSheet={Boolean(ownerSheet)}
+                      readOnly={readOnly}
+                      busy={busy}
+                      onView={(image) => setViewing({ ...image, open: true })}
+                      onRenamed={handleRenamed}
+                      onSheetsChanged={refresh}
+                    />
+                  ) : (
+                    <RemovedRow rowKey={key} onRemoved={removeRow} />
+                  )
+                }
               </RetainedEditUnit>
             );
           })}
@@ -196,7 +200,8 @@ function AddDerivative({
         // 提交中不响应关闭，请求在途时输入不丢
         if (!next && submitting) return;
         // 打开时复核占用：渲染之后到点击之间，本体可能刚被别处占用
-        if (next && rejectIfAssetBusy("character", projectName, characterName, t, "assets:derivative_busy_hint")) return;
+        if (next && rejectIfAssetBusy("character", projectName, characterName, t, "assets:derivative_busy_hint"))
+          return;
         setOpen(next);
         if (!next) reset();
       }}

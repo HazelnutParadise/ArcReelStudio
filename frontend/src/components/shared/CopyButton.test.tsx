@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vite-plus/test";
 import { CopyButton } from "./CopyButton";
 
 // 剪贴板是仓库边界（浏览器 API），jsdom 不实现，按分支需要装成功/失败两种实现；

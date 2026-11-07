@@ -41,10 +41,7 @@ const ITEM_COUNT_NOUNS: Record<GenerationRoute, string> = {
   reference_video: "video_unit_count",
 };
 
-export function itemCountKey(
-  route: GenerationRoute,
-  { withStatus = false }: { withStatus?: boolean } = {},
-): string {
+export function itemCountKey(route: GenerationRoute, { withStatus = false }: { withStatus?: boolean } = {}): string {
   const noun = ITEM_COUNT_NOUNS[route];
   return withStatus ? `${noun}_and_status` : noun;
 }

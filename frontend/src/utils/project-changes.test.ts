@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import i18n from "@/i18n";
 import type { ProjectChange } from "@/types";
 import {
@@ -90,13 +90,9 @@ describe("project-changes utils", () => {
     const [singleGroup] = groupChangesByType([namedCharacter("张三")]);
     expect(formatGroupedNotificationText(singleGroup, t)).toBe("角色「张三」已创建");
 
-    const [grouped] = groupChangesByType(
-      ["张三", "李四", "王五", "赵六", "钱七", "孙八"].map(namedCharacter),
-    );
+    const [grouped] = groupChangesByType(["张三", "李四", "王五", "赵六", "钱七", "孙八"].map(namedCharacter));
 
-    expect(formatGroupedNotificationText(grouped, t)).toBe(
-      "新增了 6 个角色：张三、李四、王五、赵六、钱七…等",
-    );
+    expect(formatGroupedNotificationText(grouped, t)).toBe("新增了 6 个角色：张三、李四、王五、赵六、钱七…等");
     expect(formatGroupedDeferredText(grouped, t)).toBe(
       "AI 刚新增了 6 个角色：张三、李四、王五、赵六、钱七…等，点击查看",
     );
@@ -228,9 +224,7 @@ describe("project-changes utils", () => {
         ),
       );
       // 分组标题用 entity_type 名词，条目名单在缺账本时用未命名集与集内 ID。
-      expect(formatGroupedNotificationText(group, t)).toBe(
-        `新增了 2 个${noun}：未命名集 · X01、未命名集 · X02`,
-      );
+      expect(formatGroupedNotificationText(group, t)).toBe(`新增了 2 个${noun}：未命名集 · X01、未命名集 · X02`);
     }
   });
 
@@ -250,9 +244,7 @@ describe("project-changes utils", () => {
       ),
     );
 
-    expect(formatGroupedNotificationText(group, t)).toBe(
-      "已生成 2 个视频单元：U01、U02",
-    );
+    expect(formatGroupedNotificationText(group, t)).toBe("已生成 2 个视频单元：U01、U02");
     expect(formatGroupedNotificationText(group, t)).not.toContain("内容");
   });
 
@@ -267,12 +259,8 @@ describe("project-changes utils", () => {
         label_params: { id: "U01" },
       }),
     ]);
-    expect(formatGroupedNotificationText(singleReferenceVideo, t)).toBe(
-      "视频单元「U01」已生成",
-    );
-    expect(formatGroupedDeferredText(singleReferenceVideo, t)).toBe(
-      "视频单元「U01」 已生成",
-    );
+    expect(formatGroupedNotificationText(singleReferenceVideo, t)).toBe("视频单元「U01」已生成");
+    expect(formatGroupedDeferredText(singleReferenceVideo, t)).toBe("视频单元「U01」 已生成");
 
     const ttsChange = (id: string) =>
       makeChange({
@@ -288,10 +276,7 @@ describe("project-changes utils", () => {
     expect(formatGroupedNotificationText(singleTts, t, [], SCRIPTS)).toBe("旁白配音「未命名集 · 2」已生成");
     expect(formatGroupedDeferredText(singleTts, t, [], SCRIPTS)).toBe("旁白配音「未命名集 · 2」 已生成");
 
-    const [groupedTts] = groupChangesByType([
-      ttsChange("E1S01"),
-      ttsChange("E1S02"),
-    ]);
+    const [groupedTts] = groupChangesByType([ttsChange("E1S01"), ttsChange("E1S02")]);
     expect(formatGroupedNotificationText(groupedTts, t, [], SCRIPTS)).toBe(
       "已生成 2 个旁白配音：未命名集 · 2、未命名集 · 1",
     );

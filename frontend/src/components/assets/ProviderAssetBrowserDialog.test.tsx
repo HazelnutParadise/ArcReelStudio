@@ -1,6 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -204,7 +204,12 @@ describe("ProviderAssetBrowserDialog", () => {
   });
 
   it.each([
-    ["成功", (d: ReturnType<typeof createDeferred<ProviderAssetImportResult>>) => d.resolve(IMPORTED), "供应商素材已导入项目「demo」，成为第 2 版", "success"],
+    [
+      "成功",
+      (d: ReturnType<typeof createDeferred<ProviderAssetImportResult>>) => d.resolve(IMPORTED),
+      "供应商素材已导入项目「demo」，成为第 2 版",
+      "success",
+    ],
     [
       "失败",
       (d: ReturnType<typeof createDeferred<ProviderAssetImportResult>>) =>

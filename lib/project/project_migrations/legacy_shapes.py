@@ -146,7 +146,7 @@ def _bound_path(project_dir: Path, binding: object) -> Path | None:
 def _load_object(path: Path) -> dict[str, Any] | None:
     try:
         payload = json.loads(path.read_bytes().decode("utf-8"))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
     return payload if isinstance(payload, dict) else None
 

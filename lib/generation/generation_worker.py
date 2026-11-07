@@ -94,7 +94,7 @@ def _read_int_env(name: str, default: int, minimum: int = 1) -> int:
         return default
     try:
         value = int(raw)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return default
     return max(minimum, value)
 

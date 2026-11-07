@@ -14,7 +14,11 @@ export function NotFoundPage() {
         </p>
         <h1 className="text-lg font-medium">{t("not_found_title")}</h1>
         <p className="text-sm text-muted-foreground">{t("not_found_description")}</p>
-        <Link href={`~${ROUTE_APP_PROJECTS}`} replace className={buttonVariants({ variant: "outline", className: "mt-5" })}>
+        <Link
+          href={`~${ROUTE_APP_PROJECTS}`}
+          replace
+          className={buttonVariants({ variant: "outline", className: "mt-5" })}
+        >
           {t("not_found_back")}
         </Link>
       </div>

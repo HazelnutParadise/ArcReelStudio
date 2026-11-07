@@ -5,6 +5,7 @@ import { Link } from "wouter";
 
 import { API } from "@/api";
 import { settingsSectionPath } from "@/app-routes";
+import { ClaudeSubscriptionSection } from "@/components/agent/ClaudeSubscriptionSection";
 import { CredentialsSection } from "@/components/agent/CredentialsSection";
 import { SaveBar } from "@/components/shared/edit-unit/SaveBar";
 import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
@@ -69,12 +70,18 @@ export function AgentConfigTab() {
             t={t}
             i18nKey="arcreel_agent_external_hint"
             components={{
-              guide: <Link href={settingsSectionPath("external-agent")} className="text-primary underline-offset-4 hover:underline" />,
+              guide: (
+                <Link
+                  href={settingsSectionPath("external-agent")}
+                  className="text-primary underline-offset-4 hover:underline"
+                />
+              ),
             }}
           />
         </p>
       </header>
       <ConfigIssueNotice issues={issues} />
+      <ClaudeSubscriptionSection />
       <CredentialsSection />
       <RuntimeSettings />
       <p className="text-sm text-muted-foreground">
@@ -110,7 +117,7 @@ function RuntimeSettings() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount 时异步拉取配置后回写，属于受控的初始化加载
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- mount 时异步拉取配置后回写，属于受控的初始化加载
     void load();
   }, [load]);
 

@@ -64,7 +64,7 @@ updates:
           - "mcp"
           - "google-genai"
           - "openai"
-          - "volcengine-python-sdk*"
+          - "volcengine-ark-runtime"
           - "tos"
           - "xai-sdk"
           - "instructor"
@@ -102,7 +102,7 @@ updates:
         patterns:
           - "Jinja2"
           - "PyYAML"
-          - "httpx"
+          - "httpx2"
           - "jsonpath-rfc9535"
           - "jsonschema"
           - "packaging"
@@ -152,13 +152,8 @@ updates:
       - "javascript"
     commit-message:
       prefix: "chore(deps)"
-    # jsdom 上限是 30.0.x：vitest 4 的 jsdom 环境把 jsdom Blob 转成 Node Blob 时读取内部字段
-    # `_buffer`，jsdom 30.1 已将其改名，URL.createObjectURL / FormData 传 File 的测试随之报错。
-    # 解锁条件：frontend 升级到 vitest >= 5.0.3（该版本起改读新字段）。
-    # @types/node 跟随 package.json engines 的 Node 主版本（24），主版本随 Node 升级手动调整。
+    # @types/node 跟随 package.json engines 的 Node 主版本（26），主版本随 Node 升级手动调整。
     ignore:
-      - dependency-name: "jsdom"
-        versions: [">=30.1"]
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
     groups:
@@ -207,9 +202,20 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      # Vite+ 锁定它所带的 vite-plus-core（vite 的别名）与 vitest 的版本。这几项写在 pnpm-workspace.yaml 的 catalog，
+      # 在同一个 PR 里一起升到新版 vite-plus 依赖的版本，@vitest/coverage-v8 与 vitest 保持一致。
+      vite-plus:
+        patterns:
+          - "vite-plus"
+          - "@voidzero-dev/*"
+          - "vite"
+          - "vitest"
+          - "@vitest/*"
+        update-types:
+          - "minor"
+          - "patch"
       vite-tailwind:
         patterns:
-          - "vite"
           - "@vitejs/*"
           - "tailwindcss"
           - "@tailwindcss/*"
@@ -218,9 +224,8 @@ updates:
           - "patch"
       testing:
         patterns:
-          - "vitest"
-          - "@vitest/*"
           - "@testing-library/*"
+          - "oxc-parser"
           - "jsdom"
         update-types:
           - "minor"
@@ -235,13 +240,10 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      eslint-stack:
+      # lint 由 Vite+ 的 Oxlint 执行；这些是经 JS 插件加载的 ESLint 格式插件（见 frontend/lint/config.ts）。
+      lint-plugins:
         patterns:
-          - "eslint"
-          - "eslint-*"
-          - "@eslint/*"
-          - "typescript-eslint"
-          - "globals"
+          - "eslint-plugin-*"
           - "@shadcn/lint"
         update-types:
           - "minor"

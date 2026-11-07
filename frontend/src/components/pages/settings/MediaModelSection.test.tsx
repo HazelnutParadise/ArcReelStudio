@@ -1,5 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import userEvent from "@testing-library/user-event";
 import i18n from "@/i18n";
 import { API } from "@/api";
@@ -204,9 +204,7 @@ describe("MediaModelSection", () => {
     render(<MediaModelSection />);
     await screen.findByRole("combobox", { name: "默认图片模型" });
     await user.click(screen.getAllByText("按用途指定模型")[1]);
-    expect(screen.getByRole("combobox", { name: "文生图" })).toHaveTextContent(
-      /跟随默认 · gemini · nano-banana/,
-    );
+    expect(screen.getByRole("combobox", { name: "文生图" })).toHaveTextContent(/跟随默认 · gemini · nano-banana/);
   });
 
   it("shows the auto-selected model when the default model is unset", async () => {
@@ -238,9 +236,7 @@ describe("MediaModelSection", () => {
     await user.click(await screen.findByRole("option", { name: /seedance/ }));
     await user.click(screen.getByRole("button", { name: /保存|Save/ }));
 
-    await waitFor(() =>
-      expect(patch).toHaveBeenCalledWith({ default_video_backend_r2v: "ark/seedance" }),
-    );
+    await waitFor(() => expect(patch).toHaveBeenCalledWith({ default_video_backend_r2v: "ark/seedance" }));
   });
 
   it("renders the form and completes a save while the candidate request never settles", async () => {
@@ -258,9 +254,7 @@ describe("MediaModelSection", () => {
     await user.click(await screen.findByRole("option", { name: /seedance/ }));
     await user.click(screen.getByRole("button", { name: /保存|Save/ }));
 
-    await waitFor(() =>
-      expect(patch).toHaveBeenCalledWith({ default_video_backend: "ark/seedance" }),
-    );
+    await waitFor(() => expect(patch).toHaveBeenCalledWith({ default_video_backend: "ark/seedance" }));
     // 保存结束的可观测证据：保存栏显示「已保存」——PATCH 已返回但流程仍卡在候选请求上时，
     // 保存栏会一直停在「正在保存」。
     expect(await screen.findByText("已保存")).toBeInTheDocument();
@@ -345,9 +339,7 @@ describe("MediaModelSection", () => {
         .mockResolvedValue(CONFIG as unknown as Awaited<ReturnType<typeof API.updateSystemConfig>>);
       await user.click(screen.getByRole("button", { name: "改为开启" }));
       await user.click(screen.getByRole("button", { name: /保存|Save/ }));
-      await waitFor(() =>
-        expect(patch).toHaveBeenCalledWith(expect.objectContaining({ video_generate_audio: true })),
-      );
+      await waitFor(() => expect(patch).toHaveBeenCalledWith(expect.objectContaining({ video_generate_audio: true })));
     });
 
     it("keeps the checkbox interactive when both bucket overrides are controllable, whatever the base default is", async () => {
@@ -621,9 +613,7 @@ describe("MediaModelSection – 引用处的下线提示", () => {
       .mockResolvedValue(CONFIG as unknown as Awaited<ReturnType<typeof API.updateSystemConfig>>);
     render(<MediaModelSection />);
 
-    expect(
-      await screen.findByText("已下线（2026-10-22），无法继续生成，官方建议改用 Veo 4"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("已下线（2026-10-22），无法继续生成，官方建议改用 Veo 4")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "切换到 Veo 4" }));
     await user.click(screen.getByRole("button", { name: "保存" }));
 

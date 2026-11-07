@@ -121,10 +121,7 @@ export function ReferenceDurationConfirmDialog({ open, items, onConfirm, onCance
           {advisoryItems.flatMap(({ unitId, problems }) =>
             problems.map((problem, index) => (
               // react-doctor-disable-next-line react-doctor/no-array-index-as-key -- 单元内的提示由服务端算出、没有 ID，确认框打开期间只读不变、行内无状态
-              <li
-                key={`${unitId}-${index}`}
-                className="flex flex-wrap items-center gap-x-2 gap-y-0.5"
-              >
+              <li key={`${unitId}-${index}`} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 {items.length > 1 && <EpisodeItemRef itemId={unitId} />}
                 <span className="text-subtle-foreground">{problem.message}</span>
               </li>
@@ -146,9 +143,7 @@ export function ReferenceDurationConfirmDialog({ open, items, onConfirm, onCance
     );
   const durationChanges = durationItems.length > 0;
 
-  const title = t(
-    durationChanges ? "reference_duration_confirm_title" : "reference_advisory_confirm_title",
-  );
+  const title = t(durationChanges ? "reference_duration_confirm_title" : "reference_advisory_confirm_title");
   return (
     <AlertDialog
       open={open}

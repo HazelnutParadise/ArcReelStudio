@@ -159,7 +159,7 @@ def test_symlinked_timeline_directories_outside_project_are_left_untouched(tmp_p
         episode_dir.symlink_to(external_dir, target_is_directory=True)
         (project_dir / "edit_timelines" / "episode_2").mkdir()
         (project_dir / "edit_timelines" / "episode_2" / "tl-linked.json").symlink_to(external_dir / "tl-0000abcd.json")
-    except (NotImplementedError, OSError):
+    except NotImplementedError, OSError:
         pytest.skip("symlinks are unavailable on this platform")
     external_file = external_dir / "tl-0000abcd.json"
     before = external_file.read_bytes()

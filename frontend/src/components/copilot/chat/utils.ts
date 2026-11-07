@@ -20,8 +20,7 @@ export const TERMINAL_SESSION_STATUSES = new Set(["completed", "error", "interru
 export function composeAllTurns(turns: Turn[], draftTurn: Turn | null): Turn[] {
   if (!draftTurn) return turns;
   const last = turns.at(-1);
-  const lastIsInterrupt = last?.type === "system"
-    && (last.content ?? []).some((b) => b.type === "interrupt_notice");
+  const lastIsInterrupt = last?.type === "system" && (last.content ?? []).some((b) => b.type === "interrupt_notice");
   if (lastIsInterrupt && last) {
     return [...turns.slice(0, -1), draftTurn, last];
   }

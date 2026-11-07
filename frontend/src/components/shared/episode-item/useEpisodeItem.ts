@@ -23,7 +23,8 @@ export function useItemPositionLabeler(): (itemId: string) => string {
   const { t } = useTranslation();
   const scripts = useProjectsStore((s) => s.currentScripts);
   return useCallback(
-    (itemId: string) => itemPositionLabel(episodeItemKind(itemId), findEpisodeItem(scripts, itemId)?.position ?? null, t),
+    (itemId: string) =>
+      itemPositionLabel(episodeItemKind(itemId), findEpisodeItem(scripts, itemId)?.position ?? null, t),
     [scripts, t],
   );
 }

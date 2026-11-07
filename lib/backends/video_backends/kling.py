@@ -24,7 +24,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import cast
 
-import httpx
+import httpx2
 
 from arcreel_catalog_core import CatalogEntry
 from arcreel_market_core.video_backend_contract import (
@@ -509,7 +509,7 @@ class KlingVideoBackend(EntryBoundCapabilities, KlingBackendBase, ProviderJobIdP
 
     async def _poll_and_build(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         subpath: str,
         task_id: str,
         request: VideoGenerationRequest,

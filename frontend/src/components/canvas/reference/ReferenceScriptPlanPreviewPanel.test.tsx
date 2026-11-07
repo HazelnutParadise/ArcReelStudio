@@ -1,7 +1,7 @@
 import { itemIdsInEpisodeText } from "@/utils/episode-display";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vite-plus/test";
 import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
@@ -122,8 +122,20 @@ function quarantinedState(): ScriptReviewState {
         ],
       },
       violations: [
-        { code: "fullwidth_braces", label: "unit E1U01", message: "unit E1U01 使用了全角花括号", line: 1, item_index: 0 },
-        { code: "dialogue_overload", label: "unit E1U01", message: "unit E1U01 的台词念不完", line: null, item_index: 0 },
+        {
+          code: "fullwidth_braces",
+          label: "unit E1U01",
+          message: "unit E1U01 使用了全角花括号",
+          line: 1,
+          item_index: 0,
+        },
+        {
+          code: "dialogue_overload",
+          label: "unit E1U01",
+          message: "unit E1U01 的台词念不完",
+          line: null,
+          item_index: 0,
+        },
       ],
     }),
   };
@@ -179,12 +191,18 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
             hydrated_capability: "i2v",
             declared_references: [],
             allowed_durations: null,
-            problem: { code: "video_capability_missing_i2v", params: { capability: "i2v" }, action: "configure_video_model" },
+            problem: {
+              code: "video_capability_missing_i2v",
+              params: { capability: "i2v" },
+              action: "configure_video_model",
+            },
           }),
         },
       },
     });
-    state.content = { units: [{ unit_id: "E1U01", text: "夜色中行走。", duration_seconds: 8, source_text: "夜色中行走。" }] };
+    state.content = {
+      units: [{ unit_id: "E1U01", text: "夜色中行走。", duration_seconds: 8, source_text: "夜色中行走。" }],
+    };
     vi.spyOn(API, "getScriptReview").mockResolvedValue(state);
 
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
@@ -210,7 +228,14 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
       },
     });
     state.content = {
-      units: [{ unit_id: "E1U01", text: "@[阿离] 撑伞走过 @[长街]", duration_seconds: durationSeconds, source_text: "阿离撑伞走过长街。" }],
+      units: [
+        {
+          unit_id: "E1U01",
+          text: "@[阿离] 撑伞走过 @[长街]",
+          duration_seconds: durationSeconds,
+          source_text: "阿离撑伞走过长街。",
+        },
+      ],
     };
     return state;
   }
@@ -218,7 +243,13 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
   it("offers the planning tiers for a unit whose bucket is endpoint-fixed", async () => {
     vi.spyOn(API, "getScriptReview").mockResolvedValue(endpointFixedState(8));
     render(
-      <ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} videoModelUnresolved={false} planningDurations={[4, 8]} />,
+      <ReferenceScriptPlanPreviewPanel
+        projectName="p"
+        episode={1}
+        lookup={LOOKUP}
+        videoModelUnresolved={false}
+        planningDurations={[4, 8]}
+      />,
     );
     expect(await durationOptions()).toEqual(["4", "8"]);
     expect(screen.getByText(/时长由端点固定/)).toBeInTheDocument();
@@ -228,7 +259,13 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
   it("flags an endpoint-fixed unit outside the planning tiers and lets the duration be corrected", async () => {
     vi.spyOn(API, "getScriptReview").mockResolvedValue(endpointFixedState(6));
     render(
-      <ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} videoModelUnresolved={false} planningDurations={[4, 8]} />,
+      <ReferenceScriptPlanPreviewPanel
+        projectName="p"
+        episode={1}
+        lookup={LOOKUP}
+        videoModelUnresolved={false}
+        planningDurations={[4, 8]}
+      />,
     );
     expect(await screen.findByText("档位已失效")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /确认拆分，继续生成/ })).toBeDisabled();
@@ -248,19 +285,21 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
 
   it("localizes structured speech violations with their unit and field locations", async () => {
     const state = quarantinedState();
-    state.quarantine!.violations = [{
-      code: "mixed_speech",
-      label: "unit E1U01",
-      message: "raw agent message",
-      line: null,
-      locations: [
-        { path: ["text"], line: 1 },
-        { path: ["text"], line: 2 },
-      ],
-      reason: "character_and_narrator_mixed",
-      action: "replan_unit",
-      item_index: 0,
-    }];
+    state.quarantine!.violations = [
+      {
+        code: "mixed_speech",
+        label: "unit E1U01",
+        message: "raw agent message",
+        line: null,
+        locations: [
+          { path: ["text"], line: 1 },
+          { path: ["text"], line: 2 },
+        ],
+        reason: "character_and_narrator_mixed",
+        action: "replan_unit",
+        item_index: 0,
+      },
+    ];
     vi.spyOn(API, "getScriptReview").mockResolvedValue(state);
 
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
@@ -272,7 +311,9 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
   // 场景引用提示：与解析预览面板同判据，落在 unit 卡内，不阻断确认。
   it("warns on units that reference no scene while the project registers scene assets", async () => {
     const state = pendingState();
-    state.content = { units: [{ unit_id: "E1U01", text: "@[阿离] 推门。", duration_seconds: 8, source_text: "阿离推门。" }] };
+    state.content = {
+      units: [{ unit_id: "E1U01", text: "@[阿离] 推门。", duration_seconds: 8, source_text: "阿离推门。" }],
+    };
     vi.spyOn(API, "getScriptReview").mockResolvedValue(state);
 
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
@@ -284,7 +325,9 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
 
   it("drops the scene warning once the edited body references a scene", async () => {
     const state = pendingState();
-    state.content = { units: [{ unit_id: "E1U01", text: "@[阿离] 推门。", duration_seconds: 8, source_text: "阿离推门。" }] };
+    state.content = {
+      units: [{ unit_id: "E1U01", text: "@[阿离] 推门。", duration_seconds: 8, source_text: "阿离推门。" }],
+    };
     vi.spyOn(API, "getScriptReview").mockResolvedValue(state);
 
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
@@ -319,7 +362,9 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
 
   it("stays silent about scenes when the project registers none", async () => {
     const state = pendingState();
-    state.content = { units: [{ unit_id: "E1U01", text: "@[阿离] 推门。", duration_seconds: 8, source_text: "阿离推门。" }] };
+    state.content = {
+      units: [{ unit_id: "E1U01", text: "@[阿离] 推门。", duration_seconds: 8, source_text: "阿离推门。" }],
+    };
     vi.spyOn(API, "getScriptReview").mockResolvedValue(state);
 
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={{ 阿离: "character" }} />);
@@ -332,9 +377,7 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
     // Web 全流程不打开 Agent 面板：确认后由页面的下一步接续，与 ScriptReviewGate 一致。
     useAppStore.setState({ assistantPanelOpen: false });
     vi.spyOn(API, "getScriptReview").mockResolvedValue(pendingState());
-    const confirm = vi
-      .spyOn(API, "confirmScriptReview")
-      .mockResolvedValue(pendingState(CONFIRMED));
+    const confirm = vi.spyOn(API, "confirmScriptReview").mockResolvedValue(pendingState(CONFIRMED));
 
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
     await waitFor(() => expect(screen.getByRole("button", { name: /确认拆分，继续生成/ })).toBeInTheDocument());
@@ -360,7 +403,9 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
     expect(screen.getByText("8 秒")).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "视频单元 1 时长" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "编辑文稿" })).not.toBeInTheDocument();
-    expect(screen.getByText("内容已确认，此处只读。请在时间线上修改；要整集重做，请重跑脚本规划后再确认。")).toBeInTheDocument();
+    expect(
+      screen.getByText("内容已确认，此处只读。请在时间线上修改；要整集重做，请重跑脚本规划后再确认。"),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "去时间线修改" }));
     expect(openTimeline).toHaveBeenCalledTimes(1);
@@ -374,7 +419,9 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
 
     const button = await screen.findByRole("button", { name: "重新确认并生成正式脚本" });
     expect(button).toBeEnabled();
-    expect(screen.getByText("内容已确认，但本集还没有正式脚本。重新确认即按脚本规划转出正式脚本。")).toBeInTheDocument();
+    expect(
+      screen.getByText("内容已确认，但本集还没有正式脚本。重新确认即按脚本规划转出正式脚本。"),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "视频单元 1 时长" })).not.toBeInTheDocument();
 
     fireEvent.click(button);
@@ -391,9 +438,7 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
       text: "现有 1 条分镜全部移除。视频 1 段。",
     });
     vi.spyOn(API, "getScriptReview").mockResolvedValue(pendingState({ script_overwrite: overwrite }));
-    const confirm = vi
-      .spyOn(API, "confirmScriptReview")
-      .mockResolvedValue(pendingState(CONFIRMED));
+    const confirm = vi.spyOn(API, "confirmScriptReview").mockResolvedValue(pendingState(CONFIRMED));
 
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
 
@@ -461,7 +506,10 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
 
     const notice = await screen.findByRole("alert");
     expect(notice).toHaveTextContent("尚未配置可用的视频模型");
-    expect(screen.getByRole("link", { name: "前往项目设置" })).toHaveAttribute("href", "/app/projects/p/settings?tab=models");
+    expect(screen.getByRole("link", { name: "前往项目设置" })).toHaveAttribute(
+      "href",
+      "/app/projects/p/settings?tab=models",
+    );
     const button = screen.getByRole("button", { name: /确认拆分，继续生成/ });
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute("title", expect.stringContaining("尚未配置可用的视频模型"));
@@ -683,7 +731,13 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
     state.quarantine = draftView({
       content: state.quarantine!.content,
       soft_violations: [
-        { code: "ref_warn_speaker_without_audio", params: {}, item_index: 0, item_id: "E1U01", message: "阿离未设置参考音频" },
+        {
+          code: "ref_warn_speaker_without_audio",
+          params: {},
+          item_index: 0,
+          item_id: "E1U01",
+          message: "阿离未设置参考音频",
+        },
       ],
     });
     vi.spyOn(API, "getScriptReview").mockResolvedValue(state);
@@ -788,8 +842,7 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
 
   it("counts a well-formed dialogue line as a spoken line", async () => {
     const withDialogue = pendingState();
-    (withDialogue.content as ReferenceScriptPlanDraft).units[0].text =
-      "@[阿离] 撑伞走过 @[长街]\n@[阿离]：{我来了。}";
+    (withDialogue.content as ReferenceScriptPlanDraft).units[0].text = "@[阿离] 撑伞走过 @[长街]\n@[阿离]：{我来了。}";
     vi.spyOn(API, "getScriptReview").mockResolvedValue(withDialogue);
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
 
@@ -809,7 +862,9 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
   });
 
   it("falls back to a read-only duration when no tier list is available", async () => {
-    vi.spyOn(API, "getScriptReview").mockResolvedValue(pendingState({ supported_durations: null, duration_tiers: null }));
+    vi.spyOn(API, "getScriptReview").mockResolvedValue(
+      pendingState({ supported_durations: null, duration_tiers: null }),
+    );
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
 
     await waitFor(() => expect(screen.getByText("8 秒")).toBeInTheDocument());
@@ -817,13 +872,15 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
   });
 
   it("keeps the duration select on a stored value that is no longer a supported tier, sorted into place", async () => {
-    vi.spyOn(API, "getScriptReview").mockResolvedValue(pendingState({
-      supported_durations: [4, 6],
-      duration_tiers: {
-        with_references: [4, 6],
-        units: { E1U01: mkCapability("E1U01", { allowed_durations: [4, 6] }) },
-      },
-    }));
+    vi.spyOn(API, "getScriptReview").mockResolvedValue(
+      pendingState({
+        supported_durations: [4, 6],
+        duration_tiers: {
+          with_references: [4, 6],
+          units: { E1U01: mkCapability("E1U01", { allowed_durations: [4, 6] }) },
+        },
+      }),
+    );
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
 
     expect(await screen.findByRole("combobox", { name: "视频单元 1 时长" })).toHaveTextContent("8 秒");
@@ -838,7 +895,9 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
       quarantine: draftView({
         // schema 违约：后端原样回传 Agent 手改的内容，`units` 根本不是数组。
         content: { units: "被改坏了" },
-        violations: [{ code: "schema_invalid", label: "", message: "待修复草稿的 content.units 必须是非空数组", line: null }],
+        violations: [
+          { code: "schema_invalid", label: "", message: "待修复草稿的 content.units 必须是非空数组", line: null },
+        ],
       }),
     });
     render(<ReferenceScriptPlanPreviewPanel projectName="p" episode={1} lookup={LOOKUP} />);
@@ -904,8 +963,22 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
               unavailable_references: [{ type: "character", name: "阿离" }],
               allowed_durations: [4, 6, 8],
               problems: [
-                { code: "reference_asset_missing", blocking: true, unit_id: "E1U01", locations: [], params: {}, action: "repair_reference_assets" },
-                { code: "reference_capability_changed", blocking: true, unit_id: "E1U01", locations: [], params: {}, action: "repair_reference_assets" },
+                {
+                  code: "reference_asset_missing",
+                  blocking: true,
+                  unit_id: "E1U01",
+                  locations: [],
+                  params: {},
+                  action: "repair_reference_assets",
+                },
+                {
+                  code: "reference_capability_changed",
+                  blocking: true,
+                  unit_id: "E1U01",
+                  locations: [],
+                  params: {},
+                  action: "repair_reference_assets",
+                },
               ],
             }),
           },
@@ -936,7 +1009,14 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
               unregistered_references: ["路人"],
               allowed_durations: [4, 6, 8],
               problems: [
-                { code: "reference_asset_unregistered", blocking: true, unit_id: "E1U01", locations: [], params: {}, action: "repair_reference_assets" },
+                {
+                  code: "reference_asset_unregistered",
+                  blocking: true,
+                  unit_id: "E1U01",
+                  locations: [],
+                  params: {},
+                  action: "repair_reference_assets",
+                },
               ],
             }),
           },
@@ -1060,8 +1140,20 @@ describe("ReferenceScriptPlanPreviewPanel", () => {
           ],
         },
         violations: [
-          { code: "fullwidth_braces", label: "unit E1U01", message: "unit E1U01 使用了全角花括号", line: 1, item_index: 0 },
-          { code: "fullwidth_braces", label: "unit E1U02", message: "unit E1U02 使用了全角花括号", line: 1, item_index: 1 },
+          {
+            code: "fullwidth_braces",
+            label: "unit E1U01",
+            message: "unit E1U01 使用了全角花括号",
+            line: 1,
+            item_index: 0,
+          },
+          {
+            code: "fullwidth_braces",
+            label: "unit E1U02",
+            message: "unit E1U02 使用了全角花括号",
+            line: 1,
+            item_index: 1,
+          },
         ],
       }),
     });

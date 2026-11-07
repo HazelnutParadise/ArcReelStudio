@@ -9,12 +9,7 @@ interface AvatarStackProps {
   maxShow?: number;
 }
 
-export function AvatarStack({
-  names,
-  characters,
-  projectName,
-  maxShow = 4,
-}: AvatarStackProps) {
+export function AvatarStack({ names, characters, projectName, maxShow = 4 }: AvatarStackProps) {
   if (names.length === 0) return null;
 
   const visible = names.slice(0, maxShow);

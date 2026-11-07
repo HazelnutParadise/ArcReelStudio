@@ -17,14 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -292,11 +285,7 @@ function SourceRow({ source, refreshing, onToggle, onRefresh, onRename, onDelete
           <p className="text-xs break-words text-warn">{source.last_error}</p>
         )}
       </div>
-      <Switch
-        checked={source.is_enabled}
-        onCheckedChange={onToggle}
-        aria-label={t("market_source_enable", { name })}
-      />
+      <Switch checked={source.is_enabled} onCheckedChange={onToggle} aria-label={t("market_source_enable", { name })} />
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" size="icon-sm" aria-label={t("market_source_menu", { name })} />}
@@ -453,7 +442,11 @@ function DeleteSourceDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{t("market_source_delete_title", { name: shown?.display_name ?? "" })}</AlertDialogTitle>
         </AlertDialogHeader>
-        <AlertDialogBody tabIndex={0} role="region" aria-label={t("market_source_delete_title", { name: shown?.display_name ?? "" })}>
+        <AlertDialogBody
+          tabIndex={0}
+          role="region"
+          aria-label={t("market_source_delete_title", { name: shown?.display_name ?? "" })}
+        >
           <div className="flex flex-col gap-3">
             <AlertDialogDescription>{t("market_source_delete_desc")}</AlertDialogDescription>
             {error && (

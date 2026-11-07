@@ -13,6 +13,7 @@ BGM 按片段起点混入整集音频，音量是登记时缓存的响度增益�
 from __future__ import annotations
 
 import asyncio
+import logging
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
@@ -65,6 +66,7 @@ from lib.infra.ffmpeg import FfmpegUnavailableError, ffmpeg_executable
 from lib.infra.media_probe import MediaProbeError, probe_media
 from lib.infra.path_safety import PathTraversalError, safe_join
 from lib.infra.subprocess_deadline import Spawner
+from lib.infra.video_encoder import CPU_ENCODING, VideoEncoding
 from lib.jianying_draft.basis import DraftNarration
 from lib.jianying_draft.placement import (
     DraftPlacement,
@@ -77,6 +79,8 @@ from lib.material.storage import VersionSnapshotCorruptedError
 from lib.project.project_manager import ProjectManager
 from lib.speech.narration_config import project_narration_delivery
 from lib.speech.narration_delivery import USE_TTS
+
+logger = logging.getLogger(__name__)
 
 
 class FinalCutCheck(BaseModel):
@@ -159,7 +163,10 @@ class _Checked:
 
 
 class FinalCutService:
-    """``unit_materials`` 是带旁白或烧入字幕的版本取素材层的来源；只做检查与读取时效的调用方可以不给。"""
+    """``unit_materials`` 是带旁白或烧入字幕的版本取素材层的来源；只做检查与读取时效的调用方可以不给。
+
+    ``video_encoding`` 是成片画面的编码方式。GPU 编码渲染失败时整片改用 CPU 重新渲染一次。
+    """
 
     def __init__(
         self,
@@ -168,11 +175,13 @@ class FinalCutService:
         unit_materials: UnitMaterialSource | None = None,
         spawn: Spawner | None = None,
         deadlines: RenderDeadlines = DEFAULT_RENDER_DEADLINES,
+        video_encoding: VideoEncoding = CPU_ENCODING,
     ) -> None:
         self._projects = projects
         self._unit_materials = unit_materials
         self._spawn = spawn
         self._deadlines = deadlines
+        self._video_encoding = video_encoding
 
     def _project_dir(self, project_name: str) -> Path:
         if not self._projects.project_exists(project_name):
@@ -442,7 +451,7 @@ class FinalCutService:
         narrations, bgm = await asyncio.to_thread(audio_inputs)
         ffmpeg = ffmpeg_executable()
 
-        async def render_step(output: Path, workspace: Path) -> None:
+        async def render_with(encoding: VideoEncoding, output: Path, workspace: Path) -> None:
             await render_plan_to_file(
                 ffmpeg,
                 plan,
@@ -453,7 +462,19 @@ class FinalCutService:
                 subtitles=burned,
                 deadlines=self._deadlines,
                 spawn=self._spawn,
+                encoding=encoding,
             )
+
+        async def render_step(output: Path, workspace: Path) -> None:
+            encoding = self._video_encoding
+            try:
+                await render_with(encoding, output, workspace)
+            except FinalCutError as exc:
+                if not encoding.uses_gpu or exc.code != "final_cut_render_failed":
+                    raise
+                # 拼接要求各段编码一致：GPU 编码中途失败（驱动、会话数上限等）时整片改用 CPU 重渲。
+                logger.warning("成片 GPU 编码（%s）失败，改用 CPU 重新渲染：%s", encoding.encoder, exc)
+                await render_with(CPU_ENCODING, output, workspace)
 
         async def accept_step(output: Path) -> FinalCutAcceptance:
             return await accept_final_cut(output, plan, spawn=self._spawn)

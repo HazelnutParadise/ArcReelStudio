@@ -65,7 +65,10 @@ const LONG_AD = adProject({
     ]),
   ),
   overview: {
-    synopsis: Array.from({ length: 12 }, (_, i) => `${i * 3}-${i * 3 + 3} 秒：冰块落进杯子，镜头推近，气泡沿杯壁上升。`).join("\n"),
+    synopsis: Array.from(
+      { length: 12 },
+      (_, i) => `${i * 3}-${i * 3 + 3} 秒：冰块落进杯子，镜头推近，气泡沿杯壁上升。`,
+    ).join("\n"),
     genre: "饮品广告 / 生活方式 / 轻喜剧",
     theme: "忙碌通勤里的一口清凉",
     world_setting: repeat("夏天傍晚的城市街角，便利店灯光刚亮，地铁口人流涌出。", 6),
@@ -83,7 +86,8 @@ const REGULAR_AD = adProject({
     ]),
   ),
   overview: {
-    synopsis: "0-3 秒：冰块落进杯子。\n3-10 秒：地铁口人流涌出，主角拉开易拉罐。\n10-30 秒：三种口味依次出场，结尾领券。",
+    synopsis:
+      "0-3 秒：冰块落进杯子。\n3-10 秒：地铁口人流涌出，主角拉开易拉罐。\n10-30 秒：三种口味依次出场，结尾领券。",
     genre: "饮品广告",
     theme: "忙碌通勤里的一口清凉",
     world_setting: "夏天傍晚的城市街角，便利店灯光刚亮。",

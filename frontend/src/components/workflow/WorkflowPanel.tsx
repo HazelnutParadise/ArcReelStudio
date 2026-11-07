@@ -150,9 +150,7 @@ export function WorkflowPanel({ projectName, episode, onViewUnit, onRegenerate, 
   const [, setLocation] = useLocation();
   const [open, setOpen] = useState(false);
   const [assetBatchEpisode, setAssetBatchEpisode] = useState<number | null>(null);
-  const [storyboardBatch, setStoryboardBatch] = useState<{ episodeId: number; kind: StoryboardBatchKind } | null>(
-    null,
-  );
+  const [storyboardBatch, setStoryboardBatch] = useState<{ episodeId: number; kind: StoryboardBatchKind } | null>(null);
   const [instructionDraft, setInstructionDraft] = useState<{ key: string; value: string } | null>(null);
   const [running, setRunning] = useState(false);
   const [pendingDiscard, setPendingDiscard] = useState<PendingDiscard | null>(null);
@@ -187,14 +185,7 @@ export function WorkflowPanel({ projectName, episode, onViewUnit, onRegenerate, 
   useEffect(() => {
     if (!projectName) return;
     void refreshPlan(projectName, episode);
-  }, [
-    projectName,
-    episode,
-    snapshotRevision,
-    settledTaskFingerprint,
-    confirmedDurations,
-    refreshPlan,
-  ]);
+  }, [projectName, episode, snapshotRevision, settledTaskFingerprint, confirmedDurations, refreshPlan]);
 
   useEffect(() => () => resetTarget(), [resetTarget]);
 
@@ -205,7 +196,12 @@ export function WorkflowPanel({ projectName, episode, onViewUnit, onRegenerate, 
   const episodeMeta = projectData?.episodes?.find((entry) => entry.episode === episodeId);
   const episodeRef = episodeId != null ? episodeAgentRef(ledger, episodeId, t) : "";
   const timelineIds = shown?.status.artifacts.edit_timelines?.timeline_ids;
-  const editOverview = useEditOverview(projectName, episodeId ?? null, shown, Array.isArray(timelineIds) ? timelineIds.length : 0);
+  const editOverview = useEditOverview(
+    projectName,
+    episodeId ?? null,
+    shown,
+    Array.isArray(timelineIds) ? timelineIds.length : 0,
+  );
 
   const view = useMemo(() => {
     if (!shown || episodeId == null) return null;
@@ -225,7 +221,19 @@ export function WorkflowPanel({ projectName, episode, onViewUnit, onRegenerate, 
       canViewUnit: Boolean(onViewUnit),
       editOverview,
     });
-  }, [shown, episodeId, episodeRef, scripts, episodeMeta, projectData, t, i18n.language, onAuthorPrompts, onViewUnit, editOverview]);
+  }, [
+    shown,
+    episodeId,
+    episodeRef,
+    scripts,
+    episodeMeta,
+    projectData,
+    t,
+    i18n.language,
+    onAuthorPrompts,
+    onViewUnit,
+    editOverview,
+  ]);
 
   const blockers = useMemo(() => (shown ? blockerViews(t, shown.blockers) : []), [shown, t]);
   const issues = useMemo(() => (shown ? blockerViews(t, shown.status.issues) : []), [shown, t]);
@@ -351,7 +359,13 @@ export function WorkflowPanel({ projectName, episode, onViewUnit, onRegenerate, 
               break;
             }
             const draft = await API.getEpisodeDraft(projectName, episodeId, intent.docType);
-            await enqueueDraftRepair(projectName, episodeId, intent.docType, draft.revision ?? "", instruction.trim() || null);
+            await enqueueDraftRepair(
+              projectName,
+              episodeId,
+              intent.docType,
+              draft.revision ?? "",
+              instruction.trim() || null,
+            );
             break;
           }
           case "discard_draft": {
@@ -373,7 +387,21 @@ export function WorkflowPanel({ projectName, episode, onViewUnit, onRegenerate, 
         setRunning(false);
       }
     },
-    [episodeId, episode, withInstruction, onAuthorPrompts, projectName, onViewUnit, setLocation, instruction, shown, t, episodeRef, pushToast, refreshPlan],
+    [
+      episodeId,
+      episode,
+      withInstruction,
+      onAuthorPrompts,
+      projectName,
+      onViewUnit,
+      setLocation,
+      instruction,
+      shown,
+      t,
+      episodeRef,
+      pushToast,
+      refreshPlan,
+    ],
   );
 
   const viewUnit = useMemo(
@@ -492,9 +520,7 @@ export function WorkflowPanel({ projectName, episode, onViewUnit, onRegenerate, 
             </ol>
           ) : (
             !shown && (
-              <p className="text-xs text-muted-foreground">
-                {loading ? t("plan_loading") : t("plan_unavailable")}
-              </p>
+              <p className="text-xs text-muted-foreground">{loading ? t("plan_loading") : t("plan_unavailable")}</p>
             )
           )}
         </PopoverContent>

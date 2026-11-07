@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import type { EditClip, EditTimelinePreviewMedia, EditTimelineReadout } from "@/types/edit-timeline";
 
@@ -55,12 +55,49 @@ const READOUT: EditTimelineReadout = {
       trim: { source_in: 1, source_out: 4, basis_version: 1 },
       narration: { start: 7, end: 9 },
     }),
-    clip({ id: "c4", unit_id: "E1U9", start: 10, duration: 0, status: "unit_deleted", video_version: null, source_duration: null }),
-    clip({ id: "c5", unit_id: "E1U5", start: 10, duration: 3, carries_narration: true, narration: { start: 10, end: null } }),
+    clip({
+      id: "c4",
+      unit_id: "E1U9",
+      start: 10,
+      duration: 0,
+      status: "unit_deleted",
+      video_version: null,
+      source_duration: null,
+    }),
+    clip({
+      id: "c5",
+      unit_id: "E1U5",
+      start: 10,
+      duration: 3,
+      carries_narration: true,
+      narration: { start: 10, end: null },
+    }),
   ],
   bgm: [
-    { id: "b1", bgm_id: "bgm-0001", name: "雨夜", start: 0, end: 10, source_in: 5, source_out: 15, volume: 0.25, fade_in: 1, fade_out: 1 },
-    { id: "b2", bgm_id: "bgm-0001", name: "雨夜", start: 10, end: 13, source_in: 0, source_out: 8, volume: 0.25, fade_in: 1, fade_out: 1 },
+    {
+      id: "b1",
+      bgm_id: "bgm-0001",
+      name: "雨夜",
+      start: 0,
+      end: 10,
+      source_in: 5,
+      source_out: 15,
+      volume: 0.25,
+      fade_in: 1,
+      fade_out: 1,
+    },
+    {
+      id: "b2",
+      bgm_id: "bgm-0001",
+      name: "雨夜",
+      start: 10,
+      end: 13,
+      source_in: 0,
+      source_out: 8,
+      volume: 0.25,
+      fade_in: 1,
+      fade_out: 1,
+    },
   ],
   issues: [],
 };
@@ -114,8 +151,22 @@ describe("narrationSpans", () => {
     const overlapping: EditTimelineReadout = {
       ...READOUT,
       clips: [
-        clip({ id: "c1", unit_id: "E1U1", start: 0, duration: 3, carries_narration: true, narration: { start: 0, end: 5 } }),
-        clip({ id: "c2", unit_id: "E1U2", start: 3, duration: 4, carries_narration: true, narration: { start: 3, end: 15 } }),
+        clip({
+          id: "c1",
+          unit_id: "E1U1",
+          start: 0,
+          duration: 3,
+          carries_narration: true,
+          narration: { start: 0, end: 5 },
+        }),
+        clip({
+          id: "c2",
+          unit_id: "E1U2",
+          start: 3,
+          duration: 4,
+          carries_narration: true,
+          narration: { start: 3, end: 15 },
+        }),
       ],
       duration: 7,
     };
@@ -142,21 +193,54 @@ describe("narrationSpans in a post-production project", () => {
 describe("narrationPlacements", () => {
   it("sounds only narration with audio that the preview renders with narration", () => {
     expect(narrationPlacements(READOUT, MEDIA)).toEqual([
-      { id: "narration-c1", kind: "narration", sourceId: "E1U1", start: 0, end: 5, sourceIn: 0, volume: 1, fadeIn: 0, fadeOut: 0 },
-      { id: "narration-c3", kind: "narration", sourceId: "E1U2", start: 7, end: 9, sourceIn: 0, volume: 1, fadeIn: 0, fadeOut: 0 },
+      {
+        id: "narration-c1",
+        kind: "narration",
+        sourceId: "E1U1",
+        start: 0,
+        end: 5,
+        sourceIn: 0,
+        volume: 1,
+        fadeIn: 0,
+        fadeOut: 0,
+      },
+      {
+        id: "narration-c3",
+        kind: "narration",
+        sourceId: "E1U2",
+        start: 7,
+        end: 9,
+        sourceIn: 0,
+        volume: 1,
+        fadeIn: 0,
+        fadeOut: 0,
+      },
     ]);
   });
 
   it("stays silent before the preview media arrives or without narration", () => {
     expect(narrationPlacements(READOUT, null)).toEqual([]);
-    expect(narrationPlacements(READOUT, { ...MEDIA, units: MEDIA.units.map((unit) => ({ ...unit, narration_audio: null })) })).toEqual([]);
+    expect(
+      narrationPlacements(READOUT, {
+        ...MEDIA,
+        units: MEDIA.units.map((unit) => ({ ...unit, narration_audio: null })),
+      }),
+    ).toEqual([]);
   });
 });
 
 describe("bgmPlacements", () => {
   it("follows the readout's placed range and fades and scales the clip volume by the loudness gain", () => {
     expect(
-      bgmPlacements(READOUT, MEDIA).map((item) => [item.id, item.name, item.start, item.end, item.sourceIn, item.volume, item.fadeOut]),
+      bgmPlacements(READOUT, MEDIA).map((item) => [
+        item.id,
+        item.name,
+        item.start,
+        item.end,
+        item.sourceIn,
+        item.volume,
+        item.fadeOut,
+      ]),
     ).toEqual([
       ["bgm-b1", "雨夜", 0, 10, 5, 0.4, 1],
       ["bgm-b2", "雨夜", 10, 13, 0, 0.4, 1],
@@ -171,7 +255,9 @@ describe("bgmPlacements", () => {
         { ...READOUT.bgm[1], start: 13, end: 13 },
       ],
     };
-    expect(bgmPlacements(readout, null).map((item) => [item.id, item.name, item.volume])).toEqual([["bgm-b1", null, 0.25]]);
+    expect(bgmPlacements(readout, null).map((item) => [item.id, item.name, item.volume])).toEqual([
+      ["bgm-b1", null, 0.25],
+    ]);
   });
 });
 
@@ -195,7 +281,15 @@ describe("placeSubtitles", () => {
     const readout: EditTimelineReadout = {
       ...READOUT,
       duration: 2,
-      clips: [clip({ id: "c1", unit_id: "E1U5", start: 0, duration: 2, trim: { source_in: 0.5, source_out: 2.5, basis_version: 1 } })],
+      clips: [
+        clip({
+          id: "c1",
+          unit_id: "E1U5",
+          start: 0,
+          duration: 2,
+          trim: { source_in: 0.5, source_out: 2.5, basis_version: 1 },
+        }),
+      ],
       bgm: [],
     };
 
@@ -210,7 +304,14 @@ describe("placeSubtitles", () => {
       ...READOUT,
       duration: 4,
       clips: [
-        clip({ id: "c1", unit_id: "E1U1", start: 0, duration: 2, carries_narration: true, narration: { start: 0, end: 5 } }),
+        clip({
+          id: "c1",
+          unit_id: "E1U1",
+          start: 0,
+          duration: 2,
+          carries_narration: true,
+          narration: { start: 0, end: 5 },
+        }),
         clip({ id: "c2", unit_id: "E1U5", start: 2, duration: 2 }),
       ],
       bgm: [],

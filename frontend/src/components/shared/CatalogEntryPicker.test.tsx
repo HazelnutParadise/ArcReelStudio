@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { beforeEach, describe, expect, it, vi, type MockInstance } from "vite-plus/test";
 import { API } from "@/api";
 import type { CatalogEntryHit } from "@/types";
 import { CatalogEntryPicker } from "./CatalogEntryPicker";

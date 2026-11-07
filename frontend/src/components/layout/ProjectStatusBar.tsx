@@ -270,7 +270,9 @@ function EpisodeList({
             <span className="w-12 shrink-0 text-subtle-foreground tabular-nums">
               {t("common:episode_position_name", { position: index + 1 })}
             </span>
-            <span className="min-w-0 flex-1 truncate text-foreground">{episodeDisplayName(episodes, episode.episode, t)}</span>
+            <span className="min-w-0 flex-1 truncate text-foreground">
+              {episodeDisplayName(episodes, episode.episode, t)}
+            </span>
             <span className="shrink-0 text-subtle-foreground">{rowNote(episode)}</span>
           </button>
         </li>
@@ -411,14 +413,14 @@ export function ProjectStatusBar({ projectName }: { projectName: string }) {
   const bar = (
     <div className={SHELL_FLAT}>
       <Popover open={open === "episodes"} onOpenChange={openChange("episodes")}>
-        <PopoverTrigger
-          render={<button type="button" className={SEGMENT} />}
-          disabled={total === 0 || isAd}
-        >
+        <PopoverTrigger render={<button type="button" className={SEGMENT} />} disabled={total === 0 || isAd}>
           <Ring done={done} total={total} />
           <span className="num text-subtle-foreground">{progressText}</span>
           {staleEpisodes > 0 && (
-            <span className="inline-flex items-center gap-1 text-warn" title={t("guide_stale_episodes", { count: staleEpisodes })}>
+            <span
+              className="inline-flex items-center gap-1 text-warn"
+              title={t("guide_stale_episodes", { count: staleEpisodes })}
+            >
               <span aria-hidden className="size-1.5 rounded-full bg-warn" />
               <span className="num" aria-label={t("guide_stale_episodes", { count: staleEpisodes })}>
                 {staleEpisodes}

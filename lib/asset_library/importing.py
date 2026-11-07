@@ -16,7 +16,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from io import BytesIO
 
-import httpx
+import httpx2
 from PIL import Image, UnidentifiedImageError
 
 from lib.asset_library.control_plane import (
@@ -42,7 +42,7 @@ IMPORT_IMAGE_MAX_BYTES = 30 * 1024 * 1024
 #: 可以导入的图片格式与保存时使用的扩展名，与手动上传允许的格式同出一处。
 _FORMAT_SUFFIXES = {name: suffixes[0] for name, suffixes in IMAGE_FORMAT_SUFFIXES.items()}
 
-_DOWNLOAD_TIMEOUT = httpx.Timeout(60.0, connect=10.0)
+_DOWNLOAD_TIMEOUT = httpx2.Timeout(60.0, connect=10.0)
 _MAX_REDIRECTS = 5
 _DNS_TIMEOUT_SECONDS = 10.0
 
@@ -73,7 +73,7 @@ def _is_public(address: str) -> bool:
     return ip.is_global
 
 
-async def _check_destination(url: httpx.URL, resolver: Resolver) -> None:
+async def _check_destination(url: httpx2.URL, resolver: Resolver) -> None:
     """素材地址由公有云供应商签发：只放行 HTTPS 与公网地址，环回、私网、链路本地与元数据地址一律拒绝。
 
     主机名解析失败或超时时不作判定，交给传输层照常连接，与产物下载的先例一致：经代理出网的部署里
@@ -101,7 +101,7 @@ def _download_failed(reason: str, **diagnostic: object) -> BadGatewayError:
 async def download_provider_image_bytes(url: str, *, resolver: Resolver | None = None) -> bytes:
     """从供应商签发的访问地址取回素材内容。
 
-    失败一律抛不带地址的领域错误，并以 ``from None`` 断开异常链：httpx 的部分异常文本带完整 URL，
+    失败一律抛不带地址的领域错误，并以 ``from None`` 断开异常链：httpx2 的部分异常文本带完整 URL，
     签名参数会随异常链进入日志。
 
     Raises:
@@ -109,16 +109,16 @@ async def download_provider_image_bytes(url: str, *, resolver: Resolver | None =
         UnprocessableError: 内容超过 :data:`IMPORT_IMAGE_MAX_BYTES`。
     """
     try:
-        parsed = httpx.URL(url)
-    except httpx.InvalidURL:
+        parsed = httpx2.URL(url)
+    except httpx2.InvalidURL:
         raise _download_failed("invalid_url") from None
 
     resolve = resolver or resolve_host
 
-    async def guard(request: httpx.Request) -> None:
+    async def guard(request: httpx2.Request) -> None:
         await _check_destination(request.url, resolve)
 
-    client = httpx.AsyncClient(
+    client = httpx2.AsyncClient(
         timeout=_DOWNLOAD_TIMEOUT,
         follow_redirects=True,
         max_redirects=_MAX_REDIRECTS,
@@ -135,7 +135,7 @@ async def download_provider_image_bytes(url: str, *, resolver: Resolver | None =
         raise UnprocessableError(
             "provider_asset_import_too_large", max_mb=IMPORT_IMAGE_MAX_BYTES // (1024 * 1024)
         ) from None
-    except httpx.HTTPError as exc:
+    except httpx2.HTTPError as exc:
         raise _download_failed("network", error=type(exc).__name__) from None
     if not content:
         raise _download_failed("empty_body")
@@ -154,7 +154,7 @@ def image_suffix(content: bytes) -> str:
             if img.size[0] * img.size[1] > MAX_UPLOAD_PIXELS:
                 raise ImagePixelLimitError("too many pixels")
             img.verify()
-    except (UnidentifiedImageError, OSError, ValueError, SyntaxError, Image.DecompressionBombError):
+    except UnidentifiedImageError, OSError, ValueError, SyntaxError, Image.DecompressionBombError:
         raise UnprocessableError("provider_asset_import_invalid_image") from None
     if suffix is None:
         raise UnprocessableError("provider_asset_import_invalid_image")

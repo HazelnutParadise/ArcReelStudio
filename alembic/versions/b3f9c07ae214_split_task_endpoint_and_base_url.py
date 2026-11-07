@@ -23,7 +23,7 @@ depends_on: str | Sequence[str] | None = None
 
 # 域名判据：该列只可能出现协议标识或请求域名，只有 http(s) 前缀的是后者。协议标识取自一份
 # 闭合的 endpoint 注册表（全是 slug，无 scheme）；域名一侧也不会缺 scheme——落库发生在创建
-# 供应商任务的 HTTP 调用成功之后，而无 scheme 的 base_url 在发请求时就被 httpx 拒绝，根本走
+# 供应商任务的 HTTP 调用成功之后，而无 scheme 的 base_url 在发请求时就被 httpx2 拒绝，根本走
 # 不到持久化。故 http(s) 前缀是完备判据。
 # lower(...) LIKE 在 SQLite 与 PostgreSQL 上语义一致，无需方言分支。
 _HAS_DOMAIN = (

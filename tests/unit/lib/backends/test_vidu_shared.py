@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Generator
 from contextlib import contextmanager
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -52,7 +52,7 @@ def _probe_route(*, status_code: int, body: str = "") -> Generator[respx.Route]:
     白名单判定的输入是真实响应的状态码，URL 拼接与 Authorization 头都在断言范围内。
     """
     with capture_http() as router:
-        yield router.get(url__regex=r".*/tasks/0/creations").mock(return_value=httpx.Response(status_code, text=body))
+        yield router.get(url__regex=r".*/tasks/0/creations").mock(return_value=httpx2.Response(status_code, text=body))
 
 
 class TestViduConnectionTestUrl:
@@ -88,10 +88,12 @@ class TestFetchViduTaskErrorRedaction:
         # 凭证渲染在 raise_for_status 写进消息的那条 URL 里，须先脱敏再抛。
         with capture_http() as router:
             router.get(url__regex=r"^https://api\.vidu\.cn/ent/v2/tasks/t-1/creations").mock(
-                return_value=httpx.Response(401, json={"detail": "invalid token"})
+                return_value=httpx2.Response(401, json={"detail": "invalid token"})
             )
-            async with httpx.AsyncClient(base_url=vidu_shared.VIDU_BASE_URL, params={"api_key": "SECRETKEY"}) as client:
-                with pytest.raises(httpx.HTTPStatusError) as excinfo:
+            async with httpx2.AsyncClient(
+                base_url=vidu_shared.VIDU_BASE_URL, params={"api_key": "SECRETKEY"}
+            ) as client:
+                with pytest.raises(httpx2.HTTPStatusError) as excinfo:
                     await vidu_shared.fetch_vidu_task(client, "t-1")
 
         assert "SECRETKEY" not in str(excinfo.value)

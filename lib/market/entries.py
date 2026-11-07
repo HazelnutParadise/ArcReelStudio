@@ -16,7 +16,7 @@ from pathlib import PurePosixPath
 from typing import Any
 from urllib.parse import quote
 
-import httpx
+import httpx2
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from arcreel_market_core.market.fetch import (
@@ -139,7 +139,7 @@ class MarketEntryService:
         self,
         session_factory: async_sessionmaker[AsyncSession],
         *,
-        http_client: Callable[[], httpx.AsyncClient] = get_http_client,
+        http_client: Callable[[], httpx2.AsyncClient] = get_http_client,
         icon_cache_size: int = ICON_CACHE_SIZE,
     ) -> None:
         self._session_factory = session_factory

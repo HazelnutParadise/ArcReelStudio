@@ -701,7 +701,7 @@ class TargetStatePlanner:
             for episode in self.episodes:
                 try:
                     script_basis = build_ad_episode_script_basis(episode.episode, project=self.project)
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     continue
                 self._add_if_present(
                     ArtifactKey.episode_script(episode.episode),
@@ -715,7 +715,7 @@ class TargetStatePlanner:
             return
         try:
             script_basis = build_episode_script_basis(project=self.project)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             script_basis = None
         if script_basis is not None:
             for episode in self.episodes:
@@ -777,7 +777,7 @@ class TargetStatePlanner:
                     episode=binding.episode,
                     project=self.project,
                 )
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 pass
             else:
                 self._add_if_present(script_plan_key, script_plan_rel, script_plan_basis)
@@ -877,7 +877,7 @@ class TargetStatePlanner:
                     absent=gaps,
                     asset_names=project_basis_records_asset_names(self.project),
                 )
-            except (OSError, TypeError, ValueError):
+            except OSError, TypeError, ValueError:
                 continue
             self._add_if_present(ArtifactKey.episode_grid(grid.episode, grid.id), grid.grid_image_path, basis)
         self._planned.add("grids")
@@ -943,7 +943,7 @@ class TargetStatePlanner:
                         absent=gaps,
                         asset_names=project_basis_records_asset_names(self.project),
                     )
-                except (OSError, TypeError, ValueError):
+                except OSError, TypeError, ValueError:
                     continue
                 result[resource_id] = (
                     ArtifactKey.episode_storyboard(grid.episode, resource_id),
@@ -972,7 +972,7 @@ class TargetStatePlanner:
                         video_prompt=item.get("video_prompt"),
                     )
                 )
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 return None
         return tuple(members)
 
@@ -998,7 +998,7 @@ class TargetStatePlanner:
                         kind="sheet",
                     )
                 )
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 return None
         return tuple(references), tuple(gaps)
 
@@ -1165,7 +1165,7 @@ class TargetStatePlanner:
                 return
         try:
             target = parse_typed_media_version_target(resource_type, record)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             # 旧版旁白音频的版本记录没有合成设置，依据无从补写：这一类给用户看（ADR 0098）。
             self._skip(
                 key,
@@ -1208,7 +1208,7 @@ class TargetStatePlanner:
                     version_metadata=record,
                     legacy_audio_entries=self._legacy_audio_entries(),
                 )
-        except (KeyError, OSError, TypeError, ValueError):
+        except KeyError, OSError, TypeError, ValueError:
             self._skip(key, artifact_path, "current basis cannot be projected from the script")
             return
         if current_basis is None:
@@ -1649,7 +1649,7 @@ class TargetStatePlanner:
                 provider_audio_enabled=provider_audio_enabled,
                 subtitle_sentences_prepared=True,
             )
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
         frozen_presentation_basis = frozen.presentation_basis
         expected_presentation = {
@@ -1689,7 +1689,7 @@ class TargetStatePlanner:
                     narration_audio=current_audio,
                     provider_audio_enabled=provider_audio_enabled,
                 )
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 pass
             else:
                 current_subtitle = current.subtitle_basis
@@ -1710,7 +1710,7 @@ class TargetStatePlanner:
                     narration_audio=current_audio.evidence if current_audio is not None else None,
                     provider_audio_enabled=provider_audio_enabled,
                 )
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 current_subtitle = current_presentation = None
         return _PersistedPresentationProof(
             frozen_subtitle_basis=frozen.subtitle_basis,
@@ -1773,7 +1773,7 @@ class TargetStatePlanner:
         try:
             target = parse_typed_media_version_target(resource_type, record)
             embedded_basis = ArtifactBasisDescriptor.from_dict(raw.get("basis"))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
         if (
             target.episode != episode.episode
@@ -1794,7 +1794,7 @@ class TargetStatePlanner:
                 content_digest=cast(str, raw.get("content_digest")),
                 actual_duration_seconds=cast(float, raw.get("actual_duration_seconds")),
             )
-        except (OSError, TypeError, ValueError):
+        except OSError, TypeError, ValueError:
             return None
         if evidence.content_digest != content_digest:
             return None
@@ -1868,7 +1868,7 @@ class TargetStatePlanner:
         try:
             raw = path.read_bytes()
             parsed = json.loads(raw.decode("utf-8"))
-        except (OSError, UnicodeDecodeError, ValueError):
+        except OSError, UnicodeDecodeError, ValueError:
             return None
         if not isinstance(parsed, Mapping):
             return None

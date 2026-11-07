@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { ONBOARDING_ANCHORS } from "./anchors";
 import { anchorSelector, startTour, type TourLabels, type TourStep } from "./tour";
 
@@ -30,9 +30,7 @@ function click(selector: string): void {
 
 describe("anchorSelector", () => {
   it("maps an anchor name to its data-onboarding selector", () => {
-    expect(anchorSelector(ONBOARDING_ANCHORS.lobbyCreateProject)).toBe(
-      '[data-onboarding="lobby-create-project"]',
-    );
+    expect(anchorSelector(ONBOARDING_ANCHORS.lobbyCreateProject)).toBe('[data-onboarding="lobby-create-project"]');
   });
 });
 
@@ -129,7 +127,9 @@ describe("startTour", () => {
     await vi.waitFor(() => expect(trigger).toHaveAttribute("aria-haspopup", "menu"));
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     // 居中气泡顶着的占位元素是空 div，同样不带这组属性
-    await vi.waitFor(() => expect(document.getElementById("driver-dummy-element")).not.toHaveAttribute("aria-expanded"));
+    await vi.waitFor(() =>
+      expect(document.getElementById("driver-dummy-element")).not.toHaveAttribute("aria-expanded"),
+    );
 
     handle.dispose();
     expect(trigger).toHaveAttribute("aria-haspopup", "menu");

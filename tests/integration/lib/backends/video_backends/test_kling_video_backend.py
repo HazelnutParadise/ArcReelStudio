@@ -14,7 +14,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import NamedTuple
 
-import httpx
+import httpx2
 import jwt
 import pytest
 import respx
@@ -59,8 +59,8 @@ def _kling_api() -> Generator[_KlingRoutes]:
         )
 
 
-def _resp(json_body: dict, status_code: int = 200) -> httpx.Response:
-    return httpx.Response(status_code, json=json_body)
+def _resp(json_body: dict, status_code: int = 200) -> httpx2.Response:
+    return httpx2.Response(status_code, json=json_body)
 
 
 def _submit(task_id: str = "t-1") -> dict:
@@ -700,7 +700,7 @@ class TestGenerateHappyPath:
                     _resp(_query("succeed", url=_DOWNLOAD_URL)),
                 ]
             )
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4-bytes"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4-bytes"))
 
             result = await _jwt_backend().generate(_request(tmp_path))
 
@@ -718,7 +718,7 @@ class TestGenerateHappyPath:
         with _kling_api() as routes:
             routes.submit.mock(return_value=_resp(_submit()))
             routes.poll.mock(return_value=_resp(_query("succeed", url=_DOWNLOAD_URL)))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             await _jwt_backend().generate(_request(tmp_path))
 
@@ -731,7 +731,7 @@ class TestGenerateHappyPath:
         with _kling_api() as routes:
             routes.submit.mock(return_value=_resp(_submit()))
             routes.poll.mock(return_value=_resp(_query("succeed", url=_DOWNLOAD_URL)))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             await _bearer_backend().generate(_request(tmp_path))
 
@@ -751,7 +751,7 @@ class TestGenerateHappyPath:
         with _kling_api() as routes, captured_provider_job_ids() as persisted:
             routes.submit.mock(return_value=_resp(_submit("task-x")))
             routes.poll.mock(return_value=_resp(_query("succeed", url=_DOWNLOAD_URL)))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             await _jwt_backend().generate(_request(tmp_path, task_id="local-task-1"))
 
@@ -764,7 +764,7 @@ class TestGenerateHappyPath:
         with _kling_api() as routes, captured_provider_job_ids() as persisted:
             routes.submit.mock(return_value=_resp(_submit("task-i")))
             routes.poll.mock(return_value=_resp(_query("succeed", url=_DOWNLOAD_URL)))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             await _jwt_backend().generate(_request(tmp_path, task_id="local-task-2", start_image=img))
 
@@ -776,10 +776,10 @@ class TestResume:
     async def test_download_failure_can_resume_without_resubmit(self, tmp_path):
         download_ready = False
 
-        def download_response(_request: httpx.Request) -> httpx.Response:
+        def download_response(_request: httpx2.Request) -> httpx2.Response:
             if download_ready:
-                return httpx.Response(200, content=b"resumed")
-            return httpx.Response(503, text="cdn unavailable")
+                return httpx2.Response(200, content=b"resumed")
+            return httpx2.Response(503, text="cdn unavailable")
 
         with _kling_api() as routes, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             routes.submit.mock(return_value=_resp(_submit("task-download")))
@@ -801,7 +801,7 @@ class TestResume:
     async def test_resume_polls_without_resubmit(self, tmp_path):
         with _kling_api() as routes:
             routes.poll.mock(return_value=_resp(_query("succeed", url="https://x/r.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b"resumed"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"resumed"))
 
             # 持久化 job_id 带 text2video 前缀 → 复原查询端点 + 还原裸 task_id
             result = await _jwt_backend().resume_video("text2video:task-resume", _request(tmp_path))
@@ -818,7 +818,7 @@ class TestResume:
         # 否则 image2video 任务会误查 text2video 端点取不到。
         with _kling_api() as routes:
             routes.poll.mock(return_value=_resp(_query("succeed", url="https://x/r.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             result = await _jwt_backend().resume_video("image2video:task-r2", _request(tmp_path))
 
@@ -831,7 +831,7 @@ class TestResume:
         # 无已知前缀（异常/旧数据）回落 text2video，整串作 task_id。
         with _kling_api() as routes:
             routes.poll.mock(return_value=_resp(_query("succeed", url="https://x/r.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             result = await _jwt_backend().resume_video("legacy-bare-id", _request(tmp_path))
 
@@ -843,7 +843,7 @@ class TestResume:
         # 多图主体任务 resume：子路径从持久化 job_id 前缀复原，查 multi-image2video 端点。
         with _kling_api() as routes:
             routes.poll.mock(return_value=_resp(_query("succeed", url="https://x/r.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             result = await _jwt_backend("kling-v3-omni").resume_video("multi-image2video:task-m", _request(tmp_path))
 
@@ -876,7 +876,7 @@ class TestResume:
                     _resp(_query("succeed", url=_DOWNLOAD_URL)),
                 ]
             )
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4-bytes"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4-bytes"))
 
             result = await _jwt_backend().generate(_request(tmp_path))
 
@@ -898,7 +898,7 @@ class TestSubmittedBaseUrlReplay:
             router.get(f"{_RELAY_A}/videos/text2video/task-r").mock(
                 return_value=_resp(_query("succeed", url=_DOWNLOAD_URL))
             )
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b""))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b""))
 
             backend = KlingVideoBackend(auth_mode="bearer", api_key="static-key", base_url=_RELAY_A)
             await backend.generate(_request(tmp_path, task_id="local-r"))
@@ -914,7 +914,7 @@ class TestSubmittedBaseUrlReplay:
             current = router.get(url__regex=r"^https://relay-b\.example\.com/").mock(
                 return_value=_resp({"code": 1203, "message": "task not found"}, status_code=404)
             )
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b"resumed"))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b"resumed"))
 
             backend = KlingVideoBackend(auth_mode="bearer", api_key="static-key", base_url=_RELAY_B)
             result = await backend.resume_video("image2video:task-r:0", _request(tmp_path, submitted_base_url=_RELAY_A))
@@ -946,7 +946,7 @@ class TestOutboundDestinationGuard:
             poll = router.get(url__regex=r"^http://169\.254\.169\.254/").mock(
                 return_value=_resp(_query("succeed", url=_DOWNLOAD_URL))
             )
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b""))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b""))
 
             backend = KlingVideoBackend(auth_mode="bearer", api_key="static-key", base_url=self._LINK_LOCAL_BASE_URL)
             with pytest.raises(ArtifactDestinationRejectedError):
@@ -963,7 +963,7 @@ class TestAudioGatingResult:
         with _kling_api() as routes:
             routes.submit.mock(return_value=_resp(_submit(task_id)))
             routes.poll.mock(return_value=_resp(_query("succeed", url="https://x/v.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
             yield routes
 
     async def test_v2_6_pro_audio_result_true(self, tmp_path):
@@ -1035,7 +1035,7 @@ class TestAudioGatingResult:
         # 结果仍取 submit 时算定的有声（避免计费漂移）
         with _kling_api() as routes:
             routes.poll.mock(return_value=_resp(_query("succeed", url="https://x/r.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             result = await _jwt_backend("kling-v2-6").resume_video(
                 "text2video:task-c:1", _request(tmp_path, service_tier="pro", generate_audio=False)
@@ -1052,7 +1052,7 @@ class TestAudioGatingResult:
         # 不含有声标志的 2 段 job_id 一律判无声：这类任务的成片必然无声，不得按当前能力表重算为有声
         with _kling_api() as routes:
             routes.poll.mock(return_value=_resp(_query("succeed", url="https://x/r.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             result = await _jwt_backend("kling-v2-6").resume_video(
                 "text2video:task-c", _request(tmp_path, service_tier="pro", generate_audio=True)
@@ -1069,7 +1069,7 @@ class TestAudioGatingResult:
         # 多图主体子路径的成片必然无声：接续请求不带参考图字段，判据只能取自解码出的子路径
         with _kling_api() as routes:
             routes.poll.mock(return_value=_resp(_query("succeed", url="https://x/r.mp4")))
-            routes.download.mock(return_value=httpx.Response(200, content=b""))
+            routes.download.mock(return_value=httpx2.Response(200, content=b""))
 
             result = await _jwt_backend("kling-v3-omni").resume_video(
                 "multi-image2video:task-d", _request(tmp_path, generate_audio=True)

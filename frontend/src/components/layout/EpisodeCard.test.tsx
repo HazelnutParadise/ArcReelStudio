@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { EpisodeCard } from "./EpisodeCard";
 import type { EpisodeMeta } from "@/types/project";
@@ -25,9 +25,7 @@ function makeEpisode(overrides: Partial<EpisodeMeta> = {}): EpisodeMeta {
 }
 
 function renderCard(ep: EpisodeMeta, route: GenerationRoute = "storyboard") {
-  return render(
-    <EpisodeCard ep={ep} position={1} active={false} onClick={() => {}} route={route} />,
-  );
+  return render(<EpisodeCard ep={ep} position={1} active={false} onClick={() => {}} route={route} />);
 }
 
 describe("EpisodeCard", () => {

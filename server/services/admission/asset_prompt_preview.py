@@ -72,7 +72,7 @@ async def render_asset_prompt(
 
     try:
         generation_input = await asyncio.to_thread(_assemble)
-    except (ValueError, TypeError, KeyError):
+    except ValueError, TypeError, KeyError:
         return RenderedPrompt(unavailable=UNAVAILABLE_INVALID, is_text_form=True)
     if (refused := generation_input.refusal) is not None:
         refusal = input_refusal_error(refused)

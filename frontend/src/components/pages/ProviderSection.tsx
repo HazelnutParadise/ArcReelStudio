@@ -14,11 +14,7 @@ import { ProviderDetail } from "./ProviderDetail";
 import { CustomProviderDetail } from "./settings/CustomProviderDetail";
 import { CustomProviderForm } from "./settings/CustomProviderForm";
 
-type Selection =
-  | { kind: "preset"; id: string }
-  | { kind: "custom"; id: number }
-  | { kind: "new-custom" }
-  | null;
+type Selection = { kind: "preset"; id: string } | { kind: "custom"; id: number } | { kind: "new-custom" } | null;
 
 /** 二级栏条目的 id：预置与自定义供应商的 id 可能撞值，加上分组前缀。 */
 function railId(selection: Selection): string | null {

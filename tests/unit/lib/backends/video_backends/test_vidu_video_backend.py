@@ -416,16 +416,16 @@ class TestRegistryBackendConsistency:
 
 
 class TestCreateTask413:
-    """413 规整：_create_task 透出保留状态码的 httpx.HTTPStatusError（咽喉层据此降档）。"""
+    """413 规整：_create_task 透出保留状态码的 httpx2.HTTPStatusError（咽喉层据此降档）。"""
 
     async def test_create_task_413_surfaces_httpstatuserror_no_retry(self):
         from unittest.mock import AsyncMock, MagicMock
 
-        import httpx
+        import httpx2
 
-        request = httpx.Request("POST", "https://vidu/text2video")
-        response = httpx.Response(413, request=request, text="Request Entity Too Large")
-        err = httpx.HTTPStatusError("error 413", request=request, response=response)
+        request = httpx2.Request("POST", "https://vidu/text2video")
+        response = httpx2.Response(413, request=request, text="Request Entity Too Large")
+        err = httpx2.HTTPStatusError("error 413", request=request, response=response)
 
         resp = MagicMock()
         resp.status_code = 413
@@ -435,7 +435,7 @@ class TestCreateTask413:
         client.post = AsyncMock(return_value=resp)
 
         backend = _profile("viduq3-turbo")(api_key="k", model="viduq3-turbo")
-        with pytest.raises(httpx.HTTPStatusError) as ei:
+        with pytest.raises(httpx2.HTTPStatusError) as ei:
             await backend._create_task(client, "/text2video", {"model": "viduq3-turbo", "prompt": "x", "duration": 8})
         assert ei.value.response.status_code == 413
         # 413 非 retryable → fail-fast 单次
@@ -448,12 +448,12 @@ class TestCreateTaskAmbiguity:
     async def test_read_timeout_fails_fast_with_manual_retry_hint(self):
         from unittest.mock import AsyncMock
 
-        import httpx
+        import httpx2
 
         from lib.backends.http_status_errors import AmbiguousSubmitError
 
         client = AsyncMock()
-        client.post = AsyncMock(side_effect=httpx.ReadTimeout("read timed out"))
+        client.post = AsyncMock(side_effect=httpx2.ReadTimeout("read timed out"))
 
         backend = _profile("viduq3-turbo")(api_key="k", model="viduq3-turbo")
         with (
@@ -467,13 +467,13 @@ class TestCreateTaskAmbiguity:
     async def test_connect_error_retries(self):
         from unittest.mock import AsyncMock, MagicMock
 
-        import httpx
+        import httpx2
 
         ok = MagicMock()
         ok.status_code = 200
         ok.json.return_value = {"task_id": "vidu-conn"}
         client = AsyncMock()
-        client.post = AsyncMock(side_effect=[httpx.ConnectError("refused"), httpx.ConnectError("refused"), ok])
+        client.post = AsyncMock(side_effect=[httpx2.ConnectError("refused"), httpx2.ConnectError("refused"), ok])
 
         backend = _profile("viduq3-turbo")(api_key="k", model="viduq3-turbo")
         with bounded_poll_clock():

@@ -45,7 +45,10 @@ const SOURCES = [
     last_error:
       "HTTP 404 Not Found: https://raw.githubusercontent.com/team-3/arcreel-market-mirror-with-a-long-repository-name/HEAD/arcreel-market.json",
   }),
-  source(4, { status: "invalid_index", last_error: "endpoints/kling-master/definition.json: schema_version 必须是 1.x" }),
+  source(4, {
+    status: "invalid_index",
+    last_error: "endpoints/kling-master/definition.json: schema_version 必须是 1.x",
+  }),
   source(5, { is_enabled: false, status: "never_fetched", fetched_at: null, entry_count: 0, index: null }),
   source(6),
   source(7),
@@ -90,7 +93,12 @@ function entry(sourceId: number, index: number) {
 
 const ENTRIES = [1, 2, 3, 4, 6].flatMap((sourceId) => Array.from({ length: 6 }, (_, index) => entry(sourceId, index)));
 
-const OFFICIAL_SEEN = { available: true, enabled: true, notice_seen: true, instance_id: "8f14e45f-ceea-467a-9575-1c3a4d5e6f70" };
+const OFFICIAL_SEEN = {
+  available: true,
+  enabled: true,
+  notice_seen: true,
+  instance_id: "8f14e45f-ceea-467a-9575-1c3a4d5e6f70",
+};
 
 // 打开市场页时的自动刷新与官方服务聚合都访问外网，所有场景都替换。
 const OFFLINE: ApiOverrides = {
@@ -313,9 +321,11 @@ defineRegionScenarios("市场", [
       }).toPass();
       await page.keyboard.press("Space");
       expect((await saved).postDataJSON()).toEqual({ ids: [2, 1, 3, 4, 5, 6, 7, 8] });
-      await expect(sourceList(page).getByRole("button", { name: /^调整「.+」的顺序$/ }).first()).toHaveAccessibleName(
-        `调整「${LONG_SOURCE} 2」的顺序`,
-      );
+      await expect(
+        sourceList(page)
+          .getByRole("button", { name: /^调整「.+」的顺序$/ })
+          .first(),
+      ).toHaveAccessibleName(`调整「${LONG_SOURCE} 2」的顺序`);
     },
   },
   {

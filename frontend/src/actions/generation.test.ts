@@ -5,7 +5,7 @@
  *
  * 占用一律按 selector 断言而非比对标记 key 的字面量——key 编码是 store 内部实现。
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import i18n from "@/i18n";
 import { useAppStore } from "@/stores/app-store";
@@ -47,13 +47,7 @@ function occupied(projectName: string, resourceKind: ResourceKind, resourceId: s
 /** 该剧集在指定 taskType 下是否被占用。 */
 function scriptFileOccupied(projectName: string, taskType: string, scriptFile: string): boolean {
   const { tasks, optimisticActiveScriptFile } = useTasksStore.getState();
-  return selectHasActiveTaskForScriptFile(
-    tasks,
-    taskType,
-    scriptFile,
-    projectName,
-    optimisticActiveScriptFile,
-  );
+  return selectHasActiveTaskForScriptFile(tasks, taskType, scriptFile, projectName, optimisticActiveScriptFile);
 }
 
 function markCounts(): { resource: number; scriptFile: number } {
@@ -200,7 +194,11 @@ describe("单资源入队动作的乐观标记 kind / taskType", () => {
   });
 
   it.each([
-    { label: "video", run: () => enqueueVideo("demo", "seg-1", "p", "episode_1.json", 4), method: "generateVideo" as const },
+    {
+      label: "video",
+      run: () => enqueueVideo("demo", "seg-1", "p", "episode_1.json", 4),
+      method: "generateVideo" as const,
+    },
     { label: "character", run: () => enqueueCharacter("demo", "Hero"), method: "generateCharacter" as const },
   ])("$label：请求失败时回滚，不留下占用", async ({ run, method }) => {
     vi.spyOn(API, method).mockRejectedValue(new Error("boom"));
@@ -228,9 +226,7 @@ describe("enqueueEpisodeNarration", () => {
     // 服务端跳过的段（已有旁白 / 无原文）不在映射里，不能被标成生成中
     expect(occupied("demo", "tts", "E1S03")).toBe(false);
     expect(markCounts()).toEqual({ resource: 2, scriptFile: 0 });
-    expect(useAppStore.getState().toast?.text).toBe(
-      i18n.t("dashboard:narration_batch_submitted_toast", { count: 2 }),
-    );
+    expect(useAppStore.getState().toast?.text).toBe(i18n.t("dashboard:narration_batch_submitted_toast", { count: 2 }));
     expect(res).toEqual({ taskIds: ["t1", "t2"], deduped: false });
   });
 
@@ -274,9 +270,7 @@ describe("enqueueEpisodeNarration", () => {
     await enqueueEpisodeNarration("demo", "episode_1.json");
 
     expect(markCounts()).toEqual({ resource: 0, scriptFile: 0 });
-    expect(useAppStore.getState().toast?.text).toBe(
-      i18n.t("dashboard:narration_batch_none_missing_toast"),
-    );
+    expect(useAppStore.getState().toast?.text).toBe(i18n.t("dashboard:narration_batch_none_missing_toast"));
   });
 });
 
@@ -505,9 +499,7 @@ describe("enqueuePromptAuthoring", () => {
 
 describe("enqueueReferenceVideoUnit", () => {
   it("成功时打标并弹入队 info 提示", async () => {
-    const generate = vi
-      .spyOn(API, "generateReferenceVideoUnit")
-      .mockResolvedValue({ task_id: "t1", deduped: false });
+    const generate = vi.spyOn(API, "generateReferenceVideoUnit").mockResolvedValue({ task_id: "t1", deduped: false });
 
     const res = await enqueueReferenceVideoUnit("demo", 1, "E1U1", {
       confirmed_request_duration_seconds: 8,
@@ -544,14 +536,12 @@ describe("enqueueReferenceVideoBatch", () => {
   };
 
   it("admitted 时按目标单元打标并弹入队提示", async () => {
-    const batch = vi
-      .spyOn(API, "generateReferenceVideoBatch")
-      .mockResolvedValue({
-        ...ADMISSION,
-        decision: "admitted",
-        task_ids: ["t1", "t2"],
-        task_ids_by_unit: { E1U1: "t1", E1U2: "t2" },
-      } as never);
+    const batch = vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue({
+      ...ADMISSION,
+      decision: "admitted",
+      task_ids: ["t1", "t2"],
+      task_ids_by_unit: { E1U1: "t1", E1U2: "t2" },
+    } as never);
 
     const res = await enqueueReferenceVideoBatch("demo", 1, {
       unit_ids: ["E1U1", "E1U2"],
@@ -562,9 +552,7 @@ describe("enqueueReferenceVideoBatch", () => {
     });
     expect(occupied("demo", "reference_video", "E1U1")).toBe(true);
     expect(occupied("demo", "reference_video", "E1U2")).toBe(true);
-    expect(useAppStore.getState().toast?.text).toBe(
-      i18n.t("dashboard:reference_batch_queued", { count: 2 }),
-    );
+    expect(useAppStore.getState().toast?.text).toBe(i18n.t("dashboard:reference_batch_queued", { count: 2 }));
     expect(res.decision).toBe("admitted");
   });
 
@@ -656,7 +644,7 @@ describe("enqueueReferenceVideoBatch", () => {
 
     try {
       await enqueueReferenceVideoBatch("demo", 1, {
-          unit_ids: ["E1U1", "E1U2"],
+        unit_ids: ["E1U1", "E1U2"],
       });
     } finally {
       useAppStore.setState({ pushToast: realPushToast });
@@ -674,33 +662,30 @@ describe("enqueueReferenceVideoBatch", () => {
 
   // confirmation_required / blocked 一个任务也没建：占用标记必须整批回滚，
   // 否则界面会把没入队的单元显示成生成中，直到刷新页面。
-  it.each(["confirmation_required", "blocked"] as const)(
-    "%s 时回滚占用标记且不弹入队提示",
-    async (decision) => {
-      vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue({
-        ...ADMISSION,
-        decision,
-        task_ids: [],
-      } as never);
+  it.each(["confirmation_required", "blocked"] as const)("%s 时回滚占用标记且不弹入队提示", async (decision) => {
+    vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue({
+      ...ADMISSION,
+      decision,
+      task_ids: [],
+    } as never);
 
-      const res = await enqueueReferenceVideoBatch("demo", 1, {
-          unit_ids: ["E1U1"],
-      });
+    const res = await enqueueReferenceVideoBatch("demo", 1, {
+      unit_ids: ["E1U1"],
+    });
 
-      expect(res.decision).toBe(decision);
-      expect(occupied("demo", "reference_video", "E1U1")).toBe(false);
-      expect(useAppStore.getState().toast).toBeNull();
-    },
-  );
+    expect(res.decision).toBe(decision);
+    expect(occupied("demo", "reference_video", "E1U1")).toBe(false);
+    expect(useAppStore.getState().toast).toBeNull();
+  });
 
   it("请求失败时回滚占用标记并原样抛出", async () => {
     vi.spyOn(API, "generateReferenceVideoBatch").mockRejectedValue(new Error("boom"));
 
-    await expect(enqueueReferenceVideoBatch("demo", 1, {
-          unit_ids: ["E1U1"],
-      })).rejects.toThrow(
-      "boom",
-    );
+    await expect(
+      enqueueReferenceVideoBatch("demo", 1, {
+        unit_ids: ["E1U1"],
+      }),
+    ).rejects.toThrow("boom");
 
     expect(markCounts()).toEqual({ resource: 0, scriptFile: 0 });
   });
@@ -744,8 +729,21 @@ describe("enqueueStoryboardBatch", () => {
 });
 
 describe("enqueueAssetSheetBatch", () => {
-  const member = (unit_id: string, asset_type: "character" | "scene", name: string, derivative: string | null, task_id: string | null, deduped = false) => ({
-    unit_id, asset_type, name, derivative, task_id, deduped, status: task_id ? "queued" : "failed",
+  const member = (
+    unit_id: string,
+    asset_type: "character" | "scene",
+    name: string,
+    derivative: string | null,
+    task_id: string | null,
+    deduped = false,
+  ) => ({
+    unit_id,
+    asset_type,
+    name,
+    derivative,
+    task_id,
+    deduped,
+    status: task_id ? "queued" : "failed",
   });
 
   it("按成员逐项打占用标记（衍生占复合槽、未建任务的不打标），并弹提交提示", async () => {

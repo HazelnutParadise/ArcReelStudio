@@ -78,6 +78,8 @@ export interface ProviderConfigDetail {
   fields: ProviderField[];
   // 凭证是否支持自定义 base_url（后端按 optional_keys 派生，单一真相源）
   supports_base_url: boolean;
+  /** 中国供应商的国际站地址；非中国供应商为 null。 */
+  international_base_url: string | null;
   // 凭证表单应渲染的 secret 字段（有序）
   secret_fields: CredentialSecretField[];
   // 凭证「二选一」分组：满足任一组（组内字段全填）即视为凭证完整；单组场景（绝大多数
@@ -106,7 +108,6 @@ export interface ProviderCredential {
 }
 
 export type CallType = "image" | "video" | "text" | "audio";
-
 
 /** 价格摘要里一个计费项的单价范围；`per` 是单价对应的计数量（每百万 token 为 1000000，每张、每秒为 1）。 */
 export interface PriceSummaryItem {

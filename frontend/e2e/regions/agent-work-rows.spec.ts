@@ -16,7 +16,8 @@ const LONG_COMMAND =
   "ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration,r_frame_rate -of json videos/E1S01_v3.mp4 videos/E1S02_v2.mp4 videos/E1S03_v1.mp4";
 const LONG_RESULT = Array.from(
   { length: 40 },
-  (_, i) => `E1S${String(i + 1).padStart(2, "0")}  1080x1920  duration=${(4 + (i % 5) * 0.5).toFixed(1)}s  r_frame_rate=24/1  codec=h264  bitrate=8.2Mb/s`,
+  (_, i) =>
+    `E1S${String(i + 1).padStart(2, "0")}  1080x1920  duration=${(4 + (i % 5) * 0.5).toFixed(1)}s  r_frame_rate=24/1  codec=h264  bitrate=8.2Mb/s`,
 ).join("\n");
 const LONG_ERROR = `PermissionError: 文件围栏拒绝读取项目目录之外的路径 /data/projects/other-project/scripts/episode_1.json。${"只能读取当前项目 demo 下的业务文件，越界路径不会被读取。".repeat(6)}`;
 
@@ -62,12 +63,12 @@ function buildEntries(): Entry[] {
     content: [{ type: "thinking", thinking: "先看制作计划，确认缺哪些分镜图。", signature: "sig" }],
   });
   toolUse("plan", "mcp__arcreel__get_workflow_plan", { episode_id: 1 });
-  toolResult("plan", "{\"next_action\": \"generate_storyboards\"}");
+  toolResult("plan", '{"next_action": "generate_storyboards"}');
   toolUse("boards", "mcp__arcreel__generate_storyboards", {
     script: "episode_1.json",
     segment_ids: ["E1S01", "E1S02", "E1S03", "E1S04", "E1S05", "E1S06"],
   });
-  toolResult("boards", "{\"generation_batch\": {\"batch_id\": \"batch-7c1e\", \"queued\": 6}}");
+  toolResult("boards", '{"generation_batch": {"batch_id": "batch-7c1e", "queued": 6}}');
   toolUse("probe", "Bash", { command: LONG_COMMAND });
   toolResult("probe", LONG_RESULT);
   toolUse("read-other", "Read", { file_path: "/data/projects/other-project/scripts/episode_1.json" });
@@ -76,16 +77,25 @@ function buildEntries(): Entry[] {
   toolResult("skill", "Launching skill: review-footage");
 
   // 子智能体：内部消息带 parent_tool_use_id，归进锚点 tool_use 的子时间线
-  toolUse("agent", "Agent", { subagent_type: "review-footage", description: "审阅第 1 集的视频单元", prompt: "逐个看联系表" });
+  toolUse("agent", "Agent", {
+    subagent_type: "review-footage",
+    description: "审阅第 1 集的视频单元",
+    prompt: "逐个看联系表",
+  });
   push({
     type: "user",
     parent_tool_use_id: "agent",
     content: [{ type: "text", text: "逐个看第 1 集视频单元的联系表，指出画面问题。" }],
   });
-  toolUse("sub-inspect", "mcp__arcreel__inspect_video_units", { unit_ids: ["E1S01", "E1S02", "E1S03", "E1S04"] }, "agent");
-  toolResult("sub-inspect", "{\"frames\": 32}", false, "agent");
+  toolUse(
+    "sub-inspect",
+    "mcp__arcreel__inspect_video_units",
+    { unit_ids: ["E1S01", "E1S02", "E1S03", "E1S04"] },
+    "agent",
+  );
+  toolResult("sub-inspect", '{"frames": 32}', false, "agent");
   toolUse("sub-read", "mcp__arcreel__read_project_file", { path: "scripts/episode_1.json" }, "agent");
-  toolResult("sub-read", "{\"segments\": []}", false, "agent");
+  toolResult("sub-read", '{"segments": []}', false, "agent");
   push({
     type: "assistant",
     message_id: "m-sub-text",
@@ -114,7 +124,7 @@ function buildEntries(): Entry[] {
     summary: "把 E1S03 换成重新生成的版本，压低开场原声",
     operations: [{ op: "set_volume", clip: "c1", volume: 0.4 }],
   });
-  toolResult("timeline", "{\"revision\": 4}");
+  toolResult("timeline", '{"revision": 4}');
   push({
     type: "assistant",
     message_id: "m-reply",
@@ -189,11 +199,12 @@ async function expectNoInnerScroll(page: Page, rowName: RegExp) {
   const trigger = row(page, rowName);
   const panelId = await trigger.getAttribute("aria-controls");
   expect(panelId).toBeTruthy();
-  const scrollers = await page.locator(`[id="${panelId}"]`).evaluate((panel) =>
-    [panel, ...panel.querySelectorAll<HTMLElement>("*")].filter((el) => {
-      const { overflowY } = getComputedStyle(el);
-      return (overflowY === "auto" || overflowY === "scroll") && el.scrollHeight > el.clientHeight;
-    }).length,
+  const scrollers = await page.locator(`[id="${panelId}"]`).evaluate(
+    (panel) =>
+      [panel, ...panel.querySelectorAll<HTMLElement>("*")].filter((el) => {
+        const { overflowY } = getComputedStyle(el);
+        return (overflowY === "auto" || overflowY === "scroll") && el.scrollHeight > el.clientHeight;
+      }).length,
   );
   expect(scrollers).toBe(0);
 }

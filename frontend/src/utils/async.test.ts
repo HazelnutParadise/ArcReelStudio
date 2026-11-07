@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { voidCall, voidPromise } from "./async";
 
 describe("voidPromise", () => {
@@ -12,7 +12,9 @@ describe("voidPromise", () => {
 
   it("routes rejection to console.error by default", async () => {
     const err = new Error("boom");
-    const fn = vi.fn(async () => { throw err; });
+    const fn = vi.fn(async () => {
+      throw err;
+    });
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     voidPromise(fn)();
     await new Promise((r) => setTimeout(r, 0));
@@ -22,7 +24,9 @@ describe("voidPromise", () => {
 
   it("routes rejection to custom onError when provided", async () => {
     const err = new Error("boom");
-    const fn = vi.fn(async () => { throw err; });
+    const fn = vi.fn(async () => {
+      throw err;
+    });
     const onError = vi.fn();
     voidPromise(fn, { onError })();
     await new Promise((r) => setTimeout(r, 0));

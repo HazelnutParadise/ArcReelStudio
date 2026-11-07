@@ -68,7 +68,9 @@ export function RequestAddresses({ requests, baseUrl, modelId, overrides, onChan
         const override = overrides?.[request.name];
         return (
           <div key={request.name} className="flex min-w-0 flex-col gap-1">
-            {requests.length > 1 && <span className="text-xs text-muted-foreground">{t(request.display_name_key)}</span>}
+            {requests.length > 1 && (
+              <span className="text-xs text-muted-foreground">{t(request.display_name_key)}</span>
+            )}
             <AddressBar
               request={request}
               rawBase={raw}

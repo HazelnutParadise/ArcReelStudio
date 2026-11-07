@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import ClassVar
 
-import httpx
+import httpx2
 import openai
 import pytest
 
@@ -344,10 +344,10 @@ class TestMediaGenerator:
 
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={
                         "status": "completed",
@@ -356,7 +356,7 @@ class TestMediaGenerator:
                     },
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             output, _version, _ref, uri = await gen.generate_video_async(
                 prompt="paper boat",
@@ -404,10 +404,10 @@ class TestMediaGenerator:
 
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://comfy.test/prompt").mock(
-                return_value=httpx.Response(200, json={"prompt_id": "p-1"})
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
             )
-            router.get("https://comfy.test/history/p-1").mock(return_value=httpx.Response(200, json=history))
-            router.get("https://comfy.test/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.get("https://comfy.test/history/p-1").mock(return_value=httpx2.Response(200, json=history))
+            router.get("https://comfy.test/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             output, _version, _ref, _uri = await gen.generate_video_async(
                 prompt="一只猫走过屋顶",
@@ -453,9 +453,9 @@ class TestMediaGenerator:
         collected: list[dict] = []
 
         with capture_http() as router, bounded_poll_clock():
-            router.post("https://comfy.test/prompt").mock(return_value=httpx.Response(200, json={"prompt_id": "p-1"}))
-            router.get("https://comfy.test/history/p-1").mock(return_value=httpx.Response(200, json=history))
-            router.get("https://comfy.test/view").mock(return_value=httpx.Response(200, content=MP4_BYTES))
+            router.post("https://comfy.test/prompt").mock(return_value=httpx2.Response(200, json={"prompt_id": "p-1"}))
+            router.get("https://comfy.test/history/p-1").mock(return_value=httpx2.Response(200, json=history))
+            router.get("https://comfy.test/view").mock(return_value=httpx2.Response(200, content=MP4_BYTES))
 
             await gen.generate_video_async(
                 prompt="一只猫走过屋顶",
@@ -505,13 +505,13 @@ class TestMediaGenerator:
 
         with capture_http() as router:
             upload = router.post("https://comfy.test/upload/image").mock(
-                return_value=httpx.Response(200, json={"name": "job-7-reference_images-1.png", "subfolder": "arcreel"})
+                return_value=httpx2.Response(200, json={"name": "job-7-reference_images-1.png", "subfolder": "arcreel"})
             )
             submit = router.post("https://comfy.test/prompt").mock(
-                return_value=httpx.Response(200, json={"prompt_id": "p-1"})
+                return_value=httpx2.Response(200, json={"prompt_id": "p-1"})
             )
-            router.get("https://comfy.test/history/p-1").mock(return_value=httpx.Response(200, json=history))
-            router.get("https://comfy.test/view").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get("https://comfy.test/history/p-1").mock(return_value=httpx2.Response(200, json=history))
+            router.get("https://comfy.test/view").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
 
             output, version = await gen.generate_image_async(
                 prompt="把这张图改成夜景",
@@ -793,7 +793,7 @@ class TestMediaGenerator:
         backend = _Poll413Backend()
         gen._video_backend = backend
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(httpx2.HTTPStatusError):
             await gen.generate_video_async(
                 prompt="p",
                 resource_type="reference_videos",
@@ -1463,10 +1463,10 @@ from lib.generation.media_generator import _is_413
 from lib.references.reference_compression import LADDER_STEPS, ReferencePayloadFloorError
 
 
-def _http_413_error() -> httpx.HTTPStatusError:
-    req = httpx.Request("POST", "https://example.test")
-    resp = httpx.Response(status_code=413, request=req)
-    return httpx.HTTPStatusError("Request Entity Too Large", request=req, response=resp)
+def _http_413_error() -> httpx2.HTTPStatusError:
+    req = httpx2.Request("POST", "https://example.test")
+    resp = httpx2.Response(status_code=413, request=req)
+    return httpx2.HTTPStatusError("Request Entity Too Large", request=req, response=resp)
 
 
 def _noise_png(tmp_path: Path, name: str, w: int, h: int) -> Path:
@@ -1525,9 +1525,9 @@ class TestIs413:
         assert _is_413(RuntimeError("error code 413xyz")) is False
 
     def test_non_413_status(self):
-        req = httpx.Request("POST", "https://example.test")
-        resp = httpx.Response(status_code=400, request=req)
-        err = httpx.HTTPStatusError("bad request", request=req, response=resp)
+        req = httpx2.Request("POST", "https://example.test")
+        resp = httpx2.Response(status_code=400, request=req)
+        err = httpx2.HTTPStatusError("bad request", request=req, response=resp)
         assert _is_413(err) is False
 
     def test_sdk_status_code_attr(self):
@@ -1736,7 +1736,7 @@ class TestReferenceCompressionSeam:
         backend = _ConfigurableImageBackend(fail_413_times=99)
         gen._image_backend = backend
 
-        with pytest.raises(httpx.HTTPStatusError):
+        with pytest.raises(httpx2.HTTPStatusError):
             await gen.generate_image_async(
                 prompt="p",
                 resource_type="storyboards",
@@ -2233,9 +2233,9 @@ class TestEntryBoundVideoRequests:
 
         with capture_http() as router:
             submit = router.post(url__startswith="https://relay.test/v1/videos/").mock(
-                return_value=httpx.Response(400, json={"code": 1201, "message": "stop"})
+                return_value=httpx2.Response(400, json={"code": 1201, "message": "stop"})
             )
-            with pytest.raises(httpx.HTTPStatusError):
+            with pytest.raises(httpx2.HTTPStatusError):
                 await gen.generate_video_async(
                     prompt="p", resource_type="videos", resource_id="E1S01", duration_seconds=5, resolution="720p"
                 )
@@ -2258,9 +2258,9 @@ class TestEntryBoundVideoRequests:
 
         with capture_http() as router:
             submit = router.post(url__regex=r".*/v1/videos$").mock(
-                return_value=httpx.Response(400, json={"error": {"message": "stop"}})
+                return_value=httpx2.Response(400, json={"error": {"message": "stop"}})
             )
-            with pytest.raises(httpx.HTTPStatusError):
+            with pytest.raises(httpx2.HTTPStatusError):
                 await gen.generate_video_async(
                     prompt="p",
                     resource_type="reference_videos",
@@ -2307,7 +2307,7 @@ class TestEntryBoundVideoRequests:
 
         with capture_http() as router:
             submit = router.post("https://relay.test/v1/videos").mock(
-                return_value=httpx.Response(400, json={"error": {"message": "stop", "type": "invalid_request_error"}})
+                return_value=httpx2.Response(400, json={"error": {"message": "stop", "type": "invalid_request_error"}})
             )
             with pytest.raises(openai.BadRequestError):
                 await gen.generate_video_async(

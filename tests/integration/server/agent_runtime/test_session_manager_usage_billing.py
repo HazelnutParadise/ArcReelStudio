@@ -12,7 +12,7 @@ from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
@@ -591,8 +591,8 @@ class TestUsageRecordsView:
             _result("r-2", {"main-model": _totals(1_500, 120, cache_read=2_000, cache_write=500)}),
         )
 
-        transport = httpx.ASGITransport(app=usage_app(harness.factory))
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        transport = httpx2.ASGITransport(app=usage_app(harness.factory))
+        async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
             generation = (await client.get("/api/v1/usage/records")).json()
             sessions = (await client.get("/api/v1/usage/sessions")).json()
             detail = (await client.get(f"/api/v1/usage/sessions/{SDK_ID}")).json()

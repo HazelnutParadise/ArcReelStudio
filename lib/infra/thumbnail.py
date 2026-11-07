@@ -118,7 +118,7 @@ async def _probe_frame_count(
     if not count_frames:
         try:
             probe = await probe_media(video_path, deadline_seconds=deadlines.probe, grace=deadlines.grace, spawn=spawn)
-        except (MediaProbeError, OSError):
+        except MediaProbeError, OSError:
             return None
         video = probe.first_stream("video")
         return video.packet_count if video is not None else None
@@ -149,7 +149,7 @@ async def _probe_frame_count(
     except SubprocessDeadlineExceeded:
         logger.warning("解码计帧超时: %s", video_path)
         return None
-    except (FileNotFoundError, OSError):
+    except FileNotFoundError, OSError:
         return None
 
     if result.returncode != 0:

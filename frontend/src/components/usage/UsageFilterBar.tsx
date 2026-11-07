@@ -83,9 +83,7 @@ export function UsageFilterBar({
   const titleOf = projectTitleResolver(summary);
   const options = summary?.filter_options;
   // 选定供应商后只列它的模型：跨供应商的同名模型混在一起既选不准也读不懂。
-  const models = (options?.models ?? []).filter(
-    (option) => !filters.provider || option.provider === filters.provider,
-  );
+  const models = (options?.models ?? []).filter((option) => !filters.provider || option.provider === filters.provider);
 
   const projectLabel = (name: string) => usageProjectLabel(name, t, i18n.language, titleOf(name));
 

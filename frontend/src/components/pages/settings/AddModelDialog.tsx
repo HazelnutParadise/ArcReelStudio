@@ -100,8 +100,7 @@ function AddModelBody({
     : [];
   const added = (entry: CatalogEntryHit) =>
     models.some(
-      (m) =>
-        m.api_model_name === entry.name && m.media_type === entry.media_type && (m.enabled || !m.official),
+      (m) => m.api_model_name === entry.name && m.media_type === entry.media_type && (m.enabled || !m.official),
     );
 
   return (
@@ -130,9 +129,7 @@ function AddModelBody({
                 key={model.model_id}
                 value={`disabled:${model.model_id}`}
                 disabled={busy}
-                onSelect={() =>
-                  voidCall(run(() => API.setProviderModelEnabled(providerId, model.model_id, true)))
-                }
+                onSelect={() => voidCall(run(() => API.setProviderModelEnabled(providerId, model.model_id, true)))}
               >
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <TruncatedText text={model.display_name ?? model.model_id} focusable={false} />
@@ -158,33 +155,31 @@ function AddModelBody({
             </CommandItem>
           </CommandGroup>
         )}
-        {search.error === null &&
-          search.entries !== null &&
-          search.entries.length > 0 && (
-            <CommandGroup heading={t("pm_add_group_catalog")}>
-              {search.entries.map((entry) => {
-                const already = added(entry);
-                return (
-                  <CommandItem
-                    key={`${entry.maker}/${entry.name}/${entry.media_type}`}
-                    value={`entry:${entry.maker}/${entry.name}/${entry.media_type}`}
-                    // 结果就绪前，上一次的结果仍显示但不可选
-                    disabled={busy || already || !search.settled}
-                    onSelect={() =>
-                      add({
-                        model_id: entry.name,
-                        media_type: entry.media_type,
-                        entry_binding: `${entry.maker}/${entry.name}`,
-                      })
-                    }
-                  >
-                    <CatalogEntryLabel entry={entry} />
-                    {already && <span className="shrink-0 text-xs text-muted-foreground">{t("pm_add_added")}</span>}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          )}
+        {search.error === null && search.entries !== null && search.entries.length > 0 && (
+          <CommandGroup heading={t("pm_add_group_catalog")}>
+            {search.entries.map((entry) => {
+              const already = added(entry);
+              return (
+                <CommandItem
+                  key={`${entry.maker}/${entry.name}/${entry.media_type}`}
+                  value={`entry:${entry.maker}/${entry.name}/${entry.media_type}`}
+                  // 结果就绪前，上一次的结果仍显示但不可选
+                  disabled={busy || already || !search.settled}
+                  onSelect={() =>
+                    add({
+                      model_id: entry.name,
+                      media_type: entry.media_type,
+                      entry_binding: `${entry.maker}/${entry.name}`,
+                    })
+                  }
+                >
+                  <CatalogEntryLabel entry={entry} />
+                  {already && <span className="shrink-0 text-xs text-muted-foreground">{t("pm_add_added")}</span>}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
       </CommandList>
       {/* 列表只放选项（listbox 的子元素要求），目录读取失败的说明与重试放在列表之外 */}
       {search.error !== null && (

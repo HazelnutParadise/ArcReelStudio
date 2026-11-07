@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vite-plus/test";
 import { act, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { API } from "@/api";
 import { useAdScriptStore } from "@/stores/ad-script-store";
@@ -23,7 +23,14 @@ import type {
 } from "@/types/workflow";
 
 function nextAction(type: WorkflowActionType, overrides: Partial<WorkflowNextAction> = {}): WorkflowNextAction {
-  return { type, args: { episode_id: 1 }, requested_ids: [], requires_confirmation: false, reason: "next", ...overrides };
+  return {
+    type,
+    args: { episode_id: 1 },
+    requested_ids: [],
+    requires_confirmation: false,
+    reason: "next",
+    ...overrides,
+  };
 }
 
 interface Scenario {
@@ -190,7 +197,12 @@ describe("WorkflowPanel 准入与置灰", () => {
     await renderExpanded(
       scenario({
         next: nextAction("collect_project_input", { args: {} }),
-        content: { ad_inputs: "absent", episode_source: "not_applicable", formal_script: "absent", script_item_count: null },
+        content: {
+          ad_inputs: "absent",
+          episode_source: "not_applicable",
+          formal_script: "absent",
+          script_item_count: null,
+        },
         status: {
           project: { content_mode: "ad", generation_mode: "storyboard", grid_storyboard: false },
           operations: { generate_script: { state: "refused", reason: "ad_brief_and_products_missing" } },
@@ -262,7 +274,9 @@ describe("WorkflowPanel 准入与置灰", () => {
       }),
     );
     fireEvent.click(within(screen.getByTestId("workflow-next-step")).getByRole("button", { name: "从空白开始" }));
-    await waitFor(() => expect(pushToast).toHaveBeenCalledWith("操作已完成，但页面数据刷新失败，请手动刷新查看最新状态", "warning"));
+    await waitFor(() =>
+      expect(pushToast).toHaveBeenCalledWith("操作已完成，但页面数据刷新失败，请手动刷新查看最新状态", "warning"),
+    );
   });
 });
 
@@ -350,7 +364,9 @@ describe("WorkflowPanel 剪辑", () => {
 
     fireEvent.click(within(screen.getByTestId("workflow-next-step")).getByRole("button", { name: "新建剪辑时间线" }));
 
-    await waitFor(() => expect(pushToast).toHaveBeenCalledWith("操作已完成，但页面数据刷新失败，请手动刷新查看最新状态", "warning"));
+    await waitFor(() =>
+      expect(pushToast).toHaveBeenCalledWith("操作已完成，但页面数据刷新失败，请手动刷新查看最新状态", "warning"),
+    );
     expect(pushToast).not.toHaveBeenCalledWith(expect.anything(), "success");
   });
 
@@ -365,7 +381,10 @@ describe("WorkflowPanel 剪辑", () => {
       scenario({
         next: nextAction("none", { args: {} }),
         content: { episode_complete: true },
-        status: { ...videosReady, artifacts: { ...videosReady.artifacts, edit_timelines: { timeline_ids: ["tl-1", "tl-2"] } } },
+        status: {
+          ...videosReady,
+          artifacts: { ...videosReady.artifacts, edit_timelines: { timeline_ids: ["tl-1", "tl-2"] } },
+        },
       }),
     );
     const row = screen.getByTestId("workflow-row-edit");
@@ -420,7 +439,9 @@ describe("WorkflowPanel 草稿", () => {
     } as unknown as Awaited<ReturnType<typeof API.getEpisodeDraft>>);
     await renderExpanded(
       scenario({
-        next: nextAction("resolve_draft", { args: { episode_id: 1, draft_kind: "drama_script_plan", needs_repair: true } }),
+        next: nextAction("resolve_draft", {
+          args: { episode_id: 1, draft_kind: "drama_script_plan", needs_repair: true },
+        }),
         content: { drafts: [repairDraft], formal_script: "absent", script_item_count: null },
       }),
     );
@@ -451,7 +472,9 @@ describe("WorkflowPanel 草稿", () => {
       .mockResolvedValue({ batch: { members: [] } } as unknown as Awaited<ReturnType<typeof API.repairEpisodeDraft>>);
     await renderExpanded(
       scenario({
-        next: nextAction("resolve_draft", { args: { episode_id: 1, draft_kind: "drama_script_plan", needs_repair: true } }),
+        next: nextAction("resolve_draft", {
+          args: { episode_id: 1, draft_kind: "drama_script_plan", needs_repair: true },
+        }),
         content: { drafts: [repairDraft], formal_script: "absent", script_item_count: null },
       }),
     );
@@ -466,7 +489,9 @@ describe("WorkflowPanel 草稿", () => {
     useScriptPlanStore.getState().close();
     await renderExpanded(
       scenario({
-        next: nextAction("resolve_draft", { args: { episode_id: 1, draft_kind: "drama_script_plan", needs_repair: true } }),
+        next: nextAction("resolve_draft", {
+          args: { episode_id: 1, draft_kind: "drama_script_plan", needs_repair: true },
+        }),
         content: { drafts: [repairDraft], formal_script: "absent", script_item_count: null },
       }),
     );
@@ -491,7 +516,9 @@ describe("WorkflowPanel 草稿", () => {
       .mockResolvedValue({ episode: 1, doc_type: "drama_script_plan", discarded: true });
     await renderExpanded(
       scenario({
-        next: nextAction("resolve_draft", { args: { episode_id: 1, draft_kind: "drama_script_plan", needs_repair: true } }),
+        next: nextAction("resolve_draft", {
+          args: { episode_id: 1, draft_kind: "drama_script_plan", needs_repair: true },
+        }),
         content: { drafts: [repairDraft], formal_script: "absent", script_item_count: null },
       }),
     );
@@ -507,7 +534,9 @@ describe("WorkflowPanel 草稿", () => {
   it("Agent 的可编辑草稿：交给 Agent 完成，或者丢弃这份修改", async () => {
     await renderExpanded(
       scenario({
-        next: nextAction("resolve_draft", { args: { episode_id: 1, draft_kind: "narration_script_plan", needs_repair: false } }),
+        next: nextAction("resolve_draft", {
+          args: { episode_id: 1, draft_kind: "narration_script_plan", needs_repair: false },
+        }),
         content: {
           drafts: [{ kind: "narration_script_plan", path: "drafts/episode_1.json", needs_repair: false }],
           formal_script: "absent",
@@ -524,8 +553,7 @@ describe("WorkflowPanel 草稿", () => {
 });
 
 describe("WorkflowPanel 编写提示词", () => {
-  const plan = () =>
-    scenario({ next: nextAction("author_prompts"), content: { pending_authoring_ids: ["E1S02"] } });
+  const plan = () => scenario({ next: nextAction("author_prompts"), content: { pending_authoring_ids: ["E1S02"] } });
 
   it("AI 编写直接提交全部待编写，并带上附加指令", async () => {
     useTasksStore.getState().setTasks([]);
@@ -569,7 +597,11 @@ describe("WorkflowPanel AI 规划脚本", () => {
     const next = screen.getByTestId("workflow-next-step");
     expect(within(next).queryByRole("textbox")).not.toBeInTheDocument();
     fireEvent.click(within(next).getByRole("button", { name: "去规划脚本" }));
-    expect(useEpisodeSurfaceStore.getState().request).toEqual({ projectName: "proj", episode: 1, surface: "script_plan" });
+    expect(useEpisodeSurfaceStore.getState().request).toEqual({
+      projectName: "proj",
+      episode: 1,
+      surface: "script_plan",
+    });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(submit).not.toHaveBeenCalled();
   });
@@ -588,7 +620,11 @@ describe("WorkflowPanel AI 规划脚本", () => {
     );
     const row = screen.getByTestId("workflow-row-plan");
     fireEvent.click(within(row).getByRole("button", { name: "AI 规划脚本" }));
-    expect(useScriptPlanStore.getState().request).toEqual({ projectName: "proj", episode: 1, replaces: "formal_script" });
+    expect(useScriptPlanStore.getState().request).toEqual({
+      projectName: "proj",
+      episode: 1,
+      replaces: "formal_script",
+    });
   });
 
   it("从空白开始的集没有集原文时，AI 规划脚本置灰并说明原因", async () => {
@@ -619,7 +655,11 @@ describe("WorkflowPanel AI 规划脚本", () => {
       }),
     );
     fireEvent.click(within(screen.getByTestId("workflow-row-plan")).getByRole("button", { name: "去规划脚本" }));
-    expect(useEpisodeSurfaceStore.getState().request).toEqual({ projectName: "proj", episode: 1, surface: "script_plan" });
+    expect(useEpisodeSurfaceStore.getState().request).toEqual({
+      projectName: "proj",
+      episode: 1,
+      surface: "script_plan",
+    });
     expect(useAssistantStore.getState().input).toBe("");
   });
 });
@@ -634,18 +674,24 @@ describe("WorkflowPanel 补充集原文", () => {
 
   it("一集既没有原文也没有规划和草稿时，原文行给出补充集原文", async () => {
     await renderExpanded(sourceless({}, "missing"));
-    expect(within(screen.getByTestId("workflow-row-source")).getByRole("button", { name: "补充集原文" })).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("workflow-row-source")).getByRole("button", { name: "补充集原文" }),
+    ).toBeInTheDocument();
   });
 
   it("没有原文但已有规划时，原文行不给补充集原文", async () => {
     await renderExpanded(sourceless({}, "current"));
-    expect(within(screen.getByTestId("workflow-row-source")).queryByRole("button", { name: "补充集原文" })).not.toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("workflow-row-source")).queryByRole("button", { name: "补充集原文" }),
+    ).not.toBeInTheDocument();
   });
 
   it("没有原文但有草稿时，原文行不给补充集原文", async () => {
     const draft = { kind: "drama_script_plan", path: "drafts/episode_1.json", needs_repair: true };
     await renderExpanded(sourceless({ drafts: [draft] }, "missing"));
-    expect(within(screen.getByTestId("workflow-row-source")).queryByRole("button", { name: "补充集原文" })).not.toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("workflow-row-source")).queryByRole("button", { name: "补充集原文" }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -663,7 +709,12 @@ describe("WorkflowPanel 广告/短片 AI 生成脚本", () => {
     await renderExpanded(
       scenario({
         next: nextAction("generate_script"),
-        content: { ad_inputs: "present", episode_source: "not_applicable", formal_script: "absent", script_item_count: null },
+        content: {
+          ad_inputs: "present",
+          episode_source: "not_applicable",
+          formal_script: "absent",
+          script_item_count: null,
+        },
         status: adStatus({ generate_script: { state: "admitted", reason: null } }),
       }),
     );
@@ -684,7 +735,12 @@ describe("WorkflowPanel 广告/短片 AI 生成脚本", () => {
     await renderExpanded(
       scenario({
         next: nextAction("collect_project_input", { args: {} }),
-        content: { ad_inputs: "absent", episode_source: "not_applicable", formal_script: "absent", script_item_count: null },
+        content: {
+          ad_inputs: "absent",
+          episode_source: "not_applicable",
+          formal_script: "absent",
+          script_item_count: null,
+        },
         status: adStatus({ generate_script: { state: "refused", reason: "ad_brief_and_products_missing" } }),
       }),
     );
@@ -839,7 +895,11 @@ describe("WorkflowPanel 过期产物、任务与准入", () => {
     const row = screen.getByTestId("workflow-row-videos");
     expect(within(row).getAllByText(/视频 · 生成中/)).toHaveLength(3);
     const note = within(row).getByText("已提交给供应商，重试可能再次计费。").parentElement as HTMLElement;
-    expect(within(note).getAllByRole("img").map((badge) => badge.getAttribute("aria-label"))).toEqual(["分镜 2", "分镜 3"]);
+    expect(
+      within(note)
+        .getAllByRole("img")
+        .map((badge) => badge.getAttribute("aria-label")),
+    ).toEqual(["分镜 2", "分镜 3"]);
     expect(within(row).getByText("下一步：等待生成完成")).toBeInTheDocument();
   });
 
@@ -884,7 +944,9 @@ describe("WorkflowPanel 过期产物、任务与准入", () => {
               unit_id: "E1S04",
               admitted: true,
               withheld: true,
-              problems: [{ code: "generation_batch_admission_withheld", detail: "withheld", action: "none", params: {} }],
+              problems: [
+                { code: "generation_batch_admission_withheld", detail: "withheld", action: "none", params: {} },
+              ],
             },
           ],
         },
@@ -944,7 +1006,13 @@ describe("WorkflowPanel 过期产物、任务与准入", () => {
           units: [],
           confirmation: {
             tiers: [
-              { request_duration_seconds: 8, unit_count: 2, unit_ids: ["E1U1", "E1U2"], cost_amount: 1.6, cost_currency: "USD" },
+              {
+                request_duration_seconds: 8,
+                unit_count: 2,
+                unit_ids: ["E1U1", "E1U2"],
+                cost_amount: 1.6,
+                cost_currency: "USD",
+              },
             ],
           },
         },
@@ -1039,7 +1107,9 @@ describe("WorkflowPanel 刷新纪律", () => {
       useTasksStore.getState().setTasks([makeTask({ task_id: "other-1", project_name: "another", status: "queued" })]);
     });
     act(() => {
-      useTasksStore.getState().setTasks([makeTask({ task_id: "other-1", project_name: "another", status: "succeeded" })]);
+      useTasksStore
+        .getState()
+        .setTasks([makeTask({ task_id: "other-1", project_name: "another", status: "succeeded" })]);
     });
     await settleDebounce();
 

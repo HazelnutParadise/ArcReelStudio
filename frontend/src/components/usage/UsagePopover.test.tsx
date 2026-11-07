@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import i18n from "@/i18n";
@@ -9,11 +9,7 @@ import { useUsageHeaderStore } from "@/stores/usage-header-store";
 import { makeTask } from "@/test/factories";
 import type { EpisodeItemRef, UsageRecord, UsageSummary } from "@/types";
 import { makeUsageRecord, makeUsageRecordDetail, makeUsageSummary } from "./usage-fixtures";
-import {
-  HEADER_PROJECT,
-  renderUsageHeaderEntry,
-  resetHeaderStores,
-} from "./usage-header-test-utils";
+import { HEADER_PROJECT, renderUsageHeaderEntry, resetHeaderStores } from "./usage-header-test-utils";
 
 const EMPTY_KPI = {
   calls: 0,
@@ -47,11 +43,7 @@ function stubUsageApi() {
 }
 
 /** 打开悬浮层并把当前项目的数据灌进 store。 */
-function openPopover(state: {
-  summary?: UsageSummary;
-  recent?: UsageRecord[];
-  pending?: UsageRecord[];
-}) {
+function openPopover(state: { summary?: UsageSummary; recent?: UsageRecord[]; pending?: UsageRecord[] }) {
   useUsageHeaderStore.setState({
     projectName: HEADER_PROJECT,
     summary: state.summary ?? makeUsageSummary(),
@@ -76,9 +68,7 @@ describe("UsagePopover", () => {
   it("shows only the guidance line and the records link when nothing was ever called", () => {
     openPopover({ summary: makeUsageSummary({ kpi: EMPTY_KPI, primary_currency: null }) });
 
-    expect(
-      screen.getByText("本项目还没有使用记录。开始生成后，这里会显示进行中与已结束的调用。"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("本项目还没有使用记录。开始生成后，这里会显示进行中与已结束的调用。")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "查看全部记录" })).toBeInTheDocument();
     expect(screen.queryByText("调用次数")).not.toBeInTheDocument();
     expect(screen.queryByText("进行中")).not.toBeInTheDocument();
@@ -180,17 +170,13 @@ describe("UsagePopover", () => {
 
     openPopover({});
 
-    const notice = await screen.findByText(
-      "部分数据加载失败，显示的可能不是最新结果。",
-    );
+    const notice = await screen.findByText("部分数据加载失败，显示的可能不是最新结果。");
     expect(notice).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "刷新" }));
 
     await waitFor(() =>
-      expect(
-        screen.queryByText("部分数据加载失败，显示的可能不是最新结果。"),
-      ).not.toBeInTheDocument(),
+      expect(screen.queryByText("部分数据加载失败，显示的可能不是最新结果。")).not.toBeInTheDocument(),
     );
   });
 
@@ -199,9 +185,7 @@ describe("UsagePopover", () => {
 
     fireEvent.click(screen.getByRole("link", { name: "查看全部记录" }));
 
-    expect(location.history.at(-1)).toBe(
-      `/app/settings?section=usage&u_project=${encodeURIComponent(HEADER_PROJECT)}`,
-    );
+    expect(location.history.at(-1)).toBe(`/app/settings?section=usage&u_project=${encodeURIComponent(HEADER_PROJECT)}`);
     expect(useAppStore.getState().usagePanelOpen).toBe(false);
   });
 
@@ -231,8 +215,6 @@ describe("UsagePopover", () => {
     fireEvent.click(screen.getByRole("button", { name: "重试下载" }));
 
     await waitFor(() => expect(retrySpy).toHaveBeenCalledWith("t-9"));
-    await waitFor(() =>
-      expect(API.getUsageSummary).toHaveBeenCalledTimes(callsBeforeRetry + 1),
-    );
+    await waitFor(() => expect(API.getUsageSummary).toHaveBeenCalledTimes(callsBeforeRetry + 1));
   });
 });

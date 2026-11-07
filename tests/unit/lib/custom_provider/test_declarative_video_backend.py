@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import ClassVar
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.endpoint_definition import validate_definition
@@ -54,12 +54,12 @@ class TestDeclarativeVideoBackend:
     async def test_definition_drives_submit_poll_download_and_usage(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             poll = router.get("https://relay.test/v1/video/fetch/job-42").mock(
                 side_effect=[
-                    httpx.Response(200, json={"status": "processing"}),
-                    httpx.Response(
+                    httpx2.Response(200, json={"status": "processing"}),
+                    httpx2.Response(
                         200,
                         json={
                             "status": "completed",
@@ -70,7 +70,7 @@ class TestDeclarativeVideoBackend:
                 ]
             )
             download = router.get("https://relay.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             result = await DeclarativeVideoBackend(
@@ -97,16 +97,16 @@ class TestDeclarativeVideoBackend:
     async def test_cross_origin_artifact_is_downloaded_without_credentials(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://cdn.example/signed/job-42.mp4?sig=abc"},
                 )
             )
             download = router.get("https://cdn.example/signed/job-42.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             await DeclarativeVideoBackend(
@@ -129,15 +129,15 @@ class TestDeclarativeVideoBackend:
         definition["poll"] = {**definition["poll"], "url": "https://poll.test/v1/video/fetch/{{ task_id }}"}
         with capture_http() as router, bounded_poll_clock():
             router.post("https://submit.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://poll.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "completed", "video_url": "https://submit.test/files/job-42.mp4"}
                 )
             )
             download = router.get("https://submit.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             await DeclarativeVideoBackend(
@@ -157,15 +157,15 @@ class TestDeclarativeVideoBackend:
         definition["poll"] = {**definition["poll"], "url": "https://submit.test/v1/video/fetch/{{ task_id }}"}
         with capture_http() as router, bounded_poll_clock():
             router.post("https://submit.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://submit.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "completed", "video_url": "https://unused.test/files/job-42.mp4"}
                 )
             )
             download = router.get("https://unused.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             await DeclarativeVideoBackend(
@@ -181,7 +181,7 @@ class TestDeclarativeVideoBackend:
     async def test_redirect_to_another_origin_drops_custom_auth_headers(self, tmp_path: Path):
         """同源产物地址跳到 CDN 时，自定义头名的凭证同样不许跟过去。
 
-        httpx 跨源只摘 Authorization，而 auth 节可以用任意头名。
+        httpx2 跨源只摘 Authorization，而 auth 节可以用任意头名。
         """
         definition = _definition()
         definition["auth"] = {"headers": {"X-API-Key": "{{ api_key }}"}}
@@ -189,19 +189,19 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
             origin = router.get("https://relay.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(302, headers={"location": "https://cdn.example/signed/job-42.mp4"})
+                return_value=httpx2.Response(302, headers={"location": "https://cdn.example/signed/job-42.mp4"})
             )
             cdn = router.get("https://cdn.example/signed/job-42.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             await DeclarativeVideoBackend(
@@ -223,18 +223,18 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(307, headers={"location": "https://elsewhere.test/v1/video/create"})
+                return_value=httpx2.Response(307, headers={"location": "https://elsewhere.test/v1/video/create"})
             )
             moved = router.post("https://elsewhere.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="secret",
@@ -251,19 +251,19 @@ class TestDeclarativeVideoBackend:
         """302 后按 GET 跟随、丢掉请求体：原样重放创建请求会在跳转目标上再建一个付费任务。"""
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(302, headers={"location": "https://relay.test/v1/video/created"})
+                return_value=httpx2.Response(302, headers={"location": "https://relay.test/v1/video/created"})
             )
             replayed = router.post("https://relay.test/v1/video/created")
             followed = router.get("https://relay.test/v1/video/created").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="secret",
@@ -286,18 +286,18 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             poll = router.get("https://status.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(302, headers={"location": "https://elsewhere.test/fetch/job-42"})
+                return_value=httpx2.Response(302, headers={"location": "https://elsewhere.test/fetch/job-42"})
             )
             moved = router.get("https://elsewhere.test/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="secret",
@@ -322,18 +322,18 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(302, headers={"location": "/v1/video/fetch/job-42/"})
+                return_value=httpx2.Response(302, headers={"location": "/v1/video/fetch/job-42/"})
             )
             followed = router.get("https://relay.test/v1/video/fetch/job-42/").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="secret",
@@ -352,18 +352,18 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(302, headers={"location": "/v1/video/fetch/job-42/?region=us"})
+                return_value=httpx2.Response(302, headers={"location": "/v1/video/fetch/job-42/?region=us"})
             )
             followed = router.get("https://relay.test/v1/video/fetch/job-42/").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="secret",
@@ -388,16 +388,16 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://status.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://status.test/files/job-42.mp4"},
                 )
             )
             download = router.get("https://status.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             await DeclarativeVideoBackend(
@@ -421,19 +421,19 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(302, headers={"location": "https://evil.test/fetch/job-42"})
+                return_value=httpx2.Response(302, headers={"location": "https://evil.test/fetch/job-42"})
             )
             router.get("https://evil.test/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://evil.test/files/job-42.mp4"},
                 )
             )
             download = router.get("https://evil.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             await DeclarativeVideoBackend(
@@ -452,18 +452,18 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(302, headers={"location": "https://elsewhere.test/fetch/job-42"})
+                return_value=httpx2.Response(302, headers={"location": "https://elsewhere.test/fetch/job-42"})
             )
             moved = router.get("https://elsewhere.test/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="secret",
@@ -481,19 +481,19 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
             router.get("https://relay.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(302, headers={"location": "/files/job-42-v2.mp4"})
+                return_value=httpx2.Response(302, headers={"location": "/files/job-42-v2.mp4"})
             )
             final = router.get("https://relay.test/files/job-42-v2.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             await DeclarativeVideoBackend(
@@ -509,10 +509,10 @@ class TestDeclarativeVideoBackend:
     async def test_succeeded_without_video_prefers_extracted_error(self, tmp_path: Path):
         with capture_http() as router:
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(200, json={"status": "completed", "error": "moderated"})
+                return_value=httpx2.Response(200, json={"status": "completed", "error": "moderated"})
             )
 
             with pytest.raises(DeclarativeRuntimeError, match="moderated") as caught:
@@ -530,7 +530,7 @@ class TestDeclarativeVideoBackend:
         with capture_http() as router:
             submit = router.post("https://relay.test/v1/video/create")
             poll = router.get("https://relay.test/v1/video/fetch/job-old").mock(
-                return_value=httpx.Response(404, json={"error": "gone"})
+                return_value=httpx2.Response(404, json={"error": "gone"})
             )
 
             with pytest.raises(ResumeExpiredError):
@@ -548,19 +548,19 @@ class TestDeclarativeVideoBackend:
     async def test_download_retries_403_and_404_without_resubmitting(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
             download = router.get("https://relay.test/files/job-42.mp4").mock(
                 side_effect=[
-                    httpx.Response(403, json={"error": "not ready"}),
-                    httpx.Response(404, json={"error": "propagating"}),
-                    httpx.Response(200, content=b"video"),
+                    httpx2.Response(403, json={"error": "not ready"}),
+                    httpx2.Response(404, json={"error": "propagating"}),
+                    httpx2.Response(200, content=b"video"),
                 ]
             )
 
@@ -583,9 +583,9 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router:
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(400, json={"error": "bad prompt"})
+                return_value=httpx2.Response(400, json={"error": "bad prompt"})
             )
-            with pytest.raises(httpx.HTTPStatusError):
+            with pytest.raises(httpx2.HTTPStatusError):
                 await DeclarativeVideoBackend(
                     api_key="secret",
                     base_url="https://relay.test",
@@ -600,7 +600,7 @@ class TestDeclarativeVideoBackend:
         """声明式后端复用 submit_post，上游 4xx 的拒因摘要同样挂在异常上。"""
         with capture_http() as router:
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     400, json={"error": {"code": "PromptRejected", "message": "prompt violates the policy"}}
                 )
             )
@@ -624,12 +624,12 @@ class TestDeclarativeVideoBackend:
         artifact_url = "http://169.254.169.254/latest/job-42.mp4"
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(200, json={"status": "completed", "video_url": artifact_url})
+                return_value=httpx2.Response(200, json={"status": "completed", "video_url": artifact_url})
             )
-            download = router.get(artifact_url).mock(return_value=httpx.Response(200, content=b"video"))
+            download = router.get(artifact_url).mock(return_value=httpx2.Response(200, content=b"video"))
 
             # 目的地不合规是确定性结果，不落可重试下载的 artifact_download_failed
             with pytest.raises(ArtifactDestinationRejectedError):
@@ -654,15 +654,15 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(200, json={"status": "completed", "result_id": "r-9"})
+                return_value=httpx2.Response(200, json={"status": "completed", "result_id": "r-9"})
             )
             result = router.get("https://relay.test/v1/video/result/r-9").mock(
-                return_value=httpx.Response(302, headers={"Location": "http://169.254.169.254/latest/"})
+                return_value=httpx2.Response(302, headers={"Location": "http://169.254.169.254/latest/"})
             )
-            target = router.get("http://169.254.169.254/latest/").mock(return_value=httpx.Response(200, json={}))
+            target = router.get("http://169.254.169.254/latest/").mock(return_value=httpx2.Response(200, json={}))
 
             with pytest.raises(ArtifactDestinationRejectedError):
                 await DeclarativeVideoBackend(
@@ -679,16 +679,16 @@ class TestDeclarativeVideoBackend:
     async def test_download_exhausts_shared_ten_failure_budget(self, tmp_path: Path):
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
             download = router.get("https://relay.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(403, json={"error": "not ready"})
+                return_value=httpx2.Response(403, json={"error": "not ready"})
             )
 
             with pytest.raises(DeclarativeRuntimeError) as caught:
@@ -707,13 +707,13 @@ class TestDeclarativeVideoBackend:
         with capture_http() as router:
             submit = router.post("https://relay.test/v1/video/create")
             router.get("https://relay.test/v1/video/fetch/job-old").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-old.mp4"},
                 )
             )
             router.get("https://relay.test/files/job-old.mp4").mock(
-                return_value=httpx.Response(200, content=b"resumed")
+                return_value=httpx2.Response(200, content=b"resumed")
             )
 
             result = await DeclarativeVideoBackend(
@@ -731,14 +731,14 @@ class TestDeclarativeVideoBackend:
         """用户在途改了供应商域名：续跑仍按提交时的域名轮询，不把旧任务误判成过期。"""
         with capture_http() as router:
             old_host = router.get("https://old.relay.test/v1/video/fetch/job-old").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://old.relay.test/files/job-old.mp4"},
                 )
             )
             new_host = router.get("https://new.relay.test/v1/video/fetch/job-old")
             download = router.get("https://old.relay.test/files/job-old.mp4").mock(
-                return_value=httpx.Response(200, content=b"resumed")
+                return_value=httpx2.Response(200, content=b"resumed")
             )
 
             result = await DeclarativeVideoBackend(
@@ -760,15 +760,15 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock(), captured_provider_job_ids() as persisted:
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"},
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"v"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"v"))
 
             await DeclarativeVideoBackend(
                 api_key="secret",
@@ -784,15 +784,15 @@ class TestDeclarativeVideoBackend:
         """覆盖的两条请求各按覆盖路径发出，相对原样 base_url 不剥版本段；取自响应的下载地址不受影响。"""
         with capture_http() as router, bounded_poll_clock():
             submit = router.post("https://relay.test/api/v1/v2/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             poll = router.get("https://relay.test/api/v1/v2/tasks/job-42", params={"model": "video-x"}).mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}
                 )
             )
             download = router.get("https://relay.test/files/job-42.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             result = await DeclarativeVideoBackend(
@@ -822,13 +822,13 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router:
             poll = router.get("https://old.relay.test/api/v1/v2/tasks/job-old").mock(
-                return_value=httpx.Response(200, json={"status": "completed", "result_id": "r-9"})
+                return_value=httpx2.Response(200, json={"status": "completed", "result_id": "r-9"})
             )
             result = router.get("https://old.relay.test/api/v1/video/result/r-9").mock(
-                return_value=httpx.Response(200, json={"video_url": "https://old.relay.test/files/job-old.mp4"})
+                return_value=httpx2.Response(200, json={"video_url": "https://old.relay.test/files/job-old.mp4"})
             )
             router.get("https://old.relay.test/files/job-old.mp4").mock(
-                return_value=httpx.Response(200, content=b"resumed")
+                return_value=httpx2.Response(200, content=b"resumed")
             )
 
             outcome = await DeclarativeVideoBackend(
@@ -892,7 +892,7 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, text="<html>gateway timeout</html>")
+                return_value=httpx2.Response(200, text="<html>gateway timeout</html>")
             )
 
             with pytest.raises(DeclarativeRuntimeError) as caught:
@@ -912,7 +912,7 @@ class TestDeclarativeVideoBackend:
         definition["submit"]["extract"]["task_id"] = ["$[?@.a == 1e400]"]
 
         with capture_http() as router:
-            router.post("https://relay.test/v1/video/create").mock(return_value=httpx.Response(200, json={"a": 1}))
+            router.post("https://relay.test/v1/video/create").mock(return_value=httpx2.Response(200, json={"a": 1}))
 
             with pytest.raises(DeclarativeRuntimeError) as caught:
                 await DeclarativeVideoBackend(
@@ -962,13 +962,13 @@ class TestDeclarativeVideoBackend:
         with capture_http() as router:
             submit = router.post("https://relay.test/v1/video/create")
             router.get("https://relay.test/v1/video/fetch/job-old").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/job-old.mp4"},
                 )
             )
             router.get("https://relay.test/files/job-old.mp4").mock(
-                return_value=httpx.Response(200, content=b"resumed")
+                return_value=httpx2.Response(200, content=b"resumed")
             )
 
             result = await DeclarativeVideoBackend(
@@ -990,15 +990,15 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": 12345})
+                return_value=httpx2.Response(200, json={"task_id": 12345})
             )
             poll = router.get("https://relay.test/v1/video/fetch/12345").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200,
                     json={"status": "completed", "video_url": "https://relay.test/files/12345.mp4"},
                 )
             )
-            router.get("https://relay.test/files/12345.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/12345.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             result = await DeclarativeVideoBackend(
                 api_key="secret",
@@ -1015,10 +1015,10 @@ class TestDeclarativeVideoBackend:
         """供应商判负却没给理由时也必须立刻终态，不是一路轮询到超时。"""
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             poll = router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(200, json={"status": "failed"})
+                return_value=httpx2.Response(200, json={"status": "failed"})
             )
 
             with pytest.raises(RuntimeError, match="provider reported failure"):
@@ -1049,16 +1049,16 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.get("https://relay.test/v1/video/fetch/job-old").mock(
-                return_value=httpx.Response(200, json={"status": "completed", "result_id": "r-9"})
+                return_value=httpx2.Response(200, json={"status": "completed", "result_id": "r-9"})
             )
             result = router.get("https://relay.test/v1/video/result/r-9").mock(
                 side_effect=[
-                    httpx.Response(404, json={"error": "not ready"}),
-                    httpx.Response(200, json={"video_url": "https://relay.test/files/job-old.mp4"}),
+                    httpx2.Response(404, json={"error": "not ready"}),
+                    httpx2.Response(200, json={"video_url": "https://relay.test/files/job-old.mp4"}),
                 ]
             )
             router.get("https://relay.test/files/job-old.mp4").mock(
-                return_value=httpx.Response(200, content=b"resumed")
+                return_value=httpx2.Response(200, content=b"resumed")
             )
 
             outcome = await DeclarativeVideoBackend(
@@ -1083,7 +1083,7 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router:
             poll = router.get("https://relay.test/v1/video/fetch/job-old").mock(
-                return_value=httpx.Response(404, json={"error": "gone"})
+                return_value=httpx2.Response(404, json={"error": "gone"})
             )
 
             with pytest.raises(ResumeExpiredError):
@@ -1105,13 +1105,13 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(400, json={"error": "bad request"})
+                return_value=httpx2.Response(400, json={"error": "bad request"})
             )
 
-            with pytest.raises(httpx.HTTPStatusError) as caught:
+            with pytest.raises(httpx2.HTTPStatusError) as caught:
                 await DeclarativeVideoBackend(
                     api_key="super-secret-key",
                     base_url="https://relay.test",
@@ -1139,13 +1139,13 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock():
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(200, json={"status": "completed", "result_id": "r-9"})
+                return_value=httpx2.Response(200, json={"status": "completed", "result_id": "r-9"})
             )
             result = router.get("https://relay.test/v1/video/result/r-9").mock(
-                return_value=httpx.Response(500, json={"error": "result exploded"})
+                return_value=httpx2.Response(500, json={"error": "result exploded"})
             )
 
             # 任务已成功、钱已花：二次取件的瞬态失败共用产物取件预算，耗尽后落可恢复的
@@ -1171,15 +1171,15 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock(), caplog.at_level("INFO"):
             router.post(url__regex=r"^https://relay\.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get(url__regex=r"^https://relay\.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}
                 )
             )
             router.get(url__regex=r"^https://relay\.test/files/job-42\.mp4").mock(
-                return_value=httpx.Response(200, content=b"video")
+                return_value=httpx2.Response(200, content=b"video")
             )
 
             await DeclarativeVideoBackend(
@@ -1190,7 +1190,7 @@ class TestDeclarativeVideoBackend:
                 provider="custom-1",
             ).generate(_request(tmp_path))
 
-        # 断言范围限本模块写入的日志；httpx 自己的 `HTTP Request:` 行不在其内。
+        # 断言范围限本模块写入的日志；httpx2 自己的 `HTTP Request:` 行不在其内。
         logged = "\n".join(
             record.getMessage() for record in caplog.records if record.name == "lib.custom_provider.declarative_backend"
         )
@@ -1208,14 +1208,14 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock(), caplog.at_level("INFO"):
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="sk-super-secret",
@@ -1242,14 +1242,14 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock(), caplog.at_level("INFO"):
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="sk-super-secret",
@@ -1277,14 +1277,14 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock(), caplog.at_level("INFO"):
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="sk-super-secret",
@@ -1308,14 +1308,14 @@ class TestDeclarativeVideoBackend:
 
         with capture_http() as router, bounded_poll_clock(), caplog.at_level("INFO"):
             router.post("https://relay.test/v1/video/create").mock(
-                return_value=httpx.Response(200, json={"task_id": "job-42"})
+                return_value=httpx2.Response(200, json={"task_id": "job-42"})
             )
             router.get("https://relay.test/v1/video/fetch/job-42").mock(
-                return_value=httpx.Response(
+                return_value=httpx2.Response(
                     200, json={"status": "completed", "video_url": "https://relay.test/files/job-42.mp4"}
                 )
             )
-            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx.Response(200, content=b"video"))
+            router.get("https://relay.test/files/job-42.mp4").mock(return_value=httpx2.Response(200, content=b"video"))
 
             await DeclarativeVideoBackend(
                 api_key="sk-super-secret",

@@ -28,7 +28,10 @@ import { formatShortDateTime } from "@/utils/date-format";
 import { downloadBlob } from "@/utils/download";
 import { formatFileSize } from "@/utils/file-size";
 
-type ListingState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; listing: TrashListing };
+type ListingState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "ready"; listing: TrashListing };
 
 const NO_EPISODES: EpisodeLedger = [];
 
@@ -89,7 +92,10 @@ function objectTitle(
     const unit = object.item_kind === "video_units";
     const item = itemAtDeletion(t, object, episodes);
     if (item === null) {
-      return t(unit ? "trash_object_script_unit" : "trash_object_script_entry", { id: object.id, episode: object.episode });
+      return t(unit ? "trash_object_script_unit" : "trash_object_script_entry", {
+        id: object.id,
+        episode: object.episode,
+      });
     }
     return withExcerpt(t, t(unit ? "trash_object_script_unit_at" : "trash_object_script_entry_at", { item }), object);
   }
@@ -201,7 +207,7 @@ export function TrashSection({ projectName, refreshKey }: { projectName: string;
       // 降级后留下只能下载的结构文件时记录还在，由随后的重拉换成只能下载的样子
       if (result.download_only.length === 0) dropRecords((item) => item.id !== record.id);
       if (record.object.kind === "script_entry" && !result.degraded) {
-        if (await refreshAfterWrite(projectName, t) !== "success") return;
+        if ((await refreshAfterWrite(projectName, t)) !== "success") return;
       }
       useAppStore.getState().pushToast(restoredMessage(t, record, result), result.degraded ? "warning" : "success");
     } catch (error) {
@@ -286,9 +292,7 @@ export function TrashSection({ projectName, refreshKey }: { projectName: string;
                     {" · "}
                     <span className="num">{formatFileSize(record.size)}</span>
                   </span>
-                  {record.download_only && (
-                    <DownloadOnlyFiles projectName={projectName} record={record} />
-                  )}
+                  {record.download_only && <DownloadOnlyFiles projectName={projectName} record={record} />}
                 </div>
                 {!record.download_only && (
                   <Button variant="outline" size="sm" disabled={busy} onClick={() => void restore(record)}>

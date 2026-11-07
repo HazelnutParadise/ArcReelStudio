@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from types import SimpleNamespace
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import ProviderJobStatus
@@ -93,7 +93,7 @@ async def test_downloaded_artifact_rename_settles_through_cancellation(tmp_path:
 
     async def download() -> None:
         with capture_http() as router:
-            router.get("https://cdn.example/a.png").mock(return_value=httpx.Response(200, content=PNG_BYTES))
+            router.get("https://cdn.example/a.png").mock(return_value=httpx2.Response(200, content=PNG_BYTES))
             async with (
                 artifact_http_client(resolver=_resolver("93.184.216.34")) as client,
                 client.stream("GET", "https://cdn.example/a.png") as resp,

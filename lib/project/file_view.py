@@ -152,7 +152,7 @@ def _record_time(value: object, fallback: float) -> str:
 def _read_object(path: Path) -> Any:
     try:
         return json.loads(path.read_bytes())
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
 
 

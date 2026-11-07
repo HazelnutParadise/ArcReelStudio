@@ -117,7 +117,7 @@ export function ShareToMarketDialog({
   const iconValue = icon?.value ?? null;
   useEffect(() => {
     const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 预检请求换参时立即清除旧结果，避免等待期间提交未校验的内容
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 预检请求换参时立即清除旧结果，避免等待期间提交未校验的内容
     setDiagnostics(null);
     setCheckError(null);
     const timer = setTimeout(() => {
@@ -182,8 +182,7 @@ export function ShareToMarketDialog({
     }
   };
 
-  const canSubmit =
-    !submitting && !readingIcon && slug !== "" && diagnostics !== null && diagnostics.length === 0;
+  const canSubmit = !submitting && !readingIcon && slug !== "" && diagnostics !== null && diagnostics.length === 0;
 
   return (
     <Dialog
@@ -249,12 +248,7 @@ export function ShareToMarketDialog({
                 {t("market_share_icon_label")}
               </span>
               <div role="group" aria-labelledby={iconLabelId} className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={submitting}
-                  onClick={() => iconInput.current?.click()}
-                >
+                <Button variant="outline" size="sm" disabled={submitting} onClick={() => iconInput.current?.click()}>
                   <ImagePlus aria-hidden data-icon="inline-start" />
                   {icon ? icon.name : t("market_share_icon_pick")}
                 </Button>

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { beforeEach, describe, expect, it, vi, type MockInstance } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";

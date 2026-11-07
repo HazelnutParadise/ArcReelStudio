@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { isResourceBusy } from "@/stores/tasks-store";
@@ -138,7 +138,12 @@ describe("StoryboardBatchDialog", () => {
   });
 
   it("keeps the confirm disabled when nothing needs generating", async () => {
-    vi.spyOn(API, "previewStoryboardBatch").mockResolvedValue({ targets: [], skipped: [], estimated_cost: null, unpriced_count: 0 });
+    vi.spyOn(API, "previewStoryboardBatch").mockResolvedValue({
+      targets: [],
+      skipped: [],
+      estimated_cost: null,
+      unpriced_count: 0,
+    });
 
     render(<StoryboardBatchDialog projectName="demo" episode={1} kind="videos" onClose={vi.fn()} />);
 

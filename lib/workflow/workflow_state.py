@@ -840,7 +840,7 @@ class WorkflowStateService:
             project: Any = self.pm.load_project(project_name)
         except FileNotFoundError:
             raise
-        except (OSError, ValueError):
+        except OSError, ValueError:
             return []
         if not isinstance(project, dict) or load_migration_verdict(project_path) is not None:
             return []
@@ -888,7 +888,7 @@ class WorkflowStateService:
                 if currency == "registered"
                 else ArtifactCurrencyResolver(project_path)
             )
-        except (ArtifactManifestError, OSError, RuntimeError, TypeError, ValueError):
+        except ArtifactManifestError, OSError, RuntimeError, TypeError, ValueError:
             # 清单读不出来时不退回「文件存在即产物存在」：本投影一律按 0 件可用报告，
             # 与工作台把它记成 artifact_currency_unavailable 阻断同一口径。
             resolver = None
@@ -1011,7 +1011,7 @@ class WorkflowStateService:
             return preloaded_scripts[script_file]
         try:
             return self.pm.load_script_readonly(project_name, script_file)
-        except (FileNotFoundError, OSError, ValueError, json.JSONDecodeError):
+        except FileNotFoundError, OSError, ValueError, json.JSONDecodeError:
             # 列出项目不因一集剧本损坏而失败：该集按 0 件产物报告，损坏本身由工作台的
             # 制作状态查询报成 invalid_script 阻断。
             return None

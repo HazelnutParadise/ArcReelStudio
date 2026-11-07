@@ -255,7 +255,7 @@ class AssistantService:
     def _prepare_content(
         self,
         content: str,
-        images: list["ImageAttachment"] | None = None,
+        images: list[ImageAttachment] | None = None,
     ) -> str | list[dict[str, Any]]:
         """送入 CLI 的消息内容：纯文本为字符串，带图片时为图片块在前、文本块在后的列表。"""
         text = content.strip()
@@ -279,7 +279,7 @@ class AssistantService:
         content: str,
         *,
         session_id: str | None = None,
-        images: list["ImageAttachment"] | None = None,
+        images: list[ImageAttachment] | None = None,
         locale: str = DEFAULT_LOCALE,
         client_key: str | None = None,
     ) -> dict[str, Any]:
@@ -404,7 +404,7 @@ class AssistantService:
         self,
         project_name: str,
         content: str,
-        images: list["ImageAttachment"] | None,
+        images: list[ImageAttachment] | None,
         locale: str,
         client_key: str | None,
     ) -> dict[str, Any]:
@@ -446,7 +446,7 @@ class AssistantService:
         *,
         anchor_entry_uuid: str,
         content: str,
-        images: list["ImageAttachment"] | None = None,
+        images: list[ImageAttachment] | None = None,
         locale: str = DEFAULT_LOCALE,
         client_key: str | None = None,
     ) -> dict[str, Any]:
@@ -489,7 +489,7 @@ class AssistantService:
         *,
         anchor_entry_uuid: str,
         content: str,
-        images: list["ImageAttachment"] | None,
+        images: list[ImageAttachment] | None,
         locale: str,
         client_key: str | None,
     ) -> dict[str, Any]:
@@ -629,7 +629,7 @@ class AssistantService:
             logger.exception("撤回未完成分支失败 origin=%s new=%s", origin_session_id, new_session_id)
 
     @staticmethod
-    def _image_block(img: "ImageAttachment") -> dict[str, Any]:
+    def _image_block(img: ImageAttachment) -> dict[str, Any]:
         """Build a single image content block dict."""
         return {
             "type": "image",
@@ -936,7 +936,7 @@ class AssistantService:
         """
         try:
             return self.pm.get_project_path(project_name)
-        except (FileNotFoundError, ValueError):
+        except FileNotFoundError, ValueError:
             return None
 
     async def _aresolve_project_cwd_safe(self, project_name: str) -> Path | None:

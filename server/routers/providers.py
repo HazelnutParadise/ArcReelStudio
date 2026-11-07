@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from arcreel_market_core.video_backend_contract import VideoAudioMode
 from lib.backends.backend_assembly.specs import builtin_video_capabilities_for_model
-from lib.backends.gemini_shared import VERTEX_SCOPES
+from lib.backends.gemini_shared import GEMINI_DEVELOPER_API_VERSION, VERTEX_SCOPES
 from lib.backends.http_status_errors import raise_for_status_redacted
 from lib.billing.multipliers import (
     PROVIDER_MULTIPLIER_KEY,
@@ -167,6 +167,8 @@ class ProviderConfigResponse(BaseModel):
     # 该供应商凭证是否接受自定义 base_url（真相源：optional_keys 含 base_url）。
     # base_url 随凭证走、不进 fields，前端据此决定是否在密钥表单渲染 URL 输入。
     supports_base_url: bool
+    # 中国供应商的国际站地址（真相源：registry international_base_url），前端据此提供「国际站」快速选项。
+    international_base_url: str | None = None
     # 凭证表单应渲染的 secret 字段（有序，真相源：registry required_keys ∩ secret_keys ∩ 凭证键）。
     secret_fields: list[CredentialSecretField]
     # 凭证「二选一」分组：前端据此校验「至少一组的字段全部填写」而非「全部字段都填写」
@@ -552,6 +554,7 @@ async def get_provider_config(
         media_types=catalog.provider_media_types(provider_id),
         fields=fields,
         supports_base_url="base_url" in meta.optional_keys,
+        international_base_url=meta.international_base_url,
         secret_fields=secret_fields,
         secret_field_groups=secret_field_groups,
     )
@@ -675,7 +678,8 @@ async def create_credential(
         provider=provider_id,
         name=body.name,
         api_key=body.api_key,
-        base_url=body.base_url,
+        # 固定直连官方端点的供应商不收请求地址，免得接到中转站
+        base_url=body.base_url if PROVIDER_REGISTRY[provider_id].accepts_base_url else None,
         access_key=body.access_key,
         secret_key=body.secret_key,
     )
@@ -709,7 +713,7 @@ async def update_credential(
         kwargs["name"] = body.name
     if "api_key" in body.model_fields_set:
         kwargs["api_key"] = body.api_key
-    if "base_url" in body.model_fields_set:
+    if "base_url" in body.model_fields_set and PROVIDER_REGISTRY[provider_id].accepts_base_url:
         kwargs["base_url"] = body.base_url
     if "access_key" in body.model_fields_set:
         kwargs["access_key"] = body.access_key
@@ -844,7 +848,9 @@ def _check_gemini_aistudio(config: dict[str, str], _t: Callable[..., str]) -> Co
 
     api_key = config["api_key"]
     base_url = normalize_base_url(config.get("base_url"))
-    http_options: genai.types.HttpOptionsDict | None = {"base_url": base_url} if base_url else None
+    http_options: genai.types.HttpOptionsDict = {"api_version": GEMINI_DEVELOPER_API_VERSION}
+    if base_url:
+        http_options["base_url"] = base_url
     client = genai.Client(api_key=api_key, http_options=http_options)
 
     pager = client.models.list()
@@ -1031,7 +1037,7 @@ def _check_kling(config: dict[str, str], _t: Callable[..., str]) -> Connectivity
     """
     import time
 
-    import httpx
+    import httpx2
 
     from lib.backends.kling_shared import (
         KLING_BASE_URL,
@@ -1053,7 +1059,7 @@ def _check_kling(config: dict[str, str], _t: Callable[..., str]) -> Connectivity
     root = base_url.removesuffix("/v1")
     now_ms = int(time.time() * 1000)
     one_day_ms = 24 * 60 * 60 * 1000
-    resp = httpx.get(
+    resp = httpx2.get(
         f"{root}/account/costs",
         params={"start_time": now_ms - one_day_ms, "end_time": now_ms},
         headers=headers,

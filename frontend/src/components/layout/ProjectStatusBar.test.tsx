@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
@@ -34,10 +34,7 @@ function action(type: WorkflowNextAction["type"], args: Record<string, unknown> 
   return { type, args, requested_ids: [], requires_confirmation: false, reason: "" };
 }
 
-function workflowStatus(
-  next: WorkflowNextAction,
-  overrides: Partial<WorkflowStatus> = {},
-): WorkflowStatus {
+function workflowStatus(next: WorkflowNextAction, overrides: Partial<WorkflowStatus> = {}): WorkflowStatus {
   return {
     schema_version: 2,
     project_revision: "r",
@@ -83,9 +80,7 @@ describe("ProjectStatusBar", () => {
 
   it("shows episode progress and continues the first unfinished episode", async () => {
     setProject();
-    vi.spyOn(API, "getWorkflowStatus").mockResolvedValue(
-      workflowStatus(action("author_prompts", { episode_id: 7 })),
-    );
+    vi.spyOn(API, "getWorkflowStatus").mockResolvedValue(workflowStatus(action("author_prompts", { episode_id: 7 })));
     const location = renderBar();
     const user = userEvent.setup();
 
@@ -175,9 +170,7 @@ describe("ProjectStatusBar", () => {
 
   it("yields to the episode panel when the next step is the current episode", async () => {
     setProject();
-    vi.spyOn(API, "getWorkflowStatus").mockResolvedValue(
-      workflowStatus(action("author_prompts", { episode_id: 7 })),
-    );
+    vi.spyOn(API, "getWorkflowStatus").mockResolvedValue(workflowStatus(action("author_prompts", { episode_id: 7 })));
     renderBar("/episodes/7");
 
     expect(await screen.findByText("下一步见本集面板")).toBeInTheDocument();
@@ -225,9 +218,7 @@ describe("ProjectStatusBar", () => {
     await user.type(screen.getByRole("textbox"), "每集 90 秒");
     await user.click(screen.getByRole("button", { name: "交给 Agent" }));
 
-    expect(useAssistantStore.getState().input).toBe(
-      "请为整本源文规划分集，一直规划到源文结尾。\n附加指令：每集 90 秒",
-    );
+    expect(useAssistantStore.getState().input).toBe("请为整本源文规划分集，一直规划到源文结尾。\n附加指令：每集 90 秒");
     expect(useAppStore.getState().assistantPanelOpen).toBe(true);
     // 只预填不发送
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -287,8 +278,7 @@ describe("ProjectStatusBar", () => {
   it("retries a failed migration in place, reporting the reason until it succeeds", async () => {
     setProject({ ...SUMMARY, needs_repair: true, repair_reason: "step 0014 failed" });
     const getStatus = vi.spyOn(API, "getWorkflowStatus").mockReturnValue(new Promise(() => {}));
-    vi
-      .spyOn(API, "retryProjectMigration")
+    vi.spyOn(API, "retryProjectMigration")
       .mockRejectedValueOnce(
         new ApiRequestError("数据升级仍未完成", { reason: "scripts/episode_4.json 读取失败", details: [] }, 422),
       )

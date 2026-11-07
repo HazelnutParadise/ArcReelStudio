@@ -172,7 +172,8 @@ export function useManualSplit(
     [submit, t],
   );
   const clearAfter = useCallback(
-    (episode: number) => void submit({ action: "clear_after", episode }, t("manual_split_clear_after"), { dryRun: true }),
+    (episode: number) =>
+      void submit({ action: "clear_after", episode }, t("manual_split_clear_after"), { dryRun: true }),
     [submit, t],
   );
 

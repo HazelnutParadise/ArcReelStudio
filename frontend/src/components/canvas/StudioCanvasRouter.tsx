@@ -30,6 +30,7 @@ import { EpisodePage } from "./episode-page/EpisodePage";
 import { LazyBoundary } from "@/components/shared/LazyBoundary";
 import { lazyNamed } from "@/utils/lazy-component";
 import { API } from "@/api";
+import { isEditConflict } from "@/api/errors";
 import {
   enqueueCharacter,
   enqueueEpisodeNarration,
@@ -41,10 +42,7 @@ import {
   enqueueStoryboard,
   enqueueVideo,
 } from "@/actions/generation";
-import {
-  durationOutOfRangeReason,
-  useModelCapabilities,
-} from "@/hooks/useModelCapabilities";
+import { durationOutOfRangeReason, useModelCapabilities } from "@/hooks/useModelCapabilities";
 import { gridStoryboardEnabled, normalizeRoute } from "@/utils/generation-mode";
 import type { EpisodeScript } from "@/types/script";
 
@@ -93,8 +91,7 @@ function resolveSegmentPrompt(
 
 export function StudioCanvasRouter() {
   const { t } = useTranslation("dashboard");
-  const { currentProjectData, currentProjectName, currentScripts, projectDetailLoading } =
-    useProjectsStore();
+  const { currentProjectData, currentProjectName, currentScripts, projectDetailLoading } = useProjectsStore();
   // 演示态：资产画布仍走 readOnly 透传，工作台时间线的只读则由组件自己直读同一判定。
   // useDemoWorkbench() 已把路由参数与 store 的判定滞后收口在单一来源，此处直接消费。
   const demoMode = useDemoWorkbench();
@@ -148,43 +145,53 @@ export function StudioCanvasRouter() {
   // 分镜详情编辑单元的保存：PATCH 失败时如实抛错，由编辑单元显示在未保存提示条上。
   // resolve 为本地 store 是否已同步到新剧本；PATCH 已落库但刷新失败或被取消时为 false，
   // 此时 store 仍是旧剧本，接着生成会拿旧提示词入队，调用方据此不再继续生成。
-  const handleUpdatePrompt = useCallback(async (
-    segmentId: string,
-    patch: Record<string, unknown>,
-    scriptFile?: string,
-  ): Promise<boolean> => {
-    if (!currentProjectName) throw new Error(t("common:no_project_selected"));
-    const mode = currentProjectData?.content_mode ?? "narration";
-    if (mode === "ad") {
-      await API.updateShot(currentProjectName, segmentId, scriptFile ?? "", patch);
-    } else if (mode === "drama") {
-      await API.updateScene(currentProjectName, segmentId, scriptFile ?? "", patch);
-    } else {
-      await API.updateSegment(currentProjectName, segmentId, { script_file: scriptFile, ...patch });
-    }
-    return refreshProject();
-  }, [currentProjectName, currentProjectData, refreshProject, t]);
+  // `base` 是开始编辑时这些字段的值：被其他成员抢先改过时服务端拒绝写入，这里先拉取最新剧本
+  // 再抛出错误，编辑单元随之看到对方的内容并标出冲突，由用户决定放弃还是再次保存覆盖。
+  const handleUpdatePrompt = useCallback(
+    async (
+      segmentId: string,
+      patch: Record<string, unknown>,
+      scriptFile?: string,
+      base?: Record<string, unknown>,
+    ): Promise<boolean> => {
+      if (!currentProjectName) throw new Error(t("common:no_project_selected"));
+      const mode = currentProjectData?.content_mode ?? "narration";
+      try {
+        if (mode === "ad") {
+          await API.updateShot(currentProjectName, segmentId, scriptFile ?? "", patch, base);
+        } else if (mode === "drama") {
+          await API.updateScene(currentProjectName, segmentId, scriptFile ?? "", patch, base);
+        } else {
+          await API.updateSegment(currentProjectName, segmentId, { script_file: scriptFile, ...patch, base });
+        }
+      } catch (err) {
+        if (isEditConflict(err)) await refreshProject();
+        throw err;
+      }
+      return refreshProject();
+    },
+    [currentProjectName, currentProjectData, refreshProject, t],
+  );
 
   // 分镜改序（各形态通用）：把分镜移到 afterId 之后，null 移到最前。
   // 返回是否移动成功，供编辑器把选中态跟随到分镜的新位置。
-  const handleMoveShot = useCallback(async (
-    shotId: string,
-    afterId: string | null,
-    scriptFile?: string,
-  ): Promise<boolean> => {
-    if (!currentProjectName || !currentScripts) return false;
-    const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
-    if (!resolvedFile) return false;
-    try {
-      await API.moveScriptItem(currentProjectName, resolvedFile, shotId, afterId);
-      // 仅在本地 store 已写回新顺序时报告成功：刷新失败时 segments 仍是旧序，
-      // 此时让选中态跟随新位置会静默切到别的分镜。
-      return await refreshAfterAction();
-    } catch (err) {
-      useAppStore.getState().pushToast(t("reorder_shot_failed", { message: errMsg(err) }), "error");
-      return false;
-    }
-  }, [currentProjectName, currentScripts, refreshAfterAction, t]);
+  const handleMoveShot = useCallback(
+    async (shotId: string, afterId: string | null, scriptFile?: string): Promise<boolean> => {
+      if (!currentProjectName || !currentScripts) return false;
+      const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
+      if (!resolvedFile) return false;
+      try {
+        await API.moveScriptItem(currentProjectName, resolvedFile, shotId, afterId);
+        // 仅在本地 store 已写回新顺序时报告成功：刷新失败时 segments 仍是旧序，
+        // 此时让选中态跟随新位置会静默切到别的分镜。
+        return await refreshAfterAction();
+      } catch (err) {
+        useAppStore.getState().pushToast(t("reorder_shot_failed", { message: errMsg(err) }), "error");
+        return false;
+      }
+    },
+    [currentProjectName, currentScripts, refreshAfterAction, t],
+  );
 
   // 时间线新增 / 移除分镜：服务端按当前剧本 revision 执行，这里不取快照。
   // 写入一经提交即报告成功：随后的本地刷新失败时只提示重新加载，不让调用方保持可重试，
@@ -196,86 +203,97 @@ export function StudioCanvasRouter() {
   }, [refreshProject, t]);
 
   // afterId 为 null 时追加到末尾（空脚本里即第一条）。
-  const handleInsertShot = useCallback(async (
-    afterId: string | null,
-    novelText: string | undefined,
-    scriptFile?: string,
-  ): Promise<boolean> => {
-    if (!currentProjectName || !currentScripts) return false;
-    const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
-    if (!resolvedFile) return false;
-    try {
-      await API.insertScriptItem(currentProjectName, resolvedFile, { afterId: afterId ?? undefined, novelText });
-    } catch (err) {
-      useAppStore.getState().pushToast(t("shot_insert_failed", { message: errMsg(err) }), "error");
-      return false;
-    }
-    await refreshAfterStructureEdit();
-    return true;
-  }, [currentProjectName, currentScripts, refreshAfterStructureEdit, t]);
+  const handleInsertShot = useCallback(
+    async (afterId: string | null, novelText: string | undefined, scriptFile?: string): Promise<boolean> => {
+      if (!currentProjectName || !currentScripts) return false;
+      const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
+      if (!resolvedFile) return false;
+      try {
+        await API.insertScriptItem(currentProjectName, resolvedFile, { afterId: afterId ?? undefined, novelText });
+      } catch (err) {
+        useAppStore.getState().pushToast(t("shot_insert_failed", { message: errMsg(err) }), "error");
+        return false;
+      }
+      await refreshAfterStructureEdit();
+      return true;
+    },
+    [currentProjectName, currentScripts, refreshAfterStructureEdit, t],
+  );
 
-  const handleRemoveShot = useCallback(async (itemId: string, scriptFile?: string): Promise<boolean> => {
-    if (!currentProjectName || !currentScripts) return false;
-    const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
-    if (!resolvedFile) return false;
-    try {
-      await API.removeScriptItem(currentProjectName, itemId, resolvedFile);
-    } catch (err) {
-      useAppStore.getState().pushToast(t("shot_remove_failed", { message: errMsg(err) }), "error");
-      return false;
-    }
-    await refreshAfterStructureEdit();
-    return true;
-  }, [currentProjectName, currentScripts, refreshAfterStructureEdit, t]);
+  const handleRemoveShot = useCallback(
+    async (itemId: string, scriptFile?: string): Promise<boolean> => {
+      if (!currentProjectName || !currentScripts) return false;
+      const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
+      if (!resolvedFile) return false;
+      try {
+        await API.removeScriptItem(currentProjectName, itemId, resolvedFile);
+      } catch (err) {
+        useAppStore.getState().pushToast(t("shot_remove_failed", { message: errMsg(err) }), "error");
+        return false;
+      }
+      await refreshAfterStructureEdit();
+      return true;
+    },
+    [currentProjectName, currentScripts, refreshAfterStructureEdit, t],
+  );
 
-  const handleUpdateEpisodeTitle = useCallback(async (episode: number, title: string) => {
-    if (!currentProjectName) return;
-    try {
-      await API.updateEpisode(currentProjectName, episode, { title });
-    } catch (err) {
-      useAppStore.getState().pushToast(t("episode_title_update_failed", { message: errMsg(err) }), "error");
-      throw err; // 让 EditableEpisodeTitle 保持编辑态，不误清空
-    }
-    // 标题已保存：刷新失败只提示，不让标题停在编辑态引人重复提交
-    await refreshAfterAction();
-  }, [currentProjectName, refreshAfterAction, t]);
+  const handleUpdateEpisodeTitle = useCallback(
+    async (episode: number, title: string) => {
+      if (!currentProjectName) return;
+      try {
+        await API.updateEpisode(currentProjectName, episode, { title });
+      } catch (err) {
+        useAppStore.getState().pushToast(t("episode_title_update_failed", { message: errMsg(err) }), "error");
+        throw err; // 让 EditableEpisodeTitle 保持编辑态，不误清空
+      }
+      // 标题已保存：刷新失败只提示，不让标题停在编辑态引人重复提交
+      await refreshAfterAction();
+    },
+    [currentProjectName, refreshAfterAction, t],
+  );
 
   // 生成回调在调用时读 store 里的最新剧本，不用渲染时的闭包：「保存并生成」在同一次点击里先保存、
   // 刷新剧本再生成，此刻调用的仍是点击前那次渲染的回调，闭包里是保存前的提示词。
-  const handleGenerateStoryboard = useCallback(async (segmentId: string, scriptFile?: string) => {
-    const scripts = useProjectsStore.getState().currentScripts;
-    if (!currentProjectName || !scripts) return;
-    const resolved = resolveSegmentPrompt(scripts, segmentId, "image_prompt", scriptFile);
-    if (!resolved) return;
-    try {
-      await enqueueStoryboard(
-        currentProjectName,
-        segmentId,
-        resolved.prompt as string | Record<string, unknown>,
-        resolved.resolvedFile,
-      );
-    } catch (err) {
-      useAppStore.getState().pushToast(t("generate_storyboard_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, t]);
+  const handleGenerateStoryboard = useCallback(
+    async (segmentId: string, scriptFile?: string) => {
+      const scripts = useProjectsStore.getState().currentScripts;
+      if (!currentProjectName || !scripts) return;
+      const resolved = resolveSegmentPrompt(scripts, segmentId, "image_prompt", scriptFile);
+      if (!resolved) return;
+      try {
+        await enqueueStoryboard(
+          currentProjectName,
+          segmentId,
+          resolved.prompt as string | Record<string, unknown>,
+          resolved.resolvedFile,
+        );
+      } catch (err) {
+        useAppStore.getState().pushToast(t("generate_storyboard_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, t],
+  );
 
-  const handleGenerateVideo = useCallback(async (segmentId: string, scriptFile?: string) => {
-    const scripts = useProjectsStore.getState().currentScripts;
-    if (!currentProjectName || !scripts) return;
-    const resolved = resolveSegmentPrompt(scripts, segmentId, "video_prompt", scriptFile);
-    if (!resolved) return;
-    try {
-      await enqueueVideo(
-        currentProjectName,
-        segmentId,
-        resolved.prompt as string | Record<string, unknown>,
-        resolved.resolvedFile,
-        resolved.duration,
-      );
-    } catch (err) {
-      useAppStore.getState().pushToast(t("generate_video_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, t]);
+  const handleGenerateVideo = useCallback(
+    async (segmentId: string, scriptFile?: string) => {
+      const scripts = useProjectsStore.getState().currentScripts;
+      if (!currentProjectName || !scripts) return;
+      const resolved = resolveSegmentPrompt(scripts, segmentId, "video_prompt", scriptFile);
+      if (!resolved) return;
+      try {
+        await enqueueVideo(
+          currentProjectName,
+          segmentId,
+          resolved.prompt as string | Record<string, unknown>,
+          resolved.resolvedFile,
+          resolved.duration,
+        );
+      } catch (err) {
+        useAppStore.getState().pushToast(t("generate_video_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, t],
+  );
 
   // 未配置 audio 供应商时在前端就给出清晰提示（后端入队前还有同语义的 400 兜底）
   const ensureAudioProviderConfigured = useCallback((): boolean => {
@@ -287,29 +305,35 @@ export function StudioCanvasRouter() {
     return true;
   }, [t]);
 
-  const handleGenerateNarration = useCallback(async (segmentId: string, scriptFile?: string) => {
-    if (!currentProjectName || !currentScripts) return;
-    if (!ensureAudioProviderConfigured()) return;
-    const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
-    if (!resolvedFile) return;
-    try {
-      await enqueueNarration(currentProjectName, segmentId, resolvedFile);
-    } catch (err) {
-      useAppStore.getState().pushToast(t("generate_narration_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, currentScripts, ensureAudioProviderConfigured, t]);
+  const handleGenerateNarration = useCallback(
+    async (segmentId: string, scriptFile?: string) => {
+      if (!currentProjectName || !currentScripts) return;
+      if (!ensureAudioProviderConfigured()) return;
+      const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
+      if (!resolvedFile) return;
+      try {
+        await enqueueNarration(currentProjectName, segmentId, resolvedFile);
+      } catch (err) {
+        useAppStore.getState().pushToast(t("generate_narration_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, currentScripts, ensureAudioProviderConfigured, t],
+  );
 
-  const handleGenerateEpisodeNarration = useCallback(async (scriptFile?: string) => {
-    if (!currentProjectName || !currentScripts) return;
-    if (!ensureAudioProviderConfigured()) return;
-    const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
-    if (!resolvedFile) return;
-    try {
-      await enqueueEpisodeNarration(currentProjectName, resolvedFile);
-    } catch (err) {
-      useAppStore.getState().pushToast(t("generate_narration_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, currentScripts, ensureAudioProviderConfigured, t]);
+  const handleGenerateEpisodeNarration = useCallback(
+    async (scriptFile?: string) => {
+      if (!currentProjectName || !currentScripts) return;
+      if (!ensureAudioProviderConfigured()) return;
+      const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
+      if (!resolvedFile) return;
+      try {
+        await enqueueEpisodeNarration(currentProjectName, resolvedFile);
+      } catch (err) {
+        useAppStore.getState().pushToast(t("generate_narration_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, currentScripts, ensureAudioProviderConfigured, t],
+  );
 
   // 后期配音项目不生成旁白配音：收起画布上的生成入口，已有配音照常试听。
   const narrationGenerationEnabled = currentProjectData?.narration_delivery === "use_tts";
@@ -317,124 +341,139 @@ export function StudioCanvasRouter() {
   // ---- Workflow panel callbacks ----
   // 面板只陈述状态，动作交回既有入口执行：跳转复用 Agent 定位用的同一条 scrollTarget 缝，
   // 重生复用本组件已有的入队回调。面板不自建播放器，也不自建入队路径。
-  const handleViewWorkflowUnit = useCallback((unitId: string) => {
-    useAppStore.getState().triggerScrollTo({
-      type: normalizeRoute(currentProjectData?.generation_mode) === "reference_video"
-        ? "reference_unit"
-        : "segment",
-      id: unitId,
-    });
-  }, [currentProjectData?.generation_mode]);
+  const handleViewWorkflowUnit = useCallback(
+    (unitId: string) => {
+      useAppStore.getState().triggerScrollTo({
+        type: normalizeRoute(currentProjectData?.generation_mode) === "reference_video" ? "reference_unit" : "segment",
+        id: unitId,
+      });
+    },
+    [currentProjectData?.generation_mode],
+  );
 
   // 剧本文件由调用方按当前剧集给出：多集项目里 currentScripts 装着全部剧集，
   // 取第一个键会把重生打到别集的剧本上，用户看到的是另一集被重做。
-  const handleWorkflowRegenerate = useCallback(async (
-    stepId: string,
-    unitIds: string[],
-    scriptFile: string,
-  ) => {
-    if (!currentProjectName || !currentScripts) return;
-    for (const unitId of unitIds) {
-      try {
-        if (stepId === "storyboard") {
-          // react-doctor-disable-next-line react-doctor/async-await-in-loop -- 逐个入队保持任务队列与画布单元同序，并发提交会打乱入队顺序
-          await handleGenerateStoryboard(unitId, scriptFile);
-        } else if (stepId === "video") {
-          await handleGenerateVideo(unitId, scriptFile);
+  const handleWorkflowRegenerate = useCallback(
+    async (stepId: string, unitIds: string[], scriptFile: string) => {
+      if (!currentProjectName || !currentScripts) return;
+      for (const unitId of unitIds) {
+        try {
+          if (stepId === "storyboard") {
+            // react-doctor-disable-next-line react-doctor/async-await-in-loop -- 逐个入队保持任务队列与画布单元同序，并发提交会打乱入队顺序
+            await handleGenerateStoryboard(unitId, scriptFile);
+          } else if (stepId === "video") {
+            await handleGenerateVideo(unitId, scriptFile);
+          }
+        } catch (err) {
+          useAppStore.getState().pushToast(t("generate_video_failed", { message: errMsg(err) }), "error");
         }
-      } catch (err) {
-        useAppStore.getState().pushToast(t("generate_video_failed", { message: errMsg(err) }), "error");
       }
-    }
-  }, [
-    currentProjectName,
-    currentScripts,
-    handleGenerateStoryboard,
-    handleGenerateVideo,
-    t,
-  ]);
+    },
+    [currentProjectName, currentScripts, handleGenerateStoryboard, handleGenerateVideo, t],
+  );
 
   // ---- Asset sheet generation callbacks ----
-  const handleGenerateCharacter = useCallback(async (name: string) => {
-    if (!currentProjectName) return;
-    try {
-      await enqueueCharacter(currentProjectName, name);
-    } catch (err) {
-      useAppStore.getState().pushToast(t("submit_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, t]);
+  const handleGenerateCharacter = useCallback(
+    async (name: string) => {
+      if (!currentProjectName) return;
+      try {
+        await enqueueCharacter(currentProjectName, name);
+      } catch (err) {
+        useAppStore.getState().pushToast(t("submit_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, t],
+  );
 
-  const handleGenerateScene = useCallback(async (name: string) => {
-    if (!currentProjectName) return;
-    try {
-      await enqueueScene(currentProjectName, name);
-    } catch (err) {
-      useAppStore.getState().pushToast(t("submit_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, t]);
+  const handleGenerateScene = useCallback(
+    async (name: string) => {
+      if (!currentProjectName) return;
+      try {
+        await enqueueScene(currentProjectName, name);
+      } catch (err) {
+        useAppStore.getState().pushToast(t("submit_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, t],
+  );
 
-  const handleGenerateProp = useCallback(async (name: string) => {
-    if (!currentProjectName) return;
-    try {
-      await enqueueProp(currentProjectName, name);
-    } catch (err) {
-      useAppStore.getState().pushToast(t("submit_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, t]);
+  const handleGenerateProp = useCallback(
+    async (name: string) => {
+      if (!currentProjectName) return;
+      try {
+        await enqueueProp(currentProjectName, name);
+      } catch (err) {
+        useAppStore.getState().pushToast(t("submit_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, t],
+  );
 
-  const handleGenerateProduct = useCallback(async (name: string) => {
-    if (!currentProjectName) return;
-    try {
-      await enqueueProduct(currentProjectName, name);
-    } catch (err) {
-      useAppStore.getState().pushToast(t("submit_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, t]);
+  const handleGenerateProduct = useCallback(
+    async (name: string) => {
+      if (!currentProjectName) return;
+      try {
+        await enqueueProduct(currentProjectName, name);
+      } catch (err) {
+        useAppStore.getState().pushToast(t("submit_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, t],
+  );
 
-  const handleGenerateGrid = useCallback(async (episode: number, scriptFile: string, sceneIds?: string[]) => {
-    if (!currentProjectName) return;
-    try {
-      await enqueueGrid(currentProjectName, episode, scriptFile, sceneIds);
-    } catch (err) {
-      useAppStore.getState().pushToast(t("grid_generation_failed", { message: errMsg(err) }), "error");
-    }
-  }, [currentProjectName, t]);
+  const handleGenerateGrid = useCallback(
+    async (episode: number, scriptFile: string, sceneIds?: string[]) => {
+      if (!currentProjectName) return;
+      try {
+        await enqueueGrid(currentProjectName, episode, scriptFile, sceneIds);
+      } catch (err) {
+        useAppStore.getState().pushToast(t("grid_generation_failed", { message: errMsg(err) }), "error");
+      }
+    },
+    [currentProjectName, t],
+  );
 
   // 版本恢复与媒体上传之后的刷新；resolve 为是否已同步，调用方据此决定是否报告成功。
   const handleRestoreAsset = refreshAfterAction;
 
-  const handleGenerateCharacterVoid = useCallback((...args: Parameters<typeof handleGenerateCharacter>) => {
-    void handleGenerateCharacter(...args).catch(console.error);
-  }, [handleGenerateCharacter]);
-  const handleGenerateSceneVoid = useCallback((...args: Parameters<typeof handleGenerateScene>) => {
-    void handleGenerateScene(...args).catch(console.error);
-  }, [handleGenerateScene]);
-  const handleGeneratePropVoid = useCallback((...args: Parameters<typeof handleGenerateProp>) => {
-    void handleGenerateProp(...args).catch(console.error);
-  }, [handleGenerateProp]);
-  const handleGenerateProductVoid = useCallback((...args: Parameters<typeof handleGenerateProduct>) => {
-    void handleGenerateProduct(...args).catch(console.error);
-  }, [handleGenerateProduct]);
+  const handleGenerateCharacterVoid = useCallback(
+    (...args: Parameters<typeof handleGenerateCharacter>) => {
+      void handleGenerateCharacter(...args).catch(console.error);
+    },
+    [handleGenerateCharacter],
+  );
+  const handleGenerateSceneVoid = useCallback(
+    (...args: Parameters<typeof handleGenerateScene>) => {
+      void handleGenerateScene(...args).catch(console.error);
+    },
+    [handleGenerateScene],
+  );
+  const handleGeneratePropVoid = useCallback(
+    (...args: Parameters<typeof handleGenerateProp>) => {
+      void handleGenerateProp(...args).catch(console.error);
+    },
+    [handleGenerateProp],
+  );
+  const handleGenerateProductVoid = useCallback(
+    (...args: Parameters<typeof handleGenerateProduct>) => {
+      void handleGenerateProduct(...args).catch(console.error);
+    },
+    [handleGenerateProduct],
+  );
 
   // `currentProjectName` 在详情到达前就已落地（见 router.tsx 首屏加载的注释），
   // 仅查它会在深链（/characters 等）直接打开或详情较慢时把空集合渲染成可交互的
   // 「空项目」页面；`projectDetailLoading` 才是详情是否已到达的信号。
   if (!currentProjectName || projectDetailLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        {t("loading_placeholder")}
-      </div>
+      <div className="flex h-full items-center justify-center text-muted-foreground">{t("loading_placeholder")}</div>
     );
   }
 
   return (
     <Switch>
       <Route path="/">
-        <OverviewCanvas
-          projectName={currentProjectName}
-          projectData={currentProjectData}
-          readOnly={demoMode}
-        />
+        <OverviewCanvas projectName={currentProjectName} projectData={currentProjectData} readOnly={demoMode} />
       </Route>
 
       <Route path={`/${WORKSPACE_ROUTE_EPISODES}`}>
@@ -516,12 +555,10 @@ export function StudioCanvasRouter() {
           const durationOptions = capabilities.supportedDurations ?? undefined;
           // 内容确认页按剧本规划档位选时长：端点固定时 supportedDurations 为空，规划仍有借用档位。
           const planDurationOptions = capabilities.planningDurations ?? undefined;
-          const durationWarningReason = (seconds: number) =>
-            durationOutOfRangeReason(seconds, capabilities);
+          const durationWarningReason = (seconds: number) => durationOutOfRangeReason(seconds, capabilities);
           // 档位空集的两种成因说给用户听的不是同一句：型号没登记时长 vs 这份 workflow 自己定片长。
           const durationEndpointFixed = capabilities.durationEndpointFixed;
-          const hasDraft =
-            episode?.script_status === "segmented" || episode?.script_status === "generated";
+          const hasDraft = episode?.script_status === "segmented" || episode?.script_status === "generated";
           const isAd = currentProjectData?.content_mode === "ad";
           return (
             <EpisodePage
@@ -581,8 +618,12 @@ export function StudioCanvasRouter() {
                       onUpdatePrompt={handleUpdatePrompt}
                       onGenerateStoryboard={voidPromise(handleGenerateStoryboard)}
                       onGenerateVideo={handleGenerateVideo}
-                      onGenerateNarration={narrationGenerationEnabled ? voidPromise(handleGenerateNarration) : undefined}
-                      onGenerateEpisodeNarration={narrationGenerationEnabled ? voidPromise(handleGenerateEpisodeNarration) : undefined}
+                      onGenerateNarration={
+                        narrationGenerationEnabled ? voidPromise(handleGenerateNarration) : undefined
+                      }
+                      onGenerateEpisodeNarration={
+                        narrationGenerationEnabled ? voidPromise(handleGenerateEpisodeNarration) : undefined
+                      }
                       onGenerateGrid={handleGenerateGrid}
                       onRestoreStoryboard={handleRestoreAsset}
                       onRestoreVideo={handleRestoreAsset}
@@ -617,8 +658,12 @@ export function StudioCanvasRouter() {
                       onRemoveShot={handleRemoveShot}
                       onGenerateStoryboard={voidPromise(handleGenerateStoryboard)}
                       onGenerateVideo={handleGenerateVideo}
-                      onGenerateNarration={narrationGenerationEnabled ? voidPromise(handleGenerateNarration) : undefined}
-                      onGenerateEpisodeNarration={narrationGenerationEnabled ? voidPromise(handleGenerateEpisodeNarration) : undefined}
+                      onGenerateNarration={
+                        narrationGenerationEnabled ? voidPromise(handleGenerateNarration) : undefined
+                      }
+                      onGenerateEpisodeNarration={
+                        narrationGenerationEnabled ? voidPromise(handleGenerateEpisodeNarration) : undefined
+                      }
                       onRestoreStoryboard={handleRestoreAsset}
                       onRestoreVideo={handleRestoreAsset}
                     />

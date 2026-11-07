@@ -46,7 +46,9 @@ function mergeRefreshed(current: MarketSourceInfo[], updated: MarketSourceInfo[]
 /** 影响条目列表的源字段：顺序、启停、显示名与快照时间。任一变化即重新拉取条目。 */
 function entriesKey(sources: MarketSourceInfo[]): string {
   return sources
-    .map((source) => [source.id, source.is_enabled, source.display_name, source.fetched_at, source.updated_at].join(":"))
+    .map((source) =>
+      [source.id, source.is_enabled, source.display_name, source.fetched_at, source.updated_at].join(":"),
+    )
     .join("|");
 }
 
@@ -140,7 +142,7 @@ export function MarketSection() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount 后异步拉取状态，回调内回写状态
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- mount 后异步拉取状态，回调内回写状态
     void loadOfficial();
     return () => officialController.current?.abort();
   }, [loadOfficial]);
@@ -309,7 +311,9 @@ export function MarketSection() {
             setEntries(
               (current) =>
                 current?.map((item) =>
-                  item.source_id === selected.source_id && item.slug === selected.slug ? { ...item, installation } : item,
+                  item.source_id === selected.source_id && item.slug === selected.slug
+                    ? { ...item, installation }
+                    : item,
                 ) ?? null,
             );
           }}

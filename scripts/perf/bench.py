@@ -50,10 +50,10 @@ def _ensure(a: argparse.Namespace) -> None:
 
 
 def _client(app):
-    import httpx
+    import httpx2
 
-    return httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://perf", headers=h.auth_headers(), timeout=None
+    return httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=app), base_url="http://perf", headers=h.auth_headers(), timeout=None
     )
 
 

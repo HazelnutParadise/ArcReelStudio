@@ -136,7 +136,7 @@ def _project_file_if_present(project_dir: Path, rel_path: str) -> Path | None:
         return None
     try:
         ProjectManager._safe_subpath(project_dir, rel_path)
-    except (ValueError, FileNotFoundError):
+    except ValueError, FileNotFoundError:
         return None
     candidate = project_dir / rel_path
     return candidate if candidate.exists() and candidate.is_file() else None
@@ -562,7 +562,7 @@ def _locate_sources(
                 and os.path.realpath(candidate.parent) == os.path.realpath(audio_refs_dir)
             ):
                 source_audio_path = candidate
-        except (ValueError, FileNotFoundError):
+        except ValueError, FileNotFoundError:
             source_audio_path = None
     return sheet, derivative_sources, source_audio_path
 

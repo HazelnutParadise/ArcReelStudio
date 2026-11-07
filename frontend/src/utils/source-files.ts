@@ -18,6 +18,6 @@ export function isSupportedSourceFile(filename: string): boolean {
 }
 
 /** Human-readable list of supported formats, e.g. "TXT · MD · DOCX · EPUB · PDF". */
-export const SOURCE_FILE_FORMATS_LABEL = SOURCE_FILE_EXTENSIONS.map((e) =>
-  e.replace(/^\./, "").toUpperCase(),
-).join(" · ");
+export const SOURCE_FILE_FORMATS_LABEL = SOURCE_FILE_EXTENSIONS.map((e) => e.replace(/^\./, "").toUpperCase()).join(
+  " · ",
+);

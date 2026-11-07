@@ -72,6 +72,7 @@ class ApiKeyRepository(BaseRepository):
         return {
             "id": row.id,
             "name": row.name,
+            "user_id": row.user_id,
             "key_hash": row.key_hash,
             "key_prefix": row.key_prefix,
             "created_at": row.created_at,

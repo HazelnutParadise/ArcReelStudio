@@ -15,7 +15,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import ClassVar
 
-import httpx
+import httpx2
 
 from arcreel_market_core.video_backend_contract import VideoGenerationRequest
 from lib.backends.backend_runtime import (
@@ -133,7 +133,7 @@ class KlingBackendBase:
     )
     async def _submit_task(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         endpoint_path: str,
         payload: dict,
         request: VideoGenerationRequest | None = None,
@@ -152,7 +152,7 @@ class KlingBackendBase:
         )
         return self._task_id_from(resp.json())
 
-    async def _poll_query(self, client: httpx.AsyncClient, endpoint_path: str, *, base_url: str | None = None) -> dict:
+    async def _poll_query(self, client: httpx2.AsyncClient, endpoint_path: str, *, base_url: str | None = None) -> dict:
         """查询任务状态；``base_url`` 缺省用当下配置的域名，续跑回放提交域名时由调用方传入。"""
         resp = await client.get(
             f"{(base_url or self._base_url).rstrip('/')}/{endpoint_path}",

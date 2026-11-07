@@ -49,7 +49,6 @@ export function hasValidNewAssets(content: Record<string, unknown> | null): bool
   );
 }
 
-
 function emptyNames(): NamesByType {
   return { character: new Set(), scene: new Set(), prop: new Set() };
 }

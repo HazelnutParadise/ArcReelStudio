@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import { DialogueListEditor } from "./DialogueListEditor";
 import type { Dialogue } from "@/types";
 
-const dialogue: Dialogue[] = [
-  { speaker: "韩青", line: "好险的关隘！田单未能攻破，正面尚未被攻破？" },
-];
+const dialogue: Dialogue[] = [{ speaker: "韩青", line: "好险的关隘！田单未能攻破，正面尚未被攻破？" }];
 
 describe("DialogueListEditor", () => {
   it("renders the line as a textarea so long dialogue wraps instead of clipping", () => {
@@ -30,9 +28,7 @@ describe("DialogueListEditor", () => {
     fireEvent.change(screen.getByDisplayValue("韩青"), {
       target: { value: "田单" },
     });
-    expect(onChange).toHaveBeenCalledWith([
-      { speaker: "田单", line: dialogue[0].line },
-    ]);
+    expect(onChange).toHaveBeenCalledWith([{ speaker: "田单", line: dialogue[0].line }]);
   });
 
   it("blocks Enter so a dialogue line stays single-line", () => {
@@ -56,10 +52,7 @@ describe("DialogueListEditor", () => {
     const onChange = vi.fn();
     render(<DialogueListEditor dialogue={dialogue} onChange={onChange} />);
     fireEvent.click(screen.getByRole("button", { name: "添加对话" }));
-    expect(onChange).toHaveBeenCalledWith([
-      ...dialogue,
-      { speaker: "", line: "" },
-    ]);
+    expect(onChange).toHaveBeenCalledWith([...dialogue, { speaker: "", line: "" }]);
   });
 
   it("removes a pair on delete", () => {

@@ -107,11 +107,7 @@ function SourceNodes({ nodes, ...props }: Omit<SourceProps, "text"> & { nodes: S
         : undefined;
       if (description !== undefined) {
         return (
-          <span
-            key={index}
-            title={description}
-            className="rounded-sm bg-primary/12 px-1 text-primary"
-          >
+          <span key={index} title={description} className="rounded-sm bg-primary/12 px-1 text-primary">
             {slot}
           </span>
         );

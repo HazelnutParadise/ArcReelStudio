@@ -161,7 +161,7 @@ async def upload_shot_media(
         raise HTTPException(status_code=404, detail=_t("segment_not_found", id=shot_id)) from exc
     except ScriptEditError as e:
         raise HTTPException(status_code=400, detail=script_edit_detail(e, _t)) from e
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as e:
         # 不回传 str(e)：未预期异常的消息可能含服务器路径等内部细节，堆栈进日志即可

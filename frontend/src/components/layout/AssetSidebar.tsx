@@ -141,7 +141,14 @@ export function AssetSidebar({ collapsed, onCollapsedChange }: AssetSidebarProps
     // 演示项目没有服务端文件可列
     ...(demoMode
       ? []
-      : [{ key: "files", path: `/${WORKSPACE_ROUTE_FILES}`, label: t("dashboard:workspace_nav_files"), icon: FolderTree }]),
+      : [
+          {
+            key: "files",
+            path: `/${WORKSPACE_ROUTE_FILES}`,
+            label: t("dashboard:workspace_nav_files"),
+            icon: FolderTree,
+          },
+        ]),
   ];
 
   const isNavActive = (item: NavItem): boolean => {
@@ -170,7 +177,10 @@ export function AssetSidebar({ collapsed, onCollapsedChange }: AssetSidebarProps
 
   return (
     <div className="@container/sidebar relative flex h-full min-w-0 flex-col">
-      <nav aria-label={t("dashboard:workspace_nav_label")} className={cn("flex shrink-0 flex-col gap-0.5 p-2", collapsed && "items-center")}>
+      <nav
+        aria-label={t("dashboard:workspace_nav_label")}
+        className={cn("flex shrink-0 flex-col gap-0.5 p-2", collapsed && "items-center")}
+      >
         {navItems.map((item) =>
           collapsed ? (
             <RailLink key={item.key} href={item.path} label={item.label} icon={item.icon} active={isNavActive(item)} />

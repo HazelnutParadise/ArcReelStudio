@@ -24,9 +24,7 @@ interface GridPreviewViewProps {
 }
 
 function getSegmentId(seg: Segment, mode: "narration" | "drama"): string {
-  return mode === "narration"
-    ? (seg as NarrationSegment).segment_id
-    : (seg as DramaScene).scene_id;
+  return mode === "narration" ? (seg as NarrationSegment).segment_id : (seg as DramaScene).scene_id;
 }
 
 function GridGroupCard({
@@ -165,10 +163,7 @@ export function GridPreviewView({
 
   const stats = useMemo(() => {
     // 一个分组超过单张格数上限时后端会切成多张宫格，张数按实际入队张数累计
-    const batches = groups.reduce(
-      (sum, group) => sum + computeGridSize(group.length, maxCellCount).batchCount,
-      0,
-    );
+    const batches = groups.reduce((sum, group) => sum + computeGridSize(group.length, maxCellCount).batchCount, 0);
     const readyGroups = groups.filter((group) => {
       const sceneIds = group.map((s) => getSegmentId(s, contentMode));
       // 一组切成多块时，每一块都有对上的宫格且全部完成才算就绪。

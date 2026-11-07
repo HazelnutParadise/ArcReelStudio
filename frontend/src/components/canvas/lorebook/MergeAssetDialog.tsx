@@ -213,7 +213,9 @@ export function MergeAssetDialog({
           </ul>
         )}
         {result.aliases_added.length > 0 && (
-          <p>{t("assets:merge_aliases_added", { names: result.aliases_added.join(t("assets:merge_list_separator")) })}</p>
+          <p>
+            {t("assets:merge_aliases_added", { names: result.aliases_added.join(t("assets:merge_list_separator")) })}
+          </p>
         )}
         {result.derivative_created !== null && (
           <p>{t("assets:merge_derivative_created", { name: result.derivative_created })}</p>
@@ -222,10 +224,18 @@ export function MergeAssetDialog({
           <p>{t("assets:merge_derivative_existing", { name: result.source })}</p>
         )}
         {result.derivatives_moved.length > 0 && (
-          <p>{t("assets:merge_derivatives_moved", { names: result.derivatives_moved.join(t("assets:merge_list_separator")) })}</p>
+          <p>
+            {t("assets:merge_derivatives_moved", {
+              names: result.derivatives_moved.join(t("assets:merge_list_separator")),
+            })}
+          </p>
         )}
         {result.derivatives_folded.length > 0 && (
-          <p>{t("assets:merge_derivatives_folded", { names: result.derivatives_folded.join(t("assets:merge_list_separator")) })}</p>
+          <p>
+            {t("assets:merge_derivatives_folded", {
+              names: result.derivatives_folded.join(t("assets:merge_list_separator")),
+            })}
+          </p>
         )}
       </div>
     );
@@ -295,7 +305,9 @@ export function MergeAssetDialog({
                       <RadioGroupItem value={mode} className="mt-0.5" />
                       <span className="flex min-w-0 flex-col gap-0.5">
                         <span>{t(`assets:merge_mode_${mode}`)}</span>
-                        <span className="text-xs text-muted-foreground">{t(`assets:merge_mode_${mode}_hint`, { name })}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {t(`assets:merge_mode_${mode}_hint`, { name })}
+                        </span>
                       </span>
                     </label>
                   ))}
@@ -306,7 +318,9 @@ export function MergeAssetDialog({
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium">{t("assets:merge_source_description", { name })}</span>
-                {description.trim() ? <CopyButton text={description} label={t("assets:merge_copy_description")} /> : null}
+                {description.trim() ? (
+                  <CopyButton text={description} label={t("assets:merge_copy_description")} />
+                ) : null}
               </div>
               <p className="rounded-lg bg-muted/50 px-3 py-2 whitespace-pre-wrap text-subtle-foreground select-text">
                 {description.trim() || t("assets:merge_source_description_empty")}

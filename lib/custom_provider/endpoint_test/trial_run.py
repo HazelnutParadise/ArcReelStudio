@@ -371,7 +371,7 @@ class TrialRunManager:
         try:
             # 反序列化与读盘同属一条受控失败路径：读不出一个可用的 run 一律 None。
             return TrialRun.from_payload(json.loads(path.read_text(encoding="utf-8")))
-        except (OSError, KeyError, TypeError, ValueError):
+        except OSError, KeyError, TypeError, ValueError:
             return None
 
     async def wait(self, run_id: str) -> TrialRun | None:

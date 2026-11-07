@@ -52,13 +52,14 @@ export function NarrationAudioCard({
   const [restoring, setRestoring] = useState(false);
   const restoringRef = useRef(false);
   const checkBusy = () => restoringRef.current || isResourceBusy("tts", projectName, segmentId);
-  const onRestoringChange = (next: boolean) => { restoringRef.current = next; setRestoring(next); };
+  const onRestoringChange = (next: boolean) => {
+    restoringRef.current = next;
+    setRestoring(next);
+  };
   // 与 ShotDetail 的按钮禁用判定共用同一套 trim 规则，避免"卡片有正文、按钮却禁用"的矛盾态
   const hasNovelText = novelText.trim().length > 0;
 
-  const assetFp = useProjectsStore((s) =>
-    assetPath ? s.getAssetFingerprint(assetPath) : null,
-  );
+  const assetFp = useProjectsStore((s) => (assetPath ? s.getAssetFingerprint(assetPath) : null));
   const audioUrl = assetPath ? API.getFileUrl(projectName, assetPath, assetFp) : null;
 
   const generateLabel =

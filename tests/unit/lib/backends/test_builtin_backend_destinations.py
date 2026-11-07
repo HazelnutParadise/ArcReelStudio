@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import VideoGenerationRequest
@@ -93,7 +93,7 @@ _CALLS: dict[str, Call] = {
 @pytest.mark.parametrize("call", _CALLS.values(), ids=_CALLS.keys())
 async def test_a_metadata_base_url_is_refused_before_any_request_leaves(call: Call, tmp_path: Path):
     with capture_http() as router, bounded_poll_clock():
-        sent = router.route().mock(return_value=httpx.Response(200, json={}))
+        sent = router.route().mock(return_value=httpx2.Response(200, json={}))
 
         with pytest.raises(ArtifactDestinationRejectedError):
             await call(tmp_path)

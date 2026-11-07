@@ -39,11 +39,6 @@ export function WorkspaceResizeHandle({
   };
 
   return (
-    <ResizableHandle
-      aria-label={label}
-      disabled={disabled}
-      hidden={hidden}
-      onKeyDownCapture={handleKeyDownCapture}
-    />
+    <ResizableHandle aria-label={label} disabled={disabled} hidden={hidden} onKeyDownCapture={handleKeyDownCapture} />
   );
 }

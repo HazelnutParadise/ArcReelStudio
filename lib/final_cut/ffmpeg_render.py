@@ -1,4 +1,5 @@
-"""用随包 ffmpeg 执行成片的渲染规划，并验收渲染结果。
+"""用 ffmpeg 执行成片的渲染规划，并验收渲染结果。画面编码方式见 :mod:`lib.infra.video_encoder`：
+GPU 可用时各段画面改用支持 NVENC 的 ffmpeg 编码，混音、拼接封装与验收始终用随包 ffmpeg。
 
 画面按硬切边界分段渲染：段内每个片段按项目画布缩放补边、规整到固定帧率，取定帧数的源画面后用
 边缘帧的静帧补足定格延长与转场借帧的余量缺口，非重叠型转场在片段两端淡入淡出，重叠型转场用
@@ -29,6 +30,7 @@ from lib.infra.subprocess_deadline import (
     SubprocessDeadlineExceeded,
     run_with_deadline,
 )
+from lib.infra.video_encoder import CPU_ENCODING, VideoEncoding
 from lib.subtitle_style.font import SUBTITLE_FONT_FILE
 
 AUDIO_SAMPLE_RATE = 48_000
@@ -139,11 +141,18 @@ def _bgm_chain(index: int, bgm: BgmInput, start_sample: int) -> str:
 
 
 def segment_args(
-    ffmpeg: str, segment: RenderSegment, plan: RenderPlan, output: Path, *, burn_subtitles: bool = False
+    ffmpeg: str,
+    segment: RenderSegment,
+    plan: RenderPlan,
+    output: Path,
+    *,
+    burn_subtitles: bool = False,
+    encoding: VideoEncoding = CPU_ENCODING,
 ) -> list[str]:
     """一段片段的画面渲染参数：只含画面，按帧数精确截止。
 
     ``burn_subtitles`` 时按相对路径引用工作目录里的 ASS 文档与字体，须以工作目录为当前目录运行。
+    ``encoding`` 自带可执行文件时（GPU 编码）用它代替 ``ffmpeg``。
     """
     fps = plan.profile.fps
     inputs: list[str] = []
@@ -173,7 +182,7 @@ def segment_args(
         )
         label = "[subtitled]"
     return [
-        *_base_args(ffmpeg),
+        *_base_args(encoding.executable or ffmpeg),
         *inputs,
         "-filter_complex",
         ";".join(chains),
@@ -184,12 +193,7 @@ def segment_args(
         "-dn",
         "-frames:v",
         str(segment.frames),
-        "-c:v",
-        "libx264",
-        "-preset",
-        "veryfast",
-        "-crf",
-        "20",
+        *encoding.codec_args,
         "-pix_fmt",
         "yuv420p",
         "-r",
@@ -334,10 +338,12 @@ async def render_plan_to_file(
     subtitles: Sequence[BurnedSubtitle] | None = None,
     deadlines: RenderDeadlines = DEFAULT_RENDER_DEADLINES,
     spawn: Spawner | None = None,
+    encoding: VideoEncoding = CPU_ENCODING,
 ) -> None:
     """执行渲染规划：逐段渲染画面、整集混音，再拼接封装到 ``output``；中间文件只写在 ``workspace``。
 
     ``subtitles`` 不为 None 时烧入字幕（可以为空），``narrations`` 与 ``bgm`` 是要混进整集音频的旁白配音与 BGM。
+    各段都用 ``encoding`` 编码画面，无损拼接要求各段编码参数一致。
     """
     fps = plan.profile.fps
     burn = subtitles is not None
@@ -347,7 +353,7 @@ async def render_plan_to_file(
     for index, segment in enumerate(plan.segments):
         segment_file = workspace / f"segment_{index:04d}.mp4"
         await _run(
-            segment_args(ffmpeg, segment, plan, segment_file, burn_subtitles=burn),
+            segment_args(ffmpeg, segment, plan, segment_file, burn_subtitles=burn, encoding=encoding),
             deadline=deadlines.for_seconds(segment.frames / fps),
             grace=deadlines.grace,
             spawn=spawn,

@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 from PIL import Image
 
@@ -243,9 +243,9 @@ class TestLimitComesFromTheResolvedBackend:
 
         with capture_http() as router:
             route = router.post("https://api.vidu.com/ent/v2/reference2image").mock(
-                return_value=httpx.Response(400, json={"code": 1013, "message": "nope"})
+                return_value=httpx2.Response(400, json={"code": 1013, "message": "nope"})
             )
-            with caplog.at_level(logging.INFO), pytest.raises(httpx.HTTPStatusError):
+            with caplog.at_level(logging.INFO), pytest.raises(httpx2.HTTPStatusError):
                 await generation_tasks.execute_storyboard_task("demo", ITEM_ID, STORYBOARD_PAYLOAD)
 
         body = json.loads(route.calls.last.request.content)
@@ -297,7 +297,7 @@ class TestGrokLaneClampsToFive:
         Image.new("RGB", (8, 8), "red").save(buffer, format="PNG")
 
         with capture_http() as router:
-            router.get("https://grok.test/out.png").mock(return_value=httpx.Response(200, content=buffer.getvalue()))
+            router.get("https://grok.test/out.png").mock(return_value=httpx2.Response(200, content=buffer.getvalue()))
             result = await generation_tasks.execute_storyboard_task("demo", ITEM_ID, STORYBOARD_PAYLOAD)
 
         sent = grok_lane.image.sample.call_args.kwargs
@@ -359,9 +359,9 @@ class TestOpenRouterLaneClampsToTheCatalogLimit:
         image_b64 = base64.b64encode(buffer.getvalue()).decode("ascii")
 
         with capture_http() as router:
-            models = router.get(f"{self.BASE_URL}/images/models").mock(return_value=httpx.Response(200, json=catalog))
+            models = router.get(f"{self.BASE_URL}/images/models").mock(return_value=httpx2.Response(200, json=catalog))
             route = router.post(f"{self.BASE_URL}/images").mock(
-                return_value=httpx.Response(200, json={"data": [{"b64_json": image_b64}]})
+                return_value=httpx2.Response(200, json={"data": [{"b64_json": image_b64}]})
             )
             result = await generation_tasks.execute_storyboard_task("demo", ITEM_ID, STORYBOARD_PAYLOAD)
 

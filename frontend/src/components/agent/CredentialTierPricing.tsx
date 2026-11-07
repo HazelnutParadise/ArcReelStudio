@@ -99,9 +99,7 @@ function TierPricingState({ status }: { status: AgentCredentialTierStatus }) {
       {status.entry_display_name && (
         <TruncatedText text={status.entry_display_name} className="text-subtle-foreground" />
       )}
-      {status.manually_bound && (
-        <span className="shrink-0 text-muted-foreground">{t("cred_tier_manually_bound")}</span>
-      )}
+      {status.manually_bound && <span className="shrink-0 text-muted-foreground">{t("cred_tier_manually_bound")}</span>}
       {status.binding_stale && <span className="shrink-0 text-warn">{t("cred_tier_binding_stale")}</span>}
     </span>
   );

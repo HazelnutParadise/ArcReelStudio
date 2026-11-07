@@ -115,10 +115,9 @@ export function OnboardingTour() {
     // 走 replace：这是引导自己的纠偏跳转，不是用户点出来的去处。设置页两步之间来回步进
     // 会反复导航，push 的话历史里会堆满引导的中间态，用户按浏览器后退得连按多次才退得
     // 出去。用户主动产生的导航（点演示卡进工作台）不经这里，仍是正常的 push。
-    navigate(
-      requiredQuery ? `${requiredRoute}?${new URLSearchParams(requiredQuery).toString()}` : requiredRoute,
-      { replace: true },
-    );
+    navigate(requiredQuery ? `${requiredRoute}?${new URLSearchParams(requiredQuery).toString()}` : requiredRoute, {
+      replace: true,
+    });
   }, [
     active,
     inMainUi,
@@ -165,7 +164,7 @@ export function OnboardingTour() {
     // `interactive` 步顺着入口走进落点的那一帧同样先收起旧实例：效果（2.5）随即把步号
     // 推进到下一步，本效果在新步号上重建实例，外观上就是顺势接着讲。
     if (!active || !onTourRoute || enteredInteractiveTarget) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 引导退出时把步号复位到起点，是有意的受控重置，下次开启从头开始
+      // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 引导退出时把步号复位到起点，是有意的受控重置，下次开启从头开始
       if (!active) setStep(0);
       return;
     }

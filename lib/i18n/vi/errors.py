@@ -225,6 +225,7 @@ MESSAGES = {
     "draft_invalid_json": "Bản nháp kế hoạch kịch bản có cấu trúc không hợp lệ; vui lòng kiểm tra và thử lại",
     "draft_not_found": "Tập (id={episode}) không có bản nháp này; có thể nó đã được áp dụng hoặc bị hủy",
     "draft_revision_conflict": "Bản nháp đã thay đổi trong lúc bạn chỉnh sửa nên thao tác chưa được áp dụng; hãy xem nội dung mới nhất rồi thử lại",
+    "edit_conflict": "Nội dung này đã được thành viên khác sửa trong lúc bạn chỉnh sửa nên lần lưu này chưa được áp dụng; hãy xem nội dung mới nhất trước khi quyết định ghi đè",
     "draft_formal_revision_conflict": (
         "Nội dung chính thức đã thay đổi sau khi bản nháp được tạo nên lần lưu này chưa được áp dụng; "
         "hãy hủy bản nháp hoặc giao cho tác nhân hợp nhất"
@@ -493,6 +494,15 @@ MESSAGES = {
     ),
     # API Keys
     "jwt_auth_required": "API Key không được phép thực hiện thao tác này, vui lòng dùng xác thực JWT",
+    "admin_only_operation": "Chỉ quản trị viên mới có thể quản lý thành viên",
+    "username_invalid": "Tên người dùng chỉ gồm chữ thường, chữ số và . _ @ -, bắt đầu bằng chữ hoặc số, tối đa 64 ký tự",
+    "password_too_short": "Mật khẩu phải có ít nhất {min} ký tự",
+    "user_role_invalid": "Vai trò không được hỗ trợ: {role}",
+    "username_exists": "Tên người dùng {username} đã được sử dụng",
+    "user_not_found": "Không tìm thấy thành viên",
+    "cannot_change_own_admin_access": "Không thể tự vô hiệu hóa tài khoản hoặc tự bỏ vai trò quản trị viên. Hãy nhờ một quản trị viên khác",
+    "last_admin_required": "Cần giữ ít nhất một quản trị viên đang hoạt động",
+    "current_password_incorrect": "Mật khẩu hiện tại không đúng",
     "api_key_name_exists": "Tên '{name}' đã tồn tại",
     "api_key_not_found": "Không tìm thấy API Key {key_id}",
     # Agent Chat
@@ -702,6 +712,7 @@ MESSAGES = {
     "video_first_frame_unsupported": "{provider}/{model} không hỗ trợ khung hình đầu với cấu hình hiện tại; đã hủy tạo. Hãy bỏ khung hình đầu của cảnh quay này, hoặc chuyển sang mô hình hoặc gói có hỗ trợ",
     "video_last_frame_unsupported": "{provider}/{model} không hỗ trợ khung hình cuối với cấu hình hiện tại; đã hủy tạo. Hãy bỏ khung hình cuối của cảnh quay này, hoặc chuyển sang mô hình hoặc gói có hỗ trợ",
     "video_reference_audio_unsupported": "{provider}/{model} không hỗ trợ âm thanh tham chiếu; đã hủy tạo. Hãy bỏ âm thanh tham chiếu của nhân vật, hoặc chuyển sang mô hình có hỗ trợ tham chiếu giọng nói",
+    "video_veo_api_key_mode_unsupported": "{provider}/{model} không thể tạo video: Veo không còn được cung cấp qua Gemini Developer API (API Key). Hãy dùng thông tin xác thực Vertex AI cho Veo, hoặc chuyển sang mô hình video Gemini Omni",
     "video_reference_route_audio_unsupported": "{provider}/{model} không thể gửi công tắc âm thanh khi tạo từ ảnh tham chiếu nên video sẽ không có tiếng; đã hủy tạo. Hãy tắt công tắc âm thanh, gỡ ghi đè rãnh âm thanh của tuyến ảnh tham chiếu, hoặc bỏ ảnh tham chiếu rồi thử lại",
     "video_reference_audio_exceeded": "Mô hình {model} hỗ trợ tối đa {limit} đoạn âm thanh tham chiếu nhưng nhận được {count}; hãy giảm số nhân vật có âm thanh tham chiếu",
     "video_reference_audio_duration_exceeded": "Mô hình {model} hỗ trợ tổng thời lượng âm thanh tham chiếu tối đa {limit:g} giây nhưng nhận được {total:.1f} giây; hãy giảm số đoạn âm thanh tham chiếu hoặc dùng đoạn ngắn hơn",
@@ -720,6 +731,13 @@ MESSAGES = {
     "agent_base_url_invalid": "Địa chỉ chứng thực Agent không hỗ trợ tham số truy vấn, fragment hay tên người dùng/mật khẩu; hãy dùng dạng https://host/path",
     "agent_no_fields_to_update": "Không có trường nào để cập nhật",
     "agent_credential_not_found": "Không tìm thấy xác thực",
+    "claude_login_cli_not_found": "Không tìm thấy Claude CLI tích hợp, không thể đăng nhập gói đăng ký",
+    "claude_login_no_authorize_url": "Không lấy được liên kết đăng nhập Claude, vui lòng thử lại sau",
+    "claude_login_login_not_found": "Phiên đăng nhập này đã kết thúc hoặc bị thay bằng phiên mới, hãy bắt đầu lại",
+    "claude_login_login_expired": "Phiên đăng nhập đã hết hạn, hãy bắt đầu lại",
+    "claude_login_invalid_code": "Mã xác minh không đúng định dạng",
+    "claude_login_code_rejected": "Claude không chấp nhận mã này, hãy đăng nhập lại rồi thử",
+    "claude_subscription_required": "Hãy đăng nhập gói đăng ký Claude trước khi chọn chỉ dùng gói đăng ký",
     "agent_tier_binding_invalid": "Mô hình gắn với bậc này không có trong danh mục mô hình",
     "agent_cannot_delete_active": "Không thể xóa xác thực đang hoạt động; hãy kích hoạt xác thực khác trước",
     "agent_test_validation_error": "Kiểm tra kết nối thất bại; vui lòng kiểm tra cấu hình và thử lại",

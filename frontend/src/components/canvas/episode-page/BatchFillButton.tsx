@@ -63,9 +63,7 @@ export function BatchFillButton({
       : t(`batch_fill_${kind}_count`, { count });
   return (
     <Tooltip>
-      <TooltipTrigger
-        render={<Button variant="outline" size="sm" disabled={done || disabled} onClick={onClick} />}
-      >
+      <TooltipTrigger render={<Button variant="outline" size="sm" disabled={done || disabled} onClick={onClick} />}>
         <Sparkles aria-hidden data-icon="inline-start" />
         <span className="num">{label}</span>
       </TooltipTrigger>

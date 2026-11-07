@@ -1950,7 +1950,7 @@ def decode_artifact_key_parts(value: str) -> ArtifactKeyParts | None:
     try:
         raw = base64.b64decode(token + "=" * (-len(token) % 4), altchars=b"-_", validate=True)
         payload = json.loads(raw.decode("utf-8"))
-    except (binascii.Error, UnicodeDecodeError, ValueError, RecursionError):
+    except binascii.Error, UnicodeDecodeError, ValueError, RecursionError:
         return None
     if not isinstance(payload, list) or not payload or not isinstance(payload[0], str):
         return None

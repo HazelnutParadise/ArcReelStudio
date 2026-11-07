@@ -7,7 +7,7 @@ from collections.abc import Generator
 from io import BytesIO
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -71,7 +71,7 @@ def entries_sessions(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]
 
 @pytest.fixture
 def entries_client(entries_sessions: async_sessionmaker[AsyncSession]) -> Generator[TestClient]:
-    http_client = httpx.AsyncClient()
+    http_client = httpx2.AsyncClient()
     service = MarketEntryService(entries_sessions, http_client=lambda: http_client)
     app = FastAPI()
 
@@ -215,12 +215,12 @@ def test_definition_is_returned_verbatim(entries_client: TestClient, catalog: No
 @pytest.mark.parametrize(
     ("upstream", "reason"),
     [
-        (httpx.Response(404), "HTTP 404"),
-        (httpx.Response(200, text="../shared/definition.json"), "definition is not valid JSON"),
+        (httpx2.Response(404), "HTTP 404"),
+        (httpx2.Response(200, text="../shared/definition.json"), "definition is not valid JSON"),
     ],
 )
 def test_definition_upstream_failure_is_bad_gateway(
-    entries_client: TestClient, catalog: None, upstream: httpx.Response, reason: str
+    entries_client: TestClient, catalog: None, upstream: httpx2.Response, reason: str
 ) -> None:
     with capture_http() as http:
         http.get(f"{TEAM_DIR}endpoints/alpha/definition.json").mock(return_value=upstream)

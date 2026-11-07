@@ -243,7 +243,10 @@ function ItemCardShell({ notes, children }: { notes?: ItemDraftNotes; children: 
   return (
     <article
       ref={notes?.anchorRef}
-      className={cn("scroll-mt-28 rounded-lg border bg-card p-3.5", violating ? "border-destructive/45" : "border-border")}
+      className={cn(
+        "scroll-mt-28 rounded-lg border bg-card p-3.5",
+        violating ? "border-destructive/45" : "border-border",
+      )}
     >
       {children}
       {notes && (
@@ -552,7 +555,8 @@ export function ScriptReviewGate({
     return {
       projectName,
       durationOptions: durationOptions ?? standaloneCapabilities.planningDurations,
-      durationEndpointFixed: durationEndpointFixed || (durationOptions === undefined && standaloneCapabilities.durationEndpointFixed),
+      durationEndpointFixed:
+        durationEndpointFixed || (durationOptions === undefined && standaloneCapabilities.durationEndpointFixed),
       durationWarningReason,
       newAssets,
       speakerNames: speakerCandidates(projectCharacters ?? {}, newAssets),
@@ -595,7 +599,11 @@ export function ScriptReviewGate({
   };
 
   if (loading) {
-    return <div className="flex h-64 items-center justify-center text-muted-foreground">{t("dashboard:loading_script_plan")}</div>;
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground">
+        {t("dashboard:loading_script_plan")}
+      </div>
+    );
   }
 
   // 加载错误态：区别于「无 script_plan 产物」空态，展示错误信息 + 重试入口。

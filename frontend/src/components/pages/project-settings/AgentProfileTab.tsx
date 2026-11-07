@@ -104,10 +104,14 @@ export function AgentProfileTab({ projectName }: { projectName: string }) {
           <AlertCircle aria-hidden />
           <AlertDescription>{t("agent_profile_load_failed", { message: loadError })}</AlertDescription>
           <AlertAction>
-            <Button variant="outline" size="xs" onClick={() => {
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => {
                 setLoadError(null);
                 setLoadCount((count) => count + 1);
-              }}>
+              }}
+            >
               {t("common:retry")}
             </Button>
           </AlertAction>
@@ -145,11 +149,7 @@ export function AgentProfileTab({ projectName }: { projectName: string }) {
             <AlertDialogDescription>{t("agent_profile_reset_confirm_description")}</AlertDialogDescription>
           </AlertDialogHeader>
           {/* 文件多时正文滚动，可聚焦以便键盘滚动 */}
-          <AlertDialogBody
-            tabIndex={0}
-            role="region"
-            aria-label={t("agent_profile_affected_files")}
-          >
+          <AlertDialogBody tabIndex={0} role="region" aria-label={t("agent_profile_affected_files")}>
             <FileList files={status?.customized_files ?? []} />
           </AlertDialogBody>
           <AlertDialogFooter>

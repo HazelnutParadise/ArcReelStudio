@@ -285,7 +285,9 @@ function AccountDialog({
           }}
         >
           <DialogHeader>
-            <DialogTitle>{creating ? t("asset_library_account_add") : t("asset_library_account_edit_title")}</DialogTitle>
+            <DialogTitle>
+              {creating ? t("asset_library_account_add") : t("asset_library_account_edit_title")}
+            </DialogTitle>
             <DialogDescription>{t("asset_library_account_dialog_desc")}</DialogDescription>
           </DialogHeader>
           <DialogBody>

@@ -11,7 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import httpx
+import httpx2
 import pytest
 
 from arcreel_market_core.video_backend_contract import (
@@ -39,18 +39,18 @@ _ENDPOINT = "kling-video-model-path"
 # 最小响应样本，字段取自官方「Kling 4.0 - 文生视频」页的创建任务与按任务 ID 查询任务（docs/api-docs/endpoints/kling-video-model-path.md）。
 
 
-def _submitted(task_id: str = "893605946402811985") -> httpx.Response:
-    return httpx.Response(
+def _submitted(task_id: str = "893605946402811985") -> httpx2.Response:
+    return httpx2.Response(
         200, json={"code": 0, "message": "SUCCEED", "request_id": "r", "data": {"id": task_id, "status": "submitted"}}
     )
 
 
-def _task(status: str, *, task_id: str = "893605946402811985", message: str = "", **extra) -> httpx.Response:
+def _task(status: str, *, task_id: str = "893605946402811985", message: str = "", **extra) -> httpx2.Response:
     task: dict = {"id": task_id, "status": status, "message": message, **extra}
-    return httpx.Response(200, json={"code": 0, "message": "SUCCEED", "request_id": "r", "data": [task]})
+    return httpx2.Response(200, json={"code": 0, "message": "SUCCEED", "request_id": "r", "data": [task]})
 
 
-def _succeeded(*, output_duration: str | None = None, task_id: str = "893605946402811985") -> httpx.Response:
+def _succeeded(*, output_duration: str | None = None, task_id: str = "893605946402811985") -> httpx2.Response:
     extra: dict = {
         "outputs": [
             {"type": "video", "id": "v1", "url": _DOWNLOAD_URL, "watermark_url": "https://cdn.test/wm.mp4"},
@@ -198,7 +198,7 @@ class TestGenerate:
             poll = router.get(f"{_BASE}/tasks").mock(
                 side_effect=[_task("processing", task_id="task-9"), _succeeded(task_id="task-9", output_duration="12")]
             )
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b"mp4-bytes"))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b"mp4-bytes"))
 
             request = _request(tmp_path, task_id="local-1")
             result = await _backend().generate(request)
@@ -220,7 +220,7 @@ class TestGenerate:
         with capture_http() as router:
             submit = router.post(f"{_BASE}/image-to-video/kling-3.0-turbo").mock(return_value=_submitted())
             router.get(f"{_BASE}/tasks").mock(return_value=_succeeded())
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b""))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b""))
 
             request = _request(tmp_path, start_image=_frame(tmp_path, "first.png"))
             result = await _backend("kling-3.0-turbo").generate(request)
@@ -245,7 +245,7 @@ class TestGenerate:
     async def test_submit_error_envelope_raises(self, tmp_path):
         with capture_http() as router:
             router.post(f"{_BASE}/text-to-video/kling-4.0").mock(
-                return_value=httpx.Response(200, json={"code": 1201, "message": "invalid duration", "data": None})
+                return_value=httpx2.Response(200, json={"code": 1201, "message": "invalid duration", "data": None})
             )
             with pytest.raises(RuntimeError, match="invalid duration"):
                 await _backend().generate(_request(tmp_path))
@@ -275,7 +275,7 @@ class TestMetering:
         with capture_http() as router:
             router.post(f"{_BASE}/text-to-video/kling-4.0").mock(return_value=_submitted())
             router.get(f"{_BASE}/tasks").mock(return_value=_succeeded(output_duration="10"))
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b""))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b""))
             request = _request(tmp_path)
             result = await _backend().generate(request)
 
@@ -289,7 +289,7 @@ class TestResume:
         with capture_http() as router:
             submit = router.post(url__regex=rf"^{_BASE}/(text|image)-to-video/")
             poll = router.get(f"{_BASE}/tasks").mock(return_value=_succeeded(task_id="task-r"))
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b"resumed"))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b"resumed"))
 
             result = await _backend().resume_video("tasks:task-r", _request(tmp_path))
 
@@ -311,7 +311,7 @@ class TestResume:
     async def test_resume_404_is_expired(self, tmp_path):
         with capture_http() as router, bounded_poll_clock():
             poll = router.get(f"{_BASE}/tasks").mock(
-                return_value=httpx.Response(404, json={"code": 1203, "message": "task not found"})
+                return_value=httpx2.Response(404, json={"code": 1203, "message": "task not found"})
             )
             with pytest.raises(ResumeExpiredError) as caught:
                 await _backend().resume_video("tasks:task-gone", _request(tmp_path))
@@ -324,7 +324,7 @@ class TestResume:
         with capture_http() as router:
             submitted = router.get("https://relay-a.test/tasks").mock(return_value=_succeeded(task_id="task-r"))
             current = router.get(url__regex=r"^https://relay-b\.test/")
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b""))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b""))
 
             backend = _backend(base_url="https://relay-b.test")
             await backend.resume_video("tasks:task-r", _request(tmp_path, submitted_base_url="https://relay-a.test"))
@@ -350,7 +350,7 @@ class TestCustomProvider:
         with capture_http() as router:
             submit = router.post("https://relay.test/text-to-video/kling-4.0").mock(return_value=_submitted())
             router.get("https://relay.test/tasks").mock(return_value=_succeeded())
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b""))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b""))
 
             await backend.generate(_request(tmp_path))
 
@@ -366,7 +366,7 @@ class TestCustomProvider:
         with capture_http() as router:
             submit = router.post("https://relay.test/kling/v2/t2v/kling-4.0").mock(return_value=_submitted("t-1"))
             poll = router.get("https://relay.test/kling/v2/tasks").mock(return_value=_succeeded(task_id="t-1"))
-            router.get(_DOWNLOAD_URL).mock(return_value=httpx.Response(200, content=b""))
+            router.get(_DOWNLOAD_URL).mock(return_value=httpx2.Response(200, content=b""))
 
             await backend.generate(_request(tmp_path))
 

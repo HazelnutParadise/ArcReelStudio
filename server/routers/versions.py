@@ -153,7 +153,7 @@ def _commit_non_typed_restore_claim(
 
     try:
         basis = parse_image_version_basis(resource_type, resource_id, record or {})
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         basis = None
     if basis is None:
         forget_current_resource_artifact(

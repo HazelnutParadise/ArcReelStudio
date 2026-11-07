@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import httpx
+import httpx2
 import pytest
 from openai import APITimeoutError, BadRequestError, RateLimitError
 
@@ -10,12 +10,12 @@ from arcreel_market_core.video_backend_contract import VideoCapabilityError
 from lib.backends.http_status_errors import AmbiguousSubmitError, ArtifactDownloadError
 from lib.billing.call_failure import CallErrorCode, classify_call_failure
 
-_REQUEST = httpx.Request("POST", "https://provider.example/v1/videos")
+_REQUEST = httpx2.Request("POST", "https://provider.example/v1/videos")
 
 
-def _status_error(status: int, *, headers: dict[str, str] | None = None) -> httpx.HTTPStatusError:
-    response = httpx.Response(status, headers=headers or {}, request=_REQUEST)
-    return httpx.HTTPStatusError(f"{status} response", request=_REQUEST, response=response)
+def _status_error(status: int, *, headers: dict[str, str] | None = None) -> httpx2.HTTPStatusError:
+    response = httpx2.Response(status, headers=headers or {}, request=_REQUEST)
+    return httpx2.HTTPStatusError(f"{status} response", request=_REQUEST, response=response)
 
 
 class TestRateLimited:
@@ -38,7 +38,7 @@ class TestRateLimited:
         assert failure.error_params == {}
 
     def test_openai_rate_limit_error_is_recognised_by_its_response(self) -> None:
-        response = httpx.Response(429, headers={"Retry-After": "5"}, request=_REQUEST)
+        response = httpx2.Response(429, headers={"Retry-After": "5"}, request=_REQUEST)
         failure = classify_call_failure(RateLimitError("slow down", response=response, body=None))
 
         assert failure.error_code == CallErrorCode.RATE_LIMITED
@@ -57,7 +57,7 @@ class TestRateLimited:
 class TestContentPolicy:
     @pytest.mark.parametrize("provider_code", ["content_policy_violation", "moderation_blocked", "content_filter"])
     def test_provider_error_body_code_is_recognised(self, provider_code: str) -> None:
-        response = httpx.Response(400, request=_REQUEST)
+        response = httpx2.Response(400, request=_REQUEST)
         exc = BadRequestError("rejected", response=response, body={"code": provider_code})
 
         failure = classify_call_failure(exc)
@@ -66,7 +66,7 @@ class TestContentPolicy:
         assert failure.error_params == {}
 
     def test_other_provider_error_body_code_stays_unclassified(self) -> None:
-        response = httpx.Response(400, request=_REQUEST)
+        response = httpx2.Response(400, request=_REQUEST)
         exc = BadRequestError("bad model", response=response, body={"code": "model_not_found"})
 
         failure = classify_call_failure(exc)
@@ -83,16 +83,16 @@ class TestTimeout:
         assert failure.error_params == {}
 
     def test_httpx_timeout_is_recognised_despite_not_being_a_timeout_error(self) -> None:
-        assert not isinstance(httpx.ReadTimeout("read timed out"), TimeoutError)
+        assert not isinstance(httpx2.ReadTimeout("read timed out"), TimeoutError)
 
-        failure = classify_call_failure(httpx.ReadTimeout("read timed out"))
+        failure = classify_call_failure(httpx2.ReadTimeout("read timed out"))
 
         assert failure.error_code == CallErrorCode.TIMEOUT
 
     def test_timeout_wrapped_by_an_ambiguous_submit_is_still_a_timeout(self) -> None:
         """提交阶段的歧义态包装自身不可分类；根因超时在它包住的那一层，原文仍取外层。"""
         exc = AmbiguousSubmitError(provider="veo")
-        exc.__cause__ = httpx.ReadTimeout("read timed out")
+        exc.__cause__ = httpx2.ReadTimeout("read timed out")
 
         failure = classify_call_failure(exc)
 
@@ -101,7 +101,7 @@ class TestTimeout:
 
     def test_unclassifiable_chain_stays_unclassified(self) -> None:
         exc = AmbiguousSubmitError(provider="veo")
-        exc.__cause__ = httpx.RemoteProtocolError("peer closed connection")
+        exc.__cause__ = httpx2.RemoteProtocolError("peer closed connection")
 
         assert classify_call_failure(exc).error_code is None
 
@@ -121,7 +121,7 @@ class TestDownloadFailed:
     def test_http_status_comes_from_the_wrapped_download_error(self) -> None:
         try:
             raise _status_error(403)
-        except httpx.HTTPStatusError as cause:
+        except httpx2.HTTPStatusError as cause:
             exc = ArtifactDownloadError(detail=str(cause))
             exc.__cause__ = cause
 
@@ -142,7 +142,7 @@ class TestDownloadFailed:
 
         try:
             raise _status_error(502)
-        except httpx.HTTPStatusError as cause:
+        except httpx2.HTTPStatusError as cause:
             exc = DeclarativeRuntimeError("artifact_download_failed", detail=str(cause))
             exc.__cause__ = cause
 
@@ -162,7 +162,7 @@ class TestDownloadFailed:
     def test_download_wins_over_the_timeout_that_caused_it(self) -> None:
         # 取件耗尽的根因常是一次超时，但对用户而言这是可重试取件的「下载失败」。
         exc = ArtifactDownloadError(detail="read timed out")
-        exc.__cause__ = httpx.ReadTimeout("read timed out")
+        exc.__cause__ = httpx2.ReadTimeout("read timed out")
 
         failure = classify_call_failure(exc)
 

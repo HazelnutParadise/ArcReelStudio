@@ -22,7 +22,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 
 from lib.backends.transport_layer import TransportLayer, layer_async_client
 from lib.infra.async_thread import run_noninterruptible_sync, run_sync_transaction
@@ -41,7 +41,7 @@ ARTIFACT_MAX_BYTES_BY_MEDIA_TYPE: dict[str, int] = {
     "audio": AUDIO_ARTIFACT_MAX_BYTES,
 }
 
-#: 主机名解析的时限。解析不走 httpx 的超时配置，单独兜住。
+#: 主机名解析的时限。解析不走 httpx2 的超时配置，单独兜住。
 DNS_RESOLVE_TIMEOUT_SECONDS = 10.0
 
 #: 错误响应体读取上限：够状态错误带出诊断摘要即可。
@@ -90,7 +90,7 @@ def _is_rejected_address(address: str) -> bool:
 
 
 async def check_destination(
-    url: httpx.URL,
+    url: httpx2.URL,
     *,
     resolver: Resolver = resolve_host,
     resolve_timeout: float = DNS_RESOLVE_TIMEOUT_SECONDS,
@@ -122,23 +122,23 @@ def artifact_http_client(
     resolve_timeout: float = DNS_RESOLVE_TIMEOUT_SECONDS,
     transport_layer: TransportLayer | None = None,
     **kwargs: Any,
-) -> httpx.AsyncClient:
-    """构造对每次请求（含每一跳重定向）先做目的地校验的 ``httpx.AsyncClient``。
+) -> httpx2.AsyncClient:
+    """构造对每次请求（含每一跳重定向）先做目的地校验的 ``httpx2.AsyncClient``。
 
     ``transport_layer`` 叠在校验之上（见 :func:`layer_async_client`），校验的是它改写后的请求。
-    其余关键字参数原样交给 ``httpx.AsyncClient``。
+    其余关键字参数原样交给 ``httpx2.AsyncClient``。
     """
 
-    async def guard(request: httpx.Request) -> None:
+    async def guard(request: httpx2.Request) -> None:
         await check_destination(request.url, resolver=resolver, resolve_timeout=resolve_timeout)
 
-    return layer_async_client(httpx.AsyncClient(event_hooks={"request": [guard]}, **kwargs), transport_layer)
+    return layer_async_client(httpx2.AsyncClient(event_hooks={"request": [guard]}, **kwargs), transport_layer)
 
 
-def _declared_length(response: httpx.Response) -> int | None:
+def _declared_length(response: httpx2.Response) -> int | None:
     try:
         return int(response.headers["Content-Length"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         return None
 
 
@@ -146,7 +146,7 @@ def _too_large(max_bytes: int) -> ArtifactTooLargeError:
     return ArtifactTooLargeError(f"artifact response exceeds the {max_bytes}-byte limit")
 
 
-async def _capped_chunks(response: httpx.Response, max_bytes: int) -> AsyncIterator[bytes]:
+async def _capped_chunks(response: httpx2.Response, max_bytes: int) -> AsyncIterator[bytes]:
     """逐块产出响应体，累计超过 ``max_bytes`` 抛 :class:`ArtifactTooLargeError`。
 
     ``Content-Length`` 声明超限时在读取前拒绝；是否超限以实际读到的字节数为准。
@@ -162,12 +162,12 @@ async def _capped_chunks(response: httpx.Response, max_bytes: int) -> AsyncItera
         yield chunk
 
 
-async def read_body_capped(response: httpx.Response, *, max_bytes: int) -> bytes:
+async def read_body_capped(response: httpx2.Response, *, max_bytes: int) -> bytes:
     """把流式响应的响应体读进内存，超过 ``max_bytes`` 抛 :class:`ArtifactTooLargeError`。"""
     return b"".join([chunk async for chunk in _capped_chunks(response, max_bytes)])
 
 
-async def stream_body_to_file(response: httpx.Response, output_path: Path, *, max_bytes: int) -> None:
+async def stream_body_to_file(response: httpx2.Response, output_path: Path, *, max_bytes: int) -> None:
     """把流式响应的响应体写入 ``output_path``，超过 ``max_bytes`` 即中止。
 
     先写同目录 ``.part``、成功后原子改名；任何失败（含超限与取消）都删掉 ``.part``，产物路径上
@@ -210,7 +210,9 @@ async def stream_body_to_file(response: httpx.Response, output_path: Path, *, ma
         raise
 
 
-async def buffered_error_response(response: httpx.Response, *, max_bytes: int = ERROR_BODY_MAX_BYTES) -> httpx.Response:
+async def buffered_error_response(
+    response: httpx2.Response, *, max_bytes: int = ERROR_BODY_MAX_BYTES
+) -> httpx2.Response:
     """把流式错误响应换成一个已读完的副本，响应体只保留前 ``max_bytes`` 字节。
 
     状态码、响应头（去掉传输形态相关的几项）与请求原样保留，重试谓词与 ``Retry-After``
@@ -224,7 +226,7 @@ async def buffered_error_response(response: httpx.Response, *, max_bytes: int = 
         if received >= max_bytes:
             break
     headers = [(name, value) for name, value in response.headers.multi_items() if name.lower() not in _TRANSFER_HEADERS]
-    return httpx.Response(
+    return httpx2.Response(
         response.status_code,
         headers=headers,
         content=b"".join(chunks),

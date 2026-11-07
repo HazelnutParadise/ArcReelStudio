@@ -34,7 +34,11 @@ export function ThinkingBlock({ thinking, streaming }: ThinkingBlockProps) {
       <CollapsibleTrigger render={<Button variant="ghost" size="xs" className="-ml-2" />}>
         <Brain data-icon="inline-start" aria-hidden />
         {t("thinking_process_label")}
-        <ChevronRight data-icon="inline-end" aria-hidden className="transition-transform group-aria-expanded/button:rotate-90" />
+        <ChevronRight
+          data-icon="inline-end"
+          aria-hidden
+          className="transition-transform group-aria-expanded/button:rotate-90"
+        />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <p className="mt-1 ml-1.5 max-w-[40em] border-l border-border pl-3 text-xs/relaxed whitespace-pre-wrap">

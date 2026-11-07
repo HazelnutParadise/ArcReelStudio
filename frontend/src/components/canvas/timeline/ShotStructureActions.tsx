@@ -127,7 +127,9 @@ export function InsertShotButton({
               </div>
             </DialogBody>
             <DialogFooter>
-              <DialogClose render={<Button variant="outline" disabled={submitting} />}>{t("common:cancel")}</DialogClose>
+              <DialogClose render={<Button variant="outline" disabled={submitting} />}>
+                {t("common:cancel")}
+              </DialogClose>
               <Button
                 disabled={submitting || !novelText.trim()}
                 onClick={() => void run(novelText, () => setNarrationOpen(false))}

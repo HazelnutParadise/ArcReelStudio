@@ -45,7 +45,8 @@ const FAILURE = {
     source: "sdk_assistant",
     type: "rate_limit",
     status: 429,
-    message: "API Error: 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"Number of request tokens has exceeded your per-minute rate limit\"}}",
+    message:
+      'API Error: 429 {"type":"error","error":{"type":"rate_limit_error","message":"Number of request tokens has exceeded your per-minute rate limit"}}',
   },
   raw: {
     assistant_message: {
@@ -86,10 +87,16 @@ const CONTINUED_ENTRIES = entryLog((push) => {
   push({
     type: "assistant",
     message_id: "m-1",
-    content: [{ type: "text", text: "shot_07 到 shot_12 的时长都与剧本一致，shot_10 的提示词缺少人物站位，已经补上。" }],
+    content: [
+      { type: "text", text: "shot_07 到 shot_12 的时长都与剧本一致，shot_10 的提示词缺少人物站位，已经补上。" },
+    ],
   });
   const parent = { parent_tool_use_id: "tool-review-before-compact" };
-  push({ type: "user", content: [{ type: "text", text: "审片：核对第 8 集 shot_01 到 shot_06\n逐个镜头比对时长与提示词。" }], ...parent });
+  push({
+    type: "user",
+    content: [{ type: "text", text: "审片：核对第 8 集 shot_01 到 shot_06\n逐个镜头比对时长与提示词。" }],
+    ...parent,
+  });
   push({
     type: "assistant",
     message_id: "m-sub-1",
@@ -108,7 +115,11 @@ const CONTINUED_ENTRIES = entryLog((push) => {
 
 const FAILURE_ENTRIES = entryLog((push) => {
   push({ type: "user", content: [{ type: "text", text: "把 shot_04 重新生成一遍。" }] });
-  push({ type: "assistant", message_id: "m-1", content: [{ type: "text", text: "好的，先提交 shot_04 的生成任务。" }] });
+  push({
+    type: "assistant",
+    message_id: "m-1",
+    content: [{ type: "text", text: "好的，先提交 shot_04 的生成任务。" }],
+  });
   push({ type: "system", subtype: "agent_turn_failure", failure: FAILURE });
 });
 
@@ -192,7 +203,10 @@ defineRegionScenarios("Agent 会话投影", [
         await page.mouse.wheel(0, -2000);
         await expect.poll(() => transcript(page).evaluate((el) => el.scrollTop)).toBe(0);
       }
-      await expect(agentPanel(page).locator('[data-slot="message-scroller-button"]')).toHaveAttribute("data-active", String(overflow));
+      await expect(agentPanel(page).locator('[data-slot="message-scroller-button"]')).toHaveAttribute(
+        "data-active",
+        String(overflow),
+      );
       await expect(page.getByRole("heading", { name: "主要请求" })).toBeVisible();
     },
     screenshot: { name: "agent-projection-summary", target: agentPanel },

@@ -13,12 +13,10 @@ import server.auth as auth_module
 
 @pytest.fixture(autouse=True)
 def isolated_auth_env():
-    """Clear cached secret/password hash per-test so env tweaks take effect."""
+    """Clear the cached token secret per-test so env tweaks take effect."""
     auth_module._cached_token_secret = None
-    auth_module._cached_password_hash = None
     yield
     auth_module._cached_token_secret = None
-    auth_module._cached_password_hash = None
 
 
 class TestIsAuthEnabled:
@@ -52,46 +50,6 @@ class TestIsAuthEnabled:
             env["AUTH_ENABLED"] = raw
         with patch.dict(os.environ, env, clear=True):
             assert auth_module.is_auth_enabled() is expected
-
-
-class TestEnsureAuthPasswordKillSwitch:
-    def test_disabled_returns_empty_and_does_not_touch_env(self, tmp_path):
-        env_file = tmp_path / ".env"
-        env = os.environ.copy()
-        env["AUTH_ENABLED"] = "false"
-        env.pop("AUTH_PASSWORD", None)
-        with patch.dict(os.environ, env, clear=True):
-            result = auth_module.ensure_auth_password(env_path=str(env_file))
-            assert result == ""
-            assert not env_file.exists()
-            assert "AUTH_PASSWORD" not in os.environ
-
-    def test_enabled_still_generates(self, tmp_path):
-        env_file = tmp_path / ".env"
-        env = os.environ.copy()
-        env.pop("AUTH_ENABLED", None)
-        env.pop("AUTH_PASSWORD", None)
-        with patch.dict(os.environ, env, clear=True):
-            result = auth_module.ensure_auth_password(env_path=str(env_file))
-        assert result != ""
-        assert len(result) == 16
-
-
-class TestCheckCredentialsKillSwitch:
-    def test_disabled_returns_true_for_any_input(self):
-        with patch.dict(os.environ, {"AUTH_ENABLED": "false"}):
-            assert auth_module.check_credentials("anyone", "anything") is True
-            assert auth_module.check_credentials("", "") is True
-
-    def test_enabled_still_validates(self):
-        env = {
-            "AUTH_ENABLED": "true",
-            "AUTH_USERNAME": "admin",
-            "AUTH_PASSWORD": "pass123",
-        }
-        with patch.dict(os.environ, env):
-            assert auth_module.check_credentials("admin", "pass123") is True
-            assert auth_module.check_credentials("admin", "wrong") is False
 
 
 class TestVerifyDownloadTokenKillSwitch:

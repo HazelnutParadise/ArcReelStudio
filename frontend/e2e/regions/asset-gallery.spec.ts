@@ -150,7 +150,10 @@ const MANY_API: ApiOverrides = {
   ...BASE,
   "GET /api/v1/projects/demo": projectWith(MANY),
   "GET /api/v1/projects/demo/asset-sheets/status": { status: 200, body: { assets: [] } },
-  "GET /api/v1/tasks?page_size=200&project_name=demo": { status: 200, body: { items: [], total: 0, page: 1, page_size: 200 } },
+  "GET /api/v1/tasks?page_size=200&project_name=demo": {
+    status: 200,
+    body: { items: [], total: 0, page: 1, page_size: 200 },
+  },
 };
 
 // 删除前的引用预览（dry_run）：林夕被前三集引用。
@@ -228,7 +231,10 @@ const VIEWER_API: ApiOverrides = {
 // 压力变体：名字很长、有 60 个版本。
 const VIEWER_MANY_API: ApiOverrides = {
   ...BASE,
-  "GET /api/v1/projects/demo": projectWith({ [LONG_NAME]: { description: LONG_DESCRIPTION, character_sheet: sheetSvg(200) }, ...CHARACTERS }),
+  "GET /api/v1/projects/demo": projectWith({
+    [LONG_NAME]: { description: LONG_DESCRIPTION, character_sheet: sheetSvg(200) },
+    ...CHARACTERS,
+  }),
   "GET /api/v1/projects/demo/asset-sheets/status": { status: 200, body: { assets: [] } },
   [`GET /api/v1/projects/demo/versions/characters/${LONG_NAME}`]: versionsOf(LONG_NAME, 60),
 };
@@ -376,7 +382,10 @@ defineRegionScenarios("资产画廊", [
     api: {
       ...BASE,
       // 详情的衍生区块读取衍生图状态
-      "GET /api/v1/projects/demo/characters/林夕/derivatives": { status: 200, body: { success: true, derivatives: {} } },
+      "GET /api/v1/projects/demo/characters/林夕/derivatives": {
+        status: 200,
+        body: { success: true, derivatives: {} },
+      },
     },
     ready: galleryReady,
     act: async (page) => {
@@ -447,7 +456,7 @@ defineRegionScenarios("资产画廊", [
     ready: galleryReady,
     act: async (page) => {
       const viewer = await openViewer(page, "林夕");
-      await viewer.getByRole("button", { name: "第 1 版", exact: true }).click();
+      await viewer.getByRole("button", { name: "v1 · 第 1 版", exact: true }).click();
       await expect(viewer.getByText("正在查看旧版本，当前是第 3 版")).toBeVisible();
       await viewer.getByRole("button", { name: "还原到此版本" }).click();
       const confirm = page.getByRole("alertdialog", { name: "还原到第 1 版？" });
@@ -468,7 +477,7 @@ defineRegionScenarios("资产画廊", [
       const viewer = await openViewer(page, LONG_NAME);
       const strip = viewer.getByRole("list", { name: "历史版本" });
       await expect(strip.getByRole("button")).toHaveCount(60);
-      const first = strip.getByRole("button", { name: "第 1 版", exact: true });
+      const first = strip.getByRole("button", { name: "v1 · 第 1 版", exact: true });
       await first.scrollIntoViewIfNeeded();
       await first.click();
       await expect(viewer.getByRole("button", { name: "还原到此版本" })).toBeInViewport({ ratio: 1 });

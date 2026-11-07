@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import i18n from "@/i18n";
@@ -72,12 +72,11 @@ describe("UsageRecordsSection trend", () => {
     // 表头 + 两个日桶。
     expect(rows).toHaveLength(3);
     expect(within(rows[1]).getByRole("rowheader")).toHaveTextContent("3/14");
-    expect(within(rows[1]).getAllByRole("cell").map((cell) => cell.textContent)).toEqual([
-      "4",
-      "1",
-      "0",
-      "5",
-    ]);
+    expect(
+      within(rows[1])
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent),
+    ).toEqual(["4", "1", "0", "5"]);
   });
 
   it("switches to the reference cost view and footnotes the currencies left out", async () => {

@@ -1,18 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, vi } from "vitest";
+import { expect, vi } from "vite-plus/test";
 import { Router, useSearch } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
 import { LeaveGuardProvider } from "@/components/shared/edit-unit/LeaveGuard";
 import { useAppStore } from "@/stores/app-store";
 import { useEndpointCatalogStore } from "@/stores/endpoint-catalog-store";
-import type {
-  CustomEndpointInfo,
-  EndpointDefinition,
-  EndpointDescriptor,
-  EndpointValidateResponse,
-} from "@/types";
+import type { CustomEndpointInfo, EndpointDefinition, EndpointDescriptor, EndpointValidateResponse } from "@/types";
 import { EndpointsSection } from "./EndpointsSection";
 
 // EndpointsSection 的测试按行为域拆成多个文件（主流程、ComfyUI、市场集成、分享到官方市场），
@@ -86,6 +81,7 @@ export function descriptor(overrides: Partial<EndpointDescriptor>): EndpointDesc
     request_path_template: "/v1/videos",
     image_capabilities: null,
     end_image_capable: false,
+    custom_selectable: true,
     size_fixed: false,
     duration_fixed: false,
     duration_frame_rate_missing: false,
@@ -213,7 +209,6 @@ export function captureDownloads() {
   });
   return downloads;
 }
-
 
 /** 各拆分文件共用的起点：空 store、目录里只有 MINE、列表与校验接口的替身就位。 */
 export function stubEndpointsSection() {

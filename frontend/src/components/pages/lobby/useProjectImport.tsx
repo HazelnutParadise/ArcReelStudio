@@ -31,7 +31,9 @@ interface ImportAttempt {
 }
 
 function hasDiagnostics(diagnostics: ImportFailureDiagnostics | undefined): diagnostics is ImportFailureDiagnostics {
-  return !!diagnostics && diagnostics.blocking.length + diagnostics.auto_fixable.length + diagnostics.warnings.length > 0;
+  return (
+    !!diagnostics && diagnostics.blocking.length + diagnostics.auto_fixable.length + diagnostics.warnings.length > 0
+  );
 }
 
 /**

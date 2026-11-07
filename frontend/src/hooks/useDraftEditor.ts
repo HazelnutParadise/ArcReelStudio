@@ -78,7 +78,13 @@ export function diagnosticCode(err: unknown): string | null {
  * AI 修复以排队文本任务执行：占用本份草稿的任务槽期间 `repairing` 为真。本界面提交的、或看到在跑的
  * 那次修复到达终态时，提示结果并通知调用方刷新；采用后草稿视图会消失，因此按任务 ID 跟踪。
  */
-export function useDraftEditor<T>({ projectName, episode, view, narrow, onSettled }: DraftEditorOptions<T>): DraftEditorHandle<T> {
+export function useDraftEditor<T>({
+  projectName,
+  episode,
+  view,
+  narrow,
+  onSettled,
+}: DraftEditorOptions<T>): DraftEditorHandle<T> {
   const { t } = useTranslation("dashboard");
   const pushToast = useAppStore((s) => s.pushToast);
   const [synced, setSynced] = useState<Synced<T> | null>(null);

@@ -8,6 +8,7 @@ from lib.db.models.asset_library import AssetLibraryAccount, AssetLibraryBinding
 from lib.db.models.builtin_provider_model import BuiltinProviderModelState
 from lib.db.models.catalog_official_sync import CatalogOfficialSync
 from lib.db.models.catalog_user_entry import CatalogUserEntry
+from lib.db.models.claude_subscription import ClaudeSubscription
 from lib.db.models.config import ProviderConfig, SystemSetting
 from lib.db.models.credential import ProviderCredential
 from lib.db.models.custom_endpoint import CustomEndpoint
@@ -37,6 +38,7 @@ __all__ = [
     "BuiltinProviderModelState",
     "CatalogOfficialSync",
     "CatalogUserEntry",
+    "ClaudeSubscription",
     "CustomEndpoint",
     "CustomProvider",
     "CustomProviderModel",

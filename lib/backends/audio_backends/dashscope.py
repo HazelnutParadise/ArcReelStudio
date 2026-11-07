@@ -16,7 +16,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import httpx
+import httpx2
 
 from lib.backends.artifact_download_guard import (
     AUDIO_ARTIFACT_MAX_BYTES,
@@ -225,7 +225,7 @@ class DashScopeAudioBackend:
                 logger.warning("DashScope 音频下载返回 %s: %s", resp.status_code, safe_url)
                 # 不用 raise_for_status：它生成的异常文本携带完整预签名 URL；
                 # 手动构造保留异常类型与 .response.status_code，消息只带脱敏 URL。
-                raise httpx.HTTPStatusError(
+                raise httpx2.HTTPStatusError(
                     f"DashScope 音频下载返回 {resp.status_code}: {safe_url}",
                     request=resp.request,
                     response=await buffered_error_response(resp),

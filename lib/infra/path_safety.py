@@ -120,7 +120,7 @@ def try_safe_join(
             must_exist=must_exist,
             require_file=require_file,
         )
-    except (OSError, ValueError, TypeError):
+    except OSError, ValueError, TypeError:
         # TypeError：片段来自 project.json 原始字段，脏数据（dict/int）按「不存在」处理
         return None
 

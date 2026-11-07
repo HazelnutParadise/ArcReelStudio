@@ -84,7 +84,11 @@ function CandidateList({ bindingKey, candidates, targets, onToggle }: CandidateL
 
   // 各个候选由 radiogroup 直接持有，中间不隔一层 listitem。
   return (
-    <div className="flex flex-col gap-1" role={multiple ? "group" : "radiogroup"} aria-label={t("ce_cf_candidates_label")}>
+    <div
+      className="flex flex-col gap-1"
+      role={multiple ? "group" : "radiogroup"}
+      aria-label={t("ce_cf_candidates_label")}
+    >
       {candidates.map((candidate, index) => {
         const selected = chosen.has(index);
         const order = selected && ordered ? (targets ?? []).findIndex((x) => sameTarget(x, candidate.target)) + 1 : 0;

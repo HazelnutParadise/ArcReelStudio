@@ -14,6 +14,7 @@ import {
   ScrollText,
   SlidersHorizontal,
   Store,
+  Users,
   Waypoints,
   type LucideIcon,
 } from "lucide-react";
@@ -31,6 +32,7 @@ import { UsageRecordsSection } from "../usage/UsageRecordsSection";
 import { AgentConfigTab } from "./AgentConfigTab";
 import { ProviderSection } from "./ProviderSection";
 import { AboutSection } from "./settings/AboutSection";
+import { AccountSection } from "./settings/AccountSection";
 import { AssetLibrarySection } from "./settings/asset-library/AssetLibrarySection";
 import { AccessTokensSection } from "./settings/agent-access/AccessTokensSection";
 import { ExternalAgentSection } from "./settings/agent-access/ExternalAgentSection";
@@ -58,6 +60,7 @@ const SECTIONS: Record<SettingsSection, SectionDef> = {
   "access-tokens": { labelKey: "dashboard:settings_access_tokens", icon: KeyRound, tier: "constrained" },
   market: { labelKey: "dashboard:market_section_title", icon: Store, tier: "full" },
   usage: { labelKey: "dashboard:usage", icon: BarChart3, tier: "full" },
+  account: { labelKey: "dashboard:settings_account", icon: Users, tier: "constrained" },
   general: { labelKey: "dashboard:settings_general", icon: SlidersHorizontal, tier: "constrained" },
   "prompt-templates": { labelKey: "dashboard:prompt_templates", icon: ScrollText, tier: "constrained" },
   about: { labelKey: "dashboard:about", icon: Info, tier: "constrained" },
@@ -65,14 +68,22 @@ const SECTIONS: Record<SettingsSection, SectionDef> = {
 
 /** 侧栏分组与顺序。市场与使用记录各自单独成项，不设分组标题。 */
 const SECTION_GROUPS: { id: string; labelKey?: string; sections: SettingsSection[] }[] = [
-  { id: "generation", labelKey: "dashboard:settings_group_generation", sections: ["providers", "default-models", "endpoints", "asset-library"] },
+  {
+    id: "generation",
+    labelKey: "dashboard:settings_group_generation",
+    sections: ["providers", "default-models", "endpoints", "asset-library"],
+  },
   {
     id: "agent",
     labelKey: "dashboard:settings_group_agent",
     sections: ["arcreel-agent", "agent-memory", "external-agent", "access-tokens"],
   },
   { id: "standalone", sections: ["market", "usage"] },
-  { id: "system", labelKey: "dashboard:settings_group_system", sections: ["general", "prompt-templates", "about"] },
+  {
+    id: "system",
+    labelKey: "dashboard:settings_group_system",
+    sections: ["account", "general", "prompt-templates", "about"],
+  },
 ];
 
 /** 引导第 4、5 步指向的侧栏入口。 */
@@ -116,12 +127,11 @@ export function SystemConfigPage() {
           icon: SECTIONS[id].icon,
           href: settingsSectionPath(id),
           onboardingAnchor: SECTION_ONBOARDING_ANCHORS[id],
-          badge:
-            issueSections.has(id) ? (
-              <span role="img" aria-label={t("dashboard:config_incomplete")} className="text-warn">
-                <AlertTriangle aria-hidden className="size-3.5" />
-              </span>
-            ) : undefined,
+          badge: issueSections.has(id) ? (
+            <span role="img" aria-label={t("dashboard:config_incomplete")} className="text-warn">
+              <AlertTriangle aria-hidden className="size-3.5" />
+            </span>
+          ) : undefined,
         })),
       })),
     [t, issueSections],
@@ -166,6 +176,8 @@ function SectionContent({ section }: { section: SettingsSection }) {
       return <MarketSection />;
     case "usage":
       return <UsageRecordsSection />;
+    case "account":
+      return <AccountSection />;
     case "general":
       return <GeneralSection />;
     case "prompt-templates":

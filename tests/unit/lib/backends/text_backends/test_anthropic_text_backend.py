@@ -8,7 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Literal
 
-import httpx
+import httpx2
 from pydantic import BaseModel
 
 from lib.backends.text_backends.base import ImageInput, TextGenerationRequest
@@ -28,7 +28,7 @@ def _provider(base_url: str = "https://relay.example.com/anthropic") -> SimpleNa
     return SimpleNamespace(provider_id="custom-7", base_url=base_url, api_key="sk-relay")
 
 
-def _sse(text: str, *, usage: dict, output_tokens: int, stop_reason: str = "end_turn") -> httpx.Response:
+def _sse(text: str, *, usage: dict, output_tokens: int, stop_reason: str = "end_turn") -> httpx2.Response:
     """按 Messages 流式协议拼一条只含单个文本块的回包。"""
     events = [
         (
@@ -67,7 +67,7 @@ def _sse(text: str, *, usage: dict, output_tokens: int, stop_reason: str = "end_
         ("message_stop", {"type": "message_stop"}),
     ]
     body = "".join(f"event: {name}\ndata: {json.dumps(data)}\n\n" for name, data in events)
-    return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=body.encode())
+    return httpx2.Response(200, headers={"content-type": "text/event-stream"}, content=body.encode())
 
 
 async def test_structured_output_with_image_is_encoded_natively(tmp_path: Path):
@@ -100,6 +100,7 @@ async def test_structured_output_with_image_is_encoded_natively(tmp_path: Path):
 
     request = only_request(route)
     assert request.headers["x-api-key"] == "sk-relay"
+    assert "authorization" not in request.headers
     body = request_json(request)
     assert body["model"] == "claude-x"
     assert body["max_tokens"] == 64000

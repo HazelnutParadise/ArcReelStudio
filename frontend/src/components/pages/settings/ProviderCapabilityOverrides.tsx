@@ -85,7 +85,11 @@ export function ProviderCapabilityOverrides({ capabilities, value, onChange, onV
               <span className="min-w-0 flex-1">
                 <TruncatedText
                   className="text-sm text-subtle-foreground"
-                  text={capabilityValueText(t, key, key in capabilities.effective ? capabilities.effective[key] : capabilities.base[key])}
+                  text={capabilityValueText(
+                    t,
+                    key,
+                    key in capabilities.effective ? capabilities.effective[key] : capabilities.base[key],
+                  )}
                 />
               </span>
             </li>
@@ -96,7 +100,11 @@ export function ProviderCapabilityOverrides({ capabilities, value, onChange, onV
         return (
           <li
             key={key}
-            className={cn("flex flex-col gap-2 px-3 py-2", key === "duration_constraints" && "pl-6", overridden && "bg-primary/7")}
+            className={cn(
+              "flex flex-col gap-2 px-3 py-2",
+              key === "duration_constraints" && "pl-6",
+              overridden && "bg-primary/7",
+            )}
           >
             <div className="flex items-center gap-2">
               <span className="w-36 shrink-0 text-sm">{label}</span>
@@ -109,7 +117,12 @@ export function ProviderCapabilityOverrides({ capabilities, value, onChange, onV
                 {capabilityValueText(t, key, base)}
               </span>
               {overridden ? (
-                <Button variant="ghost" size="xs" aria-label={t("pm_cap_restore_named", { name: label })} onClick={() => set(key, undefined)}>
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  aria-label={t("pm_cap_restore_named", { name: label })}
+                  onClick={() => set(key, undefined)}
+                >
                   {t("pm_cap_restore")}
                 </Button>
               ) : (
@@ -171,7 +184,15 @@ interface EditorProps {
  * 一个能力维度的取值编辑器，「这个供应商支持的参数」与「模型信息」共用。文本输入只在挂载时取 `value` 作初值，
  * 外部改了取值（放弃修改、采用官方值）时由调用方换 `key` 重新挂载；卸载的文本输入不再拦着保存。
  */
-export function CapabilityValueEditor({ dimension, label, value, resolutions, hint, onChange, onValidityChange }: EditorProps) {
+export function CapabilityValueEditor({
+  dimension,
+  label,
+  value,
+  resolutions,
+  hint,
+  onChange,
+  onValidityChange,
+}: EditorProps) {
   const { t } = useTranslation("dashboard");
   const editLabel = t("pm_cap_edit_named", { name: label });
 
@@ -232,7 +253,14 @@ export function CapabilityValueEditor({ dimension, label, value, resolutions, hi
         initial={Array.isArray(value) ? (value as string[]).join(", ") : ""}
         hint={t("pm_cap_list_hint")}
         parse={(text) => {
-          const list = [...new Set(text.split(/[,，\s]+/).map((item) => item.trim()).filter(Boolean))];
+          const list = [
+            ...new Set(
+              text
+                .split(/[,，\s]+/)
+                .map((item) => item.trim())
+                .filter(Boolean),
+            ),
+          ];
           return list.length ? { value: list } : { error: t("pm_cap_error_required") };
         }}
         onChange={onChange}
@@ -356,7 +384,12 @@ function ConstraintsEditor({ value, resolutions, onChange, onValidityChange }: C
   const allowedFor = (resolution: string) =>
     Object.entries(byResolution).find(([res]) => sameResolution(res, resolution))?.[1];
 
-  const row = (key: string, rowLabel: string, initial: number[] | undefined, apply: (list: number[]) => Constraints) => (
+  const row = (
+    key: string,
+    rowLabel: string,
+    initial: number[] | undefined,
+    apply: (list: number[]) => Constraints,
+  ) => (
     <div key={key} className="grid grid-cols-[7rem_minmax(0,1fr)] items-start gap-x-3">
       <span className="pt-1.5 text-xs text-muted-foreground">{rowLabel}</span>
       <ParsedInput
@@ -371,10 +404,14 @@ function ConstraintsEditor({ value, resolutions, onChange, onValidityChange }: C
 
   return (
     <div className="flex flex-col gap-2">
-      {resolutions.length === 0 && <p className="text-xs text-muted-foreground">{t("pm_cap_constraint_no_resolutions")}</p>}
+      {resolutions.length === 0 && (
+        <p className="text-xs text-muted-foreground">{t("pm_cap_constraint_no_resolutions")}</p>
+      )}
       {resolutions.map((resolution) =>
         row(`res:${resolution}`, resolution, allowedFor(resolution), (list) => {
-          const kept = Object.fromEntries(Object.entries(byResolution).filter(([res]) => !sameResolution(res, resolution)));
+          const kept = Object.fromEntries(
+            Object.entries(byResolution).filter(([res]) => !sameResolution(res, resolution)),
+          );
           return { ...value, by_resolution: list.length ? { ...kept, [resolution]: list } : kept };
         }),
       )}

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -12,7 +12,10 @@ import { CharacterDerivativeRow, type CharacterDerivativeRowProps } from "./Char
 const SHEET_PATH = "characters/derivatives/阿岚/战斗装.png";
 const IMAGE_ALT = "衍生「阿岚/战斗装」的资产图";
 
-function renderRow(status: CharacterDerivativeStatus | undefined, overrides: Partial<CharacterDerivativeRowProps> = {}) {
+function renderRow(
+  status: CharacterDerivativeStatus | undefined,
+  overrides: Partial<CharacterDerivativeRowProps> = {},
+) {
   render(
     <ul>
       <CharacterDerivativeRow
@@ -77,7 +80,9 @@ describe("CharacterDerivativeRow", () => {
       content_mode: "narration",
       style: "Anime",
       episodes: [],
-      characters: { 阿岚: { description: "", derivatives: { 战斗装: { description: "换上黑色重甲", character_sheet } } } },
+      characters: {
+        阿岚: { description: "", derivatives: { 战斗装: { description: "换上黑色重甲", character_sheet } } },
+      },
       scenes: {},
       props: {},
     });
@@ -128,7 +133,12 @@ describe("CharacterDerivativeRow", () => {
   });
 
   it("enqueues a regeneration addressed by the compound resource id after confirming the impact", async () => {
-    vi.spyOn(API, "getAssetRegenerationImpact").mockResolvedValue({ stale: true, storyboards: 2, videos: 1, derivatives: 0 });
+    vi.spyOn(API, "getAssetRegenerationImpact").mockResolvedValue({
+      stale: true,
+      storyboards: 2,
+      videos: 1,
+      derivatives: 0,
+    });
     const spy = vi
       .spyOn(API, "generateCharacterDerivative")
       .mockResolvedValue({ success: true, task_id: "task-1", deduped: false, message: "已提交" });
@@ -171,7 +181,12 @@ describe("CharacterDerivativeRow", () => {
 
   it("rechecks the busy slot at submit time and drops the click", async () => {
     const spy = vi.spyOn(API, "generateCharacterDerivative");
-    vi.spyOn(API, "getAssetRegenerationImpact").mockResolvedValue({ stale: false, storyboards: 0, videos: 0, derivatives: 0 });
+    vi.spyOn(API, "getAssetRegenerationImpact").mockResolvedValue({
+      stale: false,
+      storyboards: 0,
+      videos: 0,
+      derivatives: 0,
+    });
     renderRow({ description: "换上黑色重甲", character_sheet: SHEET_PATH, stale: false });
     // 渲染之后本体被另一次生成占用：提交时刻新鲜读复核应当拦下
     useTasksStore.setState({
@@ -202,7 +217,9 @@ describe("CharacterDerivativeRow", () => {
       ],
     });
     vi.spyOn(API, "listProviderAssets").mockResolvedValue({
-      items: [{ id: "asset-1", name: "重甲正面", asset_type: "Image", status: "active", error_code: null, created_at: null }],
+      items: [
+        { id: "asset-1", name: "重甲正面", asset_type: "Image", status: "active", error_code: null, created_at: null },
+      ],
       total: 1,
       page: 1,
       page_size: 20,
@@ -215,7 +232,12 @@ describe("CharacterDerivativeRow", () => {
         content_mode: "narration",
         style: "Anime",
         episodes: [],
-        characters: { 阿岚: { description: "", derivatives: { 战斗装: { description: "换上黑色重甲", character_sheet: SHEET_PATH } } } },
+        characters: {
+          阿岚: {
+            description: "",
+            derivatives: { 战斗装: { description: "换上黑色重甲", character_sheet: SHEET_PATH } },
+          },
+        },
         scenes: {},
         props: {},
       },

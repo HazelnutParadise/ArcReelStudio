@@ -18,6 +18,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from mcp import types
+from mcp.client import Client
 from mcp.server import Server
 from PIL import Image
 
@@ -256,11 +257,9 @@ def _remote_arguments(declaration: AgentToolDeclaration, arguments: dict[str, An
 
 
 async def _call_server(server: Server, name: str, arguments: dict[str, Any]) -> types.CallToolResult:
-    """经 in-process server 的请求入口调用，拿到的就是模型能看到的 content 与 isError。"""
-    request = types.CallToolRequest(params=types.CallToolRequestParams(name=name, arguments=arguments))
-    result = (await server.request_handlers[types.CallToolRequest](request)).root
-    assert isinstance(result, types.CallToolResult)
-    return result
+    """经内存客户端调用 in-process server，拿到的就是模型能看到的 content 与 is_error。"""
+    async with Client(server) as client:
+        return await client.call_tool(name, arguments)
 
 
 async def _call_embedded(
@@ -286,7 +285,7 @@ async def _call_remote(
         services=services,
         caller=lambda: CallerContext(user_id="u1", source="mcp"),
     )
-    result = await tool.run(arguments)
+    result = await tool.run(arguments, None)
     assert isinstance(result, types.CallToolResult)
     return result
 
@@ -311,8 +310,8 @@ def _without_project(schema: dict[str, Any]) -> dict[str, Any]:
 
 async def _embedded_listing(seeded_projects: ProjectManager) -> dict[str, types.Tool]:
     server = build_arcreel_mcp_server(project_name="demo", data_root=seeded_projects.data_root)["instance"]
-    result = (await server.request_handlers[types.ListToolsRequest](types.ListToolsRequest(method="tools/list"))).root
-    assert isinstance(result, types.ListToolsResult)
+    async with Client(server) as client:
+        result = await client.list_tools()
     return {tool.name: tool for tool in result.tools}
 
 
@@ -326,11 +325,11 @@ async def test_both_hosts_expose_the_declared_name_schema_and_description(
     ]
 
     assert declaration.name in ARCREEL_MCP_TOOL_IDS
-    assert "project" not in embedded.inputSchema["properties"]
-    assert remote.inputSchema["properties"]["project"]["type"] == "string"
-    assert remote.inputSchema["required"][0] == "project"
-    assert _without_project(remote.inputSchema) == embedded.inputSchema
-    assert all(spec.get("description") for spec in embedded.inputSchema["properties"].values())
+    assert "project" not in embedded.input_schema["properties"]
+    assert remote.input_schema["properties"]["project"]["type"] == "string"
+    assert remote.input_schema["required"][0] == "project"
+    assert _without_project(remote.input_schema) == embedded.input_schema
+    assert all(spec.get("description") for spec in embedded.input_schema["properties"].values())
     assert embedded.description == tool_description(declaration)
     assert remote.description == tool_description(declaration) + (LONG_TASK_NOTE if declaration.long_task else "")
     assert embedded.description.endswith(MIGRATION_REFUSAL_NOTE) is isinstance(declaration.migration, Blocked)
@@ -350,9 +349,9 @@ async def test_both_hosts_expose_an_unscoped_declaration_without_project(
     ]
 
     assert declaration.name in ARCREEL_MCP_TOOL_IDS
-    assert "project" not in remote.inputSchema["properties"]
-    assert remote.inputSchema == embedded.inputSchema == declaration.input_schema
-    assert all(spec.get("description") for spec in embedded.inputSchema["properties"].values())
+    assert "project" not in remote.input_schema["properties"]
+    assert remote.input_schema == embedded.input_schema == declaration.input_schema
+    assert all(spec.get("description") for spec in embedded.input_schema["properties"].values())
     assert embedded.description == remote.description == declaration.description
     assert MIGRATION_REFUSAL_NOTE not in embedded.description
 
@@ -389,9 +388,9 @@ async def test_problems_pass_through_both_hosts_unchanged(
             "params": {"ids": ["E1S01"]},
         }
     }
-    assert embedded.isError is True
-    assert remote.isError is True
-    assert _embedded_json(embedded) == remote.structuredContent == expected
+    assert embedded.is_error is True
+    assert remote.is_error is True
+    assert _embedded_json(embedded) == remote.structured_content == expected
     assert _texts(embedded) == _texts(remote)
 
 
@@ -406,13 +405,13 @@ async def test_invalid_arguments_are_rejected_as_the_same_invalid_request_by_bot
     embedded = await _call_server(session_server, declaration.name, arguments)
     remote = await _call_remote(declaration, _remote_arguments(declaration, arguments), services)
 
-    assert embedded.isError is True
-    assert remote.isError is True
-    assert _embedded_json(embedded) == remote.structuredContent
+    assert embedded.is_error is True
+    assert remote.is_error is True
+    assert _embedded_json(embedded) == remote.structured_content
     assert _texts(embedded) == _texts(remote)
-    assert remote.structuredContent is not None
-    assert remote.structuredContent["problem"]["code"] == "invalid_request"
-    assert remote.structuredContent["problem"]["params"]["errors"][0]["loc"] == ["unexpected"]
+    assert remote.structured_content is not None
+    assert remote.structured_content["problem"]["code"] == "invalid_request"
+    assert remote.structured_content["problem"]["params"]["errors"][0]["loc"] == ["unexpected"]
 
 
 @_SCOPED_DECLARATIONS
@@ -431,11 +430,11 @@ async def test_a_blocked_declaration_refuses_a_migration_failed_project_at_both_
     remote = await _call_remote(blocked, {"project": "demo", **SAMPLE_ARGUMENTS[declaration.name]}, services)
 
     assert calls == []
-    assert embedded.isError is True
-    assert _embedded_json(embedded) == remote.structuredContent
+    assert embedded.is_error is True
+    assert _embedded_json(embedded) == remote.structured_content
     assert _texts(embedded) == _texts(remote)
-    assert remote.structuredContent is not None
-    problem = remote.structuredContent["problem"]
+    assert remote.structured_content is not None
+    problem = remote.structured_content["problem"]
     assert problem["code"] == MIGRATION_FAILURE_CODE
     assert problem["action"] == RETRY_MIGRATION_ACTION
     assert problem["params"]["schema_version"] == CURRENT_PROJECT_SCHEMA_VERSION
@@ -464,7 +463,7 @@ async def test_unblocked_declarations_reach_the_handler_on_a_migration_failed_pr
     embedded = await _call_embedded(answering, SAMPLE_ARGUMENTS[declaration.name], services)
     remote = await _call_remote(answering, _remote_arguments(answering, SAMPLE_ARGUMENTS[declaration.name]), services)
 
-    assert _embedded_json(embedded) == remote.structuredContent == {declaration.domain_key: {"answered": True}}
+    assert _embedded_json(embedded) == remote.structured_content == {declaration.domain_key: {"answered": True}}
 
 
 @pytest.mark.parametrize(
@@ -493,9 +492,9 @@ async def test_declared_blocked_entries_refuse_a_migration_failed_project_before
 
     assert declaration.name in MIGRATION_BLOCKED_TOOL_IDS
     assert calls == []
-    assert _embedded_json(embedded) == remote.structuredContent
-    assert remote.structuredContent is not None
-    problem = remote.structuredContent["problem"]
+    assert _embedded_json(embedded) == remote.structured_content
+    assert remote.structured_content is not None
+    problem = remote.structured_content["problem"]
     assert problem["code"] == MIGRATION_FAILURE_CODE
     assert problem["action"] == RETRY_MIGRATION_ACTION
 
@@ -513,12 +512,12 @@ async def test_episode_script_reader_reports_the_same_migration_problem_in_both_
     embedded = await _call_embedded(declaration, {"script": "episode_1.json"}, services)
     remote = await _call_remote(declaration, {"project": "demo", "script": "episode_1.json"}, services)
 
-    assert embedded.isError is True
-    assert remote.isError is True
-    assert _embedded_json(embedded) == remote.structuredContent
+    assert embedded.is_error is True
+    assert remote.is_error is True
+    assert _embedded_json(embedded) == remote.structured_content
     assert _texts(embedded) == _texts(remote)
-    assert remote.structuredContent is not None
-    problem = remote.structuredContent["problem"]
+    assert remote.structured_content is not None
+    problem = remote.structured_content["problem"]
     assert problem["code"] == MIGRATION_FAILURE_CODE
     assert problem["action"] == RETRY_MIGRATION_ACTION
     assert problem["params"]["schema_version"] == CURRENT_PROJECT_SCHEMA_VERSION
@@ -536,11 +535,11 @@ async def test_patch_episode_script_reports_a_missing_script_as_script_not_found
         _twin_services(seeded_projects, tmp_path),
     )
 
-    assert embedded.isError is True
-    assert remote.isError is True
-    assert _embedded_json(embedded) == remote.structuredContent
-    assert remote.structuredContent is not None
-    assert remote.structuredContent["problem"]["code"] == "script_not_found"
+    assert embedded.is_error is True
+    assert remote.is_error is True
+    assert _embedded_json(embedded) == remote.structured_content
+    assert remote.structured_content is not None
+    assert remote.structured_content["problem"]["code"] == "script_not_found"
 
 
 def _twin_services(seeded_projects: ProjectManager, tmp_path: Path) -> Services:
@@ -611,10 +610,10 @@ async def test_embedded_content_carries_the_same_json_as_remote_structured_conte
     embedded = await _call_embedded(declaration, SAMPLE_ARGUMENTS[declaration.name], services)
     remote = await _call_remote(declaration, _remote_arguments(declaration, SAMPLE_ARGUMENTS[declaration.name]), twin)
 
-    assert embedded.isError is remote.isError is (declaration.name in _PROBLEM_ON_SAMPLE)
-    assert remote.structuredContent is not None
-    assert set(remote.structuredContent) == {"problem" if remote.isError else declaration.domain_key}
-    assert _embedded_json(embedded) == remote.structuredContent
+    assert embedded.is_error is remote.is_error is (declaration.name in _PROBLEM_ON_SAMPLE)
+    assert remote.structured_content is not None
+    assert set(remote.structured_content) == {"problem" if remote.is_error else declaration.domain_key}
+    assert _embedded_json(embedded) == remote.structured_content
     assert _texts(embedded) == _texts(remote)
 
 
@@ -637,16 +636,16 @@ async def test_contact_sheets_reach_both_hosts_as_the_same_image_blocks(
     embedded = await _call_embedded(INSPECT_VIDEO_UNITS, arguments, services)
     remote = await _call_remote(INSPECT_VIDEO_UNITS, {"project": "demo", **arguments}, services)
 
-    assert embedded.isError is remote.isError is False
-    assert _embedded_json(embedded) == remote.structuredContent
+    assert embedded.is_error is remote.is_error is False
+    assert _embedded_json(embedded) == remote.structured_content
     assert _texts(embedded) == _texts(remote)
     embedded_images = [block for block in embedded.content if isinstance(block, types.ImageContent)]
     remote_images = [block for block in remote.content if isinstance(block, types.ImageContent)]
     assert len(embedded_images) == 1
-    assert [(image.mimeType, image.data) for image in embedded_images] == [
-        (image.mimeType, image.data) for image in remote_images
+    assert [(image.mime_type, image.data) for image in embedded_images] == [
+        (image.mime_type, image.data) for image in remote_images
     ]
-    assert embedded_images[0].mimeType == "image/jpeg"
+    assert embedded_images[0].mime_type == "image/jpeg"
     assert base64.b64decode(embedded_images[0].data).startswith(b"\xff\xd8")
     assert isinstance(embedded.content[-1], types.ImageContent)
 
@@ -664,13 +663,13 @@ async def test_inspected_images_reach_both_hosts_as_the_same_image_blocks(
     embedded = await _call_embedded(INSPECT_IMAGES, arguments, services)
     remote = await _call_remote(INSPECT_IMAGES, {"project": "demo", **arguments}, services)
 
-    assert embedded.isError is remote.isError is False
-    assert _embedded_json(embedded) == remote.structuredContent
+    assert embedded.is_error is remote.is_error is False
+    assert _embedded_json(embedded) == remote.structured_content
     embedded_images = [block for block in embedded.content if isinstance(block, types.ImageContent)]
     remote_images = [block for block in remote.content if isinstance(block, types.ImageContent)]
     assert len(embedded_images) == 1
-    assert [(image.mimeType, image.data) for image in embedded_images] == [
-        (image.mimeType, image.data) for image in remote_images
+    assert [(image.mime_type, image.data) for image in embedded_images] == [
+        (image.mime_type, image.data) for image in remote_images
     ]
     assert base64.b64decode(embedded_images[0].data).startswith(b"\xff\xd8")
     assert isinstance(embedded.content[-1], types.ImageContent)
@@ -687,7 +686,7 @@ async def test_a_summary_precedes_the_structured_json_in_both_hosts(services: Se
     remote = await _call_remote(summarized, {"project": "demo"}, services)
 
     assert _texts(embedded) == _texts(remote) == ["已读取《Demo》", '{"project_content": {"title": "Demo"}}']
-    assert remote.structuredContent == {"project_content": {"title": "Demo"}}
+    assert remote.structured_content == {"project_content": {"title": "Demo"}}
 
 
 @_SCOPED_DECLARATIONS
@@ -707,9 +706,9 @@ async def test_remote_project_locating_failures_are_invalid_project(
     result = await _call_remote(answering, arguments, services)
 
     assert calls == []
-    assert result.isError is True
-    assert result.structuredContent is not None
-    assert result.structuredContent["problem"]["code"] == "invalid_project"
+    assert result.is_error is True
+    assert result.structured_content is not None
+    assert result.structured_content["problem"]["code"] == "invalid_project"
 
 
 async def test_embedded_terminal_generation_result_has_the_shape_remote_polling_reads_at_the_terminal_state(
@@ -737,10 +736,10 @@ async def test_embedded_terminal_generation_result_has_the_shape_remote_polling_
     embedded = await _call_server(session_server, declaration.name, arguments)
     remote = await remote_tool(
         declaration, projects=seeded_projects, services=services, caller=lambda: remote_caller
-    ).run({"project": "demo", **arguments})
+    ).run({"project": "demo", **arguments}, None)
     assert isinstance(remote, types.CallToolResult)
-    assert remote.structuredContent is not None
-    handle = remote.structuredContent["generation_batch"]
+    assert remote.structured_content is not None
+    handle = remote.structured_content["generation_batch"]
     polled = await get_generation_batch(
         ToolRequest(GenerationBatchToolRequest(batch_id=handle["batch_id"])),
         _scope(seeded_projects),
@@ -750,12 +749,12 @@ async def test_embedded_terminal_generation_result_has_the_shape_remote_polling_
 
     # 内嵌：摘要在前、终态结果 JSON 在后；批次全部被阻断即结果级失败。
     terminal = _embedded_json(embedded)
-    assert embedded.isError is True
+    assert embedded.is_error is True
     assert len(_texts(embedded)) == 2
     assert set(terminal) == {"generation_result", "batch_id"}
     # 远程：立即拿到批次句柄，按句柄轮询到终态后读取附带的生成结果。
-    assert remote.isError is False
-    assert set(remote.structuredContent) == {"generation_batch"}
+    assert remote.is_error is False
+    assert set(remote.structured_content) == {"generation_batch"}
     assert polled.value is not None
     assert polled.value.done is True
     assert polled.value.generation_result is not None
@@ -787,11 +786,11 @@ async def test_grid_list_only_preview_is_the_same_json_in_both_hosts(
     embedded = await _call_embedded(GENERATE_GRID, arguments, services)
     remote = await _call_remote(GENERATE_GRID, _remote_arguments(GENERATE_GRID, arguments), services)
 
-    assert embedded.isError is remote.isError is False
-    assert remote.structuredContent is not None
-    assert set(remote.structuredContent) == {GENERATE_GRID.name}
-    assert "E1S01..E1S04" in remote.structuredContent[GENERATE_GRID.name]
-    assert _embedded_json(embedded) == remote.structuredContent
+    assert embedded.is_error is remote.is_error is False
+    assert remote.structured_content is not None
+    assert set(remote.structured_content) == {GENERATE_GRID.name}
+    assert "E1S01..E1S04" in remote.structured_content[GENERATE_GRID.name]
+    assert _embedded_json(embedded) == remote.structured_content
     assert _texts(embedded) == _texts(remote)
 
 
@@ -823,9 +822,9 @@ async def test_a_text_generation_dry_run_returns_the_same_prompt_in_both_hosts(
     embedded = await _call_embedded(GENERATE_EPISODE_SCRIPT, arguments, services)
     remote = await _call_remote(GENERATE_EPISODE_SCRIPT, {"project": "demo", **arguments}, twin)
 
-    assert embedded.isError is remote.isError is False
-    assert remote.structuredContent is not None
-    assert set(remote.structuredContent) == {"text_generation"}
-    assert "DRY RUN" in remote.structuredContent["text_generation"]["message"]
-    assert _embedded_json(embedded) == remote.structuredContent
+    assert embedded.is_error is remote.is_error is False
+    assert remote.structured_content is not None
+    assert set(remote.structured_content) == {"text_generation"}
+    assert "DRY RUN" in remote.structured_content["text_generation"]["message"]
+    assert _embedded_json(embedded) == remote.structured_content
     assert _texts(embedded) == _texts(remote)

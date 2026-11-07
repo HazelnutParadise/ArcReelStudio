@@ -130,8 +130,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => {
     error: null,
     confirmedDurations: {},
 
-    confirmDurations: (durations) =>
-      set((s) => ({ confirmedDurations: { ...s.confirmedDurations, ...durations } })),
+    confirmDurations: (durations) => set((s) => ({ confirmedDurations: { ...s.confirmedDurations, ...durations } })),
 
     resetTarget: () => {
       rotateScope();
@@ -156,10 +155,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => {
       // 只在请求成功后才更新，首次加载期间它恒为 null，若拿它做判据，首次
       // 加载途中切换目标会因为「两次都读到 null」而放过 resetTarget，旧目标
       // 的响应回来后仍会写进 store。
-      if (
-        currentTarget !== null
-        && (currentTarget.projectName !== projectName || currentTarget.episode !== episode)
-      ) {
+      if (currentTarget !== null && (currentTarget.projectName !== projectName || currentTarget.episode !== episode)) {
         get().resetTarget();
       }
       currentTarget = { projectName, episode };

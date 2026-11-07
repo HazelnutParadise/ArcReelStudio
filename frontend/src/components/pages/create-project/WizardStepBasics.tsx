@@ -75,8 +75,16 @@ export function WizardStepBasics({ value, onChange, titleRef }: WizardStepBasics
         </p>
       </div>
 
-      <WizardSection title={<span id={contentModeId}>{t("content_mode")}</span>} description={t("wizard_content_mode_hint")}>
-        <div role="radiogroup" aria-labelledby={contentModeId} aria-required="true" className="grid grid-cols-3 gap-2.5">
+      <WizardSection
+        title={<span id={contentModeId}>{t("content_mode")}</span>}
+        description={t("wizard_content_mode_hint")}
+      >
+        <div
+          role="radiogroup"
+          aria-labelledby={contentModeId}
+          aria-required="true"
+          className="grid grid-cols-3 gap-2.5"
+        >
           {CONTENT_MODES.map(({ mode, labelKey, descKey }) => (
             <label key={mode} className={cn(choiceClass(value.contentMode === mode), "flex-col gap-1 px-3 py-2.5")}>
               <input
@@ -86,13 +94,22 @@ export function WizardStepBasics({ value, onChange, titleRef }: WizardStepBasics
                 checked={value.contentMode === mode}
                 onChange={() =>
                   // 广告项目不支持多宫格分镜：切到广告时清掉已打开的开关
-                  onChange({ ...value, contentMode: mode, gridStoryboard: mode === "ad" ? false : value.gridStoryboard })
+                  onChange({
+                    ...value,
+                    contentMode: mode,
+                    gridStoryboard: mode === "ad" ? false : value.gridStoryboard,
+                  })
                 }
                 className="sr-only"
               />
               <span className="text-sm font-medium text-foreground">{t(labelKey)}</span>
               {/* 选中项浅底上用中间档文字，保证对比度 */}
-              <span className={cn("text-xs", value.contentMode === mode ? "text-subtle-foreground" : "text-muted-foreground")}>
+              <span
+                className={cn(
+                  "text-xs",
+                  value.contentMode === mode ? "text-subtle-foreground" : "text-muted-foreground",
+                )}
+              >
                 {t(descKey)}
               </span>
             </label>

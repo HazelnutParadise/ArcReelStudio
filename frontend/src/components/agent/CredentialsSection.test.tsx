@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import type { PresetProvider } from "@/types/agent-credential";
@@ -19,6 +19,7 @@ const preset: PresetProvider = {
   notes: null,
   api_key_pattern: null,
   is_recommended: true,
+  fixed_endpoint: false,
 };
 
 beforeEach(() => {

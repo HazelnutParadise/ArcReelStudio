@@ -9,7 +9,6 @@ const EPISODE_PATH = "/app/projects/demo/episodes/1";
 const SOURCE_PATH = "GET /api/v1/projects/demo/source/episode_1.txt";
 const TASKS_PATH = "GET /api/v1/tasks?page_size=200&project_name=demo";
 
-
 interface RecordedProject {
   project: { episodes: Record<string, unknown>[] } & Record<string, unknown>;
   scripts: Record<string, unknown>;
@@ -67,7 +66,13 @@ function scriptlessProject(episode: Record<string, unknown>): ApiOverrides[strin
 }
 
 // 制作状态：本集已有集原文、还没有规划与正式脚本，下一步是规划脚本。
-const PLANNING_NEXT = { type: "prepare_script_plan", args: { episode_id: 1 }, requested_ids: [], requires_confirmation: false, reason: "next" };
+const PLANNING_NEXT = {
+  type: "prepare_script_plan",
+  args: { episode_id: 1 },
+  requested_ids: [],
+  requires_confirmation: false,
+  reason: "next",
+};
 const SCRIPTLESS_PLAN: ApiOverrides[string] = {
   status: 200,
   body: {
@@ -82,7 +87,8 @@ const SCRIPTLESS_PLAN: ApiOverrides[string] = {
     next_action: PLANNING_NEXT,
     steps: plan.steps.map((step) => {
       if (step.id === "script_plan_content") return { ...step, state: "ready", action: PLANNING_NEXT };
-      if (step.id === "final_script") return { ...step, state: "pending", action: null, artifacts: { state: "missing", path: null } };
+      if (step.id === "final_script")
+        return { ...step, state: "pending", action: null, artifacts: { state: "missing", path: null } };
       return step;
     }),
   },
@@ -194,7 +200,13 @@ const REVIEW_STRESS: ApiOverrides = {
       last_frame: true,
       source: "registry",
       voice_consistency: "none",
-      duration_constraints: { resolution: null, uses_reference_images: false, allowed: [4, 6, 8], planning: [4, 6, 8], excluded: {} },
+      duration_constraints: {
+        resolution: null,
+        uses_reference_images: false,
+        allowed: [4, 6, 8],
+        planning: [4, 6, 8],
+        excluded: {},
+      },
     },
   },
   "GET /api/v1/projects/demo/episodes/1/script-review": {
@@ -232,8 +244,6 @@ const guideRail = (page: Page) => page.getByRole("complementary", { name: "本�
 const guideToggle = (page: Page) => page.getByRole("button", { name: /本集导览/ });
 const progress = (page: Page) => page.getByTestId("workflow-panel");
 const progressPopover = (page: Page) => page.getByRole("dialog", { name: "制作进度" });
-
-
 
 /** 弹层带入场动画，量尺寸、跑 axe 之前等它停下；进行中的转圈等循环动画不等。 */
 

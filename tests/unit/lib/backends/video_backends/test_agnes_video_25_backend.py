@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import NamedTuple
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -41,11 +41,11 @@ def _agnes_api() -> Generator[_AgnesRoutes]:
         )
 
 
-def _json(body: dict, status_code: int = 200) -> httpx.Response:
-    return httpx.Response(status_code, json=body)
+def _json(body: dict, status_code: int = 200) -> httpx2.Response:
+    return httpx2.Response(status_code, json=body)
 
 
-def _queued(video_id: str = "vid-1") -> httpx.Response:
+def _queued(video_id: str = "vid-1") -> httpx2.Response:
     return _json({"video_id": video_id, "status": "queued"})
 
 
@@ -54,7 +54,7 @@ def _completed(
     *,
     seconds: str = "4",
     url: str = "https://cdn.agnes/out.mp4",
-) -> httpx.Response:
+) -> httpx2.Response:
     return _json(
         {
             "video_id": video_id,
@@ -108,7 +108,7 @@ class TestV25RequestBodies:
         with _agnes_api() as routes:
             routes.submit.mock(return_value=_queued())
             routes.query.mock(return_value=_completed(seconds="13"))
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             await _backend().generate(_request(tmp_path, duration_seconds=13))
 
@@ -118,7 +118,7 @@ class TestV25RequestBodies:
         with _agnes_api() as routes:
             routes.submit.mock(return_value=_queued())
             routes.query.mock(return_value=_completed(seconds="8"))
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             result = await _backend().generate(_request(tmp_path, duration_seconds=8, resolution="1080p", seed=7))
 
@@ -146,7 +146,7 @@ class TestV25RequestBodies:
         with _agnes_api() as routes:
             routes.submit.mock(return_value=_queued())
             routes.query.mock(return_value=_completed(seconds="6"))
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             await _backend("agnes-video-2.5-flash").generate(
                 _request(tmp_path, start_image=start, end_image=end, resolution="720p")
@@ -167,7 +167,7 @@ class TestV25RequestBodies:
         with _agnes_api() as routes:
             routes.submit.mock(return_value=_queued())
             routes.query.mock(return_value=_completed(seconds="4"))
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             await _backend().generate(_request(tmp_path, reference_images=[first, second], duration_seconds=4))
 
@@ -189,7 +189,7 @@ class TestV25RequestBodies:
                     _completed(seconds="12"),
                 ]
             )
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -211,7 +211,7 @@ class TestV25RequestBodies:
                     _completed(),
                 ]
             )
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4"))
 
             result = await _backend().generate(_request(tmp_path))
 
@@ -244,7 +244,7 @@ class TestV25PreSubmitValidation:
         with _agnes_api() as routes:
             routes.submit.mock(return_value=_queued())
             routes.query.mock(return_value=_completed())
-            routes.download.mock(return_value=httpx.Response(200, content=b"mp4"))
+            routes.download.mock(return_value=httpx2.Response(200, content=b"mp4"))
             await _backend("agnes-video-2.5-flash").generate(_request(tmp_path, resolution=resolution))
         assert request_json(only_request(routes.submit))["size"] == resolution.upper()
 

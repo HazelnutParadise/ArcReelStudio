@@ -8,7 +8,7 @@ from __future__ import annotations
 import base64
 from types import SimpleNamespace
 
-import httpx
+import httpx2
 
 from lib.backends.image_backends.base import ImageGenerationRequest, ReferenceImage
 from lib.custom_provider.endpoints import get_endpoint_spec
@@ -22,8 +22,8 @@ def _provider() -> SimpleNamespace:
     return SimpleNamespace(provider_id="custom-7", api_key="sk-relay", base_url="https://relay.example.com")
 
 
-def _chat_response(message: dict) -> httpx.Response:
-    return httpx.Response(
+def _chat_response(message: dict) -> httpx2.Response:
+    return httpx2.Response(
         200,
         json={
             "id": "chatcmpl-1",
@@ -85,7 +85,7 @@ async def test_text_to_image_extracts_markdown_image_from_content(tmp_path):
         route = router.post("https://relay.example.com/v1/chat/completions").mock(
             return_value=_chat_response({"content": markdown})
         )
-        router.get("https://cdn.example.com/a.png").mock(return_value=httpx.Response(200, content=_PNG))
+        router.get("https://cdn.example.com/a.png").mock(return_value=httpx2.Response(200, content=_PNG))
         await backend.generate(ImageGenerationRequest(prompt="雨夜街景", output_path=out, aspect_ratio="9:16"))
 
     content = request_json(only_request(route))["messages"][-1]["content"]
@@ -103,7 +103,7 @@ async def test_download_failure_retries_download_only(tmp_path, poll_clock):
             return_value=_chat_response({"content": "![image](https://cdn.example.com/a.png)"})
         )
         download = router.get("https://cdn.example.com/a.png").mock(
-            side_effect=[httpx.Response(503), httpx.Response(200, content=_PNG)]
+            side_effect=[httpx2.Response(503), httpx2.Response(200, content=_PNG)]
         )
         await backend.generate(ImageGenerationRequest(prompt="雨夜街景", output_path=out, aspect_ratio="9:16"))
 

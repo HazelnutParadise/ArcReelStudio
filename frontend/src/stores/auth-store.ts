@@ -1,8 +1,10 @@
 import { create } from "zustand";
-import { getToken, setToken as saveToken, clearToken } from "@/utils/auth";
+import { getToken, setToken as saveToken, clearToken, tokenIdentity } from "@/utils/auth";
 
 interface AuthState {
   token: string | null;
+  /** 当前登录账号的 id，取自登录令牌；关闭认证时为 null。多人协作据此区分自己与其他成员。 */
+  userId: string | null;
   username: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -14,6 +16,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
+  userId: null,
   username: null,
   isAuthenticated: false,
   isLoading: true,
@@ -21,7 +24,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   initialize: () => {
     const token = getToken();
     if (token) {
-      set({ token, isAuthenticated: true, isLoading: false });
+      // 刷新页面后身份同样从令牌还原：令牌里的用户名是规范化后的写法
+      const identity = tokenIdentity(token);
+      set({
+        token,
+        userId: identity?.userId ?? null,
+        username: identity?.username ?? null,
+        isAuthenticated: true,
+        isLoading: false,
+      });
       return;
     }
     // 无 token 时先问后端是否启用了鉴权。`AUTH_ENABLED=false` 时后端全链路
@@ -56,12 +67,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: (token, username) => {
     saveToken(token);
-    set({ token, username, isAuthenticated: true, isLoading: false });
+    const identity = tokenIdentity(token);
+    set({
+      token,
+      userId: identity?.userId ?? null,
+      username: identity?.username ?? username,
+      isAuthenticated: true,
+      isLoading: false,
+    });
   },
 
   logout: () => {
     clearToken();
-    set({ token: null, username: null, isAuthenticated: false });
+    set({ token: null, userId: null, username: null, isAuthenticated: false });
   },
 
   setLoading: (isLoading) => set({ isLoading }),

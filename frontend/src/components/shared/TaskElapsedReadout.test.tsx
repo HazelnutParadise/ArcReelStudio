@@ -1,5 +1,5 @@
 import { render, screen, act } from "@testing-library/react";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vite-plus/test";
 import "@/i18n";
 import { makeTask } from "@/test/factories";
 import { TaskElapsedReadout } from "./TaskElapsedReadout";
@@ -53,9 +53,7 @@ describe("TaskElapsedReadout", () => {
   });
 
   it("started_at 缺失的执行中任务不渲染任何读数", () => {
-    const { container } = render(
-      <TaskElapsedReadout task={makeTask({ status: "running", started_at: null })} />,
-    );
+    const { container } = render(<TaskElapsedReadout task={makeTask({ status: "running", started_at: null })} />);
     expect(container).toBeEmptyDOMElement();
   });
 

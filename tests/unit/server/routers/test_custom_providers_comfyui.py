@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Generator
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 
@@ -24,7 +24,7 @@ _SYSTEM_STATS = f"{_COMFY_URL}/system_stats"
 
 
 @pytest.fixture
-def comfyui_client(custom_providers_app) -> Generator[TestClient, None, None]:
+def comfyui_client(custom_providers_app) -> Generator[TestClient]:
     with TestClient(custom_providers_app) as c:
         yield c
 
@@ -131,11 +131,11 @@ class TestComfyuiProviderCreation:
 # ---------------------------------------------------------------------------
 
 
-def _stats_response(version: str | None = "0.3.60") -> httpx.Response:
+def _stats_response(version: str | None = "0.3.60") -> httpx2.Response:
     system: dict[str, Any] = {"os": "posix", "python_version": "3.12.0"}
     if version is not None:
         system["comfyui_version"] = version
-    return httpx.Response(200, json={"system": system, "devices": []})
+    return httpx2.Response(200, json={"system": system, "devices": []})
 
 
 class TestComfyuiConnectivityCheck:
@@ -184,7 +184,7 @@ class TestComfyuiConnectivityCheck:
     def test_an_unreachable_service_comes_back_as_a_readable_failure(self, comfyui_client: TestClient):
         """软失败回 200 + success=False，与另外两条协议同形，界面直接展示原因。"""
         with capture_http() as router:
-            router.get(_SYSTEM_STATS).mock(side_effect=httpx.ConnectError("connection refused"))
+            router.get(_SYSTEM_STATS).mock(side_effect=httpx2.ConnectError("connection refused"))
             resp = comfyui_client.post(
                 "/api/v1/custom-providers/test",
                 json={"discovery_format": "comfyui", "base_url": _COMFY_URL, "api_key": ""},
@@ -196,7 +196,7 @@ class TestComfyuiConnectivityCheck:
 
     def test_an_error_status_comes_back_as_a_readable_failure(self, comfyui_client: TestClient):
         with capture_http() as router:
-            router.get(_SYSTEM_STATS).mock(return_value=httpx.Response(401, json={"error": "unauthorized"}))
+            router.get(_SYSTEM_STATS).mock(return_value=httpx2.Response(401, json={"error": "unauthorized"}))
             body = comfyui_client.post(
                 "/api/v1/custom-providers/test",
                 json={"discovery_format": "comfyui", "base_url": _COMFY_URL, "api_key": "wrong"},
@@ -278,7 +278,7 @@ class TestComfyuiDiscovery:
     def test_other_protocols_keep_reporting_applicable(self, comfyui_client: TestClient):
         """「不适用」只属于 comfyui；别的协议一次失败的发现仍须是失败，不是不适用。"""
         with capture_http() as router:
-            router.get(url__regex=r".*/models.*").mock(return_value=httpx.Response(200, json={"data": []}))
+            router.get(url__regex=r".*/models.*").mock(return_value=httpx2.Response(200, json={"data": []}))
             body = comfyui_client.post(
                 "/api/v1/custom-providers/discover",
                 json={"discovery_format": "openai", "base_url": "https://api.example.com/v1", "api_key": "sk-x"},

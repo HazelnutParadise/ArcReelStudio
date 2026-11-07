@@ -68,11 +68,13 @@ export default {
   'status_edit_timelines_one': '{{count}} edit timeline',
   'status_edit_timelines_other': '{{count}} edit timelines',
   'status_edit_none': 'No edit timeline yet',
-  'status_edit_timelines_with_issues_one': '{{count}} edit timeline; issues in the most recently modified one: {{issues}}',
-  'status_edit_timelines_with_issues_other': '{{count}} edit timelines; issues in the most recently modified one: {{issues}}',
+  'status_edit_timelines_with_issues_one':
+    '{{count}} edit timeline; issues in the most recently modified one: {{issues}}',
+  'status_edit_timelines_with_issues_other':
+    '{{count}} edit timelines; issues in the most recently modified one: {{issues}}',
   'status_brief_present': 'Filled in',
   'status_brief_absent': 'No brief or products yet',
-  'note_episode_plan_stale': 'The episode source was re-planned. This episode\'s script plan needs to be rebuilt.',
+  'note_episode_plan_stale': "The episode source was re-planned. This episode's script plan needs to be rebuilt.",
   'note_needs_replan_one': '{{count}} video unit needs changes: {{ids}}',
   'note_needs_replan_other': '{{count}} video units need changes: {{ids}}',
   'note_assets_stale_one': '{{count}} asset sheet is outdated: {{names}}',
@@ -86,10 +88,14 @@ export default {
   'note_products_without_selling_points_one': '{{count}} product has no selling points: {{names}}',
   'note_products_without_selling_points_other': '{{count}} products have no selling points: {{names}}',
   'hint_fill_brief': 'Add a creative brief or a product first.',
-  'hint_assets_without_sheet_storyboard_one': '{{count}} referenced asset has no sheet yet, so shots that reference it cannot be generated.',
-  'hint_assets_without_sheet_storyboard_other': '{{count}} referenced assets have no sheets yet, so shots that reference them cannot be generated.',
-  'hint_assets_without_sheet_unit_one': '{{count}} referenced asset has no sheet yet, so video units that reference it cannot be generated.',
-  'hint_assets_without_sheet_unit_other': '{{count}} referenced assets have no sheets yet, so video units that reference them cannot be generated.',
+  'hint_assets_without_sheet_storyboard_one':
+    '{{count}} referenced asset has no sheet yet, so shots that reference it cannot be generated.',
+  'hint_assets_without_sheet_storyboard_other':
+    '{{count}} referenced assets have no sheets yet, so shots that reference them cannot be generated.',
+  'hint_assets_without_sheet_unit_one':
+    '{{count}} referenced asset has no sheet yet, so video units that reference it cannot be generated.',
+  'hint_assets_without_sheet_unit_other':
+    '{{count}} referenced assets have no sheets yet, so video units that reference them cannot be generated.',
   'act_agent': 'Hand to Agent',
   'act_agent_edit': 'Hand to Agent to edit',
   'act_create_edit_timeline': 'New edit timeline',
@@ -111,7 +117,7 @@ export default {
   'act_view_source': 'View source',
   'act_open_settings': 'Open settings',
   'next_title_resolve_draft_repair': 'Repair the draft',
-  'next_title_resolve_draft_agent': 'Handle the Agent\'s unfinished edit',
+  'next_title_resolve_draft_agent': "Handle the Agent's unfinished edit",
   'next_title_prepare_script_plan': 'AI plan the script',
   'next_title_start_blank_script': 'Start from blank',
   'next_title_provide_episode_source': 'Add episode source',
@@ -128,10 +134,13 @@ export default {
   'next_title_generate_videos': 'Generate videos',
   'next_title_create_edit_timeline': 'Edit',
   'next_title_wait_for_task': 'Wait for generation to finish',
-  'next_detail_resolve_draft_repair': 'Some AI output does not meet the requirements. The final content stays unchanged until the draft is repaired.',
-  'next_detail_resolve_draft_agent': 'Only the Agent can finish this edit. You can also discard it and return to the previous content.',
+  'next_detail_resolve_draft_repair':
+    'Some AI output does not meet the requirements. The final content stays unchanged until the draft is repaired.',
+  'next_detail_resolve_draft_agent':
+    'Only the Agent can finish this edit. You can also discard it and return to the previous content.',
   'next_detail_resolve_draft_unknown': 'This episode has a draft to handle.',
-  'next_detail_prepare_script_plan': 'Plan the script from the episode source. The plan needs a content review afterwards.',
+  'next_detail_prepare_script_plan':
+    'Plan the script from the episode source. The plan needs a content review afterwards.',
   'next_detail_start_blank_script_storyboard': 'Create an empty final script, then add shots one by one.',
   'next_detail_start_blank_script_unit': 'Create an empty final script, then add video units one by one.',
   'next_detail_provide_episode_source': 'With the episode source added, AI can plan the script.',
@@ -139,35 +148,44 @@ export default {
   'next_detail_generate_script': 'Write a complete script from the brief and products.',
   'next_detail_add_script_items_storyboard': 'The final script is empty. Add shots first.',
   'next_detail_add_script_items_unit': 'The final script is empty. Add video units first.',
-  'next_detail_author_prompts_one': 'Write image and video prompts for {{count}} entry awaiting prompts. Existing prompts are kept.',
-  'next_detail_author_prompts_other': 'Write image and video prompts for {{count}} entries awaiting prompts. Existing prompts are kept.',
+  'next_detail_author_prompts_one':
+    'Write image and video prompts for {{count}} entry awaiting prompts. Existing prompts are kept.',
+  'next_detail_author_prompts_other':
+    'Write image and video prompts for {{count}} entries awaiting prompts. Existing prompts are kept.',
   'next_detail_repair_video_units_one': '{{ids}} needs changes before videos can be generated.',
   'next_detail_repair_video_units_other': '{{ids}} need changes before videos can be generated.',
-  'next_detail_patch_episode_script': 'Some fields in the final script do not meet the requirements. The problems are listed in this row.',
-  'next_detail_generate_asset_sheets_one': '{{count}} asset referenced by this episode has no sheet: {{names}}. Derivatives are generated after their base asset.',
-  'next_detail_generate_asset_sheets_other': '{{count}} assets referenced by this episode have no sheets: {{names}}. Derivatives are generated after their base asset.',
+  'next_detail_patch_episode_script':
+    'Some fields in the final script do not meet the requirements. The problems are listed in this row.',
+  'next_detail_generate_asset_sheets_one':
+    '{{count}} asset referenced by this episode has no sheet: {{names}}. Derivatives are generated after their base asset.',
+  'next_detail_generate_asset_sheets_other':
+    '{{count}} assets referenced by this episode have no sheets: {{names}}. Derivatives are generated after their base asset.',
   'next_detail_generate_storyboards_one': '{{count}} shot has no storyboard yet.',
   'next_detail_generate_storyboards_other': '{{count}} shots have no storyboard yet.',
   'next_detail_generate_grid_one': '{{count}} shot has no storyboard yet. It is generated in grid groups.',
   'next_detail_generate_grid_other': '{{count}} shots have no storyboard yet. They are generated in grid groups.',
   'next_detail_generate_videos_one': '{{count}} item has no video yet.',
   'next_detail_generate_videos_other': '{{count}} items have no video yet.',
-  'next_detail_create_edit_timeline': 'All videos for this episode are ready. Hand editing to the Agent, or create an edit timeline from the script: every video used in full, all hard cuts.',
+  'next_detail_create_edit_timeline':
+    'All videos for this episode are ready. Hand editing to the Agent, or create an edit timeline from the script: every video used in full, all hard cuts.',
   'next_detail_wait_for_task': 'Generation is in progress. The status updates when it finishes.',
   'next_title_wait_for_episode_planning': 'Episode planning in progress',
-  'next_detail_wait_for_episode_planning': 'AI is planning episodes section by section. The status updates when it finishes.',
+  'next_detail_wait_for_episode_planning':
+    'AI is planning episodes section by section. The status updates when it finishes.',
   'act_view_planning_progress': 'View planning progress',
   'agent_prefill_generate_script': 'Generate the script of {{episodeRef}} from the brief and products',
   'agent_prefill_add_script_items_storyboard': 'Add shots to the final script of {{episodeRef}}',
   'agent_prefill_add_script_items_unit': 'Add video units to the final script of {{episodeRef}}',
   'agent_prefill_repair_video_units': 'Revise {{ids}} of {{episodeRef}} so that videos can be generated',
-  'agent_prefill_patch_episode_script': 'Fix the fields in the final script of {{episodeRef}} that do not meet the requirements',
+  'agent_prefill_patch_episode_script':
+    'Fix the fields in the final script of {{episodeRef}} that do not meet the requirements',
   'agent_prefill_generate_asset_sheets': 'Generate asset sheets for the pending assets referenced by {{episodeRef}}',
   'agent_prefill_generate_storyboards': 'Generate storyboards for the shots of {{episodeRef}} that have none',
   'agent_prefill_generate_grid': 'Generate grids for the shots of {{episodeRef}} that have no storyboard',
   'agent_prefill_generate_videos': 'Generate videos for the items of {{episodeRef}} that have none',
   'agent_prefill_create_edit_timeline': 'Edit {{episodeRef}} into a cut',
-  'agent_prefill_admission': 'Resolve the issues blocking video generation for {{episodeRef}}, as reported by the production status',
+  'agent_prefill_admission':
+    'Resolve the issues blocking video generation for {{episodeRef}}, as reported by the production status',
   'refusal_whole_source_missing': 'Upload the source text first',
   'refusal_replan_candidate_pending': 'Adopt or discard the new episode plan first',
   'refusal_episode_source_missing': 'Add the episode source first',
@@ -186,7 +204,8 @@ export default {
   // ---- Stale artifacts ----
   'stale_title_one': '{{count}} result is older than the current content',
   'stale_title_other': '{{count}} results are older than the current content',
-  'stale_still_usable': 'These files are kept. You can open them on the canvas, and they still go into this episode. Keeping them costs nothing; regenerating charges the provider again.',
+  'stale_still_usable':
+    'These files are kept. You can open them on the canvas, and they still go into this episode. Keeping them costs nothing; regenerating charges the provider again.',
   'stale_view': 'Open',
   'stale_view_unit': 'Open {{id}} on the canvas',
   'stale_regenerate': 'Regenerate',
@@ -223,11 +242,14 @@ export default {
   'checkpoint_submitted': 'Already submitted to the provider — retrying may be charged again.',
 
   // ---- Batch admission ----
-  'admission_blocked_intro': 'This batch created no tasks. Nothing was charged. Fix the items below and request it again.',
+  'admission_blocked_intro':
+    'This batch created no tasks. Nothing was charged. Fix the items below and request it again.',
   'admission_withheld_title_one': '{{count}} unit was fine but was held back with the batch:',
   'admission_withheld_title_other': '{{count}} units were fine but were held back with the batch:',
-  'admission_confirm_intro_one': '{{count}} unit will be generated at the length below. No task exists until you confirm.',
-  'admission_confirm_intro_other': '{{count}} units will be generated at the lengths below. No tasks exist until you confirm.',
+  'admission_confirm_intro_one':
+    '{{count}} unit will be generated at the length below. No task exists until you confirm.',
+  'admission_confirm_intro_other':
+    '{{count}} units will be generated at the lengths below. No tasks exist until you confirm.',
   'admission_confirm_note': 'Videos are generated at the provider length shown; they are not trimmed afterwards.',
   'admission_confirm_cta': 'Confirm these lengths',
   'admission_skipped_one': '{{count}} unit already had a video and is skipped.',
@@ -283,7 +305,8 @@ export default {
   'problem_generation_unit_request_invalid': 'The request for this unit is not valid.',
   'problem_generation_artifact_state_unavailable': "This unit's existing file cannot be read.",
   'problem_generation_enqueue_failed': 'This unit could not be queued.',
-  'problem_generation_enqueue_interrupted': 'Enqueue stopped before this unit got a task; the ones already queued keep running.',
+  'problem_generation_enqueue_interrupted':
+    'Enqueue stopped before this unit got a task; the ones already queued keep running.',
   'problem_generation_active_task_conflict': 'This unit already has an attempt running.',
   'problem_generation_batch_admission_withheld': 'Held back because another unit in the batch did not pass.',
   'problem_generation_task_failed': 'The last attempt failed.',
@@ -292,14 +315,19 @@ export default {
   'problem_generation_post_processing_failed': 'The video was generated but post-processing failed.',
   'problem_reference_asset_unregistered': 'This unit references assets that are not registered.',
   'problem_reference_asset_missing': 'A referenced asset has no asset sheet yet.',
-  'problem_video_capability_unavailable': "Could not read the selected video model's capabilities. Check the provider and model configuration.",
+  'problem_video_capability_unavailable':
+    "Could not read the selected video model's capabilities. Check the provider and model configuration.",
   'problem_video_supported_durations_missing': 'The selected video model does not declare supported duration tiers.',
   'problem_video_supported_durations_invalid': "The selected video model's duration tier metadata is invalid.",
-  'problem_video_supported_durations_incompatible': 'The selected video model has no compatible duration tier for the current resolution.',
-  'problem_reference_capability_unavailable': "Could not read the selected video model's capabilities. Check the provider and model configuration.",
-  'problem_reference_supported_durations_missing': 'The selected video model does not declare supported duration tiers.',
+  'problem_video_supported_durations_incompatible':
+    'The selected video model has no compatible duration tier for the current resolution.',
+  'problem_reference_capability_unavailable':
+    "Could not read the selected video model's capabilities. Check the provider and model configuration.",
+  'problem_reference_supported_durations_missing':
+    'The selected video model does not declare supported duration tiers.',
   'problem_reference_supported_durations_invalid': "The selected video model's duration tier metadata is invalid.",
-  'problem_reference_supported_durations_incompatible': 'The selected video model has no compatible duration tier for the current resolution and reference images.',
+  'problem_reference_supported_durations_incompatible':
+    'The selected video model has no compatible duration tier for the current resolution and reference images.',
   'problem_mixed_speech': 'This unit mixes character dialogue with narration; split them.',
   'problem_needs_replan': "This unit is longer than the selected model's largest duration tier; replan it.",
   'problem_parse_failed': "This unit's dialogue can't be read; check how it is written.",
@@ -307,14 +335,17 @@ export default {
   'problem_project_migration_failed': "The project's data upgrade didn't finish, so nothing can be generated yet.",
   'problem_video_audio_switch_not_supported': 'The selected video model always produces audio and cannot mute it.',
   'problem_reference_capability_changed': "The reference assets don't match the declared generation method.",
-  'problem_reference_duration_confirmation_required': 'This unit will be generated at a different duration tier and needs confirmation.',
+  'problem_reference_duration_confirmation_required':
+    'This unit will be generated at a different duration tier and needs confirmation.',
   'problem_video_capability_missing_i2v': "The selected video model doesn't support image-to-video.",
   'problem_video_capability_missing_r2v': "The selected video model doesn't support reference-to-video.",
-  'problem_video_capability_missing_t2v': "The selected video model doesn't support text-to-video; a first-frame image is needed.",
+  'problem_video_capability_missing_t2v':
+    "The selected video model doesn't support text-to-video; a first-frame image is needed.",
   'problem_video_capability_reference_unavailable': 'The video model chosen in Settings is no longer available.',
   'problem_model_not_in_provider_catalog': "The model chosen in Settings is no longer in the provider's model list.",
   'problem_model_discontinued': 'The model chosen in Settings has been discontinued.',
-  'problem_generation_dependency_failed': "A unit this one depends on in the same batch didn't succeed, so this unit wasn't submitted.",
+  'problem_generation_dependency_failed':
+    "A unit this one depends on in the same batch didn't succeed, so this unit wasn't submitted.",
   'problem_fallback_retry': "The last attempt didn't succeed.",
   'problem_fallback_fix_input': "This unit's content needs changes before it can be generated.",
   'problem_fallback_generate_dependency': 'A reference that must be generated first is missing.',

@@ -131,26 +131,28 @@ export function CreateProjectModal() {
   // react-doctor-disable-next-line react-doctor/no-set-state-after-await-in-effect -- await 后的写入都先检查 controller.signal.aborted，cleanup 中 abort 作废上一轮
   useEffect(() => {
     const controller = new AbortController();
-    voidCall((async () => {
-      try {
-        const { data, narrationDefaults } = await loadGenerationData(controller.signal);
-        if (controller.signal.aborted) return;
-        if (!narrationPrefilled.current && narrationDefaults) {
-          narrationPrefilled.current = true;
-          setNarration((prev) => ({
-            ...prev,
-            audioBackend: narrationDefaults.audio_backend ?? "",
-            narrationVoice: narrationDefaults.narration_voice,
-            narrationSpeed: narrationDefaults.narration_speed,
-          }));
+    voidCall(
+      (async () => {
+        try {
+          const { data, narrationDefaults } = await loadGenerationData(controller.signal);
+          if (controller.signal.aborted) return;
+          if (!narrationPrefilled.current && narrationDefaults) {
+            narrationPrefilled.current = true;
+            setNarration((prev) => ({
+              ...prev,
+              audioBackend: narrationDefaults.audio_backend ?? "",
+              narrationVoice: narrationDefaults.narration_voice,
+              narrationSpeed: narrationDefaults.narration_speed,
+            }));
+          }
+          setGenerationData(data);
+          // 重取成功即清掉上一轮的错误，否则错误会一直遮住新数据。
+          setGenerationError(null);
+        } catch (err) {
+          if (!controller.signal.aborted) setGenerationError(errMsg(err));
         }
-        setGenerationData(data);
-        // 重取成功即清掉上一轮的错误，否则错误会一直遮住新数据。
-        setGenerationError(null);
-      } catch (err) {
-        if (!controller.signal.aborted) setGenerationError(errMsg(err));
-      }
-    })());
+      })(),
+    );
     return () => controller.abort();
   }, [i18n.language]);
 

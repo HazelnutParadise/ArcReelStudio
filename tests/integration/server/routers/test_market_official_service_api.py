@@ -9,7 +9,7 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import FastAPI
@@ -40,7 +40,7 @@ OFFICIAL_INDEX = "https://raw.githubusercontent.com/ArcReel/arcreel-market/HEAD/
 OFFICIAL_DEFINITION = "https://raw.githubusercontent.com/ArcReel/arcreel-market/HEAD/endpoints/example/definition.json"
 CUSTOM_DEFINITION = "https://example.com/endpoints/example/definition.json"
 
-ClientFactory = Callable[..., AbstractAsyncContextManager[httpx.AsyncClient]]
+ClientFactory = Callable[..., AbstractAsyncContextManager[httpx2.AsyncClient]]
 
 
 def _source(source_id: int, *, kind: str, canonical_key: str, index_url: str, slugs: list[str]) -> MarketSource:
@@ -96,9 +96,9 @@ async def market_client_factory(session_factory: async_sessionmaker[AsyncSession
             yield session
 
     @asynccontextmanager
-    async def factory(base_url: str = OFFICIAL_SERVICE) -> AsyncGenerator[httpx.AsyncClient]:
+    async def factory(base_url: str = OFFICIAL_SERVICE) -> AsyncGenerator[httpx2.AsyncClient]:
         app = FastAPI()
-        async with httpx.AsyncClient() as network:
+        async with httpx2.AsyncClient() as network:
             app.dependency_overrides[get_async_session] = session_override
             app.dependency_overrides[get_market_entry_service] = lambda: MarketEntryService(
                 session_factory, http_client=lambda: network
@@ -110,22 +110,22 @@ async def market_client_factory(session_factory: async_sessionmaker[AsyncSession
             app.include_router(market.router)
             app.include_router(custom_endpoints.router)
             register_error_handlers(app)
-            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as client:
                 yield client
 
     return factory
 
 
 async def _install(
-    client: httpx.AsyncClient, source_id: int = 1, overwrite_endpoint_id: int | None = None
-) -> httpx.Response:
+    client: httpx2.AsyncClient, source_id: int = 1, overwrite_endpoint_id: int | None = None
+) -> httpx2.Response:
     body: dict[str, Any] = {"definition_digest": definition_digest(custom_endpoint_definition())}
     if overwrite_endpoint_id is not None:
         body["overwrite_endpoint_id"] = overwrite_endpoint_id
     return await client.post(f"/market/sources/{source_id}/entries/example/install", json=body)
 
 
-async def _install_for_rating(client: httpx.AsyncClient) -> int:
+async def _install_for_rating(client: httpx2.AsyncClient) -> int:
     with respx.mock(assert_all_called=True) as remote:
         remote.get(OFFICIAL_DEFINITION).respond(json=custom_endpoint_definition())
         remote.post(f"{OFFICIAL_SERVICE}/api/v1/market/installs").respond(204)
@@ -183,12 +183,12 @@ async def test_official_install_reports_once_with_instance_header(
 
 @pytest.mark.parametrize(
     "failure",
-    [httpx.Response(503, json={"code": "instance_hash_unconfigured", "params": {}}), httpx.ReadTimeout("timed out")],
+    [httpx2.Response(503, json={"code": "instance_hash_unconfigured", "params": {}}), httpx2.ReadTimeout("timed out")],
 )
 async def test_install_succeeds_when_official_service_fails(
     market_client_factory: ClientFactory,
     session_factory: async_sessionmaker[AsyncSession],
-    failure: httpx.Response | Exception,
+    failure: httpx2.Response | Exception,
 ):
     async with market_client_factory() as client:
         with respx.mock(assert_all_called=True) as remote:
@@ -261,9 +261,9 @@ async def test_rating_error_code_lands_in_local_response(
     assert response.json() == {"detail": detail, "diagnostic": {"official_service": {"code": code, "params": params}}}
 
 
-@pytest.mark.parametrize("failure", [httpx.Response(502, text="Bad Gateway"), httpx.ConnectTimeout("timed out")])
+@pytest.mark.parametrize("failure", [httpx2.Response(502, text="Bad Gateway"), httpx2.ConnectTimeout("timed out")])
 async def test_rating_reports_unreachable_official_service_without_retry(
-    market_client_factory: ClientFactory, failure: httpx.Response | Exception
+    market_client_factory: ClientFactory, failure: httpx2.Response | Exception
 ):
     async with market_client_factory() as client:
         await _install_for_rating(client)
@@ -329,9 +329,9 @@ async def test_aggregates_only_query_official_entries(market_client_factory: Cli
 @pytest.mark.parametrize(
     "failure",
     [
-        httpx.Response(200, json={"items": []}),
+        httpx2.Response(200, json={"items": []}),
         *(
-            httpx.Response(
+            httpx2.Response(
                 200,
                 json={
                     "items": [
@@ -352,12 +352,12 @@ async def test_aggregates_only_query_official_entries(market_client_factory: Cli
                 ("example", {"installs": 0, "rating_count": 0, "rating_average": None}),
             )
         ),
-        httpx.Response(503, json={"code": "instance_hash_unconfigured", "params": {}}),
-        httpx.ReadTimeout("timed out"),
+        httpx2.Response(503, json={"code": "instance_hash_unconfigured", "params": {}}),
+        httpx2.ReadTimeout("timed out"),
     ],
 )
 async def test_aggregates_failure_is_an_error_response(
-    market_client_factory: ClientFactory, failure: httpx.Response | Exception
+    market_client_factory: ClientFactory, failure: httpx2.Response | Exception
 ):
     async with market_client_factory() as client:
         with respx.mock(assert_all_called=True) as remote:
@@ -379,9 +379,9 @@ async def test_aggregates_split_into_batches_of_one_hundred(
         ).cached_index
         await session.commit()
 
-    def respond(request: httpx.Request) -> httpx.Response:
+    def respond(request: httpx2.Request) -> httpx2.Response:
         items = json.loads(request.content)["items"]
-        return httpx.Response(
+        return httpx2.Response(
             200, json={"items": [{**item, "installs": 1, "rating_count": 0, "rating_average": None} for item in items]}
         )
 

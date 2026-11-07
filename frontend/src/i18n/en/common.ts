@@ -1,4 +1,3 @@
-
 export default {
   'language': 'Language',
   'chinese': 'Chinese',
@@ -53,11 +52,12 @@ export default {
   'save_and_leave': 'Save and leave',
   'save_and_switch': 'Save and switch',
   'save_and_generate': 'Save and generate',
-  'updated_by_agent': 'The Agent updated this content',
+  'updated_externally': 'Another member or the Agent updated this content',
   'adopt_new_content': 'Use new content',
-  'leave_dialog_description': 'Discarded changes can\'t be recovered.',
+  'leave_dialog_description': "Discarded changes can't be recovered.",
   'undo': 'Undo',
-  'sortable_instructions': 'Press Space or Enter to pick up, use the arrow keys to move, then press Space or Enter to drop. Press Escape to cancel.',
+  'sortable_instructions':
+    'Press Space or Enter to pick up, use the arrow keys to move, then press Space or Enter to drop. Press Escape to cancel.',
   'sortable_role_description': 'sortable item',
   'sortable_picked_up': 'Picked up “{{name}}”, position {{position}} of {{total}}.',
   'sortable_moved': '“{{name}}” moved to position {{position}} of {{total}}.',
@@ -86,5 +86,5 @@ export default {
   'item_position_of_total': '{{position}} / {{total}}',
   'item_internal_id': 'Internal ID {{id}}',
   'item_agent_ref': '{{label}} (ID {{id}})',
-  "error_details": "Details",
+  'error_details': 'Details',
 };

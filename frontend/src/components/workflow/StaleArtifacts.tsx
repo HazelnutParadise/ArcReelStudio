@@ -28,7 +28,10 @@ export function StaleArtifacts({ staleIds, onView, onRegenerate, busy }: Props) 
   if (staleIds.length === 0) return null;
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-1.5 rounded-lg border border-warn/40 bg-warn/10 px-3 py-2">
+    <section
+      aria-labelledby={headingId}
+      className="flex flex-col gap-1.5 rounded-lg border border-warn/40 bg-warn/10 px-3 py-2"
+    >
       <h4 id={headingId} className="text-xs font-medium text-warn">
         {t("stale_title", { count: staleIds.length })}
       </h4>

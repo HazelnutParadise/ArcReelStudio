@@ -62,10 +62,8 @@ export default {
   "single.deleted": "{{label}} deleted",
   "single.updated": "{{label}} updated",
 
-  "deferred.storyboard_ready":
-    "AI just generated the storyboard image for {{label}}. Tap to view",
-  "deferred.video_ready":
-    "AI just generated the video for {{label}}. Tap to view",
+  "deferred.storyboard_ready": "AI just generated the storyboard image for {{label}}. Tap to view",
+  "deferred.video_ready": "AI just generated the video for {{label}}. Tap to view",
   "deferred.generated": "{{label}} is ready",
   "deferred.completed": "{{label}} is done",
   "deferred.created": "AI just added {{label}}. Tap to view",
@@ -77,15 +75,12 @@ export default {
   "group.deleted": "Deleted {{count}} {{entity}}: {{summary}}",
   "group.updated": "Updated {{count}} {{entity}}: {{summary}}",
 
-  "group_deferred.generated":
-    "AI just generated {{count}} {{entity}}: {{summary}}. Tap to view",
-  "group_deferred.created":
-    "AI just added {{count}} {{entity}}: {{summary}}. Tap to view",
-  "group_deferred.deleted":
-    "AI just deleted {{count}} {{entity}}: {{summary}}. Tap to view",
-  "group_deferred.updated":
-    "AI just updated {{count}} {{entity}}: {{summary}}. Tap to view",
+  "group_deferred.generated": "AI just generated {{count}} {{entity}}: {{summary}}. Tap to view",
+  "group_deferred.created": "AI just added {{count}} {{entity}}: {{summary}}. Tap to view",
+  "group_deferred.deleted": "AI just deleted {{count}} {{entity}}: {{summary}}. Tap to view",
+  "group_deferred.updated": "AI just updated {{count}} {{entity}}: {{summary}}. Tap to view",
 
+  "change_by_member": "{{name}}: {{text}}",
   "list.separator": ", ",
   "list.more_suffix": " and more",
 };

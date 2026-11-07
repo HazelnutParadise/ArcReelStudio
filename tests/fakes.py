@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import itertools
 import json
+import tempfile
 import threading
 from collections.abc import AsyncIterator, Callable, Generator, Mapping, Sequence
 from contextlib import contextmanager
@@ -16,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from instructor.core import InstructorRetryException
 
 if TYPE_CHECKING:
@@ -31,6 +33,17 @@ _STREAM_EOF = object()
 #: ``lib.custom_provider.comfyui.artifacts.container_matches``），裸占位字节会被判容器不符。
 MP4_BYTES = b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00mp4-bytes"
 PNG_BYTES = b"\x89PNG\r\n\x1a\npng-bytes"
+
+
+def private_tempdir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """把进程的临时目录指向本用例私有的 ``tmp_path/tmp``，返回它。
+
+    检查「临时文件或目录有没有清掉」时用：系统临时目录是进程共享的，并行用例与其他检出也会往里写。
+    """
+    root = tmp_path / "tmp"
+    root.mkdir(exist_ok=True)
+    monkeypatch.setattr(tempfile, "tempdir", str(root))
+    return root
 
 
 @contextmanager
@@ -1134,6 +1147,7 @@ def use_project_manager(monkeypatch, pm: Any) -> None:
     monkeypatch.setattr("server.routers.projects.get_project_manager", for_pm)
     monkeypatch.setattr("server.routers.provider_asset_links.get_project_manager", for_pm)
     monkeypatch.setattr("server.routers.project_migration.get_project_manager", for_pm)
+    monkeypatch.setattr("server.routers.project_presence.get_project_manager", for_pm)
     monkeypatch.setattr("server.routers.project_trash.get_project_manager", for_pm)
     monkeypatch.setattr("server.routers.reference_videos.get_project_manager", for_pm)
     monkeypatch.setattr("server.routers.shot_uploads.get_project_manager", for_pm)
@@ -1206,7 +1220,7 @@ def use_assets_router_sessions(monkeypatch, factory) -> None:
 def use_object_storage_sdk(monkeypatch, factory: Callable[..., Any]) -> None:
     """对象存储的网络边界：``create_sdk_client`` 改调 *factory*（收 ``ObjectStorageConfig``，返回 TOS SDK 客户端替身）。
 
-    TOS SDK 基于 requests，不经 httpx，respx 拦不到；所有对象存取都经这一处构造客户端。
+    TOS SDK 基于 requests，不经 httpx2，respx 拦不到；所有对象存取都经这一处构造客户端。
     """
     monkeypatch.setattr("lib.object_storage.client.create_sdk_client", factory)
 

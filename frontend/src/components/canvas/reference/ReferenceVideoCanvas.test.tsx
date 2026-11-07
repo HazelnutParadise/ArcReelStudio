@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vite-plus/test";
 import { render as rtlRender, screen, waitFor, fireEvent, act, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
@@ -29,8 +29,7 @@ import type { EpisodeScript, ProjectData } from "@/types";
 // 独立用 getState() 新鲜读 store。
 const mockHolder = vi.hoisted(() => ({
   realActiveResourceIds: undefined as unknown as typeof import("@/stores/tasks-store").useActiveResourceIds,
-  realLatestTasksByResource:
-    undefined as unknown as typeof import("@/stores/tasks-store").useLatestTasksByResource,
+  realLatestTasksByResource: undefined as unknown as typeof import("@/stores/tasks-store").useLatestTasksByResource,
 }));
 vi.mock("@/stores/tasks-store", async () => {
   const actual = await vi.importActual<typeof import("@/stores/tasks-store")>("@/stores/tasks-store");
@@ -189,7 +188,10 @@ describe("ReferenceVideoCanvas", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("presents a prompt authoring draft needing fixes in place of the unit workbench and saves a hand fix", async () => {
-    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     vi.spyOn(API, "listEpisodeDrafts").mockResolvedValue({
       episode: 1,
       drafts: [{ doc_type: "reference_prompt_authoring", editable_by: "user", violation_count: 1 }],
@@ -200,7 +202,9 @@ describe("ReferenceVideoCanvas", () => {
       revision: "rev-1",
       editable_by: "user",
       content: { title: "第1集", units: [{ text: "镜头一" }, { text: "镜头二｛全角｝" }] },
-      violations: [{ code: "fullwidth_braces", label: "unit E1U2", message: "unit E1U2 使用了全角花括号", line: 0, item_index: 1 }],
+      violations: [
+        { code: "fullwidth_braces", label: "unit E1U2", message: "unit E1U2 使用了全角花括号", line: 0, item_index: 1 },
+      ],
       soft_violations: [],
       formal_exists: true,
       item_ids: ["E1U1", "E1U2"],
@@ -228,7 +232,10 @@ describe("ReferenceVideoCanvas", () => {
   });
 
   it("loads units on mount and renders the list", async () => {
-    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     await waitFor(() => expect(screen.getByTestId("unit-row-E1U1")).toBeInTheDocument());
     expect(screen.getByTestId("unit-row-E1U2")).toBeInTheDocument();
@@ -240,14 +247,20 @@ describe("ReferenceVideoCanvas", () => {
     // 后端只在生成时写入这一节：尚未生成过任何产物的单元没有它，读侧一律按可能缺席处理。
     const bare: ReferenceVideoUnit = mkUnit("E1U1");
     delete bare.generated_assets;
-    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [bare, mkUnit("E1U2")], unit_capabilities: {} });
+    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+      units: [bare, mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     await waitFor(() => expect(screen.getByTestId("unit-row-E1U1")).toBeInTheDocument());
     expect(screen.getByTestId("unit-row-E1U2")).toBeInTheDocument();
   });
 
   it("removes the selected unit only after the danger confirmation", async () => {
-    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     const deleteSpy = vi.spyOn(API, "deleteReferenceVideoUnit").mockResolvedValue(undefined);
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     await screen.findByTestId("unit-row-E1U1");
@@ -266,14 +279,22 @@ describe("ReferenceVideoCanvas", () => {
   });
 
   it("asks about unsaved edits only once the removal is confirmed, so cancelling the removal keeps them", async () => {
-    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     const deleteSpy = vi.spyOn(API, "deleteReferenceVideoUnit").mockResolvedValue(undefined);
     const discard = vi.fn();
     function DirtyUnit() {
       useLeaveGuard({ dirty: true, save: async () => true, discard });
       return null;
     }
-    render(<><DirtyUnit /><ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} /></>);
+    render(
+      <>
+        <DirtyUnit />
+        <ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />
+      </>,
+    );
     await screen.findByTestId("unit-row-E1U1");
     const removal = async () => {
       fireEvent.click(screen.getByRole("button", { name: /^(Remove unit|移除单元)$/ }));
@@ -287,14 +308,21 @@ describe("ReferenceVideoCanvas", () => {
     expect(discard).not.toHaveBeenCalled();
 
     fireEvent.click(within(await removal()).getByRole("button", { name: /^(Move to project trash|移入项目回收站)$/ }));
-    fireEvent.click(within(await screen.findByRole("alertdialog", { name: "有未保存的修改" })).getByRole("button", { name: "放弃修改" }));
+    fireEvent.click(
+      within(await screen.findByRole("alertdialog", { name: "有未保存的修改" })).getByRole("button", {
+        name: "放弃修改",
+      }),
+    );
 
     await waitFor(() => expect(deleteSpy).toHaveBeenCalledWith("proj", 1, "E1U1"));
     expect(discard).toHaveBeenCalledTimes(1);
   });
 
   it("does not remove a unit that became busy after the confirmation opened", async () => {
-    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     const deleteSpy = vi.spyOn(API, "deleteReferenceVideoUnit").mockResolvedValue(undefined);
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     fireEvent.click(await screen.findByRole("button", { name: /^(Remove unit|移除单元)$/ }));
@@ -302,7 +330,9 @@ describe("ReferenceVideoCanvas", () => {
     act(() => {
       useTasksStore.setState({ tasks: [runningTask("E1U1")] as never });
     });
-    const confirm = within(screen.getByRole("alertdialog")).getByRole("button", { name: /^(Move to project trash|移入项目回收站)$/ });
+    const confirm = within(screen.getByRole("alertdialog")).getByRole("button", {
+      name: /^(Move to project trash|移入项目回收站)$/,
+    });
     await waitFor(() => expect(confirm).toBeDisabled());
     fireEvent.click(confirm);
 
@@ -362,7 +392,10 @@ describe("ReferenceVideoCanvas", () => {
   });
 
   it("blocks removing a unit while its narration audio is being generated", async () => {
-    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     useTasksStore.setState({ tasks: [{ ...runningTask("E1U1"), task_type: "tts" }] as never });
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
 
@@ -376,7 +409,11 @@ describe("ReferenceVideoCanvas", () => {
     vi.spyOn(API, "patchReferenceVideoUnit").mockRejectedValue(new Error("单元已不存在"));
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     fireEvent.change(await screen.findByRole("combobox"), { target: { value: "unsaved edit" } });
-    act(() => useReferenceVideoStore.setState((state) => ({ unitsByEpisode: { ...state.unitsByEpisode, [referenceVideoCacheKey("proj", 1)]: [units[1]] } })));
+    act(() =>
+      useReferenceVideoStore.setState((state) => ({
+        unitsByEpisode: { ...state.unitsByEpisode, [referenceVideoCacheKey("proj", 1)]: [units[1]] },
+      })),
+    );
     expect(screen.getByRole("combobox")).toHaveValue("unsaved edit");
     expect(screen.getByText(/这个视频单元已被删除/)).toHaveAttribute("role", "status");
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
@@ -388,13 +425,29 @@ describe("ReferenceVideoCanvas", () => {
   });
 
   it("外部提示词草稿到达时保留正在编辑的单元，放弃后才显示草稿", async () => {
-    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1", "正式正文")], unit_capabilities: {} });
+    vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+      units: [mkUnit("E1U1", "正式正文")],
+      unit_capabilities: {},
+    });
     const listDrafts = vi.spyOn(API, "listEpisodeDrafts").mockResolvedValue({ episode: 1, drafts: [] });
     seedFormalUnits(["E1U1"]);
-    vi.spyOn(API, "getEpisodeDraft").mockResolvedValue({ episode: 1, doc_type: "reference_prompt_authoring", revision: "rev-2", editable_by: "user", content: { title: "第一集", units: [{ text: "新的提示词草稿" }] }, violations: [{ code: "fullwidth_braces", label: "unit E1U1", message: "草稿需要修复", line: 0, item_index: 0 }], soft_violations: [], formal_exists: true, item_ids: ["E1U1"] });
+    vi.spyOn(API, "getEpisodeDraft").mockResolvedValue({
+      episode: 1,
+      doc_type: "reference_prompt_authoring",
+      revision: "rev-2",
+      editable_by: "user",
+      content: { title: "第一集", units: [{ text: "新的提示词草稿" }] },
+      violations: [{ code: "fullwidth_braces", label: "unit E1U1", message: "草稿需要修复", line: 0, item_index: 0 }],
+      soft_violations: [],
+      formal_exists: true,
+      item_ids: ["E1U1"],
+    });
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     fireEvent.change(await screen.findByRole("combobox"), { target: { value: "保留单元修改" } });
-    listDrafts.mockResolvedValue({ episode: 1, drafts: [{ doc_type: "reference_prompt_authoring", editable_by: "user", violation_count: 1 }] });
+    listDrafts.mockResolvedValue({
+      episode: 1,
+      drafts: [{ doc_type: "reference_prompt_authoring", editable_by: "user", violation_count: 1 }],
+    });
     act(() => useAppStore.getState().invalidateEntities(["draft:episode_1_prompt_authoring"]));
     expect(await screen.findByText(/本集有新的提示词草稿/)).toHaveAttribute("role", "status");
     expect(screen.getByRole("combobox")).toHaveValue("保留单元修改");
@@ -414,7 +467,9 @@ describe("ReferenceVideoCanvas", () => {
   // 解析预览与文稿共用编辑器列：切到解析视图时 textarea 让位给只读派生视图
   it("switches the editor column between the script and its parse preview", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1", "中景。")], unit_capabilities: {} });
+      units: [mkUnit("E1U1", "中景。")],
+      unit_capabilities: {},
+    });
     const previewSpy = vi.spyOn(API, "previewReferenceScript").mockResolvedValue({
       utterances: [],
       warnings: [{ key: "ref_warn_unregistered_mention", message: "@[王五] 未在角色/场景/道具中登记" }],
@@ -435,7 +490,9 @@ describe("ReferenceVideoCanvas", () => {
   // 解析预览只读、没有可聚焦的后代：面板自身须能接焦点，键盘用户才翻得到折线以下的内容
   it("lets the keyboard reach the read-only parse preview", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1", "中景。")], unit_capabilities: {} });
+      units: [mkUnit("E1U1", "中景。")],
+      unit_capabilities: {},
+    });
     vi.spyOn(API, "previewReferenceScript").mockResolvedValue({
       utterances: [],
       warnings: [],
@@ -459,7 +516,9 @@ describe("ReferenceVideoCanvas", () => {
       } as ProjectData,
     });
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1", "@[__proto__] 出场。")], unit_capabilities: {} });
+      units: [mkUnit("E1U1", "@[__proto__] 出场。")],
+      unit_capabilities: {},
+    });
     vi.spyOn(API, "previewReferenceScript").mockResolvedValue({
       utterances: [],
       warnings: [],
@@ -479,7 +538,9 @@ describe("ReferenceVideoCanvas", () => {
 
   it("renders the ReferenceVideoCard textarea once auto-selected", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1")], unit_capabilities: {} });
+      units: [mkUnit("E1U1")],
+      unit_capabilities: {},
+    });
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     const ta = await screen.findByRole("combobox");
     expect((ta as HTMLTextAreaElement).value).toContain("x");
@@ -504,15 +565,15 @@ describe("ReferenceVideoCanvas", () => {
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     fireEvent.click(await screen.findByRole("button", { name: /生成旁白配音|Generate narration audio/ }));
 
-    await waitFor(() =>
-      expect(generate).toHaveBeenCalledWith("proj", "E1U1", "episode_1.json"),
-    );
+    await waitFor(() => expect(generate).toHaveBeenCalledWith("proj", "E1U1", "episode_1.json"));
 
     unit.generated_assets.narration_audio = "audio/segment_E1U1.wav";
     useReferenceVideoStore.setState({
       unitsByEpisode: { [referenceVideoCacheKey("proj", 1)]: [unit] },
     } as never);
-    expect(await screen.findByRole("button", { name: /重新生成旁白配音|Regenerate narration audio/ })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /重新生成旁白配音|Regenerate narration audio/ }),
+    ).toBeInTheDocument();
     expect(document.querySelector('audio[src*="audio/segment_E1U1.wav"]')).not.toBeNull();
   });
 
@@ -541,18 +602,17 @@ describe("ReferenceVideoCanvas", () => {
   it("saves an edited body as the unit's text, with nothing else in the request", async () => {
     const unit = mkUnit("E1U1", "推门。");
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [unit], unit_capabilities: {} });
-    const patchSpy = vi
-      .spyOn(API, "patchReferenceVideoUnit")
-      .mockResolvedValue({ unit: { ...unit, text: "@[张三] 推门而入。" }, unit_capability: makeReferenceUnitCapability("E1U1") });
+    const patchSpy = vi.spyOn(API, "patchReferenceVideoUnit").mockResolvedValue({
+      unit: { ...unit, text: "@[张三] 推门而入。" },
+      unit_capability: makeReferenceUnitCapability("E1U1"),
+    });
 
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     const ta = await screen.findByRole("combobox");
     fireEvent.change(ta, { target: { value: "@[张三] 推门而入。" } });
 
     fireEvent.click(await screen.findByRole("button", { name: /^(Save|保存)$/ }));
-    await waitFor(() =>
-      expect(patchSpy).toHaveBeenCalledWith("proj", 1, "E1U1", { prompt: "@[张三] 推门而入。" }),
-    );
+    await waitFor(() => expect(patchSpy).toHaveBeenCalledWith("proj", 1, "E1U1", { prompt: "@[张三] 推门而入。" }));
   });
 
   it("图标栏展开的完整列表里也能用键盘排序", async () => {
@@ -617,12 +677,11 @@ describe("ReferenceVideoCanvas", () => {
     it("「保存并生成」先保存正文，再为该单元入队", async () => {
       const unit = mkUnit("E1U1", "推门。");
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [unit], unit_capabilities: {} });
-      const patchSpy = vi
-        .spyOn(API, "patchReferenceVideoUnit")
-        .mockResolvedValue({ unit: { ...unit, text: "推门而入。" }, unit_capability: makeReferenceUnitCapability("E1U1") });
-      const genSpy = vi
-        .spyOn(API, "generateReferenceVideoUnit")
-        .mockResolvedValue({ task_id: "t1", deduped: false });
+      const patchSpy = vi.spyOn(API, "patchReferenceVideoUnit").mockResolvedValue({
+        unit: { ...unit, text: "推门而入。" },
+        unit_capability: makeReferenceUnitCapability("E1U1"),
+      });
+      const genSpy = vi.spyOn(API, "generateReferenceVideoUnit").mockResolvedValue({ task_id: "t1", deduped: false });
       render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
 
       fireEvent.change(await screen.findByRole("combobox"), { target: { value: "推门而入。" } });
@@ -636,9 +695,20 @@ describe("ReferenceVideoCanvas", () => {
     it("旁白同样先保存正文再生成", async () => {
       const unit = mkUnit("E1U1", "镜头推进。\n{夜色深沉。}");
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [unit], unit_capabilities: {} });
-      useProjectsStore.setState({ currentProjectData: { ...STUB_PROJECT, narration_delivery: "use_tts", episodes: [{ episode: 1, title: "", script_file: "episode_1.json" }] } });
-      const save = vi.spyOn(API, "patchReferenceVideoUnit").mockResolvedValue({ unit: { ...unit, text: "镜头推进。\n{天亮了。}" }, unit_capability: makeReferenceUnitCapability("E1U1", { allowed_durations: null }) });
-      const generate = vi.spyOn(API, "generateNarrationAudio").mockResolvedValue({ success: true, task_id: "tts-1", deduped: false, message: "queued" });
+      useProjectsStore.setState({
+        currentProjectData: {
+          ...STUB_PROJECT,
+          narration_delivery: "use_tts",
+          episodes: [{ episode: 1, title: "", script_file: "episode_1.json" }],
+        },
+      });
+      const save = vi.spyOn(API, "patchReferenceVideoUnit").mockResolvedValue({
+        unit: { ...unit, text: "镜头推进。\n{天亮了。}" },
+        unit_capability: makeReferenceUnitCapability("E1U1", { allowed_durations: null }),
+      });
+      const generate = vi
+        .spyOn(API, "generateNarrationAudio")
+        .mockResolvedValue({ success: true, task_id: "tts-1", deduped: false, message: "queued" });
       render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
       fireEvent.change(await screen.findByRole("combobox"), { target: { value: "镜头推进。\n{天亮了。}" } });
       fireEvent.click(screen.getAllByRole("button", { name: "保存并生成" }).at(-1)!);
@@ -650,8 +720,13 @@ describe("ReferenceVideoCanvas", () => {
     it("有修改时预览先保存正文", async () => {
       const unit = mkUnit("E1U1", "推门。");
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [unit], unit_capabilities: {} });
-      const patch = vi.spyOn(API, "patchReferenceVideoUnit").mockResolvedValue({ unit: { ...unit, text: "推门而入。" }, unit_capability: makeReferenceUnitCapability("E1U1") });
-      const preview = vi.spyOn(API, "previewReferenceUnitPrompt").mockResolvedValue({ text: "最终提示词", is_text_form: true, unavailable: null, references: [], warnings: [] });
+      const patch = vi.spyOn(API, "patchReferenceVideoUnit").mockResolvedValue({
+        unit: { ...unit, text: "推门而入。" },
+        unit_capability: makeReferenceUnitCapability("E1U1"),
+      });
+      const preview = vi
+        .spyOn(API, "previewReferenceUnitPrompt")
+        .mockResolvedValue({ text: "最终提示词", is_text_form: true, unavailable: null, references: [], warnings: [] });
       render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
       fireEvent.change(await screen.findByRole("combobox"), { target: { value: "推门而入。" } });
       fireEvent.click(screen.getByRole("button", { name: "保存并预览" }));
@@ -661,7 +736,10 @@ describe("ReferenceVideoCanvas", () => {
     });
 
     it("正文保存失败时不请求预览", async () => {
-      vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1", "推门。")], unit_capabilities: {} });
+      vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+        units: [mkUnit("E1U1", "推门。")],
+        unit_capabilities: {},
+      });
       vi.spyOn(API, "patchReferenceVideoUnit").mockRejectedValue(new Error("正文写入失败"));
       const preview = vi.spyOn(API, "previewReferenceUnitPrompt");
       render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
@@ -674,7 +752,10 @@ describe("ReferenceVideoCanvas", () => {
     });
 
     it("正文保存失败时不入队，错误留在提示条上", async () => {
-      vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1", "推门。")], unit_capabilities: {} });
+      vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+        units: [mkUnit("E1U1", "推门。")],
+        unit_capabilities: {},
+      });
       vi.spyOn(API, "patchReferenceVideoUnit").mockRejectedValue(new Error("磁盘已满"));
       const genSpy = vi.spyOn(API, "generateReferenceVideoUnit");
       render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
@@ -688,7 +769,9 @@ describe("ReferenceVideoCanvas", () => {
 
     it("有未保存的正文时切换单元先询问，放弃修改后才切换", async () => {
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-        units: [mkUnit("E1U1", "hello from A"), mkUnit("E1U2", "hello from B")], unit_capabilities: {} });
+        units: [mkUnit("E1U1", "hello from A"), mkUnit("E1U2", "hello from B")],
+        unit_capabilities: {},
+      });
       const patchSpy = vi.spyOn(API, "patchReferenceVideoUnit");
       render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
       fireEvent.change(await screen.findByRole("combobox"), { target: { value: "edited A" } });
@@ -708,7 +791,10 @@ describe("ReferenceVideoCanvas", () => {
       ["", "/episodes/1"],
       ["/app/projects/proj", "/episodes/1"],
     ])("有未保存的正文时切到脚本规划会询问（base=%s）", async (base, path) => {
-      vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1", "推门。")], unit_capabilities: {} });
+      vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+        units: [mkUnit("E1U1", "推门。")],
+        unit_capabilities: {},
+      });
       renderAt(`${path}?view=board`, base);
       fireEvent.change(await screen.findByRole("combobox"), { target: { value: "推门而入。" } });
 
@@ -721,7 +807,10 @@ describe("ReferenceVideoCanvas", () => {
       ["", "/episodes/1"],
       ["/app/projects/proj", "/episodes/1"],
     ])("停留在视频单元视图的跳转不询问，去剪辑视图时询问（base=%s）", async (base, path) => {
-      vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1", "推门。")], unit_capabilities: {} });
+      vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
+        units: [mkUnit("E1U1", "推门。")],
+        unit_capabilities: {},
+      });
       renderAt(`${path}?view=board`, base);
       fireEvent.change(await screen.findByRole("combobox"), { target: { value: "推门而入。" } });
 
@@ -761,17 +850,16 @@ describe("ReferenceVideoCanvas", () => {
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     expect(await openDurationOptions()).toEqual([3, 8]);
     await userEvent.click(screen.getByRole("option", { name: /^8/ }));
-    await waitFor(() =>
-      expect(patchSpy).toHaveBeenCalledWith("proj", 1, "E1U1", { duration_seconds: 8 }),
-    );
+    await waitFor(() => expect(patchSpy).toHaveBeenCalledWith("proj", 1, "E1U1", { duration_seconds: 8 }));
   });
 
   it("commits a free-form duration once after editing instead of patching intermediate digits", async () => {
     const unit = mkUnit("E1U1");
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [unit], unit_capabilities: {} });
-    const patchSpy = vi
-      .spyOn(API, "patchReferenceVideoUnit")
-      .mockResolvedValue({ unit: { ...unit, duration_seconds: 120 }, unit_capability: makeReferenceUnitCapability("E1U1") });
+    const patchSpy = vi.spyOn(API, "patchReferenceVideoUnit").mockResolvedValue({
+      unit: { ...unit, duration_seconds: 120 },
+      unit_capability: makeReferenceUnitCapability("E1U1"),
+    });
 
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} freeDuration />);
     const input = await screen.findByRole("spinbutton", { name: /Duration|时长/ });
@@ -783,9 +871,7 @@ describe("ReferenceVideoCanvas", () => {
     expect(patchSpy).not.toHaveBeenCalled();
     fireEvent.blur(input);
 
-    await waitFor(() =>
-      expect(patchSpy).toHaveBeenCalledWith("proj", 1, "E1U1", { duration_seconds: 120 }),
-    );
+    await waitFor(() => expect(patchSpy).toHaveBeenCalledWith("proj", 1, "E1U1", { duration_seconds: 120 }));
     expect(patchSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -815,7 +901,11 @@ describe("ReferenceVideoCanvas", () => {
     const patchSpy = vi.spyOn(API, "patchReferenceVideoUnit").mockImplementation(
       () =>
         new Promise((resolve) => {
-          accept = () => resolve({ unit: { ...units[0], duration_seconds: 12 }, unit_capability: makeReferenceUnitCapability("E1U1") });
+          accept = () =>
+            resolve({
+              unit: { ...units[0], duration_seconds: 12 },
+              unit_capability: makeReferenceUnitCapability("E1U1"),
+            });
         }),
     );
 
@@ -842,7 +932,11 @@ describe("ReferenceVideoCanvas", () => {
     const input = await screen.findByRole("spinbutton", { name: /Duration|时长/ });
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: "12" } });
-    act(() => useReferenceVideoStore.setState((state) => ({ unitsByEpisode: { ...state.unitsByEpisode, [referenceVideoCacheKey("proj", 1)]: [units[1]] } })));
+    act(() =>
+      useReferenceVideoStore.setState((state) => ({
+        unitsByEpisode: { ...state.unitsByEpisode, [referenceVideoCacheKey("proj", 1)]: [units[1]] },
+      })),
+    );
 
     expect(screen.getByRole("spinbutton", { name: /Duration|时长/ })).toHaveValue(12);
     expect(screen.getByText(/这个视频单元已被删除/)).toHaveAttribute("role", "status");
@@ -852,9 +946,10 @@ describe("ReferenceVideoCanvas", () => {
   it("lets an explicit same-value duration confirm a duration-only replan marker", async () => {
     const unit = { ...mkUnit("E1U1"), needs_replan: true };
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [unit], unit_capabilities: {} });
-    const patchSpy = vi
-      .spyOn(API, "patchReferenceVideoUnit")
-      .mockResolvedValue({ unit: { ...unit, needs_replan: false }, unit_capability: makeReferenceUnitCapability("E1U1") });
+    const patchSpy = vi.spyOn(API, "patchReferenceVideoUnit").mockResolvedValue({
+      unit: { ...unit, needs_replan: false },
+      unit_capability: makeReferenceUnitCapability("E1U1"),
+    });
 
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} freeDuration />);
     const input = await screen.findByRole("spinbutton", { name: /Duration|时长/ });
@@ -862,9 +957,7 @@ describe("ReferenceVideoCanvas", () => {
     fireEvent.change(input, { target: { value: "3" } });
     fireEvent.blur(input);
 
-    await waitFor(() =>
-      expect(patchSpy).toHaveBeenCalledWith("proj", 1, "E1U1", { duration_seconds: 3 }),
-    );
+    await waitFor(() => expect(patchSpy).toHaveBeenCalledWith("proj", 1, "E1U1", { duration_seconds: 3 }));
   });
 
   // 参考生视频按申请秒数计价：改档位即改估价。SSE 会让分组缓存最终一致，费用面板仍由
@@ -1000,7 +1093,9 @@ describe("ReferenceVideoCanvas", () => {
 
   it("remounts the card so textarea shows the new unit's prompt when selection changes", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1", "hello from A"), mkUnit("E1U2", "hello from B")], unit_capabilities: {} });
+      units: [mkUnit("E1U1", "hello from A"), mkUnit("E1U2", "hello from B")],
+      unit_capabilities: {},
+    });
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     const taA = (await screen.findByRole("combobox")) as HTMLTextAreaElement;
     expect(taA.value).toContain("hello from A");
@@ -1089,7 +1184,12 @@ describe("ReferenceVideoCanvas", () => {
         useLeaveGuard({ dirty: true, save: async () => true, discard });
         return null;
       }
-      render(<><DirtyUnit /><ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} hasScript /></>);
+      render(
+        <>
+          <DirtyUnit />
+          <ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} hasScript />
+        </>,
+      );
       await screen.findByTestId("unit-row-E1U1");
 
       fireEvent.click(screen.getByRole("button", { name: "在此后插入" }));
@@ -1104,7 +1204,11 @@ describe("ReferenceVideoCanvas", () => {
       });
       fireEvent.click(confirmAdd(dialog));
       expect(addSpy).not.toHaveBeenCalled();
-      fireEvent.click(within(await screen.findByRole("alertdialog", { name: "有未保存的修改" })).getByRole("button", { name: "放弃修改" }));
+      fireEvent.click(
+        within(await screen.findByRole("alertdialog", { name: "有未保存的修改" })).getByRole("button", {
+          name: "放弃修改",
+        }),
+      );
 
       await waitFor(() => expect(addSpy).toHaveBeenCalledTimes(1));
       expect(discard).toHaveBeenCalledTimes(1);
@@ -1123,7 +1227,12 @@ describe("ReferenceVideoCanvas", () => {
         leave = useConfirmLeave();
         return null;
       }
-      render(<><Navigation /><ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} hasScript /></>);
+      render(
+        <>
+          <Navigation />
+          <ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} hasScript />
+        </>,
+      );
       fireEvent.click(await screen.findByRole("button", { name: "新增第一个视频单元" }));
       const dialog = await addDialog();
       fireEvent.change(within(dialog).getByRole("textbox", { name: "正文" }), {
@@ -1135,7 +1244,9 @@ describe("ReferenceVideoCanvas", () => {
       const left = vi.fn();
       act(() => leave(left));
       const leftBeforeCreation = left.mock.calls.length;
-      await act(async () => { pending.resolve(created); });
+      await act(async () => {
+        pending.resolve(created);
+      });
       await waitFor(() => expect(left).toHaveBeenCalledTimes(1));
       expect(leftBeforeCreation).toBe(0);
       expect(await screen.findByTestId("unit-row-E1U1")).toBeInTheDocument();
@@ -1176,7 +1287,9 @@ describe("ReferenceVideoCanvas", () => {
   // 视图由集页路由给出：脚本规划视图下不渲染 UnitList，切回视频单元视图时单元列表仍在。
   it("renders the script plan preview instead of the unit list on the plan view", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     vi.spyOn(API, "getScriptReview").mockResolvedValue({
       episode: 1,
       content_mode: "narration",
@@ -1203,7 +1316,9 @@ describe("ReferenceVideoCanvas", () => {
     // 模拟切换 episode 后残留的旧 selectedUnitId
     useReferenceVideoStore.setState({ selectedUnitId: "E99U42" });
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1", "first"), mkUnit("E1U2", "second")], unit_capabilities: {} });
+      units: [mkUnit("E1U1", "first"), mkUnit("E1U2", "second")],
+      unit_capabilities: {},
+    });
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     await waitFor(() => {
       expect(useReferenceVideoStore.getState().selectedUnitId).toBe("E1U1");
@@ -1384,10 +1499,10 @@ describe("ReferenceVideoCanvas", () => {
   // 报告、并据此让整批零任务入队的缺口：在浏览器里先摘掉，服务端只会看到健康子集并照常建任务。
   it("批量生成把在途与 needs_replan 的 unit 一并提交给服务端准入", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1"), mkUnit("E1U2"), { ...mkUnit("E1U3"), needs_replan: true }], unit_capabilities: {} });
-    const batchSpy = vi
-      .spyOn(API, "generateReferenceVideoBatch")
-      .mockResolvedValue(mkAdmission());
+      units: [mkUnit("E1U1"), mkUnit("E1U2"), { ...mkUnit("E1U3"), needs_replan: true }],
+      unit_capabilities: {},
+    });
+    const batchSpy = vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue(mkAdmission());
     vi.mocked(useActiveResourceIds).mockReturnValue(new Set());
     vi.mocked(useLatestTasksByResource).mockReturnValue(new Map());
 
@@ -1410,13 +1525,15 @@ describe("ReferenceVideoCanvas", () => {
 
   it("批量入口一次请求走服务端准入，admitted 时提示已入队", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
-    const batchSpy = vi
-      .spyOn(API, "generateReferenceVideoBatch")
-      .mockResolvedValue(mkAdmission({
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
+    const batchSpy = vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue(
+      mkAdmission({
         task_ids: ["t1", "t2"],
         task_ids_by_unit: { E1U1: "t1", E1U2: "t2" },
-      }));
+      }),
+    );
     const unitSpy = vi.spyOn(API, "generateReferenceVideoUnit");
 
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
@@ -1440,9 +1557,7 @@ describe("ReferenceVideoCanvas", () => {
 
   it("批量入口只提交目标单元，不提供也不携带旁白交付方式", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1")], unit_capabilities: {} });
-    const batchSpy = vi
-      .spyOn(API, "generateReferenceVideoBatch")
-      .mockResolvedValue(mkAdmission());
+    const batchSpy = vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue(mkAdmission());
 
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     const batch = await screen.findByRole("button", { name: /Fill in videos|补齐视频/ });
@@ -1484,12 +1599,12 @@ describe("ReferenceVideoCanvas", () => {
   // 复核口径：否则上传在途期间批量生成仍会入队同一 unit，两条路径并发写同一个成片文件。
   it("批量生成跳过上传在途的 unit", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     // 上传挂起不 resolve，模拟「请求已发出、尚未落盘」的窗口
     vi.spyOn(API, "uploadReferenceUnitVideo").mockReturnValue(new Promise(() => {}) as never);
-    const batchSpy = vi
-      .spyOn(API, "generateReferenceVideoBatch")
-      .mockResolvedValue(mkAdmission());
+    const batchSpy = vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue(mkAdmission());
     vi.mocked(useActiveResourceIds).mockReturnValue(new Set());
     vi.mocked(useLatestTasksByResource).mockReturnValue(new Map());
 
@@ -1609,9 +1724,7 @@ describe("ReferenceVideoCanvas", () => {
 
       fireEvent.click(screen.getByRole("button", { name: /Cancel|取消/ }));
 
-      await waitFor(() =>
-        expect(screen.queryByRole("button", { name: CONFIRM_CTA })).not.toBeInTheDocument(),
-      );
+      await waitFor(() => expect(screen.queryByRole("button", { name: CONFIRM_CTA })).not.toBeInTheDocument());
       expect(genSpy).not.toHaveBeenCalled();
     });
 
@@ -1635,9 +1748,6 @@ describe("ReferenceVideoCanvas", () => {
       expect(screen.getByText(/短 8 秒|8s shorter/)).toBeInTheDocument();
       expect(screen.getByText(/放不下完整的请求时长基准|cannot hold the full request basis/)).toBeInTheDocument();
     });
-
-
-
 
     // 反向：单元入口的「重新生成」本就要覆盖已有成片，不能被同一条复核挡掉。
     it("单元入口对已有成片的单元仍可重新生成", async () => {
@@ -1664,8 +1774,6 @@ describe("ReferenceVideoCanvas", () => {
         }),
       );
     });
-
-
 
     it("预检失败的单元不入队并提示", async () => {
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [mkUnit("E1U1")], unit_capabilities: {} });
@@ -1711,7 +1819,9 @@ describe("ReferenceVideoCanvas", () => {
     it("点补齐视频先列出名单、跳过项与预估费用，取消后不提交", async () => {
       const done = mkUnit("E1U3");
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-        units: [mkUnit("E1U1"), mkUnit("E1U2"), done], unit_capabilities: {} });
+        units: [mkUnit("E1U1"), mkUnit("E1U2"), done],
+        unit_capabilities: {},
+      });
       const previewSpy = vi.spyOn(API, "previewReferenceVideoBatch").mockResolvedValue(
         mkPreview({
           units: [
@@ -1754,7 +1864,9 @@ describe("ReferenceVideoCanvas", () => {
       await clickBatch();
 
       const dialog = within(await screen.findByRole("alertdialog"));
-      expect(await dialog.findByRole("alert")).toHaveTextContent(/无法规划这一批：offline|Couldn't plan this batch: offline/);
+      expect(await dialog.findByRole("alert")).toHaveTextContent(
+        /无法规划这一批：offline|Couldn't plan this batch: offline/,
+      );
       expect(dialog.getByRole("button", { name: BATCH_START_CTA })).toBeDisabled();
       expect(batchSpy).not.toHaveBeenCalled();
     });
@@ -1763,36 +1875,38 @@ describe("ReferenceVideoCanvas", () => {
     // 不再弹第二层档位确认。
     it("需确认档位时在同一个确认框里拍板，确认一次就带 confirmed_request_durations 提交", async () => {
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-        units: [mkUnit("E1U1"), mkUnit("E1U2"), mkUnit("E1U3")], unit_capabilities: {} });
+        units: [mkUnit("E1U1"), mkUnit("E1U2"), mkUnit("E1U3")],
+        unit_capabilities: {},
+      });
       vi.spyOn(API, "previewReferenceVideoBatch").mockResolvedValue(
-          mkPreview({
-            decision: "confirmation_required",
-            estimated_cost: { USD: 1.6 },
-            unpriced_count: 1,
-            units: [
-              { unit_id: "E1U1", admitted: false, request_duration_seconds: 8, problems: [] },
-              { unit_id: "E1U2", admitted: false, request_duration_seconds: 8, problems: [] },
-              { unit_id: "E1U3", admitted: false, request_duration_seconds: 4, problems: [] },
+        mkPreview({
+          decision: "confirmation_required",
+          estimated_cost: { USD: 1.6 },
+          unpriced_count: 1,
+          units: [
+            { unit_id: "E1U1", admitted: false, request_duration_seconds: 8, problems: [] },
+            { unit_id: "E1U2", admitted: false, request_duration_seconds: 8, problems: [] },
+            { unit_id: "E1U3", admitted: false, request_duration_seconds: 4, problems: [] },
+          ],
+          confirmation: {
+            tiers: [
+              {
+                request_duration_seconds: 8,
+                unit_count: 2,
+                unit_ids: ["E1U1", "E1U2"],
+                cost_amount: 1.6,
+                cost_currency: "USD",
+              },
+              {
+                request_duration_seconds: 4,
+                unit_count: 1,
+                unit_ids: ["E1U3"],
+                cost_amount: null,
+                cost_currency: null,
+              },
             ],
-            confirmation: {
-              tiers: [
-                {
-                  request_duration_seconds: 8,
-                  unit_count: 2,
-                  unit_ids: ["E1U1", "E1U2"],
-                  cost_amount: 1.6,
-                  cost_currency: "USD",
-                },
-                {
-                  request_duration_seconds: 4,
-                  unit_count: 1,
-                  unit_ids: ["E1U3"],
-                  cost_amount: null,
-                  cost_currency: null,
-                },
-              ],
-            },
-          }),
+          },
+        }),
       );
       const batchSpy = vi
         .spyOn(API, "generateReferenceVideoBatch")
@@ -1828,7 +1942,9 @@ describe("ReferenceVideoCanvas", () => {
     // 新结论，结论弹窗按它再请一次确认，确认后按新档位重发。
     it("提交时档位与预览不同，按新结论再确认一次后重发", async () => {
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-        units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+        units: [mkUnit("E1U1"), mkUnit("E1U2")],
+        unit_capabilities: {},
+      });
       const batchSpy = vi
         .spyOn(API, "generateReferenceVideoBatch")
         .mockResolvedValueOnce(
@@ -1841,7 +1957,13 @@ describe("ReferenceVideoCanvas", () => {
             ],
             confirmation: {
               tiers: [
-                { request_duration_seconds: 8, unit_count: 1, unit_ids: ["E1U2"], cost_amount: 0.8, cost_currency: "USD" },
+                {
+                  request_duration_seconds: 8,
+                  unit_count: 1,
+                  unit_ids: ["E1U2"],
+                  cost_amount: 0.8,
+                  cost_currency: "USD",
+                },
               ],
             },
           }),
@@ -1868,24 +1990,24 @@ describe("ReferenceVideoCanvas", () => {
       const [u1, u2] = [mkUnit("E1U1"), mkUnit("E1U2")];
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({ units: [u1, u2], unit_capabilities: {} });
       vi.spyOn(API, "previewReferenceVideoBatch").mockResolvedValue(
-          mkPreview({
-            decision: "confirmation_required",
-            units: [
-              { unit_id: "E1U1", admitted: false, request_duration_seconds: 4, problems: [] },
-              { unit_id: "E1U2", admitted: false, request_duration_seconds: 4, problems: [] },
+        mkPreview({
+          decision: "confirmation_required",
+          units: [
+            { unit_id: "E1U1", admitted: false, request_duration_seconds: 4, problems: [] },
+            { unit_id: "E1U2", admitted: false, request_duration_seconds: 4, problems: [] },
+          ],
+          confirmation: {
+            tiers: [
+              {
+                request_duration_seconds: 4,
+                unit_count: 2,
+                unit_ids: ["E1U1", "E1U2"],
+                cost_amount: 0.8,
+                cost_currency: "USD",
+              },
             ],
-            confirmation: {
-              tiers: [
-                {
-                  request_duration_seconds: 4,
-                  unit_count: 2,
-                  unit_ids: ["E1U1", "E1U2"],
-                  cost_amount: 0.8,
-                  cost_currency: "USD",
-                },
-              ],
-            },
-          }),
+          },
+        }),
       );
       const batchSpy = vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValueOnce(mkAdmission());
 
@@ -1915,7 +2037,9 @@ describe("ReferenceVideoCanvas", () => {
 
     it("受阻时在确认框里列出每个单元的缺口与下一步，并标明被连带扣下的单元，不能提交", async () => {
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-        units: [mkUnit("E1U1"), mkUnit("E1U2"), mkUnit("E1U3")], unit_capabilities: {} });
+        units: [mkUnit("E1U1"), mkUnit("E1U2"), mkUnit("E1U3")],
+        unit_capabilities: {},
+      });
       const batchSpy = vi.spyOn(API, "generateReferenceVideoBatch");
       vi.spyOn(API, "previewReferenceVideoBatch").mockResolvedValue(
         mkPreview({
@@ -1995,7 +2119,9 @@ describe("ReferenceVideoCanvas", () => {
 
     it("入队中断时逐个列出没排上队列的单元与原因", async () => {
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-        units: [mkUnit("E1U1"), mkUnit("E1U2"), mkUnit("E1U3")], unit_capabilities: {} });
+        units: [mkUnit("E1U1"), mkUnit("E1U2"), mkUnit("E1U3")],
+        unit_capabilities: {},
+      });
       const batchSpy = vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue(
         // 入队中断不撤销已建的任务：decision 仍是 admitted，没轮到的单元逐个进
         // enqueue_failures，各带一条已本地化的原因。
@@ -2028,13 +2154,9 @@ describe("ReferenceVideoCanvas", () => {
       // 已排上的单元不混进未排上的清单
       expect(dialog.queryByRole("img", { name: "视频单元 1" })).not.toBeInTheDocument();
       // 已建任务照常执行这一点要说明，否则用户读不出这批是「部分成功」
-      expect(
-        dialog.getByText(/再次批量生成就会补上|generate the batch again/),
-      ).toBeInTheDocument();
+      expect(dialog.getByText(/再次批量生成就会补上|generate the batch again/)).toBeInTheDocument();
       // 已有产物而跳过的单元与没排上的不是一回事，这一路同样要交代
-      expect(
-        dialog.getByText(/已有视频，本次跳过|already had a video and is skipped/),
-      ).toBeInTheDocument();
+      expect(dialog.getByText(/已有视频，本次跳过|already had a video and is skipped/)).toBeInTheDocument();
       // 动作层那条计数提示仍在，两处说的是同一件事
       await waitFor(() => {
         expect(useAppStore.getState().toast?.text).toMatch(/入队中断|Enqueue was interrupted/);
@@ -2048,7 +2170,9 @@ describe("ReferenceVideoCanvas", () => {
 
     it("首个目标就中断时不说成部分排上", async () => {
       vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-        units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+        units: [mkUnit("E1U1"), mkUnit("E1U2")],
+        unit_capabilities: {},
+      });
       vi.spyOn(API, "generateReferenceVideoBatch").mockResolvedValue(
         // 中断落在第一个目标上：decision 仍是 admitted，但一个任务也没建成。
         mkAdmission({
@@ -2080,9 +2204,7 @@ describe("ReferenceVideoCanvas", () => {
       expect(dialog.getByRole("img", { name: "视频单元 1" })).toBeInTheDocument();
       expect(dialog.getByRole("img", { name: "视频单元 2" })).toBeInTheDocument();
       // 一个任务都没建时不能说「部分」，也不能说已提交的任务照常执行
-      expect(
-        dialog.getByText(/没有任务排上队列|No task from this batch was queued/),
-      ).toBeInTheDocument();
+      expect(dialog.getByText(/没有任务排上队列|No task from this batch was queued/)).toBeInTheDocument();
       expect(dialog.queryByText(/部分单元未排上队列|Some units were not queued/)).not.toBeInTheDocument();
       expect(dialog.getByText(/没有任务在执行|nothing from this batch is running/)).toBeInTheDocument();
     });
@@ -2120,7 +2242,9 @@ describe("ReferenceVideoCanvas", () => {
   // 通知回跳：收到 reference_unit scroll target 时切到视频单元视图并选中对应 unit，不多留一条历史。
   it("selects the unit and asks for the units view on a reference_unit scroll target", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     vi.spyOn(API, "getScriptReview").mockRejectedValue(new Error("not needed"));
     const onViewChange = vi.fn();
     render(<ReferenceVideoCanvas view="plan" onViewChange={onViewChange} projectName="proj" episode={1} />);
@@ -2135,7 +2259,9 @@ describe("ReferenceVideoCanvas", () => {
 
   it("有未保存修改时定位到单元只询问一次：继续编辑什么都不变，放弃后切到视频单元视图并选中", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     vi.spyOn(API, "getScriptReview").mockRejectedValue(new Error("not needed"));
     const saveNothing = async () => true;
     /** 画布之外另一个带着未保存修改的编辑单元。 */
@@ -2144,7 +2270,12 @@ describe("ReferenceVideoCanvas", () => {
       return null;
     }
     const onViewChange = vi.fn();
-    render(<><OtherDirtyUnit /><ReferenceVideoCanvas view="plan" onViewChange={onViewChange} projectName="proj" episode={1} /></>);
+    render(
+      <>
+        <OtherDirtyUnit />
+        <ReferenceVideoCanvas view="plan" onViewChange={onViewChange} projectName="proj" episode={1} />
+      </>,
+    );
     await waitFor(() => expect(useReferenceVideoStore.getState().selectedUnitId).toBe("E1U1"));
 
     act(() => useAppStore.getState().triggerScrollTo({ type: "reference_unit", id: "E1U2", route: "/episodes/1" }));
@@ -2160,7 +2291,9 @@ describe("ReferenceVideoCanvas", () => {
 
   it("窄屏下带起始时间的单元链接把预览子页签切到前台", async () => {
     vi.spyOn(API, "listReferenceVideoUnits").mockResolvedValue({
-      units: [mkUnit("E1U1"), mkUnit("E1U2")], unit_capabilities: {} });
+      units: [mkUnit("E1U1"), mkUnit("E1U2")],
+      unit_capabilities: {},
+    });
     render(<ReferenceVideoCanvas {...BOARD} projectName="proj" episode={1} />);
     await waitFor(() => expect(useReferenceVideoStore.getState().selectedUnitId).toBe("E1U1"));
     const previewTab = screen.getByRole("tab", { name: /^(Video|视频)$/ });
@@ -2168,7 +2301,9 @@ describe("ReferenceVideoCanvas", () => {
 
     act(() => {
       useAppStore.getState().triggerScrollTo({ type: "reference_unit", id: "E1U2", route: "/episodes/1" });
-      useAppStore.getState().requestPlaybackStart({ resource_type: "reference_videos", resource_id: "E1U2", seconds: 2 });
+      useAppStore
+        .getState()
+        .requestPlaybackStart({ resource_type: "reference_videos", resource_id: "E1U2", seconds: 2 });
     });
 
     await waitFor(() => expect(useReferenceVideoStore.getState().selectedUnitId).toBe("E1U2"));
@@ -2179,7 +2314,10 @@ describe("ReferenceVideoCanvas", () => {
   // 慢网/冷启动回归：units 仍在加载（loadUnits 未返回）时，即便 target 已过期也不该
   // 提前清除——否则 units 到达后无法再选中目标 unit，"点击通知回跳"失效。
   it("keeps a reference_unit target while units are still loading, even past expiry", async () => {
-    let resolveList: (v: { units: ReferenceVideoUnit[]; unit_capabilities: ReferenceUnitCapabilityMap }) => void = () => {};
+    let resolveList: (v: {
+      units: ReferenceVideoUnit[];
+      unit_capabilities: ReferenceUnitCapabilityMap;
+    }) => void = () => {};
     vi.spyOn(API, "listReferenceVideoUnits").mockReturnValue(
       new Promise((resolve) => {
         resolveList = resolve;
@@ -2296,12 +2434,10 @@ describe("ReferenceVideoCanvas", () => {
       // refreshProject 失败时 resolve "failed" 而非 reject——只 await 不检查结果/传
       // onError 会让这次失败在 UI 上完全无感知。
       vi.spyOn(API, "updateCharacter").mockResolvedValue({} as never);
-      const refreshProject = vi.fn(
-        (_name: string, options?: { onError?: (err: unknown) => void }): Promise<string> => {
-          options?.onError?.(new Error("network down"));
-          return Promise.resolve("failed");
-        },
-      );
+      const refreshProject = vi.fn((_name: string, options?: { onError?: (err: unknown) => void }): Promise<string> => {
+        options?.onError?.(new Error("network down"));
+        return Promise.resolve("failed");
+      });
       useProjectsStore.setState({
         currentProjectName: "proj",
         currentProjectData: {

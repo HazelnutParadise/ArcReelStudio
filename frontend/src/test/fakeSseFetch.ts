@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi } from "vite-plus/test";
 
 /**
  * 可控的 `text/event-stream` fetch 响应替身：把全局 `fetch` 打桩为返回一个由测试驱动的

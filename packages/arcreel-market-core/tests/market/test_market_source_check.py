@@ -13,6 +13,7 @@ from definition_factories import comfyui_endpoint_definition, custom_endpoint_de
 from PIL import Image
 
 from arcreel_market_core.market import INDEX_FILENAME, check_source
+from arcreel_market_core.market.fetch import MAX_JSON_DEPTH
 
 
 def _png(width: int = 64, height: int = 64, fmt: str = "PNG") -> bytes:
@@ -141,6 +142,15 @@ class TestIndexRule:
 
     def test_deeply_nested_index_is_reported(self, tmp_path: Path):
         nested = "[" * 100_000 + "]" * 100_000
+        (tmp_path / INDEX_FILENAME).write_text(
+            f'{{"schema_version": "1.0.0", "name": "x", "entries": [], "extra": {nested}}}', encoding="utf-8"
+        )
+
+        assert _codes(tmp_path) == [(INDEX_FILENAME, "$", "index_unreadable")]
+
+    def test_index_nested_deeper_than_the_fetch_limit_is_reported(self, tmp_path: Path):
+        # 不依赖解析器的递归上限：这个深度在任何 Python 版本上都能解析，应用抓取时却会因为嵌套过深拒收
+        nested = "[" * (MAX_JSON_DEPTH + 1) + "]" * (MAX_JSON_DEPTH + 1)
         (tmp_path / INDEX_FILENAME).write_text(
             f'{{"schema_version": "1.0.0", "name": "x", "entries": [], "extra": {nested}}}', encoding="utf-8"
         )

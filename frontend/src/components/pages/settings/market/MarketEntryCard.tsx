@@ -42,7 +42,15 @@ function useEntryIconUrl(entry: MarketEntry): string | null {
 export function EntryIcon({ entry }: { entry: MarketEntry }) {
   const url = useEntryIconUrl(entry);
   if (url !== null) {
-    return <img src={url} alt="" width={ICON_SIZE} height={ICON_SIZE} className="size-10 shrink-0 rounded-md object-contain" />;
+    return (
+      <img
+        src={url}
+        alt=""
+        width={ICON_SIZE}
+        height={ICON_SIZE}
+        className="size-10 shrink-0 rounded-md object-contain"
+      />
+    );
   }
   return (
     <div

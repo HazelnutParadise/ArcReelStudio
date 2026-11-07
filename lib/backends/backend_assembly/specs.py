@@ -753,7 +753,8 @@ _MULTI_ENDPOINT_DEFAULTS: Mapping[tuple[str, str], str] = {
     ("ark", "image"): "ark-seedream-4",
     ("ark-agent-plan", "image"): "ark-seedream-4",
     ("dashscope", "image"): "dashscope-qwen-image",
-    ("gemini-aistudio", "video"): "gemini-video",
+    # Google 已关闭 AI Studio 上的 Veo，默认改用 Gemini Omni；Veo 走 Vertex
+    ("gemini-aistudio", "video"): "gemini-interactions-video",
     ("gemini-vertex", "video"): "gemini-vertex-video",
     ("agnes", "image"): "agnes-image-tier",
     ("minimax", "video"): "minimax-hailuo-v1",
@@ -904,10 +905,14 @@ def agnes_video_endpoint_for_name(name: str) -> str | None:
 
 
 def gemini_video_endpoint_for_name(provider_id: str, name: str) -> str | None:
-    """按名字预填 Gemini 视频的请求协议：Gemini Omni 走 Interactions API，其余由供应商默认端点决定。"""
-    if "gemini-omni" not in name.strip().lower():
-        return None
-    return _GEMINI_VIDEO_ENDPOINTS["interactions"][_GEMINI_BACKEND_TYPES[provider_id]]
+    """按名字预填 Gemini 视频的请求协议：Gemini Omni 走 Interactions API，Veo 走长任务端点，其余由供应商默认端点决定。"""
+    lowered = name.strip().lower()
+    backend_type = _GEMINI_BACKEND_TYPES[provider_id]
+    if "gemini-omni" in lowered:
+        return _GEMINI_VIDEO_ENDPOINTS["interactions"][backend_type]
+    if "veo" in lowered:
+        return _GEMINI_VIDEO_ENDPOINTS["veo"][backend_type]
+    return None
 
 
 def builtin_model_endpoint(provider_id: str, media_type: str, model_id: str | None) -> str:

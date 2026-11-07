@@ -43,8 +43,13 @@ export function executingImageModel(
   globals: { image: string; imageT2I: string } & AutoBackendsLayer,
 ): string {
   return (
-    effectiveModel(value.imageBackendT2I, value.imageBackendDefault, globals.imageT2I, globals.image, globals.auto?.t2i) ??
-    ""
+    effectiveModel(
+      value.imageBackendT2I,
+      value.imageBackendDefault,
+      globals.imageT2I,
+      globals.image,
+      globals.auto?.t2i,
+    ) ?? ""
   );
 }
 

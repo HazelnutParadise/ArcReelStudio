@@ -329,7 +329,7 @@ def read_quarantine(project_path: Path, episode: int, kind: str) -> QuarantinedD
     try:
         if int(data["episode"]) != episode:
             return None
-    except (KeyError, TypeError, ValueError):
+    except KeyError, TypeError, ValueError:
         return None
     raw_violations = data.get("violations")
     violations = [v for v in raw_violations if isinstance(v, dict)] if isinstance(raw_violations, list) else []

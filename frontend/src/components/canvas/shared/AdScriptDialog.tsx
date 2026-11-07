@@ -222,7 +222,8 @@ interface ProgressProps {
   className?: string;
 }
 
-const STATUS_CLS = "flex gap-2.5 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-subtle-foreground";
+const STATUS_CLS =
+  "flex gap-2.5 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-subtle-foreground";
 
 /**
  * 广告/短片整份生成的任务进度：排队 / 生成中，或本次登记的待生成资产。
@@ -237,10 +238,7 @@ export function AdScriptProgress({ projectName, episode, noScript, className = "
 
   if (busy) {
     return (
-      <div
-        role="status"
-        className={cn(STATUS_CLS, "items-center", className)}
-      >
+      <div role="status" className={cn(STATUS_CLS, "items-center", className)}>
         <Loader2 className="size-4 shrink-0 animate-spin text-primary" aria-hidden />
         <span>
           {latestTask.status === "running" ? t("ad_script_progress_running") : t("ad_script_progress_queued")}{" "}
@@ -265,10 +263,7 @@ export function AdScriptProgress({ projectName, episode, noScript, className = "
   const registered = (latestTask.result as AdScriptTaskResult | null)?.new_assets ?? [];
   if (latestTask.status !== "succeeded" || registered.length === 0) return null;
   return (
-    <div
-      role="status"
-      className={cn(STATUS_CLS, "items-start", className)}
-    >
+    <div role="status" className={cn(STATUS_CLS, "items-start", className)}>
       <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
       <span>
         {t("ad_script_new_assets", {

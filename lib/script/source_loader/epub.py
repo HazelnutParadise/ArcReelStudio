@@ -80,7 +80,7 @@ def _decode_chapter(data: bytes) -> str | bytes:
             return data.decode("utf-8")
         codec = codecs.lookup(declaration.group(1).decode("ascii")).name
         return data[declaration.end() :].decode(codec)
-    except (LookupError, ValueError):
+    except LookupError, ValueError:
         return data
 
 

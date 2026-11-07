@@ -34,7 +34,8 @@ function narrowPromptAuthoringDraft(content: Record<string, unknown> | null): Pr
   const units = content?.units;
   if (!Array.isArray(units)) return null;
   const valid = units.every(
-    (unit: unknown) => unit != null && typeof unit === "object" && typeof (unit as { text?: unknown }).text === "string",
+    (unit: unknown) =>
+      unit != null && typeof unit === "object" && typeof (unit as { text?: unknown }).text === "string",
   );
   return valid ? (content as unknown as PromptAuthoringDraft) : null;
 }

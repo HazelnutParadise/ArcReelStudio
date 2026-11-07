@@ -1,13 +1,6 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ChevronDown,
-  ChevronUp,
-  MessageSquareQuote,
-  Plus,
-  Radio,
-  X,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, MessageSquareQuote, Plus, Radio, X } from "lucide-react";
 import { cn } from "cn";
 import type { Utterance, UtteranceKind } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -62,16 +55,7 @@ interface UtteranceRowProps {
  * 一条有序发声条目：左侧时序节点（台词实心、画外音空心）、类型切换、说话人（仅台词）、
  * 随内容撑高的文本与上移 / 下移 / 删除。台词缺说话人时标为无效（后端 kind ⇄ speaker 约束，保存时会拒）。
  */
-function UtteranceRow({
-  value,
-  index,
-  total,
-  disabled,
-  speakerListId,
-  onUpdate,
-  onMove,
-  onRemove,
-}: UtteranceRowProps) {
+function UtteranceRow({ value, index, total, disabled, speakerListId, onUpdate, onMove, onRemove }: UtteranceRowProps) {
   const { t } = useTranslation("dashboard");
   const isDialogue = value.kind === "dialogue";
   const speaker = isDialogue ? value.speaker : "";
@@ -84,10 +68,7 @@ function UtteranceRow({
         {index > 0 && <span aria-hidden="true" className="absolute top-0 h-2.5 w-px bg-border" />}
         <span
           aria-hidden="true"
-          className={cn(
-            "mt-2 size-2.5 rounded-full",
-            isDialogue ? "bg-primary" : "border border-muted-foreground",
-          )}
+          className={cn("mt-2 size-2.5 rounded-full", isDialogue ? "bg-primary" : "border border-muted-foreground")}
         />
         {index < total - 1 && <span aria-hidden="true" className="w-px flex-1 bg-border" />}
       </div>
@@ -109,7 +90,7 @@ function UtteranceRow({
             </TooltipTrigger>
             <TooltipContent>{t("utterance_toggle_kind")}</TooltipContent>
           </Tooltip>
-         {isDialogue && (
+          {isDialogue && (
             <Input
               value={speaker}
               list={speakerListId}

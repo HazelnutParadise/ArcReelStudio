@@ -68,25 +68,12 @@ export const MEDIA_TYPE_FORM_PROFILES: Record<EndpointMediaType, MediaTypeFormPr
 
 export const INPUT_ENCODINGS: EndpointInputEncoding[] = ["data_uri", "base64"];
 
-export const STANDARD_STATUSES: EndpointStandardStatus[] = [
-  "queued",
-  "running",
-  "succeeded",
-  "failed",
-];
+export const STANDARD_STATUSES: EndpointStandardStatus[] = ["queued", "running", "succeeded", "failed"];
 
 export const HTTP_METHODS = ["GET", "POST", "PUT"];
 
 /** 表单分节 id，同时是诊断卡定位与竖轨编号的依据。 */
-export type EndpointFormSection =
-  | "meta"
-  | "auth"
-  | "inputs"
-  | "submit"
-  | "poll"
-  | "status"
-  | "capabilities"
-  | "test";
+export type EndpointFormSection = "meta" | "auth" | "inputs" | "submit" | "poll" | "status" | "capabilities" | "test";
 
 /** 新建定义的预填：方法与恒等状态映射有通用答案，能力与取值路径各家差异大，留空。 */
 export function newEndpointDefinition(author: string): EndpointDefinition {
@@ -128,10 +115,7 @@ export function readPaths(spec: EndpointExtractSpec | undefined): EndpointPathIt
 }
 
 /** 写回路径数组，保留原形态的 accept；空数组写成空简写而非删键，避免字段静默消失。 */
-export function writePaths(
-  spec: EndpointExtractSpec | undefined,
-  paths: EndpointPathItem[],
-): EndpointExtractSpec {
+export function writePaths(spec: EndpointExtractSpec | undefined, paths: EndpointPathItem[]): EndpointExtractSpec {
   if (spec !== undefined && !Array.isArray(spec)) {
     return spec.accept === undefined ? { paths } : { paths, accept: spec.accept };
   }
@@ -177,12 +161,7 @@ export function sectionOfIssuePath(path: string): EndpointFormSection | null {
 // ---------------------------------------------------------------------------
 
 /** 按键序重建对象，让重命名键不改变字段顺序——顺序变化会让 JSON 视图无谓地跳动。 */
-export function renameKey<T>(
-  record: Record<string, T>,
-  from: string,
-  to: string,
-  value: T,
-): Record<string, T> {
+export function renameKey<T>(record: Record<string, T>, from: string, to: string, value: T): Record<string, T> {
   if (from !== to && to in record) return record;
   const next: Record<string, T> = {};
   for (const [k, v] of Object.entries(record)) {

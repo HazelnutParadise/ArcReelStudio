@@ -36,17 +36,14 @@ export function UsageHeaderEntry({ projectName }: { projectName: string }) {
   const cost = summary?.kpi.cost ?? {};
   const primaryCurrency = summary?.primary_currency ?? null;
   const entries = costEntries(cost);
-  const primaryEntry = primaryCurrency
-    ? entries.find(([currency]) => currency === primaryCurrency)
-    : undefined;
+  const primaryEntry = primaryCurrency ? entries.find(([currency]) => currency === primaryCurrency) : undefined;
   const others = entries.filter(([currency]) => currency !== primaryEntry?.[0]);
   const primaryText = primaryEntry
     ? formatCurrencyAmount(primaryEntry[0], primaryEntry[1])
     : formatCurrencyAmount(primaryCurrency ?? FALLBACK_CURRENCY, 0);
-  const fullCost = [
-    primaryText,
-    ...others.map(([currency, amount]) => formatCurrencyAmount(currency, amount)),
-  ].join(" + ");
+  const fullCost = [primaryText, ...others.map(([currency, amount]) => formatCurrencyAmount(currency, amount))].join(
+    " + ",
+  );
   const label =
     activeCount > 0
       ? t("usage_entry_aria_active", { cost: fullCost, count: activeCount })
@@ -54,11 +51,7 @@ export function UsageHeaderEntry({ projectName }: { projectName: string }) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        render={
-          <Button variant="outline" size="sm" aria-label={label} className="relative" />
-        }
-      >
+      <PopoverTrigger render={<Button variant="outline" size="sm" aria-label={label} className="relative" />}>
         <Activity
           aria-hidden="true"
           data-icon="inline-start"

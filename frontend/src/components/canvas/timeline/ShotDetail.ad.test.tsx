@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { ShotDetail } from "./ShotDetail";
 import { useCostStore } from "@/stores/cost-store";
 import type { AdShot } from "@/types";
@@ -63,6 +63,7 @@ describe("ShotDetail 广告/短片", () => {
     expect(onUpdatePrompt).toHaveBeenCalledWith(
       "E1S01",
       expect.objectContaining({ voiceover_text: "三秒速干，告别水渍", section: "demo" }),
+      expect.anything(),
     );
   });
 
@@ -79,6 +80,7 @@ describe("ShotDetail 广告/短片", () => {
       expect.objectContaining({
         video_prompt: expect.objectContaining({ dialogue: [{ speaker: "店员", line: "" }] }),
       }),
+      expect.anything(),
     );
     expect(screen.queryByRole("button", { name: "清除台词" })).not.toBeInTheDocument();
   });

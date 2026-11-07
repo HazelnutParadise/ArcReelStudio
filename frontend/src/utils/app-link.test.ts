@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { parseAppLink, parseSeconds } from "./app-link";
 
@@ -24,7 +24,11 @@ describe("parseAppLink", () => {
   });
 
   it("单元链接不带 t 时起始时间为 null", () => {
-    expect(parseAppLink("/app/projects/demo/episodes/2?unit=E1U3", ORIGIN)?.unit).toEqual({ id: "E1U3", seconds: null, project: "demo" });
+    expect(parseAppLink("/app/projects/demo/episodes/2?unit=E1U3", ORIGIN)?.unit).toEqual({
+      id: "E1U3",
+      seconds: null,
+      project: "demo",
+    });
   });
 
   it("项目名按路径段编码", () => {
@@ -33,9 +37,9 @@ describe("parseAppLink", () => {
   });
 
   it("单元链接带出解码后的项目名，无法解码的项目名为 null", () => {
-    expect(parseAppLink("/app/projects/%E6%88%91%E7%9A%84%E9%A1%B9%E7%9B%AE/episodes/1?unit=E1U1", ORIGIN)?.unit?.project).toBe(
-      "我的项目",
-    );
+    expect(
+      parseAppLink("/app/projects/%E6%88%91%E7%9A%84%E9%A1%B9%E7%9B%AE/episodes/1?unit=E1U1", ORIGIN)?.unit?.project,
+    ).toBe("我的项目");
     expect(parseAppLink("/app/projects/%E0%A4%A/episodes/1?unit=E1U1", ORIGIN)?.unit?.project).toBeNull();
   });
 

@@ -135,11 +135,7 @@ export function ProviderModelEntryInfo({
         </p>
       )}
       {pending !== null ? (
-        <PendingChange
-          pending={pending}
-          onEdit={() => setDialog("manual")}
-          onCancel={() => onPendingChange(null)}
-        />
+        <PendingChange pending={pending} onEdit={() => setDialog("manual")} onCancel={() => onPendingChange(null)} />
       ) : entry === null || value === null ? (
         <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-warn/50 px-4 py-3">
           <p className="text-sm">{t("pm_sheet_no_entry")}</p>
@@ -342,7 +338,15 @@ export interface FactFieldProps {
  * 一项模型事实。编辑器里的文本只在挂载时取初值：取值被外部改掉（放弃修改、采用官方值、恢复官方数据）时换一代
  * 重新挂载，上一代的文本输入卸载时收回它留下的「填写不正确」。
  */
-export function FactField({ dimension, value, resolutions, onChange, validityKey, onValidityChange, official }: FactFieldProps) {
+export function FactField({
+  dimension,
+  value,
+  resolutions,
+  onChange,
+  validityKey,
+  onValidityChange,
+  official,
+}: FactFieldProps) {
   const { t } = useTranslation("dashboard");
   const [seen, setSeen] = useState({ value, generation: 0 });
   if (!sameJson(seen.value, value)) setSeen({ value, generation: seen.generation + 1 });
@@ -376,12 +380,7 @@ function OfficialValue({ text, label, onAdopt }: { text: string; label: string; 
         {t("pm_entry_official_value")}
         <span className="text-subtle-foreground">{text}</span>
       </span>
-      <Button
-        variant="link"
-        size="xs"
-        aria-label={t("pm_entry_adopt_named", { name: label })}
-        onClick={onAdopt}
-      >
+      <Button variant="link" size="xs" aria-label={t("pm_entry_adopt_named", { name: label })} onClick={onAdopt}>
         {t("pm_entry_adopt")}
       </Button>
     </p>
@@ -599,7 +598,9 @@ function PendingChange({
             {capabilityValueText(t, key, entry.facts?.[key])}
           </InfoRow>
         ))}
-        <InfoRow label={t("pm_info_price")}>{entry.price ? t("pm_manual_price_filled") : t("pm_manual_price_empty")}</InfoRow>
+        <InfoRow label={t("pm_info_price")}>
+          {entry.price ? t("pm_manual_price_filled") : t("pm_manual_price_empty")}
+        </InfoRow>
       </dl>
       {actions}
     </div>

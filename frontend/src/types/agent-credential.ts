@@ -17,6 +17,8 @@ export interface PresetProvider {
   notes: string | null;
   api_key_pattern: string | null;
   is_recommended: boolean;
+  /** 固定直连官方端点：地址不能改，表单里只读显示。 */
+  fixed_endpoint: boolean;
 }
 
 export interface PresetProvidersResponse {
@@ -120,4 +122,30 @@ export interface TestConnectionRequest {
   base_url?: string | null;
   api_key: string;
   model?: string | null;
+}
+
+// ==================== Claude 订阅登录 ====================
+
+/** Agent 会话用哪种认证：只用 API Key、只用订阅，或优先用其中一方、不能用时改用另一方。 */
+export type AgentAuthMode = "api_key" | "subscription" | "prefer_subscription" | "prefer_api_key";
+
+/** 一方暂时不能用：`until` 是到期时间（Unix 秒），要等重新配置时为 null。 */
+export interface AgentAuthAvailability {
+  blocked: boolean;
+  until: number | null;
+}
+
+export interface ClaudeSubscriptionStatus {
+  logged_in: boolean;
+  token_masked: string | null;
+  logged_in_at: string | null;
+  mode: AgentAuthMode;
+  has_api_key: boolean;
+  subscription: AgentAuthAvailability;
+  api_key: AgentAuthAvailability;
+}
+
+export interface ClaudeLoginStart {
+  login_id: string;
+  authorize_url: string;
 }

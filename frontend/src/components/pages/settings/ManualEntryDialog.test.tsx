@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import "@/i18n";
 import { API } from "@/api";
 import { ManualEntryDialog } from "./ManualEntryDialog";
@@ -22,6 +22,8 @@ describe("ManualEntryDialog", () => {
     const confirm = within(dialog).getByRole("button", { name: "确定" });
     expect(confirm).toBeEnabled();
     await user.click(confirm);
-    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ maker: "acme", name: "relay-x", media_type: "image" }));
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ maker: "acme", name: "relay-x", media_type: "image" }),
+    );
   });
 });

@@ -6,7 +6,7 @@
  */
 
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import i18n from "@/i18n";
@@ -24,12 +24,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import { useTasksStore } from "@/stores/tasks-store";
 import { ONBOARDING_ANCHORS, type OnboardingAnchor } from "./anchors";
 import { DemoAssistantPanel } from "./DemoAssistantPanel";
-import {
-  buildDemoProjectData,
-  buildDemoScripts,
-  DEMO_PROJECT_NAME,
-  DEMO_SCRIPTED_EPISODE,
-} from "./demo-project";
+import { buildDemoProjectData, buildDemoScripts, DEMO_PROJECT_NAME, DEMO_SCRIPTED_EPISODE } from "./demo-project";
 import { anchorSelector } from "./tour";
 
 vi.mock("@/components/pages/CreateProjectModal", () => ({

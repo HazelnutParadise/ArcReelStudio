@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { ApiRequestError } from "@/api/errors";
 import { makeTask } from "@/test/factories";
@@ -14,7 +14,10 @@ describe("outputTruncationOf", () => {
     });
     expect(outputTruncationOf(truncated)).toEqual({ providerId: "custom-3", model: "my-llm", custom: true });
     expect(
-      outputTruncationOf({ error_code: "text_output_truncated", error_params: { provider_id: "openai", model: "gpt" } }),
+      outputTruncationOf({
+        error_code: "text_output_truncated",
+        error_params: { provider_id: "openai", model: "gpt" },
+      }),
     ).toEqual({ providerId: "openai", model: "gpt", custom: false });
     expect(outputTruncationOf({ error_code: "generation_refused", error_params: {} })).toBeNull();
     expect(outputTruncationOf({ error_code: "text_output_truncated" })).toBeNull();

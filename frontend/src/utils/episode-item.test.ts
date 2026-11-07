@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import { findEpisodeItem, itemExcerpt } from "./episode-item";
 
@@ -18,7 +18,11 @@ const reference = {
   title: "",
   content_mode: "drama",
   video_units: [
-    { unit_id: "E9U2", text: "@[张三] 推门进来", generated_assets: { video_thumbnail: "thumbs/u2.jpg", storyboard_image: null } },
+    {
+      unit_id: "E9U2",
+      text: "@[张三] 推门进来",
+      generated_assets: { video_thumbnail: "thumbs/u2.jpg", storyboard_image: null },
+    },
     { unit_id: "E9U5", text: "第二单元" },
   ],
 };
@@ -68,9 +72,9 @@ describe("itemExcerpt", () => {
   });
 
   it("uses the visual description for drama scenes and the voiceover for ad shots", () => {
-    expect(itemExcerpt({ scene_id: "E1S01", scene_description: "雨夜，他独自走过街头", image_prompt: { scene: "x" } })).toBe(
-      "雨夜，他独自走过街头",
-    );
+    expect(
+      itemExcerpt({ scene_id: "E1S01", scene_description: "雨夜，他独自走过街头", image_prompt: { scene: "x" } }),
+    ).toBe("雨夜，他独自走过街头");
     expect(itemExcerpt({ scene_id: "E1S01", image_prompt: { scene: "雨夜街头" } })).toBe("雨夜街头");
     expect(itemExcerpt({ scene_id: "E1S01", image_prompt: "雨夜街头，霓虹" })).toBe("雨夜街头，霓虹");
     expect(itemExcerpt({ shot_id: "E1S01", voiceover_text: "限时五折", image_prompt: { scene: "货架" } })).toBe(

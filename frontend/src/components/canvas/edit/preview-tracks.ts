@@ -123,10 +123,7 @@ export function narrationPlacements(
  * BGM 片段按读取结果的实际起止与淡入淡出摆放（截断与淡入淡出的收缩由服务端算好，与成片、剪映草稿同一份摆放）。
  * 音量是片段音量乘以 BGM 的响度增益；预览素材层还没有这首 BGM 时按片段音量摆放，只显示在轨上、不出声。
  */
-export function bgmPlacements(
-  readout: EditTimelineReadout,
-  media: EditTimelinePreviewMedia | null,
-): AudioPlacement[] {
+export function bgmPlacements(readout: EditTimelineReadout, media: EditTimelinePreviewMedia | null): AudioPlacement[] {
   const gains = new Map((media?.bgm ?? []).map((item) => [item.bgm_id, item.gain]));
   return readout.bgm.flatMap((item) => {
     if (item.end <= item.start) return [];
@@ -163,7 +160,11 @@ export function placeSubtitles(
     if (unit.subtitles_follow_narration) {
       if (!clip.carries_narration) continue;
       for (const cue of unit.subtitles) {
-        placed.push({ start: round(segment.start + cue.start), end: round(segment.start + cue.start + cue.duration), text: cue.text });
+        placed.push({
+          start: round(segment.start + cue.start),
+          end: round(segment.start + cue.start + cue.duration),
+          text: cue.text,
+        });
       }
       continue;
     }

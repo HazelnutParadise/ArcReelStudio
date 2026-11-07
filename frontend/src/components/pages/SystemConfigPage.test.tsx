@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API } from "@/api";
@@ -13,9 +13,7 @@ import type { GetSystemConfigResponse, GetSystemVersionResponse, ProviderInfo } 
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeConfigResponse(
-  overrides?: Partial<GetSystemConfigResponse["settings"]>,
-): GetSystemConfigResponse {
+function makeConfigResponse(overrides?: Partial<GetSystemConfigResponse["settings"]>): GetSystemConfigResponse {
   return {
     settings: {
       default_video_backend: "gemini/veo-3",
@@ -25,6 +23,7 @@ function makeConfigResponse(
       text_backend_complex: "",
       video_generate_audio: true,
       video_poll_timeout_seconds: 3600,
+      gpu_encoding_enabled: true,
       anthropic_api_key: { is_set: true, masked: "sk-ant-***" },
       anthropic_base_url: "",
       anthropic_model: "",
@@ -129,13 +128,15 @@ describe("SystemConfigPage", () => {
         list.getAttribute("aria-labelledby")
           ? document.getElementById(list.getAttribute("aria-labelledby")!)?.textContent
           : null,
-        within(list).getAllByRole("link").map((link) => link.textContent),
+        within(list)
+          .getAllByRole("link")
+          .map((link) => link.textContent),
       ]);
     expect(groups).toEqual([
       ["生成", ["供应商", "默认模型", "调用端点", "素材库与存储"]],
       ["Agent", ["ArcReel Agent", "Agent 记忆", "外部 Agent 接入", "访问令牌"]],
       [null, ["市场", "使用记录"]],
-      ["系统", ["通用", "提示词模版", "关于"]],
+      ["系统", ["账号与成员", "通用", "提示词模版", "关于"]],
     ]);
     expect(within(nav).getByRole("link", { name: "供应商" })).toHaveAttribute("aria-current", "page");
   });
@@ -188,7 +189,9 @@ describe("SystemConfigPage", () => {
     expect(useConfigStatusStore.getState().isComplete).toBe(true);
 
     await user.click(within(nav).getByRole("link", { name: "供应商" }));
-    await waitFor(() => expect(within(nav).getByRole("link", { name: "供应商" })).toHaveAttribute("aria-current", "page"));
+    await waitFor(() =>
+      expect(within(nav).getByRole("link", { name: "供应商" })).toHaveAttribute("aria-current", "page"),
+    );
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
@@ -210,7 +213,9 @@ describe("SystemConfigPage", () => {
 
     for (const section of ["默认模型", "使用记录", "提示词模版"]) {
       await user.click(within(nav).getByRole("link", { name: section }));
-      await waitFor(() => expect(within(nav).getByRole("link", { name: section })).toHaveAttribute("aria-current", "page"));
+      await waitFor(() =>
+        expect(within(nav).getByRole("link", { name: section })).toHaveAttribute("aria-current", "page"),
+      );
       expect(screen.queryByRole("note", { name: "配置不完整" })).not.toBeInTheDocument();
     }
   });
@@ -238,9 +243,9 @@ describe("SystemConfigPage", () => {
   });
 
   it("rechecks updates when clicking the refresh button", async () => {
-    const getSystemVersion = vi.spyOn(API, "getSystemVersion").mockResolvedValue(
-      makeVersionResponse({ latest: null, has_update: false, update_check_error: "boom" }),
-    );
+    const getSystemVersion = vi
+      .spyOn(API, "getSystemVersion")
+      .mockResolvedValue(makeVersionResponse({ latest: null, has_update: false, update_check_error: "boom" }));
 
     renderPage("/app/settings", "section=about");
 

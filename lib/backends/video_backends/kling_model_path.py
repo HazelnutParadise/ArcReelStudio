@@ -20,7 +20,7 @@ import logging
 from pathlib import Path
 from typing import cast
 
-import httpx
+import httpx2
 
 from arcreel_catalog_core import CatalogEntry
 from arcreel_market_core.video_backend_contract import (
@@ -279,14 +279,14 @@ class KlingModelPathVideoBackend(EntryBoundCapabilities, KlingBackendBase, Provi
         async with artifact_http_client(timeout=self._http_timeout, transport_layer=self._transport_layer) as client:
             return await self._poll_and_build(client, task_id, request, resume_job_id=job_id)
 
-    async def _query_task(self, client: httpx.AsyncClient, task_id: str, *, base_url: str) -> dict:
+    async def _query_task(self, client: httpx2.AsyncClient, task_id: str, *, base_url: str) -> dict:
         resp = await client.get(f"{base_url}/{TASKS_PATH}", params={"task_ids": task_id}, headers=self._headers())
         raise_for_status_redacted(resp)
         return resp.json()
 
     async def _poll_and_build(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         task_id: str,
         request: VideoGenerationRequest,
         *,

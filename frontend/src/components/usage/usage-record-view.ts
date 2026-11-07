@@ -1,11 +1,4 @@
-import type {
-  CallType,
-  EpisodeItemRef,
-  TaskItem,
-  TaskMediaType,
-  UsageRecord,
-  UsageRecordStatus,
-} from "@/types";
+import type { CallType, EpisodeItemRef, TaskItem, TaskMediaType, UsageRecord, UsageRecordStatus } from "@/types";
 import { parseIsoTimestamp } from "@/utils/date-format";
 
 /**
@@ -151,8 +144,5 @@ export function taskToUsageRecordView(task: TaskItem): UsageRecordView | null {
  * 同样的时区后缀，故按解析出的时刻比较，不按字符串。
  */
 export function sortByStartedDesc(views: UsageRecordView[]): UsageRecordView[] {
-  return [...views].sort(
-    (a, b) =>
-      parseIsoTimestamp(b.startedAt).getTime() - parseIsoTimestamp(a.startedAt).getTime(),
-  );
+  return [...views].sort((a, b) => parseIsoTimestamp(b.startedAt).getTime() - parseIsoTimestamp(a.startedAt).getTime());
 }

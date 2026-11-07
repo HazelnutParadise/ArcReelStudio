@@ -3,7 +3,7 @@
 from collections.abc import AsyncIterator
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import FastAPI
@@ -35,7 +35,7 @@ def _install_body(definition: dict[str, Any], overwrite_endpoint_id: int | None 
 
 
 @pytest.fixture
-async def install_client(session_factory: async_sessionmaker[AsyncSession]) -> AsyncIterator[httpx.AsyncClient]:
+async def install_client(session_factory: async_sessionmaker[AsyncSession]) -> AsyncIterator[httpx2.AsyncClient]:
     definition = custom_endpoint_definition()
     async with session_factory() as session:
         for source_id in (1, 2):
@@ -71,7 +71,7 @@ async def install_client(session_factory: async_sessionmaker[AsyncSession]) -> A
         async with session_factory() as session:
             yield session
 
-    async with httpx.AsyncClient() as network:
+    async with httpx2.AsyncClient() as network:
         service = MarketEntryService(session_factory, http_client=lambda: network)
         app.dependency_overrides[get_async_session] = session_override
         app.dependency_overrides[get_market_entry_service] = lambda: service
@@ -79,12 +79,12 @@ async def install_client(session_factory: async_sessionmaker[AsyncSession]) -> A
         app.include_router(market.router)
         app.include_router(custom_endpoints.router)
         register_error_handlers(app)
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as client:
             yield client
 
 
 async def test_install_record_responses_and_uninstall_cascade(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ):
     definition = custom_endpoint_definition()
     local = (await install_client.post("/custom-endpoints", json=definition)).json()
@@ -122,7 +122,7 @@ async def test_install_record_responses_and_uninstall_cascade(
 
 @pytest.mark.parametrize("failure", ["mismatch", "version", "invalid"])
 async def test_rejected_install_leaves_no_endpoint_or_record(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession], failure: str
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession], failure: str
 ):
     definition = custom_endpoint_definition()
     detail = "调用端点定义未通过校验，请按诊断逐条修正后重试"
@@ -154,13 +154,13 @@ async def test_rejected_install_leaves_no_endpoint_or_record(
 
 
 async def test_install_rejects_definition_changed_after_review(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ):
     reviewed = custom_endpoint_definition()
     swapped = custom_endpoint_definition()
     swapped["submit"]["url"] = "https://attacker.example.com/submit"
     with respx.mock() as remote:
-        remote.get(URL).mock(side_effect=[httpx.Response(200, json=reviewed), httpx.Response(200, json=swapped)])
+        remote.get(URL).mock(side_effect=[httpx2.Response(200, json=reviewed), httpx2.Response(200, json=swapped)])
         preview = (await install_client.get(f"{BASE}/definition")).json()
         response = await install_client.post(
             f"{BASE}/install", json={"definition_digest": preview["definition_digest"]}
@@ -174,7 +174,7 @@ async def test_install_rejects_definition_changed_after_review(
 
 
 async def test_duplicate_install_and_cross_source_overwrite_conflict(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ):
     definition = custom_endpoint_definition()
     with respx.mock() as remote:
@@ -197,7 +197,7 @@ async def test_duplicate_install_and_cross_source_overwrite_conflict(
 
 
 async def test_overwrite_preserves_key_references_and_update_refreshes_record(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ):
     definition = custom_endpoint_definition()
     local = (await install_client.post("/custom-endpoints", json=definition)).json()
@@ -267,7 +267,7 @@ async def test_overwrite_preserves_key_references_and_update_refreshes_record(
 
 
 async def test_overwrite_rejects_endpoint_without_same_author_and_name(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ):
     definition = custom_endpoint_definition()
     unrelated = (
@@ -288,7 +288,7 @@ async def test_overwrite_rejects_endpoint_without_same_author_and_name(
 
 
 async def test_installation_reconnects_to_github_source_re_added_with_other_casing(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ):
     definition = custom_endpoint_definition()
     async with session_factory() as session:
@@ -354,13 +354,13 @@ async def _set_index_entry(session_factory: async_sessionmaker[AsyncSession], so
 
 
 async def test_install_rejects_entry_moved_by_refresh_during_definition_fetch(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ):
     definition = custom_endpoint_definition()
 
-    async def refreshed_while_fetching(_request: httpx.Request) -> httpx.Response:
+    async def refreshed_while_fetching(_request: httpx2.Request) -> httpx2.Response:
         await _set_index_entry(session_factory, 1, path="endpoints/moved/definition.json")
-        return httpx.Response(200, json=definition)
+        return httpx2.Response(200, json=definition)
 
     with respx.mock() as remote:
         remote.get(URL).mock(side_effect=refreshed_while_fetching)
@@ -373,7 +373,7 @@ async def test_install_rejects_entry_moved_by_refresh_during_definition_fetch(
 
 
 async def test_installation_states_follow_index_version_source_availability_and_local_edits(
-    install_client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ):
     definition = custom_endpoint_definition()
     with respx.mock() as remote:

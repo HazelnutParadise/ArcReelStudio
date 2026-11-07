@@ -33,13 +33,7 @@ const TASK_STATUS_KEYS: Record<TaskItem["status"], string> = {
  * 任务代表的 pending 调用（剧本生成、助手会话一类）。只有排队中的任务可取消：
  * 已开始执行的任务照常跑完，pending 调用没有任务可取消。
  */
-export function UsageActiveRow({
-  view,
-  task,
-  providerLabel,
-  onCancel,
-  cancelling,
-}: UsageActiveRowProps) {
+export function UsageActiveRow({ view, task, providerLabel, onCancel, cancelling }: UsageActiveRowProps) {
   const { t } = useTranslation("dashboard");
   const now = useNowTick();
 
@@ -47,13 +41,15 @@ export function UsageActiveRow({
   const MediaIcon = media.Icon;
   const running = task?.status === "running";
   const cancellable = task?.status === "queued";
-  const statusText = task
-    ? (task.error_message ?? t(TASK_STATUS_KEYS[task.status]))
-    : t("usage_status_pending");
+  const statusText = task ? (task.error_message ?? t(TASK_STATUS_KEYS[task.status])) : t("usage_status_pending");
 
   return (
     <div className="flex items-start gap-2 px-2 py-1.5">
-      <MediaIcon role="img" aria-label={t(media.labelKey)} className={cn("mt-0.5 size-3.5 shrink-0", media.iconClass)} />
+      <MediaIcon
+        role="img"
+        aria-label={t(media.labelKey)}
+        className={cn("mt-0.5 size-3.5 shrink-0", media.iconClass)}
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex items-center gap-1.5 text-sm">
           <TargetLabel record={view} />

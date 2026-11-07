@@ -375,7 +375,13 @@ export function CharacterDerivativeRow({
                 }}
                 className="h-7 min-w-0 flex-1"
               />
-              <Button type="submit" variant="ghost" size="icon-sm" disabled={pending} aria-label={t("assets:derivative_rename_confirm")}>
+              <Button
+                type="submit"
+                variant="ghost"
+                size="icon-sm"
+                disabled={pending}
+                aria-label={t("assets:derivative_rename_confirm")}
+              >
                 {pending ? <Loader2 aria-hidden className="animate-spin" /> : <Check aria-hidden />}
               </Button>
               <Button

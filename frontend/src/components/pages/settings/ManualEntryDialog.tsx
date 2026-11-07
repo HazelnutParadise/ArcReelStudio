@@ -2,7 +2,15 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { API } from "@/api";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -19,7 +27,8 @@ type MediaType = ProviderModelItem["media_type"];
 const MEDIA_TYPES: readonly MediaType[] = ["text", "image", "video", "audio"];
 
 /** 手动填写时列出的模型事实：与「模型信息」可修改的一致，时长联动约束留到保存之后再设。 */
-const FILL_IN_FACTS = (media: MediaType): CapabilityKey[] => EDITABLE_FACTS[media].filter((key) => key !== "duration_constraints");
+const FILL_IN_FACTS = (media: MediaType): CapabilityKey[] =>
+  EDITABLE_FACTS[media].filter((key) => key !== "duration_constraints");
 
 /**
  * 各媒体类型的初始取值；视频的可选时长随名字预填，见 `ManualEntryDialog`。文本的最大输出长度不预填：写入的值
@@ -157,7 +166,13 @@ function ManualEntryForm({
           <FieldRow
             label={t("pm_info_maker")}
             htmlFor={`${idPrefix}-maker`}
-            hint={makerHasSlash ? <FieldHint tone="warn">{t("pm_manual_maker_slash")}</FieldHint> : <FieldHint>{t("pm_manual_maker_hint")}</FieldHint>}
+            hint={
+              makerHasSlash ? (
+                <FieldHint tone="warn">{t("pm_manual_maker_slash")}</FieldHint>
+              ) : (
+                <FieldHint>{t("pm_manual_maker_hint")}</FieldHint>
+              )
+            }
           >
             <Input
               id={`${idPrefix}-maker`}

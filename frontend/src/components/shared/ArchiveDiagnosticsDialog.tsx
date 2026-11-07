@@ -37,12 +37,7 @@ const SEVERITY_STYLE: Record<DiagnosticSeverity, { icon: LucideIcon; tone: strin
 };
 
 /** 项目导入、导出的诊断清单：按严重程度分组列出问题与出处，没有任何条目时不显示。 */
-export function ArchiveDiagnosticsDialog({
-  title,
-  description,
-  sections,
-  onClose,
-}: ArchiveDiagnosticsDialogProps) {
+export function ArchiveDiagnosticsDialog({ title, description, sections, onClose }: ArchiveDiagnosticsDialogProps) {
   const { t } = useTranslation("common");
   const visibleSections = sections.filter((s) => s.items.length > 0);
 
@@ -69,9 +64,7 @@ export function ArchiveDiagnosticsDialog({
                   <h3 className={cn("flex items-center gap-2 text-sm font-medium", tone)}>
                     <Icon aria-hidden className="size-4" />
                     {section.title}
-                    <span className="font-mono text-xs text-muted-foreground tabular-nums">
-                      {section.items.length}
-                    </span>
+                    <span className="font-mono text-xs text-muted-foreground tabular-nums">{section.items.length}</span>
                   </h3>
                   <ul className="flex flex-col gap-1.5">
                     {section.items.map((item, index) => (

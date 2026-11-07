@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type {
   ComfyuiBindingCandidate,
   ComfyuiBindingTarget,
@@ -29,7 +29,10 @@ const WORKFLOW: Record<string, unknown> = {
   notes: "this is not a node",
 };
 
-function candidate(target: ComfyuiBindingTarget, overrides?: Partial<ComfyuiBindingCandidate>): ComfyuiBindingCandidate {
+function candidate(
+  target: ComfyuiBindingTarget,
+  overrides?: Partial<ComfyuiBindingCandidate>,
+): ComfyuiBindingCandidate {
   return { target, score: 64, signals: [], selected: false, origin: "inferred", depth: null, ...overrides };
 }
 
@@ -212,9 +215,9 @@ describe("rowStatus", () => {
   const target = { node: "10", input: "text", class_type: "CLIPTextEncode" };
 
   it("calls an untouched inferred pick automatically recognized", () => {
-    expect(
-      rowStatus("prompt", "auto_selected", [target], { touched: false, candidates: [candidate(target)] }),
-    ).toBe("auto");
+    expect(rowStatus("prompt", "auto_selected", [target], { touched: false, candidates: [candidate(target)] })).toBe(
+      "auto",
+    );
   });
 
   it("calls a saved binding manual, because saving one is what confirming it means", () => {
@@ -259,10 +262,7 @@ describe("rowOrigin", () => {
 
   it("reports a rematch even when the rest of the row was kept, since that is what wants a look", () => {
     expect(
-      rowOrigin(
-        [candidate(target, { origin: "kept" }), candidate(other, { origin: "rematched" })],
-        [target, other],
-      ),
+      rowOrigin([candidate(target, { origin: "kept" }), candidate(other, { origin: "rematched" })], [target, other]),
     ).toBe("rematched");
   });
 
@@ -293,7 +293,12 @@ describe("saveBlockers", () => {
   });
 
   it("holds the placeholder name back, so two unrelated workflows are not judged the same one", () => {
-    const blockers = saveBlockers(bound, inference(), definition({ meta: { name: "ComfyUI workflow", author: "unknown", version: "1.0.0" } }), "ComfyUI workflow");
+    const blockers = saveBlockers(
+      bound,
+      inference(),
+      definition({ meta: { name: "ComfyUI workflow", author: "unknown", version: "1.0.0" } }),
+      "ComfyUI workflow",
+    );
 
     expect(blockers).toEqual([{ code: "placeholder_name" }]);
   });

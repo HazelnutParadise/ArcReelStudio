@@ -1,5 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router, useLocation } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API, type ProjectEventStreamOptions } from "@/api";
@@ -109,32 +109,30 @@ describe("useProjectEventsSSE", () => {
     expect(stream.options?.projectName).toBe("demo");
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-1",
-          fingerprint: "fp-1",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "filesystem",
-          changes: [
-            {
-              entity_type: "character",
-              action: "created",
-              entity_id: "hero",
-              // label 是后端默认语言兜底；通知文案应由 label_key 按界面语言渲染而来。
-              label: "backend fallback",
-              label_key: "named_entity_character",
-              label_params: { id: "hero" },
-              focus: {
-                pane: "characters",
-                anchor_type: "character",
-                anchor_id: "hero",
-              },
-              important: true,
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-1",
+        fingerprint: "fp-1",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "filesystem",
+        changes: [
+          {
+            entity_type: "character",
+            action: "created",
+            entity_id: "hero",
+            // label 是后端默认语言兜底；通知文案应由 label_key 按界面语言渲染而来。
+            label: "backend fallback",
+            label_key: "named_entity_character",
+            label_params: { id: "hero" },
+            focus: {
+              pane: "characters",
+              anchor_type: "character",
+              anchor_id: "hero",
             },
-          ],
-        },
-      );
+            important: true,
+          },
+        ],
+      });
     });
 
     await waitFor(() => {
@@ -205,31 +203,29 @@ describe("useProjectEventsSSE", () => {
     renderHarness("/episodes/1");
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-ref",
-          fingerprint: "fp-ref",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "worker",
-          changes: [
-            {
-              entity_type: "reference_unit",
-              action: "created",
-              entity_id: "E1U01",
-              label: "视频单元「E1U01」",
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-ref",
+        fingerprint: "fp-ref",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "worker",
+        changes: [
+          {
+            entity_type: "reference_unit",
+            action: "created",
+            entity_id: "E1U01",
+            label: "视频单元「E1U01」",
+            episode: 1,
+            focus: {
+              pane: "episode",
               episode: 1,
-              focus: {
-                pane: "episode",
-                episode: 1,
-                anchor_type: "reference_unit",
-                anchor_id: "E1U01",
-              },
-              important: true,
+              anchor_type: "reference_unit",
+              anchor_id: "E1U01",
             },
-          ],
-        },
-      );
+            important: true,
+          },
+        ],
+      });
     });
 
     await waitFor(() => {
@@ -263,29 +259,27 @@ describe("useProjectEventsSSE", () => {
     input.focus();
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-2",
-          fingerprint: "fp-2",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "worker",
-          changes: [
-            {
-              entity_type: "scene",
-              action: "updated",
-              entity_id: "酒馆",
-              label: "场景「酒馆」",
-              focus: {
-                pane: "scenes",
-                anchor_type: "scene",
-                anchor_id: "酒馆",
-              },
-              important: true,
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-2",
+        fingerprint: "fp-2",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "worker",
+        changes: [
+          {
+            entity_type: "scene",
+            action: "updated",
+            entity_id: "酒馆",
+            label: "场景「酒馆」",
+            focus: {
+              pane: "scenes",
+              anchor_type: "scene",
+              anchor_id: "酒馆",
             },
-          ],
-        },
-      );
+            important: true,
+          },
+        ],
+      });
     });
 
     await waitFor(() => {
@@ -371,9 +365,19 @@ describe("useProjectEventsSSE", () => {
     });
 
     await waitFor(() => {
-      expect(useAppStore.getState().workspaceNotifications.map((n) => n.text).join("\n")).toContain("第一集");
+      expect(
+        useAppStore
+          .getState()
+          .workspaceNotifications.map((n) => n.text)
+          .join("\n"),
+      ).toContain("第一集");
     });
-    expect(useAppStore.getState().workspaceNotifications.map((n) => n.text).join("\n")).not.toContain("未命名集");
+    expect(
+      useAppStore
+        .getState()
+        .workspaceNotifications.map((n) => n.text)
+        .join("\n"),
+    ).not.toContain("未命名集");
   });
 
   it("does not announce changes from a stale script when the refresh fails", async () => {
@@ -409,7 +413,12 @@ describe("useProjectEventsSSE", () => {
       expect(useAppStore.getState().toast?.tone).toBe("warning");
     });
     expect(useAppStore.getState().toast?.text).toContain("network down");
-    expect(useAppStore.getState().workspaceNotifications.map((n) => n.text).join("\n")).not.toContain("已删除");
+    expect(
+      useAppStore
+        .getState()
+        .workspaceNotifications.map((n) => n.text)
+        .join("\n"),
+    ).not.toContain("已删除");
   });
 
   it("shows a toast without navigation for generation completion batches", async () => {
@@ -418,26 +427,24 @@ describe("useProjectEventsSSE", () => {
     renderHarness("/episodes/1");
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-3",
-          fingerprint: "fp-3",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "worker",
-          changes: [
-            {
-              entity_type: "segment",
-              action: "storyboard_ready",
-              entity_id: "E1S01",
-              label: "分镜「E1S01」",
-              episode: 1,
-              focus: null,
-              important: true,
-            },
-          ],
-        },
-      );
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-3",
+        fingerprint: "fp-3",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "worker",
+        changes: [
+          {
+            entity_type: "segment",
+            action: "storyboard_ready",
+            entity_id: "E1S01",
+            label: "分镜「E1S01」",
+            episode: 1,
+            focus: null,
+            important: true,
+          },
+        ],
+      });
     });
 
     await waitFor(() => {
@@ -487,26 +494,24 @@ describe("useProjectEventsSSE", () => {
       renderHarness("/episodes/1");
 
       act(() => {
-        stream.options?.onChanges?.(
-          {
-            project_name: "demo",
-            batch_id: "batch-completion",
-            fingerprint: "fp-completion",
-            generated_at: "2026-03-01T00:00:00Z",
-            source: "worker",
-            changes: [
-              {
-                entity_type: entityType,
-                action,
-                entity_id: entityId,
-                label,
-                episode: 1,
-                focus: null,
-                important: true,
-              },
-            ],
-          },
-        );
+        stream.options?.onChanges?.({
+          project_name: "demo",
+          batch_id: "batch-completion",
+          fingerprint: "fp-completion",
+          generated_at: "2026-03-01T00:00:00Z",
+          source: "worker",
+          changes: [
+            {
+              entity_type: entityType,
+              action,
+              entity_id: entityId,
+              label,
+              episode: 1,
+              focus: null,
+              important: true,
+            },
+          ],
+        });
       });
 
       await waitFor(() => {
@@ -528,43 +533,41 @@ describe("useProjectEventsSSE", () => {
     renderHarness("/episodes/1");
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-priority",
-          fingerprint: "fp-priority",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "worker",
-          changes: [
-            {
-              entity_type: "character",
-              action: "created",
-              entity_id: "hero",
-              label: "角色「hero」",
-              focus: null,
-              important: true,
-            },
-            {
-              entity_type: "reference_unit",
-              action: "reference_video_ready",
-              entity_id: "U01",
-              label: "视频单元「U01」",
-              episode: 1,
-              focus: null,
-              important: true,
-            },
-            {
-              entity_type: "segment",
-              action: "tts_ready",
-              entity_id: "E1S01",
-              label: "旁白「E1S01」",
-              episode: 1,
-              focus: null,
-              important: true,
-            },
-          ],
-        },
-      );
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-priority",
+        fingerprint: "fp-priority",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "worker",
+        changes: [
+          {
+            entity_type: "character",
+            action: "created",
+            entity_id: "hero",
+            label: "角色「hero」",
+            focus: null,
+            important: true,
+          },
+          {
+            entity_type: "reference_unit",
+            action: "reference_video_ready",
+            entity_id: "U01",
+            label: "视频单元「U01」",
+            episode: 1,
+            focus: null,
+            important: true,
+          },
+          {
+            entity_type: "segment",
+            action: "tts_ready",
+            entity_id: "E1S01",
+            label: "旁白「E1S01」",
+            episode: 1,
+            focus: null,
+            important: true,
+          },
+        ],
+      });
     });
 
     await waitFor(() => {
@@ -579,53 +582,51 @@ describe("useProjectEventsSSE", () => {
     renderHarness("/");
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-grouped",
-          fingerprint: "fp-grouped",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "filesystem",
-          changes: [
-            {
-              entity_type: "character",
-              action: "created",
-              entity_id: "hero",
-              label: "角色「hero」",
-              focus: {
-                pane: "characters",
-                anchor_type: "character",
-                anchor_id: "hero",
-              },
-              important: true,
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-grouped",
+        fingerprint: "fp-grouped",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "filesystem",
+        changes: [
+          {
+            entity_type: "character",
+            action: "created",
+            entity_id: "hero",
+            label: "角色「hero」",
+            focus: {
+              pane: "characters",
+              anchor_type: "character",
+              anchor_id: "hero",
             },
-            {
-              entity_type: "character",
-              action: "created",
-              entity_id: "mage",
-              label: "角色「mage」",
-              focus: {
-                pane: "characters",
-                anchor_type: "character",
-                anchor_id: "mage",
-              },
-              important: true,
+            important: true,
+          },
+          {
+            entity_type: "character",
+            action: "created",
+            entity_id: "mage",
+            label: "角色「mage」",
+            focus: {
+              pane: "characters",
+              anchor_type: "character",
+              anchor_id: "mage",
             },
-            {
-              entity_type: "prop",
-              action: "updated",
-              entity_id: "玉佩",
-              label: "道具「玉佩」",
-              focus: {
-                pane: "props",
-                anchor_type: "prop",
-                anchor_id: "玉佩",
-              },
-              important: true,
+            important: true,
+          },
+          {
+            entity_type: "prop",
+            action: "updated",
+            entity_id: "玉佩",
+            label: "道具「玉佩」",
+            focus: {
+              pane: "props",
+              anchor_type: "prop",
+              anchor_id: "玉佩",
             },
-          ],
-        },
-      );
+            important: true,
+          },
+        ],
+      });
     });
 
     await waitFor(() => {
@@ -665,29 +666,27 @@ describe("useProjectEventsSSE", () => {
     renderHarness("/props");
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-3",
-          fingerprint: "fp-3",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "webui",
-          changes: [
-            {
-              entity_type: "prop",
-              action: "updated",
-              entity_id: "玉佩",
-              label: "道具「玉佩」",
-              focus: {
-                pane: "props",
-                anchor_type: "prop",
-                anchor_id: "玉佩",
-              },
-              important: true,
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-3",
+        fingerprint: "fp-3",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "webui",
+        changes: [
+          {
+            entity_type: "prop",
+            action: "updated",
+            entity_id: "玉佩",
+            label: "道具「玉佩」",
+            focus: {
+              pane: "props",
+              anchor_type: "prop",
+              anchor_id: "玉佩",
             },
-          ],
-        },
-      );
+            important: true,
+          },
+        ],
+      });
     });
 
     await waitFor(() => {
@@ -764,29 +763,27 @@ describe("useProjectEventsSSE", () => {
     document.body.appendChild(editingMarker);
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-4",
-          fingerprint: "fp-4",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "filesystem",
-          changes: [
-            {
-              entity_type: "scene",
-              action: "updated",
-              entity_id: "酒馆",
-              label: "场景「酒馆」",
-              focus: {
-                pane: "scenes",
-                anchor_type: "scene",
-                anchor_id: "酒馆",
-              },
-              important: true,
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-4",
+        fingerprint: "fp-4",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "filesystem",
+        changes: [
+          {
+            entity_type: "scene",
+            action: "updated",
+            entity_id: "酒馆",
+            label: "场景「酒馆」",
+            focus: {
+              pane: "scenes",
+              anchor_type: "scene",
+              anchor_id: "酒馆",
             },
-          ],
-        },
-      );
+            important: true,
+          },
+        ],
+      });
     });
 
     await waitFor(() => {
@@ -851,50 +848,41 @@ describe("useProjectEventsSSE", () => {
 
     const d1 = createDeferred<GetProjectResult>();
     const d2 = createDeferred<GetProjectResult>();
-    const getProjectSpy = vi
-      .spyOn(API, "getProject")
-      .mockReturnValueOnce(d1.promise)
-      .mockReturnValueOnce(d2.promise);
+    const getProjectSpy = vi.spyOn(API, "getProject").mockReturnValueOnce(d1.promise).mockReturnValueOnce(d2.promise);
 
     renderHarness("/");
 
     // 建立初始 fingerprint 基线（首次 onSnapshot 不触发刷新）。
     act(() => {
-      stream.options?.onSnapshot?.(
-        { project_name: "demo", fingerprint: "fp-a", generated_at: "2026-03-01T00:00:00Z" },
-      );
+      stream.options?.onSnapshot?.({ project_name: "demo", fingerprint: "fp-a", generated_at: "2026-03-01T00:00:00Z" });
     });
     expect(getProjectSpy).not.toHaveBeenCalled();
 
     // fingerprint 变化触发一次不带聚焦目标的刷新，getProject 卡在在途（d1 未 resolve）。
     act(() => {
-      stream.options?.onSnapshot?.(
-        { project_name: "demo", fingerprint: "fp-b", generated_at: "2026-03-01T00:00:01Z" },
-      );
+      stream.options?.onSnapshot?.({ project_name: "demo", fingerprint: "fp-b", generated_at: "2026-03-01T00:00:01Z" });
     });
     expect(getProjectSpy).toHaveBeenCalledTimes(1);
 
     // 在途期间，一批带真实聚焦目标的 onChanges 到达并排队。
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-race",
-          fingerprint: "fp-race",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "filesystem",
-          changes: [
-            {
-              entity_type: "character",
-              action: "created",
-              entity_id: "hero",
-              label: "角色「hero」",
-              focus: { pane: "characters", anchor_type: "character", anchor_id: "hero" },
-              important: true,
-            },
-          ],
-        },
-      );
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-race",
+        fingerprint: "fp-race",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "filesystem",
+        changes: [
+          {
+            entity_type: "character",
+            action: "created",
+            entity_id: "hero",
+            label: "角色「hero」",
+            focus: { pane: "characters", anchor_type: "character", anchor_id: "hero" },
+            important: true,
+          },
+        ],
+      });
     });
     // 在途合并：这批只是排队，不会立即多发一次请求。
     expect(getProjectSpy).toHaveBeenCalledTimes(1);
@@ -927,58 +915,51 @@ describe("useProjectEventsSSE", () => {
 
     const d1 = createDeferred<GetProjectResult>();
     const d2 = createDeferred<GetProjectResult>();
-    const getProjectSpy = vi
-      .spyOn(API, "getProject")
-      .mockReturnValueOnce(d1.promise)
-      .mockReturnValueOnce(d2.promise);
+    const getProjectSpy = vi.spyOn(API, "getProject").mockReturnValueOnce(d1.promise).mockReturnValueOnce(d2.promise);
 
     renderHarness("/");
 
     // 第一批:聚焦角色 hero → /characters。发起后 getProject 卡在在途(d1 未 resolve)。
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-stale",
-          fingerprint: "fp-stale-1",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "filesystem",
-          changes: [
-            {
-              entity_type: "character",
-              action: "created",
-              entity_id: "hero",
-              label: "角色「hero」",
-              focus: { pane: "characters", anchor_type: "character", anchor_id: "hero" },
-              important: true,
-            },
-          ],
-        },
-      );
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-stale",
+        fingerprint: "fp-stale-1",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "filesystem",
+        changes: [
+          {
+            entity_type: "character",
+            action: "created",
+            entity_id: "hero",
+            label: "角色「hero」",
+            focus: { pane: "characters", anchor_type: "character", anchor_id: "hero" },
+            important: true,
+          },
+        ],
+      });
     });
     expect(getProjectSpy).toHaveBeenCalledTimes(1);
 
     // 第二批在第一批仍在途时到达:聚焦场景 酒馆 → /scenes，覆盖 queuedFocusRef。
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-stale-2",
-          fingerprint: "fp-stale-2",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "filesystem",
-          changes: [
-            {
-              entity_type: "scene",
-              action: "updated",
-              entity_id: "酒馆",
-              label: "场景「酒馆」",
-              focus: { pane: "scenes", anchor_type: "scene", anchor_id: "酒馆" },
-              important: true,
-            },
-          ],
-        },
-      );
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-stale-2",
+        fingerprint: "fp-stale-2",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "filesystem",
+        changes: [
+          {
+            entity_type: "scene",
+            action: "updated",
+            entity_id: "酒馆",
+            label: "场景「酒馆」",
+            focus: { pane: "scenes", anchor_type: "scene", anchor_id: "酒馆" },
+            important: true,
+          },
+        ],
+      });
     });
     // 在途合并:第二批只是排队，不会立即多发一次请求。
     expect(getProjectSpy).toHaveBeenCalledTimes(1);
@@ -1009,26 +990,24 @@ describe("useProjectEventsSSE", () => {
     renderHarness("/");
 
     act(() => {
-      stream.options?.onChanges?.(
-        {
-          project_name: "demo",
-          batch_id: "batch-fp",
-          fingerprint: "fp-fp",
-          generated_at: "2026-03-01T00:00:00Z",
-          source: "worker",
-          changes: [
-            {
-              entity_type: "segment",
-              action: "storyboard_ready",
-              entity_id: "E1S01",
-              label: "分镜「E1S01」",
-              focus: null,
-              important: true,
-              asset_fingerprints: { "storyboards/scene_E1S01.png": 1710288000 },
-            },
-          ],
-        },
-      );
+      stream.options?.onChanges?.({
+        project_name: "demo",
+        batch_id: "batch-fp",
+        fingerprint: "fp-fp",
+        generated_at: "2026-03-01T00:00:00Z",
+        source: "worker",
+        changes: [
+          {
+            entity_type: "segment",
+            action: "storyboard_ready",
+            entity_id: "E1S01",
+            label: "分镜「E1S01」",
+            focus: null,
+            important: true,
+            asset_fingerprints: { "storyboards/scene_E1S01.png": 1710288000 },
+          },
+        ],
+      });
     });
 
     // fingerprints 应立即（同步）写入 store，无需等待 getProject
@@ -1076,29 +1055,22 @@ describe("useProjectEventsSSE", () => {
       };
     }
 
-    function emit(
-      stream: ReturnType<typeof mockProjectEventStream>,
-      changes: ProjectChange[],
-    ) {
+    function emit(stream: ReturnType<typeof mockProjectEventStream>, changes: ProjectChange[]) {
       act(() => {
-        stream.options?.onChanges?.(
-          {
-            project_name: "demo",
-            batch_id: "batch-task",
-            fingerprint: "fp-task",
-            generated_at: "2026-03-01T00:00:00Z",
-            source: "worker",
-            changes,
-          },
-        );
+        stream.options?.onChanges?.({
+          project_name: "demo",
+          batch_id: "batch-task",
+          fingerprint: "fp-task",
+          generated_at: "2026-03-01T00:00:00Z",
+          source: "worker",
+          changes,
+        });
       });
     }
 
     it("收到任务终态即刷新任务列表，不等兜底轮询", async () => {
       const stream = mockProjectEventStream();
-      const refreshTasksSpy = vi
-        .spyOn(useTasksStore.getState(), "refreshTasks")
-        .mockResolvedValue(undefined);
+      const refreshTasksSpy = vi.spyOn(useTasksStore.getState(), "refreshTasks").mockResolvedValue(undefined);
 
       renderHarness("/");
       emit(stream, [taskChange()]);
@@ -1108,16 +1080,11 @@ describe("useProjectEventsSSE", () => {
 
     it("纯任务终态批次不重拉项目，仍刷新任务列表", async () => {
       const stream = mockProjectEventStream();
-      const refreshTasksSpy = vi
-        .spyOn(useTasksStore.getState(), "refreshTasks")
-        .mockResolvedValue(undefined);
+      const refreshTasksSpy = vi.spyOn(useTasksStore.getState(), "refreshTasks").mockResolvedValue(undefined);
       const getProjectSpy = vi.spyOn(API, "getProject");
 
       renderHarness("/");
-      emit(stream, [
-        taskChange(),
-        taskChange({ entity_id: "task-2", action: "task_failed" }),
-      ]);
+      emit(stream, [taskChange(), taskChange({ entity_id: "task-2", action: "task_failed" })]);
 
       expect(refreshTasksSpy).toHaveBeenCalledTimes(1);
       expect(getProjectSpy).not.toHaveBeenCalled();
@@ -1125,9 +1092,7 @@ describe("useProjectEventsSSE", () => {
 
     it("批次混有项目实体变更时照常重拉项目数据", async () => {
       const stream = mockProjectEventStream();
-      const refreshTasksSpy = vi
-        .spyOn(useTasksStore.getState(), "refreshTasks")
-        .mockResolvedValue(undefined);
+      const refreshTasksSpy = vi.spyOn(useTasksStore.getState(), "refreshTasks").mockResolvedValue(undefined);
 
       renderHarness("/episodes/1");
       emit(stream, [
@@ -1294,10 +1259,7 @@ describe("useProjectEventsSSE", () => {
       vi.spyOn(useTasksStore.getState(), "refreshTasks").mockResolvedValue(undefined);
 
       renderHarness("/");
-      emit(stream, [
-        taskChange(),
-        taskChange({ entity_id: "task-2", action: "task_failed" }),
-      ]);
+      emit(stream, [taskChange(), taskChange({ entity_id: "task-2", action: "task_failed" })]);
 
       expect(Object.keys(useAppStore.getState().entityRevisions)).toHaveLength(0);
     });
@@ -1313,25 +1275,23 @@ describe("useProjectEventsSSE", () => {
       renderHarness("/");
 
       act(() => {
-        stream.options?.onChanges?.(
-          {
-            project_name: "demo",
-            batch_id: "batch-entity",
-            fingerprint: "fp-entity",
-            generated_at: "2026-03-01T00:00:00Z",
-            source: "filesystem",
-            changes: [
-              {
-                entity_type: "character",
-                action: "created",
-                entity_id: "hero",
-                label: "角色「hero」",
-                focus: { pane: "characters", anchor_type: "character", anchor_id: "hero" },
-                important: true,
-              },
-            ],
-          },
-        );
+        stream.options?.onChanges?.({
+          project_name: "demo",
+          batch_id: "batch-entity",
+          fingerprint: "fp-entity",
+          generated_at: "2026-03-01T00:00:00Z",
+          source: "filesystem",
+          changes: [
+            {
+              entity_type: "character",
+              action: "created",
+              entity_id: "hero",
+              label: "角色「hero」",
+              focus: { pane: "characters", anchor_type: "character", anchor_id: "hero" },
+              important: true,
+            },
+          ],
+        });
       });
 
       emit(stream, [taskChange()]);
@@ -1362,21 +1322,16 @@ describe("useProjectEventsSSE", () => {
       };
     }
 
-    function emitUsage(
-      stream: ReturnType<typeof mockProjectEventStream>,
-      changes: ProjectChange[],
-    ) {
+    function emitUsage(stream: ReturnType<typeof mockProjectEventStream>, changes: ProjectChange[]) {
       act(() => {
-        stream.options?.onChanges?.(
-          {
-            project_name: "demo",
-            batch_id: "batch-usage",
-            fingerprint: "fp-usage",
-            generated_at: "2026-03-01T00:00:00Z",
-            source: "worker",
-            changes,
-          },
-        );
+        stream.options?.onChanges?.({
+          project_name: "demo",
+          batch_id: "batch-usage",
+          fingerprint: "fp-usage",
+          generated_at: "2026-03-01T00:00:00Z",
+          source: "worker",
+          changes,
+        });
       });
     }
 

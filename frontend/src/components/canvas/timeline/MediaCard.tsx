@@ -91,7 +91,8 @@ export function MediaCard({
   const itemLabel = useItemPositionLabel(segmentId);
   const [restoring, setRestoring] = useState(false);
   const restoringRef = useRef(false);
-  const freshBusy = () => restoringRef.current || Boolean(checkBusy?.()) || isResourceBusy(kind, projectName, segmentId);
+  const freshBusy = () =>
+    restoringRef.current || Boolean(checkBusy?.()) || isResourceBusy(kind, projectName, segmentId);
   const setRestoreBusy = (next: boolean) => {
     restoringRef.current = next;
     setRestoring(next);
@@ -101,9 +102,7 @@ export function MediaCard({
   // 不再各自靠「对应回调是否传入」推断——那让版本入口与其余入口分属两套机制。
   const demoReadOnly = useDemoWorkbench();
 
-  const assetFp = useProjectsStore((s) =>
-    assetPath ? s.getAssetFingerprint(assetPath) : null,
-  );
+  const assetFp = useProjectsStore((s) => (assetPath ? s.getAssetFingerprint(assetPath) : null));
   const playbackStart = usePlaybackStart("videos", segmentId);
   // 原图只给全屏预览；卡片里按媒体栏宽度从 640 / 1280 两档缩略图中取，媒体栏最宽约 720px。
   const assetUrl = assetPath ? API.getFileUrl(projectName, assetPath, assetFp) : null;
@@ -113,8 +112,7 @@ export function MediaCard({
       : undefined;
 
   const Icon = kind === "storyboard" ? ImageIcon : Film;
-  const title =
-    kind === "storyboard" ? t("media_storyboard_title") : t("media_video_title");
+  const title = kind === "storyboard" ? t("media_storyboard_title") : t("media_video_title");
   const generateLabel =
     generateLabelOverride ??
     (kind === "storyboard"
@@ -124,8 +122,7 @@ export function MediaCard({
       : assetPath
         ? t("media_regenerate_video")
         : t("media_generate_video"));
-  const resourceType: "storyboards" | "videos" =
-    kind === "storyboard" ? "storyboards" : "videos";
+  const resourceType: "storyboards" | "videos" = kind === "storyboard" ? "storyboards" : "videos";
   // uploadDisabled 是本卡片之外的互斥占用（如同一分镜另一张卡在上传中）；
   // 编辑/版本恢复/生成同样写这个资源，须一并禁用，否则会与占用中的写操作并发冲突。
   const resourceBusy = generating || uploading || uploadDisabled || restoring || externalRestoring;
@@ -139,14 +136,12 @@ export function MediaCard({
         {onUpload && !demoReadOnly && (
           <UploadIconButton
             accept={UPLOAD_ACCEPT[kind]}
-            label={
-              kind === "storyboard"
-                ? t("media_upload_storyboard")
-                : t("media_upload_video")
-            }
+            label={kind === "storyboard" ? t("media_upload_storyboard") : t("media_upload_video")}
             busy={uploading}
             disabled={resourceBusy}
-            onSelect={(f) => { if (!freshBusy()) void onUpload(f); }}
+            onSelect={(f) => {
+              if (!freshBusy()) void onUpload(f);
+            }}
           />
         )}
         {kind === "storyboard" && editScriptFile && !demoReadOnly && (
@@ -216,11 +211,7 @@ export function MediaCard({
           size="lg"
           onClick={onGenerate}
           disabled={generateDisabled || resourceBusy}
-          title={
-            generateDisabled
-              ? (generateDisabledHint ?? t("media_generate_video_disabled_hint"))
-              : undefined
-          }
+          title={generateDisabled ? (generateDisabledHint ?? t("media_generate_video_disabled_hint")) : undefined}
         >
           <Sparkles aria-hidden data-icon="inline-start" />
           {generateLabel}

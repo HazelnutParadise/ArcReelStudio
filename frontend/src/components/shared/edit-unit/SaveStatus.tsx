@@ -35,7 +35,7 @@ export function SaveStatus({ unit }: { unit: EditUnitControls }) {
         ) : unit.dirty ? (
           <>
             <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-warn" />
-            {unit.externallyUpdated ? t("updated_by_agent") : t("unsaved_changes")}
+            {unit.externallyUpdated ? t("updated_externally") : t("unsaved_changes")}
           </>
         ) : unit.status === "saved" ? (
           <>

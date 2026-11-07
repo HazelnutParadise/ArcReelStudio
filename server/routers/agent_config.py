@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from lib.agent.agent_provider_catalog import CUSTOM_SENTINEL_ID, get_preset, list_presets
+from lib.agent.agent_provider_catalog import CUSTOM_SENTINEL_ID, fixed_endpoint_url, get_preset, list_presets
 from lib.agent.credential_tiers import Tier, tier_statuses
 from lib.catalog import query as catalog
 from lib.config.anthropic_probe import DiagnosisCode, run_test
@@ -49,6 +49,8 @@ class PresetProviderResponse(BaseModel):
     notes: str | None
     api_key_pattern: str | None
     is_recommended: bool
+    # 固定直连官方端点，不能改地址
+    fixed_endpoint: bool
 
 
 class PresetProvidersResponse(BaseModel):
@@ -76,6 +78,7 @@ async def list_preset_providers(_t: Translator) -> PresetProvidersResponse:
                 notes=_t(p.notes_i18n_key) if p.notes_i18n_key else None,
                 api_key_pattern=p.api_key_pattern,
                 is_recommended=p.is_recommended,
+                fixed_endpoint=p.fixed_endpoint,
             )
             for p in list_presets()
         ],
@@ -264,7 +267,10 @@ async def create_credential(
         preset = get_preset(body.preset_id)
         if preset is None:
             raise HTTPException(status_code=422, detail=_t("agent_preset_unknown", preset_id=body.preset_id))
-        base_url = _normalized_base_url(requested_base_url, _t) if requested_base_url else preset.messages_url
+        if preset.fixed_endpoint or not requested_base_url:
+            base_url = preset.messages_url
+        else:
+            base_url = _normalized_base_url(requested_base_url, _t)
         display_name = body.display_name or preset.display_name
         model = body.model or preset.default_model
     else:
@@ -318,7 +324,9 @@ async def update_credential(
             fields.pop(required, None)
     binding_changes = _validated_tier_bindings(fields.pop("tier_bindings", None), _t)
     if "base_url" in fields:
-        fields["base_url"] = _normalized_base_url(fields["base_url"], _t)
+        existing = await repo.get(cred_id)
+        fixed = fixed_endpoint_url(existing.preset_id) if existing is not None else None
+        fields["base_url"] = fixed or _normalized_base_url(fields["base_url"], _t)
     if not fields and not binding_changes:
         raise HTTPException(status_code=400, detail=_t("agent_no_fields_to_update"))
     cred = await repo.update(cred_id, **fields)

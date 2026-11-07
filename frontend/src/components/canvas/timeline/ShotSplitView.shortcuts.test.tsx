@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { LeaveGuardProvider } from "@/components/shared/edit-unit/LeaveGuard";
 import { useProjectsStore } from "@/stores/projects-store";
 import { makeNarrationSegment } from "@/test/factories";
@@ -81,11 +81,15 @@ describe("ShotSplitView 切换拦截与快捷键", () => {
     fireEvent.change(box, { target: { value: "雨后的街道" } });
 
     expect(fireEvent.keyDown(box, { key: "s", metaKey: true })).toBe(false);
-    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道" }));
+    await waitFor(() =>
+      expect(onUpdatePrompt).toHaveBeenCalledWith("E1S01", { image_prompt: "雨后的街道" }, expect.anything()),
+    );
 
     fireEvent.change(box, { target: { value: "雨停后的街道" } });
     expect(fireEvent.keyDown(box, { key: "s", ctrlKey: true })).toBe(false);
-    await waitFor(() => expect(onUpdatePrompt).toHaveBeenLastCalledWith("E1S01", { image_prompt: "雨停后的街道" }));
+    await waitFor(() =>
+      expect(onUpdatePrompt).toHaveBeenLastCalledWith("E1S01", { image_prompt: "雨停后的街道" }, expect.anything()),
+    );
   });
 
   it("焦点在弹层里时 ⌘S 不保存分镜，但仍拦下浏览器的保存网页", () => {
@@ -108,7 +112,18 @@ describe("ShotSplitView 切换拦截与快捷键", () => {
 
   it("外部删除当前分镜时保留可见修改，放弃后才显示真实列表里的分镜", async () => {
     const save = vi.fn().mockRejectedValue(new Error("分镜已不存在"));
-    const view = (items: typeof segments) => <LeaveGuardProvider><ShotSplitView segments={items} contentMode="narration" aspectRatio="9:16" projectName="demo" scriptFile="episode_1.json" onUpdatePrompt={save} /></LeaveGuardProvider>;
+    const view = (items: typeof segments) => (
+      <LeaveGuardProvider>
+        <ShotSplitView
+          segments={items}
+          contentMode="narration"
+          aspectRatio="9:16"
+          projectName="demo"
+          scriptFile="episode_1.json"
+          onUpdatePrompt={save}
+        />
+      </LeaveGuardProvider>
+    );
     const { rerender } = render(view(segments));
     fireEvent.change(screen.getByDisplayValue("雨夜街道"), { target: { value: "保留我的修改" } });
     rerender(view([segments[1]]));

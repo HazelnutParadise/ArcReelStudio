@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from arcreel_market_core.endpoint_definition import COMFYUI_KIND
 from arcreel_market_core.video_backend_contract import ReferenceAudioMode, audio_capability_pair_is_coherent
 from lib.backends.artifact_download_guard import artifact_http_client
+from lib.backends.gemini_shared import GEMINI_DEVELOPER_API_VERSION
 from lib.backends.http_status_errors import raise_for_status_redacted
 from lib.backends.image_backends.base import ImageCapability
 from lib.catalog.model_id import has_dot_segment
@@ -75,6 +76,8 @@ def _validate_endpoint(value: str) -> str:
     """Pydantic 层校验内置键或合法的自定义端点键形状；存在性由写入事务异步确认。"""
     if value not in ENDPOINT_REGISTRY and not is_custom_endpoint(value):
         raise ValueError(f"unknown endpoint: {value!r}")
+    if value in ENDPOINT_REGISTRY and not ENDPOINT_REGISTRY[value].custom_selectable:
+        raise ValueError(f"endpoint {value!r} is not available for custom providers")
     return value
 
 
@@ -368,6 +371,8 @@ class EndpointDescriptor(BaseModel):
     request_method: str
     request_path_template: str
     image_capabilities: list[str] | None = None  # image 类填能力字符串列表，其他为 None
+    # 自定义供应商能否选用；只给内置供应商用的端点（如 Veo）仍在目录里，供内置模型显示与归类
+    custom_selectable: bool = True
     # 该 endpoint 的执行层是否真的下传尾帧约束；仅 video 类有意义。前端据此收窄 last_frame
     # 覆盖控件里「强制开」的可选范围——否则用户只能撞上写入侧的 422 才知道这条路不通。
     end_image_capable: bool = False
@@ -1280,7 +1285,7 @@ async def list_endpoint_catalog(
     for row in await CustomEndpointRepository(session).list_all():
         try:
             specs.append(endpoint_spec_from_row(row))
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             logger.warning("自定义调用端点定义无法构造 spec，已跳过: id=%s", row.id, exc_info=True)
     return EndpointCatalogResponse(
         endpoints=[EndpointDescriptor(**endpoint_spec_to_dict(spec)) for spec in specs],
@@ -1641,7 +1646,7 @@ async def _run_connectivity_check(
                 timeout=_CONNECTIVITY_CHECK_TIMEOUT,
             )
         elif is_comfyui_protocol(discovery_format):
-            # 不进 to_thread：ComfyUI 探针走 httpx 直调，本就是协程，另外两条是同步 SDK 调用。
+            # 不进 to_thread：ComfyUI 探针走 httpx2 直调，本就是协程，另外两条是同步 SDK 调用。
             result = await asyncio.wait_for(
                 _check_comfyui(base_url, api_key, _t),
                 timeout=_CONNECTIVITY_CHECK_TIMEOUT,
@@ -1703,7 +1708,9 @@ def _check_google(
     from lib.config.url_utils import ensure_google_base_url
 
     effective_url = ensure_google_base_url(base_url)
-    http_options: genai.types.HttpOptionsDict | None = {"base_url": effective_url} if effective_url else None
+    http_options: genai.types.HttpOptionsDict = {"api_version": GEMINI_DEVELOPER_API_VERSION}
+    if effective_url:
+        http_options["base_url"] = effective_url
     client = (client_factory or genai.Client)(api_key=api_key, http_options=http_options)
     pager = client.models.list()
     count = sum(1 for _ in pager)

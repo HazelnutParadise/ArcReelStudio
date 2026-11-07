@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
 import i18n from "@/i18n";
 import type { EpisodeMeta, EpisodesView, EpisodesViewEpisode, EpisodesViewSegment } from "@/types";
@@ -13,7 +13,18 @@ import {
 } from "./episodes-view-model";
 
 function segment(overrides: Partial<EpisodesViewSegment>): EpisodesViewSegment {
-  return { kind: "unsplit", start: 0, end: 0, text: "", episode: null, gap: false, units: 0, continued: false, continues: false, ...overrides };
+  return {
+    kind: "unsplit",
+    start: 0,
+    end: 0,
+    text: "",
+    episode: null,
+    gap: false,
+    units: 0,
+    continued: false,
+    continues: false,
+    ...overrides,
+  };
 }
 
 function info(episode: number, overrides: Partial<EpisodesViewEpisode> = {}): EpisodesViewEpisode {
@@ -37,7 +48,17 @@ function meta(episode: number): EpisodeMeta {
 }
 
 function view(overrides: Partial<EpisodesView>): EpisodesView {
-  return { unit: "chars", units: 0, cut_units: 0, files: [], episodes: [], unregistered: [], replan: null, external_changes: [], ...overrides };
+  return {
+    unit: "chars",
+    units: 0,
+    cut_units: 0,
+    files: [],
+    episodes: [],
+    unregistered: [],
+    replan: null,
+    external_changes: [],
+    ...overrides,
+  };
 }
 
 describe("episodes-view-model", () => {
@@ -125,12 +146,17 @@ describe("episodes-view-model", () => {
           segment({ kind: "episode", episode: 2, start: 4, end: 10 }),
         ]),
       ],
-      episodes: [info(1, { end_file: "source/b.txt" }), info(2, { source_file: "source/b.txt", end_file: "source/b.txt" })],
+      episodes: [
+        info(1, { end_file: "source/b.txt" }),
+        info(2, { source_file: "source/b.txt", end_file: "source/b.txt" }),
+      ],
     });
 
     const groups = outlineFileGroups(layout, [meta(1), meta(2)]);
 
-    expect(groups.map((group) => [group.file.name, group.rows.map((row) => row.kind === "episode" && row.episode.episode)])).toEqual([
+    expect(
+      groups.map((group) => [group.file.name, group.rows.map((row) => row.kind === "episode" && row.episode.episode)]),
+    ).toEqual([
       ["a.txt", [1]],
       ["b.txt", [2]],
     ]);

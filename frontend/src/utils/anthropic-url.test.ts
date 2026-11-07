@@ -1,10 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
-import {
-  anthropicMessagesUrl,
-  hasUnsupportedUrlComponents,
-  normalizeAnthropicBaseUrl,
-} from "./anthropic-url";
+import { anthropicMessagesUrl, hasUnsupportedUrlComponents, normalizeAnthropicBaseUrl } from "./anthropic-url";
 
 describe("normalizeAnthropicBaseUrl", () => {
   it.each([
@@ -44,10 +40,7 @@ describe("hasUnsupportedUrlComponents", () => {
     expect(hasUnsupportedUrlComponents(raw)).toBe(true);
   });
 
-  it.each(["", "   ", "https://x/anthropic", "x.example.com"])(
-    "放行 %s（缺 scheme 等形态由后端判定）",
-    (raw) => {
-      expect(hasUnsupportedUrlComponents(raw)).toBe(false);
-    },
-  );
+  it.each(["", "   ", "https://x/anthropic", "x.example.com"])("放行 %s（缺 scheme 等形态由后端判定）", (raw) => {
+    expect(hasUnsupportedUrlComponents(raw)).toBe(false);
+  });
 });

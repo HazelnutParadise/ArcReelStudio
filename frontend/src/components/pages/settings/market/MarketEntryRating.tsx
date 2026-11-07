@@ -76,7 +76,10 @@ export function MarketEntryRating({
             className="rounded-sm p-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Star
-              className={cn("size-4 transition-colors", value <= lit ? "fill-primary text-primary" : "text-muted-foreground")}
+              className={cn(
+                "size-4 transition-colors",
+                value <= lit ? "fill-primary text-primary" : "text-muted-foreground",
+              )}
               aria-hidden
             />
           </button>

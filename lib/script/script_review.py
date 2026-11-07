@@ -180,7 +180,7 @@ def content_fingerprint(path: Path) -> str | None:
         return None
     try:
         parsed = json.loads(raw)
-    except (ValueError, UnicodeDecodeError):
+    except ValueError, UnicodeDecodeError:
         return hashlib.sha256(raw).hexdigest()
     return content_fingerprint_of_data(parsed)
 
@@ -694,7 +694,7 @@ def formal_script_overwrite(
         return None
     try:
         parsed = json.loads(raw)
-    except (ValueError, UnicodeDecodeError):
+    except ValueError, UnicodeDecodeError:
         return FormalScriptOverwrite(fingerprint=hashlib.sha256(raw).hexdigest(), entries=())
     fingerprint = content_fingerprint_of_data(parsed)
     if not isinstance(parsed, dict):

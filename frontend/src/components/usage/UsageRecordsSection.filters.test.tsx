@@ -1,6 +1,6 @@
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import i18n from "@/i18n";
@@ -8,7 +8,6 @@ import { useTasksStore } from "@/stores/tasks-store";
 import { useUsageRecordsStore } from "@/stores/usage-records-store";
 import { makeUsageRecord, makeUsageSummary } from "./usage-fixtures";
 import { renderUsageRecordsSection } from "./usage-test-utils";
-
 
 /** 只取记录请求的状态维度：进行中区的取数走同一个客户端方法，但不带时间范围。 */
 function recordQueries(): { statuses: readonly string[] }[] {
@@ -42,19 +41,14 @@ describe("UsageRecordsSection filters", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "7 天" }));
 
-    await waitFor(() =>
-      expect(location.history.at(-1)).toBe("/app/settings?section=usage&u_range=7d"),
-    );
+    await waitFor(() => expect(location.history.at(-1)).toBe("/app/settings?section=usage&u_range=7d"));
   });
 
   it("restores the filters from the URL on load", async () => {
     renderUsageRecordsSection("section=usage&u_range=7d&u_provider=minimax&u_media=video");
 
     await waitFor(() => expect(API.getUsageSummary).toHaveBeenCalled());
-    expect(screen.getByRole("button", { name: "7 天" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: "7 天" })).toHaveAttribute("aria-pressed", "true");
     expect(vi.mocked(API.getUsageRecords).mock.calls[0][0]).toMatchObject({
       providers: ["minimax"],
       mediaTypes: ["video"],
@@ -67,9 +61,7 @@ describe("UsageRecordsSection filters", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "清除筛选：MiniMax" }));
 
-    await waitFor(() =>
-      expect(location.history.at(-1)).toBe("/app/settings?section=usage&u_media=video"),
-    );
+    await waitFor(() => expect(location.history.at(-1)).toBe("/app/settings?section=usage&u_media=video"));
   });
 
   it("sends a local-midnight since and the browser time zone in the real request", async () => {
@@ -152,9 +144,7 @@ describe("UsageRecordsSection filters", () => {
 
     await userEvent.click(screen.getByRole("combobox", { name: "模型" }));
     await userEvent.click(await screen.findByRole("option", { name: "__all__" }));
-    await waitFor(() =>
-      expect(location.history.at(-1)).toBe("/app/settings?section=usage&u_model=__all__"),
-    );
+    await waitFor(() => expect(location.history.at(-1)).toBe("/app/settings?section=usage&u_model=__all__"));
 
     await userEvent.click(screen.getByRole("combobox", { name: "模型" }));
     await userEvent.click(await screen.findByRole("option", { name: "全部模型" }));
@@ -172,17 +162,13 @@ describe("UsageRecordsSection filters", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "下一页" }));
     await waitFor(() =>
-      expect(
-        vi.mocked(API.getUsageRecords).mock.calls.some(([query]) => query?.cursor === "cursor-2"),
-      ).toBe(true),
+      expect(vi.mocked(API.getUsageRecords).mock.calls.some(([query]) => query?.cursor === "cursor-2")).toBe(true),
     );
     const seen = vi.mocked(API.getUsageRecords).mock.calls.length;
 
     await userEvent.click(screen.getByRole("button", { name: "7 天" }));
 
-    await waitFor(() =>
-      expect(vi.mocked(API.getUsageRecords).mock.calls.length).toBeGreaterThan(seen),
-    );
+    await waitFor(() => expect(vi.mocked(API.getUsageRecords).mock.calls.length).toBeGreaterThan(seen));
     // 筛选变化后发出的每一次记录请求都从第一页起，不带上一页留下的游标。
     for (const [query] of vi.mocked(API.getUsageRecords).mock.calls.slice(seen)) {
       expect(query?.cursor).toBeUndefined();

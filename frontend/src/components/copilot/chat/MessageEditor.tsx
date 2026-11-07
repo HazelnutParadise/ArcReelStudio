@@ -68,16 +68,19 @@ export function MessageEditor({
     onSubmit(text, images.map(attachmentToImagePayload));
   }, [text, images, hasContent, isReadingImages, submitting, canSubmit, onSubmit, invalidatePendingTranscodes]);
 
-  const handlePaste = useCallback((event: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    if (attachDisabled) return;
-    const imageFiles = Array.from(event.clipboardData.items)
-      .filter((item) => item.type.startsWith("image/"))
-      .map((item) => item.getAsFile())
-      .filter((file): file is File => file !== null);
-    if (imageFiles.length === 0) return;
-    event.preventDefault();
-    addFiles(imageFiles);
-  }, [addFiles, attachDisabled]);
+  const handlePaste = useCallback(
+    (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      if (attachDisabled) return;
+      const imageFiles = Array.from(event.clipboardData.items)
+        .filter((item) => item.type.startsWith("image/"))
+        .map((item) => item.getAsFile())
+        .filter((file): file is File => file !== null);
+      if (imageFiles.length === 0) return;
+      event.preventDefault();
+      addFiles(imageFiles);
+    },
+    [addFiles, attachDisabled],
+  );
 
   return (
     <Message align="end">
@@ -120,7 +123,11 @@ export function MessageEditor({
                     ? t("max_images_hint", { count: MAX_ATTACHED_IMAGES })
                     : t("attach_image")}
                 </Button>
-                {attachError && <span role="alert" className="text-xs text-destructive">{attachError}</span>}
+                {attachError && (
+                  <span role="alert" className="text-xs text-destructive">
+                    {attachError}
+                  </span>
+                )}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -174,7 +181,11 @@ export function MessageEditor({
                 <Button variant="outline" size="xs" disabled={submitting} onClick={onCancel}>
                   {t("message_edit_cancel")}
                 </Button>
-                <Button size="xs" disabled={submitting || !canSubmit || !hasContent || isReadingImages} onClick={submit}>
+                <Button
+                  size="xs"
+                  disabled={submitting || !canSubmit || !hasContent || isReadingImages}
+                  onClick={submit}
+                >
                   {submitting ? t("message_edit_resending") : t("message_edit_resend")}
                 </Button>
               </div>

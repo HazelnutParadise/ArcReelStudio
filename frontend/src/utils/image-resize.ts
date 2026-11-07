@@ -24,16 +24,9 @@ function roundTiesToEven(value: number): number {
  *
  * 默认参数是标准分辨率档。已经落在两条限制内的图片原样返回。
  */
-export function resizedSize(
-  width: number,
-  height: number,
-  maxEdge = 1568,
-  maxTokens = 1568,
-): [number, number] {
+export function resizedSize(width: number, height: number, maxEdge = 1568, maxTokens = 1568): [number, number] {
   const fits = (w: number, h: number): boolean =>
-    Math.ceil(w / 28) * 28 <= maxEdge
-    && Math.ceil(h / 28) * 28 <= maxEdge
-    && countImageTokens(w, h) <= maxTokens;
+    Math.ceil(w / 28) * 28 <= maxEdge && Math.ceil(h / 28) * 28 <= maxEdge && countImageTokens(w, h) <= maxTokens;
 
   if (fits(width, height)) return [width, height];
   if (height > width) {

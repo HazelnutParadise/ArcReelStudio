@@ -60,10 +60,11 @@ from lib.infra.logging_config import (
 )
 from lib.infra.loop_stall_probe import start_loop_stall_probe, stop_loop_stall_probe
 from lib.infra.path_safety import try_safe_join
+from lib.infra.video_encoder import log_gpu_encoder_status
 from lib.material.maintenance import start_material_maintenance
 from lib.project.project_migrations import cleanup_stale_backups, run_project_migrations
 from lib.script.source_loader.migration import migrate_project_source_encoding, migrate_project_source_encoding_once
-from server.auth import ensure_auth_password, ensure_token_secret, get_current_user, warn_if_auth_disabled
+from server.auth import ensure_token_secret, get_current_user, warn_if_auth_disabled
 from server.cors_config import resolve_cors_policy
 from server.dependencies import require_project_migration_ok, require_valid_project_name
 from server.error_handlers import register_error_handlers
@@ -72,6 +73,7 @@ from server.routers import (
     ad_script,
     agent_config,
     agent_memory,
+    agent_subscription,
     api_keys,
     asset_library,
     asset_sheets,
@@ -102,6 +104,7 @@ from server.routers import (
     products,
     project_events,
     project_migration,
+    project_presence,
     project_trash,
     projects,
     prompt_authoring,
@@ -123,8 +126,11 @@ from server.routers import (
     versions,
 )
 from server.routers import auth as auth_router
+from server.routers import users as users_router
+from server.services.accounts import bootstrap_admin
 from server.services.project.episode_id_records import recorded_episode_ids_on
 from server.services.project.project_events import ProjectEventService
+from server.services.project.project_presence import ProjectPresenceService
 from server.services.tasks.generation_tasks import execute_generation_task
 from server.services.tasks.resume_executor import execute_resume_video_task
 
@@ -371,6 +377,8 @@ async def lifespan(app: FastAPI):
 
     # 随包 ffmpeg 自检一次，结论缓存在进程内；不可用不阻断启动。
     await asyncio.to_thread(log_ffmpeg_status)
+    # GPU 编码自检一次，结论缓存在进程内；不可用时成片用 CPU 编码。
+    await asyncio.to_thread(log_gpu_encoder_status)
 
     # 日志文件持久化：先把代码目录下的旧日志迁入数据根，再挂 file handler。
     # 顺序很重要——handler 会在新位置创建 arcreel.log，提前挂会让旧的同名文件因冲突留在原处。
@@ -379,7 +387,6 @@ async def lifespan(app: FastAPI):
     warn_if_log_dir_env_set()
     warn_if_env_diverges_from_file()
 
-    ensure_auth_password()
     warn_if_auth_disabled()
 
     # Run Alembic migrations (auto-creates tables on first start)
@@ -396,6 +403,9 @@ async def lifespan(app: FastAPI):
     # 签名密钥可能落在数据根的 runtime/ 下，须在布局迁移之后解析：旧布局里名为 runtime 的项目
     # 会被搬进 projects/，提前写入的密钥文件会随它进入项目目录。
     await asyncio.to_thread(ensure_token_secret)
+    # 库里还没有可登录账号时按 AUTH_USERNAME / AUTH_PASSWORD 初始化默认管理员；须在 Alembic 之后
+    # （依赖 users 表的凭据列）、布局迁移之后（初始密码文件写在数据根的 runtime/ 下）。
+    await bootstrap_admin(async_session_factory, initial_password_path=layout.initial_admin_password_path)
 
     # 源文件编码迁移（幂等；失败不阻塞启动）。先于 schema 迁移跑：源文一律先归到 UTF-8，
     # 之后所有按 UTF-8 读源文的链路（分集规划、派生文件对账）才有统一的输入。
@@ -512,7 +522,7 @@ async def lifespan(app: FastAPI):
     _profile_sync_stats = await asyncio.to_thread(_pm.sync_all_agent_profiles)
     _log_profile_sync_outcome(_profile_sync_stats)
 
-    # 启动共享 httpx 客户端（用于版本检查等外部 API 调用）
+    # 启动共享 httpx2 客户端（用于版本检查等外部 API 调用）
     await startup_http_client()
 
     # Initialize async services
@@ -533,6 +543,10 @@ async def lifespan(app: FastAPI):
     assistant.assistant_service.session_manager.set_autonomous_turn_listener(
         project_event_service.publish_assistant_session_resumed
     )
+    # 在线成员名单经项目事件流广播；登记只在进程内存里，随应用关停清空
+    project_presence_service = ProjectPresenceService(publish=project_event_service.publish_presence)
+    app.state.project_presence_service = project_presence_service
+    project_presence_service.start()
 
     # 卡顿探针放在启动步骤之后：迁移等启动期同步工作不算线上卡顿，避免误报。
     stall_probe = start_loop_stall_probe()
@@ -561,6 +575,9 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     assistant.assistant_service.session_manager.set_autonomous_turn_listener(None)
+    project_presence_service = getattr(app.state, "project_presence_service", None)
+    if project_presence_service:
+        await project_presence_service.shutdown()
     project_event_service = getattr(app.state, "project_event_service", None)
     if project_event_service:
         logger.info("正在停止 ProjectEventService...")
@@ -789,6 +806,9 @@ app.include_router(
 app.include_router(
     project_events.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["项目变更流"]
 )
+app.include_router(
+    project_presence.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["在线成员"]
+)
 app.include_router(tasks.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["任务队列"])
 app.include_router(providers.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["供应商管理"])
 app.include_router(
@@ -805,7 +825,11 @@ app.include_router(
 app.include_router(system_config.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["系统配置"])
 app.include_router(system.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["系统"])
 app.include_router(api_keys.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["API Key 管理"])
+app.include_router(users_router.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["成员管理"])
 app.include_router(agent_config.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["Agent 配置"])
+app.include_router(
+    agent_subscription.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["Agent 配置"]
+)
 app.include_router(
     custom_providers.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["自定义供应商"]
 )

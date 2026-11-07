@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-import httpx
+import httpx2
 import pytest
 import uvicorn
 
@@ -191,8 +191,8 @@ class TestMainEntry:
 @pytest.mark.parametrize("path", ["/mcp", "/mcp/"])
 async def test_remote_mcp_paths_reach_host_without_redirect(path: str) -> None:
     """规范端点与兼容入口都直接落到远程 MCP 宿主；未进入 lifespan 时宿主固定回 503。"""
-    transport = httpx.ASGITransport(app=app_module.app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://internal") as client:
+    transport = httpx2.ASGITransport(app=app_module.app)
+    async with httpx2.AsyncClient(transport=transport, base_url="http://internal") as client:
         response = await client.post(path, follow_redirects=False)
 
     assert response.status_code == 503

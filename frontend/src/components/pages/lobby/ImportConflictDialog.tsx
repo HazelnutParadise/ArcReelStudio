@@ -64,7 +64,9 @@ export function ImportConflictDialog({ projectName, importing, onResolve, onCanc
         <AlertDialogFooter>
           <AlertDialogCancel disabled={importing}>{t("common:cancel")}</AlertDialogCancel>
           <Button variant="outline" disabled={importing} onClick={() => resolve("rename")}>
-            {importing && policy === "rename" && <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden />}
+            {importing && policy === "rename" && (
+              <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden />
+            )}
             {t("dashboard:auto_rename_import")}
           </Button>
           <AlertDialogAction variant="destructive" disabled={importing} onClick={() => resolve("overwrite")}>

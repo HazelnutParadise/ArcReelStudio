@@ -31,9 +31,7 @@ export const API_BASE = "/api/v1";
 export async function throwIfNotOk(response: Response, fallbackMsg: string): Promise<void> {
   if (!response.ok) {
     handleUnauthorized(response);
-    const error = await response
-      .json()
-      .catch(() => ({ detail: response.statusText })) as ErrorResponse;
+    const error = (await response.json().catch(() => ({ detail: response.statusText }))) as ErrorResponse;
     const detail = error.detail;
     if (isReferenceProjectionAdmission(detail)) {
       throw new ReferenceProjectionError(detail);
@@ -56,9 +54,7 @@ function redirectToLogin(): void {
   // 携带当前所在的站内地址，登录成功后回跳；仅对 /app/ 下的页面附加 from，
   // 避免把登录页自身等非应用路径写进回跳参数。
   const current = `${globalThis.location.pathname}${globalThis.location.search}${globalThis.location.hash}`;
-  globalThis.location.href = current.startsWith("/app/")
-    ? `/login?from=${encodeURIComponent(current)}`
-    : "/login";
+  globalThis.location.href = current.startsWith("/app/") ? `/login?from=${encodeURIComponent(current)}` : "/login";
 }
 
 let apiReadOnly = false;
@@ -135,9 +131,7 @@ export function sseHeaders(): HeadersInit {
 export function parseSseJson(data: string, label: string): Record<string, unknown> | null {
   try {
     const parsed: unknown = JSON.parse(data || "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : null;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
   } catch (err) {
     console.error(`Failed to parse ${label} SSE data:`, err, data);
     return null;
@@ -157,10 +151,7 @@ export function sseErrorHandler(onError?: (error: SseStreamError) => void) {
 /**
  * 通用请求：拼接 API 前缀、注入凭证并过只读闸门，非 2xx 时按错误契约抛出对应错误。
  */
-export async function requestJson<T = unknown>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function requestJson<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
   const defaultOptions: RequestInit = {
     headers: {
@@ -172,9 +163,7 @@ export async function requestJson<T = unknown>(
 
   if (!response.ok) {
     handleUnauthorized(response);
-    const payload = await response
-      .json()
-      .catch(() => ({ detail: response.statusText })) as unknown;
+    const payload = (await response.json().catch(() => ({ detail: response.statusText }))) as unknown;
     if (isScriptEditResult(payload)) {
       throw new ScriptEditCommandError(payload);
     }
@@ -191,7 +180,11 @@ export async function requestJson<T = unknown>(
     if (isSpeechAdmission(error.detail)) {
       throw new SpeechAdmissionError(error.detail);
     }
-    throw new ApiRequestError(messageFromDetail(error.detail, i18n.t("errors:request_failed")), error.diagnostic, response.status);
+    throw new ApiRequestError(
+      messageFromDetail(error.detail, i18n.t("errors:request_failed")),
+      error.diagnostic,
+      response.status,
+    );
   }
 
   if (response.status === 204) {

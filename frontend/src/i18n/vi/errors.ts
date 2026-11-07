@@ -1,4 +1,4 @@
-import type enErrors from "@/i18n/en/errors";
+import type enErrors from '@/i18n/en/errors';
 
 export default {
   'unknown_error': 'Đã xảy ra lỗi không xác định',
@@ -22,7 +22,8 @@ export default {
   'content_mode_immutable': 'Không thể thay đổi content_mode sau khi đã tạo dự án',
   'import_failed': 'Nhập thất bại',
   'upload_failed': 'Tải lên thất bại',
-  'upload_conflict_incomplete': 'Tải lên "{{filename}}" thất bại: máy chủ trả về 409 nhưng thông tin xung đột không đầy đủ',
+  'upload_conflict_incomplete':
+    'Tải lên "{{filename}}" thất bại: máy chủ trả về 409 nhưng thông tin xung đột không đầy đủ',
   'memory_file_load_failed': 'Không tải được tệp bộ nhớ',
   'file_view_load_failed': 'Không tải được tệp',
   'memory_file_save_failed': 'Không lưu được tệp bộ nhớ',

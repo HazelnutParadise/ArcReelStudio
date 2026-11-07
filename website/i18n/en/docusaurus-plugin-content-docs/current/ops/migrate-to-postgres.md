@@ -17,7 +17,7 @@ Before migrating, distinguish the three types of data involved:
 | Other files under `deploy/projects/` | Project metadata, media assets, logs, Vertex credentials, and so on | Copy to `deploy/production/projects/` |
 | `deploy/production/pgdata/` | PostgreSQL cluster data | Initialize with PostgreSQL; never place project or SQLite files here |
 
-The commands below consistently use the shell variable `source_projects` for the source data root on the host. The default deployment sets it to the absolute path of `deploy/projects/`. If you changed the container data directory with `ARCREEL_DATA_DIR` and a custom mount, set `source_projects` in step 1 to the corresponding absolute host path. The container and host paths may differ, so this guide does not derive that value directly from `.env`. Keep this variable in the same shell throughout the migration.
+The commands below consistently use the shell variable `source_projects` for the source data root on the host. The default deployment sets it to the absolute path of `deploy/projects/`. If you set `ARCREEL_HOST_DATA_DIR` in `deploy/.env`, set `source_projects` in step 1 to the absolute path of `projects/` under that directory. Keep this variable in the same shell throughout the migration. If `deploy/production/.env` sets `ARCREEL_HOST_DATA_DIR`, replace `deploy/production/projects/` and `deploy/production/pgdata/` below with the directories of the same names under that directory.
 
 ## Prerequisites {#prerequisites}
 

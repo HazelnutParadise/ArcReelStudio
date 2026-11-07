@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import httpx
+import httpx2
 import pytest
 import respx
 
@@ -26,13 +26,13 @@ _DEFAULT_HOST = "https://dashscope.aliyuncs.com"
 _IMAGE_PATH = "/api/v1/services/aigc/multimodal-generation/generation"
 
 
-def _img_response(url: str = "https://x/out.png") -> httpx.Response:
-    return httpx.Response(200, json={"output": {"choices": [{"message": {"content": [{"image": url}]}}]}})
+def _img_response(url: str = "https://x/out.png") -> httpx2.Response:
+    return httpx2.Response(200, json={"output": {"choices": [{"message": {"content": [{"image": url}]}}]}})
 
 
 @contextmanager
 def _generate_route(
-    response: httpx.Response,
+    response: httpx2.Response,
     download: AsyncMock,
     *,
     host: str = _DEFAULT_HOST,
@@ -365,11 +365,11 @@ class TestCapabilityGating:
 class TestErrorResponse:
     async def test_http_error_surfaces_httpstatuserror(self, tmp_path: Path):
         download = AsyncMock()
-        with _generate_route(httpx.Response(400, text="bad request"), download) as route:
+        with _generate_route(httpx2.Response(400, text="bad request"), download) as route:
             from lib.backends.image_backends.dashscope import DashScopeImageBackend
 
             b = DashScopeImageBackend(api_key="sk", model="qwen-image-2.0")
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.generate(ImageGenerationRequest(prompt="p", output_path=tmp_path / "o.png"))
         # raise_for_status 透出保留状态码：4xx fail-fast
         assert ei.value.response.status_code == 400
@@ -384,12 +384,12 @@ class TestErrorResponse:
         host = "https://dashscope-503.example.com"
         with (
             bounded_poll_clock(),
-            _generate_route(httpx.Response(400, text="bad request"), download, host=host) as route,
+            _generate_route(httpx2.Response(400, text="bad request"), download, host=host) as route,
         ):
             from lib.backends.image_backends.dashscope import DashScopeImageBackend
 
             b = DashScopeImageBackend(api_key="sk", model="qwen-image-2.0", base_url=host)
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.generate(ImageGenerationRequest(prompt="p", output_path=tmp_path / "o.png"))
         # 异常字符串确实带瞬态子串，而瞬态判定只认状态码，故仍单次 fail-fast
         assert "503" in str(ei.value)
@@ -399,11 +399,11 @@ class TestErrorResponse:
 
     async def test_413_surfaces_httpstatuserror_no_retry(self, tmp_path: Path):
         download = AsyncMock()
-        with _generate_route(httpx.Response(413, text="Request Entity Too Large"), download) as route:
+        with _generate_route(httpx2.Response(413, text="Request Entity Too Large"), download) as route:
             from lib.backends.image_backends.dashscope import DashScopeImageBackend
 
             b = DashScopeImageBackend(api_key="sk", model="qwen-image-2.0")
-            with pytest.raises(httpx.HTTPStatusError) as ei:
+            with pytest.raises(httpx2.HTTPStatusError) as ei:
                 await b.generate(ImageGenerationRequest(prompt="p", output_path=tmp_path / "o.png"))
         # 保留 status_code 让咽喉层识别 413 走降档；413 不在 retryable 模式中 → fail-fast 单次
         assert ei.value.response.status_code == 413
@@ -413,7 +413,7 @@ class TestErrorResponse:
     async def test_rejection_body_becomes_a_redacted_provider_reason(self, tmp_path: Path):
         """图像后端 4xx 与视频侧同路：拒因摘要脱敏截断后挂在异常上。"""
         download = AsyncMock()
-        rejection = httpx.Response(
+        rejection = httpx2.Response(
             400, json={"code": "DataInspectionFailed", "message": "input data may contain inappropriate content"}
         )
         with _generate_route(rejection, download):

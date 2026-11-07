@@ -37,7 +37,12 @@ export function CatalogEntryPicker({ open, onOpenChange, mediaType, onSelect, ti
   const { t } = useTranslation("dashboard");
   const heading = title ?? t("catalog_picker_title");
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} title={heading} description={t("catalog_picker_description")}>
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={heading}
+      description={t("catalog_picker_description")}
+    >
       <PickerBody
         initialFilter={mediaType ?? "all"}
         onSelect={(entry) => {

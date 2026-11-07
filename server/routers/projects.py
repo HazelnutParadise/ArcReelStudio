@@ -107,6 +107,7 @@ from server.routers._coalesce import RequestCoalescer
 from server.routers._episode_source_errors import episode_source_http_error
 from server.routers._script_edits import (
     execute_current_script_edit,
+    require_fields_unchanged,
     require_script_edit_result,
     script_batch_status,
 )
@@ -523,7 +524,7 @@ async def create_export_token(
             "expires_in": 300,
             "diagnostics": diagnostics,
         }
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -578,7 +579,7 @@ async def export_project_archive(
         return response
     except FileNotFoundError as exc:
         raise NotFoundError("project_not_found", name=name) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -789,7 +790,7 @@ async def create_project(
         # 项目名 / duration / brief 等配置校验失败，str(e) 只进日志
         logger.warning("创建项目参数错误: name=%s (%s)", req.name or req.title, e)
         raise BadRequestError("project_config_invalid") from e
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -989,7 +990,7 @@ async def get_project(
         return await coalescer.run((name, locale), lambda: run_sync_transaction(_sync))
     except FileNotFoundError as exc:
         raise NotFoundError("project_not_found", name=name) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1197,7 +1198,7 @@ async def update_project(name: str, req: UpdateProjectRequest, _t: Translator):
         return await run_sync_transaction(_sync)
     except FileNotFoundError as exc:
         raise NotFoundError("project_not_found", name=name) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1223,7 +1224,7 @@ async def delete_project(name: str, _t: Translator):
         return {"success": True, "message": _t("project_deleted", name=name)}
     except FileNotFoundError as exc:
         raise NotFoundError("project_not_found", name=name) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1286,7 +1287,7 @@ async def get_script(name: str, script_file: str, _t: Translator):
         return {"script": script, "revision": script_revision(script)}
     except FileNotFoundError as exc:
         raise NotFoundError("script_not_found", name=script_file) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1455,7 +1456,7 @@ async def insert_script_item(
         raise NotFoundError("script_not_found", name=req.script_file) from exc
     except ValueError as exc:
         raise UnprocessableError("script_validation_failed").with_diagnostic(str(exc)) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1521,7 +1522,7 @@ async def remove_script_item(
         raise NotFoundError("script_not_found", name=script_file) from exc
     except ValueError as exc:
         raise UnprocessableError("script_validation_failed").with_diagnostic(str(exc)) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1572,7 +1573,7 @@ async def move_script_item(
         raise NotFoundError("script_not_found", name=req.script_file) from exc
     except ValueError as exc:
         raise UnprocessableError("script_validation_failed").with_diagnostic(str(exc)) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1582,6 +1583,8 @@ async def move_script_item(
 class UpdateSceneRequest(BaseModel):
     script_file: str
     updates: dict
+    # 开始编辑时各字段的值；给出时，起点之后被别人改过的字段拒绝写入（409）
+    base: dict[str, Any] | None = None
 
 
 @router.patch("/projects/{name}/script-scenes/{scene_id}", dependencies=[Depends(require_project_migration_ok)])
@@ -1627,9 +1630,10 @@ async def update_scene(
                 if key in {"characters_in_scene", "scenes", "props"} and isinstance(value, list):
                     value = [asset_name_comparison_key(entry) if isinstance(entry, str) else entry for entry in value]
                 fields[key] = value
+            matched = next(scene for scene in scenes if scene.get("scene_id") == scene_id)
             if not fields:
-                matched = next(scene for scene in scenes if scene.get("scene_id") == scene_id)
                 return {"success": True, "scene": matched}
+            require_fields_unchanged(matched, fields, req.base)
             with project_change_source("webui"):
                 result = execute_current_script_edit(
                     manager,
@@ -1637,6 +1641,7 @@ async def update_scene(
                     req.script_file,
                     [{"op": "update", "id": scene_id, "fields": fields}],
                     editor=make_script_batch_editor(manager),
+                    current_script=current,
                 )
             require_script_edit_result(
                 result,
@@ -1653,7 +1658,7 @@ async def update_scene(
         # 结构校验失败、集号错配、非法文件名都抛 ValueError（ScriptStructureValidationError
         # 即其子类）：统一转 422 客户端错误，避免落到下面的 500 兜底。
         raise UnprocessableError("script_validation_failed").with_diagnostic(str(exc)) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1663,6 +1668,8 @@ async def update_scene(
 class UpdateShotRequest(BaseModel):
     script_file: str
     updates: dict
+    # 开始编辑时各字段的值；给出时，起点之后被别人改过的字段拒绝写入（409）
+    base: dict[str, Any] | None = None
 
 
 # ad 分镜 PATCH 白名单：shot_id（定位键）与 generated_assets（运行时状态）不可改写。
@@ -1733,6 +1740,7 @@ async def update_shot(
             }
             if not fields:
                 return {"success": True, "shot": matched}
+            require_fields_unchanged(matched, fields, req.base)
             with project_change_source("webui"):
                 result = execute_current_script_edit(
                     manager,
@@ -1740,6 +1748,7 @@ async def update_shot(
                     req.script_file,
                     [{"op": "update", "id": shot_id, "fields": fields}],
                     editor=make_script_batch_editor(manager),
+                    current_script=current,
                 )
             require_script_edit_result(
                 result,
@@ -1756,7 +1765,7 @@ async def update_shot(
         # 结构校验失败、集号错配、非法文件名都抛 ValueError（ScriptStructureValidationError
         # 即其子类）：统一转 422 客户端错误，避免落到下面的 500 兜底。
         raise UnprocessableError("script_validation_failed").with_diagnostic(str(exc)) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1774,6 +1783,8 @@ class UpdateSegmentRequest(BaseModel):
     characters_in_segment: list[str] | None = None
     scenes: list[str] | None = None
     props: list[str] | None = None
+    # 开始编辑时各字段的值；给出时，起点之后被别人改过的字段拒绝写入（409）
+    base: dict[str, Any] | None = None
 
 
 class UpdateOverviewRequest(BaseModel):
@@ -1842,6 +1853,7 @@ async def update_segment(
                     fields[field] = [asset_name_comparison_key(value) for value in (getattr(req, field) or [])]
             if not fields:
                 return {"success": True, "segment": matched}
+            require_fields_unchanged(matched, fields, req.base)
             with project_change_source("webui"):
                 result = execute_current_script_edit(
                     manager,
@@ -1849,6 +1861,7 @@ async def update_segment(
                     req.script_file,
                     [{"op": "update", "id": segment_id, "fields": fields}],
                     editor=make_script_batch_editor(manager),
+                    current_script=current,
                 )
             require_script_edit_result(
                 result,
@@ -1865,7 +1878,7 @@ async def update_segment(
         # 结构校验失败、集号错配、非法文件名都抛 ValueError（ScriptStructureValidationError
         # 即其子类）：统一转 422 客户端错误，避免落到下面的 500 兜底。
         raise UnprocessableError("script_validation_failed").with_diagnostic(str(exc)) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -1931,7 +1944,7 @@ async def update_episode(name: str, episode: int, req: UpdateEpisodeRequest, _t:
             return {"success": True, "episode": {"episode": episode, "title": title}}
 
         return await run_sync_transaction(_sync)
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         # ApiError 与 HTTPException 并列：_sync 内部抛出的 NotFoundError 不是
         # HTTPException 子类，不并入这里会被下面的 except Exception 吞成 500
         raise
@@ -1971,7 +1984,7 @@ async def update_episode_source(name: str, episode: int, req: UpdateEpisodeSourc
         return await run_sync_transaction(_sync)
     except EpisodeSourceError as exc:
         raise episode_source_http_error(exc, _t, episode=episode) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -2075,7 +2088,7 @@ async def set_project_source(
                 )
 
         return result
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -2099,7 +2112,7 @@ async def generate_overview(name: str, _t: Translator):
         raise BadRequestError("invalid_project_name", name=name) from e
     except FileNotFoundError as exc:
         raise NotFoundError("project_not_found", name=name) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")
@@ -2142,7 +2155,7 @@ async def generate_overview(name: str, _t: Translator):
         # 供应商解析链路内部会重新 load_project，project.json 损坏时不能误判为「未配置供应商」
         logger.exception("生成概述失败：项目数据损坏 name=%s", name)
         raise HTTPException(status_code=500, detail=_t("internal_server_error")) from exc
-    except (HTTPException, ApiError, ModelNotInCatalogError):
+    except HTTPException, ApiError, ModelNotInCatalogError:
         # ModelNotInCatalogError：项目引用的文本模型已不在供应商清单中，交 app 级 handler 返回要求重新选择模型的 400
         raise
     except Exception as exc:
@@ -2180,7 +2193,7 @@ async def update_overview(name: str, req: UpdateOverviewRequest, _t: Translator)
         return await run_sync_transaction(_sync)
     except FileNotFoundError as exc:
         raise NotFoundError("project_not_found", name=name) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")

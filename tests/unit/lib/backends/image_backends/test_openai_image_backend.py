@@ -6,7 +6,7 @@ import base64
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.image_backends import ImageCapabilityError
@@ -213,7 +213,7 @@ class TestOpenAIImageBackend:
                 await backend.generate(request)
 
     async def test_text_to_image_url_fallback(self, tmp_path: Path):
-        """网关只返回 url 时，应走 httpx 下载分支。"""
+        """网关只返回 url 时，应走 httpx2 下载分支。"""
         mock_client = AsyncMock()
         mock_client.images.generate = AsyncMock(
             return_value=_make_mock_image_response(b64_data=None, url="https://gateway/img.png")
@@ -235,7 +235,7 @@ class TestOpenAIImageBackend:
 
             with capture_http() as router:
                 download = router.get("https://gateway/img.png").mock(
-                    return_value=httpx.Response(200, content=downloaded)
+                    return_value=httpx2.Response(200, content=downloaded)
                 )
                 result = await backend.generate(request)
 

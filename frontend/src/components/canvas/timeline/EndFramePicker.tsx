@@ -6,14 +6,7 @@ import { AspectFrame } from "@/components/canvas/shared/AspectFrame";
 import { UPLOAD_IMAGE_ACCEPT } from "@/components/canvas/shared/UploadIconButton";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "cn";
 import { useProjectsStore } from "@/stores/projects-store";
 import { getScriptItems, type EditorContentMode } from "@/utils/script-shape";
@@ -110,11 +103,10 @@ export function EndFramePicker({
   }, [projectName, scriptFile, t]);
 
   const groups = useMemo<ImageGroup[]>(() => {
-    const storyboards: PickableImage[] = getScriptItems(script, contentMode)
-      .flatMap((item, index) => {
-        const path = item.generated_assets?.storyboard_image;
-        return path ? [{ path, label: itemPositionLabel("shot", index + 1, t) }] : [];
-      });
+    const storyboards: PickableImage[] = getScriptItems(script, contentMode).flatMap((item, index) => {
+      const path = item.generated_assets?.storyboard_image;
+      return path ? [{ path, label: itemPositionLabel("shot", index + 1, t) }] : [];
+    });
 
     return [
       { title: t("end_frame_picker_group_storyboards"), images: storyboards },

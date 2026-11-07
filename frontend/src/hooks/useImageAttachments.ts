@@ -133,25 +133,26 @@ export function useImageAttachments(initialImages: AttachedImage[] | (() => Atta
           if (pending.kind === "append") {
             setImages((current) => {
               if (current.length >= MAX_ATTACHED_IMAGES) return current;
-              return [
-                ...current,
-                { id: uid(), dataUrl: result.dataUrl, mimeType: TRANSCODED_IMAGE_MIME_TYPE },
-              ];
+              return [...current, { id: uid(), dataUrl: result.dataUrl, mimeType: TRANSCODED_IMAGE_MIME_TYPE }];
             });
           } else {
-            setImages((current) => current.map((image) => (
-              image.id === pending.imageId
-                ? { ...image, dataUrl: result.dataUrl, mimeType: TRANSCODED_IMAGE_MIME_TYPE }
-                : image
-            )));
+            setImages((current) =>
+              current.map((image) =>
+                image.id === pending.imageId
+                  ? { ...image, dataUrl: result.dataUrl, mimeType: TRANSCODED_IMAGE_MIME_TYPE }
+                  : image,
+              ),
+            );
           }
         } else if (pending.kind === "append") {
           setError(tRef.current(TRANSCODE_FAILURE_HINTS[result.failure], { name: pending.file.name }));
         } else {
           setImages((current) => current.filter((image) => image.id !== pending.imageId));
-          setError(tRef.current(HISTORICAL_TRANSCODE_FAILURE_HINTS[result.failure], {
-            index: pending.index + 1,
-          }));
+          setError(
+            tRef.current(HISTORICAL_TRANSCODE_FAILURE_HINTS[result.failure], {
+              index: pending.index + 1,
+            }),
+          );
         }
         if (pending.kind === "append") {
           pendingSlotsRef.current = Math.max(0, pendingSlotsRef.current - 1);
@@ -182,36 +183,36 @@ export function useImageAttachments(initialImages: AttachedImage[] | (() => Atta
     };
   }, [initialState.pending, processNext]);
 
-  const addFiles = useCallback((files: File[]) => {
-    setError(null);
-    const generation = generationRef.current;
-    const imageFiles = files.filter((file) => {
-      if (!file.type.startsWith("image/")) return false;
-      // GIF 不进 canvas：重编码只会留下首帧，动画内容被静默丢弃；原样上传又会让它
-      // 成为唯一绕开单张预算的格式。明确拒绝，让用户自己转成 PNG / JPEG。
-      if (file.type === "image/gif") {
-        setError(t("image_gif_unsupported_hint", { name: file.name }));
+  const addFiles = useCallback(
+    (files: File[]) => {
+      setError(null);
+      const generation = generationRef.current;
+      const imageFiles = files.filter((file) => {
+        if (!file.type.startsWith("image/")) return false;
+        // GIF 不进 canvas：重编码只会留下首帧，动画内容被静默丢弃；原样上传又会让它
+        // 成为唯一绕开单张预算的格式。明确拒绝，让用户自己转成 PNG / JPEG。
+        if (file.type === "image/gif") {
+          setError(t("image_gif_unsupported_hint", { name: file.name }));
+          return false;
+        }
+        if (file.size <= MAX_IMAGE_FILE_BYTES) return true;
+        setError(t("image_too_large_hint", { name: file.name }));
         return false;
+      });
+      const remainingCapacity = Math.max(0, MAX_ATTACHED_IMAGES - images.length - pendingSlotsRef.current);
+      if (imageFiles.length > remainingCapacity) {
+        setError(t("max_images_hint", { count: MAX_ATTACHED_IMAGES }));
       }
-      if (file.size <= MAX_IMAGE_FILE_BYTES) return true;
-      setError(t("image_too_large_hint", { name: file.name }));
-      return false;
-    });
-    const remainingCapacity = Math.max(
-      0,
-      MAX_ATTACHED_IMAGES - images.length - pendingSlotsRef.current,
-    );
-    if (imageFiles.length > remainingCapacity) {
-      setError(t("max_images_hint", { count: MAX_ATTACHED_IMAGES }));
-    }
-    const filesToTranscode = imageFiles.slice(0, remainingCapacity);
-    pendingSlotsRef.current += filesToTranscode.length;
-    setPendingTranscodes((current) => current + filesToTranscode.length);
-    queueRef.current.push(...filesToTranscode.map((file) => ({ kind: "append" as const, file, generation })));
+      const filesToTranscode = imageFiles.slice(0, remainingCapacity);
+      pendingSlotsRef.current += filesToTranscode.length;
+      setPendingTranscodes((current) => current + filesToTranscode.length);
+      queueRef.current.push(...filesToTranscode.map((file) => ({ kind: "append" as const, file, generation })));
 
-    // 逐张串行：同时解码多张大图会在移动端撑爆内存。
-    processNext();
-  }, [images.length, processNext, t]);
+      // 逐张串行：同时解码多张大图会在移动端撑爆内存。
+      processNext();
+    },
+    [images.length, processNext, t],
+  );
 
   // 退回输入框的图片已经过发送时的转码，原样追加；超过上限也全部保留，由用户自己挑掉多出的
   const appendImages = useCallback((appended: AttachedImage[]) => {

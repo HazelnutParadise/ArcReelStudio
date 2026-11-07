@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.http_status_errors import ProviderRejectedError
@@ -120,7 +120,7 @@ class TestViduReferenceImageLimit:
 
         with capture_http() as router:
             route = router.post("https://api.vidu.com/ent/v2/reference2image").mock(
-                return_value=httpx.Response(400, json={"code": 1013, "message": "nope"})
+                return_value=httpx2.Response(400, json={"code": 1013, "message": "nope"})
             )
             backend = ViduImageBackend(api_key="k", model="viduq2", base_url="https://api.vidu.com/ent/v2")
             from lib.backends.image_capabilities import gate_image_request
@@ -150,11 +150,11 @@ class TestViduImageCreateTaskHttpErrors:
     async def test_create_task_413_surfaces_httpstatuserror_no_retry(self):
         from unittest.mock import AsyncMock, MagicMock
 
-        import httpx
+        import httpx2
 
-        request = httpx.Request("POST", "https://vidu/reference2image")
-        response = httpx.Response(413, request=request, text="Request Entity Too Large")
-        err = httpx.HTTPStatusError("error 413", request=request, response=response)
+        request = httpx2.Request("POST", "https://vidu/reference2image")
+        response = httpx2.Response(413, request=request, text="Request Entity Too Large")
+        err = httpx2.HTTPStatusError("error 413", request=request, response=response)
 
         resp = MagicMock()
         resp.status_code = 413
@@ -164,7 +164,7 @@ class TestViduImageCreateTaskHttpErrors:
         client.post = AsyncMock(return_value=resp)
 
         backend = ViduImageBackend(api_key="k", model="viduq2")
-        with pytest.raises(httpx.HTTPStatusError) as ei:
+        with pytest.raises(httpx2.HTTPStatusError) as ei:
             await backend._create_task(client, {"model": "viduq2", "prompt": "x"})
         assert ei.value.response.status_code == 413
         # 413 非 retryable → fail-fast 单次
@@ -174,7 +174,7 @@ class TestViduImageCreateTaskHttpErrors:
         """4xx 与视频侧同路：消息去掉查询串，拒因摘要单独挂在异常上。"""
         with capture_http() as router:
             router.post("https://api.vidu.com/ent/v2/reference2image").mock(
-                return_value=httpx.Response(400, json={"code": 1013, "message": "reference image is not readable"})
+                return_value=httpx2.Response(400, json={"code": 1013, "message": "reference image is not readable"})
             )
             backend = ViduImageBackend(api_key="k", model="viduq2", base_url="https://api.vidu.com/ent/v2")
             with pytest.raises(ProviderRejectedError) as ei:
@@ -194,7 +194,7 @@ class TestViduImageResolutionPassthrough:
 
         with capture_http() as router:
             route = router.post("https://api.vidu.com/ent/v2/reference2image").mock(
-                return_value=httpx.Response(400, json={"code": 1013, "message": "resolution not supported"})
+                return_value=httpx2.Response(400, json={"code": 1013, "message": "resolution not supported"})
             )
             backend = ViduImageBackend(api_key="k", model=model, base_url="https://api.vidu.com/ent/v2")
             with pytest.raises(ProviderRejectedError) as ei:

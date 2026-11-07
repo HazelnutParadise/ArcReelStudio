@@ -38,7 +38,7 @@ LAST_FRAME_MODEL = "doubao-seedance-1-0-pro-fast-251015"
 
 
 @pytest.fixture
-def capability_client(custom_providers_app) -> Generator[TestClient, None, None]:
+def capability_client(custom_providers_app) -> Generator[TestClient]:
     with TestClient(custom_providers_app) as c:
         yield c
 

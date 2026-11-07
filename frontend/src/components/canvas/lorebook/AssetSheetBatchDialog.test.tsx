@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useAssetSheetBatchStore } from "@/stores/asset-sheet-batch-store";
@@ -29,7 +29,13 @@ describe("AssetSheetBatchDialog", () => {
         { unit_id: "scene/庭院", asset_type: "scene", name: "庭院", derivative: null, depends_on: null },
       ],
       skipped: [
-        { unit_id: "character/Bob/雨夜", asset_type: "character", name: "Bob", derivative: "雨夜", reason: "owner_sheet_missing" },
+        {
+          unit_id: "character/Bob/雨夜",
+          asset_type: "character",
+          name: "Bob",
+          derivative: "雨夜",
+          reason: "owner_sheet_missing",
+        },
       ],
       estimated_cost: { USD: 0.12 },
       unpriced_count: 0,
@@ -37,10 +43,42 @@ describe("AssetSheetBatchDialog", () => {
     const submit = vi.spyOn(API, "submitAssetSheetBatch").mockResolvedValue({
       batch_id: "b1",
       members: [
-        { unit_id: "character/Alice", asset_type: "character", name: "Alice", derivative: null, task_id: "t1", deduped: false, status: "queued" },
-        { unit_id: "character/Alice/战损", asset_type: "character", name: "Alice", derivative: "战损", task_id: "t2", deduped: false, status: "queued" },
-        { unit_id: "scene/庭院", asset_type: "scene", name: "庭院", derivative: null, task_id: null, deduped: false, status: "failed" },
-        { unit_id: "character/Bob/雨夜", asset_type: "character", name: "Bob", derivative: "雨夜", task_id: null, deduped: false, status: "blocked" },
+        {
+          unit_id: "character/Alice",
+          asset_type: "character",
+          name: "Alice",
+          derivative: null,
+          task_id: "t1",
+          deduped: false,
+          status: "queued",
+        },
+        {
+          unit_id: "character/Alice/战损",
+          asset_type: "character",
+          name: "Alice",
+          derivative: "战损",
+          task_id: "t2",
+          deduped: false,
+          status: "queued",
+        },
+        {
+          unit_id: "scene/庭院",
+          asset_type: "scene",
+          name: "庭院",
+          derivative: null,
+          task_id: null,
+          deduped: false,
+          status: "failed",
+        },
+        {
+          unit_id: "character/Bob/雨夜",
+          asset_type: "character",
+          name: "Bob",
+          derivative: "雨夜",
+          task_id: null,
+          deduped: false,
+          status: "blocked",
+        },
       ],
     });
     const onClose = vi.fn();
@@ -56,7 +94,11 @@ describe("AssetSheetBatchDialog", () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(submit).toHaveBeenCalledWith("demo", { episode_id: 2 });
-    expect(useAssetSheetBatchStore.getState().batches.b1?.members.map((member) => member.task_id)).toEqual(["t1", "t2", null]);
+    expect(useAssetSheetBatchStore.getState().batches.b1?.members.map((member) => member.task_id)).toEqual([
+      "t1",
+      "t2",
+      null,
+    ]);
     expect(useAssetSheetBatchStore.getState().trackedTaskIds).toEqual(new Set(["t1", "t2"]));
   });
 
@@ -86,7 +128,17 @@ describe("AssetSheetBatchDialog", () => {
     });
     vi.spyOn(API, "submitAssetSheetBatch").mockResolvedValue({
       batch_id: "failed-batch",
-      members: [{ unit_id: "prop/玉佩", asset_type: "prop", name: "玉佩", derivative: null, task_id: null, deduped: false, status: "failed" }],
+      members: [
+        {
+          unit_id: "prop/玉佩",
+          asset_type: "prop",
+          name: "玉佩",
+          derivative: null,
+          task_id: null,
+          deduped: false,
+          status: "failed",
+        },
+      ],
     });
     render(<AssetSheetBatchDialog projectName="demo" scope={{ asset_type: "prop" }} onClose={vi.fn()} />);
     await screen.findByText("将生成 1 张");
@@ -97,7 +149,12 @@ describe("AssetSheetBatchDialog", () => {
   });
 
   it("keeps the confirm disabled when nothing needs generating", async () => {
-    vi.spyOn(API, "previewAssetSheetBatch").mockResolvedValue({ targets: [], skipped: [], estimated_cost: null, unpriced_count: 0 });
+    vi.spyOn(API, "previewAssetSheetBatch").mockResolvedValue({
+      targets: [],
+      skipped: [],
+      estimated_cost: null,
+      unpriced_count: 0,
+    });
 
     render(<AssetSheetBatchDialog projectName="demo" scope={{ asset_type: "prop" }} onClose={vi.fn()} />);
 

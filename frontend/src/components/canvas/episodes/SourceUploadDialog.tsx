@@ -153,14 +153,24 @@ export function SourceUploadDialog({
       const at = visible.findIndex((row) => row.key === key);
       const target = visible[at + delta];
       if (at < 0 || !target) return prev;
-      return moveKey(prev, key, prev.findIndex((row) => row.key === target.key));
+      return moveKey(
+        prev,
+        key,
+        prev.findIndex((row) => row.key === target.key),
+      );
     });
   };
 
   const onRowDragOver = (event: DragEvent, overKey: string) => {
     if (dragKey === null || dragKey === overKey) return;
     event.preventDefault();
-    setRows((prev) => moveKey(prev, dragKey, prev.findIndex((row) => row.key === overKey)));
+    setRows((prev) =>
+      moveKey(
+        prev,
+        dragKey,
+        prev.findIndex((row) => row.key === overKey),
+      ),
+    );
   };
 
   const hasFiles = (event: DragEvent) => Array.from(event.dataTransfer.types).includes("Files");
@@ -233,7 +243,8 @@ export function SourceUploadDialog({
     }
     if (failure) {
       useAppStore.getState().pushToast(t("dashboard:source_upload_failed_partway", failure), "error");
-      if (refreshed === "success" && (result.wholeSourceFiles.length > 0 || result.episodes.length > 0)) onUploaded?.(result);
+      if (refreshed === "success" && (result.wholeSourceFiles.length > 0 || result.episodes.length > 0))
+        onUploaded?.(result);
       return;
     }
     if (refreshed === "success" && renamed.length > 0) {
@@ -384,7 +395,9 @@ export function SourceUploadDialog({
                           ) : null}
                         </div>
                         {isNew ? (
-                          <span className="num shrink-0 text-xs text-muted-foreground">{formatFileSize(row.file.size)}</span>
+                          <span className="num shrink-0 text-xs text-muted-foreground">
+                            {formatFileSize(row.file.size)}
+                          </span>
                         ) : (
                           <span className="shrink-0 text-xs text-muted-foreground">
                             {withSourceKind

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 
@@ -19,7 +19,13 @@ const PROJECT: ProjectData = {
   style: "",
   episodes: [
     { episode: 1, title: "开端", script_file: "scripts/episode_1.json", source_origin: "whole_source" },
-    { episode: 2, title: "转折", script_file: "scripts/episode_2.json", source_origin: "whole_source", ledger_status: "stale" },
+    {
+      episode: 2,
+      title: "转折",
+      script_file: "scripts/episode_2.json",
+      source_origin: "whole_source",
+      ledger_status: "stale",
+    },
     { episode: 3, title: "番外", script_file: "scripts/episode_3.json", source_origin: "own" },
   ],
   characters: {},
@@ -43,17 +49,80 @@ const VIEW: EpisodesViewData = {
       units: 30,
       cut_units: 20,
       segments: [
-        { kind: "episode", start: 0, end: 10, text: "第一集的原文。", episode: 1, gap: false, units: 10, continued: false, continues: false },
-        { kind: "episode", start: 10, end: 20, text: "第二集的原文。", episode: 2, gap: false, units: 10, continued: false, continues: false },
-        { kind: "unsplit", start: 20, end: 30, text: "还没分集的原文。", episode: null, gap: false, units: 10, continued: false, continues: false },
+        {
+          kind: "episode",
+          start: 0,
+          end: 10,
+          text: "第一集的原文。",
+          episode: 1,
+          gap: false,
+          units: 10,
+          continued: false,
+          continues: false,
+        },
+        {
+          kind: "episode",
+          start: 10,
+          end: 20,
+          text: "第二集的原文。",
+          episode: 2,
+          gap: false,
+          units: 10,
+          continued: false,
+          continues: false,
+        },
+        {
+          kind: "unsplit",
+          start: 20,
+          end: 30,
+          text: "还没分集的原文。",
+          episode: null,
+          gap: false,
+          units: 10,
+          continued: false,
+          continues: false,
+        },
       ],
       source_kind: null,
     },
   ],
   episodes: [
-    { episode: 1, origin: "whole_source", placed: true, source_file: "source/上卷.txt", end_file: "source/上卷.txt", units: 10, spoken_seconds: 3, first_sentence: "第一集的原文。", last_sentence: "第一集的原文。", source_kind: null },
-    { episode: 2, origin: "whole_source", placed: true, source_file: "source/上卷.txt", end_file: "source/上卷.txt", units: 10, spoken_seconds: 3, first_sentence: "", last_sentence: "", source_kind: null },
-    { episode: 3, origin: "own", placed: false, source_file: null, end_file: null, units: 8, spoken_seconds: 2, first_sentence: "", last_sentence: "", source_kind: null },
+    {
+      episode: 1,
+      origin: "whole_source",
+      placed: true,
+      source_file: "source/上卷.txt",
+      end_file: "source/上卷.txt",
+      units: 10,
+      spoken_seconds: 3,
+      first_sentence: "第一集的原文。",
+      last_sentence: "第一集的原文。",
+      source_kind: null,
+    },
+    {
+      episode: 2,
+      origin: "whole_source",
+      placed: true,
+      source_file: "source/上卷.txt",
+      end_file: "source/上卷.txt",
+      units: 10,
+      spoken_seconds: 3,
+      first_sentence: "",
+      last_sentence: "",
+      source_kind: null,
+    },
+    {
+      episode: 3,
+      origin: "own",
+      placed: false,
+      source_file: null,
+      end_file: null,
+      units: 8,
+      spoken_seconds: 2,
+      first_sentence: "",
+      last_sentence: "",
+      source_kind: null,
+    },
   ],
   unregistered: [],
   replan: null,
@@ -265,9 +334,39 @@ describe("EpisodesView", () => {
         {
           ...VIEW.files[0],
           segments: [
-            { kind: "episode", start: 0, end: 10, text: "第一集的原文。", episode: 1, gap: false, units: 10, continued: false, continues: false },
-            { kind: "unsplit", start: 10, end: 20, text: "删掉的那一集的原文。", episode: null, gap: true, units: 10, continued: false, continues: false },
-            { kind: "episode", start: 20, end: 30, text: "第二集的原文。", episode: 2, gap: false, units: 10, continued: false, continues: false },
+            {
+              kind: "episode",
+              start: 0,
+              end: 10,
+              text: "第一集的原文。",
+              episode: 1,
+              gap: false,
+              units: 10,
+              continued: false,
+              continues: false,
+            },
+            {
+              kind: "unsplit",
+              start: 10,
+              end: 20,
+              text: "删掉的那一集的原文。",
+              episode: null,
+              gap: true,
+              units: 10,
+              continued: false,
+              continues: false,
+            },
+            {
+              kind: "episode",
+              start: 20,
+              end: 30,
+              text: "第二集的原文。",
+              episode: 2,
+              gap: false,
+              units: 10,
+              continued: false,
+              continues: false,
+            },
           ],
         },
       ],
@@ -284,9 +383,7 @@ describe("EpisodesView", () => {
       expect(within(outline).getByText("未切分的原文 10 字")).toBeInTheDocument();
       fireEvent.click(within(outline).getByRole("button", { name: "规划这段未切分的原文" }));
 
-      await waitFor(() =>
-        expect(plan).toHaveBeenCalledWith("demo", null, { source_file: "source/上卷.txt", end: 20 }),
-      );
+      await waitFor(() => expect(plan).toHaveBeenCalledWith("demo", null, { source_file: "source/上卷.txt", end: 20 }));
     });
 
     it("does not call the whole source split while a gap is left", async () => {
@@ -417,7 +514,14 @@ describe("EpisodesView", () => {
     it("shows the planning progress on the header button while planning runs", async () => {
       vi.spyOn(API, "getEpisodesView").mockResolvedValue(VIEW);
       useTasksStore.setState({
-        tasks: [makeTask({ project_name: "demo", task_type: "text_episode_plan", resource_id: "episode-planning", status: "running" })],
+        tasks: [
+          makeTask({
+            project_name: "demo",
+            task_type: "text_episode_plan",
+            resource_id: "episode-planning",
+            status: "running",
+          }),
+        ],
       });
       renderView();
 
@@ -495,10 +599,12 @@ describe("EpisodesView", () => {
     await userEvent.click(await screen.findByRole("combobox", { name: "上卷.txt 的源文件类型" }));
     await userEvent.click(await screen.findByRole("option", { name: /^剧本/ }));
 
-    await waitFor(() => expect(useAppStore.getState().toast).toMatchObject({
-      text: "操作已完成，但页面数据刷新失败，请手动刷新查看最新状态",
-      tone: "warning",
-    }));
+    await waitFor(() =>
+      expect(useAppStore.getState().toast).toMatchObject({
+        text: "操作已完成，但页面数据刷新失败，请手动刷新查看最新状态",
+        tone: "warning",
+      }),
+    );
   });
 
   it("shows no source kind outside drama projects", async () => {
@@ -529,8 +635,30 @@ describe("EpisodesView", () => {
       uncovered: [],
       moved: [{ episode: 3, from: 3, to: 4 }],
       episodes: [
-        { title: "新一", hook: "", source_file: "source/上卷.txt", start: 10, end: 20, units: 10, first_sentence: "第二集的原文。", last_sentence: "第二集的原文。", same_as: 2, overlaps: [2] },
-        { title: "新二", hook: "", source_file: "source/上卷.txt", start: 20, end: 30, units: 10, first_sentence: "", last_sentence: "", same_as: null, overlaps: [] },
+        {
+          title: "新一",
+          hook: "",
+          source_file: "source/上卷.txt",
+          start: 10,
+          end: 20,
+          units: 10,
+          first_sentence: "第二集的原文。",
+          last_sentence: "第二集的原文。",
+          same_as: 2,
+          overlaps: [2],
+        },
+        {
+          title: "新二",
+          hook: "",
+          source_file: "source/上卷.txt",
+          start: 20,
+          end: 30,
+          units: 10,
+          first_sentence: "",
+          last_sentence: "",
+          same_as: null,
+          overlaps: [],
+        },
       ],
     };
 
@@ -725,10 +853,12 @@ describe("EpisodesView", () => {
       const dialog = await screen.findByRole("alertdialog", { name: "采纳新的分集方案" });
       fireEvent.click(within(dialog).getByRole("button", { name: "采纳新方案" }));
 
-      await waitFor(() => expect(useAppStore.getState().toast).toMatchObject({
-        text: "操作已完成，但页面数据刷新失败，请手动刷新查看最新状态",
-        tone: "warning",
-      }));
+      await waitFor(() =>
+        expect(useAppStore.getState().toast).toMatchObject({
+          text: "操作已完成，但页面数据刷新失败，请手动刷新查看最新状态",
+          tone: "warning",
+        }),
+      );
     });
   });
 });

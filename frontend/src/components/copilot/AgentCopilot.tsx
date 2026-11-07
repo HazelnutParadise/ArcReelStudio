@@ -79,17 +79,23 @@ export function AgentCopilot() {
     [sendMessage],
   );
 
-  const handleResendQueued = useCallback((id: string) => {
-    setHistoryOpen(false);
-    flowRef.current?.scrollToEnd();
-    return resendQueuedMessage(id);
-  }, [resendQueuedMessage]);
+  const handleResendQueued = useCallback(
+    (id: string) => {
+      setHistoryOpen(false);
+      flowRef.current?.scrollToEnd();
+      return resendQueuedMessage(id);
+    },
+    [resendQueuedMessage],
+  );
 
-  const handleSendQueuedNow = useCallback((id: string) => {
-    setHistoryOpen(false);
-    flowRef.current?.scrollToEnd();
-    return sendQueuedMessageNow(id);
-  }, [sendQueuedMessageNow]);
+  const handleSendQueuedNow = useCallback(
+    (id: string) => {
+      setHistoryOpen(false);
+      flowRef.current?.scrollToEnd();
+      return sendQueuedMessageNow(id);
+    },
+    [sendQueuedMessageNow],
+  );
 
   // 改写成功后由会话切换重建时间线（编辑态随 resetTimeline 清空）；失败保留编辑态，
   // 用户可以改完再试，错误经消息区下方的错误条呈现
@@ -126,7 +132,12 @@ export function AgentCopilot() {
   return (
     <div className="relative isolate flex h-full flex-col">
       <header className="flex h-12 shrink-0 items-center gap-1 border-b border-border px-2">
-        <Button variant="ghost" size="icon-sm" onClick={toggleAssistantPanel} aria-label={t("dashboard:collapse_panel")}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={toggleAssistantPanel}
+          aria-label={t("dashboard:collapse_panel")}
+        >
           <PanelRightClose aria-hidden />
         </Button>
         <div className="flex min-w-0 flex-1 items-center gap-2 px-1">
@@ -149,7 +160,12 @@ export function AgentCopilot() {
         >
           <History aria-hidden />
         </Button>
-        <Button variant="ghost" size="icon-sm" aria-label={t("dashboard:new_session_action")} onClick={handleNewSession}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("dashboard:new_session_action")}
+          onClick={handleNewSession}
+        >
           <Plus aria-hidden />
         </Button>
       </header>
@@ -170,7 +186,10 @@ export function AgentCopilot() {
       <TodoProgress turns={turns} draftTurn={draftTurn} />
 
       {!pendingQuestion && error && (
-        <p role="alert" className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        <p
+          role="alert"
+          className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+        >
           {error}
         </p>
       )}

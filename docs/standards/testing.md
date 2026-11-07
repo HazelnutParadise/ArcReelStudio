@@ -46,7 +46,7 @@ seam 是构造参数或关键字参数，带生产默认值，不改变生产行
 
 ### 出站 HTTP 用 respx 拦截，FastAPI 依赖用 `dependency_overrides`
 
-respx 保留真实 httpx 客户端、在 transport 层拦截（`AsyncOpenAI` 的流量同样被捕获），断言的是真实序列化后的请求。路由依赖用 `app.dependency_overrides` 替换，不 patch。
+respx 保留真实 httpx2 客户端、在 transport 层拦截（`AsyncOpenAI` 等 SDK 的流量同样被捕获），断言的是真实序列化后的请求。respx 按 httpx 编写，靠根 conftest 的 `httpx2.alias_httpx()` 拦截 httpx2，安排见 `docs/agents/dependencies.md`。路由依赖用 `app.dependency_overrides` 替换，不 patch。
 
 ### 前端页面级套件的接口替身从真实后端录制
 

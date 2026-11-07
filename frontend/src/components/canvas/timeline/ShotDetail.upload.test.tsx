@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { makeNarrationSegment } from "@/test/factories";
@@ -66,7 +66,9 @@ describe("ShotDetail 媒体上传", () => {
 
     chooseStoryboard();
 
-    await waitFor(() => expect(useAppStore.getState().toast).toMatchObject({ text: "「分镜 2」上传完成", tone: "success" }));
+    await waitFor(() =>
+      expect(useAppStore.getState().toast).toMatchObject({ text: "「分镜 2」上传完成", tone: "success" }),
+    );
     expect(API.uploadShotMedia).toHaveBeenCalledWith("demo", "episode_1.json", "E1S01", "storyboard", expect.any(File));
   });
 

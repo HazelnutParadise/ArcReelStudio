@@ -900,7 +900,7 @@ async def upload_unit_video(
         raise HTTPException(status_code=404, detail=_t("ref_unit_not_found", unit_id=unit_id)) from exc
     except ScriptEditError as exc:
         raise HTTPException(status_code=400, detail=script_edit_detail(exc, _t)) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         # ApiError 与 HTTPException 并列：_load_episode_script 抛出的 NotFoundError
         # 不是 HTTPException 子类，不并入这里会被下面的 except Exception 吞成 500
         raise

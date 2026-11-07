@@ -6,7 +6,12 @@ import {
   WORKSPACE_ROUTE_SCENES,
 } from "@/app-routes";
 import type { ProjectData, TaskItem, WorkspaceNotificationTarget } from "@/types";
-import { episodeDisplayName, episodeItemLabel, itemIdsInEpisodeText, type ProjectScripts } from "@/utils/episode-display";
+import {
+  episodeDisplayName,
+  episodeItemLabel,
+  itemIdsInEpisodeText,
+  type ProjectScripts,
+} from "@/utils/episode-display";
 
 /**
  * 由失败任务构建可点击回跳的通知 target，以及人类可读的失败文案。
@@ -37,22 +42,21 @@ export function assetNotificationTarget(
   return { type: assetType, id: name, route: ASSET_ROUTES[assetType], highlight_style: "flash" };
 }
 
-const FAILURE_TEXT_KEYS: Partial<
-  Record<TaskItem["task_type"], { key: string; idParam: "id" | "unitId" | "episode" }>
-> = {
-  storyboard: { key: "storyboard_task_failed", idParam: "id" },
-  video: { key: "video_task_failed", idParam: "id" },
-  character: { key: "character_task_failed", idParam: "id" },
-  scene: { key: "scene_task_failed", idParam: "id" },
-  prop: { key: "prop_task_failed", idParam: "id" },
-  product: { key: "product_task_failed", idParam: "id" },
-  grid: { key: "grid_task_failed", idParam: "id" },
-  reference_video: { key: "reference_generation_task_failed", idParam: "unitId" },
-  image_edit: { key: "image_edit_task_failed", idParam: "id" },
-  text_drama_script_plan: { key: "script_plan_task_failed", idParam: "episode" },
-  text_narration_script_plan: { key: "script_plan_task_failed", idParam: "episode" },
-  text_reference_script_plan: { key: "script_plan_task_failed", idParam: "episode" },
-};
+const FAILURE_TEXT_KEYS: Partial<Record<TaskItem["task_type"], { key: string; idParam: "id" | "unitId" | "episode" }>> =
+  {
+    storyboard: { key: "storyboard_task_failed", idParam: "id" },
+    video: { key: "video_task_failed", idParam: "id" },
+    character: { key: "character_task_failed", idParam: "id" },
+    scene: { key: "scene_task_failed", idParam: "id" },
+    prop: { key: "prop_task_failed", idParam: "id" },
+    product: { key: "product_task_failed", idParam: "id" },
+    grid: { key: "grid_task_failed", idParam: "id" },
+    reference_video: { key: "reference_generation_task_failed", idParam: "unitId" },
+    image_edit: { key: "image_edit_task_failed", idParam: "id" },
+    text_drama_script_plan: { key: "script_plan_task_failed", idParam: "episode" },
+    text_narration_script_plan: { key: "script_plan_task_failed", idParam: "episode" },
+    text_reference_script_plan: { key: "script_plan_task_failed", idParam: "episode" },
+  };
 
 /** 集级任务的 resource_id 形如 `episode-3`，失败文案按集名指称。 */
 const EPISODE_RESOURCE_ID = /^episode-(\d+)$/;
@@ -78,15 +82,10 @@ export function stripScriptsPrefix(path: string): string {
   return path.replace(/^scripts\//, "");
 }
 
-function resolveEpisodeRoute(
-  projectData: ProjectData | null,
-  scriptFile: string | null,
-): string | null {
+function resolveEpisodeRoute(projectData: ProjectData | null, scriptFile: string | null): string | null {
   if (!projectData || !scriptFile) return null;
   const normalized = stripScriptsPrefix(scriptFile);
-  const ep = projectData.episodes.find(
-    (e) => stripScriptsPrefix(e.script_file) === normalized,
-  );
+  const ep = projectData.episodes.find((e) => stripScriptsPrefix(e.script_file) === normalized);
   return ep ? `/episodes/${ep.episode}` : null;
 }
 
@@ -108,9 +107,7 @@ export function buildTaskFailureTarget(
     case "storyboard":
     case "video": {
       const route = resolveEpisodeRoute(projectData, task.script_file);
-      return route
-        ? { type: "segment", id: task.resource_id, route, highlight_style: "flash" }
-        : null;
+      return route ? { type: "segment", id: task.resource_id, route, highlight_style: "flash" } : null;
     }
     case "grid": {
       const route = resolveEpisodeRoute(projectData, task.script_file);
@@ -136,9 +133,7 @@ export function buildTaskFailureTarget(
           };
         case "storyboard": {
           const route = resolveEpisodeRoute(projectData, task.script_file);
-          return route
-            ? { type: "segment", id: task.resource_id, route, highlight_style: "flash" }
-            : null;
+          return route ? { type: "segment", id: task.resource_id, route, highlight_style: "flash" } : null;
         }
         default:
           return null;

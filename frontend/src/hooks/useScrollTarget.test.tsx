@@ -1,5 +1,5 @@
 import { act, render, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { useScrollTarget } from "@/hooks/useScrollTarget";
 import i18n from "@/i18n";
 import { useAppStore } from "@/stores/app-store";

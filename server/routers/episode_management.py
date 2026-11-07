@@ -71,7 +71,7 @@ async def _run[T](name: str, _t: Translator, action: Callable[[ProjectManager], 
         raise HTTPException(status_code=_STATUS.get(exc.code, 409), detail=_t(f"episode_manage_{exc.code}")) from exc
     except EpisodeSourceError as exc:
         raise episode_source_http_error(exc, _t, episode=episode) from exc
-    except (HTTPException, ApiError):
+    except HTTPException, ApiError:
         raise
     except Exception as exc:
         logger.exception("请求处理失败")

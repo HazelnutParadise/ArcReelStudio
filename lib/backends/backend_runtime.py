@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, cast
 from urllib.parse import urlsplit
 
-import httpx
+import httpx2
 from sqlalchemy.exc import InterfaceError, OperationalError
 
 from lib.backends.artifact_download_guard import (
@@ -192,14 +192,14 @@ def is_retryable_http_status(status_code: int, *, retry_not_found: bool = False)
     return False
 
 
-# httpx 传输错误中「请求确定未送达」的子集：连接建立阶段失败 / 从未取得连接 / 代理握手失败。
+# httpx2 传输错误中「请求确定未送达」的子集：连接建立阶段失败 / 从未取得连接 / 代理握手失败。
 # 重试安全——服务端不可能已建任务 / 已计费。读/写阶段及之后的传输错误（ReadTimeout、
 # WriteError、连接中途断开、RemoteProtocolError 等）请求可能已抵达服务端，归歧义态，不在此列。
 _NOT_SENT_TRANSPORT_ERRORS: tuple[type[Exception], ...] = (
-    httpx.ConnectError,
-    httpx.ConnectTimeout,
-    httpx.PoolTimeout,
-    httpx.ProxyError,  # 代理连接/握手失败：请求从未离开客户端→代理段，未抵达目标供应商
+    httpx2.ConnectError,
+    httpx2.ConnectTimeout,
+    httpx2.PoolTimeout,
+    httpx2.ProxyError,  # 代理连接/握手失败：请求从未离开客户端→代理段，未抵达目标供应商
 )
 
 # 请求字节发出前就确定失败的本地/协议错误：URL scheme 不受支持（UnsupportedProtocol）
@@ -207,8 +207,8 @@ _NOT_SENT_TRANSPORT_ERRORS: tuple[type[Exception], ...] = (
 # 也不会变好——poll 路径快速失败、submit 路径原样抛出（非歧义态，不套「请求可能已送达」）。
 # 注意 RemoteProtocolError 是其同级 ProtocolError 子类，但属「服务端中途断开」，不在此列。
 _NON_RETRYABLE_LOCAL_ERRORS: tuple[type[Exception], ...] = (
-    httpx.LocalProtocolError,
-    httpx.UnsupportedProtocol,
+    httpx2.LocalProtocolError,
+    httpx2.UnsupportedProtocol,
 )
 
 
@@ -222,7 +222,7 @@ def should_retry_submit(exc: Exception) -> bool:
     返回 False。HTTPStatusError 按 status_code 显式闸门：5xx/408/425/429 重试（服务端
     明示创建失败），404 与确定性 4xx 快速失败。
     """
-    if isinstance(exc, httpx.HTTPStatusError):
+    if isinstance(exc, httpx2.HTTPStatusError):
         return is_retryable_http_status(exc.response.status_code, retry_not_found=False)
     return isinstance(exc, _NOT_SENT_TRANSPORT_ERRORS)
 
@@ -237,11 +237,11 @@ def should_retry_poll(exc: Exception) -> bool:
     含 URL/task_id，其中 "500"/"503" 子串会被字符串兜底误判，故走显式 status_code 判定绕开；
     ResumeExpiredError 等业务异常一律快速失败。
     """
-    if isinstance(exc, httpx.HTTPStatusError):
+    if isinstance(exc, httpx2.HTTPStatusError):
         return is_retryable_http_status(exc.response.status_code, retry_not_found=True)
     if isinstance(exc, _NON_RETRYABLE_LOCAL_ERRORS):
         return False
-    return isinstance(exc, (httpx.RequestError, *BASE_RETRYABLE_ERRORS))
+    return isinstance(exc, (httpx2.RequestError, *BASE_RETRYABLE_ERRORS))
 
 
 def should_retry_signed_download(exc: Exception) -> bool:
@@ -252,11 +252,11 @@ def should_retry_signed_download(exc: Exception) -> bool:
     HTTPStatusError 按 status_code 显式闸门，绕开字符串兜底对结果 URL 中 "503"/"timeout"
     等子串的误判。
     """
-    if isinstance(exc, httpx.HTTPStatusError):
+    if isinstance(exc, httpx2.HTTPStatusError):
         return is_retryable_http_status(exc.response.status_code, retry_not_found=False)
     if isinstance(exc, _NON_RETRYABLE_LOCAL_ERRORS):
         return False
-    return isinstance(exc, (httpx.RequestError, *BASE_RETRYABLE_ERRORS))
+    return isinstance(exc, (httpx2.RequestError, *BASE_RETRYABLE_ERRORS))
 
 
 def should_retry_download(exc: Exception) -> bool:
@@ -266,18 +266,18 @@ def should_retry_download(exc: Exception) -> bool:
     CDN 未同步是抽样中的真实形态（ark ``video_not_ready``），URL 本身写错由端点测试在保存
     前兜住。
     """
-    if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (403, 404):
+    if isinstance(exc, httpx2.HTTPStatusError) and exc.response.status_code in (403, 404):
         return True
     return should_retry_signed_download(exc)
 
 
 async def submit_post(
-    post_fn: Callable[[], Awaitable[httpx.Response]],
+    post_fn: Callable[[], Awaitable[httpx2.Response]],
     *,
     provider: str,
     request: VideoGenerationRequest | None = None,
     include_provider_reason: bool = True,
-) -> httpx.Response:
+) -> httpx2.Response:
     """create/提交阶段（非幂等 POST）统一包装：按「请求是否确定送达」给失败分流。
 
     - 连接/代理建立失败（ConnectError/ConnectTimeout/PoolTimeout/ProxyError）：请求确定未送达
@@ -297,7 +297,7 @@ async def submit_post(
     """
     try:
         resp = await post_fn()
-    except httpx.RequestError as exc:
+    except httpx2.RequestError as exc:
         # 请求确定未送达——连接建立失败（瞬态、可重试）或本地/协议错误（确定性、快速失败）——
         # 均无重复建任务 / 重复计费风险，原样抛出交 should_retry_submit 分流；不套歧义态。
         if isinstance(exc, (*_NOT_SENT_TRANSPORT_ERRORS, *_NON_RETRYABLE_LOCAL_ERRORS)):
@@ -309,7 +309,7 @@ async def submit_post(
         logger.warning("%s create 返回 %s: %s", provider, resp.status_code, redact_provider_text(resp.text)[:500])
         try:
             resp.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             if include_provider_reason and is_provider_rejection(resp.status_code):
                 raise provider_rejected_error(exc, provider_reason=provider_reason_summary(resp)) from None
             raise redacted_status_error(exc) from None
@@ -479,16 +479,16 @@ def url_origin(url: str) -> tuple[str, str, int | None]:
     return parts.scheme.lower(), (parts.hostname or "").lower(), port
 
 
-#: 手动跟随重定向时的跳数上限，与 httpx 的缺省一致。
+#: 手动跟随重定向时的跳数上限，与 httpx2 的缺省一致。
 _MAX_REDIRECTS = 20
 
 
-def _redirect_location(response: httpx.Response) -> str | None:
+def _redirect_location(response: httpx2.Response) -> str | None:
     return response.headers.get("location") if response.is_redirect else None
 
 
 def _rewrites_to_get(status_code: int, method: str) -> bool:
-    """跟随重定向时该不该把方法改写成 GET 并丢掉请求体（与 httpx / RFC 9110 同规则）。
+    """跟随重定向时该不该把方法改写成 GET 并丢掉请求体（与 httpx2 / RFC 9110 同规则）。
 
     303 对除 HEAD 外的一切方法改写；301 / 302 只改写 POST——PUT 等方法在这两档上保留方法
     与请求体，改写它们会让端点收到一个语义完全不同的请求。307 / 308 一律原样重发。
@@ -505,7 +505,7 @@ def _rewrites_to_get(status_code: int, method: str) -> bool:
 def _without_query(url: str) -> str:
     """去掉查询串与 userinfo 的 URL：按 query 传的凭证、签名与 Basic 认证的口令都在那里，
     不该进错误消息与日志。"""
-    return str(httpx.URL(url).copy_with(query=None, userinfo=b""))
+    return str(httpx2.URL(url).copy_with(query=None, userinfo=b""))
 
 
 #: 拒因摘要的字符上限。上游错误体可以长达数千字符，而摘要要落进任务失败信封、随任务列表
@@ -582,8 +582,8 @@ def _strip_url_queries(text: str) -> str:
         raw = match.group(0).rstrip(".,;:!?)]}\"'")
         trailing = match.group(0)[len(raw) :]
         try:
-            stripped = str(httpx.URL(raw).copy_with(query=None, fragment=None, userinfo=b""))
-        except (httpx.InvalidURL, ValueError, UnicodeError):
+            stripped = str(httpx2.URL(raw).copy_with(query=None, fragment=None, userinfo=b""))
+        except httpx2.InvalidURL, ValueError, UnicodeError:
             stripped = "<url>"
         return stripped + trailing
 
@@ -610,7 +610,7 @@ def is_provider_rejection(status_code: int) -> bool:
     return 400 <= status_code < 500 and not is_retryable_http_status(status_code, retry_not_found=False)
 
 
-def provider_reason_summary(response: httpx.Response) -> str | None:
+def provider_reason_summary(response: httpx2.Response) -> str | None:
     """把上游确定性 4xx 的响应体提炼成脱敏、截断后的拒因摘要；无可用内容返回 ``None``。
 
     只对 4xx 产出：5xx 与传输错误说的是「上游此刻不可用」，其响应体对用户没有可行动的信息，
@@ -628,7 +628,7 @@ def provider_reason_summary(response: httpx.Response) -> str | None:
         return None
     try:
         body_text = response.text
-    except httpx.ResponseNotRead:
+    except httpx2.ResponseNotRead:
         # 流式响应尚未 aread：错误路径上没有可读的体，不为此再发一次请求。
         return None
     try:
@@ -666,7 +666,7 @@ class _Hop:
     auth_query: Mapping[str, str] | None = None
 
     def redirected_to(self, location: str, credential_origin: tuple[str, str, int | None]) -> _Hop:
-        target = httpx.URL(self.url).join(location)
+        target = httpx2.URL(self.url).join(location)
         if url_origin(str(target)) != credential_origin:
             # 跨源：请求头、查询凭证与原请求的 params 一并卸掉。
             return _Hop(str(target), None, None, None)
@@ -688,7 +688,7 @@ class _Body:
 
 
 async def request_with_scoped_credentials(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     method: str,
     url: str,
     *,
@@ -697,10 +697,10 @@ async def request_with_scoped_credentials(
     auth_query: Mapping[str, str] | None = None,
     files: Mapping[str, Any] | None = None,
     data: Mapping[str, Any] | None = None,
-) -> httpx.Response:
+) -> httpx2.Response:
     """发一次请求并自行逐跳跟随重定向，跳出本请求的源时卸掉 ``headers`` 里的凭证。
 
-    httpx 的 ``follow_redirects`` 跨源只摘 ``Authorization``，自定义头名（``X-API-Key`` 之类）
+    httpx2 的 ``follow_redirects`` 跨源只摘 ``Authorization``，自定义头名（``X-API-Key`` 之类）
     会原样送到重定向目标。凡是携带渲染出的 auth 节的请求都要走这里，而不是交给客户端自动跟随。
 
     凭证的作用域取 ``url`` 自己的源，而不是某个外部基准：调用方指定的地址就是凭证的去处，
@@ -741,12 +741,12 @@ async def request_with_scoped_credentials(
 
 
 async def stream_to_file(
-    client: httpx.AsyncClient,
+    client: httpx2.AsyncClient,
     url: str,
     output_path: Path,
     *,
     max_bytes: int,
-    timeout: int = 120,  # noqa: ASYNC109 -- 转交 httpx 的 I/O 超时配置，非 async 取消 deadline
+    timeout: int = 120,  # noqa: ASYNC109 -- 转交 httpx2 的 I/O 超时配置，非 async 取消 deadline
     headers: Mapping[str, str] | None = None,
     params: Mapping[str, str] | None = None,
     credential_origin: tuple[str, str, int | None] | None = None,
@@ -759,7 +759,7 @@ async def stream_to_file(
     约束（见 :func:`lib.backends.artifact_download_guard.artifact_http_client`）。
 
     ``credential_origin`` 给出 ``headers`` 里的凭证只许发往哪个源。给了它就自行逐跳跟随
-    重定向，跳到别的源时把 ``headers`` 整个丢掉：httpx 跨源只摘 ``Authorization``，而端点
+    重定向，跳到别的源时把 ``headers`` 整个丢掉：httpx2 跨源只摘 ``Authorization``，而端点
     定义的 auth 节可以用 ``X-API-Key`` 之类的任意头名，交给 ``follow_redirects`` 会把这些
     凭证原样送到重定向目标（对象存储 / CDN）去。
 
@@ -767,13 +767,13 @@ async def stream_to_file(
     视频的重封装由调用方在重试返回之后经 :func:`faststart_video_artifact` 进行。
     """
 
-    async def _write(resp: httpx.Response) -> None:
+    async def _write(resp: httpx2.Response) -> None:
         if resp.status_code >= 400:
             # 换成读完（且截断）响应体的副本，HTTPStatusError.response.text 才可用
             resp = await buffered_error_response(resp)
         try:
             resp.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             # 产物地址的查询串可能是签名，也可能是按 query 传的凭证——都不该进日志与任务记录。
             raise redacted_status_error(exc) from None
         await stream_body_to_file(resp, output_path, max_bytes=max_bytes)
@@ -868,7 +868,7 @@ async def download_video(
     output_path: Path,
     *,
     label: str = "",
-    timeout: int = 120,  # noqa: ASYNC109 -- 转交 httpx 的 I/O 超时配置，非 async 取消 deadline
+    timeout: int = 120,  # noqa: ASYNC109 -- 转交 httpx2 的 I/O 超时配置，非 async 取消 deadline
     retry_if: Callable[[Exception], bool] | None = should_retry_download,
     retryable_errors: tuple[type[Exception], ...] = BASE_RETRYABLE_ERRORS,
     max_wait: float = ARTIFACT_DOWNLOAD_MAX_WAIT_SECONDS,
@@ -971,7 +971,7 @@ def recording_poll[T](
     async def once() -> T:
         try:
             body = await poll_fn()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             await notify_provider_response(request, stage, _response_body_or_text(exc.response))
             raise
         await notify_provider_response(request, stage, body)
@@ -1002,7 +1002,7 @@ def resume_expiry_gate[T](
     async def gated() -> T:
         try:
             return await poll_fn()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             if exc.response.status_code == 404:
                 raise ResumeExpiredError(job_id=resume_job_id, provider=provider) from exc
             raise
@@ -1010,7 +1010,7 @@ def resume_expiry_gate[T](
     return gated
 
 
-def _response_body_or_text(response: httpx.Response) -> object:
+def _response_body_or_text(response: httpx2.Response) -> object:
     """响应体：能解析成 JSON 就存结构，否则存原文（截断由留痕边界统一负责）。"""
     try:
         return response.json()

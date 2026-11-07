@@ -18,12 +18,7 @@ import type { EpisodesView } from "@/types";
 import { errMsg } from "@/utils/async";
 import { lastInstruction, rememberInstruction } from "@/utils/last-instruction";
 
-import {
-  lastPlanningFailure,
-  remainingUnits,
-  wholeSourceStats,
-  type PlanningFailure,
-} from "./episode-planning-model";
+import { lastPlanningFailure, remainingUnits, wholeSourceStats, type PlanningFailure } from "./episode-planning-model";
 import { formatSpoken, formatVolume } from "./episodes-view-model";
 
 interface Props {
@@ -48,7 +43,10 @@ export function EpisodePlanningPanel({ projectName, view, active, onStarted }: P
   const instructionId = useId();
   const tasks = useTasksStore((s) => s.tasks);
   const targetSeconds = useProjectsStore((s) => s.currentProjectData?.episode_target_duration ?? null);
-  const failure = useMemo(() => (active ? null : lastPlanningFailure(tasks, projectName)), [active, tasks, projectName]);
+  const failure = useMemo(
+    () => (active ? null : lastPlanningFailure(tasks, projectName)),
+    [active, tasks, projectName],
+  );
   const queuedWindow = tasks.some(
     (task) =>
       task.project_name === projectName &&
@@ -167,7 +165,11 @@ export function EpisodePlanningPanel({ projectName, view, active, onStarted }: P
 
   const handToAgent = () => {
     prefillAssistant(
-      withInstruction(t, started ? t("dashboard:guide_prefill_plan_continue") : t("dashboard:guide_prefill_plan"), instruction),
+      withInstruction(
+        t,
+        started ? t("dashboard:guide_prefill_plan_continue") : t("dashboard:guide_prefill_plan"),
+        instruction,
+      ),
     );
     onStarted?.();
   };
@@ -175,7 +177,9 @@ export function EpisodePlanningPanel({ projectName, view, active, onStarted }: P
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <PopoverTitle>{started ? t("dashboard:guide_plan_continue_title") : t("dashboard:guide_plan_title")}</PopoverTitle>
+        <PopoverTitle>
+          {started ? t("dashboard:guide_plan_continue_title") : t("dashboard:guide_plan_title")}
+        </PopoverTitle>
         <PopoverDescription>
           {started
             ? t("dashboard:episode_planning_continue_detail", { volume: formatVolume(t, remaining, view.unit) })

@@ -49,7 +49,7 @@ async def _sources(project_path: Path, assets: Sequence[ResolvedReferenceAsset])
     images = [(asset.path, str(asset.reference.name)) for asset in assets]
     try:
         return await asyncio.to_thread(reference_image_sources, project_path, images)
-    except (OSError, PathTraversalError):
+    except OSError, PathTraversalError:
         return None
 
 

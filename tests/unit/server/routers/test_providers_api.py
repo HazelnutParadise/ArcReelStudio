@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -434,8 +434,8 @@ class TestGetProviderConfig:
     @pytest.mark.parametrize(
         ("provider_id", "expected"),
         [
-            ("gemini-aistudio", True),
-            ("openai", True),
+            ("gemini-aistudio", False),
+            ("openai", False),
             ("vidu", True),
             ("dashscope", True),
             ("ark", True),
@@ -454,6 +454,30 @@ class TestGetProviderConfig:
             resp = client.get(f"/api/v1/providers/{provider_id}/config")
         assert resp.status_code == 200
         assert resp.json()["supports_base_url"] is expected
+
+    @pytest.mark.parametrize(
+        ("provider_id", "expected"),
+        [
+            ("ark", "https://ark.ap-southeast.bytepluses.com/api/v3"),
+            ("dashscope", "https://dashscope-intl.aliyuncs.com"),
+            ("minimax", "https://api.minimax.io/v1"),
+            ("kling", "https://api-singapore.klingai.com/v1"),
+            ("vidu", "https://api.vidu.com/ent/v2"),
+            ("openai", None),
+            ("gemini-aistudio", None),
+        ],
+    )
+    def test_chinese_providers_offer_their_international_address(self, provider_id: str, expected: str | None):
+        """中国供应商另给国际站地址，密钥表单据此提供「国际站」快速选项；非中国供应商没有。"""
+        app, _ = _make_session_app()
+        with (
+            patch("server.routers.providers.ConfigService", return_value=self._mock_svc_empty()),
+            patch("server.routers.providers.CredentialRepository", return_value=self._mock_cred_repo_empty()),
+            TestClient(app) as client,
+        ):
+            resp = client.get(f"/api/v1/providers/{provider_id}/config")
+        assert resp.status_code == 200
+        assert resp.json()["international_base_url"] == expected
 
     def test_secret_fields_single_secret_provider(self):
         """单 secret provider（如 gemini-aistudio）→ secret_fields = [api_key]。"""
@@ -920,7 +944,7 @@ class TestTestProviderConnection:
             captured.update(url=url, params=params, headers=headers, timeout=timeout)
             return self._FakeKlingResponse({"code": 0, "message": "", "data": {}})
 
-        with patch("httpx.get", _fake_get):
+        with patch("httpx2.get", _fake_get):
             resp = providers._check_kling({"api_key": "sk-kling"}, lambda k, **kw: k)
         assert resp.success is True
         assert captured["headers"]["Authorization"] == "Bearer sk-kling"
@@ -937,7 +961,7 @@ class TestTestProviderConnection:
             captured.update(headers=headers)
             return self._FakeKlingResponse({"code": 0, "message": "", "data": {}})
 
-        with patch("httpx.get", _fake_get):
+        with patch("httpx2.get", _fake_get):
             resp = providers._check_kling({"access_key": "ak-1", "secret_key": "s" * 40}, lambda k, **kw: k)
         assert resp.success is True
         auth = captured["headers"]["Authorization"]
@@ -952,7 +976,7 @@ class TestTestProviderConnection:
             captured.update(headers=headers)
             return self._FakeKlingResponse({"code": 0, "message": "", "data": {}})
 
-        with patch("httpx.get", _fake_get):
+        with patch("httpx2.get", _fake_get):
             providers._check_kling(
                 {"api_key": "sk-kling", "access_key": "ak-1", "secret_key": "s" * 40}, lambda k, **kw: k
             )
@@ -966,7 +990,7 @@ class TestTestProviderConnection:
             captured.update(url=url)
             return self._FakeKlingResponse({"code": 0, "message": "", "data": {}})
 
-        with patch("httpx.get", _fake_get):
+        with patch("httpx2.get", _fake_get):
             providers._check_kling(
                 {"api_key": "sk-kling", "base_url": "https://relay.example.com/v1"}, lambda k, **kw: k
             )
@@ -983,7 +1007,7 @@ class TestTestProviderConnection:
         def _fake_get(url, params=None, headers=None, timeout=None):
             return self._FakeKlingResponse({"code": 1101, "message": "auth failed", "data": {}})
 
-        with patch("httpx.get", _fake_get), pytest.raises(RuntimeError, match="auth failed"):
+        with patch("httpx2.get", _fake_get), pytest.raises(RuntimeError, match="auth failed"):
             providers._check_kling({"api_key": "sk-kling"}, lambda k, **kw: k)
 
     def test_kling_test_fn_prefers_json_body_error_over_raise_for_status(self):
@@ -991,12 +1015,12 @@ class TestTestProviderConnection:
 
         class _FailingResponse(self._FakeKlingResponse):
             def raise_for_status(self) -> None:
-                raise httpx.HTTPStatusError("401 Unauthorized", request=MagicMock(), response=MagicMock())
+                raise httpx2.HTTPStatusError("401 Unauthorized", request=MagicMock(), response=MagicMock())
 
         def _fake_get(url, params=None, headers=None, timeout=None):
             return _FailingResponse({"code": 1101, "message": "access key not found", "data": {}})
 
-        with patch("httpx.get", _fake_get), pytest.raises(RuntimeError, match="access key not found"):
+        with patch("httpx2.get", _fake_get), pytest.raises(RuntimeError, match="access key not found"):
             providers._check_kling({"api_key": "sk-kling"}, lambda k, **kw: k)
 
     def test_kling_test_fn_raises_http_status_error_when_body_not_json(self):
@@ -1005,7 +1029,7 @@ class TestTestProviderConnection:
             http.get(host="api-beijing.klingai.com", path="/account/costs").respond(
                 status_code=502, text="<html>bad gateway</html>", headers={"content-type": "text/html"}
             )
-            with pytest.raises(httpx.HTTPStatusError) as exc_info:
+            with pytest.raises(httpx2.HTTPStatusError) as exc_info:
                 providers._check_kling({"api_key": "sk-kling"}, lambda k, **kw: k)
 
         assert exc_info.value.response.status_code == 502
@@ -1017,7 +1041,7 @@ class TestTestProviderConnection:
             http.get(host="api-beijing.klingai.com", path="/account/costs").respond(
                 status_code=504, text="", headers={"content-type": "application/json"}
             )
-            with pytest.raises(httpx.HTTPStatusError) as exc_info:
+            with pytest.raises(httpx2.HTTPStatusError) as exc_info:
                 providers._check_kling({"api_key": "sk-kling"}, lambda k, **kw: k)
 
         assert exc_info.value.response.status_code == 504
@@ -1026,14 +1050,14 @@ class TestTestProviderConnection:
     def test_kling_test_fn_keeps_credentials_out_of_status_error_message(self):
         """状态码兜底抛的是脱敏后的 HTTPStatusError：base_url 权限段里的口令不进异常消息。
 
-        base_url 由用户自填，写成 https://user:pw@host 时 httpx 把口令留在请求 URL 的权限段，
+        base_url 由用户自填，写成 https://user:pw@host 时 httpx2 把口令留在请求 URL 的权限段，
         裸 raise_for_status 会把整条 URL 写进消息，而这条消息经连接测试端点原样回到设置页。
         """
         with capture_http() as http:
             http.get(host="relay.example.com", path="/account/costs").respond(
                 status_code=401, text="unauthorized", headers={"content-type": "text/plain"}
             )
-            with pytest.raises(httpx.HTTPStatusError) as exc_info:
+            with pytest.raises(httpx2.HTTPStatusError) as exc_info:
                 providers._check_kling(
                     {"api_key": "sk-kling", "base_url": "https://kl-user:sk-leaked-kling@relay.example.com/v1"},
                     lambda k, **kw: k,
@@ -1071,7 +1095,7 @@ class TestTestProviderConnection:
 
         # 请求真的发出去了，message 才是走完状态码兜底那条路的产物。口令进异常消息这件事由
         # test_kling_test_fn_keeps_credentials_out_of_status_error_message 在 exc.request.url
-        # 上断言：httpx 出站前会把权限段挪进 Authorization 头，出站 URL 上看不到它。
+        # 上断言：httpx2 出站前会把权限段挪进 Authorization 头，出站 URL 上看不到它。
         only_request(route)
         assert resp.status_code == 200
         body = resp.json()
@@ -1086,7 +1110,7 @@ class TestTestProviderConnection:
                 {"code": 0, "message": "", "data": {"code": 1234, "msg": "resource pack not found"}}
             )
 
-        with patch("httpx.get", _fake_get), pytest.raises(RuntimeError, match="resource pack not found"):
+        with patch("httpx2.get", _fake_get), pytest.raises(RuntimeError, match="resource pack not found"):
             providers._check_kling({"api_key": "sk-kling"}, lambda k, **kw: k)
 
     def test_kling_connection_test_via_router_with_api_key_only(self):
@@ -1104,7 +1128,7 @@ class TestTestProviderConnection:
         with (
             patch("server.routers.providers.CredentialRepository", return_value=repo),
             patch("server.routers.providers.ConfigService", return_value=self._mock_svc()),
-            patch("httpx.get", return_value=self._FakeKlingResponse({"code": 0, "message": "", "data": {}})),
+            patch("httpx2.get", return_value=self._FakeKlingResponse({"code": 0, "message": "", "data": {}})),
             TestClient(app) as client,
         ):
             resp = client.post("/api/v1/providers/kling/test")

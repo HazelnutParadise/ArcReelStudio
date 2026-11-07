@@ -1,6 +1,6 @@
 """让被依赖库吞掉的取消在任务自己的代码里重新生效。
 
-任务在 anyio 的任务组或取消域里时（httpx 建立连接时经 httpcore 进入 ``anyio.connect_tcp`` 的任务组），
+任务在 anyio 的任务组或取消域里时（httpx2 建立连接时经 httpcore 进入 ``anyio.connect_tcp`` 的任务组），
 anyio 若恰在同一轮调度里取消自己的域，外部的 ``Task.cancel()`` 会与它合并成一个 anyio 取消，在域出口被整个吞掉：
 任务继续运行，``cancelling()`` 停在非零。
 

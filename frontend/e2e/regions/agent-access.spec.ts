@@ -27,9 +27,30 @@ const FEW_TOKENS: ApiOverrides = {
   "GET /api/v1/api-keys": {
     status: 200,
     body: [
-      { id: 1, name: "我的外部 Agent", key_prefix: "arc-7d1e", created_at: "2025-12-20T03:00:00Z", expires_at: "2026-01-19T03:00:00Z", last_used_at: "2025-12-31T09:00:00Z" },
-      { id: 2, name: "CI 流水线", key_prefix: "arc-4a6b", created_at: "2025-11-02T03:00:00Z", expires_at: null, last_used_at: null },
-      { id: 3, name: "旧笔记本", key_prefix: "arc-0c2f", created_at: "2025-10-01T03:00:00Z", expires_at: "2025-12-01T00:00:00Z", last_used_at: "2025-11-28T12:00:00Z" },
+      {
+        id: 1,
+        name: "我的外部 Agent",
+        key_prefix: "arc-7d1e",
+        created_at: "2025-12-20T03:00:00Z",
+        expires_at: "2026-01-19T03:00:00Z",
+        last_used_at: "2025-12-31T09:00:00Z",
+      },
+      {
+        id: 2,
+        name: "CI 流水线",
+        key_prefix: "arc-4a6b",
+        created_at: "2025-11-02T03:00:00Z",
+        expires_at: null,
+        last_used_at: null,
+      },
+      {
+        id: 3,
+        name: "旧笔记本",
+        key_prefix: "arc-0c2f",
+        created_at: "2025-10-01T03:00:00Z",
+        expires_at: "2025-12-01T00:00:00Z",
+        last_used_at: "2025-11-28T12:00:00Z",
+      },
     ],
   },
 };

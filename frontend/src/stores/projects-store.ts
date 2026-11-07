@@ -236,8 +236,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
     setProjectDetailLoading: (loading) => set({ projectDetailLoading: loading }),
     setShowCreateModal: (show) => set({ showCreateModal: show }),
     setCreatingProject: (creating) => set({ creatingProject: creating }),
-    updateAssetFingerprints: (fps) =>
-      set((s) => ({ assetFingerprints: { ...s.assetFingerprints, ...fps } })),
+    updateAssetFingerprints: (fps) => set((s) => ({ assetFingerprints: { ...s.assetFingerprints, ...fps } })),
     getAssetFingerprint: (path) => get().assetFingerprints[path] ?? null,
 
     refreshProject: (name, options) => {

@@ -28,11 +28,7 @@ import {
   providerLabelResolver,
   usageProjectLabel,
 } from "./usage-record-format";
-import {
-  sortByStartedDesc,
-  taskToUsageRecordView,
-  usageRecordToView,
-} from "./usage-record-view";
+import { sortByStartedDesc, taskToUsageRecordView, usageRecordToView } from "./usage-record-view";
 import type { UsageRecordView } from "./usage-record-view";
 import { useTaskCancellation } from "./use-task-cancellation";
 
@@ -58,9 +54,7 @@ function KpiStrip({ summary }: { summary: UsageSummary | null }) {
   const { t, i18n } = useTranslation("dashboard");
   const kpi = summary?.kpi ?? null;
   const primary = summary?.primary_currency ?? null;
-  const otherCosts = Object.entries(kpi?.cost ?? {}).filter(
-    ([currency, amount]) => currency !== primary && amount > 0,
-  );
+  const otherCosts = Object.entries(kpi?.cost ?? {}).filter(([currency, amount]) => currency !== primary && amount > 0);
   return (
     <dl className="grid grid-cols-4 divide-x divide-border rounded-lg border border-border">
       <KpiCell
@@ -76,23 +70,15 @@ function KpiStrip({ summary }: { summary: UsageSummary | null }) {
       <KpiCell
         label={t("usage_kpi_failed")}
         value={kpi ? formatCount(kpi.failed, i18n.language) : "—"}
-        sub={
-          kpi && kpi.cancelled > 0
-            ? t("usage_kpi_cancelled_count", { count: kpi.cancelled })
-            : "—"
-        }
+        sub={kpi && kpi.cancelled > 0 ? t("usage_kpi_cancelled_count", { count: kpi.cancelled }) : "—"}
       />
       <KpiCell
         label={t("usage_kpi_cost")}
-        value={
-          kpi && primary ? formatCurrencyAmount(primary, kpi.cost[primary] ?? 0) : "—"
-        }
+        value={kpi && primary ? formatCurrencyAmount(primary, kpi.cost[primary] ?? 0) : "—"}
         sub={
           [
             ...otherCosts.map(([currency, amount]) => `+ ${formatCurrencyAmount(currency, amount)}`),
-            ...(kpi && kpi.unpriced_calls > 0
-              ? [t("usage_kpi_unpriced_count", { count: kpi.unpriced_calls })]
-              : []),
+            ...(kpi && kpi.unpriced_calls > 0 ? [t("usage_kpi_unpriced_count", { count: kpi.unpriced_calls })] : []),
           ].join("  ") || "—"
         }
       />
@@ -123,11 +109,7 @@ export function UsagePopover({ projectName }: UsagePopoverProps) {
 
   // 进行中区按占用谓词取：与后端去重口径一致的排队中 / 执行中任务。
   const activeTasks = useTasksStore(
-    useShallow((s) =>
-      s.tasks.filter(
-        (task) => task.project_name === projectName && isOccupyingStatus(task.status),
-      ),
-    ),
+    useShallow((s) => s.tasks.filter((task) => task.project_name === projectName && isOccupyingStatus(task.status))),
   );
   // 只数列表里显示的排队任务：本地渲染任务不列出，服务端批量取消也不含它们。
   const queuedCount = activeTasks.filter(
@@ -171,11 +153,7 @@ export function UsagePopover({ projectName }: UsagePopoverProps) {
   const finishedRows = useMemo(() => recent.map(usageRecordToView), [recent]);
 
   // 「没有任何调用」以 summary 为准：它是本项目全部时间的口径，与入口按钮一致。
-  const empty =
-    summary !== null &&
-    summary.kpi.calls === 0 &&
-    activeRows.length === 0 &&
-    finishedRows.length === 0;
+  const empty = summary !== null && summary.kpi.calls === 0 && activeRows.length === 0 && finishedRows.length === 0;
 
   // 按 task_id 分别记在途：多条下载失败的行可以同时重试，用单个 id 会让先返回的那条
   // 把后点的那条的加载态一并清掉。

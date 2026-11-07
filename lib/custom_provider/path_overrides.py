@@ -17,7 +17,7 @@ from types import MappingProxyType
 from typing import Literal
 from urllib.parse import urlsplit
 
-import httpx
+import httpx2
 
 #: 请求名 → 整条替换的路径。
 PathOverrides = Mapping[str, str]
@@ -142,7 +142,7 @@ class PathOverrideLayer:
         self._model = model
         self._placeholder = placeholder
 
-    def __call__(self, inner: httpx.AsyncBaseTransport | httpx.BaseTransport, /) -> _PathOverrideTransport:
+    def __call__(self, inner: httpx2.AsyncBaseTransport | httpx2.BaseTransport, /) -> _PathOverrideTransport:
         return _PathOverrideTransport(inner, self)
 
     def _replayed_raw_path(self, prefix: str) -> str:
@@ -172,7 +172,7 @@ class PathOverrideLayer:
                 yield prefix, self._replayed_raw_path(prefix)
         yield self._prefix, self._raw_path
 
-    def rewrite(self, request: httpx.Request) -> None:
+    def rewrite(self, request: httpx2.Request) -> None:
         # 按未解码的路径匹配：前缀取自 base_url 原文，%2F 这类转义解码后就对不上；捕获的占位符值也原样写回
         raw_path = request.url.raw_path.decode("ascii").partition("?")[0]
         found = next(
@@ -196,27 +196,27 @@ class PathOverrideLayer:
         )
 
 
-class _PathOverrideTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
-    def __init__(self, inner: httpx.AsyncBaseTransport | httpx.BaseTransport, layer: PathOverrideLayer) -> None:
+class _PathOverrideTransport(httpx2.BaseTransport, httpx2.AsyncBaseTransport):
+    def __init__(self, inner: httpx2.AsyncBaseTransport | httpx2.BaseTransport, layer: PathOverrideLayer) -> None:
         self._inner = inner
         self._layer = layer
 
-    def handle_request(self, request: httpx.Request) -> httpx.Response:
-        assert isinstance(self._inner, httpx.BaseTransport)
+    def handle_request(self, request: httpx2.Request) -> httpx2.Response:
+        assert isinstance(self._inner, httpx2.BaseTransport)
         self._layer.rewrite(request)
         return self._inner.handle_request(request)
 
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        assert isinstance(self._inner, httpx.AsyncBaseTransport)
+    async def handle_async_request(self, request: httpx2.Request) -> httpx2.Response:
+        assert isinstance(self._inner, httpx2.AsyncBaseTransport)
         self._layer.rewrite(request)
         return await self._inner.handle_async_request(request)
 
     def close(self) -> None:
-        assert isinstance(self._inner, httpx.BaseTransport)
+        assert isinstance(self._inner, httpx2.BaseTransport)
         self._inner.close()
 
     async def aclose(self) -> None:
-        assert isinstance(self._inner, httpx.AsyncBaseTransport)
+        assert isinstance(self._inner, httpx2.AsyncBaseTransport)
         await self._inner.aclose()
 
 

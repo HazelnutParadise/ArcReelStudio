@@ -7,7 +7,7 @@ from collections.abc import Generator
 from datetime import UTC, datetime
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -55,7 +55,7 @@ def factory(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
 
 @pytest.fixture
 def market_client(factory: async_sessionmaker[AsyncSession]) -> Generator[TestClient]:
-    http_client = httpx.AsyncClient()
+    http_client = httpx2.AsyncClient()
     service = MarketSourceService(factory, http_client=lambda: http_client, clock=lambda: NOW)
     app = FastAPI()
 
@@ -238,7 +238,7 @@ def test_refresh_single_source_reports_failure_and_keeps_snapshot(market_client:
     team = _add_team(market_client)
 
     with capture_http() as http:
-        http.get(url__startswith=TEAM_URL).mock(side_effect=httpx.ConnectTimeout("slow"))
+        http.get(url__startswith=TEAM_URL).mock(side_effect=httpx2.ConnectTimeout("slow"))
         response = market_client.post(f"/api/v1/market/sources/{team['id']}/refresh")
 
     assert response.status_code == 200

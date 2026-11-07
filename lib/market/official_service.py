@@ -4,7 +4,7 @@
 ``ARCREEL_OFFICIAL_SERVICE_URL`` 覆盖，覆盖为空即关闭；用户可见的总开关、首次告知标记与实例标识存系统设置。
 地址为空或开关关闭时 :meth:`OfficialServiceGateway.open` 返回 None，调用方据此对官方服务零出站。
 
-出站复用共享 httpx 客户端，单请求使用独立短超时、不重试。官方服务的非 2xx 响应体 ``{code, params}`` 转为
+出站复用共享 httpx2 客户端，单请求使用独立短超时、不重试。官方服务的非 2xx 响应体 ``{code, params}`` 转为
 :class:`OfficialServiceError`：状态码原样，文案键为 ``official_service_error_<code>``（目录未登记的 code
 落到通用键），``code`` 与 ``params`` 原样挂在诊断上；取不回或响应不可用时为 502 ``official_service_unavailable``。
 """
@@ -19,7 +19,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-import httpx
+import httpx2
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -121,13 +121,13 @@ class OfficialServiceState:
 class OfficialServiceClient:
     """已开启的官方服务的一次会话：每个请求携带实例标识头。"""
 
-    def __init__(self, *, base_url: str, instance_id: str, http_client: httpx.AsyncClient, timeout: float) -> None:
+    def __init__(self, *, base_url: str, instance_id: str, http_client: httpx2.AsyncClient, timeout: float) -> None:
         self._base_url = base_url
         self._instance_id = instance_id
         self._http_client = http_client
         self._timeout = timeout
 
-    async def request(self, method: str, path: str, *, json: object | None = None) -> httpx.Response:
+    async def request(self, method: str, path: str, *, json: object | None = None) -> httpx2.Response:
         """``path`` 相对 ``/api/v1``；2xx 原样返回，其余抛 :class:`OfficialServiceError` 或 502。"""
         try:
             response = await self._http_client.request(
@@ -137,7 +137,7 @@ class OfficialServiceClient:
                 headers={INSTANCE_HEADER: self._instance_id},
                 timeout=self._timeout,
             )
-        except httpx.HTTPError as exc:
+        except httpx2.HTTPError as exc:
             raise _unavailable(type(exc).__name__) from exc
         if response.is_success:
             return response
@@ -191,7 +191,7 @@ class OfficialServiceClient:
         return _parse_submission(await self.request("GET", f"/market/submissions/{token}"), expected={"token": token})
 
 
-def _parse_submission(response: httpx.Response, *, expected: Mapping[str, str]) -> SubmissionStatus:
+def _parse_submission(response: httpx2.Response, *, expected: Mapping[str, str]) -> SubmissionStatus:
     """``expected`` 是请求所指的字段；响应属于另一个提交时按不可用处理。"""
     try:
         body = response.json()
@@ -207,7 +207,7 @@ def _parse_submission(response: httpx.Response, *, expected: Mapping[str, str]) 
     return SubmissionStatus(**fields)
 
 
-def _parse_aggregates(response: httpx.Response, refs: Sequence[EntryRef]) -> list[EntryAggregate]:
+def _parse_aggregates(response: httpx2.Response, refs: Sequence[EntryRef]) -> list[EntryAggregate]:
     try:
         items = response.json()["items"]
         if not isinstance(items, list) or len(items) != len(refs):
@@ -255,7 +255,7 @@ class OfficialServiceGateway:
         session_factory: async_sessionmaker[AsyncSession],
         *,
         base_url: str | None = None,
-        http_client: Callable[[], httpx.AsyncClient] = get_http_client,
+        http_client: Callable[[], httpx2.AsyncClient] = get_http_client,
         timeout: float = REQUEST_TIMEOUT_SECONDS,
     ) -> None:
         self._session_factory = session_factory

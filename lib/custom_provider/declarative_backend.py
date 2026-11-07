@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import quote
 
-import httpx
+import httpx2
 
 from arcreel_catalog_core import CatalogEntry
 from arcreel_market_core.endpoint_definition import (
@@ -169,7 +169,7 @@ def strips_base_url_version(definition: Mapping[str, Any]) -> bool:
 def normalize_declarative_base_url(base_url: str, definition: Mapping[str, Any]) -> str:
     """补协议 + 去尾斜杠；定义带显式版本路径时剥配置末尾版本段，避免拼成 ``/v1/v2``。
 
-    无 scheme 的纯域名（如 ``api.aimlapi.com``）补 ``https://``——httpx 拒收缺协议的相对
+    无 scheme 的纯域名（如 ``api.aimlapi.com``）补 ``https://``——httpx2 拒收缺协议的相对
     URL，而存量自定义供应商的 ``base_url`` 是不受约束的字符串。预览与真发共用这一份归一化：
     分叉会让预览展示的 URL 与实际提交的不一致。
     """
@@ -325,7 +325,7 @@ def extract_duration(spec: object | None, body: object) -> int | None:
         value = int(Decimal(str(raw)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
     except JsonPathEvaluationError:
         raise
-    except (InvalidOperation, TypeError, ValueError):
+    except InvalidOperation, TypeError, ValueError:
         return None
     return value if 0 < value <= MAX_BILLED_DURATION_SECONDS else None
 
@@ -503,23 +503,23 @@ class DeclarativeJobEngine[StateT: JobState]:
 
     async def _send(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         section: Mapping[str, Any],
         context: Mapping[str, object],
-    ) -> httpx.Response:
+    ) -> httpx2.Response:
         response = await self._send_without_status(client, section, context)
         try:
             response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
+        except httpx2.HTTPStatusError as exc:
             raise redacted_status_error(exc) from None
         return response
 
-    async def submit(self, client: httpx.AsyncClient, context: Mapping[str, object], call: JobCall) -> str:
+    async def submit(self, client: httpx2.AsyncClient, context: Mapping[str, object], call: JobCall) -> str:
         """发提交请求并取供应商任务 id。"""
         section = self._definition["submit"]
 
-        async def operation() -> httpx.Response:
-            async def post() -> httpx.Response:
+        async def operation() -> httpx2.Response:
+            async def post() -> httpx2.Response:
                 response = await self._send_without_status(client, section, context)
                 if response.status_code >= 400:
                     await self._record_response(response, call, "submit")
@@ -551,10 +551,10 @@ class DeclarativeJobEngine[StateT: JobState]:
 
     async def _send_without_status(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         section: Mapping[str, Any],
         context: Mapping[str, object],
-    ) -> httpx.Response:
+    ) -> httpx2.Response:
         rendered = self._render(section, context)
         logger.info(
             "%s: %s",
@@ -580,7 +580,7 @@ class DeclarativeJobEngine[StateT: JobState]:
 
     async def poll(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         job_id: str,
         call: JobCall,
         *,
@@ -617,7 +617,7 @@ class DeclarativeJobEngine[StateT: JobState]:
             """
             try:
                 response = await self._send(client, section, section_context)
-            except httpx.HTTPStatusError as exc:
+            except httpx2.HTTPStatusError as exc:
                 await self._record_response(exc.response, call, stage)
                 if expire_on_404 and is_resume and exc.response.status_code == 404:
                     raise ResumeExpiredError(job_id=job_id, provider=self._provider) from exc
@@ -666,7 +666,7 @@ class DeclarativeJobEngine[StateT: JobState]:
                 retry_if=should_retry_poll,
                 max_wait=call.poll_timeout_seconds,
             )
-        except (ResumeExpiredError, DeclarativeRuntimeError, NonRetryableError):
+        except ResumeExpiredError, DeclarativeRuntimeError, NonRetryableError:
             raise
         except Exception as exc:
             raise DeclarativeRuntimeError("artifact_download_failed", detail=str(exc)) from exc
@@ -687,7 +687,7 @@ class DeclarativeJobEngine[StateT: JobState]:
         return self._read_state(body, extract, status_map=self._definition.get("status_map"), status=status)
 
     @staticmethod
-    async def _response_body(response: httpx.Response, call: JobCall, stage: ProviderResponseStage) -> object:
+    async def _response_body(response: httpx2.Response, call: JobCall, stage: ProviderResponseStage) -> object:
         try:
             body = response.json()
         except ValueError as exc:
@@ -701,7 +701,7 @@ class DeclarativeJobEngine[StateT: JobState]:
         return body
 
     @staticmethod
-    async def _record_response(response: httpx.Response, call: JobCall, stage: ProviderResponseStage) -> None:
+    async def _record_response(response: httpx2.Response, call: JobCall, stage: ProviderResponseStage) -> None:
         """留痕失败响应；非 JSON 体存截断后的原文，不因此让任务多失败一种方式。"""
         try:
             body: object = response.json()
@@ -711,7 +711,7 @@ class DeclarativeJobEngine[StateT: JobState]:
 
     async def download(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         url: str,
         output_path: Path,
         context: Mapping[str, object],
@@ -854,7 +854,7 @@ class DeclarativeVideoBackend(ProviderJobIdPersistenceMixin):
 
     async def _poll_download(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         job_id: str,
         request: VideoGenerationRequest,
         *,

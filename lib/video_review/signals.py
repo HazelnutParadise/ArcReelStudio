@@ -105,7 +105,7 @@ class VideoSignals:
                 freeze=tuple(TimeSpan(float(start), float(end)) for start, end in data["freeze"]),
                 cuts=tuple(float(cut) for cut in data["cuts"]),
             )
-        except (KeyError, TypeError, ValueError):
+        except KeyError, TypeError, ValueError:
             return None
 
 

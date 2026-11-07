@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vite-plus/test";
 import "@/i18n";
 import { StylePicker, type StylePickerValue } from "./StylePicker";
 
@@ -17,14 +17,18 @@ describe("StylePicker", () => {
     render(<StylePicker value={liveValue} onChange={onChange} />);
     expect(screen.getByRole("button", { name: /精品短剧|premium/i })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: /张艺谋/ }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ mode: "template", templateId: "live_zhang_yimou" }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: "template", templateId: "live_zhang_yimou" }),
+    );
   });
 
   it("keeps the chosen template when switching to the custom tab", () => {
     const onChange = vi.fn();
     render(<StylePicker value={liveValue} onChange={onChange} />);
     fireEvent.click(screen.getByRole("tab", { name: "自定义" }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ mode: "custom", templateId: "live_premium_drama" }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: "custom", templateId: "live_premium_drama" }),
+    );
   });
 
   it("keeps an uploaded image when switching back to a template category", () => {
@@ -38,7 +42,12 @@ describe("StylePicker", () => {
     );
     fireEvent.click(screen.getByRole("tab", { name: /漫剧|动画/ }));
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: "template", activeCategory: "anim", uploadedFile: file, uploadedPreview: "blob:test" }),
+      expect.objectContaining({
+        mode: "template",
+        activeCategory: "anim",
+        uploadedFile: file,
+        uploadedPreview: "blob:test",
+      }),
     );
   });
 

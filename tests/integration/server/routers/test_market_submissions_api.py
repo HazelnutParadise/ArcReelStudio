@@ -11,7 +11,7 @@ from collections.abc import AsyncGenerator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 import respx
 from fastapi import FastAPI
@@ -29,7 +29,7 @@ TOKEN = "3f1c" + "0" * 28
 PR_URL = "https://github.com/ArcReel/arcreel-market/pull/101"
 SQUARE_SVG = b'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"></svg>'
 
-ClientFactory = Callable[..., AbstractAsyncContextManager[httpx.AsyncClient]]
+ClientFactory = Callable[..., AbstractAsyncContextManager[httpx2.AsyncClient]]
 
 
 def _client_factory(session_factory: async_sessionmaker[AsyncSession]) -> ClientFactory:
@@ -40,9 +40,9 @@ def _client_factory(session_factory: async_sessionmaker[AsyncSession]) -> Client
             yield session
 
     @asynccontextmanager
-    async def factory(base_url: str = OFFICIAL_SERVICE) -> AsyncGenerator[httpx.AsyncClient]:
+    async def factory(base_url: str = OFFICIAL_SERVICE) -> AsyncGenerator[httpx2.AsyncClient]:
         app = FastAPI()
-        async with httpx.AsyncClient() as network:
+        async with httpx2.AsyncClient() as network:
             app.dependency_overrides[get_async_session] = session_override
             app.dependency_overrides[get_official_service_gateway] = lambda: OfficialServiceGateway(
                 session_factory, base_url=base_url, http_client=lambda: network
@@ -50,7 +50,7 @@ def _client_factory(session_factory: async_sessionmaker[AsyncSession]) -> Client
             app.include_router(market_submissions.router)
             app.include_router(custom_endpoints.router)
             register_error_handlers(app)
-            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as client:
                 yield client
 
     return factory
@@ -67,7 +67,7 @@ async def concurrent_client_factory(concurrent_session_factory: async_sessionmak
     return _client_factory(concurrent_session_factory)
 
 
-async def _create_endpoint(client: httpx.AsyncClient, **overrides: Any) -> int:
+async def _create_endpoint(client: httpx2.AsyncClient, **overrides: Any) -> int:
     response = await client.post("/custom-endpoints", json=custom_endpoint_definition(**overrides))
     assert response.status_code == 201, response.text
     return response.json()["id"]
@@ -206,7 +206,7 @@ async def test_submission_error_code_lands_in_local_response(
     assert listed == []
 
 
-async def _list_without_outbound(client: httpx.AsyncClient) -> list[dict[str, Any]]:
+async def _list_without_outbound(client: httpx2.AsyncClient) -> list[dict[str, Any]]:
     with respx.mock():
         response = await client.get("/market/submissions")
     assert response.status_code == 200, response.text
@@ -270,7 +270,7 @@ async def test_unreachable_official_service_keeps_last_status(client_factory: Cl
                 remote.post(SUBMISSIONS_URL).respond(201, json={**_status_body(), "token": token})
                 await client.post("/market/submissions", json={"endpoint_id": endpoint_id, "slug": "acme-video"})
         with respx.mock(assert_all_called=True) as remote:
-            route = remote.get(url__startswith=f"{SUBMISSIONS_URL}/").mock(side_effect=httpx.ConnectError("down"))
+            route = remote.get(url__startswith=f"{SUBMISSIONS_URL}/").mock(side_effect=httpx2.ConnectError("down"))
             response = await client.get("/market/submissions")
             assert route.call_count == 1
     assert response.status_code == 200
@@ -445,10 +445,10 @@ async def test_response_extract_paths_are_not_credentials(client_factory: Client
 async def test_concurrent_submissions_for_one_endpoint_both_succeed(concurrent_client_factory: ClientFactory):
     both_arrived = asyncio.Barrier(2)
 
-    async def accept(request: httpx.Request) -> httpx.Response:
+    async def accept(request: httpx2.Request) -> httpx2.Response:
         # 两个请求都拿到官方服务的结果后才各自落库，本地记录此前都不存在。
         await both_arrived.wait()
-        return httpx.Response(201, json=_status_body())
+        return httpx2.Response(201, json=_status_body())
 
     async with concurrent_client_factory() as client:
         endpoint_id = await _create_endpoint(client)
@@ -471,11 +471,11 @@ async def test_status_refresh_does_not_overwrite_a_newer_submission(concurrent_c
     refreshing = asyncio.Event()
     resubmitted = asyncio.Event()
 
-    async def old_status(request: httpx.Request) -> httpx.Response:
+    async def old_status(request: httpx2.Request) -> httpx2.Response:
         # 旧令牌的状态查询在途时，同一端点完成了一次新提交。
         refreshing.set()
         await resubmitted.wait()
-        return httpx.Response(200, json=_status_body("closed"))
+        return httpx2.Response(200, json=_status_body("closed"))
 
     async with concurrent_client_factory() as client:
         endpoint_id = await _create_endpoint(client)
@@ -498,7 +498,7 @@ async def test_status_refresh_does_not_overwrite_a_newer_submission(concurrent_c
         assert created.status_code == 200
         # 官方服务不可达时列表展示本地保存的值：应是新提交的令牌与状态，而不是旧令牌的查询结果。
         with respx.mock(assert_all_called=True) as remote:
-            latest = remote.get(f"{SUBMISSIONS_URL}/{new_token}").mock(side_effect=httpx.ConnectError("down"))
+            latest = remote.get(f"{SUBMISSIONS_URL}/{new_token}").mock(side_effect=httpx2.ConnectError("down"))
             response = await client.get("/market/submissions")
             assert latest.call_count == 1
     assert [(s["endpoint_id"], s["status"], s["stale"]) for s in response.json()["submissions"]] == [
@@ -506,7 +506,7 @@ async def test_status_refresh_does_not_overwrite_a_newer_submission(concurrent_c
     ]
 
 
-async def _list_without_outbound_after_merge(client: httpx.AsyncClient) -> list[dict[str, Any]]:
+async def _list_without_outbound_after_merge(client: httpx2.AsyncClient) -> list[dict[str, Any]]:
     """把唯一的开放中提交刷新为已采纳，再确认之后的列表不再出站。"""
     with respx.mock(assert_all_called=True) as remote:
         remote.get(f"{SUBMISSIONS_URL}/{TOKEN}").respond(200, json=_status_body("merged"))

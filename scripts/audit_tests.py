@@ -18,7 +18,7 @@
 
 类 4「文件形态」：`_more` / `_full` / `_coverage` / `_extra` / `_additional` 分裂后缀；
 单文件 3000 行熔断；前端测试文件位于 `__tests__/` 目录。后端 `tests/**/*.py` 与前端
-`frontend/src/**/*.test.*` 同受此类约束，前端语义类规则归 eslint、不在本脚本内。
+`frontend/src/**/*.test.*` 同受此类约束，前端语义类规则归前端 lint（Oxlint）、不在本脚本内。
 
 类 5「重复用例」：同一测试文件内，两个用例去掉 docstring 后函数体的 `ast.unparse` 规范化
 表示相同；或一条用例的函数体等同于同文件某个 `@parametrize` 用例参数表中的一行。判定限定
@@ -853,9 +853,12 @@ class TestFunctionAnalyzer:
                 elif isinstance(inner, ast.Subscript) and isinstance(inner.ctx, ast.Store):
                     if isinstance(inner.value, ast.Name) and inner.value.id in containers:
                         self.recorders.add(inner.value.id)
-                elif isinstance(inner, ast.AugAssign) and isinstance(inner.target, ast.Name):
-                    if inner.target.id in containers:
-                        self.recorders.add(inner.target.id)
+                elif (
+                    isinstance(inner, ast.AugAssign)
+                    and isinstance(inner.target, ast.Name)
+                    and inner.target.id in containers
+                ):
+                    self.recorders.add(inner.target.id)
 
     # -- 断言分类 ------------------------------------------------
 
@@ -1016,7 +1019,7 @@ class ProductionIndex:
         if path is not None:
             try:
                 tree = ast.parse(path.read_text(encoding="utf-8"))
-            except (SyntaxError, UnicodeDecodeError):  # pragma: no cover
+            except SyntaxError, UnicodeDecodeError:  # pragma: no cover
                 tree = None
             if tree is not None:
                 names: dict[str, str] = {}
@@ -1692,7 +1695,7 @@ def is_literal(node: ast.expr) -> bool:
     """节点是否静态可求值。负数是 `UnaryOp`、容器是 `List` / `Dict`，都不是 `Constant`。"""
     try:
         ast.literal_eval(node)
-    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+    except ValueError, SyntaxError, TypeError, MemoryError, RecursionError:
         return False
     return True
 
@@ -1863,7 +1866,7 @@ def render_row(argnames: list[str], values: tuple[str, ...]) -> str:
 def scan_module_duplicates(rel: str, tree: ast.Module, scope: CollectionScope) -> list[StructureFinding]:
     """同一文件内函数体等同的测试用例。跨文件不判——局部辅助函数同名会造成整批假阳。
 
-    只扫后端：本脚本零第三方依赖、只用 `ast`，无法解析 TS/TSX，前端同类判断按分工归 eslint。
+    只扫后端：本脚本零第三方依赖、只用 `ast`，无法解析 TS/TSX，前端同类判断按分工归前端 lint（Oxlint）。
     """
     cases = collect_test_cases(tree, scope)
     parametrized = [c for c in cases if c.is_parametrized]

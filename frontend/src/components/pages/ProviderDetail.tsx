@@ -265,9 +265,7 @@ export function ProviderDetail({ providerId, initialModelId, onSaved }: Props) {
                 {t(STATUS_LABEL_KEY[detail.status])}
               </Badge>
             </div>
-            {detail.description && (
-              <p className="max-w-[40em] text-sm text-muted-foreground">{detail.description}</p>
-            )}
+            {detail.description && <p className="max-w-[40em] text-sm text-muted-foreground">{detail.description}</p>}
             {mediaTypes.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {mediaTypes.map((kind) => (
@@ -287,6 +285,7 @@ export function ProviderDetail({ providerId, initialModelId, onSaved }: Props) {
         <CredentialList
           providerId={providerId}
           supportsBaseUrl={detail.supports_base_url}
+          internationalBaseUrl={detail.international_base_url}
           secretFields={detail.secret_fields}
           secretFieldGroups={detail.secret_field_groups}
           onChanged={handleCredentialChanged}

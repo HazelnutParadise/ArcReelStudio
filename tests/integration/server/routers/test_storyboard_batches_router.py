@@ -9,7 +9,7 @@ import json
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 from fastapi import FastAPI
 
@@ -46,7 +46,7 @@ async def board_queue(session_factory, board_projects: ProjectManager) -> Genera
 @pytest.fixture
 async def board_client(
     session_factory, board_projects: ProjectManager, board_queue: GenerationQueue, monkeypatch
-) -> AsyncIterator[httpx.AsyncClient]:
+) -> AsyncIterator[httpx2.AsyncClient]:
     async with session_factory() as session:
         provider = await CustomProviderRepository(session).create_provider(
             display_name="Images",
@@ -89,7 +89,7 @@ async def board_client(
     register_error_handlers(app)
     override_auth(app)
     app.include_router(storyboard_batches.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as http:
+    async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as http:
         yield http
 
 
@@ -131,7 +131,7 @@ def _claim_storyboard(board_projects: ProjectManager, segment_id: str) -> None:
 
 
 async def test_storyboard_preview_lists_targets_skips_and_cost_without_queueing(
-    board_client: httpx.AsyncClient, board_projects: ProjectManager, board_queue: GenerationQueue
+    board_client: httpx2.AsyncClient, board_projects: ProjectManager, board_queue: GenerationQueue
 ) -> None:
     _write_episode(
         board_projects,
@@ -154,7 +154,7 @@ async def test_storyboard_preview_lists_targets_skips_and_cost_without_queueing(
 
 
 async def test_storyboard_submit_queues_the_targets_as_one_batch(
-    board_client: httpx.AsyncClient, board_projects: ProjectManager, board_queue: GenerationQueue
+    board_client: httpx2.AsyncClient, board_projects: ProjectManager, board_queue: GenerationQueue
 ) -> None:
     _write_episode(board_projects, [_segment("E1S01"), _segment("E1S02", image_prompt=None)])
 
@@ -177,7 +177,7 @@ async def test_storyboard_submit_queues_the_targets_as_one_batch(
 
 
 async def test_video_batch_without_a_video_model_is_refused_whole_with_reasons(
-    board_client: httpx.AsyncClient, board_projects: ProjectManager, board_queue: GenerationQueue
+    board_client: httpx2.AsyncClient, board_projects: ProjectManager, board_queue: GenerationQueue
 ) -> None:
     _write_episode(board_projects, [_with_storyboard(board_projects, "E1S01"), _segment("E1S02")])
     _claim_storyboard(board_projects, "E1S01")
@@ -215,7 +215,7 @@ async def test_video_batch_without_a_video_model_is_refused_whole_with_reasons(
 
 @pytest.mark.parametrize("kind", ["storyboards", "videos"])
 async def test_batch_maps_unknown_episode_and_reference_project(
-    board_client: httpx.AsyncClient, board_projects: ProjectManager, kind: str
+    board_client: httpx2.AsyncClient, board_projects: ProjectManager, kind: str
 ) -> None:
     _write_episode(board_projects, [_segment("E1S01")])
 

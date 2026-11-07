@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -66,7 +66,9 @@ describe("UnregisteredFilesBanner", () => {
     const { onChanged } = renderBanner();
     const dialog = openDialog();
 
-    fireEvent.click(within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }));
+    fireEvent.click(
+      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }),
+    );
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     expect(adopt).toHaveBeenCalledWith("demo", "旧稿.txt", { target: "whole_source" });
@@ -109,7 +111,9 @@ describe("UnregisteredFilesBanner", () => {
     const { onChanged } = renderBanner();
     const dialog = openDialog();
 
-    fireEvent.click(within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }));
+    fireEvent.click(
+      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }),
+    );
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     expect(useAppStore.getState().toast).toMatchObject({
@@ -123,7 +127,9 @@ describe("UnregisteredFilesBanner", () => {
     const { onChanged } = renderBanner();
     const dialog = openDialog();
 
-    fireEvent.click(within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }));
+    fireEvent.click(
+      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }),
+    );
 
     expect(await dialog.findByRole("alert")).toHaveTextContent("处理 旧稿.txt 失败：文件已被登记");
     expect(onChanged).not.toHaveBeenCalled();

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import { useAssistantSession } from "@/hooks/useAssistantSession";
 import { useAssistantStore } from "@/stores/assistant-store";
@@ -102,7 +102,9 @@ describe("MessageFlow 失败卡片的播报", () => {
       stream.emit("entry", {
         seq: 1,
         type: "assistant",
-        content: [{ type: "tool_use", id: "toolu-sub", name: "Agent", input: { description: "核对分镜", prompt: "核对" } }],
+        content: [
+          { type: "tool_use", id: "toolu-sub", name: "Agent", input: { description: "核对分镜", prompt: "核对" } },
+        ],
         uuid: "a-1",
       });
       stream.emit("entry", {

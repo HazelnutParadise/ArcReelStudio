@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 from google.genai.types import GenerateContentResponseUsageMetadata
 from pydantic import BaseModel
@@ -33,8 +33,8 @@ class TestProperties:
     def test_name(self, mock_genai):
         b = GeminiTextBackend(api_key="k")
         assert b.name == "gemini"
-        # AI Studio 模式：构造时把 api_key 原样交给 genai.Client，未给 base_url 则不带 http_options
-        mock_genai.Client.assert_called_once_with(api_key="k", http_options=None)
+        # AI Studio 模式：构造时把 api_key 原样交给 genai.Client，http_options 固定 API 版本，未给 base_url 则不带 base_url
+        mock_genai.Client.assert_called_once_with(api_key="k", http_options={"api_version": "v1beta"})
 
     def test_default_model(self, mock_genai):
         b = GeminiTextBackend(api_key="k")
@@ -540,7 +540,7 @@ class TestAdditionalPropertiesStripped:
         """请求体层面：真实 google-genai 序列化后的 generationConfig.responseSchema 不含该字段。
 
         google-genai 装有 aiohttp 时默认走 aiohttp，respx 拦不到；注入 ``httpx_async_client`` 后 SDK
-        改走该 httpx 客户端（含降级链的后续请求），由 respx 在 transport 层截获，未声明的请求直接抛错。
+        改走该 httpx2 客户端（含降级链的后续请求），由 respx 在 transport 层截获，未声明的请求直接抛错。
         """
         from google import genai as real_genai
 
@@ -550,8 +550,8 @@ class TestAdditionalPropertiesStripped:
         }
         backend = GeminiTextBackend(api_key="k")
         with capture_http() as router:
-            route = router.post(url__regex=r":generateContent$").mock(return_value=httpx.Response(200, json=reply))
-            async with httpx.AsyncClient() as http_client:
+            route = router.post(url__regex=r":generateContent$").mock(return_value=httpx2.Response(200, json=reply))
+            async with httpx2.AsyncClient() as http_client:
                 backend._client = real_genai.Client(api_key="k", http_options={"httpx_async_client": http_client})
                 for model in response_schema_models():
                     route.calls.reset()

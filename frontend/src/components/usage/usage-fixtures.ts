@@ -48,9 +48,7 @@ export function makeUsageRecord(overrides: Partial<UsageRecord> = {}): UsageReco
   };
 }
 
-export function makeUsageRecordDetail(
-  overrides: Partial<UsageRecordDetail> = {},
-): UsageRecordDetail {
+export function makeUsageRecordDetail(overrides: Partial<UsageRecordDetail> = {}): UsageRecordDetail {
   return {
     ...makeUsageRecord(),
     prompt: null,
@@ -138,9 +136,7 @@ export function makeUsageAgentSession(overrides: Partial<UsageAgentSession> = {}
 }
 
 /** 会话明细里的一条记录；未覆写的列取一条已定价、无缓存的记录。 */
-export function makeUsageAgentSessionRecord(
-  overrides: Partial<UsageAgentSessionRecord> = {},
-): UsageAgentSessionRecord {
+export function makeUsageAgentSessionRecord(overrides: Partial<UsageAgentSessionRecord> = {}): UsageAgentSessionRecord {
   return {
     id: 1,
     started_at: "2026-03-15T08:00:00+00:00",

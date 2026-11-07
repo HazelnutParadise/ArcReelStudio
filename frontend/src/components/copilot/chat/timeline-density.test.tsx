@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 import type { ContentBlock, Turn } from "@/types";
 import { useAssistantStore } from "@/stores/assistant-store";
 import { SubagentCard } from "./SubagentCard";
@@ -25,7 +25,7 @@ describe("工具调用的工序行", () => {
       id: "tu-read",
       name: "Read",
       input: { file_path: "scripts/episode_1.json" },
-      result: "{\"shots\": []}",
+      result: '{"shots": []}',
     });
 
     const row = screen.getByRole("button", { name: /读取文件/ });
@@ -39,7 +39,14 @@ describe("工具调用的工序行", () => {
   });
 
   it("marks a failed tool in its collapsed row and a running tool while the session runs", () => {
-    renderBlock({ type: "tool_use", id: "a", name: "Bash", input: { command: "ls" }, result: "denied", is_error: true });
+    renderBlock({
+      type: "tool_use",
+      id: "a",
+      name: "Bash",
+      input: { command: "ls" },
+      result: "denied",
+      is_error: true,
+    });
     renderBlock({ type: "tool_use", id: "b", name: "Grep", input: { pattern: "雨夜" } });
 
     expect(screen.getByRole("button", { name: /运行命令.*失败/ })).toHaveAttribute("aria-expanded", "false");

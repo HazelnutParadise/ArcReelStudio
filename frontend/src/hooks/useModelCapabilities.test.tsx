@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API, ApiRequestError } from "@/api";
 import { durationOutOfRangeReason, useModelCapabilities } from "@/hooks/useModelCapabilities";
 import { DEMO_PROJECT_NAME } from "@/onboarding/demo-project";
@@ -63,9 +63,7 @@ describe("useModelCapabilities 时长维度", () => {
         }),
       }),
     );
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     await waitFor(() => expect(result.current.supportedDurations).toEqual([8]));
     expect(result.current.rawDurations).toEqual([4, 6, 8]);
     expect(result.current.excludedDurations).toEqual({ "4": "resolution", "6": "resolution" });
@@ -91,9 +89,7 @@ describe("useModelCapabilities 时长维度", () => {
 
   it("查询未落地 / 失败时时长为未知（null），不谎报成空集合", async () => {
     vi.spyOn(API, "getVideoCapabilities").mockRejectedValue(new Error("boom"));
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     expect(result.current.supportedDurations).toBeNull();
     expect(result.current.rawDurations).toBeNull();
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -105,16 +101,12 @@ describe("useModelCapabilities 时长维度", () => {
     // 裸 provider 是合法项目配置（服务端补全默认视频模型）。调用方按「项目为该后端保存了什么」
     // 查配置时必须用这个已解析值，拿裸值去查会把 provider ID 当成 model ID、读不到实际档位。
     vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(caps());
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: "gemini" }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: "gemini" }));
     await waitFor(() => expect(result.current.resolvedVideoBackend).toBe("gemini/veo-3"));
   });
 
   it("请求 key 用元组编码，字段内含分隔符也不碰撞", async () => {
-    const spy = vi
-      .spyOn(API, "getVideoCapabilities")
-      .mockResolvedValue(caps({ supported_durations: [7] }));
+    const spy = vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(caps({ supported_durations: [7] }));
     const { result, rerender } = renderHook(
       (props: { projectName: string; videoBackend: string }) => useModelCapabilities(props),
       { initialProps: { projectName: "a b", videoBackend: "c" } },
@@ -168,9 +160,7 @@ describe("useModelCapabilities 约束上下文", () => {
 
   it("表单里的「自动」分辨率显式传 null，不让服务端回退到已保存档位", async () => {
     const spy = vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(caps());
-    renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND, videoResolution: null }),
-    );
+    renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND, videoResolution: null }));
     await waitFor(() => expect(spy).toHaveBeenCalled());
     expect(spy.mock.calls[0]?.[1]?.resolution).toBeNull();
   });
@@ -206,13 +196,11 @@ describe("useModelCapabilities 约束上下文", () => {
 
 describe("useModelCapabilities 无项目上下文", () => {
   it("创建向导没有项目时按候选模型走无项目端点", async () => {
-    const modelSpy = vi.spyOn(API, "getModelVideoCapabilities").mockResolvedValue(
-      caps({ duration_constraints: constraints({ uses_reference_images: true, allowed: [8] }) }),
-    );
+    const modelSpy = vi
+      .spyOn(API, "getModelVideoCapabilities")
+      .mockResolvedValue(caps({ duration_constraints: constraints({ uses_reference_images: true, allowed: [8] }) }));
     const projectSpy = vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(caps());
-    const { result } = renderHook(() =>
-      useModelCapabilities({ videoBackend: BACKEND, usesReferenceImages: true }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ videoBackend: BACKEND, usesReferenceImages: true }));
     await waitFor(() => expect(result.current.supportedDurations).toEqual([8]));
     expect(projectSpy).not.toHaveBeenCalled();
     expect(modelSpy.mock.calls[0]?.[0]).toBe(BACKEND);
@@ -262,30 +250,22 @@ describe("useModelCapabilities 视频模型可解析性", () => {
 
 describe("useModelCapabilities 首尾帧维度", () => {
   it("取服务端生效值（含用户覆盖）", async () => {
-    vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(
-      caps({ first_frame: true, last_frame: false }),
-    );
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(caps({ first_frame: true, last_frame: false }));
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     await waitFor(() => expect(result.current.lastFrame).toBe(false));
     expect(result.current.firstFrame).toBe(true);
   });
 
   it("查询未落地时为未知（null），不谎报不支持", () => {
     vi.spyOn(API, "getVideoCapabilities").mockReturnValue(new Promise(() => {}));
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     expect(result.current.lastFrame).toBeNull();
     expect(result.current.loading).toBe(true);
   });
 
   it("查询失败时为未知（null）", async () => {
     vi.spyOn(API, "getVideoCapabilities").mockRejectedValue(new Error("boom"));
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.lastFrame).toBeNull();
   });
@@ -309,17 +289,13 @@ describe("useModelCapabilities 首尾帧维度", () => {
 describe("useModelCapabilities voiceConsistency 维度", () => {
   it("取服务端二维派生值", async () => {
     vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(caps({ voice_consistency: "native" }));
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     await waitFor(() => expect(result.current.voiceConsistency).toBe("native"));
   });
 
   it("查询未落地时为未知（null）", () => {
     vi.spyOn(API, "getVideoCapabilities").mockReturnValue(new Promise(() => {}));
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     expect(result.current.voiceConsistency).toBeNull();
   });
 });
@@ -327,9 +303,7 @@ describe("useModelCapabilities voiceConsistency 维度", () => {
 describe("useModelCapabilities 失效时机", () => {
   it("能力覆盖变更（store 失效）后自动重取，无需重新挂载或任何交互", async () => {
     const spy = vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(caps({ last_frame: true }));
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     await waitFor(() => expect(result.current.lastFrame).toBe(true));
 
     spy.mockResolvedValue(caps({ last_frame: false }));
@@ -339,9 +313,7 @@ describe("useModelCapabilities 失效时机", () => {
 
   it("失效重取期间保留旧值，不闪未知态", async () => {
     const spy = vi.spyOn(API, "getVideoCapabilities").mockResolvedValue(caps({ last_frame: false }));
-    const { result } = renderHook(() =>
-      useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }),
-    );
+    const { result } = renderHook(() => useModelCapabilities({ projectName: PROJECT, videoBackend: BACKEND }));
     await waitFor(() => expect(result.current.lastFrame).toBe(false));
 
     spy.mockReturnValue(new Promise(() => {}));

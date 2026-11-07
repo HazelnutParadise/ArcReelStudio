@@ -53,7 +53,7 @@ def _persisted_size(value: object) -> int:
     """
     try:
         return len(json.dumps(value, default=str).encode("utf-8"))
-    except (TypeError, ValueError, RecursionError):
+    except TypeError, ValueError, RecursionError:
         return len(str(value).encode("utf-8"))
 
 
@@ -63,7 +63,7 @@ def bound_provider_response(body: object) -> object:
         return body
     try:
         text = json.dumps(body, ensure_ascii=False, separators=(",", ":"), default=str)
-    except (TypeError, ValueError, RecursionError):
+    except TypeError, ValueError, RecursionError:
         text = str(body)
     # 逐次减半到包装后的写出体量真正落进上限内：escape 的膨胀率随内容而变（CJK 2 倍、
     # 表情符号 3 倍），按固定比例预留兜不住最坏情形。
@@ -282,7 +282,7 @@ class UsageRepository(BaseRepository):
                 started_at = started_at.replace(tzinfo=UTC)
             settled_finished_at = finished_at if finished_at.tzinfo is not None else finished_at.replace(tzinfo=UTC)
             duration_ms = int((settled_finished_at - started_at).total_seconds() * 1000)
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             duration_ms = 0
 
         effective_generate_audio = (

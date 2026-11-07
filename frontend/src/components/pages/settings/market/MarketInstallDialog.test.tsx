@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
 import { API, ApiRequestError } from "@/api";
@@ -154,12 +154,24 @@ describe("MarketInstallDialog", () => {
   });
 
   it("shows header metadata from the reviewed definition rather than an earlier entry snapshot", async () => {
-    const stale = { ...entry, name: "Demo Old", author: "Old Author", description: "Stale", homepage: "https://old.example.com" };
+    const stale = {
+      ...entry,
+      name: "Demo Old",
+      author: "Old Author",
+      description: "Stale",
+      homepage: "https://old.example.com",
+    };
     vi.mocked(API.getMarketEntry).mockResolvedValue({ ...detail, entry: stale });
     vi.mocked(API.getMarketEntryDefinition).mockResolvedValue({
       definition: {
         ...definition,
-        meta: { ...definition.meta, name: "Demo Pro", author: "New Author", description: "Refreshed", homepage: "https://new.example.com" },
+        meta: {
+          ...definition.meta,
+          name: "Demo Pro",
+          author: "New Author",
+          description: "Refreshed",
+          homepage: "https://new.example.com",
+        },
       },
       entry_matches_definition: true,
       definition_digest: "reviewed-digest",
@@ -414,10 +426,18 @@ describe("MarketInstallDialog", () => {
         "7": { class_type: "CLIPTextEncode", inputs: { text: "" } },
         "9": { class_type: "SaveImage", inputs: {} },
       },
-      bindings: { prompt: [{ node: "6", input: "text", class_type: "CLIPTextEncode" }], output: [{ node: "9", class_type: "SaveImage" }] },
+      bindings: {
+        prompt: [{ node: "6", input: "text", class_type: "CLIPTextEncode" }],
+        output: [{ node: "9", class_type: "SaveImage" }],
+      },
     };
     const comfyuiEntry: MarketEntry = { ...entry, media_type: "image" };
-    const comfyuiEndpoint: CustomEndpointInfo = { ...endpoint, kind: "comfyui", media_type: "image", definition: comfyui };
+    const comfyuiEndpoint: CustomEndpointInfo = {
+      ...endpoint,
+      kind: "comfyui",
+      media_type: "image",
+      definition: comfyui,
+    };
 
     function showComfyui(
       selected: MarketEntryInstallation | null = null,

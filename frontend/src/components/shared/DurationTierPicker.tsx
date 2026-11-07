@@ -19,7 +19,9 @@ function parseSeconds(text: string): number | null {
 function chipClass(active: boolean, disabled: boolean): string {
   return cn(
     "relative inline-flex h-8 cursor-pointer items-center rounded-lg border px-3 text-sm tabular-nums transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
-    active ? "border-primary/50 bg-primary/10 text-foreground" : "border-border text-subtle-foreground hover:text-foreground",
+    active
+      ? "border-primary/50 bg-primary/10 text-foreground"
+      : "border-border text-subtle-foreground hover:text-foreground",
     disabled && "cursor-not-allowed opacity-50",
   );
 }

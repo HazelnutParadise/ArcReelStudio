@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-import httpx
+import httpx2
 import pytest
 
 from lib.backends.image_backends.base import (
@@ -176,7 +176,7 @@ class TestArkImageBackendReferenceLimitIsAModelFact:
 
         with capture_http() as router:
             route = router.post(f"{ARK_BASE_URL}/images/generations").mock(
-                return_value=httpx.Response(200, json={"model": model, "created": 1, "data": [{"b64_json": FAKE_B64}]})
+                return_value=httpx2.Response(200, json={"model": model, "created": 1, "data": [{"b64_json": FAKE_B64}]})
             )
             result = await backend.generate(
                 ImageGenerationRequest(prompt="merge", output_path=tmp_path / "out.png", reference_images=refs)
@@ -368,7 +368,7 @@ class TestArkImageBackendGenerate:
                 await backend.generate(request)
 
     async def test_t2i_url_fallback(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-        """网关只返回 url 时，应走 httpx 下载分支。"""
+        """网关只返回 url 时，应走 httpx2 下载分支。"""
         monkeypatch.delenv("ARK_API_KEY", raising=False)
         response = _FakeImagesResponse(data=[_FakeImageData(b64_json=None, url="https://gateway/img.png")])
         downloaded = b"downloaded-from-gateway"
@@ -382,7 +382,7 @@ class TestArkImageBackendGenerate:
 
             with capture_http() as router:
                 download = router.get("https://gateway/img.png").mock(
-                    return_value=httpx.Response(200, content=downloaded)
+                    return_value=httpx2.Response(200, content=downloaded)
                 )
                 result = await backend.generate(request)
 

@@ -1,6 +1,6 @@
-// 与 frontend/eslint.config.js 规则集同构但刻意不共用：website 是独立包根，
-// 其 typescript 钉在 5.x（见 .github/dependabot.yml 的说明），两边无法共享同一份
-// 依赖与 tsconfig。改动规则时两份配置需要各自维护。
+// 规则集与 frontend/lint/config.ts 同源（eslint:recommended、typescript-eslint recommended-type-checked、
+// react、react-hooks、jsx-a11y 的推荐集），但刻意不共用：website 是独立包根，前端已改用 Vite+ 的
+// Oxlint，这里仍是 ESLint。改动共有规则时两份配置需要各自维护。
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import react from "eslint-plugin-react";

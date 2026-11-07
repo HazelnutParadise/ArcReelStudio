@@ -34,7 +34,13 @@ function messageKey(notice: Notice, hasSuccessor: boolean): string {
  * 且是这一处的候选时附一键切换。选中的模型已不在清单里、也查不到生命周期时，提示不可用。只提示、不替用户切换
  * （docs/adr/0103），也没有弹窗。
  */
-export function ModelLifecycleNotice({ value, notices, layer = "default", modelNames, onSwitch }: ModelLifecycleNoticeProps) {
+export function ModelLifecycleNotice({
+  value,
+  notices,
+  layer = "default",
+  modelNames,
+  onSwitch,
+}: ModelLifecycleNoticeProps) {
   const { t } = useTranslation("templates");
   const notice = value ? notices?.[value] : undefined;
   if (!notice) return null;
@@ -45,7 +51,11 @@ export function ModelLifecycleNotice({ value, notices, layer = "default", modelN
   return (
     <InlineWarning
       message={t(messageKey(notice, !!successor), { date: notice.shutdown_date ?? "", successor: successor ?? "" })}
-      action={target ? { label: t("model_lifecycle_switch", { model: targetName }), onClick: () => onSwitch(target) } : undefined}
+      action={
+        target
+          ? { label: t("model_lifecycle_switch", { model: targetName }), onClick: () => onSwitch(target) }
+          : undefined
+      }
     />
   );
 }

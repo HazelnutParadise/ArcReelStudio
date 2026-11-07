@@ -1,5 +1,5 @@
 import { act, render } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { useScriptGenerationNotice } from "@/hooks/useScriptGenerationNotice";
 import { useAssistantStore } from "@/stores/assistant-store";
 import { useAppStore } from "@/stores/app-store";
@@ -73,10 +73,7 @@ describe("useScriptGenerationNotice", () => {
 
     act(() => {
       useAssistantStore.setState({
-        draftTurn: assistantTurn(
-          toolUse("mcp__arcreel__generate_storyboards", "tu-sb"),
-          toolUse("Bash", "tu-bash"),
-        ),
+        draftTurn: assistantTurn(toolUse("mcp__arcreel__generate_storyboards", "tu-sb"), toolUse("Bash", "tu-bash")),
       });
     });
 
@@ -111,10 +108,7 @@ describe("useScriptGenerationNotice", () => {
 
     act(() => {
       useAssistantStore.setState({
-        turns: [
-          assistantTurn(toolUse(SCRIPT_TOOL, "tu-done")),
-          { type: "user", content: [toolResult("tu-done")] },
-        ],
+        turns: [assistantTurn(toolUse(SCRIPT_TOOL, "tu-done")), { type: "user", content: [toolResult("tu-done")] }],
       });
     });
 
@@ -131,12 +125,7 @@ describe("useScriptGenerationNotice", () => {
 
     act(() => {
       useAssistantStore.setState({
-        turns: [
-          assistantTurn(
-            completedToolUse(SCRIPT_TOOL, "tu-done"),
-            toolUse("AskUserQuestion", "tu-q"),
-          ),
-        ],
+        turns: [assistantTurn(completedToolUse(SCRIPT_TOOL, "tu-done"), toolUse("AskUserQuestion", "tu-q"))],
       });
     });
 

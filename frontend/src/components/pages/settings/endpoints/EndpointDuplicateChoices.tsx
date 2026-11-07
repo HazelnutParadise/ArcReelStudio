@@ -3,8 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { EndpointDuplicateDescriptor } from "@/types";
 import { Button } from "@/components/ui/button";
 
-const ROW_CLS =
-  "flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm text-subtle-foreground";
+const ROW_CLS = "flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm text-subtle-foreground";
 
 type EndpointDuplicateChoicesProps = {
   duplicates: EndpointDuplicateDescriptor[];
@@ -36,7 +35,9 @@ export function EndpointDuplicateChoices({
   const groupName = useId();
   if (duplicates.length === 0) return null;
 
-  const version = (dup: EndpointDuplicateDescriptor) => <span className="ml-2 text-muted-foreground">v{dup.version}</span>;
+  const version = (dup: EndpointDuplicateDescriptor) => (
+    <span className="ml-2 text-muted-foreground">v{dup.version}</span>
+  );
   const relation = (dup: EndpointDuplicateDescriptor) => (
     <span className="shrink-0 text-xs text-muted-foreground">{t(`ce_import_relation_${dup.relation}`)}</span>
   );
@@ -74,7 +75,10 @@ export function EndpointDuplicateChoices({
             );
           }
           return (
-            <label key={dup.id} className={`${ROW_CLS} flex-wrap has-focus-visible:ring-3 has-focus-visible:ring-ring/50`}>
+            <label
+              key={dup.id}
+              className={`${ROW_CLS} flex-wrap has-focus-visible:ring-3 has-focus-visible:ring-ring/50`}
+            >
               <input
                 type="radio"
                 name={groupName}

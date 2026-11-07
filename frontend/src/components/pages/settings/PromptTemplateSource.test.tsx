@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import userEvent from "@testing-library/user-event";
 import { PromptTemplateSource } from "./PromptTemplateSource";
 import type { PromptTemplateMeta } from "@/types";
@@ -20,17 +20,34 @@ const template: PromptTemplateMeta = {
 describe("PromptTemplateSource", () => {
   it("expands nested partials and switches only the chosen reference from the first declared axis value", async () => {
     const user = userEvent.setup();
-    render(<PromptTemplateSource
-      onOpenPartial={() => {}}
-      template={template}
-      text={'{{ variant("asset/sheet/title", asset_type) }}\n{{ variant("asset/sheet/title", asset_type) }}'}
-      partials={[
-        { name: "asset/sheet/title/character", source: "角色三视图正文", protected: false, referenced_by: ["asset/sheet"] },
-        { name: "asset/sheet/title/scene", source: '场景全景正文 {{ partial("shared/style", instructions=instructions) }}', protected: false, referenced_by: ["asset/sheet"] },
-        { name: "shared/style", source: '画风说明 {{ partial("shared/detail") }}', protected: false, referenced_by: ["asset/sheet"] },
-        { name: "shared/detail", source: "深层片段正文", protected: false, referenced_by: ["asset/sheet"] },
-      ]}
-    />);
+    render(
+      <PromptTemplateSource
+        onOpenPartial={() => {}}
+        template={template}
+        text={'{{ variant("asset/sheet/title", asset_type) }}\n{{ variant("asset/sheet/title", asset_type) }}'}
+        partials={[
+          {
+            name: "asset/sheet/title/character",
+            source: "角色三视图正文",
+            protected: false,
+            referenced_by: ["asset/sheet"],
+          },
+          {
+            name: "asset/sheet/title/scene",
+            source: '场景全景正文 {{ partial("shared/style", instructions=instructions) }}',
+            protected: false,
+            referenced_by: ["asset/sheet"],
+          },
+          {
+            name: "shared/style",
+            source: '画风说明 {{ partial("shared/detail") }}',
+            protected: false,
+            referenced_by: ["asset/sheet"],
+          },
+          { name: "shared/detail", source: "深层片段正文", protected: false, referenced_by: ["asset/sheet"] },
+        ]}
+      />,
+    );
     const references = screen.getAllByRole("button", { name: '{{ variant("asset/sheet/title", asset_type) }}' });
     expect(screen.queryByText(/场景全景正文/)).not.toBeInTheDocument();
     await user.click(references[0]);
@@ -39,7 +56,9 @@ describe("PromptTemplateSource", () => {
     expect(screen.getAllByText(/场景全景正文/)).toHaveLength(2);
     expect(screen.queryByText("角色三视图正文")).not.toBeInTheDocument();
 
-    await user.click(screen.getAllByRole("button", { name: '{{ partial("shared/style", instructions=instructions) }}' })[1]);
+    await user.click(
+      screen.getAllByRole("button", { name: '{{ partial("shared/style", instructions=instructions) }}' })[1],
+    );
     expect(screen.getByText(/画风说明/)).toBeVisible();
     await user.click(screen.getByRole("button", { name: '{{ partial("shared/detail") }}' }));
     expect(screen.getByText("深层片段正文")).toBeVisible();
@@ -61,16 +80,18 @@ describe("PromptTemplateSource", () => {
 
   it("shows intentional blank variants and leaves filtered expressions as source", async () => {
     const user = userEvent.setup();
-    render(<PromptTemplateSource
-      onOpenPartial={() => {}}
-      template={template}
-      text={'{{ variant("asset/sheet/title", asset_type) }}\n{{ partial("shared/style") | indent(2) }}'}
-      partials={[
-        { name: "asset/sheet/title/scene", source: "", protected: false, referenced_by: ["asset/sheet"] },
-        { name: "asset/sheet/title/character", source: "角色正文", protected: false, referenced_by: ["asset/sheet"] },
-        { name: "shared/style", source: "画风正文", protected: false, referenced_by: ["asset/sheet"] },
-      ]}
-    />);
+    render(
+      <PromptTemplateSource
+        onOpenPartial={() => {}}
+        template={template}
+        text={'{{ variant("asset/sheet/title", asset_type) }}\n{{ partial("shared/style") | indent(2) }}'}
+        partials={[
+          { name: "asset/sheet/title/scene", source: "", protected: false, referenced_by: ["asset/sheet"] },
+          { name: "asset/sheet/title/character", source: "角色正文", protected: false, referenced_by: ["asset/sheet"] },
+          { name: "shared/style", source: "画风正文", protected: false, referenced_by: ["asset/sheet"] },
+        ]}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: '{{ variant("asset/sheet/title", asset_type) }}' }));
     expect(screen.getByText("空片段：该取值下不追加措辞。")).toBeVisible();
@@ -83,12 +104,16 @@ describe("PromptTemplateSource", () => {
   });
 
   it("marks nested optional ranges and keeps else branches and filters verbatim", () => {
-    render(<PromptTemplateSource
-      onOpenPartial={() => {}}
-      template={template}
-      partials={[]}
-      text={'前文{% if instructions %}可选内容{% if assets %}{{ assets | join(", ") }}{% else %}没有资产{% endif %}{% endif %}后文'}
-    />);
+    render(
+      <PromptTemplateSource
+        onOpenPartial={() => {}}
+        template={template}
+        partials={[]}
+        text={
+          '前文{% if instructions %}可选内容{% if assets %}{{ assets | join(", ") }}{% else %}没有资产{% endif %}{% endif %}后文'
+        }
+      />,
+    );
 
     const outer = screen.getByRole("group", { name: "仅当 instructions 存在" });
     const inner = within(outer).getByRole("group", { name: "仅当 assets 存在" });
@@ -102,12 +127,14 @@ describe("PromptTemplateSource", () => {
   });
 
   it("renders only declared slots as chips and keeps loop variables verbatim", () => {
-    render(<PromptTemplateSource
-      onOpenPartial={() => {}}
-      template={template}
-      partials={[]}
-      text={'{{ description }}{% for name in assets %}「{{ name }}」{% endfor %}'}
-    />);
+    render(
+      <PromptTemplateSource
+        onOpenPartial={() => {}}
+        template={template}
+        partials={[]}
+        text={"{{ description }}{% for name in assets %}「{{ name }}」{% endfor %}"}
+      />,
+    );
 
     expect(screen.getByText("description")).toHaveAttribute("title", "外观描述");
     expect(screen.getByText("{{ name }}")).toBeVisible();

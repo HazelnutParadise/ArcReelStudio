@@ -55,7 +55,11 @@ function adjustmentText(t: TFunction, item: WorkflowMigrationAdjustment, episode
       });
     case "item_id_reassigned":
       return params.from
-        ? t("dashboard:migration_adjustment_item_id_reassigned_duplicate", { episode, from: params.from, to: params.to })
+        ? t("dashboard:migration_adjustment_item_id_reassigned_duplicate", {
+            episode,
+            from: params.from,
+            to: params.to,
+          })
         : t("dashboard:migration_adjustment_item_id_reassigned_missing", { episode, to: params.to });
     case "duplicate_asset_removed":
       return params.kept
@@ -140,7 +144,12 @@ export function MigrationReportContent({
   return (
     <div className="flex flex-col gap-5">
       {report.adjusted.length > 0 && (
-        <Section icon={Wrench} tone="text-primary" title={t("migration_report_adjusted")} count={report.adjusted.length}>
+        <Section
+          icon={Wrench}
+          tone="text-primary"
+          title={t("migration_report_adjusted")}
+          count={report.adjusted.length}
+        >
           {report.adjusted.map((item, index) => (
             // react-doctor-disable-next-line react-doctor/no-array-index-as-key -- 迁移报告的只读列表，同一代码与文件可出现多条且无唯一标识；条目不带状态，界面不重排也不筛选
             <li key={`${item.code}-${item.file ?? ""}-${index}`} className={ITEM}>

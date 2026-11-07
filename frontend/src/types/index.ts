@@ -6,6 +6,7 @@ export * from "./workspace";
 export * from "./system";
 export * from "./prompt-template";
 export * from "./api-key";
+export * from "./account";
 export * from "./provider";
 export * from "./catalog";
 export * from "./usage-record";

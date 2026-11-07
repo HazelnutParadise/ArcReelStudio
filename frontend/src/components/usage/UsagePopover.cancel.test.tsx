@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
@@ -9,11 +9,7 @@ import { createDeferred } from "@/test/deferred";
 import { makeTask } from "@/test/factories";
 import type { EpisodeItemRef, TaskItem } from "@/types";
 import { makeUsageSummary } from "./usage-fixtures";
-import {
-  HEADER_PROJECT,
-  renderUsageHeaderEntry,
-  resetHeaderStores,
-} from "./usage-header-test-utils";
+import { HEADER_PROJECT, renderUsageHeaderEntry, resetHeaderStores } from "./usage-header-test-utils";
 
 const STARTED_AT = "2026-04-20T00:00:00Z";
 
@@ -81,9 +77,7 @@ describe("UsagePopover cancellation", () => {
       task: { task_id: "t-q", task_type: "storyboard", resource_id: "E1S10", status: "queued" },
       cascaded: [{ task_id: "t-dep", task_type: "video", resource_id: "E1S11", resource_ref: itemRef("S11", 4) }],
     });
-    const cancelSpy = vi
-      .spyOn(API, "cancelTask")
-      .mockResolvedValue({ cancelled: [], skipped_terminal: [] });
+    const cancelSpy = vi.spyOn(API, "cancelTask").mockResolvedValue({ cancelled: [], skipped_terminal: [] });
     openWithTasks([activeTask()]);
 
     fireEvent.click(screen.getByRole("button", { name: "取消此任务" }));
@@ -113,9 +107,7 @@ describe("UsagePopover cancellation", () => {
               resource_id: "E1S11",
               status: "queued",
             },
-            cascaded: [
-              { task_id: "t-new", task_type: "video", resource_id: "E1S12", resource_ref: itemRef("S12", 5) },
-            ],
+            cascaded: [{ task_id: "t-new", task_type: "video", resource_id: "E1S12", resource_ref: itemRef("S12", 5) }],
           }),
     );
     openWithTasks([
@@ -165,9 +157,7 @@ describe("UsagePopover cancellation", () => {
     fireEvent.click(screen.getByRole("button", { name: "确认取消" }));
 
     await waitFor(() => expect(cancelSpy).toHaveBeenCalledTimes(2));
-    await waitFor(() =>
-      expect(screen.queryByRole("alertdialog", { name: "取消确认" })).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.queryByRole("alertdialog", { name: "取消确认" })).not.toBeInTheDocument());
   });
 
   it("drops a pending confirmation when the popover is closed", async () => {
@@ -207,19 +197,13 @@ describe("UsagePopover cancellation", () => {
   it("hides the cancel-all action while nothing is queued", () => {
     openWithTasks([activeTask({ status: "running" })]);
 
-    expect(
-      screen.queryByRole("button", { name: "取消所有排队中的任务" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "取消所有排队中的任务" })).not.toBeInTheDocument();
   });
 
   it("hides the cancel-all action while only local render tasks are queued", () => {
-    openWithTasks([
-      activeTask({ task_type: "render_final_cut", media_type: "render", resource_id: "tl-0000beef" }),
-    ]);
+    openWithTasks([activeTask({ task_type: "render_final_cut", media_type: "render", resource_id: "tl-0000beef" })]);
 
-    expect(
-      screen.queryByRole("button", { name: "取消所有排队中的任务" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "取消所有排队中的任务" })).not.toBeInTheDocument();
   });
 
   it("offers no cancel action on a task that has started running", () => {
@@ -250,9 +234,7 @@ describe("UsagePopover cancellation", () => {
 
   it("shows the server's reason when the task started running before the cancel landed", async () => {
     mockSinglePreview();
-    vi.spyOn(API, "cancelTask").mockRejectedValue(
-      new ApiRequestError(RUNNING_REJECTION, undefined, 409),
-    );
+    vi.spyOn(API, "cancelTask").mockRejectedValue(new ApiRequestError(RUNNING_REJECTION, undefined, 409));
     openWithTasks([activeTask()]);
 
     fireEvent.click(screen.getByRole("button", { name: "取消此任务" }));
@@ -267,9 +249,7 @@ describe("UsagePopover cancellation", () => {
 
   it("falls back to the generic failure notice for a non-409 rejection", async () => {
     mockSinglePreview();
-    vi.spyOn(API, "cancelTask").mockRejectedValue(
-      new ApiRequestError("服务暂时不可用", undefined, 503),
-    );
+    vi.spyOn(API, "cancelTask").mockRejectedValue(new ApiRequestError("服务暂时不可用", undefined, 503));
     openWithTasks([activeTask()]);
 
     fireEvent.click(screen.getByRole("button", { name: "取消此任务" }));

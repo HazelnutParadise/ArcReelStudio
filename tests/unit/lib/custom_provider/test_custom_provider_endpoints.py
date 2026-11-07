@@ -165,6 +165,7 @@ class TestRegistry:
             "video_max_reference_images": None,
             "end_image_capable": False,
             "reference_audio_capable": False,
+            "custom_selectable": True,
             # 参数约束五项只有 ComfyUI 端点会取非默认值；其余端点的尺寸与时长由请求参数决定。
             "size_fixed": False,
             "duration_fixed": False,
@@ -469,9 +470,9 @@ INFER_RULE_CASES = [
     ("proxy/Qwen-Audio-3.1-TTS-Plus", "openai", "dashscope-speech-synthesizer"),
     ("tts-1", "openai", "openai-tts"),  # 其余 TTS 仍为 openai-tts
     ("cosyvoice-v2", "openai", "openai-tts"),
-    # ── Veo 仅 google 发现协议推断为 gemini-video，其余仍为 openai-video ──
-    ("veo-3", "google", "gemini-video"),
-    ("veo-3.1-generate-preview", "google", "gemini-video"),
+    # ── 经 Gemini 协议中转 Veo 的路已拔掉：任何发现协议下都不推断为 gemini-video ──
+    ("veo-3", "google", "openai-video"),
+    ("veo-3.1-generate-preview", "google", "openai-video"),
     ("veo-3", "openai", "openai-video"),
     ("sora-2", "google", "openai-video"),
     # ── MiniMax 的 speech-<版本>-hd|turbo → minimax-tts，不分 discovery_format ──
@@ -730,7 +731,7 @@ class TestInferEndpoint:
             ("house-painter", "openai", "image", "openai-images"),
             ("house-painter", "google", "image", "gemini-image"),
             ("house-motion", "openai", "video", "openai-video"),
-            ("house-motion", "google", "video", "gemini-video"),
+            ("house-motion", "google", "video", "gemini-interactions-video"),
             ("house-voice", "openai", "audio", "openai-tts"),
         ],
     )

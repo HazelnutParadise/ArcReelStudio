@@ -73,42 +73,20 @@ export function ContentBlockRenderer({ block, index, streaming, announce }: Cont
           />
         );
       }
-      return (
-        <ToolCallWithResult
-          key={block.id ?? `block-${index}`}
-          block={block}
-        />
-      );
+      return <ToolCallWithResult key={block.id ?? `block-${index}`} block={block} />;
 
     case "tool_result":
       // Standalone tool_result (should be rare -- usually attached to tool_use)
       return <StandaloneToolResult key={block.id ?? `block-${index}`} block={block} />;
 
     case "skill_invocation":
-      return (
-        <SkillChip
-          key={block.id ?? `block-${index}`}
-          name={block.skill_name}
-          args={block.skill_args}
-        />
-      );
+      return <SkillChip key={block.id ?? `block-${index}`} name={block.skill_name} args={block.skill_args} />;
 
     case "thinking":
-      return (
-        <ThinkingBlock
-          key={block.id ?? `block-${index}`}
-          thinking={block.thinking}
-          streaming={streaming}
-        />
-      );
+      return <ThinkingBlock key={block.id ?? `block-${index}`} thinking={block.thinking} streaming={streaming} />;
 
     case "task_progress":
-      return (
-        <TaskProgressBlock
-          key={block.id ?? `block-${index}`}
-          block={block}
-        />
-      );
+      return <TaskProgressBlock key={block.id ?? `block-${index}`} block={block} />;
 
     case "interrupt_notice":
       return <InterruptNoticeBlock key={block.id ?? `block-${index}`} />;
@@ -137,9 +115,8 @@ export function ContentBlockRenderer({ block, index, streaming, announce }: Cont
 
     default: {
       // Fallback: render as text (content may be non-string from SDK)
-      const fallback = block.text
-        || (typeof block.content === "string" ? block.content : null)
-        || JSON.stringify(block);
+      const fallback =
+        block.text || (typeof block.content === "string" ? block.content : null) || JSON.stringify(block);
       return <TextBlock key={block.id ?? `block-${index}`} text={fallback} />;
     }
   }
@@ -147,9 +124,7 @@ export function ContentBlockRenderer({ block, index, streaming, announce }: Cont
 
 function extractSkillName(input: Record<string, unknown> | undefined): string {
   if (!input) return "";
-  return (typeof input.skill === "string" && input.skill)
-    || (typeof input.name === "string" && input.name)
-    || "";
+  return (typeof input.skill === "string" && input.skill) || (typeof input.name === "string" && input.name) || "";
 }
 
 function extractSkillArgs(input: Record<string, unknown> | undefined): string {
@@ -161,7 +136,11 @@ function extractSkillArgs(input: Record<string, unknown> | undefined): string {
 function StandaloneToolResult({ block }: Readonly<{ block: ContentBlock }>) {
   const { t } = useTranslation("dashboard");
   const result = stringifyResult(block.content);
-  const firstLine = result.split("\n").find((line) => line.trim())?.trim() ?? "";
+  const firstLine =
+    result
+      .split("\n")
+      .find((line) => line.trim())
+      ?.trim() ?? "";
   return (
     <WorkRow
       icon={TOOL_RESULT_ICON}
@@ -186,8 +165,7 @@ function InterruptNoticeBlock() {
 // AskUserQuestion 答复：结构化答案逐条呈现（问题、所选选项），
 // 无结构化答案时回退展示原始结果文本。
 function QuestionAnswerBlock({ block }: Readonly<{ block: ContentBlock }>) {
-  const answers =
-    block.answers && Object.keys(block.answers).length > 0 ? block.answers : null;
+  const answers = block.answers && Object.keys(block.answers).length > 0 ? block.answers : null;
   if (!answers) return <p className="whitespace-pre-wrap">{block.text}</p>;
   return (
     <dl className="flex flex-col gap-1.5">

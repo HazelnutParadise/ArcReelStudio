@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
+import httpx2
 import instructor
 import pytest
 from instructor import Mode
@@ -139,7 +139,7 @@ def _tool_call_args_invalid_error() -> ResponseParsingError:
 def _bad_request(message: str) -> BadRequestError:
     return BadRequestError(
         message=message,
-        response=httpx.Response(400, request=httpx.Request("POST", "https://proxy.example/v1/chat/completions")),
+        response=httpx2.Response(400, request=httpx2.Request("POST", "https://proxy.example/v1/chat/completions")),
         body={"error": {"message": message}},
     )
 
@@ -1133,10 +1133,10 @@ class TestModelFacingSchemaOnWire:
     """
 
     _ENDPOINT = "https://proxy.invalid/v1/chat/completions"
-    _REJECT = httpx.Response(400, json={"error": {"message": "stop", "type": "invalid_request_error"}})
+    _REJECT = httpx2.Response(400, json={"error": {"message": "stop", "type": "invalid_request_error"}})
 
     @staticmethod
-    def _wire_json(request: httpx.Request, mode: Mode) -> str:
+    def _wire_json(request: httpx2.Request, mode: Mode) -> str:
         body = request_json(request)
         if mode is Mode.TOOLS:
             return json.dumps(body["tools"], ensure_ascii=False)

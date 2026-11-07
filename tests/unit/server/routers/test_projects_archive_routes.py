@@ -15,9 +15,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from lib.project.project_manager import ProjectManager
-from server.auth import CurrentUserInfo, create_download_token, create_token, get_current_user
+from server.auth import CurrentUserInfo, create_download_token, get_current_user
 from server.routers import projects
-from tests.auth_deps import AUTH_DEPENDENCIES
+from tests.auth_deps import AUTH_DEPENDENCIES, default_admin_token
 from tests.fakes import use_project_manager
 
 
@@ -200,7 +200,7 @@ class TestProjectArchiveRoutes:
         client = _client(monkeypatch, pm)
 
         with patch.dict(os.environ, {"AUTH_TOKEN_SECRET": "test-secret-key-that-is-at-least-32-bytes"}):
-            jwt_token = create_token("admin")
+            jwt_token = default_admin_token()
             with client:
                 response = client.post(
                     "/api/v1/projects/demo/export/token",
@@ -218,7 +218,7 @@ class TestProjectArchiveRoutes:
         client = _client(monkeypatch, pm)
 
         with patch.dict(os.environ, {"AUTH_TOKEN_SECRET": "test-secret-key-that-is-at-least-32-bytes"}):
-            jwt_token = create_token("admin")
+            jwt_token = default_admin_token()
             with client:
                 response = client.post(
                     "/api/v1/projects/nonexistent/export/token",
@@ -264,7 +264,7 @@ class TestProjectArchiveRoutes:
         with patch.dict(os.environ, {"AUTH_TOKEN_SECRET": "test-secret-key-that-is-at-least-32-bytes"}), client:
             token_response = client.post(
                 "/api/v1/projects/demo/export/token?scope=current",
-                headers={"Authorization": f"Bearer {create_token('admin')}"},
+                headers={"Authorization": f"Bearer {default_admin_token()}"},
             )
             assert token_response.status_code == 200
             download_token = token_response.json()["download_token"]
@@ -346,7 +346,7 @@ class TestProjectArchiveDiagnosticsLocalization:
         client = _client(monkeypatch, pm)
 
         with patch.dict(os.environ, {"AUTH_TOKEN_SECRET": "test-secret-key-that-is-at-least-32-bytes"}):
-            jwt_token = create_token("admin")
+            jwt_token = default_admin_token()
             with client:
                 response = client.post(
                     "/api/v1/projects/demo/export/token",

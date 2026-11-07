@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
 import type { PromptTemplateMeta } from "@/types";
 import { PromptTemplateList } from "./PromptTemplateList";
@@ -80,14 +80,7 @@ describe("PromptTemplateList", () => {
     render(<PromptTemplateList onSelect={vi.fn()} />);
 
     const headings = await screen.findAllByRole("heading", { level: 3 });
-    expect(headings.map((h) => h.textContent)).toEqual([
-      "文本生成",
-      "资产图",
-      "分镜图",
-      "视频",
-      "画风",
-      "lab",
-    ]);
+    expect(headings.map((h) => h.textContent)).toEqual(["文本生成", "资产图", "分镜图", "视频", "画风", "lab"]);
   });
 
   it("shows each card's production step and trigger with the names used elsewhere in the app", async () => {
@@ -113,8 +106,9 @@ describe("PromptTemplateList", () => {
     expect(within(styleGroup).queryByText("吉卜力")).not.toBeInTheDocument();
 
     await user.click(within(styleGroup).getByRole("button", { name: "画风" }));
-    expect(within(screen.getByText("吉卜力").closest("button")!).getByText("画风 · 你的操作 · 项目风格选择"))
-      .toBeInTheDocument();
+    expect(
+      within(screen.getByText("吉卜力").closest("button")!).getByText("画风 · 你的操作 · 项目风格选择"),
+    ).toBeInTheDocument();
     await user.click(within(styleGroup).getByRole("button", { name: /^双城之战/ }));
     expect(onSelect).toHaveBeenCalledWith("style/arcane");
 
@@ -128,17 +122,16 @@ describe("PromptTemplateList", () => {
 
     const contentMode = await screen.findByRole("group", { name: "创作类型" });
     expect(
-      within(contentMode).getAllByRole("button").map((button) => button.textContent),
+      within(contentMode)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
     ).toEqual(["全部", "剧情演绎", "旁白/解说"]);
     expect(screen.getByRole("group", { name: "生成模式" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "源文件类型" })).toBeInTheDocument();
 
     await user.click(within(contentMode).getByRole("button", { name: "旁白/解说" }));
 
-    expect(within(contentMode).getByRole("button", { name: "旁白/解说" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(within(contentMode).getByRole("button", { name: "旁白/解说" })).toHaveAttribute("aria-pressed", "true");
     const textGroup = screen.getByRole("region", { name: "文本生成" });
     expect(within(textGroup).queryByText("剧情脚本规划")).not.toBeInTheDocument();
     expect(within(textGroup).getByText("旁白脚本规划")).toBeInTheDocument();

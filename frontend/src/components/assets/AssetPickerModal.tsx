@@ -96,9 +96,7 @@ export function AssetPickerModal({ type, existingNames, onClose, onImport }: Pro
             </div>
           ) : pages.items.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              {debouncedQ
-                ? t("library_no_match", { type: typeLabel, query: debouncedQ })
-                : t(`library_empty_${type}`)}
+              {debouncedQ ? t("library_no_match", { type: typeLabel, query: debouncedQ }) : t(`library_empty_${type}`)}
             </p>
           ) : (
             <div className="flex flex-col gap-3">
@@ -128,7 +126,11 @@ export function AssetPickerModal({ type, existingNames, onClose, onImport }: Pro
                         {inProject ? (
                           <span className="text-xs text-muted-foreground">{t("already_in_project")}</span>
                         ) : asset.description ? (
-                          <TruncatedText text={asset.description} focusable={false} className="w-full text-xs text-muted-foreground" />
+                          <TruncatedText
+                            text={asset.description}
+                            focusable={false}
+                            className="w-full text-xs text-muted-foreground"
+                          />
                         ) : null}
                         {isSelected && (
                           <span

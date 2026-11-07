@@ -86,11 +86,7 @@ export function SessionHistory({ onPick, onDelete, onClose }: SessionHistoryProp
       onKeyDown={(event) => {
         // Esc 先回到消息区；阻止默认行为，外壳不会因这次 Esc 收起面板。
         // 删除确认框经 Portal 渲染，它的 Esc 在 React 树里也会冒泡到这里，只处理本视图 DOM 内的按键
-        if (
-          event.key === "Escape" &&
-          !event.defaultPrevented &&
-          event.currentTarget.contains(event.target as Node)
-        ) {
+        if (event.key === "Escape" && !event.defaultPrevented && event.currentTarget.contains(event.target as Node)) {
           event.preventDefault();
           onClose();
         }
@@ -137,10 +133,15 @@ export function SessionHistory({ onPick, onDelete, onClose }: SessionHistoryProp
                     <TruncatedText
                       text={title}
                       focusable={false}
-                      className={cn("flex-1 text-left", current ? "text-foreground" : "font-normal text-subtle-foreground")}
+                      className={cn(
+                        "flex-1 text-left",
+                        current ? "text-foreground" : "font-normal text-subtle-foreground",
+                      )}
                     />
                     {current && <Check aria-hidden className="text-muted-foreground" />}
-                    <span className="shrink-0 text-xs font-normal text-muted-foreground">{relativeTime(session.updated_at)}</span>
+                    <span className="shrink-0 text-xs font-normal text-muted-foreground">
+                      {relativeTime(session.updated_at)}
+                    </span>
                   </Button>
                   <Button
                     variant="ghost"
