@@ -91,7 +91,7 @@ function useFilePreview(file: File | null): string | null {
   useLayoutEffect(() => {
     if (!file) return;
     const url = URL.createObjectURL(file);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- object URL 随文件创建并在换文件或卸载时回收（同 AssetCreateDialog）
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- object URL 随文件创建并在换文件或卸载时回收（同 AssetCreateDialog）
     setPreview({ file, url });
     return () => URL.revokeObjectURL(url);
   }, [file]);

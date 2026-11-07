@@ -3,10 +3,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { ENQUEUE_METHODS } from "../eslint.config.js";
+import { ENQUEUE_METHODS } from "../lint/arcreel-plugin";
 
 // 入队类方法以 api.ts 上的 JSDoc `@enqueue` 标记识别（返回类型不统一，无法按类型推断）。
-// 该集合必须与 eslint.config.js 的 ENQUEUE_METHODS 完全相同，否则漏登记的方法可被组件直调。
+// 该集合必须与 lint/arcreel-plugin.ts 的 ENQUEUE_METHODS 完全相同，否则漏登记的方法可被组件直调。
 function taggedEnqueueMethods(): string[] {
   const path = resolve(process.cwd(), "src/api.ts");
   const sf = ts.createSourceFile("api.ts", readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true);

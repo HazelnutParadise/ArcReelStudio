@@ -167,7 +167,7 @@ function IconLink({ href, label, children }: { href: string; label: string; chil
           <Link
             href={href}
             aria-label={label}
-            // eslint-disable-next-line shadcn/require-static-classes -- 链接借用 buttonVariants 的 ghost/icon 外观；Button 渲染为链接会被 Base UI 加上 role="button"，故不能换成 render={<Button />}，TooltipTrigger 自身不带样式（见 eslint.config.js 的 UNSTYLED_PRIMITIVES）
+            // eslint-disable-next-line shadcn/require-static-classes -- 链接借用 buttonVariants 的 ghost/icon 外观；Button 渲染为链接会被 Base UI 加上 role="button"，故不能换成 render={<Button />}，TooltipTrigger 自身不带样式（见 lint/config.ts 的 UNSTYLED_PRIMITIVES）
             className={buttonVariants({ variant: "ghost", size: "icon", className: "relative" })}
           />
         }

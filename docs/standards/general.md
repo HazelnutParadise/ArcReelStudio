@@ -27,7 +27,7 @@ paths:
 
 - actionlint：写在 `.github/actionlint.yaml` 的 `paths.<文件>.ignore`，按错误消息正则精确匹配。
 - deptry 的 `DEP002` / `DEP004`：写在 `[tool.deptry.per_rule_ignores]`，按包名逐项列出。
-- ESLint 的文件级关闭：经 `eslint.config.js` 的 `files` override。
+- 前端 lint（Oxlint）的文件级关闭：经 `frontend/lint/config.ts` 的 `overrides`；文档站 ESLint 的文件级关闭：经 `website/eslint.config.mjs` 的 `files` override。
 
 策略阈值类的发现（如 Dependabot 冷却期天数）按工具要求调整配置，同样不走豁免。
 

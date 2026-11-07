@@ -1,10 +1,13 @@
-import { defineConfig } from "vite";
+import { defineConfig, lazyPlugins } from "vite-plus";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import { lintConfig } from "./lint/config";
 
 export default defineConfig({
-    plugins: [react(), tailwindcss()],
+    // vp lint、vp check 读取本文件时不需要构建插件，lazyPlugins 让插件只在 dev、build 时实例化。
+    plugins: lazyPlugins(() => [react(), tailwindcss()]),
+    lint: lintConfig,
     resolve: {
         alias: { "@": path.resolve(__dirname, "src") },
         extensions: [".mjs", ".mts", ".ts", ".tsx", ".js", ".jsx", ".json"],

@@ -163,7 +163,7 @@ function GithubProxySettings({ active }: { active: boolean }) {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount 后异步拉取配置，回调内回写状态
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- mount 后异步拉取配置，回调内回写状态
     void load();
     return () => loadController.current?.abort();
   }, [load]);

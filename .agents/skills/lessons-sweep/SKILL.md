@@ -45,7 +45,7 @@ disable-model-invocation: true
 达到 lessons.md 晋升阈值的条目逐一按 lessons.md「计数与晋升」裁决去向。注明了 issue 号的条目：issue 仍 open 的跳过；已关闭的按其中的裁决处理，采纳就按去向执行，否决就删除条目。按改动规模选择执行方式：
 
 - **文字规则**：写进路径对应的 `docs/standards/` 文件，体例与相邻规则一致；条目移到「已晋升」区。
-- **小而自洽的检查**（`scripts/audit_conventions.py` 加一项、ESLint `no-restricted-syntax`、一个测试）：在本 PR 实现，确认它在当前代码上通过、对该教训的反例报错；条目移到「已晋升」区。
+- **小而自洽的检查**（`scripts/audit_conventions.py` 加一项、前端 `frontend/lint/arcreel-plugin.ts` 的守卫规则、一个测试）：在本 PR 实现，确认它在当前代码上通过、对该教训的反例报错；条目移到「已晋升」区。
 - **其余去向**（skill、导航指针、架构文档，以及需要大面积改动的检查）：按 escalation.md「范围外的真缺陷」的三步开 `ready-for-agent` issue，条目标注「已晋升，见 #<issue>」并移到「已晋升」区。
 - **符合 escalation.md 找用户判据的**：先查重，再开 `needs-triage` issue，写明选项与推荐；条目留在原组，注明 issue 号。
 

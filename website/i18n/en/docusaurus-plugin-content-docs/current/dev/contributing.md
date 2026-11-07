@@ -31,7 +31,7 @@ ArcReel assumes that contributors develop with a coding Agent. `AGENTS.md` at th
 uv sync
 cd frontend && pnpm install && cd ..
 
-# Install the pre-commit hooks once (ruff / eslint / actionlint / zizmor)
+# Install the pre-commit hooks once (ruff / vp lint / actionlint / zizmor)
 uv run pre-commit install
 
 # Initialize the database

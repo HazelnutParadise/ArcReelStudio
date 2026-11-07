@@ -370,7 +370,7 @@ export function ReferenceVideoCard({
           {currentText.endsWith("\n") ? "\u200b" : null}
         </pre>
 
-        {/* eslint-disable-next-line no-restricted-syntax -- 与着色镜像层逐字对齐、同步滚动，Textarea 的自动撑高会破坏对齐 */}
+        {/* eslint-disable-next-line arcreel/no-raw-textarea -- 与着色镜像层逐字对齐、同步滚动，Textarea 的自动撑高会破坏对齐 */}
         <textarea
           ref={taRef}
           value={currentText}

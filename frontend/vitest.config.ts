@@ -4,7 +4,7 @@ import path from "path";
 
 const mockIconsPath = path.resolve(__dirname, "src/__mocks__/@lobehub/icons.tsx");
 
-// 只收 .test.*：eslint 的测试规则块与 scripts/audit_tests.py 的前端发现都以此为界，
+// 只收 .test.*：lint/config.ts 的测试 override 与 scripts/audit_tests.py 的前端发现都以此为界，
 // 放开 vitest 默认的 .spec.* 会让这类文件被执行却不受两道闸门约束。
 const TEST_FILES = "src/**/*.test.{ts,tsx}";
 

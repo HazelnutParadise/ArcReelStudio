@@ -61,13 +61,13 @@ Base UI 的 Combobox 只接受候选项，不能提交候选之外的文字；�
 
 ### 放宽样式与布局守卫时，在 PR 描述中逐条列出放宽项
 
-`frontend/src/` 下除测试以外的源码都受 `@shadcn/lint` 样式规则、滚动与响应式守卫和类名守卫约束（定义在 `frontend/eslint.config.js`）。每条放宽都让一类写法在登记范围内重新合法，在 diff 里却只是配置中的一行，审查容易放过。因此在 PR 描述中逐条列出，由审查判断理由是否成立：
+`frontend/src/` 下除测试以外的源码都受 `@shadcn/lint` 样式规则、滚动与响应式守卫和类名守卫约束。生效范围与豁免定义在 `frontend/lint/config.ts`，守卫的匹配规则在 `frontend/lint/arcreel-plugin.ts`。每条放宽都让一类写法在登记范围内重新合法，在 diff 里却只是配置中的一行，审查容易放过。因此在 PR 描述中逐条列出，由审查判断理由是否成立：
 
 - 新增的组件变体，`@shadcn/lint` 的 `allow` 或 `contracts` 条目。
 - 登记进 `VIEWPORT_BREAKPOINT_ALLOWLIST` 的文件。只放行外壳切换标准档与紧凑档、弹层宽度这类确需按视口判断的场景；外壳内组件的可用宽度随侧栏与分栏变化，一律用容器查询。
-- 新增或扩大 `restrictSyntax(...)` 豁免的配置块。
+- `lint/config.ts` 中新增的、或扩大了文件范围的 override：它们把某条 `arcreel/*` 守卫或 `shadcn/*` 规则设为 `off`。
 
-配置块的组合方式（flat config 对 `no-restricted-syntax` 整体替换选项）见配置文件头注释，由 `src/lint-class-guards.test.ts` 校验。
+每条守卫是一条独立规则，按文件放宽时在 override 里只关掉对应的那一条。各路径上哪些守卫生效、哪些放宽，由 `src/lint-class-guards.test.ts` 校验。
 
 ### Sheet、DropdownMenu、Command、Chart 的本仓库用法
 

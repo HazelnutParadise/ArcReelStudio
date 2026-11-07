@@ -247,6 +247,8 @@ def test_frontend_and_workflow_suppressions_without_reason_are_reported(repo: Pa
 /** @public */
 /** @public 供外部 Agent skill 动态导入 */
 /* eslint-enable react-hooks/refs */
+// oxlint-disable-next-line react/exhaustive-deps
+// oxlint-disable-next-line react/exhaustive-deps -- 理由
 """,
     )
     _write(
@@ -264,6 +266,7 @@ jobs: # zizmor: ignore[excessive-permissions]  # 理由
         ("frontend/src/demo.tsx", 3),
         ("frontend/src/demo.tsx", 5),
         ("frontend/src/demo.tsx", 7),
+        ("frontend/src/demo.tsx", 10),
     ]
 
 

@@ -1,8 +1,19 @@
 # pnpm 的项目设置。overrides 中 `@lobehub/icons>@lobehub/ui` 排除该包的 UI peer，约束见 docs/agents/dependencies.md。
-allowBuilds:
-  esbuild: true
+# 工具链是 Vite+（vp）：vite 指向 vite-plus-core，vite 与 vitest 的版本由 catalog 统一，
+# 依赖它们作 peer 的插件（@vitejs/plugin-react、@tailwindcss/vite 等）一律接受这两个别名。
 overrides:
-  "mermaid": "11.16.1"
-  "esbuild": "0.28.1"
-  "lodash-es": "4.18.1"
   "@lobehub/icons>@lobehub/ui": "-"
+  vite@*: "catalog:"
+  vitest@*: "catalog:"
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@1.5.0
+  vitest: 5.1.0
+  vite-plus: 1.5.0
+  "@vitest/coverage-v8": 5.1.0
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: "*"
+    vitest: "*"

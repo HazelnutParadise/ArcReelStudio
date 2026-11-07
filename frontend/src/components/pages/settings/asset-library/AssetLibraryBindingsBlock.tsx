@@ -57,7 +57,7 @@ export function AssetLibraryBindingsBlock({
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 挂载与账号变化后拉取绑定列表回写，属于受控加载
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 挂载与账号变化后拉取绑定列表回写，属于受控加载
     void fetchBindings();
     return () => loadController.current?.abort();
   }, [fetchBindings, reloadToken]);

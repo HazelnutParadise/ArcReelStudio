@@ -57,7 +57,7 @@ export function AccessTokensSection() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 挂载时拉取令牌列表后回写，属于受控的初始化加载
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 挂载时拉取令牌列表后回写，属于受控的初始化加载
     void fetchTokens();
     return () => loadController.current?.abort();
   }, [fetchTokens]);

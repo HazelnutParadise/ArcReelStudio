@@ -174,7 +174,7 @@ export function MediaModelSection() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 依赖变更时异步拉取配置后回写
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 依赖变更时异步拉取配置后回写
     void fetchConfig();
   }, [fetchConfig]);
 

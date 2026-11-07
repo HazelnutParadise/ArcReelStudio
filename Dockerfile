@@ -13,7 +13,7 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN npm install -g corepack@0.36.0 && corepack enable
 
 # 先复制依赖文件，利用缓存（corepack 按 packageManager 字段自动下载对应 pnpm）；
-# pnpm-workspace.yaml 存放 overrides 与 allowBuilds，缺了它 --frozen-lockfile 校验不过
+# pnpm-workspace.yaml 存放 overrides 与 catalog，缺了它 --frozen-lockfile 校验不过
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 

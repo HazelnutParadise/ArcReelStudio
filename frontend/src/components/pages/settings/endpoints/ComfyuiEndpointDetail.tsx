@@ -207,7 +207,7 @@ export function ComfyuiEndpointDetail({
   const [mountDefinition] = useState(initialDefinition);
   useEffect(() => {
     if (initialInference !== null) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only 初始化，load 在首个 await 前不写 state
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- mount-only 初始化，load 在首个 await 前不写 state
     voidCall(load(mountDefinition));
   }, [initialInference, mountDefinition, load]);
 

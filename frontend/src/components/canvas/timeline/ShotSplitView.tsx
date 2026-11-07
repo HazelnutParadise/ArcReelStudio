@@ -194,7 +194,7 @@ export function ShotSplitView({
     if (scrollTarget?.type !== "segment") return;
     const idx = ids.indexOf(scrollTarget.id);
     if (idx !== -1) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- 响应外部 store 的一次性定位请求切换选中分镜：没有修改时当场切换，有修改时等离开拦截放行后再切
+      // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 响应外部 store 的一次性定位请求切换选中分镜：没有修改时当场切换，有修改时等离开拦截放行后再切
       select(idx);
       clearScrollTarget(scrollTarget.request_id);
     } else if (Date.now() >= scrollTarget.expires_at) {

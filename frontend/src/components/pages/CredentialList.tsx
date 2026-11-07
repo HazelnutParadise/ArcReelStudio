@@ -122,7 +122,7 @@ export function CredentialList({ providerId, supportsBaseUrl, secretFields, secr
   }, [load]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 挂载或换供应商后异步加载，取消域覆盖后续即时动作的刷新
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 挂载或换供应商后异步加载，取消域覆盖后续即时动作的刷新
     void load();
     return () => loadController.current?.abort();
   }, [load]);

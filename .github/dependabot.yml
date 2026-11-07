@@ -153,9 +153,12 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     # @types/node 跟随 package.json engines 的 Node 主版本（26），主版本随 Node 升级手动调整。
+    # TypeScript 7 不再提供原有的编译器 API，前端停在 6.x；原因与解锁条件见 docs/agents/dependencies.md。
     ignore:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        versions: [">=7"]
     groups:
       react:
         patterns:
@@ -202,9 +205,20 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      # Vite+ 锁定它所带的 vite-plus-core（vite 的别名）与 vitest 的版本。这几项写在 pnpm-workspace.yaml 的 catalog，
+      # 在同一个 PR 里一起升到新版 vite-plus 依赖的版本，@vitest/coverage-v8 与 vitest 保持一致。
+      vite-plus:
+        patterns:
+          - "vite-plus"
+          - "@voidzero-dev/*"
+          - "vite"
+          - "vitest"
+          - "@vitest/*"
+        update-types:
+          - "minor"
+          - "patch"
       vite-tailwind:
         patterns:
-          - "vite"
           - "@vitejs/*"
           - "tailwindcss"
           - "@tailwindcss/*"
@@ -213,8 +227,6 @@ updates:
           - "patch"
       testing:
         patterns:
-          - "vitest"
-          - "@vitest/*"
           - "@testing-library/*"
           - "jsdom"
         update-types:
@@ -230,13 +242,10 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      eslint-stack:
+      # lint 由 Vite+ 的 Oxlint 执行；这些是经 JS 插件加载的 ESLint 格式插件（见 frontend/lint/config.ts）。
+      lint-plugins:
         patterns:
-          - "eslint"
-          - "eslint-*"
-          - "@eslint/*"
-          - "typescript-eslint"
-          - "globals"
+          - "eslint-plugin-*"
           - "@shadcn/lint"
         update-types:
           - "minor"

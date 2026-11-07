@@ -151,7 +151,7 @@ function BrowserBody({
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 打开对话框时拉取素材库账号后回写，属于受控的初始化加载
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 打开对话框时拉取素材库账号后回写，属于受控的初始化加载
     void fetchAccounts();
     return () => accountsController.current?.abort();
   }, [fetchAccounts]);
@@ -174,7 +174,7 @@ function BrowserBody({
 
   useEffect(() => {
     if (accountId === null) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 换账号或翻页后拉取该页素材，旧请求随之作废
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 换账号或翻页后拉取该页素材，旧请求随之作废
     void fetchPage(accountId, pageNumber);
     return () => pageController.current?.abort();
   }, [accountId, pageNumber, fetchPage]);

@@ -158,7 +158,7 @@ export function EndpointsSection() {
 
   useEffect(() => {
     const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reloadKey 变化时点亮加载态并重新拉取，是动作驱动重置
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- reloadKey 变化时点亮加载态并重新拉取，是动作驱动重置
     setLoading(true);
     setLoadError(null);
     voidCall(

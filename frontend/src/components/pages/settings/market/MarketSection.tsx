@@ -140,7 +140,7 @@ export function MarketSection() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount 后异步拉取状态，回调内回写状态
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- mount 后异步拉取状态，回调内回写状态
     void loadOfficial();
     return () => officialController.current?.abort();
   }, [loadOfficial]);

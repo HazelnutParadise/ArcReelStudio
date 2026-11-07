@@ -117,7 +117,7 @@ export function ShareToMarketDialog({
   const iconValue = icon?.value ?? null;
   useEffect(() => {
     const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 预检请求换参时立即清除旧结果，避免等待期间提交未校验的内容
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 预检请求换参时立即清除旧结果，避免等待期间提交未校验的内容
     setDiagnostics(null);
     setCheckError(null);
     const timer = setTimeout(() => {

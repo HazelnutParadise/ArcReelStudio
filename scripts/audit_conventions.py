@@ -7,7 +7,7 @@
   只命中兜底分组（`patterns: ["*"]`）说明新增依赖时漏了归组。
 - TOOL-VERSION：actionlint / zizmor 在 pre-commit 与 CI workflow 中的版本一致。
 - SUPPRESSION-REASON：行内豁免注释（`noqa`、`pyright: ignore`、`type: ignore`、`deptry: ignore`、
-  `zizmor: ignore`、`eslint-disable`、knip 的 `@public`）在同一行写明理由。
+  `zizmor: ignore`、`eslint-disable`、`oxlint-disable`、knip 的 `@public`）在同一行写明理由。
 - BUNDLED-FFMPEG：产品代码不出现值恰为 `"ffmpeg"`/`"ffprobe"` 的字符串常量。ffmpeg 随包分发、不查 PATH
   （ADR 0095），只经 `lib/infra/ffmpeg.py` 查找。
 - PRIVATE-IMPORT：`from <本仓模块> import _name` 不允许，被别的模块用到的符号取公开名。`from m import 公开名 as _别名`、
@@ -325,7 +325,8 @@ JS_SUFFIXES = frozenset({".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".mts", "
 YAML_SUFFIXES = frozenset({".yml", ".yaml"})
 
 _PY_DIRECTIVE = re.compile(r"#\s*(?:noqa\b(?::\s*[\w, ]+)?|(?P<tool>pyright|type|deptry):\s*ignore(?:\[[^\]]*\])?)")
-_ESLINT_DIRECTIVE = re.compile(r"(?://|/\*)\s*eslint-disable(?:-next-line|-line)?\b")
+# 前端 lint（Oxlint）同时认 eslint-disable* 与 oxlint-disable* 两种写法。
+_LINT_DIRECTIVE = re.compile(r"(?://|/\*)\s*(?:eslint|oxlint)-disable(?:-next-line|-line)?\b")
 _KNIP_PUBLIC = re.compile(r"(?:/\*\*|^\s*\*)(?:(?!\*/)[^@])*@public\b")
 _ZIZMOR_DIRECTIVE = re.compile(r"#\s*zizmor:\s*ignore(?:\[[^\]]*\])?")
 
@@ -402,9 +403,9 @@ def _text_suppressions(rel: Path, source: str, out: list[Violation]) -> None:
     else:
         checks = [
             (
-                _ESLINT_DIRECTIVE,
+                _LINT_DIRECTIVE,
                 r"\s--\s*\S",
-                "`eslint-disable*` 指令的规则名后接 ` -- 理由`，写明这里为什么是工具误报",
+                "`eslint-disable*` / `oxlint-disable*` 指令的规则名后接 ` -- 理由`，写明这里为什么是工具误报",
             ),
             (_KNIP_PUBLIC, r"\S", "`@public` 后接理由，写明这个导出为什么要保留"),
         ]

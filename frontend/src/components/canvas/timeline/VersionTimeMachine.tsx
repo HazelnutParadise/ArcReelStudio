@@ -141,7 +141,7 @@ export function VersionTimeMachine({
   useEffect(() => {
     if (!open || !resourceId) return;
     const controller = new AbortController();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 打开或资源更新时启动带取消信号的版本加载，并同步展示加载状态
+    // eslint-disable-next-line react-hooks-js/set-state-in-effect -- 打开或资源更新时启动带取消信号的版本加载，并同步展示加载状态
     void loadVersions(controller.signal);
     return () => controller.abort();
   }, [open, resourceId, resourceFp, reload, loadVersions]);

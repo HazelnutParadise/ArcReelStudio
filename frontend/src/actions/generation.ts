@@ -13,7 +13,7 @@
  * 失败一律向上抛，由调用方决定错误提示。返回值统一归一化为 EnqueueResult，
  * 屏蔽各端点 task_id / task_ids 的形状差异。
  *
- * 组件禁止绕过本层直调入队类 API 方法（ESLint no-restricted-syntax 强制）。
+ * 组件禁止绕过本层直调入队类 API 方法（lint 规则 arcreel/no-direct-enqueue 强制）。
  */
 import { API, derivativeResourceId } from "@/api";
 import i18n from "@/i18n";

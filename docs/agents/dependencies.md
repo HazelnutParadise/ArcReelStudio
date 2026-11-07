@@ -6,7 +6,9 @@
 
 ## 已知版本约束
 
-- **前端 TypeScript 受 `typescript-eslint` 的 peer 范围限制。** 升级 TypeScript 前先核对锁定版本的 `typescript-eslint` peer 范围，必要时同步升级。
+- **前端 TypeScript 停在 6.x。** TypeScript 7 的 `typescript` 包不再提供原有的编译器 API，入口只剩 `typescript/unstable/*`，而 `frontend/src/api.enqueue-methods.test.ts` 用 `ts.createSourceFile` 解析 `api.ts`。解锁条件：该测试改用不依赖编译器 API 的解析器，再核对 TypeScript 7 下 `pnpm check` 的结果。`@shadcn/lint` 读取组件文件优先用随它安装的 `oxc-parser`，它的 peer `@typescript-eslint/parser` 要求 `typescript <6.1`，升级后只会出现 peer 警告。`.github/dependabot.yml` 的 frontend 段因此忽略 TypeScript 7。
+- **前端工具链是 Vite+（`vp`）。** `vite-plus` 固定它所带的 Oxlint、tsgolint、`vite-plus-core` 与 `vitest` 的版本。`frontend/pnpm-workspace.yaml` 的 catalog 把 `vite` 指向 `@voidzero-dev/vite-plus-core`，`vitest`、`@vitest/coverage-v8` 与 `vite-plus` 依赖的版本一致；升级 `vite-plus` 时在同一个改动里同步 catalog。不要把 `oxlint`、`@oxlint/plugins` 加为直接依赖，自写的 lint 插件从 `vite-plus/lint/plugins` 导入。`vite` 包不再提供 `vite` 命令，构建与预览用 `vp build`、`vp preview`。
+- **前端的 ESLint 格式插件经 Oxlint 的 JS 插件加载。** `eslint-plugin-react-hooks`（React Compiler 诊断）、`eslint-plugin-testing-library`、`eslint-plugin-jest-dom` 与 `@shadcn/lint` 仍是直接依赖，`eslint` 作为它们的 peer 留在依赖树里，但不再是直接依赖，也不再执行 lint。React Compiler 诊断不用 Oxlint 内置实现的原因写在 `frontend/lint/config.ts`。
 - **文档站 TypeScript 上限是 6.x。** 原因与解锁条件写在 `.github/dependabot.yml` 的 website 段注释里。
 - **后端 HTTP 客户端统一用 `httpx2`。** 仓库代码直接 `import httpx2`，不 import `httpx`。`lib/__init__.py`、`server/__init__.py`、`tests/conftest.py` 与 `packages/arcreel-market-core/tests/conftest.py` 在任何 `import httpx` 之前调用 `httpx2.alias_httpx()`，让仍按 `httpx` 编写的依赖（方舟 SDK `volcengine-ark-runtime`、respx）拿到同一套 `httpx2` 的类：这些 SDK 因此接受 `httpx2` 客户端，路径覆盖的 transport 层只实现 `httpx2` 一份，respx（`tests/http_capture.py`）拦截的也是 `httpx2` 发出的请求。respx 的 pytest 插件在加载 conftest 之前就 import `httpx`，主仓与子包的 pytest 配置都用 `-p no:respx` 禁止它自动加载。新增会在导入期 import `httpx` 的 pytest 插件或进程入口时，要保证 `alias_httpx()` 先执行，否则它抛出 `RuntimeError`。
 - **`openai` 受 `instructor` 的 `jiter` 上限限制。** `openai` 3.4.0 起要求 `jiter>=0.16`，`instructor` 1.17.0 要求 `jiter<0.15`，`uv lock --upgrade` 因此停在 `openai` 3.3.0。解锁条件：`instructor` 放宽 `jiter` 上限。
