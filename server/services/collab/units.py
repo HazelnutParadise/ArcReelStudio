@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol, TypeIs
 
 from pydantic import ValidationError
 
@@ -31,12 +31,12 @@ class UnitNotFoundError(LookupError):
 class UnitWriteError(ValueError):
     """内容不合规，不能写回；``code`` 是给界面本地化用的稳定键（可以直接是错误文案的 i18n key）。"""
 
-    def __init__(self, code: str, detail: str = "", **params: object) -> None:
+    def __init__(self, code: str, detail: str = "", params: dict[str, object] | None = None) -> None:
         super().__init__(detail or code)
         self.code = code
         self.detail = detail
         #: 渲染错误文案的参数（如区间上下限）
-        self.params = params
+        self.params = params or {}
 
 
 @dataclass(frozen=True)
@@ -47,6 +47,8 @@ class UnitRef:
 
 
 class UnitSpec(Protocol):
+    """项目里的单元：读写是同步的文件操作，由中枢放进线程执行；外部改动来自项目事件流。"""
+
     kind: str
 
     def read(self, pm: ProjectManager, project: str, key: str) -> dict[str, Any]:
@@ -56,6 +58,31 @@ class UnitSpec(Protocol):
     def write(self, pm: ProjectManager, project: str, key: str, changes: dict[str, Any]) -> None:
         """写回改动过的顶层字段；内容不合规时抛 :class:`UnitWriteError`。"""
         ...
+
+
+class GlobalUnitSpec(Protocol):
+    """不属于项目的单元（全局资产库、工作区记忆等）：房间的 ``project`` 为空串，读写是协程。
+
+    没有项目事件流可订阅，中枢在房间打开期间定时重读，别处（接口、Agent）的改动照样并进文档。
+    """
+
+    kind: str
+    scope: Literal["global"]
+
+    async def read(self, key: str) -> dict[str, Any]:
+        """单元当前的内容；不存在时抛 :class:`UnitNotFoundError`。"""
+        ...
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        """写回改动过的顶层字段；内容不合规时抛 :class:`UnitWriteError`。"""
+        ...
+
+
+AnyUnitSpec = UnitSpec | GlobalUnitSpec
+
+
+def is_global(spec: AnyUnitSpec) -> TypeIs[GlobalUnitSpec]:
+    return getattr(spec, "scope", "project") == "global"
 
 
 # ── 项目概述 ─────────────────────────────────────────────────────
@@ -487,10 +514,10 @@ class ProjectSettingsUnit:
         try:
             _update_project(pm, project, _mutate)
         except ApiError as exc:
-            raise UnitWriteError(exc.key, **exc.params) from exc
+            raise UnitWriteError(exc.key, params=exc.params) from exc
 
 
-UNIT_SPECS: dict[str, UnitSpec] = {
+UNIT_SPECS: dict[str, AnyUnitSpec] = {
     spec.kind: spec
     for spec in (
         PageUnit(),

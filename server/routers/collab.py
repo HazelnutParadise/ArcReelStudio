@@ -84,6 +84,9 @@ def _room(message: dict[str, Any], hub: CollabHub) -> UnitRef | None:
         return None
     if not hub.has_kind(kind) or len(key) > MAX_KEY_LENGTH:
         return None
+    # 不属于项目的单元（全局资产库、工作区记忆等）房间的 project 是空串
+    if hub.is_global_kind(kind):
+        return UnitRef(project="", kind=kind, key=key) if project == "" else None
     try:
         ProjectManager.normalize_project_name(project)
     except ValueError:
