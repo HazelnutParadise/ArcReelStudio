@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from lib.agent.claude_subscription_login import ClaudeLoginError, ClaudeLoginManager
+from lib.subscriptions.claude_login import ClaudeLoginError, ClaudeLoginManager
 
 AUTHORIZE_URL = "https://claude.com/cai/oauth/authorize?code=true&client_id=x&state=abc"
 TOKEN = "sk-ant-oat01-Abc_def-123"
@@ -57,7 +57,7 @@ async def test_the_cli_runs_in_a_throwaway_home_that_is_removed_afterwards(fake_
     manager = ClaudeLoginManager(cli_path=str(fake_cli))
 
     login_id, _ = await manager.start()
-    home = manager._login.home
+    home = manager._logins[login_id].home
     # 每次登录专用的临时目录，不是容器里正在用的 HOME
     assert Path(home).name.startswith("claude-login-")
     await manager.submit_code(login_id, "good-code")
@@ -78,21 +78,33 @@ async def test_a_rejected_code_reports_why_without_leaking_a_token(fake_cli) -> 
 
 async def test_a_code_for_another_login_is_refused(fake_cli) -> None:
     manager = ClaudeLoginManager(cli_path=str(fake_cli))
-    await manager.start()
+    login_id, _ = await manager.start()
 
     with pytest.raises(ClaudeLoginError) as exc_info:
         await manager.submit_code("someone-else", "good-code")
 
     assert exc_info.value.code == "login_not_found"
-    await manager.cancel()
+    await manager.cancel(login_id)
 
 
-async def test_a_new_login_replaces_the_previous_one(fake_cli) -> None:
+async def test_two_logins_run_side_by_side(fake_cli) -> None:
+    # 不同成员可以同时添加各自的账号：开始第二个登录不会作废第一个
     manager = ClaudeLoginManager(cli_path=str(fake_cli))
     first_id, _ = await manager.start()
-    first_home = manager._login.home
-
     second_id, _ = await manager.start()
+
+    assert first_id != second_id
+    assert await manager.submit_code(first_id, "good-code") == TOKEN
+    assert await manager.submit_code(second_id, "good-code") == TOKEN
+
+
+async def test_cancel_ends_only_that_login(fake_cli) -> None:
+    manager = ClaudeLoginManager(cli_path=str(fake_cli))
+    first_id, _ = await manager.start()
+    second_id, _ = await manager.start()
+    first_home = manager._logins[first_id].home
+
+    await manager.cancel(first_id)
 
     assert not await asyncio.to_thread(Path(first_home).exists)
     with pytest.raises(ClaudeLoginError):
@@ -109,7 +121,7 @@ async def test_empty_or_multiline_codes_are_refused_before_reaching_the_cli(fake
         await manager.submit_code(login_id, code)
 
     assert exc_info.value.code == "invalid_code"
-    await manager.cancel()
+    await manager.cancel(login_id)
 
 
 async def test_a_missing_cli_is_reported(tmp_path) -> None:

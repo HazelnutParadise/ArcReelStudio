@@ -2,11 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import Literal
 
 from lib.backends.agnes_shared import AGNES_BASE_URL
 from lib.backends.ark_shared import ARK_BASE_URL
 from lib.backends.dashscope_shared import DASHSCOPE_BASE_URL
 from lib.backends.minimax_shared import MINIMAX_BASE_URL, MINIMAX_INTL_BASE_URL
+
+#: 订阅供应商的连线怎么建立：``code_paste`` 是在授权页拿到验证码贴回页面（Claude），``device_code`` 是页面给网址与
+#: 一次性代码、用户在自己的浏览器授权（ChatGPT、Grok）。
+LoginKind = Literal["code_paste", "device_code"]
 
 # 合法并发 lane 名，与 CapacityTable 的 image/video/audio 三条容量通道对齐。
 _VALID_LANES = frozenset({"image", "video", "audio"})
@@ -37,6 +42,9 @@ class ProviderMeta:
     # lane 无害——_lane_limits 会按 media_types 把不支持的 lane 投影为 0。键名与上限值在
     # __post_init__ 校验。
     default_concurrency: dict[str, int] = field(default_factory=dict)
+    # 订阅供应商：连线只能经登录流程建立（凭证是登录换来的令牌或凭证文件），不走密钥表单，也不能改请求地址。
+    # 普通供应商为 None。
+    login_kind: LoginKind | None = None
 
     @property
     def accepts_base_url(self) -> bool:
@@ -57,6 +65,10 @@ class ProviderMeta:
             # "1"、浮点 3.0 同样违反声明类型。type() is int 把这几类一并挡在 import 期。
             if type(limit) is not int or limit < 1:
                 raise ValueError(f"{self.display_name} default_concurrency[{lane!r}] 必须是 >=1 的整数，得到 {limit!r}")
+        if self.login_kind is not None and (self.required_keys or self.credential_groups or self.accepts_base_url):
+            raise ValueError(
+                f"{self.display_name} 设了 login_kind，连线只能经登录建立：不能声明必填密钥、凭证分组或可改的请求地址"
+            )
         if self.credential_groups:
             allowed = set(self.required_keys) & set(self.secret_keys)
             covered: set[str] = set()
@@ -191,5 +203,21 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
         # Agnes 视频上游对并发敏感，出厂串行（默认 1）避免主动制造 503 Service busy；
         # 用户可经 video_max_workers 覆盖。其余 lane 未声明，走全局默认。
         default_concurrency={"video": 1},
+    ),
+    # 订阅供应商：放在最后，自动推断（按登记顺序取第一个可用的）不会先选到按额度计的订阅。
+    "claude-subscription": ProviderMeta(
+        display_name="Claude 订阅",
+        required_keys=[],
+        login_kind="code_paste",
+    ),
+    "chatgpt-subscription": ProviderMeta(
+        display_name="ChatGPT 订阅",
+        required_keys=[],
+        login_kind="device_code",
+    ),
+    "grok-subscription": ProviderMeta(
+        display_name="Grok 订阅",
+        required_keys=[],
+        login_kind="device_code",
     ),
 }

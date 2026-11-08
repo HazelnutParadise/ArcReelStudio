@@ -49,6 +49,29 @@ export interface ProviderInfo {
   /** 凭证（界面称「密钥」）条数；没有凭证时为 0。 */
   credential_count: number;
   models: Record<string, ModelInfoResponse>;
+  /** 订阅供应商的连线怎么建立；普通供应商为 null（走密钥表单）。 */
+  login_kind?: SubscriptionLoginKind | null;
+}
+
+/**
+ * 订阅供应商的连线怎么建立：`code_paste` 是在授权页拿到验证码贴回来（Claude），`device_code` 是页面给网址与一次性代码，
+ * 在自己的浏览器授权（ChatGPT、Grok）。
+ */
+export type SubscriptionLoginKind = "code_paste" | "device_code";
+
+/** 一次订阅登录的进度。 */
+export interface SubscriptionLogin {
+  login_id: string;
+  provider_id: string;
+  kind: SubscriptionLoginKind;
+  url: string;
+  /** device code 登录要在授权页输入的一次性代码 */
+  user_code: string | null;
+  expires_at: string;
+  status: "pending" | "succeeded" | "failed";
+  credential_id: number | null;
+  /** 失败原因（已按界面语言） */
+  error: string | null;
 }
 
 export interface ProviderField {
@@ -80,6 +103,8 @@ export interface ProviderConfigDetail {
   supports_base_url: boolean;
   /** 中国供应商的国际站地址；非中国供应商为 null。 */
   international_base_url: string | null;
+  /** 订阅供应商的连线怎么建立；非 null 时「添加密钥」换成「登录」。 */
+  login_kind?: SubscriptionLoginKind | null;
   // 凭证表单应渲染的 secret 字段（有序）
   secret_fields: CredentialSecretField[];
   // 凭证「二选一」分组：满足任一组（组内字段全填）即视为凭证完整；单组场景（绝大多数

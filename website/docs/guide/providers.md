@@ -24,9 +24,9 @@ Agent 负责：
 
 ArcReel 的 Agent Runtime 基于 Claude Agent SDK，支持 Anthropic 官方服务以及项目所支持的兼容配置。预设的「Anthropic Official」固定连接 Anthropic 官方地址，不能修改。
 
-Agent 也可以用 Claude 订阅账号的额度。管理员在「设置 › ArcReel Agent › Claude 订阅」点「用 Claude 账号登录」，打开 Claude 授权页登录并同意授权，再把页面显示的验证码贴回来，就完成登录。整个工作区共用同一个账号的额度。
+Agent 也可以用 Claude 订阅账号的额度。Claude 订阅账号是连线中心里「Claude 订阅」供应商的连线，登录方式见[订阅账号](#subscription-accounts)。有两个以上的 Claude 订阅连线时，管理员可以在「设置 › ArcReel Agent › Claude 订阅」选择 Agent 用哪一个；没选的用默认连线。
 
-登录后可以选择 Agent 的使用方式：
+有 Claude 订阅连线后可以选择 Agent 的使用方式：
 
 | 方式 | 说明 |
 | --- | --- |
@@ -578,6 +578,24 @@ Agent 必须先取得你的明确同意。检测到同作者、同名的定义�
 4. 观察错误率；
 5. 删除或停用旧 Key；
 6. 更新密钥管理记录。
+
+### 11.1 订阅账号 {#subscription-accounts}
+
+Claude、ChatGPT 与 Grok 的订阅账号也是连线，分别属于「Claude 订阅」「ChatGPT 订阅」「Grok 订阅」三个供应商。订阅账号的连线只能登录建立，不能填写密钥；建立后只能改名。登录与选择连线只有管理员能做，整个工作区共用账号的订阅额度。
+
+在「设置 › 连线中心」点「新增连线」，在「登录订阅账号」下选择要登录的订阅：
+
+| 订阅 | 登录方式 |
+| --- | --- |
+| Claude | 打开 Claude 授权页，登录并同意授权，把页面显示的验证码贴回对话框 |
+| ChatGPT | 打开授权页登录，输入对话框显示的一次性代码，完成后对话框会自动显示结果 |
+| Grok | 同 ChatGPT |
+
+- ChatGPT 第一次使用设备代码登录前，要先在 ChatGPT 设置的「安全」里开启设备代码登录。
+- 同一个账号重新登录时，更新原来的连线，不会多出一条。
+- ChatGPT 与 Grok 的登录凭证放在数据目录的 `subscriptions/` 下，由官方 CLI 自动续期；删除连线时一并删除。
+- Docker 镜像随附登录用的 Codex CLI 与 Grok CLI。不用 Docker 部署时，请自行安装这两个 CLI 并放到 PATH 上。
+- 目前订阅账号只供 Agent 使用（Claude 订阅）。文字与图片生成改用订阅额度会在后续版本开放。
 
 ## 12. 对象存储与供应商素材库 {#object-storage-and-asset-library}
 

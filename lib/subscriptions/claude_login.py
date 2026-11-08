@@ -2,8 +2,8 @@
 验证码送进去，换回长效 OAuth 令牌。
 
 CLI 只在终端里工作，所以给它一个伪终端。每次登录用一个临时 HOME，CLI 不会读到或写进容器里正在用的
-``~/.claude``；登录结束（成功、失败、取消或过期）都会结束进程并删掉临时目录。同一时间只有一个登录在进行，
-新的登录会取代旧的。
+``~/.claude``；登录结束（成功、失败、取消或过期）都会结束进程并删掉临时目录。可以同时进行多个登录（不同成员
+各自添加账号），各自独立。
 """
 
 from __future__ import annotations
@@ -124,45 +124,59 @@ def _visible_tail(buffer: bytearray, limit: int = 400) -> str:
 class ClaudeLoginManager:
     def __init__(self, cli_path: str | None = None) -> None:
         self._cli_path = cli_path
-        self._login: _Login | None = None
+        self._logins: dict[str, _Login] = {}
         self._lock = asyncio.Lock()
 
     async def start(self) -> tuple[str, str]:
-        """开始一次登录，返回 ``(login_id, 授权链接)``；正在进行的登录会被取代。"""
+        """开始一次登录，返回 ``(login_id, 授权链接)``。"""
+        await self._sweep()
+        cli = self._cli_path or bundled_cli_path()
+        if not cli:
+            raise ClaudeLoginError("cli_not_found")
+        login = await asyncio.to_thread(self._spawn, cli)
         async with self._lock:
-            await self._discard()
-            cli = self._cli_path or bundled_cli_path()
-            if not cli:
-                raise ClaudeLoginError("cli_not_found")
-            login = await asyncio.to_thread(self._spawn, cli)
-            self._login = login
-            return login.login_id, login.authorize_url
+            self._logins[login.login_id] = login
+        return login.login_id, login.authorize_url
 
     async def submit_code(self, login_id: str, code: str) -> str:
         """把验证码送进 CLI，返回换到的长效令牌。登录不论成败都会结束。"""
+        cleaned = code.strip()
         async with self._lock:
-            login = self._login
-            if login is None or login.login_id != login_id:
+            login = self._logins.get(login_id)
+            if login is None:
                 raise ClaudeLoginError("login_not_found")
             if time.monotonic() - login.started_at > LOGIN_TTL_SECONDS:
-                await self._discard()
+                self._logins.pop(login_id, None)
+                await asyncio.to_thread(login.close)
                 raise ClaudeLoginError("login_expired")
-            cleaned = code.strip()
             if not cleaned or any(ch in cleaned for ch in "\r\n\x00"):
                 raise ClaudeLoginError("invalid_code")
-            self._login = None
-            try:
-                return await asyncio.to_thread(self._exchange, login, cleaned)
-            finally:
-                await asyncio.to_thread(login.close)
+            self._logins.pop(login_id, None)
+        try:
+            return await asyncio.to_thread(self._exchange, login, cleaned)
+        finally:
+            await asyncio.to_thread(login.close)
 
-    async def cancel(self) -> None:
+    async def cancel(self, login_id: str) -> None:
         async with self._lock:
-            await self._discard()
-
-    async def _discard(self) -> None:
-        login, self._login = self._login, None
+            login = self._logins.pop(login_id, None)
         if login is not None:
+            await asyncio.to_thread(login.close)
+
+    async def close(self) -> None:
+        async with self._lock:
+            logins, self._logins = list(self._logins.values()), {}
+        for login in logins:
+            await asyncio.to_thread(login.close)
+
+    async def _sweep(self) -> None:
+        """丢掉过期还没贴验证码的登录。"""
+        now = time.monotonic()
+        async with self._lock:
+            stale = [item for item in self._logins.values() if now - item.started_at > LOGIN_TTL_SECONDS]
+            for login in stale:
+                self._logins.pop(login.login_id, None)
+        for login in stale:
             await asyncio.to_thread(login.close)
 
     @staticmethod

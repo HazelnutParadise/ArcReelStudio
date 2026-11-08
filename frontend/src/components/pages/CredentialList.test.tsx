@@ -328,3 +328,54 @@ describe("pages/CredentialList credential groups (api_key OR access_key+secret_k
     expect(within(dialog).getByLabelText(BASE_URL_LABEL).closest(".font-mono")).toBeNull();
   });
 });
+
+describe("CredentialList for a subscription provider", () => {
+  beforeEach(() => {
+    vi.spyOn(API, "listCredentials").mockResolvedValue({
+      credentials: [mockCred({ provider: "chatgpt-subscription", name: "me@x.com (plus)", api_key_masked: null })],
+    });
+  });
+
+  function renderSubscription() {
+    return render(
+      <CredentialList
+        providerId="chatgpt-subscription"
+        providerName="ChatGPT 订阅"
+        supportsBaseUrl={false}
+        secretFields={[]}
+        secretFieldGroups={[]}
+        loginKind="device_code"
+      />,
+    );
+  }
+
+  it("adds an account by signing in instead of a key form", async () => {
+    const start = vi.spyOn(API, "startSubscriptionLogin").mockResolvedValue({
+      login_id: "L1",
+      provider_id: "chatgpt-subscription",
+      kind: "device_code",
+      url: "https://auth.openai.com/codex/device",
+      user_code: "ABCD-1234",
+      expires_at: "2026-11-08T01:00:00Z",
+      status: "pending",
+      credential_id: null,
+      error: null,
+    });
+    vi.spyOn(API, "cancelSubscriptionLogin").mockResolvedValue();
+    renderSubscription();
+
+    expect(screen.queryByRole("button", { name: "添加密钥" })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "登录账号" }));
+
+    expect(await screen.findByText("ABCD-1234")).toBeInTheDocument();
+    expect(start).toHaveBeenCalledWith("chatgpt-subscription");
+  });
+
+  it("only lets the name be edited", async () => {
+    renderSubscription();
+
+    const dialog = await openEditDialog("me@x.com (plus)");
+
+    expect(within(dialog).getAllByRole("textbox")).toHaveLength(1);
+  });
+});

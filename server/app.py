@@ -38,6 +38,7 @@ from starlette.middleware.gzip import GZipResponder, IdentityResponder
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from lib import PROJECT_ROOT
+from lib.agent.agent_auth import auth_availability
 from lib.agent.agent_session_store import default_sdk_config_dir, session_store_enabled
 from lib.agent.agent_session_store.import_local import migrate_local_transcripts_to_store
 from lib.agent.agent_session_store.key_alignment import align_session_keys
@@ -120,6 +121,7 @@ from server.routers import (
     script_review,
     shot_uploads,
     storyboard_batches,
+    subscription_logins,
     system,
     system_config,
     tasks,
@@ -133,6 +135,7 @@ from server.services.collab.hub import create_collab_hub
 from server.services.project.episode_id_records import recorded_episode_ids_on
 from server.services.project.project_events import ProjectEventService
 from server.services.project.project_presence import ProjectPresenceService
+from server.services.subscription_logins import SubscriptionLoginService
 from server.services.tasks.generation_tasks import execute_generation_task
 from server.services.tasks.resume_executor import execute_resume_video_task
 
@@ -362,6 +365,18 @@ async def _migrate_source_encoding_on_startup(
     return summary
 
 
+def _create_subscription_logins() -> SubscriptionLoginService:
+    """订阅登录服务：登录完成后换了凭证，清掉已缓存的 backend，之前记下的订阅不可用也不再适用。"""
+
+    def on_changed() -> None:
+        from server.services.tasks.generation_context import invalidate_backend_cache
+
+        invalidate_backend_cache()
+        auth_availability.clear("subscription")
+
+    return SubscriptionLoginService(async_session_factory, on_credentials_changed=on_changed)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
@@ -551,6 +566,7 @@ async def lifespan(app: FastAPI):
     project_presence_service.start()
     # 多人即时协作：编辑单元的房间只在进程内存里，关停时先把没写回的内容写回
     app.state.collab_hub = create_collab_hub(project_event_service)
+    app.state.subscription_logins = _create_subscription_logins()
 
     # 卡顿探针放在启动步骤之后：迁移等启动期同步工作不算线上卡顿，避免误报。
     stall_probe = start_loop_stall_probe()
@@ -582,6 +598,9 @@ async def lifespan(app: FastAPI):
     collab_hub = getattr(app.state, "collab_hub", None)
     if collab_hub is not None:
         await collab_hub.shutdown()
+    subscription_logins = getattr(app.state, "subscription_logins", None)
+    if subscription_logins is not None:
+        await subscription_logins.close()
     project_presence_service = getattr(app.state, "project_presence_service", None)
     if project_presence_service:
         await project_presence_service.shutdown()
@@ -817,6 +836,9 @@ app.include_router(
     project_presence.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["在线成员"]
 )
 app.include_router(tasks.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["任务队列"])
+app.include_router(
+    subscription_logins.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["供应商管理"]
+)
 app.include_router(providers.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["供应商管理"])
 app.include_router(
     provider_models.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["供应商管理"]

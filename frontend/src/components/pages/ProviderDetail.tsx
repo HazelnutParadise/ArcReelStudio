@@ -289,6 +289,8 @@ export function ProviderDetail({ providerId, initialModelId, onSaved }: Props) {
           secretFields={detail.secret_fields}
           secretFieldGroups={detail.secret_field_groups}
           onChanged={handleCredentialChanged}
+          loginKind={detail.login_kind ?? null}
+          providerName={detail.display_name}
         />
 
         <section aria-labelledby={billingHeadingId} className="flex flex-col gap-1.5">

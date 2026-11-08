@@ -13,6 +13,9 @@ MESSAGES: dict[str, str] = {
     "provider_name_minimax": "MiniMax",
     "provider_name_kling": "可灵 Kling",
     "provider_name_agnes": "Agnes",
+    "provider_name_claude-subscription": "Claude 订阅",
+    "provider_name_chatgpt-subscription": "ChatGPT 订阅",
+    "provider_name_grok-subscription": "Grok 订阅",
     # 失败文案里目录查不到的供应商（已被删除）的泛称
     "deleted_provider_display_name": "已删除的供应商",
     "deleted_agent_provider_display_name": "已删除的 Agent 供应商",
@@ -30,6 +33,9 @@ MESSAGES: dict[str, str] = {
     "provider_desc_minimax": "上海人工智能公司 MiniMax（稀宇科技）的开放平台，提供其多模态模型与海螺视频生成服务。默认连接国内站，海外可将 base_url 切换到国际站。",
     "provider_desc_kling": "快手推出的生成式 AI 服务可灵的开放平台。API Key 鉴权适用于全部模型；Access Key + Secret Key（JWT）仅适用于 3.0 及更早模型，二者二选一，同时填写时 API Key 优先。",
     "provider_desc_agnes": "Agnes AI 的多模态 AI 平台，通过统一的 API 提供其生成式 AI 模型。",
+    "provider_desc_claude-subscription": "用 Claude 账号（Pro、Max 等订阅）登录，使用订阅额度，目前供 ArcReel Agent 使用。",
+    "provider_desc_chatgpt-subscription": "用 ChatGPT 账号（Plus、Pro 等订阅）经 Codex 登录，使用订阅额度。",
+    "provider_desc_grok-subscription": "用 Grok 账号（SuperGrok、X Premium 等订阅）经 Grok CLI 登录，使用订阅额度。",
     # Agent preset notes (lib/agent/agent_provider_catalog.py)
     "preset_notes_deepseek": "DeepSeek 官方 Anthropic 兼容端点，需 sk- 开头的 API Key",
     "preset_notes_xiaomi_mimo": "小米 MiMo 仅支持已知模型名，未公开模型列表",

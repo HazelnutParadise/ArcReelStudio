@@ -24,7 +24,7 @@ The Agent is responsible for:
 
 ArcReel's Agent Runtime is based on the Claude Agent SDK and supports Anthropic's official service as well as compatible configurations supported by the project. The "Anthropic Official" preset always connects to Anthropic's official address, which cannot be changed.
 
-The Agent can also use a Claude subscription. In "Settings › ArcReel Agent › Claude subscription", an admin clicks "Sign in with Claude", signs in and approves on the Claude authorization page, then pastes the code shown there. The whole workspace shares that account's usage.
+The Agent can also use a Claude subscription. A Claude subscription account is a connection of the "Claude subscription" provider in the Connection center; see [Subscription accounts](#subscription-accounts) for how to sign in. When there are two or more Claude subscription connections, an admin can choose which one the Agent uses in "Settings › ArcReel Agent › Claude subscription"; otherwise the default connection is used.
 
 After signing in, choose how the Agent signs in:
 
@@ -584,6 +584,24 @@ Recommended key rotation procedure:
 4. Monitor the error rate;
 5. Delete or deactivate the old Key;
 6. Update the secret-management records.
+
+### 11.1 Subscription accounts {#subscription-accounts}
+
+Claude, ChatGPT and Grok subscription accounts are connections too, belonging to the "Claude subscription", "ChatGPT subscription" and "Grok subscription" providers. These connections can only be created by signing in, not by entering a key, and afterwards only their name can be changed. Only admins can sign in and choose connections, and the whole workspace shares the account's subscription.
+
+In "Settings › Connections", click "Add connection" and pick the subscription under "Sign in a subscription":
+
+| Subscription | How to sign in |
+| --- | --- |
+| Claude | Open the Claude authorization page, sign in and approve, then paste the code shown there into the dialog |
+| ChatGPT | Open the authorization page, sign in and enter the one-time code shown in the dialog; the dialog shows the result automatically |
+| Grok | Same as ChatGPT |
+
+- Before the first device code sign-in to ChatGPT, turn on device code sign-in under Security in your ChatGPT settings.
+- Signing in to the same account again updates its existing connection instead of adding another.
+- ChatGPT and Grok sign-in credentials are kept under `subscriptions/` in the data directory and renewed by the official CLIs; deleting the connection deletes them too.
+- The Docker image ships the Codex CLI and the Grok CLI used for sign-in. When not deploying with Docker, install both CLIs yourself and put them on PATH.
+- For now, subscription accounts are only used by the Agent (Claude subscription). Using subscription quota for text and image generation comes in a later release.
 
 ## 12. Object Storage and Provider Asset Libraries {#object-storage-and-asset-library}
 

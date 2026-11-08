@@ -14,12 +14,11 @@ from lib.config.service import build_anthropic_env
 
 @pytest.fixture(autouse=True)
 def no_subscription(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
-    """默认没有登录 Claude 订阅；需要订阅的用例改它的返回值。"""
-    repo = AsyncMock()
-    repo.get = AsyncMock(return_value=None)
-    monkeypatch.setattr("lib.db.repositories.claude_subscription_repo.ClaudeSubscriptionRepository", lambda _s: repo)
+    """默认没有 Claude 订阅连线；需要订阅的用例改它的返回值。"""
+    lookup = AsyncMock(return_value=None)
+    monkeypatch.setattr("lib.config.service.agent_claude_subscription", lookup)
     monkeypatch.setattr("lib.config.service.auth_availability", AuthAvailability())
-    return repo
+    return lookup
 
 
 @pytest.mark.asyncio
@@ -250,13 +249,13 @@ def _api_cred():
     )()
 
 
-def _subscription(token: str = "sk-ant-oat01-abc"):
-    return type("Sub", (), {"oauth_token": token})()
+def _subscription(token: str = "sk-ant-oat01-abc", credential_id: int = 7):
+    return type("Sub", (), {"api_key": token, "id": credential_id})()
 
 
 @pytest.mark.asyncio
 async def test_subscription_session_carries_only_the_oauth_token(monkeypatch, no_subscription) -> None:
-    no_subscription.get = AsyncMock(return_value=_subscription())
+    no_subscription.return_value = _subscription()
     _patch_repos(monkeypatch, cred=_api_cred(), settings={"agent_auth_mode": "subscription"})
 
     built = await build_anthropic_env(AsyncMock())
@@ -267,13 +266,13 @@ async def test_subscription_session_carries_only_the_oauth_token(monkeypatch, no
     assert built.env["ANTHROPIC_API_KEY"] == ""
     assert built.env["ANTHROPIC_BASE_URL"] == ""
     assert built.env["ANTHROPIC_MODEL"] == ""
-    # 订阅额度不按 token 计费
-    assert built.pricing == AgentPricing(multiplier=0.0)
+    # 订阅额度不按 token 计费，用量记在这条订阅连线名下
+    assert built.pricing == AgentPricing(multiplier=0.0, subscription_credential_id=7)
 
 
 @pytest.mark.asyncio
 async def test_api_key_session_blanks_the_oauth_token(monkeypatch, no_subscription) -> None:
-    no_subscription.get = AsyncMock(return_value=_subscription())
+    no_subscription.return_value = _subscription()
     _patch_repos(monkeypatch, cred=_api_cred(), settings={"agent_auth_mode": "api_key"})
 
     built = await build_anthropic_env(AsyncMock())
@@ -285,7 +284,7 @@ async def test_api_key_session_blanks_the_oauth_token(monkeypatch, no_subscripti
 
 @pytest.mark.asyncio
 async def test_default_mode_prefers_the_subscription_when_logged_in(monkeypatch, no_subscription) -> None:
-    no_subscription.get = AsyncMock(return_value=_subscription())
+    no_subscription.return_value = _subscription()
     _patch_repos(monkeypatch, cred=_api_cred(), settings={})
 
     assert (await build_anthropic_env(AsyncMock())).source == "subscription"
@@ -296,7 +295,7 @@ async def test_an_exhausted_subscription_switches_to_the_api_key(monkeypatch, no
     availability = AuthAvailability()
     availability.mark_unavailable("subscription", until=None)
     monkeypatch.setattr("lib.config.service.auth_availability", availability)
-    no_subscription.get = AsyncMock(return_value=_subscription())
+    no_subscription.return_value = _subscription()
     _patch_repos(monkeypatch, cred=_api_cred(), settings={"agent_auth_mode": "prefer_subscription"})
 
     built = await build_anthropic_env(AsyncMock())

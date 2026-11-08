@@ -136,16 +136,13 @@ export interface AgentAuthAvailability {
 }
 
 export interface ClaudeSubscriptionStatus {
-  logged_in: boolean;
-  token_masked: string | null;
-  logged_in_at: string | null;
+  /** Agent 实际会用的 Claude 订阅连线；没有时为 null */
+  credential_id: number | null;
+  credential_name: string | null;
+  /** 指定的连线；没指定时为 null，用 Claude 订阅的默认连线 */
+  chosen_credential_id: number | null;
   mode: AgentAuthMode;
   has_api_key: boolean;
   subscription: AgentAuthAvailability;
   api_key: AgentAuthAvailability;
-}
-
-export interface ClaudeLoginStart {
-  login_id: string;
-  authorize_url: string;
 }

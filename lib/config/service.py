@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from typing import Literal
 
@@ -21,6 +22,7 @@ from lib.catalog.builtin_models import disabled_builtin_models
 from lib.config.env_keys import ANTHROPIC_ENV_KEYS
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.config.repository import ProviderConfigRepository, SystemSettingRepository
+from lib.db.models.credential import ProviderCredential
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.infra.schema_guards import is_int
 
@@ -98,6 +100,27 @@ class AnthropicEnv:
     source: AuthSource = "api_key"
 
 
+#: Agent 用哪一条 Claude 订阅连线（``provider_credential`` id）；没设或那条连线已不在时用 Claude 订阅的默认连线
+AGENT_SUBSCRIPTION_CREDENTIAL_KEY = "agent_subscription_credential_id"
+CLAUDE_SUBSCRIPTION_PROVIDER = "claude-subscription"
+
+
+async def agent_claude_subscription(
+    session: AsyncSession, settings: Mapping[str, str] | None = None
+) -> ProviderCredential | None:
+    """Agent 会话用的 Claude 订阅连线；一条都没有时为 ``None``。"""
+    if settings is None:
+        settings = await SystemSettingRepository(session).get_all()
+    repo = CredentialRepository(session)
+    raw = (settings.get(AGENT_SUBSCRIPTION_CREDENTIAL_KEY) or "").strip()
+    if raw.isdigit():
+        chosen = await repo.get_by_id(int(raw))
+        if chosen is not None and chosen.provider == CLAUDE_SUBSCRIPTION_PROVIDER and chosen.api_key:
+            return chosen
+    default = await repo.get_active(CLAUDE_SUBSCRIPTION_PROVIDER)
+    return default if default is not None and default.api_key else None
+
+
 async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
     """从 DB 读 active credential，返回 {ENV_KEY: value} 与计价依据快照，**不写 os.environ**。
 
@@ -108,12 +131,11 @@ async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
     :func:`lib.agent.credential_tiers.tier_models`。
     """
     # 局部 import 避免循环依赖（agent_credential_repo → agent_credential model → base）
-    from lib.db.repositories import claude_subscription_repo
     from lib.db.repositories.agent_credential_repo import AgentCredentialRepository
 
     cred = await AgentCredentialRepository(session).get_active()
     settings = await SystemSettingRepository(session).get_all()
-    subscription = await claude_subscription_repo.ClaudeSubscriptionRepository(session).get()
+    subscription = await agent_claude_subscription(session, settings)
 
     legacy_env = {env_key: settings.get(db_key, "").strip() for db_key, env_key in _ANTHROPIC_ENV_MAP.items()}
     has_api_key = bool(cred.api_key if cred is not None else legacy_env["ANTHROPIC_API_KEY"])
@@ -128,8 +150,12 @@ async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
         # 订阅会话只带令牌：API Key 凭证的地址、密钥与档位模型都不带进来，模型由 CLI 按订阅默认值选；
         # 订阅额度不按 token 计费，倍率记 0
         env = dict.fromkeys(ANTHROPIC_ENV_KEYS, "")
-        env[OAUTH_TOKEN_ENV_KEY] = subscription.oauth_token
-        return AnthropicEnv(env=env, pricing=AgentPricing(multiplier=0.0), source="subscription")
+        env[OAUTH_TOKEN_ENV_KEY] = subscription.api_key or ""
+        return AnthropicEnv(
+            env=env,
+            pricing=AgentPricing(multiplier=0.0, subscription_credential_id=subscription.id),
+            source="subscription",
+        )
 
     if cred is not None:
         models = tier_models(cred, settings)
@@ -147,12 +173,11 @@ async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
 
 async def auth_fallback_for(session: AsyncSession, current: AuthSource) -> AuthSource | None:
     """``current`` 不能用时，按目前的认证方式与配置可以改用的另一方；不能改用时为 ``None``。"""
-    from lib.db.repositories import claude_subscription_repo
     from lib.db.repositories.agent_credential_repo import AgentCredentialRepository
 
     cred = await AgentCredentialRepository(session).get_active()
     settings = await SystemSettingRepository(session).get_all()
-    subscription = await claude_subscription_repo.ClaudeSubscriptionRepository(session).get()
+    subscription = await agent_claude_subscription(session, settings)
     has_api_key = bool(cred.api_key if cred is not None else settings.get("anthropic_api_key", "").strip())
     return fallback_source(
         parse_auth_mode(settings.get(AUTH_MODE_SETTING_KEY)),

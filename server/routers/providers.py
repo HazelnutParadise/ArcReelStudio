@@ -51,6 +51,7 @@ from lib.i18n import render_message, translate_or
 from lib.infra.api_errors import BadRequestError, ConflictError, UnprocessableError
 from lib.infra.async_thread import run_sync_transaction
 from lib.infra.data_root_layout import DataRootLayout
+from lib.subscriptions.connection_home import remove_credentials
 from server.dependencies import get_config_service
 from server.i18n import Locale, Translator, load_display_names_or_builtin
 from server.routers._validators import split_video_backend_query
@@ -129,6 +130,8 @@ class ProviderSummary(BaseModel):
     # 凭证（界面称「密钥」）条数；没有凭证时为 0。
     credential_count: int
     models: dict[str, ModelInfoResponse]
+    # 订阅供应商的连线怎么建立（code_paste / device_code）；普通供应商为 None，走密钥表单
+    login_kind: str | None = None
 
 
 class ProvidersListResponse(BaseModel):
@@ -170,6 +173,8 @@ class ProviderConfigResponse(BaseModel):
     supports_base_url: bool
     # 中国供应商的国际站地址（真相源：registry international_base_url），前端据此提供「国际站」快速选项。
     international_base_url: str | None = None
+    # 订阅供应商的连线怎么建立；非 None 时前端把「添加密钥」换成「登录」
+    login_kind: str | None = None
     # 凭证表单应渲染的 secret 字段（有序，真相源：registry required_keys ∩ secret_keys ∩ 凭证键）。
     secret_fields: list[CredentialSecretField]
     # 凭证「二选一」分组：前端据此校验「至少一组的字段全部填写」而非「全部字段都填写」
@@ -440,6 +445,7 @@ async def list_providers(
                 # 没有的（纯品牌名、自定义供应商用户自填的名字）原样返回。
                 display_name=translate_or(f"provider_name_{s.name}", s.display_name, locale),
                 description=_t(f"provider_desc_{s.name}"),
+                login_kind=PROVIDER_REGISTRY[s.name].login_kind if s.name in PROVIDER_REGISTRY else None,
                 status=s.status,
                 media_types=s.media_types,
                 capabilities=s.capabilities,
@@ -563,6 +569,7 @@ async def get_provider_config(
         fields=fields,
         supports_base_url="base_url" in meta.optional_keys,
         international_base_url=meta.international_base_url,
+        login_kind=meta.login_kind,
         secret_fields=secret_fields,
         secret_field_groups=secret_field_groups,
     )
@@ -679,6 +686,9 @@ async def create_credential(
     session: AsyncSession = Depends(get_async_session),
 ) -> CredentialResponse:
     _validate_provider(provider_id, _t)
+    if PROVIDER_REGISTRY[provider_id].login_kind is not None:
+        # 订阅连线的凭证是登录换来的，只能经 /providers/{id}/logins 建立
+        raise HTTPException(status_code=422, detail=_t("credential_requires_login"))
     # 创建是全新行，无可清空——仅复用横跨多组的歧义校验拒绝矛盾提交（新行不落盘）。
     _resolve_credential_group_switch(provider_id, _submitted_secret_values(provider_id, body), None, _t)
     repo = CredentialRepository(session)
@@ -709,6 +719,11 @@ async def update_credential(
     repo = CredentialRepository(session)
     # 先确认凭证存在（404 优先于后续切组歧义的 422），再用库内原值参与「切入」判定。
     cred = await _get_credential_or_404(repo, provider_id, cred_id, _t)
+    if PROVIDER_REGISTRY[provider_id].login_kind is not None and (
+        any(v is not None for v in (body.api_key, body.access_key, body.secret_key, body.base_url))
+    ):
+        # 订阅连线只能改名；凭证要换就重新登录这个账号
+        raise HTTPException(status_code=422, detail=_t("credential_login_secret_readonly"))
     submitted = _submitted_secret_values(provider_id, body)
     clear_keys = _resolve_credential_group_switch(
         provider_id,
@@ -793,6 +808,8 @@ async def delete_credential(
     await repo.delete(cred_id)
     await session.commit()
     await _invalidate_caches(request)
+    # 订阅连线专属的 HOME（Codex、Grok 的登录凭证）一并删掉
+    await asyncio.to_thread(remove_credentials, provider_id, cred_id)
     # 删除关联的凭证文件（如 vertex_keys/ 下的 JSON），放在 commit 之后确保数据一致性
     if cred_path:
         cred_file = Path(cred_path)

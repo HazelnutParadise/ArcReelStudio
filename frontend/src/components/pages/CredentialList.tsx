@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { Check, Loader2, MoreHorizontal, Pencil, Plus, Trash2, Upload, Wifi } from "lucide-react";
+import { Check, Loader2, LogIn, MoreHorizontal, Pencil, Plus, Trash2, Upload, Wifi } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { cn } from "cn";
@@ -8,6 +8,7 @@ import { useAppStore } from "@/stores/app-store";
 import { useConnectionsStore } from "@/stores/connections-store";
 import { errMsg } from "@/utils/async";
 import { TruncatedText } from "@/components/shared/TruncatedText";
+import { SubscriptionLoginDialog } from "@/components/subscriptions/SubscriptionLoginDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +39,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import type { CredentialReferences, CredentialSecretField, ProviderCredential, ConnectivityCheckResult } from "@/types";
+import type {
+  CredentialReferences,
+  CredentialSecretField,
+  ProviderCredential,
+  ConnectivityCheckResult,
+  SubscriptionLoginKind,
+} from "@/types";
 
 // 已知 secret 凭证字段 → 前端 i18n label key；未知 key 回退后端提供的 label。
 const SECRET_FIELD_LABEL_KEY: Record<string, string> = {
@@ -77,6 +84,10 @@ interface Props {
   secretFieldGroups: string[][];
   /** 密钥增删改或切换生效密钥之后调用，供上层刷新状态与目录。 */
   onChanged?: () => void;
+  /** 订阅供应商：新增连线改成登录账号，编辑只能改名。 */
+  loginKind?: SubscriptionLoginKind | null;
+  /** 登录对话框标题里的供应商名 */
+  providerName?: string;
 }
 
 type DialogState = { mode: "add" } | { mode: "edit"; cred: ProviderCredential } | null;
@@ -92,6 +103,8 @@ export function CredentialList({
   secretFields,
   secretFieldGroups,
   onChanged,
+  loginKind = null,
+  providerName = providerId,
 }: Props) {
   const { t } = useTranslation(["dashboard", "common"]);
   const pushToast = useAppStore((s) => s.pushToast);
@@ -100,6 +113,7 @@ export function CredentialList({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [deleting, setDeleting] = useState<ProviderCredential | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
   const headingId = useId();
   const isVertex = providerId === "gemini-vertex";
 
@@ -157,10 +171,17 @@ export function CredentialList({
         <h3 id={headingId} className="text-base font-medium">
           {t("provider_credentials_title")}
         </h3>
-        <Button variant="outline" size="sm" className="ml-auto" onClick={() => setDialog({ mode: "add" })}>
-          <Plus data-icon="inline-start" />
-          {t("add_key")}
-        </Button>
+        {loginKind ? (
+          <Button variant="outline" size="sm" className="ml-auto" onClick={() => setSigningIn(true)}>
+            <LogIn data-icon="inline-start" />
+            {t("subscription_login_add_account")}
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="ml-auto" onClick={() => setDialog({ mode: "add" })}>
+            <Plus data-icon="inline-start" />
+            {t("add_key")}
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -203,15 +224,26 @@ export function CredentialList({
           cred={dialog.mode === "edit" ? dialog.cred : null}
           providerId={providerId}
           isVertex={isVertex}
-          supportsBaseUrl={supportsBaseUrl}
-          internationalBaseUrl={internationalBaseUrl}
-          secretFields={secretFields}
-          secretFieldGroups={secretFieldGroups}
+          // 订阅连线的凭证是登录换来的，只能改名
+          supportsBaseUrl={loginKind ? false : supportsBaseUrl}
+          internationalBaseUrl={loginKind ? null : internationalBaseUrl}
+          secretFields={loginKind ? [] : secretFields}
+          secretFieldGroups={loginKind ? [] : secretFieldGroups}
           onDone={() => {
             setDialog(null);
             void handleChanged();
           }}
           onCancel={() => setDialog(null)}
+        />
+      )}
+
+      {loginKind && (
+        <SubscriptionLoginDialog
+          providerId={providerId}
+          providerName={providerName}
+          open={signingIn}
+          onOpenChange={setSigningIn}
+          onSucceeded={() => void handleChanged()}
         />
       )}
 
