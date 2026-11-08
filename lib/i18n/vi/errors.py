@@ -78,6 +78,7 @@ MESSAGES = {
     # Lý do tác vụ thất bại (GenerationWorker lưu mã lỗi + tham số; tasks API kết xuất theo ngôn ngữ khi đọc)
     "task_fail_provider_unsupported_media": "Nhà cung cấp {provider_id} không hỗ trợ tạo {media_type}",
     "task_fail_provider_rejected": "Nhà cung cấp đã từ chối yêu cầu tạo này (HTTP {status})",
+    "task_fail_credential_not_found": "Kết nối đã chọn cho “{provider}” trong thiết lập đã bị xóa. Hãy chọn lại kết nối trong thiết lập.",
     "task_fail_dispatch_provider_requeue_failed": "Nhà cung cấp tác vụ đã đổi từ {claimed_provider_id} sang {actual_provider_id}, nhưng không thể đưa tác vụ trở lại hàng đợi để nhận khe mới; vui lòng thử lại",
     "task_fail_project_deleted_during_task": "Dự án đã bị xóa trong khi tác vụ đang chạy; kết quả tạo ra không được lưu",
     "task_fail_restart_lost_image": "Tác vụ ảnh bị gián đoạn khi dịch vụ khởi động lại và không thể tiếp tục; vui lòng thử lại thủ công để tránh bị tính phí trùng",
@@ -736,6 +737,8 @@ MESSAGES = {
     "collab_error_episode_source_derived": "Nguyên văn tập này được tạo từ kế hoạch chia tập, không sửa trực tiếp được",
     "collab_error_episode_source_empty": "Nguyên văn không được để trống",
     "collab_error_revision_conflict": "Kịch bản vừa bị thay đổi bởi thao tác khác, hãy thử lại sau",
+    "credential_in_use": "Vẫn còn {count} thiết lập dùng kết nối này. Hãy xác nhận trước khi xóa.",
+    "credential_not_for_provider": "Kết nối đã chọn không thuộc “{provider}” hoặc đã bị xóa. Hãy chọn lại kết nối.",
     "collab_error_generic": "Không lưu được nội dung này vào dự án: {detail}",
     "collab_error_invalid_settings": "Một thiết lập có giá trị sai định dạng nên chưa được lưu. Hãy kiểm tra tùy chọn bạn vừa đổi.",
     "claude_login_cli_not_found": "Không tìm thấy Claude CLI tích hợp, không thể đăng nhập gói đăng ký",

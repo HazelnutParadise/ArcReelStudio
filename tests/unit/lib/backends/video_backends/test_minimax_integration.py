@@ -8,6 +8,7 @@ import pytest
 
 from lib.backends.providers import PROVIDER_MINIMAX, PROVIDER_OPENAI
 from lib.catalog import query as catalog
+from lib.config.resolver import ProviderModel
 from tests.catalog_support import builtin_price
 from tests.fakes import captured_openai_clients
 
@@ -88,7 +89,7 @@ class TestFactoryWiring:
 
         resolver = MagicMock()
         session_cm = MagicMock()
-        session_cm.text_backend_for_task = AsyncMock(return_value=(PROVIDER_MINIMAX, "MiniMax-M2.7"))
+        session_cm.text_backend_for_task = AsyncMock(return_value=ProviderModel(PROVIDER_MINIMAX, "MiniMax-M2.7"))
         session_cm.provider_config_with_credential = AsyncMock(
             return_value=({"api_key": "sk-mm", "base_url": None}, None)
         )

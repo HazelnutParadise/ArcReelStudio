@@ -104,7 +104,7 @@ def _redigest(raw: dict[str, object], *, excluded: frozenset[str] = frozenset())
     ).hexdigest()
 
 
-def _checkpoint(project_path: Path) -> ReferenceSubmissionCheckpoint:
+def _checkpoint(project_path: Path, *, credential_id: int | None = None) -> ReferenceSubmissionCheckpoint:
     staged = stage_provider_media(project_path, "task-1", _stage_inputs(project_path))
     visual = _reference_visual_basis("E1U1")
     speech = ArtifactBasis.build(
@@ -153,6 +153,7 @@ def _checkpoint(project_path: Path) -> ReferenceSubmissionCheckpoint:
         ),
         media=staged,
         reference_audio_targets=(0,),
+        credential_id=credential_id,
     )
 
 
@@ -314,8 +315,9 @@ def test_checkpoint_round_trip_is_versioned_strict_and_self_authenticating(tmp_p
     assert restored.prompt_sha256 == "0a90e70b38c8a4b4675f11f2fca1da4324d41f12b15c9b6151581d41753c34b7"
     assert len(restored.request_digest) == 64
     assert restored.media[0].source_locator == "characters/Alice.png"
-    assert restored.schema_version == 5
+    assert restored.schema_version == 6
     assert restored.provider_asset_references == ()
+    assert restored.credential_id is None
     assert restored.legacy_narration is None
     assert "narration" not in json.loads(checkpoint.to_json())
     assert "execution_narration" not in checkpoint_version_metadata(restored)
@@ -429,6 +431,7 @@ def test_legacy_checkpoint_remains_resumable_without_inventing_artifact_basis(tm
     raw["schema_version"] = 1
     raw.pop("artifact_currency")
     raw.pop("provider_asset_references")
+    raw.pop("credential_id")
     raw["narration"] = _LEGACY_NARRATION
     _redigest(raw)
 
@@ -446,6 +449,7 @@ def test_visual_only_checkpoint_remains_resumable_but_cannot_claim_complete_vide
     raw["schema_version"] = 2
     raw.pop("artifact_currency")
     raw.pop("provider_asset_references")
+    raw.pop("credential_id")
     raw["artifact_visual_basis"] = {
         "kind": artifact_visual_basis["kind"],
         "kind_version": artifact_visual_basis["kind_version"],
@@ -470,6 +474,7 @@ def test_narration_recording_checkpoint_stays_resumable_with_complete_currency(t
     raw["schema_version"] = 3
     raw["narration"] = _LEGACY_NARRATION
     raw.pop("provider_asset_references")
+    raw.pop("credential_id")
     _redigest(raw)
 
     restored = ReferenceSubmissionCheckpoint.from_json(json.dumps(raw))
@@ -667,6 +672,7 @@ def test_v4_checkpoint_without_provider_asset_references_stays_resumable(tmp_pat
     raw = json.loads(_checkpoint(tmp_path / "demo").to_json())
     raw["schema_version"] = 4
     raw.pop("provider_asset_references")
+    raw.pop("credential_id")
     _redigest(raw)
 
     restored = ReferenceSubmissionCheckpoint.from_json(json.dumps(raw))
@@ -729,3 +735,28 @@ _CREATE_FIELDS = (
     "media",
     "reference_audio_targets",
 )
+
+
+def test_a_checkpoint_records_the_connection_the_job_was_submitted_with(tmp_path: Path) -> None:
+    pinned = _checkpoint(tmp_path / "demo", credential_id=12)
+
+    restored = ReferenceSubmissionCheckpoint.from_json(pinned.to_json())
+
+    assert restored.credential_id == 12
+    # 连线进摘要：改掉落盘的连线会被识破，不能偷换账号续跑
+    raw = json.loads(pinned.to_json())
+    raw["credential_id"] = 13
+    with pytest.raises(ValueError, match="request_digest"):
+        ReferenceSubmissionCheckpoint.from_json(json.dumps(raw))
+
+
+def test_a_checkpoint_from_before_connections_resumes_with_the_default(tmp_path: Path) -> None:
+    raw = json.loads(_checkpoint(tmp_path / "demo").to_json())
+    raw["schema_version"] = 5
+    raw.pop("credential_id")
+    _redigest(raw)
+
+    restored = ReferenceSubmissionCheckpoint.from_json(json.dumps(raw))
+
+    assert restored.schema_version == 5
+    assert restored.credential_id is None

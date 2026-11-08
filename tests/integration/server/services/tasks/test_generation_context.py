@@ -118,6 +118,7 @@ def fake_assemble(monkeypatch):
         generation_type=None,
         submitted_job=False,
         builtin_endpoint=None,
+        credential_id=None,
     ):
         calls.append((provider_id, media_type, model_id))
         return _FakeBackend(name=provider_id, model=model_id or "default-model")
@@ -306,6 +307,7 @@ class TestVideoLane:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             return _FakeBackend(name=provider_id, model="mystery-model")
 
@@ -345,6 +347,7 @@ class TestVideoLane:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             return _FakeBackend(name=provider_id, model="mystery-model")
 
@@ -392,6 +395,7 @@ class TestVideoLane:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             built_with.append(builtin_endpoint)
             # 构造完成到守卫写入之间，设置页把这个模型改挂 2.5 端点。
@@ -499,6 +503,7 @@ class TestActualIdentityQueries:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             # 模拟 load_custom_backend 的回退：请求 m-dead，实际构造出默认启用的 m-live
             return _FakeBackend(name=provider_id, model="m-live")
@@ -565,6 +570,7 @@ class TestVideoRequestFacts:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             async with db_engine.begin() as connection:
                 await connection.run_sync(SystemSetting.__table__.drop)
@@ -674,6 +680,7 @@ class TestVideoRequestFacts:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             return _FakeBackend(name=provider_id, model="m-live")
 
@@ -704,6 +711,7 @@ class TestVideoRequestFacts:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             return _FakeBackend(name=provider_id, model="mystery-model")
 
@@ -747,6 +755,7 @@ class TestAudioLane:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             return _FakeBackend(
                 name=provider_id, model=model_id or "default-model", voices=[VoiceOption(id="Cherry", label="Cherry")]
@@ -774,6 +783,7 @@ class TestAtomicFailure:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             if media_type == "video":
                 raise ValueError("video backend 构造失败")
@@ -828,6 +838,7 @@ class TestBackendCache:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             built.append(model_id)
             return _FakeBackend(name=provider_id, model=model_id or "default-model")
@@ -882,6 +893,7 @@ class TestBackendCache:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             built.append(model_id)
             return _FakeBackend(name=provider_id, model=model_id or SEEDREAM_LITE)
@@ -938,6 +950,7 @@ class TestBackendCache:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             seen.append(generation_type)
             return _FakeBackend(name=provider_id, model=f"{generation_type}-model")
@@ -969,6 +982,7 @@ class TestBackendCache:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             built_with.append(builtin_endpoint)
             return _FakeBackend(name=provider_id, model=model_id)
@@ -1003,6 +1017,7 @@ class TestBackendCache:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             backend = _FakeBackend(name=provider_id, model=model_id or "default-model")
             built.append(backend)
@@ -1042,6 +1057,7 @@ class TestBackendCache:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             nonlocal construct_count
             construct_count += 1
@@ -1087,6 +1103,7 @@ class TestBackendCache:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             backend = _FakeBackend(name=provider_id, model=model_id or "default-model")
             built.append(backend)

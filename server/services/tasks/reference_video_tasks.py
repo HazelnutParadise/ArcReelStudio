@@ -652,6 +652,7 @@ async def execute_reference_video_task(
                     media=staged_media,
                     reference_audio_targets=audio_targets_tuple,
                     provider_asset_references=provider_asset_references,
+                    credential_id=video.provider_model.credential_id,
                 )
 
             async def _checkpoint_before_submit() -> Mapping[str, object]:

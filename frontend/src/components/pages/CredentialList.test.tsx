@@ -141,7 +141,26 @@ describe("pages/CredentialList", () => {
 
     fireEvent.click(within(await openConfirm()).getByRole("button", { name: "删除" }));
     await vi.waitFor(() => expect(onChanged).toHaveBeenCalled());
-    expect(deleteSpy).toHaveBeenCalledWith("dashscope", 1);
+    expect(deleteSpy).toHaveBeenCalledWith("dashscope", 1, { force: false });
+  });
+
+  it("lists the places that use a connection and switches them to the default when deleting", async () => {
+    vi.spyOn(API, "listCredentials").mockResolvedValue({ credentials: [mockCred()] });
+    vi.spyOn(API, "getCredentialReferences").mockResolvedValue({
+      settings: ["default_image_backend", "default_video_backend"],
+      projects: [{ name: "pa", title: "雨夜", settings: ["video_backend"] }],
+    });
+    const deleteSpy = vi.spyOn(API, "deleteCredential").mockResolvedValue();
+    renderList();
+
+    fireEvent.click(await screen.findByRole("button", { name: "「默认账号」的更多操作" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "删除" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "删除密钥「默认账号」？" });
+
+    expect(await within(dialog).findByText("2 项默认模型设置")).toBeInTheDocument();
+    expect(within(dialog).getByText("项目「雨夜」")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "删除" }));
+    await vi.waitFor(() => expect(deleteSpy).toHaveBeenCalledWith("dashscope", 1, { force: true }));
   });
 
   it("keeps the dialog open with the error when adding a key fails", async () => {

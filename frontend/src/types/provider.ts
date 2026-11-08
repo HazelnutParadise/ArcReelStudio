@@ -107,6 +107,12 @@ export interface ProviderCredential {
   created_at: string;
 }
 
+/** 指定了某个连线的全局模型字段与项目。 */
+export interface CredentialReferences {
+  settings: string[];
+  projects: { name: string; title: string | null; settings: string[] }[];
+}
+
 export type CallType = "image" | "video" | "text" | "audio";
 
 /** 价格摘要里一个计费项的单价范围；`per` 是单价对应的计数量（每百万 token 为 1000000，每张、每秒为 1）。 */

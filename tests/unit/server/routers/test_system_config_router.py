@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from lib.catalog import query as catalog
 from lib.catalog.builtin_models import disabled_without_state
 from lib.catalog.errors import ModelNotInCatalogError
+from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS
 from lib.config.service import ConfigService, ProviderStatus
 from lib.db import get_async_session
 from lib.db.base import Base
@@ -176,6 +177,8 @@ class TestGetSystemConfig:
             "narration_voice",
             "narration_speed",
             "market_github_proxy_prefix",
+            # 各模型字段同层的「连线」旁键
+            *(f"{key}_credential_id" for key in GLOBAL_MODEL_SETTING_KEYS),
         }
         assert set(settings.keys()) == expected_keys
 
@@ -396,6 +399,61 @@ class TestPatchSystemConfig:
             )
         assert res.status_code == 200
         assert res.json()["settings"]["default_video_backend_r2v"] == ""
+
+    def test_patch_stores_a_connection_for_the_selected_provider(self, monkeypatch):
+        checked: list[tuple[str, int | None]] = []
+
+        async def _accept(_session, backend_value, credential_id):
+            checked.append((backend_value, credential_id))
+            return credential_id
+
+        from server.services import default_model_settings
+
+        monkeypatch.setattr(default_model_settings, "validate_backend_credential", _accept)
+        mock_svc = _make_mock_svc()
+        with TestClient(self._make_patch_app(mock_svc)) as client:
+            res = client.patch(
+                "/api/v1/system/config",
+                json={
+                    "default_image_backend": "gemini-aistudio/gemini-3-pro",
+                    "default_image_backend_credential_id": 7,
+                },
+            )
+        assert res.status_code == 200
+        assert checked == [("gemini-aistudio/gemini-3-pro", 7)]
+        assert res.json()["settings"]["default_image_backend_credential_id"] == 7
+
+    def test_patch_rejects_a_connection_that_is_not_the_providers(self):
+        mock_svc = _make_mock_svc(settings={"default_image_backend": "gemini-aistudio/gemini-3-pro"})
+        with TestClient(self._make_patch_app(mock_svc)) as client:
+            res = client.patch("/api/v1/system/config", json={"default_image_backend_credential_id": 99})
+        assert res.status_code == 400
+
+    def test_switching_provider_without_a_new_connection_returns_to_the_default(self):
+        mock_svc = _make_mock_svc(
+            settings={
+                "default_image_backend": "gemini-aistudio/gemini-3-pro",
+                "default_image_backend_credential_id": "7",
+            }
+        )
+        with TestClient(self._make_patch_app(mock_svc)) as client:
+            res = client.patch("/api/v1/system/config", json={"default_image_backend": "openai/gpt-image-1"})
+        assert res.status_code == 200
+        assert res.json()["settings"]["default_image_backend_credential_id"] is None
+
+    def test_changing_only_the_model_keeps_the_connection(self):
+        mock_svc = _make_mock_svc(
+            settings={
+                "default_image_backend": "gemini-aistudio/gemini-3-pro",
+                "default_image_backend_credential_id": "7",
+            }
+        )
+        with TestClient(self._make_patch_app(mock_svc)) as client:
+            res = client.patch(
+                "/api/v1/system/config", json={"default_image_backend": "gemini-aistudio/gemini-3-flash"}
+            )
+        assert res.status_code == 200
+        assert res.json()["settings"]["default_image_backend_credential_id"] == 7
 
     def test_patch_rejects_non_video_model_in_video_bucket(self):
         mock_svc = _make_mock_svc()

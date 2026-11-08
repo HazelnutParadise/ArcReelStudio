@@ -170,6 +170,8 @@ def _expected_row(**overrides: Any) -> dict[str, Any]:
         "cost_amount": 0.0,
         "currency": "USD",
         "provider": "gemini",
+        # 测试里的 backend 不是经构造缝装出来的，没有连线记录
+        "credential_id": None,
         "usage_tokens": None,
         "input_tokens": None,
         "output_tokens": None,

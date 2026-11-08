@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
@@ -38,7 +37,12 @@ from lib.backends.http_status_errors import raise_for_status_redacted
 from lib.catalog import query as catalog
 from lib.catalog.errors import ModelNotInCatalogError
 from lib.catalog.lifecycle import Lifecycle, entry_lifecycle
-from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS, MODEL_SETTING_MEDIA_TYPES
+from lib.config.model_setting_keys import (
+    GLOBAL_MODEL_SETTING_KEYS,
+    MODEL_SETTING_MEDIA_TYPES,
+    credential_key,
+    parse_credential_id,
+)
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.config.repository import mask_secret
 from lib.config.resolver import ConfigResolver
@@ -52,7 +56,7 @@ from lib.market.sources import PROXY_PREFIX_SETTING
 from lib.speech.narration_config import parse_tts_backend
 from server.dependencies import get_config_service
 from server.i18n import Locale, Translator
-from server.services.backend_values import validate_backend_value
+from server.services.default_model_settings import apply_default_model_settings
 from server.services.project.model_references import project_model_references
 from server.services.project.narration_settings import default_narration_tts
 from server.services.tasks.generation_context import audio_backend_profile
@@ -479,6 +483,17 @@ class SystemConfigPatchRequest(BaseModel):
     default_image_backend_i2i: str | None = None
     default_text_backend: str | None = None
     default_audio_backend: str | None = None
+    # 各模型字段同层的「连线」旁键（见 lib.config.model_setting_keys）：指定用该供应商的哪一条凭证，null = 默认连线
+    default_video_backend_credential_id: int | None = None
+    default_video_backend_i2v_credential_id: int | None = None
+    default_video_backend_r2v_credential_id: int | None = None
+    default_image_backend_credential_id: int | None = None
+    default_image_backend_t2i_credential_id: int | None = None
+    default_image_backend_i2i_credential_id: int | None = None
+    default_text_backend_credential_id: int | None = None
+    default_audio_backend_credential_id: int | None = None
+    text_backend_simple_credential_id: int | None = None
+    text_backend_complex_credential_id: int | None = None
     narration_voice: str | None = None
     narration_speed: float | None = None
     # 市场源 GitHub raw 代理前缀：空串 = 直连
@@ -586,6 +601,10 @@ async def get_system_config(
         "text_backend_simple": all_s.get("text_backend_simple") or "",
         "text_backend_complex": all_s.get("text_backend_complex") or "",
         "market_github_proxy_prefix": all_s.get(PROXY_PREFIX_SETTING) or "",
+        **{
+            credential_key(key): parse_credential_id(all_s.get(credential_key(key)))
+            for key in GLOBAL_MODEL_SETTING_KEYS
+        },
     }
 
     options = await _build_options(svc, session, locale)
@@ -781,28 +800,8 @@ async def patch_system_config(
     for field_name in req.model_fields_set:
         patch[field_name] = getattr(req, field_name)
 
-    # Validate backend references (empty string = auto-resolve)
-    for backend_key in (
-        "default_video_backend",
-        "default_video_backend_i2v",
-        "default_video_backend_r2v",
-        "default_image_backend",
-        "default_image_backend_t2i",
-        "default_image_backend_i2i",
-        "default_text_backend",
-        "default_audio_backend",
-        "text_backend_simple",
-        "text_backend_complex",
-    ):
-        if backend_key in patch:
-            value = str(patch[backend_key] or "").strip()
-            if value:
-                validate_backend_value(value, backend_key)
-            await svc.set_setting(backend_key, value)
-
-    # 旁白音色：可配置字符串 id（照供应商文档填），空串 = 清除回落服务默认
-    if "narration_voice" in patch:
-        await svc.set_setting("narration_voice", str(patch["narration_voice"] or "").strip())
+    # 默认模型页的设置（模型、连线、旁白音色、语速、视频音轨、轮询超时）与协作写回共用一套校验
+    await apply_default_model_settings(session, svc, patch)
 
     # 市场源 GitHub raw 代理前缀：只拼在 raw.githubusercontent.com 地址前，须是带主机名、不含空白与控制字符、不含用户名与密码的
     # https 地址（该值经 GET 原样回显，不当作凭证存放），且不带查询串与 fragment（raw 地址按路径拼在前缀之后）；空串 = 清除
@@ -812,29 +811,8 @@ async def patch_system_config(
             raise UnprocessableError("market_github_proxy_prefix_invalid")
         await svc.set_setting(PROXY_PREFIX_SETTING, prefix)
 
-    # 旁白语速：仅做正有限数卫生校验（拒绝 0/负数/inf/nan），具体取值范围由各供应商自行约束；null = 清除
-    if "narration_speed" in patch:
-        speed = patch["narration_speed"]
-        if speed is None:
-            await svc.set_setting("narration_speed", "")
-        else:
-            speed = float(speed)
-            if not math.isfinite(speed) or speed <= 0:
-                raise HTTPException(status_code=422, detail=_t("narration_speed_must_be_positive"))
-            await svc.set_setting("narration_speed", str(speed))
-
-    # Boolean settings
-    if "video_generate_audio" in patch and patch["video_generate_audio"] is not None:
-        await svc.set_setting("video_generate_audio", "true" if patch["video_generate_audio"] else "false")
-
     if "gpu_encoding_enabled" in patch and patch["gpu_encoding_enabled"] is not None:
         await svc.set_setting(GPU_ENCODING_SETTING, "true" if patch["gpu_encoding_enabled"] else "false")
-
-    if "video_poll_timeout_seconds" in patch and patch["video_poll_timeout_seconds"] is not None:
-        try:
-            await svc.set_video_poll_timeout_seconds(patch["video_poll_timeout_seconds"])
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=_t("video_poll_timeout_minimum")) from exc
 
     # Anthropic API key (secret)
     if "anthropic_api_key" in patch:

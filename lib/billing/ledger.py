@@ -204,12 +204,15 @@ class Ledger:
         purpose: CallPurpose | None = None,
         session_id: str | None = None,
         inputs: object | None = None,
+        credential_id: int | None = None,
     ) -> AsyncGenerator[LedgerCall]:
         """记账括号：进入落 pending，块内 ``call.success(result)`` 声明成功。
 
         退出语义：``CancelledError`` 结算为 cancelled（零费用）后原样重抛；``Exception`` 翻
         failed 后原样重抛；正常退出但未声明成功抛 ``RuntimeError``；声明成功则以 backend 结果
         对象结算翻 success。取消落在进入时的开账写入上，同样等 pending 行落库后结算为 cancelled 再重抛。
+
+        ``credential_id`` 是这次调用实际用的连线（见 ``assembled_credential_id``），用于按账号看用量。
         """
         call_id = await self._open_call(
             project_name=project_name,
@@ -227,6 +230,7 @@ class Ledger:
             purpose=purpose,
             session_id=session_id,
             inputs=inputs,
+            credential_id=credential_id,
         )
         call = LedgerCall(call_id, call_type=call_type)
         try:

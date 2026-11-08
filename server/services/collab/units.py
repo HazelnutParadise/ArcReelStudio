@@ -15,6 +15,7 @@ from typing import Any, Literal, Protocol, TypeIs
 from pydantic import ValidationError
 
 from lib.agent.agent_memory_store import AgentMemoryStore
+from lib.config.service import ConfigService
 from lib.db.base import DEFAULT_USER_ID
 from lib.db.repositories.asset_repo import AssetRepository
 from lib.episode.episode_ledger import parse_positive_episode_num
@@ -27,6 +28,11 @@ from lib.project.asset_types import ASSET_SPECS, asset_name_comparison_key, reso
 from lib.project.project_manager import ProjectManager
 from lib.script.script_batch_edit import ScriptBatchEditCommand, ScriptBatchEditor, script_revision
 from server.services.asset_library_fields import LIBRARY_ASSET_TEXT_FIELDS, update_library_asset_fields
+from server.services.default_model_settings import (
+    DEFAULT_MODEL_SETTING_FIELDS,
+    apply_default_model_settings,
+    read_default_model_settings,
+)
 from server.services.project.project_settings_patch import ProjectSettingsPatch, apply_project_settings_patch
 
 
@@ -625,6 +631,44 @@ class LibraryAssetUnit:
                 raise UnitWriteError(exc.key, params=exc.params) from exc
 
 
+# ── 全局默认模型 ─────────────────────────────────────────────────
+
+
+class DefaultModelSettingsUnit:
+    """全局设置的「默认模型」页：引用模型的字段与连线、旁白音色与语速、视频音轨、轮询超时。写回与系统设置接口同一套校验。"""
+
+    kind = "default_model_settings"
+    scope: Literal["global"] = "global"
+
+    def __init__(self, session_factory: Callable[[], Any] | None = None) -> None:
+        self._session_factory = session_factory
+
+    def _sessions(self) -> Any:
+        if self._session_factory is not None:
+            return self._session_factory()
+        from lib.db import async_session_factory
+
+        return async_session_factory()
+
+    async def read(self, key: str) -> dict[str, Any]:
+        if key:
+            raise UnitNotFoundError(key)
+        async with self._sessions() as session:
+            return await read_default_model_settings(ConfigService(session))
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        values = {field: changes[field] for field in DEFAULT_MODEL_SETTING_FIELDS if field in changes}
+        if not values:
+            return
+        async with self._sessions() as session:
+            try:
+                await apply_default_model_settings(session, ConfigService(session), values)
+            except ApiError as exc:
+                await session.rollback()
+                raise UnitWriteError(exc.key, params=exc.params) from exc
+            await session.commit()
+
+
 #: 属于项目的单元：读写是同步的文件操作
 PROJECT_UNIT_SPECS: dict[str, UnitSpec] = {
     spec.kind: spec
@@ -643,7 +687,7 @@ PROJECT_UNIT_SPECS: dict[str, UnitSpec] = {
 
 #: 不属于项目的单元：房间的 project 为空串
 GLOBAL_UNIT_SPECS: dict[str, GlobalUnitSpec] = {
-    spec.kind: spec for spec in (WorkspaceMemoryFileUnit(), LibraryAssetUnit())
+    spec.kind: spec for spec in (WorkspaceMemoryFileUnit(), LibraryAssetUnit(), DefaultModelSettingsUnit())
 }
 
 UNIT_SPECS: dict[str, AnyUnitSpec] = {**PROJECT_UNIT_SPECS, **GLOBAL_UNIT_SPECS}

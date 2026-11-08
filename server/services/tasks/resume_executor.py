@@ -13,6 +13,7 @@ from typing import Any
 
 from arcreel_market_core.video_backend_contract import ResumeEndpointChangedError
 from lib.backends.resume_guard import resume_guard_accepts
+from lib.config.model_setting_keys import credential_key
 from lib.config.service import DEFAULT_VIDEO_POLL_TIMEOUT_SECONDS
 from lib.generation.deleted_target import GenerationTargetDeletedError
 from lib.project.project_change_hints import project_change_source
@@ -119,9 +120,11 @@ async def execute_resume_video_task(
         raise NotImplementedError(f"resume not supported for task_type={task_type}")
 
     checkpoint = load_task_video_checkpoint(task)
-    resolver_payload = {
-        f"video_provider_{checkpoint.generation_type}": f"{checkpoint.provider_id}/{checkpoint.provider_model_id}"
-    }
+    pinned_key = f"video_provider_{checkpoint.generation_type}"
+    resolver_payload: dict[str, object] = {pinned_key: f"{checkpoint.provider_id}/{checkpoint.provider_model_id}"}
+    # 厂商侧的任务绑在提交时的账号上：用同一个连线轮询，连线被删除时明确失败，不换账号
+    if checkpoint.credential_id is not None:
+        resolver_payload[credential_key(pinned_key)] = checkpoint.credential_id
     # 厂商侧的任务已经提交（可能已经计费），续跑只轮询它：模型在提交之后下线，结果也要照常取回。
     video_request = VideoLaneRequest(generation_type=checkpoint.generation_type, submitted_job=True)
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { type ComponentType, useEffect, useMemo } from "react";
 import { useSearch } from "wouter";
 import {
   AlertTriangle,
@@ -10,6 +10,7 @@ import {
   HardDrive,
   Info,
   KeyRound,
+  KeySquare,
   Plug,
   ScrollText,
   SlidersHorizontal,
@@ -37,6 +38,7 @@ import { AssetLibrarySection } from "./settings/asset-library/AssetLibrarySectio
 import { AccessTokensSection } from "./settings/agent-access/AccessTokensSection";
 import { ExternalAgentSection } from "./settings/agent-access/ExternalAgentSection";
 import { ConfigIssueNotice } from "./settings/ConfigIssueNotice";
+import { ConnectionCenterSection } from "./settings/ConnectionCenterSection";
 import { EndpointsSection } from "./settings/endpoints/EndpointsSection";
 import { GeneralSection } from "./settings/GeneralSection";
 import { MarketSection } from "./settings/market/MarketSection";
@@ -51,6 +53,7 @@ interface SectionDef {
 
 const SECTIONS: Record<SettingsSection, SectionDef> = {
   providers: { labelKey: "dashboard:providers", icon: Plug, tier: "bleed" },
+  connections: { labelKey: "dashboard:connection_center_title", icon: KeySquare, tier: "constrained" },
   "default-models": { labelKey: "dashboard:settings_default_models", icon: Film, tier: "constrained" },
   endpoints: { labelKey: "dashboard:ce_section_title", icon: Waypoints, tier: "bleed" },
   "asset-library": { labelKey: "dashboard:settings_asset_library", icon: HardDrive, tier: "constrained" },
@@ -71,7 +74,7 @@ const SECTION_GROUPS: { id: string; labelKey?: string; sections: SettingsSection
   {
     id: "generation",
     labelKey: "dashboard:settings_group_generation",
-    sections: ["providers", "default-models", "endpoints", "asset-library"],
+    sections: ["providers", "connections", "default-models", "endpoints", "asset-library"],
   },
   {
     id: "agent",
@@ -154,35 +157,25 @@ export function SystemConfigPage() {
   );
 }
 
+const SECTION_CONTENT: Record<SettingsSection, ComponentType> = {
+  providers: ProviderSection,
+  connections: ConnectionCenterSection,
+  "default-models": MediaModelSection,
+  endpoints: EndpointsSection,
+  "asset-library": AssetLibrarySection,
+  "arcreel-agent": AgentConfigTab,
+  "agent-memory": AgentMemorySection,
+  "external-agent": ExternalAgentSection,
+  "access-tokens": AccessTokensSection,
+  market: MarketSection,
+  usage: UsageRecordsSection,
+  account: AccountSection,
+  general: GeneralSection,
+  "prompt-templates": PromptTemplatesSection,
+  about: AboutSection,
+};
+
 function SectionContent({ section }: { section: SettingsSection }) {
-  switch (section) {
-    case "providers":
-      return <ProviderSection />;
-    case "default-models":
-      return <MediaModelSection />;
-    case "endpoints":
-      return <EndpointsSection />;
-    case "asset-library":
-      return <AssetLibrarySection />;
-    case "arcreel-agent":
-      return <AgentConfigTab />;
-    case "agent-memory":
-      return <AgentMemorySection />;
-    case "external-agent":
-      return <ExternalAgentSection />;
-    case "access-tokens":
-      return <AccessTokensSection />;
-    case "market":
-      return <MarketSection />;
-    case "usage":
-      return <UsageRecordsSection />;
-    case "account":
-      return <AccountSection />;
-    case "general":
-      return <GeneralSection />;
-    case "prompt-templates":
-      return <PromptTemplatesSection />;
-    case "about":
-      return <AboutSection />;
-  }
+  const Content = SECTION_CONTENT[section];
+  return <Content />;
 }

@@ -1,4 +1,8 @@
-"""引用模型的设置字段名：全局 ``system_settings`` 与项目 ``project.json`` 各自哪些键的值是 ``provider/model``。"""
+"""引用模型的设置字段名：全局 ``system_settings`` 与项目 ``project.json`` 各自哪些键的值是 ``provider/model``。
+
+每个引用模型的字段旁边可以有一个同层的「连线」旁键 ``<字段>_credential_id``：指定用该供应商的哪一条凭证；
+没有时用该供应商的默认连线（``provider_credential.is_active``）。连线随取到模型的那一层走，不跨层混用。
+"""
 
 from __future__ import annotations
 
@@ -52,3 +56,27 @@ MODEL_SETTING_MEDIA_TYPES: dict[str, str] = {
     "text_backend_complex": "text",
     "default_text_backend": "text",
 }
+
+
+#: 「连线」旁键的后缀：``<引用模型的字段><后缀>`` 存所指定的凭证 id。
+CREDENTIAL_KEY_SUFFIX = "_credential_id"
+
+
+def credential_key(model_key: str) -> str:
+    """引用模型的字段对应的连线旁键名。"""
+    return f"{model_key}{CREDENTIAL_KEY_SUFFIX}"
+
+
+def parse_credential_id(raw: object) -> int | None:
+    """连线旁键的值 → 凭证 id；空值、非正整数一律为 None（用默认连线）。
+
+    全局设置是字符串键值，项目文件是 JSON，两种写法都接受。
+    """
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw if raw > 0 else None
+    if isinstance(raw, str) and raw.strip().isdigit():
+        value = int(raw.strip())
+        return value if value > 0 else None
+    return None

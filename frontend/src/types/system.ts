@@ -1,4 +1,4 @@
-export interface SystemConfigSettings {
+export interface SystemConfigSettings extends GlobalCredentialSettings {
   default_video_backend: string;
   default_video_backend_i2v?: string;
   default_video_backend_r2v?: string;
@@ -27,6 +27,24 @@ export interface SystemConfigSettings {
   /** 市场源 GitHub raw 代理前缀；空串即直连。 */
   market_github_proxy_prefix?: string;
 }
+
+/** 引用模型的全局字段；每个字段旁有同名加 `_credential_id` 的「连线」旁键。 */
+export const GLOBAL_MODEL_SETTING_KEYS = [
+  "default_video_backend",
+  "default_video_backend_i2v",
+  "default_video_backend_r2v",
+  "default_image_backend",
+  "default_image_backend_t2i",
+  "default_image_backend_i2i",
+  "default_text_backend",
+  "default_audio_backend",
+  "text_backend_simple",
+  "text_backend_complex",
+] as const;
+export type GlobalModelSettingKey = (typeof GLOBAL_MODEL_SETTING_KEYS)[number];
+/** 「连线」旁键：指定用该供应商的哪一条凭证，null = 默认连线。 */
+export type CredentialKey<K extends string> = `${K}_credential_id`;
+export type GlobalCredentialSettings = { [K in GlobalModelSettingKey as CredentialKey<K>]?: number | null };
 
 export interface SystemConfigOptions {
   video_backends: string[];
@@ -148,7 +166,7 @@ export interface OnboardingStatus {
   seen: boolean;
 }
 
-export interface SystemConfigPatch {
+export interface SystemConfigPatch extends GlobalCredentialSettings {
   default_video_backend?: string;
   default_video_backend_i2v?: string;
   default_video_backend_r2v?: string;

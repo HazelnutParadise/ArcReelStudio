@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InlineWarning } from "@/components/shared/InlineWarning";
 import { ModelLifecycleNotice, type ModelLifecycleNotices } from "@/components/shared/ModelLifecycleNotice";
+import { ConnectionSelect } from "@/components/shared/ConnectionSelect";
 import { ProviderModelSelect } from "@/components/shared/ProviderModelSelect";
 import type { BucketDimension, FilteredCandidate, GenerationTypeBucket } from "@/types/system";
 
@@ -54,6 +55,14 @@ export interface LayeredSubField {
   /** 默认层里有、这一项因能力不满足而没有列出的模型及原因（候选接口的 `filtered`），列在下拉末尾、不能选。 */
   filtered?: FilteredCandidate[];
   onChange: (next: string) => void;
+  /** 这一项的「连线」旁键；不传就不显示连线下拉。 */
+  connection?: ConnectionField;
+}
+
+/** 模型字段旁的「连线」：指定用该供应商的哪一个帐号，null = 默认连线。 */
+export interface ConnectionField {
+  value: number | null | undefined;
+  onChange: (next: number | null) => void;
 }
 
 export interface LayeredModelFieldsProps {
@@ -102,6 +111,8 @@ export interface LayeredModelFieldsProps {
   footnote?: React.ReactNode;
   /** 下线提示（候选接口的 `lifecycle`）：默认层与各细分项选中的模型即将下线或已下线时，在各自下拉下方提示。 */
   lifecycle?: ModelLifecycleNotices;
+  /** 默认层的「连线」旁键；不传就不显示连线下拉。 */
+  defaultConnection?: ConnectionField;
 }
 
 export function LayeredModelFields({
@@ -121,8 +132,9 @@ export function LayeredModelFields({
   subFieldsError,
   footnote,
   lifecycle,
+  defaultConnection,
 }: LayeredModelFieldsProps) {
-  const { t } = useTranslation(["templates", "common"]);
+  const { t } = useTranslation(["templates", "common", "dashboard"]);
   const fields = subFields ?? [];
   const unmetReason = (unmet: BucketDimension[]) =>
     unmet.length > 0
@@ -163,6 +175,14 @@ export function LayeredModelFields({
         aria-label={defaultLabel}
         renderOptionMeta={renderOptionMeta}
       />
+      {defaultConnection && (
+        <ConnectionSelect
+          backendValue={defaultValue}
+          value={defaultConnection.value}
+          onChange={defaultConnection.onChange}
+          label={t("dashboard:connection_field_label", { field: defaultLabel })}
+        />
+      )}
       <ModelLifecycleNotice
         value={defaultValue}
         notices={lifecycle}
@@ -222,6 +242,14 @@ export function LayeredModelFields({
                       }))}
                       unavailableLabel={t("model_bucket_filtered_group", { purpose: field.label })}
                     />
+                    {field.connection && (
+                      <ConnectionSelect
+                        backendValue={field.value}
+                        value={field.connection.value}
+                        onChange={field.connection.onChange}
+                        label={t("dashboard:connection_field_label", { field: field.label })}
+                      />
+                    )}
                     <ModelLifecycleNotice
                       value={field.value}
                       notices={lifecycle}

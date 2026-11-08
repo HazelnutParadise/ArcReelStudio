@@ -48,12 +48,13 @@ from lib.db.repositories.credential_repository import CredentialRepository
 from lib.db.repositories.custom_provider_repo import CustomProviderRepository
 from lib.generation.video_request_facts import ResolutionOverride, VideoRequestFactsError
 from lib.i18n import render_message, translate_or
-from lib.infra.api_errors import BadRequestError, UnprocessableError
+from lib.infra.api_errors import BadRequestError, ConflictError, UnprocessableError
 from lib.infra.async_thread import run_sync_transaction
 from lib.infra.data_root_layout import DataRootLayout
 from server.dependencies import get_config_service
 from server.i18n import Locale, Translator, load_display_names_or_builtin
 from server.routers._validators import split_video_backend_query
+from server.services.credential_references import clear_credential_references, find_credential_references
 from server.services.tasks.video_caps import capability_request_facts, duration_constraints_payload
 
 if TYPE_CHECKING:
@@ -449,6 +450,13 @@ async def list_providers(
     return ProvidersListResponse(providers=providers)
 
 
+@router.get("/credentials", response_model=CredentialListResponse)
+async def list_all_credentials(session: AsyncSession = Depends(get_async_session)) -> CredentialListResponse:
+    """全部内置供应商的连线（连线中心与各处的连线下拉用）；按供应商、建立时间排序。"""
+    creds = await CredentialRepository(session).list_all()
+    return CredentialListResponse(credentials=[_cred_to_response(c) for c in creds])
+
+
 @router.get("/video-capabilities")
 async def get_model_video_capabilities(
     _t: Translator,
@@ -731,6 +739,38 @@ async def update_credential(
     return Response(status_code=204)
 
 
+class CredentialProjectReferenceOut(BaseModel):
+    name: str
+    title: str | None
+    settings: list[str]
+
+
+class CredentialReferencesOut(BaseModel):
+    """指定了这个连线的全局模型字段与项目；删除前提示用。"""
+
+    settings: list[str]
+    projects: list[CredentialProjectReferenceOut]
+
+
+@router.get("/{provider_id}/credentials/{cred_id}/references", response_model=CredentialReferencesOut)
+async def get_credential_references(
+    provider_id: str,
+    cred_id: int,
+    _t: Translator,
+    session: AsyncSession = Depends(get_async_session),
+) -> CredentialReferencesOut:
+    """哪些设置指定了这个连线，供删除确认框列出。"""
+    _validate_provider(provider_id, _t)
+    await _get_credential_or_404(CredentialRepository(session), provider_id, cred_id, _t)
+    refs = await find_credential_references(session, cred_id)
+    return CredentialReferencesOut(
+        settings=list(refs.settings),
+        projects=[
+            CredentialProjectReferenceOut(name=p.name, title=p.title, settings=list(p.settings)) for p in refs.projects
+        ],
+    )
+
+
 @router.delete("/{provider_id}/credentials/{cred_id}", status_code=204)
 async def delete_credential(
     provider_id: str,
@@ -738,11 +778,18 @@ async def delete_credential(
     request: Request,
     _t: Translator,
     session: AsyncSession = Depends(get_async_session),
+    force: bool = Query(False, description="仍有设置指定这个连线时也删除，并把它们改回默认连线"),
 ) -> Response:
     _validate_provider(provider_id, _t)
     repo = CredentialRepository(session)
     cred = await _get_credential_or_404(repo, provider_id, cred_id, _t)
+    refs = await find_credential_references(session, cred_id)
+    if refs.in_use and not force:
+        # 先列出指定了它的设置让人确认；已提交的视频任务续跑时找不到连线会明确失败，不换账号
+        raise ConflictError("credential_in_use", count=len(refs.settings) + len(refs.projects))
     cred_path = cred.credentials_file()  # 在 delete 前保存，避免 ORM 对象过期后无法访问
+    if refs.in_use:
+        await clear_credential_references(session, cred_id)
     await repo.delete(cred_id)
     await session.commit()
     await _invalidate_caches(request)

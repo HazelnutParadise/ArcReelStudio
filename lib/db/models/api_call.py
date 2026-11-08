@@ -48,6 +48,8 @@ class ApiCall(TimestampMixin, UserOwnedMixin, Base):
     cost_amount: Mapped[float | None] = mapped_column(Float, nullable=True, server_default="0.0")
     currency: Mapped[str] = mapped_column(String, server_default="USD")
     provider: Mapped[str] = mapped_column(String, server_default="gemini")
+    # 实际用的连线（provider_credential.id）；自定义供应商与没有凭证记录时为 NULL。历史快照，不设外键。
+    credential_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     usage_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)

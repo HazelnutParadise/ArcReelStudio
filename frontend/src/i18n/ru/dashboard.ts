@@ -4663,4 +4663,22 @@ export default {
   'presence_title': 'Также в этом проекте',
   'presence_view_episode': 'Смотрит серию {{episode}}',
   'presence_view_project': 'В проекте',
+  'connection_label': 'Подключение',
+  'connection_default': 'Подключение по умолчанию',
+  'connection_default_named': 'По умолчанию ({{name}})',
+  'connection_missing': 'Удалённое подключение',
+  'connection_field_label': 'Подключение для «{{field}}»',
+  'connection_center_title': 'Подключения',
+  'connection_center_desc':
+    'Все аккаунты и ключи поставщиков в одном месте. У поставщика может быть несколько подключений: каждое место, где используется модель, может выбрать своё, остальные используют подключение поставщика по умолчанию.',
+  'connection_center_add': 'Добавить подключение',
+  'connection_center_empty': 'Подключений пока нет. Добавьте аккаунт или ключ поставщика, чтобы начать генерацию.',
+  'connection_center_count': 'Подключений: {{count}}',
+  'connection_center_manage': 'Управлять',
+  'connection_center_make_default': 'Сделать основным',
+  'connection_center_delete': 'Удалить {{name}}',
+  'credential_delete_in_use_intro':
+    'Это подключение выбрано в следующих местах. После удаления там будет использоваться подключение поставщика по умолчанию:',
+  'credential_delete_in_use_global': 'Настроек моделей по умолчанию: {{count}}',
+  'credential_delete_in_use_project': 'Проект «{{name}}»',
 } satisfies Record<keyof typeof enDashboard, string> & Record<string, string>;

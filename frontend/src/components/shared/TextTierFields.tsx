@@ -9,6 +9,9 @@ export interface TextTierValue {
   complex: string;
 }
 
+/** 各档的「连线」旁键：指定用该供应商的哪一个帐号，null = 默认连线。 */
+export type TextTierConnections = Record<keyof TextTierValue, number | null | undefined>;
+
 /** 折叠区内的细分档位；「默认模型」是默认层、不在其中。 */
 const SUB_TIERS = [
   { key: "simple", labelKey: "text_tier_simple_label", captionKey: "text_tier_simple_caption" },
@@ -40,6 +43,8 @@ export interface TextTierFieldsProps {
   showTiers?: boolean;
   /** 下线提示（候选接口的 `lifecycle`）；各档都按默认层取切换目标，文本模型没有任务类型桶。 */
   lifecycle?: ModelLifecycleNotices;
+  /** 各档的连线；不传就不显示连线下拉（创建向导）。 */
+  connections?: { value: TextTierConnections; onChange: (next: TextTierConnections) => void };
 }
 
 /**
@@ -59,8 +64,15 @@ export function TextTierFields({
   auto,
   showTiers = true,
   lifecycle,
+  connections,
 }: TextTierFieldsProps) {
   const { t } = useTranslation("templates");
+
+  const connectionFor = (key: keyof TextTierValue) =>
+    connections && {
+      value: connections.value[key],
+      onChange: (next: number | null) => connections.onChange({ ...connections.value, [key]: next }),
+    };
 
   const subFields: LayeredSubField[] = SUB_TIERS.map(({ key, labelKey, captionKey }) => ({
     key,
@@ -71,6 +83,7 @@ export function TextTierFields({
     effective: fallbacks?.[key] || undefined,
     auto,
     onChange: (next: string) => onChange({ ...value, [key]: next }),
+    connection: connectionFor(key),
   }));
 
   return (
@@ -87,6 +100,7 @@ export function TextTierFields({
       modelNames={modelNames}
       subFields={showTiers ? subFields : undefined}
       lifecycle={lifecycle}
+      defaultConnection={connectionFor("default")}
       footnote={
         <p className="border-t border-border pt-3 text-xs text-muted-foreground">{t("text_tier_agent_boundary")}</p>
       }

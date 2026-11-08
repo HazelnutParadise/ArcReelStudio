@@ -48,6 +48,12 @@ class CredentialRepository(BaseRepository):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def list_all(self) -> list[ProviderCredential]:
+        """全部内置供应商的凭证（连线），按供应商、建立时间排序。"""
+        stmt = select(ProviderCredential).order_by(ProviderCredential.provider, ProviderCredential.created_at)
+        result = await self.session.execute(stmt)
+        return list(result.scalars())
+
     async def list_by_provider(self, provider: str) -> list[ProviderCredential]:
         stmt = (
             select(ProviderCredential)

@@ -31,9 +31,13 @@ logger = logging.getLogger(__name__)
 ProviderMediaRole = Literal["reference_image", "reference_audio", "start_image", "end_image"]
 ReferenceGenerationType = Literal["i2v", "r2v"]
 
-_SCHEMA_VERSION = 5
+_SCHEMA_VERSION = 6
 #: 版本记录 ``execution_checkpoint_schema_version`` 的当前值，供补写来源的迁移与写侧共用一个字面量。
 CHECKPOINT_SCHEMA_VERSION = _SCHEMA_VERSION
+#: 记录供应商素材引用、还没有记录连线（凭证）的检查点。
+_ASSET_REFERENCE_SCHEMA_VERSION = 5
+#: 记录供应商素材引用的检查点版本。
+_ASSET_REFERENCE_SCHEMA_VERSIONS = frozenset({_ASSET_REFERENCE_SCHEMA_VERSION, _SCHEMA_VERSION})
 #: 不再记录旁白交付事实、也还没有记录供应商素材引用的检查点。
 _NO_NARRATION_SCHEMA_VERSION = 4
 #: 带完整产物时效事实、并且仍记录旁白交付事实的检查点。
@@ -42,7 +46,7 @@ _VISUAL_BASIS_SCHEMA_VERSION = 2
 _LEGACY_SCHEMA_VERSION = 1
 #: 带完整产物时效事实的检查点版本；版本记录按它们判断来源是否完整。
 CURRENCY_CHECKPOINT_SCHEMA_VERSIONS = frozenset(
-    {_NARRATION_CURRENCY_SCHEMA_VERSION, _NO_NARRATION_SCHEMA_VERSION, _SCHEMA_VERSION}
+    {_NARRATION_CURRENCY_SCHEMA_VERSION, _NO_NARRATION_SCHEMA_VERSION, _ASSET_REFERENCE_SCHEMA_VERSION, _SCHEMA_VERSION}
 )
 _SUPPORTED_SCHEMA_VERSIONS = frozenset(
     {
@@ -50,6 +54,7 @@ _SUPPORTED_SCHEMA_VERSIONS = frozenset(
         _VISUAL_BASIS_SCHEMA_VERSION,
         _NARRATION_CURRENCY_SCHEMA_VERSION,
         _NO_NARRATION_SCHEMA_VERSION,
+        _ASSET_REFERENCE_SCHEMA_VERSION,
         _SCHEMA_VERSION,
     }
 )
@@ -539,6 +544,9 @@ class _VideoSubmissionCheckpoint:
     #: schema v5 起记录：以供应商素材引用代替图片内容发出的参考图，按 ``media_index`` 升序。
     provider_asset_references: tuple[ProviderAssetReference, ...]
     request_digest: str
+    #: schema v6 起记录：提交时用的连线（``provider_credential.id``），None 是供应商的默认连线或自定义供应商。
+    #: 续跑必须用同一个账号轮询；更早的版本读成 None。
+    credential_id: int | None = None
 
     _LEGACY_FIELDS = frozenset(
         {
@@ -571,7 +579,8 @@ class _VideoSubmissionCheckpoint:
     _VISUAL_BASIS_FIELDS = _LEGACY_FIELDS | {"artifact_visual_basis"}
     _NARRATION_CURRENCY_FIELDS = _LEGACY_FIELDS | {"artifact_currency"}
     _NO_NARRATION_FIELDS = _NARRATION_CURRENCY_FIELDS - {"narration"}
-    _FIELDS = _NO_NARRATION_FIELDS | {"provider_asset_references"}
+    _ASSET_REFERENCE_FIELDS = _NO_NARRATION_FIELDS | {"provider_asset_references"}
+    _FIELDS = _ASSET_REFERENCE_FIELDS | {"credential_id"}
 
     @property
     def artifact_episode(self) -> int | None:
@@ -654,12 +663,16 @@ class _VideoSubmissionCheckpoint:
                 raise ValueError("artifact currency visual kind does not match checkpoint kind")
         elif self.artifact_currency is not None:
             raise ValueError("older checkpoint cannot carry complete artifact currency facts")
-        if self.schema_version in (_NO_NARRATION_SCHEMA_VERSION, _SCHEMA_VERSION):
+        if self.schema_version in (_NO_NARRATION_SCHEMA_VERSION, *_ASSET_REFERENCE_SCHEMA_VERSIONS):
             if self.legacy_narration is not None:
                 raise ValueError("current checkpoint schema does not record narration delivery")
         elif not isinstance(self.legacy_narration, dict):
             raise ValueError("older checkpoint requires its recorded narration facts")
         self._validate_provider_asset_references()
+        if self.credential_id is not None and (
+            self.schema_version != _SCHEMA_VERSION or not is_int(self.credential_id, minimum=1)
+        ):
+            raise ValueError("credential_id must be a positive integer recorded by the current schema")
         if tuple(item.index for item in self.media) != tuple(range(len(self.media))):
             raise ValueError("provider media indexes must be contiguous and ordered")
         expected_prefix = f".arcreel/tasks/{self.task_id}/provider_media/"
@@ -694,7 +707,7 @@ class _VideoSubmissionCheckpoint:
 
     def _validate_provider_asset_references(self) -> None:
         refs = self.provider_asset_references
-        if self.schema_version != _SCHEMA_VERSION:
+        if self.schema_version not in _ASSET_REFERENCE_SCHEMA_VERSIONS:
             if refs:
                 raise ValueError("older checkpoint cannot carry provider asset references")
             return
@@ -734,8 +747,10 @@ class _VideoSubmissionCheckpoint:
         }
         if self.legacy_narration is not None:
             payload["narration"] = self.legacy_narration
-        if self.schema_version == _SCHEMA_VERSION:
+        if self.schema_version in _ASSET_REFERENCE_SCHEMA_VERSIONS:
             payload["provider_asset_references"] = [ref.to_dict() for ref in self.provider_asset_references]
+        if self.schema_version == _SCHEMA_VERSION:
+            payload["credential_id"] = self.credential_id
         if self.schema_version == _VISUAL_BASIS_SCHEMA_VERSION:
             assert self.legacy_artifact_visual_basis is not None
             payload["artifact_visual_basis"] = self.legacy_artifact_visual_basis.to_dict()
@@ -786,6 +801,7 @@ class _VideoSubmissionCheckpoint:
         media: tuple[StagedProviderMedia, ...],
         reference_audio_targets: tuple[int, ...] | None,
         provider_asset_references: tuple[ProviderAssetReference, ...] = (),
+        credential_id: int | None = None,
     ) -> Self:
         prompt_sha256 = _sha256_bytes(prompt.encode("utf-8"))
         values: dict[str, object] = {
@@ -813,6 +829,7 @@ class _VideoSubmissionCheckpoint:
             "media": [item.to_dict() for item in media],
             "reference_audio_targets": list(reference_audio_targets) if reference_audio_targets is not None else None,
             "provider_asset_references": [ref.to_dict() for ref in provider_asset_references],
+            "credential_id": credential_id,
         }
         request_digest = canonical_json_digest(values)
         return cls(
@@ -843,6 +860,7 @@ class _VideoSubmissionCheckpoint:
             reference_audio_targets=reference_audio_targets,
             provider_asset_references=provider_asset_references,
             request_digest=request_digest,
+            credential_id=credential_id,
         )
 
     @classmethod
@@ -874,6 +892,8 @@ class _VideoSubmissionCheckpoint:
                 if schema_version == _NARRATION_CURRENCY_SCHEMA_VERSION
                 else cls._NO_NARRATION_FIELDS
                 if schema_version == _NO_NARRATION_SCHEMA_VERSION
+                else cls._ASSET_REFERENCE_FIELDS
+                if schema_version == _ASSET_REFERENCE_SCHEMA_VERSION
                 else cls._FIELDS
             ),
             "checkpoint",
@@ -923,6 +943,7 @@ class _VideoSubmissionCheckpoint:
             reference_audio_targets=tuple(targets) if targets is not None else None,
             provider_asset_references=tuple(ProviderAssetReference.from_dict(item) for item in asset_refs),
             request_digest=raw["request_digest"],
+            credential_id=raw.get("credential_id"),
         )
 
 

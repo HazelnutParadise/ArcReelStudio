@@ -851,6 +851,7 @@ class TestGetOrCreateAudioBackend:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             calls.append((provider_id, media_type, model_id))
             return sentinel
@@ -879,6 +880,7 @@ class TestGetOrCreateAudioBackend:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             created.append((provider_id, media_type, model_id))
             return sentinel
@@ -907,6 +909,7 @@ class TestGetOrCreateAudioBackend:
             generation_type=None,
             submitted_job=False,
             builtin_endpoint=None,
+            credential_id=None,
         ):
             return SimpleNamespace(provider_id=provider_id, media_type=media_type, model_id=model_id)
 

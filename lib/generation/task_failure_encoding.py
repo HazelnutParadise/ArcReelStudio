@@ -18,7 +18,7 @@ from lib.backends.image_backends.base import ImageCapabilityError, ImageOutputFo
 from lib.backends.provider_assets import ProviderInputImageRejectedError
 from lib.billing.call_failure import CallErrorCode, classify_call_failure
 from lib.catalog.errors import ModelNotInCatalogError
-from lib.config.resolver import ImageBucketCapabilityError, VideoBucketCapabilityError
+from lib.config.resolver import CredentialNotFoundError, ImageBucketCapabilityError, VideoBucketCapabilityError
 from lib.custom_provider.comfyui.failures import ComfyuiError
 from lib.custom_provider.declarative_backend import DeclarativeRuntimeError
 from lib.generation.task_failure import encode_failure
@@ -43,6 +43,8 @@ def encode_task_failure_message(exc: Exception) -> str:
         return _try_encode_failure(exc.key, exc.params) or encode_failure("script_edit_error")
     if isinstance(exc, ApiError):
         return _try_encode_failure(exc.key, exc.params) or str(exc)
+    if isinstance(exc, CredentialNotFoundError):
+        return _try_encode_failure("credential_not_found", {"provider": exc.provider_id}) or str(exc)
     if isinstance(exc, ProviderRejectedError):
         # 上游确定性 4xx：状态码与脱敏摘要各占一个参数。摘要是上游原文，不进译文模板——
         # 读侧按 error_params 里的独立字段原样展示，只有外层措辞随 Accept-Language 变。

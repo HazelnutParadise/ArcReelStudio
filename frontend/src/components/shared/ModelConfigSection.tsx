@@ -20,7 +20,12 @@ import {
 } from "@/utils/provider-models";
 import { isContinuousIntegerRange } from "@/utils/duration_format";
 import { ResolutionPicker } from "./ResolutionPicker";
-import { LayeredModelFields, useGenerationTypeBucketLabels, type LayeredSubField } from "./LayeredModelFields";
+import {
+  LayeredModelFields,
+  useGenerationTypeBucketLabels,
+  type ConnectionField,
+  type LayeredSubField,
+} from "./LayeredModelFields";
 import { degradeSubFieldsToSaved, effectiveModel, executingImageModel, executingVideoModel } from "./model-layers";
 import { TextTierFields } from "./TextTierFields";
 import { CHANNEL_MODEL_FIELDS, channelOverridden, countModelOverrides, type ModelChannel } from "./model-overrides";
@@ -49,7 +54,25 @@ export interface ModelConfigValue {
   videoResolution: string | null;
   videoResolutions?: Record<string, string | null>;
   imageResolution: string | null;
+  /**
+   * 各模型字段旁的「连线」，键是项目文件里的字段名（如 `video_backend`）；null 或缺键即该供应商的默认连线。
+   * 省略时不显示连线下拉（创建向导）。
+   */
+  credentials?: Partial<Record<ProjectModelSettingKey, number | null>>;
 }
+
+/** 项目文件里引用模型的字段。 */
+export type ProjectModelSettingKey =
+  | "video_backend"
+  | "video_provider_i2v"
+  | "video_provider_r2v"
+  | "default_image_backend"
+  | "image_provider_t2i"
+  | "image_provider_i2i"
+  | "default_text_backend"
+  | "text_backend_simple"
+  | "text_backend_complex"
+  | "audio_backend";
 
 export interface ModelConfigSectionProps {
   value: ModelConfigValue;
@@ -239,6 +262,15 @@ export function ModelConfigSection({
     onVideoGenerateAudioChange?.(null);
   };
 
+  // 连线下拉只在调用方带上连线时出现（设置页）；创建向导不带
+  const connectionField = (key: ProjectModelSettingKey): ConnectionField | undefined =>
+    value.credentials
+      ? {
+          value: value.credentials[key],
+          onChange: (next) => onChange({ ...value, credentials: { ...value.credentials, [key]: next } }),
+        }
+      : undefined;
+
   const videoSubFields: LayeredSubField[] | undefined = showSubFields
     ? degradeSubFieldsToSaved(
         [
@@ -252,6 +284,7 @@ export function ModelConfigSection({
             effective: effectiveModel(value.videoBackend, globalDefaults.videoI2V, globalDefaults.video),
             auto: globalDefaults.auto?.i2v,
             onChange: (next: string) => applyVideoLayer({ videoProviderI2V: next }),
+            connection: connectionField("video_provider_i2v"),
           },
           {
             key: "r2v",
@@ -263,6 +296,7 @@ export function ModelConfigSection({
             effective: effectiveModel(value.videoBackend, globalDefaults.videoR2V, globalDefaults.video),
             auto: globalDefaults.auto?.r2v,
             onChange: (next: string) => applyVideoLayer({ videoProviderR2V: next }),
+            connection: connectionField("video_provider_r2v"),
           },
         ],
         !!mediaCandidates,
@@ -282,6 +316,7 @@ export function ModelConfigSection({
             effective: effectiveModel(value.imageBackendDefault, globalDefaults.imageT2I, globalDefaults.image),
             auto: globalDefaults.auto?.t2i,
             onChange: (next: string) => applyImageLayer({ imageBackendT2I: next }),
+            connection: connectionField("image_provider_t2i"),
           },
           {
             key: "i2i",
@@ -293,6 +328,7 @@ export function ModelConfigSection({
             effective: effectiveModel(value.imageBackendDefault, globalDefaults.imageI2I, globalDefaults.image),
             auto: globalDefaults.auto?.i2i,
             onChange: (next: string) => applyImageLayer({ imageBackendI2I: next }),
+            connection: connectionField("image_provider_i2i"),
           },
         ],
         !!mediaCandidates,
@@ -524,6 +560,7 @@ export function ModelConfigSection({
             defaultValue={value.videoBackend}
             defaultOptions={options.videoBackends}
             onDefaultChange={handleVideoChange}
+            defaultConnection={connectionField("video_backend")}
             emptyLabel={t("use_global_default")}
             emptyHint={globalDefaults.video ? t("current_global_default", { value: globalDefaults.video }) : undefined}
             defaultEffective={globalDefaults.video || undefined}
@@ -652,6 +689,7 @@ export function ModelConfigSection({
             defaultValue={value.imageBackendDefault}
             defaultOptions={options.imageBackends}
             onDefaultChange={handleImageChange}
+            defaultConnection={connectionField("default_image_backend")}
             emptyLabel={t("use_global_default")}
             emptyHint={globalDefaults.image ? t("current_global_default", { value: globalDefaults.image }) : undefined}
             defaultEffective={globalDefaults.image || undefined}
@@ -698,6 +736,25 @@ export function ModelConfigSection({
               complex: effectiveModel(value.textBackendDefault, globalDefaults.textComplex, globalDefaults.textDefault),
             }}
             auto={globalDefaults.auto?.text}
+            connections={
+              value.credentials && {
+                value: {
+                  default: value.credentials.default_text_backend,
+                  simple: value.credentials.text_backend_simple,
+                  complex: value.credentials.text_backend_complex,
+                },
+                onChange: (next) =>
+                  onChange({
+                    ...value,
+                    credentials: {
+                      ...value.credentials,
+                      default_text_backend: next.default ?? null,
+                      text_backend_simple: next.simple ?? null,
+                      text_backend_complex: next.complex ?? null,
+                    },
+                  }),
+              }
+            }
             showTiers={showSubFields}
             lifecycle={candidates?.lifecycle}
           />

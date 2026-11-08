@@ -1298,6 +1298,7 @@ async def execute_video_task(
                     artifact_currency=artifact_currency,
                     media=staged_media,
                     reference_audio_targets=None,
+                    credential_id=ctx.video.provider_model.credential_id,
                 )
 
             async def _checkpoint_before_submit() -> Mapping[str, object]:

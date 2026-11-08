@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from lib.references.reference_compression import CompressedRef, PayloadLimits, ReferenceSpec
 
 from lib.artifacts.version_manager import PaidVersionCommit, VersionManager
+from lib.backends.backend_assembly.assembler import assembled_credential_id
 from lib.backends.gemini_shared import RateLimiter
 from lib.backends.providers import CallPurpose, CallType, require_provider_pair
 from lib.billing.ledger import Ledger
@@ -743,6 +744,7 @@ class MediaGenerator:
                 aspect_ratio=aspect_ratio,
                 # 记账 provider 取解析层 provider_id；成对不变量保证 backend 非 None 时 provider_id 亦非 None。
                 provider=cast(str, self._image_provider_id),
+                credential_id=assembled_credential_id(self._image_backend),
                 user_id=self._user_id,
                 segment_id=segment_id_for("image", resource_type, resource_id),
                 output_path=_project_relative_path(self.project_path, output_path),
@@ -863,6 +865,7 @@ class MediaGenerator:
                 prompt=text,
                 # 记账 provider 取解析层 provider_id；成对不变量保证 backend 非 None 时 provider_id 亦非 None。
                 provider=cast(str, self._audio_provider_id),
+                credential_id=assembled_credential_id(self._audio_backend),
                 user_id=self._user_id,
                 segment_id=segment_id_for("audio", resource_type, resource_id),
                 output_path=_project_relative_path(self.project_path, output_path),
@@ -1122,6 +1125,7 @@ class MediaGenerator:
                 generate_audio=effective_generate_audio,
                 # 记账 provider 取解析层 provider_id；成对不变量保证 backend 非 None 时 provider_id 亦非 None。
                 provider=cast(str, self._video_provider_id),
+                credential_id=assembled_credential_id(self._video_backend),
                 user_id=self._user_id,
                 segment_id=segment_id_for("video", resource_type, resource_id),
                 output_path=_project_relative_path(self.project_path, output_path),

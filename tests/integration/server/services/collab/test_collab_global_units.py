@@ -93,3 +93,25 @@ async def test_workspace_memory_rejects_an_invalid_filename(tmp_path: Path) -> N
     unit = WorkspaceMemoryFileUnit(lambda: AgentMemoryStore(tmp_path / "memory"))
     with pytest.raises(UnitNotFoundError):
         await unit.read("../escape.md")
+
+
+async def test_default_model_settings_read_and_write_with_the_settings_api_rules(db_factory) -> None:
+    from server.services.collab.units import DefaultModelSettingsUnit
+
+    unit = DefaultModelSettingsUnit(db_factory)
+
+    await unit.write("", {"default_image_backend": "openai/gpt-image-1", "narration_speed": 1.2})
+
+    settings = await unit.read("")
+    assert settings["default_image_backend"] == "openai/gpt-image-1"
+    assert settings["narration_speed"] == 1.2
+    assert settings["default_image_backend_credential_id"] is None
+
+
+async def test_default_model_settings_reject_what_the_settings_api_rejects(db_factory) -> None:
+    from server.services.collab.units import DefaultModelSettingsUnit
+
+    with pytest.raises(UnitWriteError) as exc:
+        await DefaultModelSettingsUnit(db_factory).write("", {"narration_speed": -1})
+
+    assert exc.value.code == "narration_speed_must_be_positive"

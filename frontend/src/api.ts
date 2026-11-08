@@ -79,6 +79,7 @@ import type {
   ProviderConfigDetail,
   ConnectivityCheckResult,
   ProviderCredential,
+  CredentialReferences,
   UsageAgentSessionDetail,
   UsageAgentSessionPage,
   UsageRecordDetail,
@@ -3461,8 +3462,24 @@ class API {
     });
   }
 
-  static async deleteCredential(providerId: string, credId: number): Promise<void> {
-    return this.request(`/providers/${encodeURIComponent(providerId)}/credentials/${credId}`, { method: "DELETE" });
+  /** 全部内置供应商的连线，按供应商、建立时间排序；连线中心与各处的连线下拉用。 */
+  static async listAllCredentials(
+    options: { signal?: AbortSignal } = {},
+  ): Promise<{ credentials: ProviderCredential[] }> {
+    return this.request("/providers/credentials", { signal: options.signal });
+  }
+
+  /** 哪些全局设置与项目指定了这个连线，删除前列给使用者确认。 */
+  static async getCredentialReferences(providerId: string, credId: number): Promise<CredentialReferences> {
+    return this.request(`/providers/${encodeURIComponent(providerId)}/credentials/${credId}/references`);
+  }
+
+  /** 删除连线；还有设置指定它时服务端回 409，`force` 为真时一并把那些设置改回默认连线。 */
+  static async deleteCredential(providerId: string, credId: number, options: { force?: boolean } = {}): Promise<void> {
+    const query = options.force ? "?force=true" : "";
+    return this.request(`/providers/${encodeURIComponent(providerId)}/credentials/${credId}${query}`, {
+      method: "DELETE",
+    });
   }
 
   static async activateCredential(providerId: string, credId: number): Promise<void> {

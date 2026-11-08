@@ -4441,4 +4441,22 @@ export default {
   'presence_title': 'Cũng đang ở dự án này',
   'presence_view_episode': 'Đang xem tập {{episode}}',
   'presence_view_project': 'Trong dự án',
+  'connection_label': 'Kết nối',
+  'connection_default': 'Kết nối mặc định',
+  'connection_default_named': 'Mặc định ({{name}})',
+  'connection_missing': 'Kết nối đã bị xóa',
+  'connection_field_label': 'Kết nối cho {{field}}',
+  'connection_center_title': 'Trung tâm kết nối',
+  'connection_center_desc':
+    'Tất cả tài khoản và khóa của các nhà cung cấp ở cùng một nơi. Một nhà cung cấp có thể có nhiều kết nối; mỗi nơi dùng mô hình có thể chọn kết nối riêng, nơi không chọn sẽ dùng kết nối mặc định của nhà cung cấp.',
+  'connection_center_add': 'Thêm kết nối',
+  'connection_center_empty': 'Chưa có kết nối nào. Thêm tài khoản hoặc khóa cho nhà cung cấp để bắt đầu tạo.',
+  'connection_center_count': '{{count}} kết nối',
+  'connection_center_manage': 'Quản lý',
+  'connection_center_make_default': 'Đặt làm mặc định',
+  'connection_center_delete': 'Xóa {{name}}',
+  'credential_delete_in_use_intro':
+    'Những nơi sau đang dùng kết nối này. Sau khi xóa, chúng sẽ dùng kết nối mặc định của nhà cung cấp:',
+  'credential_delete_in_use_global': '{{count}} thiết lập mô hình mặc định',
+  'credential_delete_in_use_project': 'Dự án “{{name}}”',
 } satisfies Record<keyof typeof enDashboard, string>;

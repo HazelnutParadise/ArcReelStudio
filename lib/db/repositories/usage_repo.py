@@ -219,6 +219,7 @@ class UsageRepository(BaseRepository):
         purpose: CallPurpose | None = None,
         session_id: str | None = None,
         inputs: object | None = None,
+        credential_id: int | None = None,
     ) -> int:
         """落一条 pending 行并返回它的 id。
 
@@ -245,6 +246,7 @@ class UsageRepository(BaseRepository):
             purpose=purpose,
             session_id=session_id,
             inputs=inputs,
+            credential_id=credential_id,
         )
         self.session.add(row)
         await self.session.commit()

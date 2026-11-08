@@ -97,6 +97,8 @@ const RECORDINGS: Recording[] = [
     method: "GET",
     path: "/api/v1/providers/gemini-aistudio/credentials",
   },
+  // 连线中心与各处的连线下拉：全部内置供应商的连线（录制环境没有连线，下拉不显示）。
+  { file: "provider-credentials-all", method: "GET", path: "/api/v1/providers/credentials" },
   { file: "provider-gemini-aistudio-multiplier", method: "GET", path: "/api/v1/providers/gemini-aistudio/multiplier" },
   { file: "provider-gemini-aistudio-models", method: "GET", path: "/api/v1/providers/gemini-aistudio/models" },
   { file: "system-config-model-candidates", method: "GET", path: "/api/v1/system/config/model-candidates" },

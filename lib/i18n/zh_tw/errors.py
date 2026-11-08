@@ -78,6 +78,7 @@ MESSAGES = {
     # 任務失敗原因（GenerationWorker 寫入錯誤碼 + 引數，tasks API 讀取時按語言渲染）
     "task_fail_provider_unsupported_media": "供應商 {provider_id} 不支援 {media_type} 生成",
     "task_fail_provider_rejected": "供應商拒絕了這次生成請求（HTTP {status}）",
+    "task_fail_credential_not_found": "設定裡為「{provider}」指定的連線已經被刪除，請到設定重新選擇連線。",
     "task_fail_dispatch_provider_requeue_failed": "任務供應商從 {claimed_provider_id} 變為 {actual_provider_id}，但無法回隊重新認領，請重試",
     "task_fail_project_deleted_during_task": "專案已在任務執行期間刪除，本次生成結果未儲存",
     "task_fail_restart_lost_image": "圖片任務在服務重啟時中斷且無法接續，請手動重試以避免重複計費",
@@ -673,6 +674,8 @@ MESSAGES = {
     "collab_error_episode_source_derived": "這集的原文由分集規劃產生，不能直接修改",
     "collab_error_episode_source_empty": "原文不能是空的",
     "collab_error_revision_conflict": "劇本剛被其他操作改過，請稍後再試",
+    "credential_in_use": "還有 {count} 處設定指定了這個連線，確認後再刪除。",
+    "credential_not_for_provider": "選的連線不屬於「{provider}」，或已經被刪除，請重新選擇連線。",
     "collab_error_generic": "這段內容沒能寫回專案：{detail}",
     "collab_error_invalid_settings": "有設定的值格式不對，沒能儲存，請檢查剛改的選項。",
     "claude_login_cli_not_found": "找不到內建的 Claude CLI，無法登入訂閱",

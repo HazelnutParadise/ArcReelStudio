@@ -10,6 +10,7 @@ import logging
 from dataclasses import replace
 from typing import TYPE_CHECKING
 
+from lib.backends.backend_assembly.assembler import assembled_credential_id
 from lib.backends.providers import CallPurpose, require_provider_pair
 from lib.backends.text_backends.base import (
     DEFAULT_MAX_OUTPUT_TOKENS,
@@ -122,6 +123,7 @@ class TextGenerator:
             model=self.backend.model,
             prompt=request.prompt,
             provider=self._provider_id,
+            credential_id=assembled_credential_id(self.backend),
             user_id=self._user_id,
             purpose=self._purpose,
         ) as call:

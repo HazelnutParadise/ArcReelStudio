@@ -553,9 +553,19 @@ requires your explicit approval.
 Pass required assets with `--start-image`, `--end-image`, repeatable `--reference-images`, and repeatable
 `--reference-audio-files`. These CLI options use the same multipart fields as the Settings page.
 
-## 11. Multiple API Keys {#multiple-api-keys}
+## 11. Multiple API Keys and Connections {#multiple-api-keys}
 
-You can configure multiple API Keys for the same provider and select the currently active Key.
+You can configure multiple API Keys for the same provider. Each Key is shown as a "connection", and each provider has one default connection.
+
+"Settings › Connections" lists the connections of every provider in one place. From there you can make a connection the default, delete it, or open the provider details to add and edit connections.
+
+Each place that uses a model can choose its own connection. In "Settings › Default Models" and in project settings, after you pick a model from a built-in provider that has two or more connections, a "Connection" dropdown appears under the model. Places without a choice use the provider's default connection.
+
+- When you switch to a model from another provider, the chosen connection is cleared and the new provider's default connection is used.
+- A custom provider keeps its key on the provider itself, so it has no connection to choose.
+- When you delete a connection that is still chosen somewhere, the confirmation lists those global settings and projects. After you confirm, they use the default connection.
+- A video job already submitted to the provider keeps polling with the connection it was submitted with. If that connection has been deleted, the job fails and asks you to choose a connection again; it does not switch to another account.
+- Usage records note the connection each call actually used.
 
 When using multiple Keys, comply with the provider's terms. This is suitable for:
 

@@ -36,6 +36,7 @@ from lib.agent.agent_session_store import default_sdk_config_dir
 from lib.agent.profile_manifest import ContentMode
 from lib.backends.text_backends.base import TextOutputTruncatedError
 from lib.catalog.errors import ModelNotInCatalogError
+from lib.config.model_setting_keys import CREDENTIAL_KEY_SUFFIX
 from lib.config.resolver import (
     ConfigResolver,
     VideoBucketCapabilityError,
@@ -124,6 +125,7 @@ from server.services.project.project_settings_patch import (
     ProjectSettingsPatch,
     SpeechRateOverride,
     apply_project_settings_patch,
+    validate_patch_credentials,
     validated_episode_target_duration,
     validated_speech_rate,
 )
@@ -920,6 +922,9 @@ async def reset_agent_profile(name: str, _t: Translator):
 async def update_project(name: str, req: UpdateProjectRequest, _t: Translator):
     """更新项目元数据"""
     try:
+        if any(key.endswith(CREDENTIAL_KEY_SUFFIX) for key in req.model_fields_set):
+            current = await run_sync_transaction(lambda: get_project_manager().load_project(name))
+            await validate_patch_credentials(req, current)
 
         def _sync():
             manager = get_project_manager()

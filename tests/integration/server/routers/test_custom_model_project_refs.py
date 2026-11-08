@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS, PROJECT_MODEL_SETTING_KEYS
-from lib.config.resolver import ConfigResolver
+from lib.config.resolver import ConfigResolver, ProviderModel
 from lib.config.service import ConfigService
 from lib.db import get_async_session
 from lib.db.repositories.custom_provider_repo import CustomProviderRepository
@@ -156,7 +156,7 @@ async def test_rename_rewrites_project_model_settings_and_global_refs(model_refs
     assert _refs(model_refs_pm, "pa") == dict.fromkeys(PROJECT_MODEL_SETTING_KEYS, f"{pid}/new-a")
     refs = model_refs_client.get(f"/api/v1/providers/{pid}/model-references", params={"model_id": "old-a"}).json()
     assert refs["projects"] == []
-    assert await ConfigResolver(db_factory).text_backend_for_task("script", "pa") == (pid, "new-a")
+    assert await ConfigResolver(db_factory).text_backend_for_task("script", "pa") == ProviderModel(pid, "new-a")
 
 
 async def test_rename_leaves_other_providers_and_models_untouched(model_refs_client, db_factory, model_refs_pm):

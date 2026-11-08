@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { ModelLifecycleNotices } from "@/components/shared/ModelLifecycleNotice";
+import { ConnectionSelect } from "@/components/shared/ConnectionSelect";
 import { NarrationDeliveryFields } from "@/components/shared/NarrationDeliveryFields";
 import type { NarrationDeliveryValue } from "@/components/shared/narration-delivery";
 import type { CharacterVoiceBinding, NarrationDefaultsResponse } from "@/types";
@@ -83,6 +84,19 @@ export function VoiceTab({
           modelNames={modelNames}
           lifecycle={lifecycle}
         />
+        {value.narration.delivery === "use_tts" && (
+          <ConnectionSelect
+            backendValue={value.narration.audioBackend}
+            value={value.models.credentials?.audio_backend}
+            onChange={(next) =>
+              onChange((prev) => ({
+                ...prev,
+                models: { ...prev.models, credentials: { ...prev.models.credentials, audio_backend: next } },
+              }))
+            }
+            label={t("connection_field_label", { field: t("project_narration_delivery_title") })}
+          />
+        )}
       </SettingsBlock>
 
       {/* 参考音频通道属于参考生视频路线；分镜图生视频路线上这项设置不改变任何交付内容，不展示也不写入 */}

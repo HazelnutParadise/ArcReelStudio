@@ -78,6 +78,7 @@ MESSAGES = {
     # 任务失败原因（GenerationWorker 写入错误码 + 参数，tasks API 读取时按语言渲染）
     "task_fail_provider_unsupported_media": "供应商 {provider_id} 不支持 {media_type} 生成",
     "task_fail_provider_rejected": "供应商拒绝了这次生成请求（HTTP {status}）",
+    "task_fail_credential_not_found": "设置里为「{provider}」指定的连线已被删除，请在设置中重新选择连线。",
     "task_fail_dispatch_provider_requeue_failed": "任务供应商从 {claimed_provider_id} 变为 {actual_provider_id}，但无法回队重新认领，请重试",
     "task_fail_project_deleted_during_task": "项目已在任务执行期间删除，本次生成结果未保存",
     "task_fail_restart_lost_image": "图片任务在服务重启时中断且无法接续，请手动重试以避免重复计费",
@@ -673,6 +674,8 @@ MESSAGES = {
     "collab_error_episode_source_derived": "这集的原文由分集规划产生，不能直接修改",
     "collab_error_episode_source_empty": "原文不能为空",
     "collab_error_revision_conflict": "剧本刚被其他操作改过，请稍后再试",
+    "credential_in_use": "还有 {count} 处设置指定了这个连线，确认后再删除。",
+    "credential_not_for_provider": "所选的连线不属于「{provider}」，或已被删除，请重新选择连线。",
     "collab_error_generic": "这段内容没能写回项目：{detail}",
     "collab_error_invalid_settings": "有设置的值格式不对，没能保存，请检查刚改的选项。",
     "claude_login_cli_not_found": "找不到内置的 Claude CLI，无法登录订阅",
