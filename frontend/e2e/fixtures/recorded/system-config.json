@@ -31,7 +31,17 @@
       "agent_max_concurrent_sessions": 5,
       "text_backend_simple": "",
       "text_backend_complex": "",
-      "market_github_proxy_prefix": ""
+      "market_github_proxy_prefix": "",
+      "default_text_backend_credential_id": null,
+      "text_backend_simple_credential_id": null,
+      "text_backend_complex_credential_id": null,
+      "default_image_backend_credential_id": null,
+      "default_image_backend_t2i_credential_id": null,
+      "default_image_backend_i2i_credential_id": null,
+      "default_video_backend_credential_id": null,
+      "default_video_backend_i2v_credential_id": null,
+      "default_video_backend_r2v_credential_id": null,
+      "default_audio_backend_credential_id": null
     },
     "options": {
       "video_backends": [],
