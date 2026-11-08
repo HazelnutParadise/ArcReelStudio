@@ -115,7 +115,7 @@ async def test_a_codex_session_resumes_its_own_thread(manager: SessionManager, t
         await manager.close_session(session_id)
 
         # 之后即使全局改回 Claude，恢复的仍是这个会话自己的 Codex thread
-        assembler.read_engine.return_value = "claude"  # type: ignore[attr-defined]  # 上面 patch 的 AsyncMock
+        assembler.read_engine.return_value = "claude"
         await manager.send_message(session_id, "again")
         await _until_status(manager, session_id, "completed")
         await manager.close_session(session_id)

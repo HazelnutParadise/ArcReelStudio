@@ -31,7 +31,9 @@ _USER_ID = "default"
 
 def _text(result: dict[str, object]) -> str:
     """把 Codex 工具结果的 inputText 区块拼成一段文字。"""
-    items = result.get("contentItems") or []
+    items = result.get("contentItems")
+    if not isinstance(items, list):
+        return ""
     return "\n".join(str(item.get("text", "")) for item in items if isinstance(item, dict))
 
 
