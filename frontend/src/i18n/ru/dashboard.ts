@@ -2837,6 +2837,7 @@ export default {
   'tool_name_list_timelines': 'Список монтажных таймлайнов',
   'tool_name_read_timeline': 'Прочитать монтажный таймлайн',
   'tool_name_list_bgm': 'Список фоновой музыки',
+  'tool_name_generate_music': "Сгенерировать музыку",
   'tool_name_edit_timeline': 'Обновить монтажный таймлайн',
   'tool_name_rename_timeline': 'Переименовать монтажный таймлайн',
   'tool_name_list_revisions': 'Список ревизий монтажного таймлайна',

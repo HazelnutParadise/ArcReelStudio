@@ -2585,6 +2585,7 @@ export default {
   'tool_name_list_timelines': '列出剪輯時間軸',
   'tool_name_read_timeline': '讀取剪輯時間軸',
   'tool_name_list_bgm': '列出 BGM',
+  'tool_name_generate_music': "生成音樂",
   'tool_name_edit_timeline': '修改剪輯時間軸',
   'tool_name_rename_timeline': '重新命名剪輯時間軸',
   'tool_name_list_revisions': '檢視剪輯時間軸修訂歷史',

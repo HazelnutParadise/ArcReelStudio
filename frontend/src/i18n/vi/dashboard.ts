@@ -2942,6 +2942,7 @@ export default {
   'tool_name_list_timelines': 'Liệt kê dòng thời gian dựng',
   'tool_name_read_timeline': 'Đọc dòng thời gian dựng',
   'tool_name_list_bgm': 'Liệt kê nhạc nền BGM',
+  'tool_name_generate_music': "Tạo nhạc",
   'tool_name_edit_timeline': 'Chỉnh sửa dòng thời gian dựng',
   'tool_name_rename_timeline': 'Đổi tên dòng thời gian dựng',
   'tool_name_list_revisions': 'Liệt kê các phiên bản sửa của dòng thời gian dựng',
