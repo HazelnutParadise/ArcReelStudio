@@ -324,6 +324,38 @@ class OptionsAssembler:
             resume_thread_id=resume_thread_id,
         )
 
+    async def build_grok(
+        self,
+        project_name: str,
+        *,
+        resume_session_id: str | None = None,
+        locale: str = DEFAULT_LOCALE,
+    ) -> Any:
+        """Grok 引擎会话的启动参数（:class:`server.agent_runtime.grok_engine.GrokLaunch`）：与 :meth:`build` 共用访问规则、
+        系统提示附加段（交给 Grok 的 ``--rules``）、项目目录与用户。"""
+        from lib.config.repository import SystemSettingRepository
+        from server.agent_runtime.grok_engine import GrokConnectionMissing, build_grok_launch, grok_connection
+
+        policy = self._access_policy_provider()
+        project_cwd = await asyncio.to_thread(self._resolve_project_cwd, project_name)
+        factory = self._session_factory_provider() or default_async_session_factory
+        async with factory() as session:
+            settings = await SystemSettingRepository(session).get_all()
+            connection = await grok_connection(session, settings)
+        if connection is None:
+            raise GrokConnectionMissing("no Grok subscription or xAI connection for the Grok engine")
+        return await build_grok_launch(
+            project_name=project_name,
+            project_cwd=project_cwd,
+            data_root=self.data_root,
+            user_id=self._user_id_provider(),
+            policy=policy,
+            settings=settings,
+            connection=connection,
+            rules=await self._build_append_prompt(project_name, locale),
+            resume_session_id=resume_session_id,
+        )
+
     async def build(
         self,
         project_name: str,

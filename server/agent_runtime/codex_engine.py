@@ -24,7 +24,7 @@ from server.agent_runtime.codex_client import CodexSessionConfig
 from server.agent_runtime.codex_file_tools import FILE_TOOL_NAMES, FILE_TOOL_SPECS, CodexFileTools
 from server.agent_runtime.codex_tools import build_arcreel_codex_tools
 
-AgentEngine = Literal["claude", "codex"]
+AgentEngine = Literal["claude", "codex", "grok"]
 AGENT_ENGINES: tuple[AgentEngine, ...] = get_args(AgentEngine)
 DEFAULT_AGENT_ENGINE: AgentEngine = "claude"
 #: system_settings 键：新会话用哪个引擎、Codex 用哪条连线与哪个模型
@@ -90,14 +90,9 @@ async def build_codex_launch(
     """一个 Codex 会话的启动参数。ChatGPT 订阅用登录时存下的 CODEX_HOME；OpenAI API Key 连线用自己的持久 CODEX_HOME
     （恢复会话要读回 Codex 的对话纪录）并以 apiKey 登入。"""
     home = await asyncio.to_thread(_prepare_home, connection.provider, connection.id)
-    # 工具集的 ProjectManager 会建目录，与 Claude 引擎装配 MCP server 一样卸到线程
-    arcreel = await asyncio.to_thread(
-        build_arcreel_codex_tools, project_name=project_name, data_root=data_root, user_id=user_id
+    specs, callers, arcreel_names = await build_session_tools(
+        project_name=project_name, project_cwd=project_cwd, data_root=data_root, user_id=user_id, policy=policy
     )
-    files = CodexFileTools(policy=policy, project_cwd=project_cwd, user_id=user_id)
-    callers: dict[str, Callable[[str, Any], Awaitable[dict[str, Any]]]] = dict.fromkeys(arcreel.names, arcreel.call)
-    for name in FILE_TOOL_NAMES:
-        callers[name] = _file_caller(files)
     model = (settings.get(CODEX_MODEL_SETTING_KEY) or "").strip() or DEFAULT_CODEX_MODEL
     is_subscription = connection.provider == PROVIDER_CHATGPT_SUBSCRIPTION
     config = CodexSessionConfig(
@@ -105,9 +100,9 @@ async def build_codex_launch(
         project_cwd=project_cwd,
         model=model,
         developer_instructions=developer_instructions,
-        tool_specs=[*arcreel.specs, *FILE_TOOL_SPECS],
+        tool_specs=specs,
         tool_callers=callers,
-        arcreel_tool_names=arcreel.names,
+        arcreel_tool_names=arcreel_names,
         skill_roots=(project_cwd / ".claude" / "skills",),
         resume_thread_id=resume_thread_id,
         api_key=None if is_subscription else (connection.api_key or None),
@@ -118,6 +113,20 @@ async def build_codex_launch(
         provider_credential_id=connection.id,
     )
     return CodexLaunch(config=config, pricing=pricing, auth_source="subscription" if is_subscription else "api_key")
+
+
+async def build_session_tools(
+    *, project_name: str, project_cwd: Path, data_root: Path, user_id: str, policy: AgentAccessPolicy
+) -> tuple[list[dict[str, Any]], dict[str, Callable[[str, Any], Awaitable[dict[str, Any]]]], frozenset[str]]:
+    """一个会话的工具（Codex 与 Grok 引擎共用）：工具描述、名字 → 执行函数、ArcReel 工具名（其余是档案工具）。"""
+    arcreel = await asyncio.to_thread(
+        build_arcreel_codex_tools, project_name=project_name, data_root=data_root, user_id=user_id
+    )
+    files = CodexFileTools(policy=policy, project_cwd=project_cwd, user_id=user_id)
+    callers: dict[str, Callable[[str, Any], Awaitable[dict[str, Any]]]] = dict.fromkeys(arcreel.names, arcreel.call)
+    for name in FILE_TOOL_NAMES:
+        callers[name] = _file_caller(files)
+    return [*arcreel.specs, *FILE_TOOL_SPECS], callers, arcreel.names
 
 
 def _file_caller(files: CodexFileTools) -> Callable[[str, Any], Awaitable[dict[str, Any]]]:
@@ -139,6 +148,7 @@ __all__ = [
     "CodexConnectionMissing",
     "CodexLaunch",
     "build_codex_launch",
+    "build_session_tools",
     "codex_connection",
     "parse_agent_engine",
 ]

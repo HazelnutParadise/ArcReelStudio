@@ -36,6 +36,7 @@ from server.agent_runtime.failure_observation import (
     build_startup_failure_observation,
     failure_observation_json,
 )
+from server.agent_runtime.grok_client import GrokAgentClient
 from server.agent_runtime.message_serialization import (
     is_main_turn_activity,
     message_to_dict,
@@ -795,6 +796,17 @@ class SessionManager:
         stderr: Callable[[str], None] | None,
     ) -> _SessionLaunch:
         """按引擎装配会话 client：Claude 走 SDK options，Codex 走 :meth:`OptionsAssembler.build_codex`。"""
+        if engine == "grok":
+            if session_id is not None:
+                raise ValueError("the Grok engine cannot open a session under a preassigned id")
+            grok = await self._options_assembler.build_grok(project_name, resume_session_id=resume_id, locale=locale)
+            grok_config = grok.config
+            return _SessionLaunch(
+                client_factory=lambda: GrokAgentClient(grok_config, on_stderr=stderr),
+                agent_pricing=grok.pricing,
+                auth_source=grok.auth_source,
+                engine="grok",
+            )
         if engine == "codex":
             if session_id is not None:
                 raise ValueError("the Codex engine cannot open a session under a preassigned id")

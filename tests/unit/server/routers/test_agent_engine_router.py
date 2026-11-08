@@ -94,3 +94,25 @@ async def test_members_can_read_but_not_change(engine_member, db_factory) -> Non
 
     assert (await engine_member.get(BASE)).status_code == 200
     assert (await engine_member.put(BASE, json={"engine": "codex"})).status_code == 403
+
+
+async def test_switching_to_grok_needs_a_grok_connection(engine_admin, db_factory) -> None:
+    assert (await engine_admin.put(BASE, json={"engine": "grok"})).status_code == 422
+
+    xai = await _add(db_factory, "grok", "xai key")
+    subscription = await _add(db_factory, "grok-subscription", "me")
+    body = (await engine_admin.put(BASE, json={"engine": "grok", "grok_model": "grok-4.5"})).json()
+    assert body["engine"] == "grok"
+    assert body["grok_effective_credential_id"] == subscription
+    assert body["grok_model"] == "grok-4.5"
+
+    chosen = (await engine_admin.put(BASE, json={"engine": "grok", "grok_credential_id": xai})).json()
+    assert chosen["grok_effective_credential_id"] == xai
+
+
+async def test_grok_rejects_other_connections_and_unknown_models(engine_admin, db_factory) -> None:
+    openai = await _add(db_factory, "openai", "key")
+    await _add(db_factory, "grok-subscription", "me")
+
+    assert (await engine_admin.put(BASE, json={"engine": "grok", "grok_credential_id": openai})).status_code == 422
+    assert (await engine_admin.put(BASE, json={"engine": "grok", "grok_model": "grok-1"})).status_code == 422
