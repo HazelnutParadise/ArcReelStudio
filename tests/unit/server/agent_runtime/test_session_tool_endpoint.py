@@ -124,3 +124,17 @@ def test_images_become_mcp_image_blocks() -> None:
         "content": [{"type": "text", "text": "see"}, {"type": "image", "mimeType": "image/png", "data": "UE5H"}],
         "isError": True,
     }
+
+
+async def test_unexpected_tool_errors_do_not_leak_details(registry: SessionToolRegistry) -> None:
+    async def broken(tool: str, arguments: Any) -> dict[str, Any]:
+        raise RuntimeError("secret path /data/arcreel.db")
+
+    token = registry.register(SessionTools(specs=[{"name": "broken"}], callers={"broken": broken}))
+    async with _client() as client:
+        response = await client.post(
+            SESSION_TOOL_PATH, json=_rpc("tools/call", {"name": "broken"}), headers={"Authorization": f"Bearer {token}"}
+        )
+    result = response.json()["result"]
+    assert result["isError"] is True
+    assert "secret" not in result["content"][0]["text"]

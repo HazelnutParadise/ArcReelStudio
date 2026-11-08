@@ -159,9 +159,13 @@ async def handle(request: Request) -> Response:
             tools.on_start(call_id, name, arguments)
         try:
             result = await caller(name, arguments)
-        except Exception as exc:
+        except Exception:
+            # 例外细节只进服务器日志，不回给呼叫端
             logger.exception("会话工具 %s 抛出意外异常", name)
-            result = {"contentItems": [{"type": "inputText", "text": str(exc)}], "success": False}
+            result = {
+                "contentItems": [{"type": "inputText", "text": f"Tool '{name}' failed unexpectedly"}],
+                "success": False,
+            }
         if tools.observer is not None:
             tools.observer(call_id, result)
         return _rpc_result(message_id, to_mcp_content(result))
