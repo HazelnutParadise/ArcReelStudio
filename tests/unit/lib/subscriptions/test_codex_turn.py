@@ -95,9 +95,7 @@ async def test_passes_the_output_schema_and_input_images(fake, home: Path, tmp_p
     picture = tmp_path / "in.png"
     picture.write_bytes(b"x")
 
-    await run_codex_turn(
-        home, "describe", output_schema={"type": "object"}, input_images=[picture], cli_path=cli
-    )
+    await run_codex_turn(home, "describe", output_schema={"type": "object"}, input_images=[picture], cli_path=cli)
 
     turn = fake.seen()[1]["params"]
     assert turn["outputSchema"] == {"type": "object"}

@@ -14,7 +14,7 @@ from lib.subscriptions.grok_turn import GrokTurnError, run_grok_turn
 
 # 假 grok CLI：从自己所在目录读 behaviour.json，把收到的请求与自身启动信息写进同目录的 seen.json。
 # 不靠环境变量找文件——run_grok_turn 只带 HOME/PATH/LANG，看不到测试进程设的任何变量。
-_FAKE_GROK_SCRIPT = r'''
+_FAKE_GROK_SCRIPT = r"""
 import json, os, sys, time
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -106,7 +106,7 @@ while True:
             send({"jsonrpc": "2.0", "id": message_id, "error": {"code": error.get("code", -32000), "message": error["message"]}})
         else:
             send({"jsonrpc": "2.0", "id": message_id, "result": {"stopReason": behaviour.get("stop_reason", "end_turn")}})
-'''
+"""
 
 _FAKE_GROK = f"#!{sys.executable}\n" + _FAKE_GROK_SCRIPT
 
