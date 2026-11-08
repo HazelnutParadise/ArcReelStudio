@@ -1,5 +1,5 @@
 import { ExternalLink, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
@@ -22,34 +22,35 @@ import { errMsg, voidCall } from "@/utils/async";
 /** device code 登录多久问一次结果 */
 const POLL_MS = 2000;
 
-/** 进行中的登录：开始时向后端要网址与代码，关掉对话框时取消，device code 登录轮询结果。 */
-function useSubscriptionLogin(providerId: string, open: boolean, onSucceeded: (credentialId: number) => void) {
+/**
+ * 进行中的登录：挂载时向后端要网址与代码，卸载（关掉对话框）时取消还没完成的登录，device code 登录轮询结果。
+ * 对话框关闭时内容会卸载，所以每次打开都是一次新的登录。
+ */
+function useSubscriptionLogin(providerId: string, onSucceeded: (credentialId: number) => void) {
   const pushToast = useAppStore((s) => s.pushToast);
   const refreshConnections = useConnectionsStore((s) => s.refresh);
   const [login, setLogin] = useState<SubscriptionLogin | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
   const activeRef = useRef<SubscriptionLogin | null>(null);
-  const succeededRef = useRef(onSucceeded);
-  succeededRef.current = onSucceeded;
+  const reportSucceeded = useEffectEvent((credentialId: number) => onSucceeded(credentialId));
 
-  const finish = useCallback(
-    (next: SubscriptionLogin) => {
-      setLogin(next);
-      if (next.status === "succeeded" && next.credential_id !== null) {
-        activeRef.current = null;
-        voidCall(refreshConnections());
-        succeededRef.current(next.credential_id);
-      }
-    },
-    [refreshConnections],
-  );
+  const finish = useCallback((next: SubscriptionLogin) => {
+    // 登录不论成败都已结束：不必再在卸载时取消
+    if (next.status !== "pending") activeRef.current = null;
+    setLogin(next);
+  }, []);
 
-  // 打开时开始登录；关掉（或卸载）时取消还没完成的登录，后台的 CLI 进程随之结束
+  // 登录成功：更新各处的连线清单，再回报新连线
+  const succeededId = login?.status === "succeeded" ? login.credential_id : null;
   useEffect(() => {
-    if (!open) return;
+    if (succeededId === null) return;
+    voidCall(refreshConnections());
+    reportSucceeded(succeededId);
+  }, [refreshConnections, succeededId]);
+
+  // 挂载时开始登录；卸载时取消还没完成的登录，后台的 CLI 进程随之结束
+  useEffect(() => {
     let cancelled = false;
-    setLogin(null);
-    setStartError(null);
     const start = async () => {
       try {
         const started = await API.startSubscriptionLogin(providerId);
@@ -70,7 +71,7 @@ function useSubscriptionLogin(providerId: string, open: boolean, onSucceeded: (c
       activeRef.current = null;
       if (active) voidCall(API.cancelSubscriptionLogin(providerId, active.login_id));
     };
-  }, [open, providerId]);
+  }, [providerId]);
 
   // device code：轮询到成功或失败为止
   useEffect(() => {
@@ -81,7 +82,6 @@ function useSubscriptionLogin(providerId: string, open: boolean, onSucceeded: (c
         try {
           const next = await API.getSubscriptionLogin(providerId, login.login_id, { signal: controller.signal });
           if (controller.signal.aborted || next.status === "pending") return;
-          if (next.status === "failed") activeRef.current = null;
           finish(next);
         } catch (err) {
           if (!controller.signal.aborted) pushToast(errMsg(err), "error");
@@ -98,10 +98,8 @@ function useSubscriptionLogin(providerId: string, open: boolean, onSucceeded: (c
   const submitCode = useCallback(
     async (code: string) => {
       if (!login) return;
-      const next = await API.submitSubscriptionLoginCode(providerId, login.login_id, code);
       // 贴码后登录不论成败都结束：失败要重新开始
-      if (next.status !== "pending") activeRef.current = null;
-      finish(next);
+      finish(await API.submitSubscriptionLoginCode(providerId, login.login_id, code));
     },
     [finish, login, providerId],
   );
@@ -136,17 +134,16 @@ export function SubscriptionLoginDialog({
     },
     [onOpenChange, onSucceeded, providerName, pushToast, t],
   );
-  const { login, startError, submitCode } = useSubscriptionLogin(providerId, open, handleSucceeded);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("subscription_login_title", { name: providerName })}</DialogTitle>
           <DialogDescription>{t("subscription_login_desc")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <LoginBody login={login} startError={startError} onSubmitCode={submitCode} />
+          <LoginSession providerId={providerId} onSucceeded={handleSucceeded} />
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -156,6 +153,15 @@ export function SubscriptionLoginDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** 对话框内容：随对话框打开挂载、关闭卸载，登录的生命周期跟着它。 */
+function LoginSession({
+  providerId,
+  onSucceeded,
+}: Readonly<{ providerId: string; onSucceeded: (credentialId: number) => void }>) {
+  const { login, startError, submitCode } = useSubscriptionLogin(providerId, onSucceeded);
+  return <LoginBody login={login} startError={startError} onSubmitCode={submitCode} />;
 }
 
 function LoginBody({
