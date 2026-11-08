@@ -14,7 +14,7 @@ import hashlib
 import io
 import json
 import zipfile
-from collections.abc import Generator
+from collections.abc import AsyncIterator, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,7 +24,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from lib.artifacts.version_manager import VersionManager
 from lib.asset_library.bindings import account_scope, confirm_binding, get_bindable_credential
@@ -43,6 +43,7 @@ from server.auth import CurrentUserInfo, get_current_user
 from server.error_handlers import register_error_handlers
 from server.routers import files, object_storage, projects, versions
 from tests.auth_deps import AUTH_DEPENDENCIES
+from tests.conftest import make_test_engine
 from tests.fakes import bind_session_factory, use_object_storage_sdk, use_project_manager, use_projects_session_factory
 from tests.integration.server.derivative_sheet_support import solid_png_bytes
 from tests.integration.server.routers.test_remote_material_storage import MemoryBucket
@@ -107,8 +108,11 @@ def _memory_tos(monkeypatch) -> MemoryBucket:
 
 
 @pytest.fixture
-def source_sessions(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
-    return async_sessionmaker(db_engine, expire_on_commit=False)
+async def source_sessions(tmp_path: Path) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    """源实例的数据库用独立的文件库：取回失败时并发取回会被中途取消，内存库（StaticPool）的唯一连接随之作废、
+    重建成一个空库，后续请求就会读不到表。"""
+    async with make_test_engine(dialect_aware=False, file_path=tmp_path / "source.db") as engine:
+        yield async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def _use_storage(sessions, target: str, connection: dict[str, str] | None = None) -> None:
