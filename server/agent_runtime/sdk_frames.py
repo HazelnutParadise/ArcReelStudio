@@ -40,8 +40,12 @@ class CommandLifecycle:
 def raw_frames(client: Any) -> AsyncIterator[dict[str, Any]]:
     """已连接 client 的原始帧流：控制帧已被 Query 消化，其余帧按 CLI 输出顺序产出。
 
-    流在 CLI 退出后结束；Query 收到错误帧时抛出对应异常。
+    流在 CLI 退出后结束；Query 收到错误帧时抛出对应异常。Codex 引擎的 client 自己产出同样格式的帧（``raw_frames``）。
     """
+    from server.agent_runtime.codex_client import CodexAgentClient
+
+    if isinstance(client, CodexAgentClient):
+        return client.raw_frames()
     return client._query.receive_messages()
 
 
@@ -64,8 +68,12 @@ def parse_frame(frame: dict[str, Any]) -> CommandLifecycle | Message | None:
 async def cancel_async_message(client: Any, message_uuid: str) -> bool:
     """从 CLI 命令队列撤回一条尚未被并入轮次的用户消息；已被取走或从未送入时返回 False。
 
-    与其他 client 调用一样，只在该会话的 SessionActor 内调用。
+    与其他 client 调用一样，只在该会话的 SessionActor 内调用。Codex 引擎的 client 自持佇列，以 ``cancel_message`` 撤回。
     """
+    from server.agent_runtime.codex_client import CodexAgentClient
+
+    if isinstance(client, CodexAgentClient):
+        return await client.cancel_message(message_uuid)
     response = await client._query._send_control_request(
         {"subtype": "cancel_async_message", "message_uuid": message_uuid}
     )

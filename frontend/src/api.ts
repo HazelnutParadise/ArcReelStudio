@@ -213,6 +213,8 @@ import type {
 import type { StoryboardBatchKind, StoryboardBatchPreview, StoryboardBatchSubmitted } from "@/types/storyboard-batch";
 import type {
   AgentAuthMode,
+  AgentEngineRequest,
+  AgentEngineStatus,
   AgentCredential,
   AgentCredentialTier,
   ClaudeSubscriptionStatus,
@@ -3517,6 +3519,15 @@ class API {
       method: "PUT",
       body: JSON.stringify({ credential_id: credentialId }),
     });
+  }
+
+  static async getAgentEngine(options: { signal?: AbortSignal } = {}): Promise<AgentEngineStatus> {
+    return this.request("/agent/engine", { signal: options.signal });
+  }
+
+  /** 新会话用哪个 Agent 引擎，以及 Codex 用哪条连线与模型；只有管理员能改。 */
+  static async setAgentEngine(body: AgentEngineRequest): Promise<AgentEngineStatus> {
+    return this.request("/agent/engine", { method: "PUT", body: JSON.stringify(body) });
   }
 
   // ==================== 订阅登录 ====================

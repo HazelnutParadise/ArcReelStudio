@@ -72,9 +72,11 @@ class CodexAppServer:
         process: asyncio.subprocess.Process,
         *,
         on_server_request: ServerRequestHandler | None = None,
+        on_stderr: Callable[[str], None] | None = None,
     ) -> None:
         self._process = process
         self._on_server_request = on_server_request
+        self._on_stderr = on_stderr
         self._next_id = 0
         self._pending: dict[int, asyncio.Future[Any]] = {}
         self._listeners: list[Callable[[str, Mapping[str, Any]], None]] = []
@@ -93,6 +95,7 @@ class CodexAppServer:
         extra_env: Mapping[str, str] | None = None,
         config_overrides: tuple[str, ...] = (),
         on_server_request: ServerRequestHandler | None = None,
+        on_stderr: Callable[[str], None] | None = None,
     ) -> CodexAppServer:
         cli = cli_path or codex_cli_path()
         if not cli:
@@ -120,7 +123,7 @@ class CodexAppServer:
             )
         except OSError as exc:
             raise CodexRpcError(f"failed to start codex app-server: {exc}") from exc
-        server = cls(process, on_server_request=on_server_request)
+        server = cls(process, on_server_request=on_server_request, on_stderr=on_stderr)
         try:
             await server.request(
                 "initialize",
@@ -309,7 +312,13 @@ class CodexAppServer:
             line = await stderr.readline()
             if not line:
                 return
-            logger.debug("codex app-server stderr: %s", line.decode("utf-8", "replace").rstrip())
+            text = line.decode("utf-8", "replace").rstrip()
+            logger.debug("codex app-server stderr: %s", text)
+            if self._on_stderr is not None:
+                try:
+                    self._on_stderr(text)
+                except Exception:
+                    logger.debug("codex stderr 回调失败", exc_info=True)
 
     def _fail_pending(self, error: Exception) -> None:
         for future in self._pending.values():

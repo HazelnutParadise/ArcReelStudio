@@ -1,0 +1,16 @@
+{
+  "method": "GET",
+  "path": "/api/v1/agent/engine",
+  "status": 200,
+  "body": {
+    "engine": "claude",
+    "codex_credential_id": null,
+    "codex_effective_credential_id": null,
+    "codex_model": "gpt-5.5",
+    "codex_models": [
+      "gpt-5.5",
+      "gpt-6-sol",
+      "gpt-6-luna"
+    ]
+  }
+}

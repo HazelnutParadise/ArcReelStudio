@@ -2154,6 +2154,20 @@ export default {
   'claude_subscription_blocked_until': 'Sẽ chuyển lại sau {{time}}.',
   'claude_subscription_blocked_until_relogin': 'Chỉ dùng lại sau khi đăng nhập lại.',
   'claude_subscription_mode_title': 'Cách Agent đăng nhập',
+  'agent_engine_title': 'Engine Agent',
+  'agent_engine_desc': 'Engine nào chạy các cuộc trò chuyện mới. Cuộc trò chuyện đã bắt đầu vẫn dùng engine ban đầu.',
+  'agent_engine_claude': 'Claude',
+  'agent_engine_claude_hint':
+    'Claude Agent SDK: dùng đăng ký Claude, Anthropic API Key hoặc dịch vụ tương thích Anthropic.',
+  'agent_engine_codex': 'Codex',
+  'agent_engine_codex_hint': 'OpenAI Codex: dùng đăng ký ChatGPT hoặc OpenAI API Key.',
+  'agent_engine_admin_only': 'Chỉ quản trị viên mới đổi được engine.',
+  'agent_engine_codex_connection_label': 'Kết nối cho Codex',
+  'agent_engine_codex_model': 'Mô hình',
+  'agent_engine_codex_connection_subscription': 'Đăng ký ChatGPT · {{name}}',
+  'agent_engine_codex_connection_api_key': 'OpenAI API Key · {{name}}',
+  'agent_engine_codex_limits':
+    'Engine Codex chưa hỗ trợ viết lại từ tin nhắn trước, Agent đặt câu hỏi cho bạn, hay các Agent con kiểm duyệt chỉ đọc.',
   'claude_subscription_admin_only': 'Chỉ quản trị viên mới đăng nhập tài khoản, chọn kết nối hoặc đổi được.',
   'claude_auth_mode_prefer_subscription': 'Ưu tiên gói đăng ký',
   'claude_auth_mode_prefer_subscription_hint':
