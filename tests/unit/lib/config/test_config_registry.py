@@ -23,6 +23,8 @@ def test_all_providers_registered():
         "claude-subscription",
         "chatgpt-subscription",
         "grok-subscription",
+        "stability",
+        "elevenlabs",
     }
 
 

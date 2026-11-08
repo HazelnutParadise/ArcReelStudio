@@ -626,6 +626,9 @@ class TestRegistryShape:
             ("minimax", "audio"),
             ("gemini-aistudio", "audio"),
             ("gemini-vertex", "audio"),
+            # 只做音乐的供应商（音频类型以能力区分，docs/adr/0126）
+            ("stability", "audio"),
+            ("elevenlabs", "audio"),
         }
 
     def test_simple_family_image_video_complete(self):
@@ -680,13 +683,15 @@ class TestValidateProviderSpecs:
         """registry 名都在对应后端 registry 里 —— 归单测（import 全部后端无碍），不进 import 期。"""
         from lib.backends.audio_backends import get_registered_backends as audio_names
         from lib.backends.image_backends import get_registered_backends as image_names
+        from lib.backends.music_backends import get_registered_backends as music_names
         from lib.backends.text_backends import get_registered_backends as text_names
         from lib.backends.video_backends import get_registered_backends as video_names
 
         registered = {
             "image": set(image_names()),
             "video": set(video_names()),
-            "audio": set(audio_names()),
+            # 音频类型同时承载配音与音乐，两份注册表都算
+            "audio": set(audio_names()) | set(music_names()),
             "text": set(text_names()),
         }
         for (_provider, media), spec in PROVIDER_SPEC_REGISTRY.items():

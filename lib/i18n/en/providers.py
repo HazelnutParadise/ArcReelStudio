@@ -16,6 +16,8 @@ MESSAGES: dict[str, str] = {
     "provider_name_claude-subscription": "Claude subscription",
     "provider_name_chatgpt-subscription": "ChatGPT subscription",
     "provider_name_grok-subscription": "Grok subscription",
+    "provider_name_elevenlabs": "ElevenLabs",
+    "provider_name_stability": "Stability AI",
     # 失败文案里目录查不到的供应商（已被删除）的泛称
     "deleted_provider_display_name": "Deleted provider",
     "deleted_agent_provider_display_name": "Deleted Agent provider",
@@ -36,6 +38,8 @@ MESSAGES: dict[str, str] = {
     "provider_desc_claude-subscription": "Sign in with a Claude account (Pro, Max and other plans) to use its subscription quota. Currently used by the ArcReel Agent.",
     "provider_desc_chatgpt-subscription": "Sign in with a ChatGPT account (Plus, Pro and other plans) through Codex to use its subscription quota.",
     "provider_desc_grok-subscription": "Sign in with a Grok account (SuperGrok, X Premium and other plans) through the Grok CLI to use its subscription quota.",
+    "provider_desc_elevenlabs": "The API platform of US voice AI company ElevenLabs, offering music and sound effect generation. Its music terms forbid making the music models available through a third-party platform, so get ElevenLabs' permission before opening it to outside users.",
+    "provider_desc_stability": "The API platform of UK AI company Stability AI, offering generative models such as Stable Audio for music and sound effects.",
     # Agent preset notes (lib/agent/agent_provider_catalog.py)
     "preset_notes_deepseek": "DeepSeek official Anthropic-compat endpoint; needs sk- prefixed key.",
     "preset_notes_xiaomi_mimo": "Xiaomi MiMo only accepts known model names; no public model list.",

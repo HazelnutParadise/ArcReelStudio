@@ -16,6 +16,8 @@ MESSAGES: dict[str, str] = {
     "provider_name_claude-subscription": "Claude 訂閱",
     "provider_name_chatgpt-subscription": "ChatGPT 訂閱",
     "provider_name_grok-subscription": "Grok 訂閱",
+    "provider_name_elevenlabs": "ElevenLabs",
+    "provider_name_stability": "Stability AI",
     # 失敗文案裡目錄查不到的供應商（已被刪除）的泛稱
     "deleted_provider_display_name": "已刪除的供應商",
     "deleted_agent_provider_display_name": "已刪除的 Agent 供應商",
@@ -36,6 +38,8 @@ MESSAGES: dict[str, str] = {
     "provider_desc_claude-subscription": "用 Claude 帳號（Pro、Max 等訂閱）登入，使用訂閱額度，目前供 ArcReel Agent 使用。",
     "provider_desc_chatgpt-subscription": "用 ChatGPT 帳號（Plus、Pro 等訂閱）透過 Codex 登入，使用訂閱額度。",
     "provider_desc_grok-subscription": "用 Grok 帳號（SuperGrok、X Premium 等訂閱）透過 Grok CLI 登入，使用訂閱額度。",
+    "provider_desc_elevenlabs": "美國語音 AI 公司 ElevenLabs 的 API 平台，提供音樂與音效生成。它的音樂條款禁止把音樂模型提供給第三方平台使用，對外開放前請先向 ElevenLabs 取得授權。",
+    "provider_desc_stability": "英國 AI 公司 Stability AI 的 API 平台，提供 Stable Audio 等生成式模型，可生成音樂與音效。",
     # Agent preset notes (lib/agent/agent_provider_catalog.py)
     "preset_notes_deepseek": "DeepSeek 官方 Anthropic 相容端點，需 sk- 開頭的 API Key",
     "preset_notes_xiaomi_mimo": "小米 MiMo 僅支援已知模型名，未公開模型清單",
