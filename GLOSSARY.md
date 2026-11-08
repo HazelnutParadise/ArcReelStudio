@@ -434,7 +434,7 @@ _Avoid_: 告警、报警、异常列表。
 ### 媒体类型与配音（TTS）
 
 **媒体类型（media_type / call_type）**：
-贯穿全系统的媒体维度，取值 `image` / `video` / `text` / `audio`，供应商解析、调用通道家族、用量与计费都按媒体类型扇出；其中 `audio` 承载文本转语音，与 image / video 一样经生成队列调度（见 `docs/adr/0010`）。
+贯穿全系统的媒体维度，取值 `image` / `video` / `text` / `audio`，供应商解析、调用通道家族、用量与计费都按媒体类型扇出；其中 `audio` 承载声音产物：文本转语音（配音）与音乐，以模型能力区分（见 `docs/adr/0126`），与 image / video 一样经生成队列调度（见 `docs/adr/0010`）。
 _Avoid_: modality、media kind、用 tts / voice / speech 指代 audio。
 
 **旁白配音（narration_audio）**：

@@ -638,6 +638,13 @@ async def concurrent_session_factory(tmp_path: Path) -> AsyncIterator[async_sess
 
 
 @pytest.fixture
+async def second_file_db_factory(tmp_path: Path) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    """与 ``file_db_factory`` 互相独立的第二个文件库，供一个用例里要两套数据库（两个实例）的并发场景。"""
+    async with make_test_engine(dialect_aware=False, file_path=tmp_path / "second.db") as engine:
+        yield async_sessionmaker(engine, expire_on_commit=False)
+
+
+@pytest.fixture
 async def file_session_factory(tmp_path: Path) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     """File-backed SQLite with NullPool — each connection is independent.
 

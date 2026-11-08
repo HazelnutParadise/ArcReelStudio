@@ -63,6 +63,7 @@ const MEDIA_MODEL_KEYS = [
   "text_backend_simple",
   "text_backend_complex",
   "default_audio_backend",
+  "default_music_backend",
   "narration_voice",
   "narration_speed",
   "video_generate_audio",
@@ -236,6 +237,7 @@ export function MediaModelSection() {
   const imageBackends: string[] = options.image_backends ?? [];
   const textBackends: string[] = options.text_backends ?? [];
   const audioBackends: string[] = options.audio_backends ?? [];
+  const musicBackends: string[] = options.music_backends ?? [];
 
   const currentVideo = fields.default_video_backend ?? "";
   const currentVideoI2V = fields.default_video_backend_i2v ?? "";
@@ -349,6 +351,7 @@ export function MediaModelSection() {
   // 同口径。
   const renderVideoOptionMeta = videoOptionMetaRenderer({ t, providers, customProviders, endpointToMediaType });
   const currentAudioBackend = fields.default_audio_backend ?? "";
+  const currentMusicBackend = fields.default_music_backend ?? "";
   const currentNarrationVoice = fields.narration_voice ?? "";
   const currentNarrationSpeed = fields.narration_speed;
 
@@ -607,6 +610,38 @@ export function MediaModelSection() {
           />
           <FieldHint id="narration-speed-hint">{t("narration_speed_hint")}</FieldHint>
         </div>
+      </ChannelCard>
+
+      {/* 音乐：剪辑时「生成 BGM」与 Agent 的 generate_music 用它；没设定就不能生成，不会自动挑。 */}
+      <ChannelCard title={t("default_models_channel_music")} description={t("default_music_model_hint")}>
+        {musicBackends.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            <ProviderModelSelect
+              value={currentMusicBackend}
+              options={musicBackends}
+              providerNames={allProviderNames}
+              modelNames={allModelNames}
+              onChange={(v) => setFields((prev) => ({ ...prev, default_music_backend: v }))}
+              allowDefault
+              defaultLabel={t("music_model_unset")}
+              aria-label={t("default_music_model")}
+            />
+            <ConnectionSelect
+              backendValue={currentMusicBackend}
+              value={fields.default_music_backend_credential_id}
+              onChange={(next) => setFields((prev) => ({ ...prev, default_music_backend_credential_id: next }))}
+              label={t("connection_field_label", { field: t("default_music_model") })}
+            />
+            <ModelLifecycleNotice
+              value={currentMusicBackend}
+              notices={lifecycle}
+              modelNames={allModelNames}
+              onSwitch={(v) => setFields((prev) => ({ ...prev, default_music_backend: v }))}
+            />
+          </div>
+        ) : (
+          <NoProviders message={t("no_music_providers_hint")} />
+        )}
       </ChannelCard>
 
       <PageShellFooter>

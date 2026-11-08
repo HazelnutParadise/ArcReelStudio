@@ -197,6 +197,9 @@ class _LayeredBackendKeys:
     # 这份键位所属的任务类型桶，供自动推断层按桶过滤自定义默认模型。视频与文本 / 音频留空：
     # 前者的自定义默认在保存期就是同一 media_type 至多一个，后两者无桶。
     generation_type: str | None = None
+    # 都没设定时能否自动挑一个供应商。按媒体类型挑的默认模型分不出用途（音频类型的默认是配音模型），
+    # 音乐键位关掉它，没设定就请使用者去设定，不会拿配音模型来做音乐。
+    auto_resolve: bool = True
 
 
 # 图片桶（t2i / i2i）键位。桶为可选覆盖，空桶回退默认层：项目默认层用 project.json 的
@@ -244,6 +247,14 @@ _AUDIO_LAYERED_KEYS = _LayeredBackendKeys(
     media_type="audio",
     project_default_key="audio_backend",
     global_default_key="default_audio_backend",
+)
+
+# 音乐键位：同属音频类型，以能力区分（docs/adr/0126）。项目层 music_backend，全局层 default_music_backend，不自动推断。
+_MUSIC_LAYERED_KEYS = _LayeredBackendKeys(
+    media_type="audio",
+    project_default_key="music_backend",
+    global_default_key="default_music_backend",
+    auto_resolve=False,
 )
 
 #: 视频任务类型桶：i2v（图生视频 / 宫格，由首帧驱动；另承接参考生视频无参考图视频单元的降级执行）、
@@ -943,6 +954,21 @@ class ConfigResolver:
         async with self._open_session() as (session, svc):
             return await self._resolve_audio_provider_model(svc, session, project, payload)
 
+    async def resolve_music_backend(self, project: dict | None, payload: dict | None) -> ProviderModel:
+        """解析音乐生成任务应使用的 ProviderModel：payload（任务入队时定下的 ``music_provider`` / ``music_model``）>
+        project（``music_backend``）> 全局（``default_music_backend``）。没有设定时报未配置，不自动推断。"""
+        async with self._open_session() as (session, svc):
+            if payload:
+                provider_id = _trusted_payload_provider(payload.get("music_provider"))
+                model = payload.get("music_model")
+                if provider_id is not None and isinstance(model, str) and model:
+                    return ProviderModel(
+                        provider_id,
+                        model,
+                        credential_id=parse_credential_id(payload.get(credential_key("music_provider"))),
+                    )
+            return await self._resolve_layered_backend(svc, session, project, _MUSIC_LAYERED_KEYS)
+
     async def video_capabilities_for_project(
         self,
         project: dict,
@@ -1273,6 +1299,10 @@ class ConfigResolver:
                 return ProviderModel(
                     provider_id, model_id, credential_id=parse_credential_id(settings.get(credential_key(global_key)))
                 )
+        if not keys.auto_resolve:
+            raise NoAvailableProviderError(
+                f"未设定 {keys.global_default_key or keys.project_default_key}。请在「全局设置 → 默认模型」选择一个模型。"
+            )
         return ProviderModel(*await self._auto_resolve_backend(svc, session, keys.media_type, keys.generation_type))
 
     async def _resolve_image_provider_model(

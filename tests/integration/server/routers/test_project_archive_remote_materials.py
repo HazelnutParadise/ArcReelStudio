@@ -24,7 +24,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from lib.artifacts.version_manager import VersionManager
 from lib.asset_library.bindings import account_scope, confirm_binding, get_bindable_credential
@@ -107,8 +107,10 @@ def _memory_tos(monkeypatch) -> MemoryBucket:
 
 
 @pytest.fixture
-def source_sessions(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
-    return async_sessionmaker(db_engine, expire_on_commit=False)
+def source_sessions(second_file_db_factory: async_sessionmaker[AsyncSession]) -> async_sessionmaker[AsyncSession]:
+    """源实例的数据库用独立的文件库：取回失败时并发取回会被中途取消，内存库（StaticPool）的唯一连接随之作废、
+    重建成一个空库，后续请求就会读不到表。"""
+    return second_file_db_factory
 
 
 async def _use_storage(sessions, target: str, connection: dict[str, str] | None = None) -> None:

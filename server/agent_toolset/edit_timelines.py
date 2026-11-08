@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 from server.agent_toolset.declaration import BLOCKED, ToolDeclaration
-from server.media_tools.bgm import ListBgmRequest, bgm_list_summary, list_bgm
+from server.media_tools.bgm import (
+    GenerateMusicRequest,
+    ListBgmRequest,
+    bgm_list_summary,
+    generate_music,
+    generated_music_summary,
+    list_bgm,
+)
 from server.media_tools.edit_timelines import (
     CreateTimelineRequest,
     EditTimelineRequest,
@@ -158,15 +165,30 @@ LIST_REVISIONS = ToolDeclaration(
 LIST_BGM = ToolDeclaration(
     name="list_bgm",
     description=(
-        "列出项目里已上传的 BGM：id（如 bgm-3f9a0c21，edit_timeline 的 insert_bgm 用它引用）、name 与 duration（秒），"
-        "按上传先后排列。BGM 属于整个项目，各集的剪辑时间线都能用；上传由创作者在剪辑视图的 BGM 轨完成，"
-        "列表为空时请创作者先上传。只读，无副作用。"
+        "列出项目里的 BGM（上传的与 generate_music 生成的）：id（如 bgm-3f9a0c21，edit_timeline 的 insert_bgm 用它引用）、"
+        "name 与 duration（秒），按加入先后排列。BGM 属于整个项目，各集的剪辑时间线都能用；"
+        "列表为空时可以用 generate_music 生成，或请创作者在剪辑视图的 BGM 轨上传。只读，无副作用。"
     ),
     request_model=ListBgmRequest,
     migration=BLOCKED,
     domain_key="bgm",
     handler=list_bgm,
     summary=bgm_list_summary,
+)
+
+GENERATE_MUSIC = ToolDeclaration(
+    name="generate_music",
+    description=(
+        "用设定里的音乐模型生成一首 BGM（付费生成），完成后登记进项目的 BGM 库，回传它的 id、名字与长度，"
+        "可直接用 edit_timeline 的 insert_bgm 摆放。prompt 写风格、情绪、乐器与节奏；duration_seconds 不给时 60 秒；"
+        "instrumental 预设只要器乐。没设定音乐模型时回报 music_provider_not_configured，请创作者先设定。"
+    ),
+    request_model=GenerateMusicRequest,
+    migration=BLOCKED,
+    domain_key="bgm",
+    handler=generate_music,
+    long_task=True,
+    summary=generated_music_summary,
 )
 
 RESTORE_REVISION = ToolDeclaration(
@@ -196,12 +218,14 @@ EDIT_TIMELINE_TOOLS = (
     LIST_REVISIONS,
     RESTORE_REVISION,
     LIST_BGM,
+    GENERATE_MUSIC,
 )
 
 __all__ = [
     "CREATE_TIMELINE",
     "EDIT_TIMELINE",
     "EDIT_TIMELINE_TOOLS",
+    "GENERATE_MUSIC",
     "LIST_BGM",
     "LIST_REVISIONS",
     "LIST_TIMELINES",

@@ -153,6 +153,7 @@ MESSAGES = {
     "video_prompt_action_empty": "prompt.action 不能為空",
     "video_prompt_dialogue_array": "prompt.dialogue 必須是陣列",
     "video_task_submitted": "影片「{segment_id}」生成任務已提交",
+    "music_task_submitted": "音樂生成任務已送出，完成後會出現在 BGM 庫",
     "grid_task_submitted": "已提交 {count} 個多宮格分鏡生成任務",
     "grid_task_submitted_with_unsplit": "已提交 {count} 個多宮格分鏡生成任務；另有 {unsplit} 張聯合圖尚未切分落格，請審閱後切分",
     "grid_unsplit_awaiting_split": "{unsplit} 張聯合圖已就緒、尚未切分落格，請審閱後切分；沒有需要新生成的多宮格分鏡",
@@ -166,6 +167,7 @@ MESSAGES = {
     "tts_narration_text_missing": "該單元沒有可合成的旁白正文",
     "tts_not_applicable": "旁白配音只為旁白歸屬的畫外音單元生成",
     "audio_provider_not_configured": "請先設定音訊供應商：在「全域性設定 → 供應商」頁面設定支援語音合成的供應商",
+    "music_provider_not_configured": "還沒有設定音樂模型，請在「全域設定 → 預設模型」選擇一個音樂模型",
     "narration_speed_must_be_positive": "旁白語速必須是正數",
     "narration_delivery_required": "旁白交付方式是必填項，只能在 TTS 配音與後期配音之間切換",
     "narration_tts_model_required": "選擇 TTS 配音時必須指定 TTS 模型",
@@ -482,6 +484,7 @@ MESSAGES = {
     # Validators
     "invalid_backend_format": "模型選擇格式無效，應為「供應商/模型」",
     "backend_media_type_mismatch": "所選模型型別不符：該項需要 {expected} 模型，但 {provider}/{model} 是 {actual} 模型",
+    "backend_capability_mismatch": "{provider}/{model} 不能用在這一項：這一項需要能做「{capability}」的模型",
     # Versions
     "unsupported_resource_type": "不支援的資源型別：{resource_type}",
     "invalid_resource_id": "非法的資源 ID: {resource_id}",

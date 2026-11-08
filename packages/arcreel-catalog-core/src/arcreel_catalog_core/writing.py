@@ -60,7 +60,17 @@ def _facts(facts: ModelFacts) -> dict[str, object]:
             )
             return raw
         case AudioFacts():
-            return {}
+            raw = {}
+            _put_recorded(
+                raw,
+                {
+                    "text_to_speech": facts.text_to_speech,
+                    "text_to_music": facts.text_to_music,
+                    "text_to_sfx": facts.text_to_sfx,
+                    "max_seconds": facts.max_seconds,
+                },
+            )
+            return raw
         case _:
             assert_never(facts)
 

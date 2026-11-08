@@ -1428,6 +1428,64 @@
         "login_kind": null
       },
       {
+        "id": "stability",
+        "display_name": "Stability AI",
+        "description": "英国 AI 公司 Stability AI 的 API 平台，提供 Stable Audio 等生成式模型，可生成音乐与音效。",
+        "status": "unconfigured",
+        "media_types": [
+          "audio"
+        ],
+        "capabilities": [
+          "text_to_music"
+        ],
+        "credential_count": 0,
+        "models": {
+          "stable-audio-3": {
+            "display_name": "Stable Audio 3",
+            "media_type": "audio",
+            "capabilities": [
+              "text_to_music"
+            ],
+            "default": true,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          }
+        },
+        "login_kind": null
+      },
+      {
+        "id": "elevenlabs",
+        "display_name": "ElevenLabs",
+        "description": "美国语音 AI 公司 ElevenLabs 的 API 平台，提供音乐与音效生成。其音乐条款禁止把音乐模型提供给第三方平台使用，对外开放前请先向 ElevenLabs 取得授权。",
+        "status": "unconfigured",
+        "media_types": [
+          "audio"
+        ],
+        "capabilities": [
+          "text_to_music"
+        ],
+        "credential_count": 0,
+        "models": {
+          "music_v2_5": {
+            "display_name": "Eleven Music v2.5",
+            "media_type": "audio",
+            "capabilities": [
+              "text_to_music"
+            ],
+            "default": true,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          }
+        },
+        "login_kind": null
+      },
+      {
         "id": "openai",
         "display_name": "OpenAI",
         "description": "美国人工智能公司 OpenAI 的 API 平台，提供其 GPT 系列等生成式 AI 模型。",

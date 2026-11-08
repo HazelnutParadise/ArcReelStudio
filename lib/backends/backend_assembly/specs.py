@@ -478,6 +478,17 @@ def _build_grok_subscription_text(config: LoadedConfig, model_id: str | None) ->
     )
 
 
+def _build_music(endpoint: str) -> Callable[[LoadedConfig, str | None], Any]:
+    """音乐端点的构造：音频类型下以能力区分的音乐后端（docs/adr/0126），注册名即端点名。"""
+
+    def build(config: LoadedConfig, model_id: str | None) -> Any:
+        from lib.backends.music_backends import create_backend
+
+        return create_backend(endpoint, api_key=config.credentials.get("api_key"), model=model_id)
+
+    return build
+
+
 def _text_simple_spec(provider_id: str, endpoint: str) -> ProviderSpec:
     """登记一条简单文本 spec：registry_backend 即 provider_id 自身（文本侧无别名映射）。"""
     return ProviderSpec(
@@ -623,6 +634,9 @@ PROVIDER_ONLY_ENDPOINTS: Mapping[str, str] = {
     "codex-chat": "text",
     "codex-image": "image",
     "grok-cli-chat": "text",
+    "gemini-lyria": "audio",
+    "stability-audio": "audio",
+    "elevenlabs-music": "audio",
 }
 
 #: 简单族的 image/video/audio：(provider_id, media_type) → 端点名。
@@ -800,6 +814,20 @@ _specs += [
         endpoint="grok-cli-chat",
     ),
 ]
+_specs += [
+    ProviderSpec(
+        provider_id=provider_id,
+        media_type="audio",
+        registry_backend=endpoint,
+        build_backend=_build_music(endpoint),
+        endpoint=endpoint,
+    )
+    for provider_id, endpoint in (
+        ("gemini-aistudio", "gemini-lyria"),
+        ("stability", "stability-audio"),
+        ("elevenlabs", "elevenlabs-music"),
+    )
+]
 
 #: (provider_id, 端点名) → 该供应商经这个端点调用时的构造规格。
 PROVIDER_ENDPOINT_SPECS: dict[tuple[str, str], ProviderSpec] = {
@@ -832,6 +860,8 @@ _MULTI_ENDPOINT_DEFAULTS: Mapping[tuple[str, str], str] = {
     ("kling", "video"): "kling-video-pro-silent",
     ("dashscope", "video"): "dashscope-always-on-video",
     ("dashscope", "audio"): "dashscope-tts",
+    # 音频类型下配音是默认端点；音乐模型在目录里挂接 gemini-lyria
+    ("gemini-aistudio", "audio"): "gemini-tts",
     ("agnes", "video"): "agnes-video-2-5",
     # 方舟的默认视频模型是 Seedance 2.0 系列
     ("ark", "video"): "ark-seedance-2",

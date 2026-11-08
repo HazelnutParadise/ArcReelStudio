@@ -16,6 +16,8 @@ MESSAGES: dict[str, str] = {
     "provider_name_claude-subscription": "Подписка Claude",
     "provider_name_chatgpt-subscription": "Подписка ChatGPT",
     "provider_name_grok-subscription": "Подписка Grok",
+    "provider_name_elevenlabs": "ElevenLabs",
+    "provider_name_stability": "Stability AI",
     # 失败文案里目录查不到的供应商（已被删除）的泛称
     "deleted_provider_display_name": "Удалённый провайдер",
     "deleted_agent_provider_display_name": "Удалённый провайдер агентов",
@@ -36,6 +38,8 @@ MESSAGES: dict[str, str] = {
     "provider_desc_claude-subscription": "Вход с аккаунтом Claude (Pro, Max и другие тарифы) для использования квоты подписки. Сейчас используется ArcReel Agent.",
     "provider_desc_chatgpt-subscription": "Вход с аккаунтом ChatGPT (Plus, Pro и другие тарифы) через Codex для использования квоты подписки.",
     "provider_desc_grok-subscription": "Вход с аккаунтом Grok (SuperGrok, X Premium и другие тарифы) через Grok CLI для использования квоты подписки.",
+    "provider_desc_elevenlabs": "API-платформа американской компании ElevenLabs для генерации музыки и звуковых эффектов. Условия для музыки запрещают предоставлять музыкальные модели через сторонние платформы, поэтому перед открытием доступа внешним пользователям получите разрешение ElevenLabs.",
+    "provider_desc_stability": "API-платформа британской AI-компании Stability AI с генеративными моделями, такими как Stable Audio, для музыки и звуковых эффектов.",
     # Agent preset notes (lib/agent/agent_provider_catalog.py)
     "preset_notes_deepseek": "Официальная конечная точка DeepSeek с совместимостью с Anthropic; нужен ключ с префиксом sk-.",
     "preset_notes_xiaomi_mimo": "Xiaomi MiMo принимает только известные имена моделей; публичного списка моделей нет.",

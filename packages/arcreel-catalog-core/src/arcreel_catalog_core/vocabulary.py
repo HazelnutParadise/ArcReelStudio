@@ -67,9 +67,9 @@ METERS: Final[Mapping[str, MeterSpec]] = MappingProxyType(
         "uncached_image_input_tokens": _token(("image",)),
         "image_cache_read_tokens": _token(("image",)),
         "image_output_tokens": _token(("image",)),
-        # 视频。视频 token 由输出秒数与画面尺寸换算而来，与秒数是同一条计费轴的两种量法，归计数类：
+        # 视频与音频。输出秒数也用于按时长计价的音乐与音效。视频 token 由输出秒数与画面尺寸换算而来，与秒数是同一条计费轴的两种量法，归计数类：
         # 按秒计价的条目不收它，按 token 计价的条目不收秒数。
-        "output_seconds": _count(("video",)),
+        "output_seconds": _count(("video", "audio")),
         "video_tokens": _count(("video",), _PER_MILLION),
         "input_video_seconds": _count(("video",)),
         # 音频

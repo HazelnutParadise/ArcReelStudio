@@ -111,6 +111,10 @@ BUILTIN_ENDPOINTS: Final[Mapping[str, BuiltinEndpoint]] = MappingProxyType(
         "codex-chat": BuiltinEndpoint("text", since="0.35.1"),
         "codex-image": BuiltinEndpoint("image", since="0.35.1"),
         "grok-cli-chat": BuiltinEndpoint("text", since="0.35.1"),
+        # 音乐生成（音频类型，以能力区分）
+        "gemini-lyria": BuiltinEndpoint("audio", since="0.35.1"),
+        "stability-audio": BuiltinEndpoint("audio", since="0.35.1"),
+        "elevenlabs-music": BuiltinEndpoint("audio", since="0.35.1"),
     }
 )
 
@@ -129,6 +133,8 @@ BUILTIN_PROVIDER_ENDPOINTS: Final[Mapping[str, Mapping[str, ProviderEndpointOpti
         "chatgpt-subscription": {"text": _single("codex-chat"), "image": _single("codex-image")},
         "claude-subscription": {"text": _single("claude-subscription-chat")},
         "grok-subscription": {"text": _single("grok-cli-chat")},
+        "stability": {"audio": _single("stability-audio")},
+        "elevenlabs": {"audio": _single("elevenlabs-music")},
         "ark-agent-plan": {"text": _single("ark-chat"), "image": _SEEDREAM, "video": _SEEDANCE},
         "dashscope": {
             "text": _single("openai-chat"),
@@ -154,7 +160,7 @@ BUILTIN_PROVIDER_ENDPOINTS: Final[Mapping[str, Mapping[str, ProviderEndpointOpti
             "video": ProviderEndpointOptions(
                 ("gemini-video", "gemini-interactions-video"), "gemini-interactions-video"
             ),
-            "audio": _single("gemini-tts"),
+            "audio": ProviderEndpointOptions(("gemini-tts", "gemini-lyria"), "gemini-tts"),
         },
         "gemini-vertex": {
             "text": _single("gemini-generate"),

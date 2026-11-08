@@ -62,7 +62,9 @@ ModelCapability = Literal[
     "vision",  # 消费点：文本解析的 vision 闸（lib/config/resolver.py）
     "text_to_image",  # 消费点：图片任务类型桶判定（lib/backends/generation_type_buckets.py）
     "image_to_image",  # 消费点：同上
-    "text_to_speech",
+    "text_to_speech",  # 消费点：配音模型的候选与校验（lib/config/model_setting_keys.py MODEL_SETTING_CAPABILITIES）
+    "text_to_music",  # 消费点：音乐模型的候选与校验（同上）
+    "text_to_sfx",  # 消费点：音效模型的候选与校验（同上）
 ]
 
 #: 两栖模型沿用的旧模型键。目录数据里供应商模型的身份是（API 模型名, 条目媒体类型），同一 API 模型名的
@@ -167,7 +169,12 @@ def _to_catalog_model(entry: CatalogEntry, api_model_name: str, key: str, defaul
             by_resolution = {res: list(allowed) for res, allowed in constraints.by_resolution.items()}
             reference_durations = list(constraints.with_reference_images)
         case AudioFacts():
-            capabilities.append("text_to_speech")
+            if facts.is_speech:
+                capabilities.append("text_to_speech")
+            if facts.text_to_music:
+                capabilities.append("text_to_music")
+            if facts.text_to_sfx:
+                capabilities.append("text_to_sfx")
         case _:
             assert_never(facts)
     return CatalogModel(

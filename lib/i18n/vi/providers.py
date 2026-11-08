@@ -16,6 +16,8 @@ MESSAGES: dict[str, str] = {
     "provider_name_claude-subscription": "Gói Claude",
     "provider_name_chatgpt-subscription": "Gói ChatGPT",
     "provider_name_grok-subscription": "Gói Grok",
+    "provider_name_elevenlabs": "ElevenLabs",
+    "provider_name_stability": "Stability AI",
     # 失败文案里目录查不到的供应商（已被删除）的泛称
     "deleted_provider_display_name": "Nhà cung cấp đã bị xóa",
     "deleted_agent_provider_display_name": "Nhà cung cấp Agent đã bị xóa",
@@ -36,6 +38,8 @@ MESSAGES: dict[str, str] = {
     "provider_desc_claude-subscription": "Đăng nhập bằng tài khoản Claude (Pro, Max và các gói khác) để dùng hạn mức gói đăng ký. Hiện dùng cho ArcReel Agent.",
     "provider_desc_chatgpt-subscription": "Đăng nhập bằng tài khoản ChatGPT (Plus, Pro và các gói khác) qua Codex để dùng hạn mức gói đăng ký.",
     "provider_desc_grok-subscription": "Đăng nhập bằng tài khoản Grok (SuperGrok, X Premium và các gói khác) qua Grok CLI để dùng hạn mức gói đăng ký.",
+    "provider_desc_elevenlabs": "Nền tảng API của công ty AI giọng nói ElevenLabs (Mỹ), cung cấp tạo nhạc và hiệu ứng âm thanh. Điều khoản nhạc của họ cấm cung cấp mô hình nhạc qua nền tảng bên thứ ba; hãy xin phép ElevenLabs trước khi mở cho người dùng bên ngoài.",
+    "provider_desc_stability": "Nền tảng API của công ty AI Anh Stability AI, cung cấp các mô hình như Stable Audio để tạo nhạc và hiệu ứng âm thanh.",
     # Agent preset notes (lib/agent/agent_provider_catalog.py)
     "preset_notes_deepseek": "Endpoint Anthropic-compat chính thức của DeepSeek; cần API key sk-.",
     "preset_notes_xiaomi_mimo": "Xiaomi MiMo chỉ chấp nhận tên model đã biết; không có danh sách model công khai.",

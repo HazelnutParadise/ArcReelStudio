@@ -112,7 +112,7 @@ _FACT_FIELDS: Mapping[MediaType, frozenset[str]] = {
             "max_reference_audio_total_seconds",
         }
     ),
-    "audio": frozenset(),
+    "audio": frozenset({"text_to_speech", "text_to_music", "text_to_sfx", "max_seconds"}),
 }
 _CONSTRAINT_FIELDS = frozenset({"by_resolution", "with_reference_images"})
 _PRICE_FIELDS = frozenset({"currency", "meters"})
@@ -391,7 +391,12 @@ class CatalogReader:
                     ),
                 )
             case "audio":
-                return AudioFacts()
+                return AudioFacts(
+                    text_to_speech=self.optional_flag(data, "text_to_speech", path),
+                    text_to_music=self.optional_flag(data, "text_to_music", path),
+                    text_to_sfx=self.optional_flag(data, "text_to_sfx", path),
+                    max_seconds=self.positive_int(data, "max_seconds", path),
+                )
 
     def output_token_bases(self, raw: object, path: str) -> Mapping[str, int]:
         data = {} if raw is None else self.obj(raw, path)

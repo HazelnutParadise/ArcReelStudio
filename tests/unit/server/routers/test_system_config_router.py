@@ -174,6 +174,7 @@ class TestGetSystemConfig:
             "text_backend_simple",
             "text_backend_complex",
             "default_audio_backend",
+            "default_music_backend",
             "narration_voice",
             "narration_speed",
             "market_github_proxy_prefix",
@@ -191,6 +192,15 @@ class TestGetSystemConfig:
         assert "image_backends" in options
         assert "gemini-vertex/veo-3.1-generate-001" in options["video_backends"]
         assert "gemini-vertex/gemini-3.1-flash-image" in options["image_backends"]
+
+    def test_audio_options_are_split_into_speech_and_music(self):
+        mock_svc = _make_mock_svc(ready_providers=["gemini-aistudio", "stability"])
+        with TestClient(_make_app_with_mock(mock_svc)) as client:
+            options = client.get("/api/v1/system/config").json()["options"]
+        assert "stability/stable-audio-3" in options["music_backends"]
+        assert "gemini-aistudio/lyria-3.5" in options["music_backends"]
+        assert not any(option.startswith("stability/") for option in options["audio_backends"])
+        assert not any("lyria" in option for option in options["audio_backends"])
 
     def test_options_exclude_unconfigured_providers(self):
         mock_svc = _make_mock_svc(ready_providers=[])
@@ -462,6 +472,18 @@ class TestPatchSystemConfig:
                 "/api/v1/system/config",
                 json={"default_video_backend_i2v": "gemini-aistudio/gemini-3.1-flash-image"},
             )
+        assert res.status_code == 400
+
+    def test_patch_rejects_a_speech_model_as_the_music_model(self):
+        mock_svc = _make_mock_svc()
+        with TestClient(self._make_patch_app(mock_svc)) as client:
+            res = client.patch("/api/v1/system/config", json={"default_music_backend": "minimax/speech-2.8-hd"})
+        assert res.status_code == 400
+
+    def test_patch_rejects_a_music_model_as_the_speech_model(self):
+        mock_svc = _make_mock_svc()
+        with TestClient(self._make_patch_app(mock_svc)) as client:
+            res = client.patch("/api/v1/system/config", json={"default_audio_backend": "stability/stable-audio-3"})
         assert res.status_code == 400
 
     def test_patch_rejects_invalid_backend_format(self):

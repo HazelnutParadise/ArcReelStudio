@@ -101,6 +101,9 @@ def _settlement_from_result(call_type: CallType, result: Any, *, usage: Usage | 
             # 调用通道按用量契约上报（自定义供应商的包装层在被包装的通道不报时按通用口径补上）。
             usage=(result.usage,) if result.usage is not None else (),
         )
+    if call_type == "audio" and usage is not None:
+        # 音乐生成（音频类型，docs/adr/0126）：调用通道按用量契约上报次数或秒数，没有配音的原始文本
+        return SettlementInput(usage=(usage,))
     if call_type == "audio":
         return SettlementInput(
             usage_tokens=len(result.text),
@@ -160,7 +163,7 @@ class LedgerCall:
     def success(self, result: Any, *, usage: Usage | None = None) -> None:
         """声明成功并递交 backend 结果对象；union 分发在此完成，结算在括号退出时执行。
 
-        ``usage`` 只用于 video：调用通道按用量契约上报的这次请求的计量。
+        ``usage`` 用于 video 与音乐：调用通道按用量契约上报的这次请求的计量；配音不传，由结果的文本转写。
         """
         self._settlement = _settlement_from_result(self._call_type, result, usage=usage)
 

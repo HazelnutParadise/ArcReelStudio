@@ -459,6 +459,20 @@ After configuration, first validate:
 
 Before generating in batches, audition a segment of text that contains representative proper nouns.
 
+## 9.1 Music generation {#music-providers}
+
+You can generate BGM with AI while editing: on the BGM track in the edit view, choose "Generate music" and describe the style, mood and length. When it's done, the track appears in the project's BGM library, ready to place on the timeline. The Agent can also generate music with `generate_music`. Generated music is loudness-matched the same way as uploads.
+
+Choose the music model in "Global settings › Default models › Music". Nothing can be generated until it's set; no model is picked automatically. Currently supported:
+
+| Provider | Model | Pricing |
+| --- | --- | --- |
+| AI Studio | Lyria 3.5, Lyria 3 Clip (30 s) | Per track |
+| Stability AI | Stable Audio 3 (up to 380 s) | Per request |
+| ElevenLabs | Eleven Music v2.5 (up to 10 min) | Per second |
+
+ElevenLabs' music terms forbid making its music models available through a third-party platform. Running your own deployment with your own API key for your own team isn't affected; before opening it to other users, get permission from ElevenLabs.
+
 ## 10. Custom Providers {#custom-providers}
 
 ArcReel can connect to OpenAI-compatible or Google-compatible services. Typical uses include:

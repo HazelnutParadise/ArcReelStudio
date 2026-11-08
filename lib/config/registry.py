@@ -146,6 +146,18 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
         optional_keys=["video_max_workers", "image_max_workers"],
         secret_keys=["api_key"],
     ),
+    "stability": ProviderMeta(
+        display_name="Stability AI",
+        required_keys=["api_key"],
+        optional_keys=["audio_max_workers"],
+        secret_keys=["api_key"],
+    ),
+    "elevenlabs": ProviderMeta(
+        display_name="ElevenLabs",
+        required_keys=["api_key"],
+        optional_keys=["audio_max_workers"],
+        secret_keys=["api_key"],
+    ),
     "openai": ProviderMeta(
         display_name="OpenAI",
         required_keys=["api_key"],

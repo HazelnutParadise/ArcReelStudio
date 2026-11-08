@@ -158,6 +158,7 @@ MESSAGES = {
     "video_prompt_action_empty": "prompt.action не должен быть пустым",
     "video_prompt_dialogue_array": "prompt.dialogue должен быть массивом",
     "video_task_submitted": "Задача генерации видео для «{segment_id}» отправлена",
+    "music_task_submitted": "Генерация музыки запущена. Трек появится в библиотеке BGM, когда будет готов",
     "grid_task_submitted": "Отправлено задач генерации многокадровой раскадровки: {count}",
     "grid_task_submitted_with_unsplit": "Отправлено задач генерации многокадровой раскадровки: {count}; композитов ещё не разделено: {unsplit}. Проверьте их и разделите на ячейки",
     "grid_unsplit_awaiting_split": "Готовы, но ещё не разделены на ячейки композиты: {unsplit}. Проверьте их и разделите. Генерировать многокадровую раскадровку не нужно",
@@ -171,6 +172,7 @@ MESSAGES = {
     "tts_narration_text_missing": "У этого видеофрагмента нет закадрового текста для синтеза",
     "tts_not_applicable": "Озвучка закадрового текста создаётся только для видеофрагментов, принадлежащих рассказчику",
     "audio_provider_not_configured": "Сначала настройте аудиопровайдера: добавьте провайдера с поддержкой синтеза речи в разделе «Настройки → Провайдеры»",
+    "music_provider_not_configured": "Модель для музыки не выбрана. Выберите её в «Общие настройки → Модели по умолчанию»",
     "narration_speed_must_be_positive": "Скорость закадрового текста должна быть положительным числом",
     "narration_delivery_required": "Способ подачи закадрового текста обязателен; выберите озвучку TTS или озвучку при монтаже",
     "narration_tts_model_required": "Выберите модель TTS, если закадровый текст озвучивается через TTS",
@@ -516,6 +518,7 @@ MESSAGES = {
     # Validators
     "invalid_backend_format": "Неверный формат выбора модели; используйте provider/model",
     "backend_media_type_mismatch": "Тип модели не совпадает: для этой настройки нужна модель {expected}, а {provider}/{model} — модель {actual}",
+    "backend_capability_mismatch": "{provider}/{model} нельзя использовать здесь: нужна модель с поддержкой {capability}",
     # Versions
     "unsupported_resource_type": "Неподдерживаемый тип ресурса: {resource_type}",
     "invalid_resource_id": "Недопустимый ID ресурса: {resource_id}",

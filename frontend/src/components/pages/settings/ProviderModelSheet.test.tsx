@@ -514,7 +514,7 @@ describe("ProviderModelSheet", () => {
     expect(within(info).getByText("不填价格时，调用费用记为未定价。")).toBeInTheDocument();
     await user.click(within(info).getByRole("button", { name: "人民币" }));
     await user.click(within(info).getByRole("button", { name: "添加计费项" }));
-    await user.click(await screen.findByRole("menuitem", { name: "视频时长" }));
+    await user.click(await screen.findByRole("menuitem", { name: "输出时长" }));
 
     // 单价还没填：保存被拦下，不发请求
     expect(within(info).getByText("请填写单价。")).toBeInTheDocument();
@@ -522,7 +522,7 @@ describe("ProviderModelSheet", () => {
     expect(await screen.findByText(/「模型信息」里有填写不正确的值。/)).toBeInTheDocument();
     expect(update).not.toHaveBeenCalled();
 
-    await user.type(within(info).getByRole("textbox", { name: "视频时长的单价" }), "0.5");
+    await user.type(within(info).getByRole("textbox", { name: "输出时长的单价" }), "0.5");
     await user.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() =>
@@ -548,8 +548,8 @@ describe("ProviderModelSheet", () => {
     renderSheet();
 
     const info = await infoSection();
-    expect(within(info).getByRole("textbox", { name: "视频时长的单价" })).toHaveValue("0.5");
-    await user.click(within(info).getByRole("button", { name: "删除计费项「视频时长」" }));
+    expect(within(info).getByRole("textbox", { name: "输出时长的单价" })).toHaveValue("0.5");
+    await user.click(within(info).getByRole("button", { name: "删除计费项「输出时长」" }));
     await user.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() =>

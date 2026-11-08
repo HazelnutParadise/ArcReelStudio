@@ -12,6 +12,7 @@
       "default_image_backend_i2i": "",
       "default_text_backend": "",
       "default_audio_backend": "",
+      "default_music_backend": "",
       "narration_voice": "",
       "narration_speed": null,
       "video_generate_audio": true,
@@ -41,13 +42,15 @@
       "default_video_backend_credential_id": null,
       "default_video_backend_i2v_credential_id": null,
       "default_video_backend_r2v_credential_id": null,
-      "default_audio_backend_credential_id": null
+      "default_audio_backend_credential_id": null,
+      "default_music_backend_credential_id": null
     },
     "options": {
       "video_backends": [],
       "image_backends": [],
       "text_backends": [],
       "audio_backends": [],
+      "music_backends": [],
       "provider_names": {},
       "model_names": {},
       "gpu_encoder": null

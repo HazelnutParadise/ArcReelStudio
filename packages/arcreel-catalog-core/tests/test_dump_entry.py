@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 
 import pytest
-from catalog_factories import amphibious_image_entry, audio_entry, text_entry, video_entry
+from catalog_factories import amphibious_image_entry, audio_entry, music_entry, sfx_entry, text_entry, video_entry
 
 from arcreel_catalog_core import check_entry, dump_entry, parse_entry
 
 
-@pytest.mark.parametrize("factory", [text_entry, video_entry, amphibious_image_entry, audio_entry])
+@pytest.mark.parametrize(
+    "factory", [text_entry, video_entry, amphibious_image_entry, audio_entry, music_entry, sfx_entry]
+)
 def test_dumped_entry_parses_back_to_the_same_entry(factory):
     entry = parse_entry(factory())
 
@@ -27,11 +29,11 @@ def test_dump_keeps_price_table_details():
     assert dump_entry(parse_entry(audio_entry()))["price"] == audio_entry()["price"]
 
 
-@pytest.mark.parametrize("factory", [amphibious_image_entry, video_entry])
+@pytest.mark.parametrize("factory", [amphibious_image_entry, video_entry, audio_entry, music_entry, sfx_entry])
 def test_dump_does_not_invent_unrecorded_model_facts(factory):
     raw = factory()
 
-    assert dump_entry(parse_entry(raw))["facts"] == raw["facts"]
+    assert dump_entry(parse_entry(raw))["facts"] == raw.get("facts", {})
 
 
 @pytest.mark.parametrize(

@@ -108,6 +108,36 @@ def audio_entry() -> dict[str, Any]:
     }
 
 
+def music_entry() -> dict[str, Any]:
+    """音乐生成条目：音频类型，以模型事实标出能做音乐，按次计价。"""
+    return {
+        "maker": "google",
+        "name": "lyria-3.5",
+        "media_type": "audio",
+        "display_name": "Lyria 3.5",
+        "facts": {"text_to_music": True, "max_seconds": 240},
+        "price": {
+            "currency": "USD",
+            "meters": [{"meter": "requests", "dims": [], "rows": [{"when": {}, "price": 0.08}]}],
+        },
+    }
+
+
+def sfx_entry() -> dict[str, Any]:
+    """音效生成条目：按输出秒数计价。"""
+    return {
+        "maker": "elevenlabs",
+        "name": "eleven-text-to-sound-v3",
+        "media_type": "audio",
+        "display_name": "Eleven Sound Effects v3",
+        "facts": {"text_to_sfx": True, "max_seconds": 30},
+        "price": {
+            "currency": "USD",
+            "meters": [{"meter": "output_seconds", "dims": [], "rows": [{"when": {}, "price": 0.002}]}],
+        },
+    }
+
+
 def catalog() -> dict[str, Any]:
     return {
         "dataset_version": DATASET_VERSION,
