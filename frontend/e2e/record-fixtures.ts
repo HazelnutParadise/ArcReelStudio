@@ -111,6 +111,7 @@ const RECORDINGS: Recording[] = [
   { file: "agent-preset-providers", method: "GET", path: "/api/v1/agent/preset-providers" },
   // 「Claude 订阅」区块：订阅状态（录制环境未登录）与当前账号（决定能否登录、改使用方式）。
   { file: "agent-subscription", method: "GET", path: "/api/v1/agent/subscription" },
+  { file: "agent-engine", method: "GET", path: "/api/v1/agent/engine" },
   { file: "auth-me", method: "GET", path: "/api/v1/auth/me" },
   // 全局设置「Agent 记忆」：用户记忆目录（录制环境没有记忆文件，多条目与正文由场景替换）。
   { file: "agent-memory", method: "GET", path: "/api/v1/agent/memory" },
