@@ -14,7 +14,7 @@ import hashlib
 import io
 import json
 import zipfile
-from collections.abc import AsyncIterator, Generator
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -43,7 +43,6 @@ from server.auth import CurrentUserInfo, get_current_user
 from server.error_handlers import register_error_handlers
 from server.routers import files, object_storage, projects, versions
 from tests.auth_deps import AUTH_DEPENDENCIES
-from tests.conftest import make_test_engine
 from tests.fakes import bind_session_factory, use_object_storage_sdk, use_project_manager, use_projects_session_factory
 from tests.integration.server.derivative_sheet_support import solid_png_bytes
 from tests.integration.server.routers.test_remote_material_storage import MemoryBucket
@@ -108,11 +107,10 @@ def _memory_tos(monkeypatch) -> MemoryBucket:
 
 
 @pytest.fixture
-async def source_sessions(tmp_path: Path) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+def source_sessions(second_file_db_factory: async_sessionmaker[AsyncSession]) -> async_sessionmaker[AsyncSession]:
     """源实例的数据库用独立的文件库：取回失败时并发取回会被中途取消，内存库（StaticPool）的唯一连接随之作废、
     重建成一个空库，后续请求就会读不到表。"""
-    async with make_test_engine(dialect_aware=False, file_path=tmp_path / "source.db") as engine:
-        yield async_sessionmaker(engine, expire_on_commit=False)
+    return second_file_db_factory
 
 
 async def _use_storage(sessions, target: str, connection: dict[str, str] | None = None) -> None:
