@@ -2272,6 +2272,13 @@ export default {
     'Claude Agent SDK: подписка Claude, ключ API Anthropic или совместимый с Anthropic сервис.',
   'agent_engine_codex': 'Codex',
   'agent_engine_codex_hint': 'OpenAI Codex: подписка ChatGPT или ключ API OpenAI.',
+  'agent_engine_grok': 'Grok',
+  'agent_engine_grok_hint': 'xAI Grok (экспериментально): подписка Grok или ключ API xAI.',
+  'agent_engine_grok_connection_label': 'Подключение для Grok',
+  'agent_engine_grok_connection_subscription': 'Подписка Grok · {{name}}',
+  'agent_engine_grok_connection_api_key': 'Ключ API xAI · {{name}}',
+  'agent_engine_grok_limits':
+    'Движок Grok пока не поддерживает перезапись с более раннего сообщения, вопросы Agent к вам и проверяющие под-агенты только для чтения.',
   'agent_engine_admin_only': 'Менять движок могут только администраторы.',
   'agent_engine_codex_connection_label': 'Подключение для Codex',
   'agent_engine_codex_model': 'Модель',

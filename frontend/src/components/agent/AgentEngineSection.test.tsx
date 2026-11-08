@@ -15,6 +15,10 @@ const claude: AgentEngineStatus = {
   codex_effective_credential_id: 5,
   codex_model: "gpt-5.5",
   codex_models: ["gpt-5.5", "gpt-6-sol", "gpt-6-luna"],
+  grok_credential_id: null,
+  grok_effective_credential_id: null,
+  grok_model: "grok-4.6",
+  grok_models: ["grok-4.6", "grok-4.5"],
 };
 
 function connection(id: number, provider: string, name: string): ProviderCredential {
@@ -52,7 +56,13 @@ describe("AgentEngineSection", () => {
     await userEvent.click(await screen.findByRole("radio", { name: /Codex/ }));
 
     await waitFor(() =>
-      expect(setEngine).toHaveBeenCalledWith({ engine: "codex", codex_credential_id: null, codex_model: "gpt-5.5" }),
+      expect(setEngine).toHaveBeenCalledWith({
+        engine: "codex",
+        codex_credential_id: null,
+        codex_model: "gpt-5.5",
+        grok_credential_id: null,
+        grok_model: "grok-4.6",
+      }),
     );
     expect(await screen.findByRole("combobox", { name: "Codex 用的连线" })).toBeInTheDocument();
   });
@@ -68,7 +78,38 @@ describe("AgentEngineSection", () => {
     await userEvent.click(screen.getByRole("option", { name: "OpenAI API Key · team key" }));
 
     await waitFor(() =>
-      expect(setEngine).toHaveBeenCalledWith({ engine: "codex", codex_credential_id: 6, codex_model: "gpt-5.5" }),
+      expect(setEngine).toHaveBeenCalledWith({
+        engine: "codex",
+        codex_credential_id: 6,
+        codex_model: "gpt-5.5",
+        grok_credential_id: null,
+        grok_model: "grok-4.6",
+      }),
+    );
+  });
+
+  it("lists Grok subscription and xAI connections for Grok", async () => {
+    asRole("admin");
+    useConnectionsStore.setState({
+      connections: [connection(7, "grok-subscription", "me@x.ai"), connection(8, "grok", "xai key")],
+      loaded: true,
+    });
+    vi.spyOn(API, "getAgentEngine").mockResolvedValue({ ...claude, engine: "grok" });
+    const setEngine = vi.spyOn(API, "setAgentEngine").mockResolvedValue({ ...claude, engine: "grok" });
+    render(<AgentEngineSection />);
+
+    await userEvent.click(await screen.findByRole("combobox", { name: "Grok 用的连线" }));
+    expect(await screen.findByRole("option", { name: "Grok 订阅 · me@x.ai" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("option", { name: "xAI API Key · xai key" }));
+
+    await waitFor(() =>
+      expect(setEngine).toHaveBeenCalledWith({
+        engine: "grok",
+        codex_credential_id: null,
+        codex_model: "gpt-5.5",
+        grok_credential_id: 8,
+        grok_model: "grok-4.6",
+      }),
     );
   });
 

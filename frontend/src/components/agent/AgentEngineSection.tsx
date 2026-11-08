@@ -11,9 +11,29 @@ import type { AgentEngine, AgentEngineRequest, AgentEngineStatus } from "@/types
 import type { CurrentAccount } from "@/types";
 import { errMsg, voidCall } from "@/utils/async";
 
-const ENGINES: readonly AgentEngine[] = ["claude", "codex"];
-/** Codex 引擎能用的连线供应商：ChatGPT 订阅在前，OpenAI API Key 在后（与后端的预设顺序一致） */
-const CODEX_PROVIDERS = ["chatgpt-subscription", "openai"] as const;
+const ENGINES: readonly AgentEngine[] = ["claude", "codex", "grok"];
+
+/** 每个非 Claude 引擎能用的连线：订阅在前、API Key 在后（与后端的预设顺序一致），以及设定栏位与连线名称的文案键 */
+const ENGINE_CONNECTIONS = {
+  codex: {
+    subscription: "chatgpt-subscription",
+    apiKey: "openai",
+    credentialField: "codex_credential_id",
+    effectiveField: "codex_effective_credential_id",
+    modelField: "codex_model",
+    modelsField: "codex_models",
+  },
+  grok: {
+    subscription: "grok-subscription",
+    apiKey: "grok",
+    credentialField: "grok_credential_id",
+    effectiveField: "grok_effective_credential_id",
+    modelField: "grok_model",
+    modelsField: "grok_models",
+  },
+} as const;
+
+type ConnectedEngine = keyof typeof ENGINE_CONNECTIONS;
 
 /** 引擎设定与当前账号；组件卸载后到达的结果直接丢弃。 */
 function useEngineStatus() {
@@ -64,6 +84,8 @@ export function AgentEngineSection() {
             engine: status.engine,
             codex_credential_id: status.codex_credential_id,
             codex_model: status.codex_model,
+            grok_credential_id: status.grok_credential_id,
+            grok_model: status.grok_model,
             ...patch,
           }),
         );
@@ -93,8 +115,13 @@ export function AgentEngineSection() {
             disabled={!isAdmin || busy}
             onChange={(engine) => voidCall(save({ engine }))}
           />
-          {status.engine === "codex" && (
-            <CodexOptions status={status} disabled={!isAdmin || busy} onChange={(patch) => voidCall(save(patch))} />
+          {status.engine !== "claude" && (
+            <EngineConnectionOptions
+              engine={status.engine}
+              status={status}
+              disabled={!isAdmin || busy}
+              onChange={(patch) => voidCall(save(patch))}
+            />
           )}
           {!isAdmin && <p className="text-xs text-muted-foreground">{t("agent_engine_admin_only")}</p>}
         </>
@@ -135,11 +162,13 @@ function EnginePicker({
   );
 }
 
-function CodexOptions({
+function EngineConnectionOptions({
+  engine,
   status,
   disabled,
   onChange,
 }: Readonly<{
+  engine: ConnectedEngine;
   status: AgentEngineStatus;
   disabled: boolean;
   onChange: (patch: Partial<AgentEngineRequest>) => void;
@@ -151,8 +180,9 @@ function CodexOptions({
     void fetchConnections();
   }, [fetchConnections]);
 
-  const own = CODEX_PROVIDERS.flatMap((provider) => connectionsOf(connections, provider));
-  const effective = own.find((connection) => connection.id === status.codex_effective_credential_id);
+  const spec = ENGINE_CONNECTIONS[engine];
+  const own = [spec.subscription, spec.apiKey].flatMap((provider) => connectionsOf(connections, provider));
+  const effective = own.find((connection) => connection.id === status[spec.effectiveField]);
   const connectionItems = [
     {
       value: null,
@@ -160,12 +190,13 @@ function CodexOptions({
     },
     ...own.map((connection) => ({
       value: connection.id,
-      label: t(`agent_engine_codex_connection_${connection.provider === "openai" ? "api_key" : "subscription"}`, {
-        name: connection.name,
-      }),
+      label: t(
+        `agent_engine_${engine}_connection_${connection.provider === spec.apiKey ? "api_key" : "subscription"}`,
+        { name: connection.name },
+      ),
     })),
   ];
-  const modelItems = status.codex_models.map((model) => ({ value: model, label: model }));
+  const modelItems = status[spec.modelsField].map((model) => ({ value: model, label: model }));
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border px-4 py-3">
@@ -173,11 +204,11 @@ function CodexOptions({
         <span className="w-16 shrink-0 text-xs text-muted-foreground">{t("connection_label")}</span>
         <Select
           items={connectionItems}
-          value={status.codex_credential_id}
+          value={status[spec.credentialField]}
           disabled={disabled}
-          onValueChange={(next) => onChange({ codex_credential_id: next ?? null })}
+          onValueChange={(next) => onChange({ [spec.credentialField]: next ?? null })}
         >
-          <SelectTrigger size="sm" aria-label={t("agent_engine_codex_connection_label")} className="min-w-56">
+          <SelectTrigger size="sm" aria-label={t(`agent_engine_${engine}_connection_label`)} className="min-w-56">
             <SelectValue />
           </SelectTrigger>
           <SelectContent alignItemWithTrigger={false} align="start">
@@ -193,10 +224,10 @@ function CodexOptions({
         <span className="w-16 shrink-0 text-xs text-muted-foreground">{t("agent_engine_codex_model")}</span>
         <Select
           items={modelItems}
-          value={status.codex_model}
+          value={status[spec.modelField]}
           disabled={disabled}
           onValueChange={(next) => {
-            if (next) onChange({ codex_model: next });
+            if (next) onChange({ [spec.modelField]: next });
           }}
         >
           <SelectTrigger size="sm" aria-label={t("agent_engine_codex_model")} className="min-w-56">
@@ -211,7 +242,7 @@ function CodexOptions({
           </SelectContent>
         </Select>
       </div>
-      <p className="text-xs text-muted-foreground">{t("agent_engine_codex_limits")}</p>
+      <p className="text-xs text-muted-foreground">{t(`agent_engine_${engine}_limits`)}</p>
     </div>
   );
 }

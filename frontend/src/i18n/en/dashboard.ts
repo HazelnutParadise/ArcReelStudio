@@ -2173,6 +2173,13 @@ export default {
     'Claude Agent SDK: uses a Claude subscription, an Anthropic API key or an Anthropic-compatible service.',
   'agent_engine_codex': 'Codex',
   'agent_engine_codex_hint': 'OpenAI Codex: uses a ChatGPT subscription or an OpenAI API key.',
+  'agent_engine_grok': 'Grok',
+  'agent_engine_grok_hint': 'xAI Grok (experimental): uses a Grok subscription or an xAI API key.',
+  'agent_engine_grok_connection_label': 'Connection for Grok',
+  'agent_engine_grok_connection_subscription': 'Grok subscription · {{name}}',
+  'agent_engine_grok_connection_api_key': 'xAI API key · {{name}}',
+  'agent_engine_grok_limits':
+    "The Grok engine doesn't yet support rewriting from an earlier message, the Agent asking you questions, or the read-only review sub-agents.",
   'agent_engine_admin_only': 'Only admins can change the engine.',
   'agent_engine_codex_connection_label': 'Connection for Codex',
   'agent_engine_codex_model': 'Model',

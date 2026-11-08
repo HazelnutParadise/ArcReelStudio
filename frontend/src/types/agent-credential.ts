@@ -148,7 +148,7 @@ export interface ClaudeSubscriptionStatus {
 }
 
 /** Agent 跑新会话的引擎：Claude Agent SDK 或 Codex（ChatGPT 订阅 / OpenAI API Key）。 */
-export type AgentEngine = "claude" | "codex";
+export type AgentEngine = "claude" | "codex" | "grok";
 
 export interface AgentEngineStatus {
   engine: AgentEngine;
@@ -158,10 +158,17 @@ export interface AgentEngineStatus {
   codex_effective_credential_id: number | null;
   codex_model: string;
   codex_models: string[];
+  /** 指定的 Grok 连线；null 表示用预设（Grok 订阅优先，再来 xAI）。 */
+  grok_credential_id: number | null;
+  grok_effective_credential_id: number | null;
+  grok_model: string;
+  grok_models: string[];
 }
 
 export interface AgentEngineRequest {
   engine: AgentEngine;
   codex_credential_id: number | null;
   codex_model: string;
+  grok_credential_id: number | null;
+  grok_model: string;
 }
