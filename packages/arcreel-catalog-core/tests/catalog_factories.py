@@ -116,7 +116,10 @@ def music_entry() -> dict[str, Any]:
         "media_type": "audio",
         "display_name": "Lyria 3.5",
         "facts": {"text_to_music": True, "max_seconds": 240},
-        "price": {"currency": "USD", "meters": [{"meter": "requests", "dims": [], "rows": [{"when": {}, "price": 0.08}]}]},
+        "price": {
+            "currency": "USD",
+            "meters": [{"meter": "requests", "dims": [], "rows": [{"when": {}, "price": 0.08}]}],
+        },
     }
 
 
