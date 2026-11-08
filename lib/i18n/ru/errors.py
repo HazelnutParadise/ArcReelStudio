@@ -516,6 +516,7 @@ MESSAGES = {
     # Validators
     "invalid_backend_format": "Неверный формат выбора модели; используйте provider/model",
     "backend_media_type_mismatch": "Тип модели не совпадает: для этой настройки нужна модель {expected}, а {provider}/{model} — модель {actual}",
+    "backend_capability_mismatch": "{provider}/{model} нельзя использовать здесь: нужна модель с поддержкой {capability}",
     # Versions
     "unsupported_resource_type": "Неподдерживаемый тип ресурса: {resource_type}",
     "invalid_resource_id": "Недопустимый ID ресурса: {resource_id}",

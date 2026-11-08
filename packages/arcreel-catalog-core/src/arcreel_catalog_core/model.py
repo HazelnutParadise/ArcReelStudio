@@ -54,7 +54,19 @@ class VideoFacts:
 
 @dataclass(frozen=True)
 class AudioFacts:
-    pass
+    """音频条目会做什么：配音（文字转语音）、音乐或音效。三项都没写的条目是配音（上游既有的 TTS 条目不带事实）。"""
+
+    text_to_speech: bool | None = None
+    text_to_music: bool | None = None
+    text_to_sfx: bool | None = None
+    #: 一次能生成的最长秒数；没写表示没有记录
+    max_seconds: int | None = None
+
+    @property
+    def is_speech(self) -> bool:
+        if self.text_to_speech is not None:
+            return self.text_to_speech
+        return not (self.text_to_music or self.text_to_sfx)
 
 
 ModelFacts = TextFacts | ImageFacts | VideoFacts | AudioFacts

@@ -56,6 +56,7 @@ from lib.market.sources import PROXY_PREFIX_SETTING
 from lib.speech.narration_config import parse_tts_backend
 from server.dependencies import get_config_service
 from server.i18n import Locale, Translator
+from server.services.backend_values import audio_capabilities
 from server.services.default_model_settings import apply_default_model_settings
 from server.services.project.model_references import project_model_references
 from server.services.project.narration_settings import default_narration_tts
@@ -83,6 +84,8 @@ class _OptionsDict(TypedDict):
     image_backends: list[str]
     text_backends: list[str]
     audio_backends: list[str]
+    #: 能做音乐的音频模型（音频类型以能力区分配音与音乐，docs/adr/0126）
+    music_backends: list[str]
     provider_names: dict[str, str]
     model_names: dict[str, str]
     # 本机可用的成片 GPU 编码器（如 h264_nvenc）；None 表示 GPU 编码不可用
@@ -422,7 +425,15 @@ async def _build_options(svc: ConfigService, session: AsyncSession, locale: str 
         "text_backends": [],
         "audio_backends": [],
     }
+    music: list[str] = []
     for candidate in candidates:
+        if candidate.media_type == "audio":
+            capabilities = audio_capabilities(candidate.option)
+            if "text_to_speech" in capabilities:
+                by_media["audio_backends"].append(candidate.option)
+            if "text_to_music" in capabilities:
+                music.append(candidate.option)
+            continue
         key = _MEDIA_TO_OPTION_LIST.get(candidate.media_type)
         if key:
             by_media[key].append(candidate.option)
@@ -432,6 +443,7 @@ async def _build_options(svc: ConfigService, session: AsyncSession, locale: str 
         image_backends=by_media["image_backends"],
         text_backends=by_media["text_backends"],
         audio_backends=by_media["audio_backends"],
+        music_backends=music,
         provider_names=provider_names,
         model_names=_model_names(candidates),
         gpu_encoder=(await asyncio.to_thread(gpu_encoder_status)).encoder,

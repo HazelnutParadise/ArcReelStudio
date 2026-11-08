@@ -482,6 +482,7 @@ MESSAGES = {
     # Validators
     "invalid_backend_format": "模型選擇格式無效，應為「供應商/模型」",
     "backend_media_type_mismatch": "所選模型型別不符：該項需要 {expected} 模型，但 {provider}/{model} 是 {actual} 模型",
+    "backend_capability_mismatch": "{provider}/{model} 不能用在這一項：這一項需要能做「{capability}」的模型",
     # Versions
     "unsupported_resource_type": "不支援的資源型別：{resource_type}",
     "invalid_resource_id": "非法的資源 ID: {resource_id}",

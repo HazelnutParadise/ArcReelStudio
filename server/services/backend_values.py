@@ -5,10 +5,19 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lib.catalog import query as catalog
-from lib.config.model_setting_keys import MODEL_SETTING_MEDIA_TYPES
+from lib.config.model_setting_keys import MODEL_SETTING_CAPABILITIES, MODEL_SETTING_MEDIA_TYPES
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.infra.api_errors import BadRequestError
+
+
+def audio_capabilities(option: str) -> list[str]:
+    """``provider/model`` 音频模型的能力：目录登记的按条目事实；目录外（自定义供应商的配音端点等）视为配音。"""
+    provider_id, _, model_id = option.partition("/")
+    model_info = catalog.get_model(provider_id, model_id)
+    if model_info is None:
+        return ["text_to_speech"]
+    return list(model_info.capabilities)
 
 
 def validate_backend_value(value: str, field_name: str) -> None:
@@ -45,6 +54,11 @@ def validate_backend_value(value: str, field_name: str) -> None:
                 expected=expected_media_type,
                 actual=model_info.media_type,
             ).with_diagnostic(f"field: {field_name}")
+    required_capability = MODEL_SETTING_CAPABILITIES.get(field_name)
+    if required_capability is not None and required_capability not in audio_capabilities(value):
+        raise BadRequestError(
+            "backend_capability_mismatch", provider=provider_id, model=model_id, capability=required_capability
+        ).with_diagnostic(f"field: {field_name}")
 
 
 async def validate_backend_credential(

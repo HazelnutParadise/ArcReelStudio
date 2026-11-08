@@ -514,6 +514,7 @@ MESSAGES = {
     # Validators
     "invalid_backend_format": "Model selection format is invalid; use provider/model",
     "backend_media_type_mismatch": "Model type mismatch: this setting needs a {expected} model, but {provider}/{model} is a {actual} model",
+    "backend_capability_mismatch": "{provider}/{model} can't be used here: this setting needs a model that supports {capability}",
     # Versions
     "unsupported_resource_type": "Unsupported resource type: {resource_type}",
     "invalid_resource_id": "Invalid resource ID: {resource_id}",

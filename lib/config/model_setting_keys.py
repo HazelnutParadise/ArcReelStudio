@@ -23,6 +23,7 @@ GLOBAL_MODEL_SETTING_KEYS: tuple[str, ...] = (
     "default_video_backend_i2v",
     "default_video_backend_r2v",
     "default_audio_backend",
+    "default_music_backend",
 )
 
 #: 项目 project.json 里所有引用模型的字段。
@@ -35,6 +36,7 @@ PROJECT_MODEL_SETTING_KEYS: tuple[str, ...] = (
     "video_provider_i2v",
     "video_provider_r2v",
     "audio_backend",
+    "music_backend",
 )
 
 #: 引用模型的设置字段（全局与项目）→ 所引模型的媒体类型。写入时据此校验模型的媒体类型，读出引用时据此对应条目。
@@ -52,9 +54,21 @@ MODEL_SETTING_MEDIA_TYPES: dict[str, str] = {
     "default_image_backend_i2i": "image",
     "audio_backend": "audio",
     "default_audio_backend": "audio",
+    "music_backend": "audio",
+    "default_music_backend": "audio",
     "text_backend_simple": "text",
     "text_backend_complex": "text",
     "default_text_backend": "text",
+}
+
+
+#: 同一媒体类型下按能力区分用途的字段 → 所引模型必须具备的能力。音频类型同时承载配音与音乐（docs/adr/0126），
+#: 写入校验与模型候选据此只接受、只列出做得到的模型；不在这里的字段只看媒体类型。
+MODEL_SETTING_CAPABILITIES: dict[str, str] = {
+    "audio_backend": "text_to_speech",
+    "default_audio_backend": "text_to_speech",
+    "music_backend": "text_to_music",
+    "default_music_backend": "text_to_music",
 }
 
 

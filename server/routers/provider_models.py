@@ -767,7 +767,16 @@ def _facts_json(entry: CatalogEntry) -> dict[str, Any]:
                 },
             }
         case AudioFacts():
-            return {}
+            audio: dict[str, Any] = {}
+            for key, value in (
+                ("text_to_speech", facts.text_to_speech),
+                ("text_to_music", facts.text_to_music),
+                ("text_to_sfx", facts.text_to_sfx),
+                ("max_seconds", facts.max_seconds),
+            ):
+                if value is not None:
+                    audio[key] = value
+            return audio
         case _:
             assert_never(facts)
 
