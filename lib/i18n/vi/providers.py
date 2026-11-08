@@ -13,6 +13,9 @@ MESSAGES: dict[str, str] = {
     "provider_name_minimax": "MiniMax",
     "provider_name_kling": "Kling",
     "provider_name_agnes": "Agnes",
+    "provider_name_claude-subscription": "Gói Claude",
+    "provider_name_chatgpt-subscription": "Gói ChatGPT",
+    "provider_name_grok-subscription": "Gói Grok",
     # 失败文案里目录查不到的供应商（已被删除）的泛称
     "deleted_provider_display_name": "Nhà cung cấp đã bị xóa",
     "deleted_agent_provider_display_name": "Nhà cung cấp Agent đã bị xóa",
@@ -30,6 +33,9 @@ MESSAGES: dict[str, str] = {
     "provider_desc_minimax": "Nền tảng mở của MiniMax, công ty AI có trụ sở tại Thượng Hải, cung cấp các mô hình đa phương thức và dịch vụ tạo video Hailuo. Mặc định kết nối site nội địa; đặt base_url sang site quốc tế khi dùng ở nước ngoài.",
     "provider_desc_kling": "Nền tảng mở của Kling AI, dịch vụ AI tạo sinh của Kuaishou. Xác thực bằng API Key áp dụng cho mọi model; Access Key + Secret Key (JWT) chỉ áp dụng cho model từ 3.0 trở về trước. Chọn một trong hai — nếu điền cả hai, API Key được ưu tiên.",
     "provider_desc_agnes": "Nền tảng AI đa phương thức của Agnes AI, cung cấp các mô hình AI tạo sinh của hãng qua một API thống nhất.",
+    "provider_desc_claude-subscription": "Đăng nhập bằng tài khoản Claude (Pro, Max và các gói khác) để dùng hạn mức gói đăng ký. Hiện dùng cho ArcReel Agent.",
+    "provider_desc_chatgpt-subscription": "Đăng nhập bằng tài khoản ChatGPT (Plus, Pro và các gói khác) qua Codex để dùng hạn mức gói đăng ký.",
+    "provider_desc_grok-subscription": "Đăng nhập bằng tài khoản Grok (SuperGrok, X Premium và các gói khác) qua Grok CLI để dùng hạn mức gói đăng ký.",
     # Agent preset notes (lib/agent/agent_provider_catalog.py)
     "preset_notes_deepseek": "Endpoint Anthropic-compat chính thức của DeepSeek; cần API key sk-.",
     "preset_notes_xiaomi_mimo": "Xiaomi MiMo chỉ chấp nhận tên model đã biết; không có danh sách model công khai.",

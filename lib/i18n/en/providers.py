@@ -13,6 +13,9 @@ MESSAGES: dict[str, str] = {
     "provider_name_minimax": "MiniMax",
     "provider_name_kling": "Kling",
     "provider_name_agnes": "Agnes",
+    "provider_name_claude-subscription": "Claude subscription",
+    "provider_name_chatgpt-subscription": "ChatGPT subscription",
+    "provider_name_grok-subscription": "Grok subscription",
     # 失败文案里目录查不到的供应商（已被删除）的泛称
     "deleted_provider_display_name": "Deleted provider",
     "deleted_agent_provider_display_name": "Deleted Agent provider",
@@ -30,6 +33,9 @@ MESSAGES: dict[str, str] = {
     "provider_desc_minimax": "Open platform of MiniMax, a Shanghai-based AI company, serving its multimodal models and Hailuo video generation. Connects to the domestic site by default; set base_url to the international site for overseas access.",
     "provider_desc_kling": "Open platform of Kling AI, Kuaishou's generative AI service. API Key authentication works with all models; Access Key + Secret Key (JWT) only supports 3.0-and-earlier models. Choose either — when both are set, API Key takes priority.",
     "provider_desc_agnes": "Agnes AI's multimodal AI platform, serving its generative AI models through one unified API.",
+    "provider_desc_claude-subscription": "Sign in with a Claude account (Pro, Max and other plans) to use its subscription quota. Currently used by the ArcReel Agent.",
+    "provider_desc_chatgpt-subscription": "Sign in with a ChatGPT account (Plus, Pro and other plans) through Codex to use its subscription quota.",
+    "provider_desc_grok-subscription": "Sign in with a Grok account (SuperGrok, X Premium and other plans) through the Grok CLI to use its subscription quota.",
     # Agent preset notes (lib/agent/agent_provider_catalog.py)
     "preset_notes_deepseek": "DeepSeek official Anthropic-compat endpoint; needs sk- prefixed key.",
     "preset_notes_xiaomi_mimo": "Xiaomi MiMo only accepts known model names; no public model list.",

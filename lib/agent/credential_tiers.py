@@ -73,6 +73,8 @@ class AgentPricing:
     multiplier: float = 1.0
     #: 带绑定的档位，按 :data:`TIERS` 的顺序：（档位实际调用的模型名，条目绑定「模型厂商/官方模型名」）。
     tier_bindings: tuple[tuple[str, str], ...] = ()
+    #: 会话用 Claude 订阅时是哪一条订阅连线（``provider_credential`` id）；用量记在它名下，不计费
+    subscription_credential_id: int | None = None
 
     def entry_binding_for(self, model: str) -> str | None:
         """API 模型名 ``model`` 所在档位的条目绑定；模型名比较忽略大小写与命名空间。同一模型名在几个档位时取第一个

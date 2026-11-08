@@ -112,6 +112,15 @@ class DataRootLayout:
         return self.vertex_keys_dir / f"vertex_cred_{credential_id}.json"
 
     @property
+    def subscriptions_dir(self) -> Path:
+        """订阅连线的凭证目录。"""
+        return self.root / "subscriptions"
+
+    def subscription_home(self, provider_id: str, credential_id: int) -> Path:
+        """一条订阅连线专属的 HOME：Codex 与 Grok 把登录凭证放在这里并原地刷新，用这条连线的进程都以它为 HOME。"""
+        return self.subscriptions_dir / provider_id / str(credential_id)
+
+    @property
     def trial_runs_dir(self) -> Path:
         """端点「测试连接」的产物目录。"""
         return self.root / "trial_runs"

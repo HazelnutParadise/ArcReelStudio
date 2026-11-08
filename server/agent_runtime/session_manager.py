@@ -71,7 +71,7 @@ from claude_agent_sdk.types import (
 from lib.backends.providers import PROVIDER_ANTHROPIC, CallStatus
 from lib.billing.ledger import Ledger
 from lib.billing.metering import Usage, token_usage
-from lib.config.service import ConfigService
+from lib.config.service import CLAUDE_SUBSCRIPTION_PROVIDER, ConfigService
 from lib.db import async_session_factory
 from lib.db.repositories.usage_repo import AgentModelCall
 from lib.i18n.display_names import agent_provider_id
@@ -600,6 +600,15 @@ def _cli_session_state(msg: dict[str, Any]) -> str | None:
     data = msg.get("data")
     state = data.get("state") if isinstance(data, dict) else None
     return state if isinstance(state, str) else None
+
+
+def _agent_usage_provider(pricing: AgentPricing) -> str:
+    """用量记在哪个供应商名下：Claude 订阅会话记在订阅供应商，Agent 凭证会话记在那条凭证，都没有时记 Anthropic。"""
+    if pricing.subscription_credential_id is not None:
+        return CLAUDE_SUBSCRIPTION_PROVIDER
+    if pricing.credential_id is not None:
+        return agent_provider_id(pricing.credential_id)
+    return PROVIDER_ANTHROPIC
 
 
 class SessionManager:
@@ -1973,13 +1982,12 @@ class SessionManager:
             status = CallStatus.FAILED
 
         pricing = managed.agent_pricing
-        credential_id = pricing.credential_id
         await self.ledger.record_agent_turn(
             project_name=managed.project_name,
             session_id=managed.session_id,
             prompt=managed.last_user_prompt,
             user_id=getattr(self, "_user_id", DEFAULT_USER_ID),
-            provider=agent_provider_id(credential_id) if credential_id is not None else PROVIDER_ANTHROPIC,
+            provider=_agent_usage_provider(pricing),
             pricing=pricing,
             status=status,
             calls=[_agent_model_call(usage) for usage in usages],
