@@ -36,7 +36,7 @@ async def device(db_factory):
 async def service(db_factory, device):
     svc = SubscriptionLoginService(
         db_factory,
-        claude=FakeClaude(),  # type: ignore[arg-type]
+        claude=FakeClaude(),
         device_managers={"chatgpt-subscription": device},
         poll_interval=0.01,
     )
@@ -54,6 +54,7 @@ async def test_device_login_is_polled_until_the_connection_exists(service, devic
         assert (started["kind"], started["user_code"], started["status"]) == ("device_code", "ABCD-1234", "pending")
 
         device.release.set()
+        body = started
         for _ in range(200):
             body = (await client.get(f"/api/v1/providers/chatgpt-subscription/logins/{started['login_id']}")).json()
             if body["status"] != "pending":

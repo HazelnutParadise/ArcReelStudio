@@ -19,7 +19,7 @@ AUTH_JSON = json.dumps({"auth_mode": "chatgpt", "tokens": {"access_token": "a"}}
 def _service(session_factory, *, device: FakeDevice | None = None, changed: list[int] | None = None):
     return SubscriptionLoginService(
         session_factory,
-        claude=FakeClaude(),  # type: ignore[arg-type]
+        claude=FakeClaude(),
         device_managers={"chatgpt-subscription": device or FakeDevice(DeviceLoginResult(status="pending"))},
         on_credentials_changed=(lambda: changed.append(1)) if changed is not None else None,
         poll_interval=0.01,
