@@ -127,4 +127,33 @@ ArcReel 随附 lib/subtitle_style/fonts/SourceHanSansCN-Bold.otf，即 Adobe 思
 未作修改。思源黑体按 SIL 开源字体许可证 1.1 版授权，许可证全文见
 lib/subtitle_style/fonts/LICENSE.txt。
 
+==== Third-party: OpenAI Codex CLI / 第三方组件：OpenAI Codex CLI ====
+
+The Docker image ships /usr/local/bin/codex, the unmodified official Linux
+static build of OpenAI Codex CLI 0.166.0 (https://github.com/openai/codex,
+tag rust-v0.166.0). ArcReelStudio runs it as a separate process to sign in to
+ChatGPT subscriptions and to drive them. It is licensed under the Apache
+License, Version 2.0; the license text is in LICENSES/Apache-2.0.txt.
+
+Codex's NOTICE reads:
+  OpenAI Codex
+  Copyright 2025 OpenAI
+  This project includes code derived from Ratatui
+  (https://github.com/ratatui/ratatui), licensed under the MIT license.
+  Copyright (c) 2016-2022 Florian Dehau
+  Copyright (c) 2023-2025 The Ratatui Developers
+
+Docker 镜像随附 /usr/local/bin/codex，即未经修改的 OpenAI Codex CLI 0.166.0 官方 Linux
+静态构建（https://github.com/openai/codex 的 rust-v0.166.0 标签）。ArcReelStudio 以独立子进程
+调用它登录与使用 ChatGPT 订阅。它按 Apache 许可证 2.0 版授权，许可证全文见
+LICENSES/Apache-2.0.txt，原 NOTICE 内容见上。
+
+Grok CLI is not shipped in the image. When someone first signs in to a Grok
+subscription, ArcReelStudio downloads the official build published by xAI at
+https://x.ai/cli (version pinned and checksum-verified) into the data
+directory of that deployment.
+
+镜像不随附 Grok CLI。第一次登录 Grok 订阅时，ArcReelStudio 才把 xAI 在
+https://x.ai/cli 发布的官方构建（固定版本、校验和核对）下载到该部署的数据目录。
+
 ==== End of Notices ====

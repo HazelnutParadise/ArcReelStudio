@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
-import { Check, Loader2, Plus, Settings2, Trash2 } from "lucide-react";
+import { Check, Loader2, LogIn, Plus, Settings2, Trash2 } from "lucide-react";
 
 import { API } from "@/api";
 import { providerSettingsPath } from "@/app-routes";
 import { TruncatedText } from "@/components/shared/TruncatedText";
+import { SubscriptionLoginDialog } from "@/components/subscriptions/SubscriptionLoginDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAppStore } from "@/stores/app-store";
@@ -26,12 +29,13 @@ import { DeleteCredentialDialog } from "../CredentialList";
  * 项目设置）可以各自指定用哪一个；没指定的用该供应商的「默认连线」。新增与编辑在供应商详情里进行。
  */
 export function ConnectionCenterSection() {
-  const { t } = useTranslation(["dashboard", "common"]);
+  const { t, i18n } = useTranslation(["dashboard", "common"]);
   const connections = useConnectionsStore((s) => s.connections);
   const loaded = useConnectionsStore((s) => s.loaded);
   const refresh = useConnectionsStore((s) => s.refresh);
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [deleting, setDeleting] = useState<ProviderCredential | null>(null);
+  const [signingIn, setSigningIn] = useState<ProviderInfo | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +53,9 @@ export function ConnectionCenterSection() {
   }, [refresh]);
 
   const providerName = (id: string) => providers.find((provider) => provider.id === id)?.display_name ?? id;
+  const isLoginBased = (id: string) => Boolean(providers.find((provider) => provider.id === id)?.login_kind);
+  const keyProviders = providers.filter((provider) => !provider.login_kind);
+  const subscriptionProviders = providers.filter((provider) => provider.login_kind);
   const groups = groupByProvider(connections);
 
   const makeDefault = async (connection: ProviderCredential) => {
@@ -73,14 +80,29 @@ export function ConnectionCenterSection() {
             {t("connection_center_add")}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="relative max-h-80 overflow-y-auto">
-            {providers.map((provider) => (
-              <DropdownMenuItem
-                key={provider.id}
-                render={<Link href={providerSettingsPath({ preset: provider.id })} />}
-              >
-                {provider.display_name}
-              </DropdownMenuItem>
-            ))}
+            {subscriptionProviders.length > 0 && (
+              <>
+                <DropdownMenuGroup label={t("connection_center_add_subscription")}>
+                  {subscriptionProviders.map((provider) => (
+                    <DropdownMenuItem key={provider.id} onClick={() => setSigningIn(provider)}>
+                      <LogIn aria-hidden />
+                      {provider.display_name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <DropdownMenuGroup label={subscriptionProviders.length > 0 ? t("connection_center_add_key") : undefined}>
+              {keyProviders.map((provider) => (
+                <DropdownMenuItem
+                  key={provider.id}
+                  render={<Link href={providerSettingsPath({ preset: provider.id })} />}
+                >
+                  {provider.display_name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
@@ -121,10 +143,14 @@ export function ConnectionCenterSection() {
                       {connection.is_active && <Badge variant="secondary">{t("connection_default")}</Badge>}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {connection.api_key_masked ??
-                        connection.credentials_filename ??
-                        connection.access_key_masked ??
-                        ""}
+                      {isLoginBased(connection.provider)
+                        ? t("connection_center_signed_in_at", {
+                            date: new Date(connection.created_at).toLocaleDateString(i18n.language),
+                          })
+                        : (connection.api_key_masked ??
+                          connection.credentials_filename ??
+                          connection.access_key_masked ??
+                          "")}
                     </span>
                   </div>
                   {!connection.is_active && (
@@ -146,6 +172,17 @@ export function ConnectionCenterSection() {
             </ul>
           </section>
         ))
+      )}
+
+      {signingIn !== null && (
+        <SubscriptionLoginDialog
+          providerId={signingIn.id}
+          providerName={signingIn.display_name}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSigningIn(null);
+          }}
+        />
       )}
 
       <DeleteCredentialDialog

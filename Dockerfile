@@ -51,7 +51,38 @@ RUN set -eu; \
     rm /tmp/ffmpeg.tar.xz
 
 # ============================================================
-# Stage 3: 生产镜像
+# Stage 3: ChatGPT 订阅用的 Codex CLI
+# ============================================================
+# ChatGPT 订阅经 Codex（app-server）登录与调用。Codex 以 Apache-2.0 发布，用官方的 Linux 静态二进制，版本与校验和
+# 随架构固定。Grok CLI 没有允许再分发的许可，不放进镜像：第一次登录 Grok 订阅时由服务按固定版本与校验和下载
+# （见 lib/subscriptions/grok_cli.py）。
+FROM python:3.14-slim AS subscription-clis
+
+ARG TARGETARCH
+ARG CODEX_VERSION=0.166.0
+ARG CODEX_SHA256_AMD64=a0bf572d2f93f056c6712a6da348e96078dc84f3885fd7be67807ef389cb3978
+ARG CODEX_SHA256_ARM64=94eb707605ec2646b2e05b7edf7c4e7b3ccf02b16237c34ae9beb8cfb7f810a9
+
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    case "${TARGETARCH}" in \
+    amd64) codex_arch=x86_64; codex_sha="${CODEX_SHA256_AMD64}" ;; \
+    arm64) codex_arch=aarch64; codex_sha="${CODEX_SHA256_ARM64}" ;; \
+    *) echo "不支持的架构：${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    mkdir -p /out; \
+    curl -fsSL -o /tmp/codex.tar.gz \
+    "https://github.com/openai/codex/releases/download/rust-v${CODEX_VERSION}/codex-${codex_arch}-unknown-linux-musl.tar.gz"; \
+    echo "${codex_sha}  /tmp/codex.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/codex.tar.gz -C /tmp; \
+    install -m 0755 "/tmp/codex-${codex_arch}-unknown-linux-musl" /out/codex; \
+    rm -f /tmp/codex.tar.gz "/tmp/codex-${codex_arch}-unknown-linux-musl"
+
+# ============================================================
+# Stage 4: 生产镜像
 # ============================================================
 FROM python:3.14-slim AS production
 
@@ -105,6 +136,9 @@ COPY --from=frontend-builder /build/frontend/dist/ frontend/dist/
 
 # GPU 编码用的 ffmpeg，路径与 lib/infra/video_encoder.py 的 GPU_FFMPEG_PATH 一致
 COPY --from=gpu-ffmpeg /out/ffmpeg /opt/arcreel/ffmpeg-gpu/ffmpeg
+
+# ChatGPT 订阅用的 Codex CLI（PATH 上的 codex）
+COPY --from=subscription-clis /out/codex /usr/local/bin/codex
 
 # 构建 commit 由 CI 传入，/health 据此返回运行版本；放在最后，值每次变化也不影响前面的层缓存
 ARG BUILD_COMMIT=

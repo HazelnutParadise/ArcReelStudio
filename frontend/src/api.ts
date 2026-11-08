@@ -157,6 +157,7 @@ import type {
   ReferenceScriptPlanDraft,
   VideoCapabilities,
   EpisodeItemRef,
+  SubscriptionLogin,
 } from "@/types";
 import type { GridCapability, GridGeneration } from "@/types/grid";
 import type { PresentationReadModel, PresentationRequestOptions, PresentationResourceType } from "@/types/presentation";
@@ -214,7 +215,6 @@ import type {
   AgentAuthMode,
   AgentCredential,
   AgentCredentialTier,
-  ClaudeLoginStart,
   ClaudeSubscriptionStatus,
   CreateAgentCredentialRequest,
   PresetProvidersResponse,
@@ -3507,27 +3507,49 @@ class API {
     return this.request("/agent/subscription", { signal: options.signal });
   }
 
-  static async startClaudeLogin(): Promise<ClaudeLoginStart> {
-    return this.request("/agent/subscription/login", { method: "POST" });
+  static async setAgentAuthMode(mode: AgentAuthMode): Promise<ClaudeSubscriptionStatus> {
+    return this.request("/agent/subscription/mode", { method: "PUT", body: JSON.stringify({ mode }) });
   }
 
-  static async finishClaudeLogin(loginId: string, code: string): Promise<ClaudeSubscriptionStatus> {
-    return this.request(`/agent/subscription/login/${encodeURIComponent(loginId)}`, {
-      method: "POST",
-      body: JSON.stringify({ code }),
+  /** Agent 用哪一条 Claude 订阅连线；null 表示用默认连线。 */
+  static async setAgentSubscriptionConnection(credentialId: number | null): Promise<ClaudeSubscriptionStatus> {
+    return this.request("/agent/subscription/connection", {
+      method: "PUT",
+      body: JSON.stringify({ credential_id: credentialId }),
     });
   }
 
-  static async cancelClaudeLogin(): Promise<void> {
-    await this.request("/agent/subscription/login", { method: "DELETE" });
+  // ==================== 订阅登录 ====================
+
+  static async startSubscriptionLogin(providerId: string): Promise<SubscriptionLogin> {
+    return this.request(`/providers/${encodeURIComponent(providerId)}/logins`, { method: "POST" });
   }
 
-  static async logoutClaudeSubscription(): Promise<ClaudeSubscriptionStatus> {
-    return this.request("/agent/subscription", { method: "DELETE" });
+  static async getSubscriptionLogin(
+    providerId: string,
+    loginId: string,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<SubscriptionLogin> {
+    return this.request(`/providers/${encodeURIComponent(providerId)}/logins/${encodeURIComponent(loginId)}`, {
+      signal: options.signal,
+    });
   }
 
-  static async setAgentAuthMode(mode: AgentAuthMode): Promise<ClaudeSubscriptionStatus> {
-    return this.request("/agent/subscription/mode", { method: "PUT", body: JSON.stringify({ mode }) });
+  static async submitSubscriptionLoginCode(
+    providerId: string,
+    loginId: string,
+    code: string,
+  ): Promise<SubscriptionLogin> {
+    return this.request(
+      `/providers/${encodeURIComponent(providerId)}/logins/${encodeURIComponent(loginId)}/code`,
+      { method: "POST", body: JSON.stringify({ code }) },
+    );
+  }
+
+  static async cancelSubscriptionLogin(providerId: string, loginId: string): Promise<void> {
+    await this.request(`/providers/${encodeURIComponent(providerId)}/logins/${encodeURIComponent(loginId)}`, {
+      method: "DELETE",
+    });
   }
 
   static async listAgentCredentials(

@@ -1,20 +1,24 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useId, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAppStore } from "@/stores/app-store";
-import type { AgentAuthMode, ClaudeLoginStart, ClaudeSubscriptionStatus } from "@/types/agent-credential";
+import { ConnectionSelect } from "@/components/shared/ConnectionSelect";
+import { SubscriptionLoginDialog } from "@/components/subscriptions/SubscriptionLoginDialog";
+import type { AgentAuthMode, ClaudeSubscriptionStatus } from "@/types/agent-credential";
 import type { CurrentAccount } from "@/types";
 import { errMsg, voidCall } from "@/utils/async";
 
 const MODES: readonly AgentAuthMode[] = ["prefer_subscription", "prefer_api_key", "subscription", "api_key"];
 
-type Busy = "start" | "code" | "logout" | "mode" | null;
+type Busy = "mode" | "connection" | null;
+
+/** 订阅连线的供应商 id；连线下拉按它找这家的连线 */
+const CLAUDE_SUBSCRIPTION = "claude-subscription";
 
 /** 订阅状态与当前账号；组件卸载后到达的结果直接丢弃。 */
 function useSubscriptionStatus() {
@@ -45,76 +49,18 @@ function useSubscriptionStatus() {
 }
 
 /**
- * Claude 订阅：在网页上登录（开授权页、贴回验证码），并选择 Agent 用订阅还是 API Key、谁优先。
- * 订阅是整个工作区共用的，登录、登出与切换方式只有管理员能做，其他成员只看得到状态。
+ * Agent 的 Claude 订阅：用哪一条 Claude 订阅连线、Agent 用订阅还是 API Key、谁优先。订阅连线在连线中心登录，这里也能
+ * 直接登录新账号。认证方式与连线是整个工作区共用的，只有管理员能改，其他成员只看得到状态。
  */
 export function ClaudeSubscriptionSection() {
   const { t } = useTranslation("dashboard");
   const pushToast = useAppStore((s) => s.pushToast);
   const titleId = useId();
   const { status, setStatus, isAdmin } = useSubscriptionStatus();
-
-  const [login, setLogin] = useState<ClaudeLoginStart | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const loginRef = useRef<ClaudeLoginStart | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
 
-  // 离开页面时放弃进行到一半的登录，后台的 CLI 进程随之结束
-  useEffect(
-    () => () => {
-      if (loginRef.current) voidCall(API.cancelClaudeLogin());
-    },
-    [],
-  );
-
-  const endLogin = useCallback(() => {
-    loginRef.current = null;
-    setLogin(null);
-  }, []);
-
-  const startLogin = useCallback(async () => {
-    setBusy("start");
-    setLoginError(null);
-    try {
-      const started = await API.startClaudeLogin();
-      loginRef.current = started;
-      setLogin(started);
-    } catch (err) {
-      pushToast(errMsg(err), "error");
-    } finally {
-      setBusy(null);
-    }
-  }, [pushToast]);
-
-  const submitCode = useCallback(
-    async (code: string) => {
-      if (!login) return;
-      setBusy("code");
-      setLoginError(null);
-      try {
-        setStatus(await API.finishClaudeLogin(login.login_id, code));
-        pushToast(t("claude_subscription_logged_in_toast"), "success");
-      } catch (err) {
-        setLoginError(errMsg(err));
-      } finally {
-        // 登录不论成败都已结束：要再试得重新开始
-        endLogin();
-        setBusy(null);
-      }
-    },
-    [endLogin, login, pushToast, setStatus, t],
-  );
-
-  const cancelLogin = useCallback(async () => {
-    endLogin();
-    try {
-      await API.cancelClaudeLogin();
-    } catch (err) {
-      pushToast(errMsg(err), "error");
-    }
-  }, [endLogin, pushToast]);
-
-  const runStatusAction = useCallback(
+  const run = useCallback(
     async (kind: Busy, action: () => Promise<ClaudeSubscriptionStatus>) => {
       setBusy(kind);
       try {
@@ -127,6 +73,8 @@ export function ClaudeSubscriptionSection() {
     },
     [pushToast, setStatus],
   );
+
+  const refresh = useCallback(() => voidCall(run(null, () => API.getClaudeSubscription())), [run]);
 
   return (
     <section aria-labelledby={titleId} className="flex flex-col gap-4">
@@ -141,85 +89,83 @@ export function ClaudeSubscriptionSection() {
         <Loader2 aria-label={t("loading_placeholder")} className="size-4 animate-spin text-muted-foreground" />
       ) : (
         <>
-          <SubscriptionStatusRow
+          <SubscriptionConnectionRow
             status={status}
             isAdmin={isAdmin}
             busy={busy}
-            loginOpen={login !== null}
-            onLogin={() => voidCall(startLogin())}
-            onLogout={() => voidCall(runStatusAction("logout", () => API.logoutClaudeSubscription()))}
+            onLogin={() => setLoginOpen(true)}
+            onChoose={(credentialId) =>
+              voidCall(run("connection", () => API.setAgentSubscriptionConnection(credentialId)))
+            }
           />
           {status.subscription.blocked && <BlockedNotice until={status.subscription.until} />}
-          {login !== null && (
-            <LoginCodeForm
-              authorizeUrl={login.authorize_url}
-              submitting={busy === "code"}
-              disabled={busy !== null}
-              onSubmit={(code) => voidCall(submitCode(code))}
-              onCancel={() => voidCall(cancelLogin())}
-            />
-          )}
-          {loginError !== null && (
-            <p role="alert" className="text-sm text-destructive">
-              {loginError}
-            </p>
-          )}
           <AuthModePicker
             mode={status.mode}
-            loggedIn={status.logged_in}
+            loggedIn={status.credential_id !== null}
             disabled={!isAdmin || busy !== null}
-            onChange={(mode) => voidCall(runStatusAction("mode", () => API.setAgentAuthMode(mode)))}
+            onChange={(mode) => voidCall(run("mode", () => API.setAgentAuthMode(mode)))}
           />
           {!isAdmin && <p className="text-xs text-muted-foreground">{t("claude_subscription_admin_only")}</p>}
         </>
+      )}
+      {isAdmin && (
+        <SubscriptionLoginDialog
+          providerId={CLAUDE_SUBSCRIPTION}
+          providerName={t("claude_subscription_title")}
+          open={loginOpen}
+          onOpenChange={setLoginOpen}
+          onSucceeded={refresh}
+        />
       )}
     </section>
   );
 }
 
-function SubscriptionStatusRow({
+function SubscriptionConnectionRow({
   status,
   isAdmin,
   busy,
-  loginOpen,
   onLogin,
-  onLogout,
+  onChoose,
 }: Readonly<{
   status: ClaudeSubscriptionStatus;
   isAdmin: boolean;
   busy: Busy;
-  loginOpen: boolean;
   onLogin: () => void;
-  onLogout: () => void;
+  onChoose: (credentialId: number | null) => void;
 }>) {
   const { t } = useTranslation("dashboard");
-  if (!status.logged_in) {
-    return (
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3">
-        <Badge variant="outline">{t("claude_subscription_status_logged_out")}</Badge>
-        {isAdmin && !loginOpen && (
-          <Button className="ml-auto" size="sm" disabled={busy !== null} onClick={onLogin}>
-            {busy === "start" && <Loader2 aria-hidden className="size-3.5 animate-spin" />}
-            {t("claude_subscription_login")}
+  const loggedIn = status.credential_id !== null;
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3">
+        {loggedIn ? (
+          <>
+            <Badge variant="secondary">{t("claude_subscription_status_logged_in")}</Badge>
+            <span className="min-w-0 truncate text-sm">{status.credential_name}</span>
+          </>
+        ) : (
+          <Badge variant="outline">{t("claude_subscription_status_logged_out")}</Badge>
+        )}
+        {isAdmin && (
+          <Button
+            className="ml-auto"
+            variant={loggedIn ? "outline" : "default"}
+            size="sm"
+            disabled={busy !== null}
+            onClick={onLogin}
+          >
+            {loggedIn ? t("claude_subscription_add_account") : t("claude_subscription_login")}
           </Button>
         )}
       </div>
-    );
-  }
-  return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3">
-      <Badge variant="secondary">{t("claude_subscription_status_logged_in")}</Badge>
-      <span className="font-mono text-sm text-muted-foreground">{status.token_masked}</span>
-      {isAdmin && (
-        <span className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" disabled={busy !== null || loginOpen} onClick={onLogin}>
-            {t("claude_subscription_relogin")}
-          </Button>
-          <Button variant="ghost" size="sm" disabled={busy !== null} onClick={onLogout}>
-            {busy === "logout" && <Loader2 aria-hidden className="size-3.5 animate-spin" />}
-            {t("claude_subscription_logout")}
-          </Button>
-        </span>
+      {isAdmin && loggedIn && (
+        <ConnectionSelect
+          backendValue={`${CLAUDE_SUBSCRIPTION}/agent`}
+          value={status.chosen_credential_id}
+          onChange={onChoose}
+          label={t("claude_subscription_connection_label")}
+        />
       )}
     </div>
   );
@@ -235,65 +181,6 @@ function BlockedNotice({ until }: Readonly<{ until: number | null }>) {
     <p role="status" className="text-sm text-muted-foreground">
       {t("claude_subscription_blocked")} {when}
     </p>
-  );
-}
-
-function LoginCodeForm({
-  authorizeUrl,
-  submitting,
-  disabled,
-  onSubmit,
-  onCancel,
-}: Readonly<{
-  authorizeUrl: string;
-  submitting: boolean;
-  disabled: boolean;
-  onSubmit: (code: string) => void;
-  onCancel: () => void;
-}>) {
-  const { t } = useTranslation("dashboard");
-  const codeId = useId();
-  const [code, setCode] = useState("");
-  const trimmed = code.trim();
-  return (
-    <form
-      className="flex flex-col gap-3 rounded-lg border px-4 py-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (trimmed) onSubmit(trimmed);
-      }}
-    >
-      <p className="text-sm">{t("claude_subscription_login_step_open")}</p>
-      <a
-        href={authorizeUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex w-fit items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
-      >
-        {t("claude_subscription_login_open_link")}
-        <ExternalLink aria-hidden className="size-3.5" />
-      </a>
-      <label htmlFor={codeId} className="text-sm">
-        {t("claude_subscription_login_step_code")}
-      </label>
-      <Input
-        id={codeId}
-        value={code}
-        autoComplete="off"
-        spellCheck={false}
-        onChange={(event) => setCode(event.target.value)}
-        placeholder={t("claude_subscription_code_placeholder")}
-      />
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={disabled || !trimmed}>
-          {submitting && <Loader2 aria-hidden className="size-3.5 animate-spin" />}
-          {t("claude_subscription_login_submit")}
-        </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          {t("cancel")}
-        </Button>
-      </div>
-    </form>
   );
 }
 
