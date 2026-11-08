@@ -57,7 +57,7 @@ async def run_codex_turn(
     try:
         server = await CodexAppServer.start(str(codex_home), cli_path=cli_path)
     except CodexRpcError as exc:
-        await asyncio.to_thread(shutil.rmtree, work_dir, True)
+        await asyncio.to_thread(shutil.rmtree, work_dir, True)  # hard-delete: temp -- 起不了进程，删掉刚建的临时工作目录
         raise CodexTurnError(str(exc), code="cli_unavailable") from exc
     try:
         return await asyncio.wait_for(
