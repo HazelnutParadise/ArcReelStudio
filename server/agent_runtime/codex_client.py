@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from lib.agent.codex_app_server import CodexAppServer, CodexRpcError
+from server.agent_runtime.engine_client import EngineClient
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,7 @@ class _QueuedQuery:
     temp_files: list[Path] = field(default_factory=list)
 
 
-class CodexAgentClient:
+class CodexAgentClient(EngineClient):
     """一个 Codex 会话。只在所属 SessionActor 的 task 里使用。"""
 
     def __init__(self, config: CodexSessionConfig, *, on_stderr: Callable[[str], None] | None = None) -> None:

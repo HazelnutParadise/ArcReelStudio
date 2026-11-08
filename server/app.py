@@ -65,6 +65,7 @@ from lib.infra.video_encoder import log_gpu_encoder_status
 from lib.material.maintenance import start_material_maintenance
 from lib.project.project_migrations import cleanup_stale_backups, run_project_migrations
 from lib.script.source_loader.migration import migrate_project_source_encoding, migrate_project_source_encoding_once
+from server.agent_runtime import session_tool_endpoint
 from server.auth import ensure_token_secret, get_current_user, warn_if_auth_disabled
 from server.cors_config import resolve_cors_policy
 from server.dependencies import require_project_migration_ok, require_valid_project_name
@@ -912,6 +913,8 @@ app.include_router(files.public_router, prefix="/api/v1", tags=["文件管理"])
 # 端点内 verify_download_token 校验短时效下载 token（见 docs/adr/0071）。
 app.include_router(projects.self_auth_router, prefix="/api/v1", tags=["项目管理"])
 app.include_router(edit_timelines.self_auth_router, prefix="/api/v1", tags=["剪辑时间线"])
+# 内嵌 Agent（Grok 引擎）的本机工具端点：不走使用者会话认证，只认本机连线与每会话令牌（docs/adr/0125）
+app.include_router(session_tool_endpoint.router, tags=["Agent 运行时"])
 
 
 mount_remote_mcp(app, remote_mcp_host)

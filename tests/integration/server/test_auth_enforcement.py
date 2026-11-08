@@ -36,6 +36,9 @@ SELF_AUTH_OPERATIONS = frozenset(
     {
         "GET /api/v1/projects/{name}/export",
         "GET /api/v1/projects/{project_name}/edit-timelines/{timeline_id}/jianying-draft/download",
+        # 内嵌 Grok 引擎的本机工具端点：只认本机连线与每会话随机令牌（docs/adr/0125），GET 一律 405
+        "GET /internal/agent-tools",
+        "POST /internal/agent-tools",
     }
 )
 

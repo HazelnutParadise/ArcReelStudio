@@ -41,7 +41,9 @@ Agent 也可以用 Claude 订阅账号的额度。Claude 订阅账号是连线�
 
 新对话可以改用 OpenAI 的 Codex 跑：在「设置 › ArcReel Agent › Agent 引擎」选择 Codex，再选用哪一条 ChatGPT 订阅或 OpenAI API Key 连线，以及模型。没选连线时，先用 ChatGPT 订阅的默认连线，没有订阅再用 OpenAI 的默认连线。只有管理员能改，已经开始的对话会照它当初的引擎继续。
 
-两个引擎用同一套工具、技能和项目说明，对话画面一样。Codex 引擎目前不支持从较早的消息改写重来、Agent 向你提问，以及只读的审查子 Agent；订阅与 API Key 之间的自动切换也只在 Claude 引擎。
+也可以改用 xAI 的 Grok：选 Grok 引擎，再选 Grok 订阅或 xAI API Key 连线和模型；没选连线时先用 Grok 订阅的默认连线，没有订阅再用 xAI 的默认连线。Grok 引擎目前是实验性功能：Grok 自带的档案与命令工具已经关闭，只能用 ArcReel 的工具，但这一点要用真的 Grok 账号跑过一次才算验证。
+
+三个引擎用同一套工具、技能和项目说明，对话画面一样。Codex 与 Grok 引擎目前不支持从较早的消息改写重来、Agent 向你提问，以及只读的审查子 Agent；订阅与 API Key 之间的自动切换也只在 Claude 引擎。
 
 Agent 供应商不一定承担实际图片和视频生成。
 

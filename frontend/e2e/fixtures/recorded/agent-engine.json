@@ -11,6 +11,13 @@
       "gpt-5.5",
       "gpt-6-sol",
       "gpt-6-luna"
+    ],
+    "grok_credential_id": null,
+    "grok_effective_credential_id": null,
+    "grok_model": "grok-4.6",
+    "grok_models": [
+      "grok-4.6",
+      "grok-4.5"
     ]
   }
 }

@@ -2161,6 +2161,13 @@ export default {
     'Claude Agent SDK: dùng đăng ký Claude, Anthropic API Key hoặc dịch vụ tương thích Anthropic.',
   'agent_engine_codex': 'Codex',
   'agent_engine_codex_hint': 'OpenAI Codex: dùng đăng ký ChatGPT hoặc OpenAI API Key.',
+  'agent_engine_grok': 'Grok',
+  'agent_engine_grok_hint': 'xAI Grok (thử nghiệm): dùng đăng ký Grok hoặc xAI API Key.',
+  'agent_engine_grok_connection_label': 'Kết nối cho Grok',
+  'agent_engine_grok_connection_subscription': 'Đăng ký Grok · {{name}}',
+  'agent_engine_grok_connection_api_key': 'xAI API Key · {{name}}',
+  'agent_engine_grok_limits':
+    'Engine Grok chưa hỗ trợ viết lại từ tin nhắn trước, Agent đặt câu hỏi cho bạn, hay các Agent con kiểm duyệt chỉ đọc.',
   'agent_engine_admin_only': 'Chỉ quản trị viên mới đổi được engine.',
   'agent_engine_codex_connection_label': 'Kết nối cho Codex',
   'agent_engine_codex_model': 'Mô hình',
