@@ -8,21 +8,20 @@ import pytest
 from fastapi import FastAPI
 from httpx2 import ASGITransport, AsyncClient
 
-from server.agent_runtime import session_tool_endpoint
 from server.agent_runtime.session_tool_endpoint import (
     SESSION_TOOL_PATH,
     SessionToolRegistry,
     SessionTools,
     router,
+    session_tool_registry,
     to_mcp_content,
 )
 
 
 @pytest.fixture
-def registry(monkeypatch: pytest.MonkeyPatch) -> SessionToolRegistry:
-    fresh = SessionToolRegistry()
-    monkeypatch.setattr(session_tool_endpoint, "session_tool_registry", fresh)
-    return fresh
+def registry() -> SessionToolRegistry:
+    """端点读的就是进程内单例；令牌随机，各用例登记的工具互不干扰。"""
+    return session_tool_registry
 
 
 def _client(host: str = "127.0.0.1") -> AsyncClient:

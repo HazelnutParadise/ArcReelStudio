@@ -14,18 +14,22 @@ import uvicorn
 from fastapi import FastAPI
 
 from lib.agent.credential_tiers import AgentPricing
-from server.agent_runtime import session_tool_endpoint
 from server.agent_runtime.event_log import EventLogStore
 from server.agent_runtime.grok_client import GrokSessionConfig
 from server.agent_runtime.grok_engine import GrokLaunch
 from server.agent_runtime.session_manager import SessionManager
 from server.agent_runtime.session_store import SessionMetaStore
-from server.agent_runtime.session_tool_endpoint import SESSION_TOOL_PATH, SessionToolRegistry, router
+from server.agent_runtime.session_tool_endpoint import (
+    SESSION_TOOL_PATH,
+    SessionToolRegistry,
+    router,
+    session_tool_registry,
+)
 from tests.grok_fakes import install_fake_grok, read_fake_grok_seen
 
 
 @pytest.fixture
-async def manager(tmp_path, file_db_factory):
+async def grok_manager(tmp_path, file_db_factory):
     return SessionManager(
         project_root=tmp_path,
         meta_store=SessionMetaStore(session_factory=file_db_factory),
@@ -34,9 +38,8 @@ async def manager(tmp_path, file_db_factory):
 
 
 @pytest.fixture
-async def endpoint(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[tuple[str, SessionToolRegistry]]:
-    registry = SessionToolRegistry()
-    monkeypatch.setattr(session_tool_endpoint, "session_tool_registry", registry)
+async def endpoint() -> AsyncIterator[tuple[str, SessionToolRegistry]]:
+    registry = session_tool_registry
     app = FastAPI()
     app.include_router(router)
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=0, log_level="warning", lifespan="off"))
@@ -91,9 +94,9 @@ async def _entries(store: EventLogStore, session_id: str, count: int) -> list[di
     return await store.list_after(session_id)
 
 
-async def _until_status(manager: SessionManager, session_id: str, status: str) -> None:
+async def _until_status(grok_manager: SessionManager, session_id: str, status: str) -> None:
     for _ in range(250):
-        managed = manager.sessions.get(session_id)
+        managed = grok_manager.sessions.get(session_id)
         if managed is not None and managed.status == status:
             return
         await asyncio.sleep(0.02)
@@ -101,25 +104,25 @@ async def _until_status(manager: SessionManager, session_id: str, status: str) -
 
 
 async def test_a_grok_session_runs_a_turn_through_the_event_log(
-    manager: SessionManager, endpoint, tmp_path: Path
+    grok_manager: SessionManager, endpoint, tmp_path: Path
 ) -> None:
     url, registry = endpoint
     cli = install_fake_grok(tmp_path / "fake", tool=True)
     calls: list[tuple[str, Any]] = []
-    assembler = manager._options_assembler
+    assembler = grok_manager._options_assembler
     with (
         patch.object(assembler, "read_engine", new=AsyncMock(return_value="grok")),
         patch.object(assembler, "build_grok", new=_launcher(tmp_path, cli, url, registry, calls)),
     ):
-        session_id = await manager.send_new_session("demo", "帮我列出项目")
+        session_id = await grok_manager.send_new_session("demo", "帮我列出项目")
         assert session_id == "G1"
-        await _until_status(manager, session_id, "completed")
-        entries = await _entries(manager.event_log_store, session_id, 4)
-        meta = await manager.meta_store.get(session_id)
+        await _until_status(grok_manager, session_id, "completed")
+        entries = await _entries(grok_manager.event_log_store, session_id, 4)
+        meta = await grok_manager.meta_store.get(session_id)
         assert meta is not None
         assert meta.engine == "grok"
-        assert manager.sessions[session_id].agent_pricing.provider_id == "grok-subscription"
-        await manager.close_session(session_id)
+        assert grok_manager.sessions[session_id].agent_pricing.provider_id == "grok-subscription"
+        await grok_manager.close_session(session_id)
 
     # 首条用户消息的日志条目由 AssistantService 受理时写入（直接调 SessionManager 时没有），与其他引擎相同
     assert [e["type"] for e in entries] == ["assistant", "assistant", "tool_result", "assistant"]
@@ -130,23 +133,23 @@ async def test_a_grok_session_runs_a_turn_through_the_event_log(
     assert calls == [("list_projects", {"x": 1})]
 
 
-async def test_a_grok_session_resumes_its_own_session(manager: SessionManager, endpoint, tmp_path: Path) -> None:
+async def test_a_grok_session_resumes_its_own_session(grok_manager: SessionManager, endpoint, tmp_path: Path) -> None:
     url, registry = endpoint
     folder = tmp_path / "fake"
     cli = install_fake_grok(folder)
-    assembler = manager._options_assembler
+    assembler = grok_manager._options_assembler
     with (
         patch.object(assembler, "read_engine", new=AsyncMock(return_value="grok")),
         patch.object(assembler, "build_grok", new=_launcher(tmp_path, cli, url, registry, [])),
     ):
-        session_id = await manager.send_new_session("demo", "hi")
-        await _until_status(manager, session_id, "completed")
-        await manager.close_session(session_id)
+        session_id = await grok_manager.send_new_session("demo", "hi")
+        await _until_status(grok_manager, session_id, "completed")
+        await grok_manager.close_session(session_id)
 
         assembler.read_engine.return_value = "claude"
-        await manager.send_message(session_id, "again")
-        await _until_status(manager, session_id, "completed")
-        await manager.close_session(session_id)
+        await grok_manager.send_message(session_id, "again")
+        await _until_status(grok_manager, session_id, "completed")
+        await grok_manager.close_session(session_id)
 
     seen = await asyncio.to_thread(read_fake_grok_seen, folder)
     opened = [r for r in seen["requests"] if r["method"] in ("session/new", "session/resume", "session/load")]

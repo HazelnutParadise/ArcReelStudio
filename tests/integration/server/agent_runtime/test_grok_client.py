@@ -13,7 +13,7 @@ import uvicorn
 from claude_agent_sdk import AssistantMessage, ResultMessage, SystemMessage, UserMessage
 from fastapi import FastAPI
 
-from server.agent_runtime import sdk_frames, session_tool_endpoint
+from server.agent_runtime import sdk_frames
 from server.agent_runtime.grok_client import (
     DISALLOWED_GROK_TOOLS,
     GROK_PERMISSION_CONFIG,
@@ -21,14 +21,18 @@ from server.agent_runtime.grok_client import (
     GrokSessionConfig,
 )
 from server.agent_runtime.sdk_frames import CommandLifecycle
-from server.agent_runtime.session_tool_endpoint import SESSION_TOOL_PATH, SessionToolRegistry, router
+from server.agent_runtime.session_tool_endpoint import (
+    SESSION_TOOL_PATH,
+    SessionToolRegistry,
+    router,
+    session_tool_registry,
+)
 from tests.grok_fakes import install_fake_grok, read_fake_grok_seen
 
 
 @pytest.fixture
-async def tool_server(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[tuple[str, SessionToolRegistry]]:
-    registry = SessionToolRegistry()
-    monkeypatch.setattr(session_tool_endpoint, "session_tool_registry", registry)
+async def tool_server() -> AsyncIterator[tuple[str, SessionToolRegistry]]:
+    registry = session_tool_registry
     app = FastAPI()
     app.include_router(router)
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=0, log_level="warning", lifespan="off"))
