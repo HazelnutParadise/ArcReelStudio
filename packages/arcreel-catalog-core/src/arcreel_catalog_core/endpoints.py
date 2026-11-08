@@ -106,6 +106,11 @@ BUILTIN_ENDPOINTS: Final[Mapping[str, BuiltinEndpoint]] = MappingProxyType(
         "gemini-interactions-video": BuiltinEndpoint("video", since="0.35.1"),
         "gemini-vertex-interactions-video": BuiltinEndpoint("video", since="0.35.1"),
         "vidu-video-q4": BuiltinEndpoint("video", since="0.35.1"),
+        # 订阅：经官方 CLI 用订阅额度（Claude 经 Agent SDK、ChatGPT 经 Codex、Grok 经 Grok CLI）
+        "claude-subscription-chat": BuiltinEndpoint("text", since="0.35.1"),
+        "codex-chat": BuiltinEndpoint("text", since="0.35.1"),
+        "codex-image": BuiltinEndpoint("image", since="0.35.1"),
+        "grok-cli-chat": BuiltinEndpoint("text", since="0.35.1"),
     }
 )
 
@@ -121,6 +126,9 @@ BUILTIN_PROVIDER_ENDPOINTS: Final[Mapping[str, Mapping[str, ProviderEndpointOpti
             "video": ProviderEndpointOptions(("agnes-video-2", "agnes-video-2-5"), "agnes-video-2-5"),
         },
         "ark": {"text": _single("ark-chat"), "image": _SEEDREAM, "video": _SEEDANCE},
+        "chatgpt-subscription": {"text": _single("codex-chat"), "image": _single("codex-image")},
+        "claude-subscription": {"text": _single("claude-subscription-chat")},
+        "grok-subscription": {"text": _single("grok-cli-chat")},
         "ark-agent-plan": {"text": _single("ark-chat"), "image": _SEEDREAM, "video": _SEEDANCE},
         "dashscope": {
             "text": _single("openai-chat"),

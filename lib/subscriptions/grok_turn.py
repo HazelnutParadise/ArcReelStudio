@@ -4,7 +4,7 @@
 1. 起 ``grok --no-auto-update [-m <model>] agent stdio``，环境里 ``HOME`` 是连线专属的 HOME（凭证在其中的 ``.grok``）。
 2. 发 ``initialize``（``protocolVersion: 1``、``clientCapabilities: {}``），再发 ``session/new``（``cwd`` 是临时工作目录、
    ``mcpServers: []``），拿 ``sessionId``。
-3. 发 ``session/prompt``（``sessionId``、``prompt: [{"type": "text", "text": ...}]``）；回复文字以 ``session/update`` 通知
+3. 发 ``session/prompt``（``sessionId``、``prompt: [{"type": "text", "text": ...}, 图片块...]``）；回复文字以 ``session/update`` 通知
    陆续到达（``params.update.sessionUpdate == "agent_message_chunk"`` 时取 ``params.update.content.text``，按到达顺序拼接），
    ``session/prompt`` 的响应带 ``stopReason`` 表示这一轮结束。
 4. 服务器发来的请求（例如 ``session/request_permission``、``fs/*``）一律拒绝：回 JSON-RPC 错误 ``-32601``。
@@ -13,13 +13,15 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import contextlib
 import json
 import logging
+import mimetypes
 import os
 import shutil
 import tempfile
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -170,6 +172,15 @@ class _AcpConnection:
                 future.set_exception(error)
 
 
+def _image_blocks(images: Sequence[Path]) -> list[dict[str, Any]]:
+    """ACP 的图片内容块：``{"type": "image", "mimeType": ..., "data": <base64>}``。"""
+    blocks: list[dict[str, Any]] = []
+    for path in images:
+        mime = mimetypes.guess_type(path.name)[0] or "image/png"
+        blocks.append({"type": "image", "mimeType": mime, "data": base64.b64encode(path.read_bytes()).decode("ascii")})
+    return blocks
+
+
 def _error_code(message: str) -> str | None:
     """把错误讯息归到我们关心的几类：要重新登录、额度用完。"""
     text = message.lower()
@@ -190,6 +201,7 @@ async def run_grok_turn(
     *,
     model: str | None = None,
     system_prompt: str | None = None,
+    input_images: Sequence[Path] = (),
     cli_path: str | None = None,
     timeout: float = DEFAULT_TURN_TIMEOUT_SECONDS,  # noqa: ASYNC109 -- 一轮的等待上限，由 asyncio.wait_for 实现；仓库无 trio/anyio cancel scope
 ) -> GrokTurnResult:
@@ -235,7 +247,7 @@ async def run_grok_turn(
         connection = _AcpConnection(process)
         try:
             return await asyncio.wait_for(
-                _run_turn(connection, work_dir, prompt, system_prompt),
+                _run_turn(connection, work_dir, prompt, system_prompt, input_images),
                 timeout=timeout,
             )
         except TimeoutError as exc:
@@ -251,6 +263,7 @@ async def _run_turn(
     work_dir: Path,
     prompt: str,
     system_prompt: str | None,
+    input_images: Sequence[Path] = (),
 ) -> GrokTurnResult:
     try:
         await connection.request("initialize", {"protocolVersion": 1, "clientCapabilities": {}})
@@ -259,10 +272,9 @@ async def _run_turn(
         if not session_id:
             raise GrokTurnError("grok did not start a session")
         text = prompt if not system_prompt else f"{system_prompt}\n\n{prompt}"
-        result = await connection.request(
-            "session/prompt",
-            {"sessionId": session_id, "prompt": [{"type": "text", "text": text}]},
-        )
+        blocks: list[dict[str, Any]] = [{"type": "text", "text": text}]
+        blocks += await asyncio.to_thread(_image_blocks, input_images)
+        result = await connection.request("session/prompt", {"sessionId": session_id, "prompt": blocks})
     except _AcpError as exc:
         raise GrokTurnError(str(exc), code=_error_code(str(exc))) from exc
 

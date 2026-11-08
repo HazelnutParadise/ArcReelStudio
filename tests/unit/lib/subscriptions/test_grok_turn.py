@@ -283,3 +283,15 @@ async def test_the_temporary_working_directory_is_removed_afterwards(fake_grok_c
     seen = await asyncio.to_thread(fake_grok_cli.seen)
     assert seen["cwd_exists"] is True
     assert not await asyncio.to_thread(Path(seen["cwd"]).exists)
+
+
+async def test_images_are_sent_as_acp_image_blocks(fake_grok_cli, grok_home_dir: Path, tmp_path: Path) -> None:
+    picture = tmp_path / "ref.png"
+    await asyncio.to_thread(picture.write_bytes, b"PNG")
+    cli = fake_grok_cli(chunks=["ok"])
+
+    await run_grok_turn(grok_home_dir, "describe", input_images=[picture], cli_path=cli)
+
+    seen = await asyncio.to_thread(fake_grok_cli.seen)
+    blocks = next(r for r in seen["requests"] if r["method"] == "session/prompt")["params"]["prompt"]
+    assert blocks[1] == {"type": "image", "mimeType": "image/png", "data": "UE5H"}

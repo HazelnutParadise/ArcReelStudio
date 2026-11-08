@@ -18,6 +18,7 @@ from lib.backends.text_backends.base import TextCapability, TextGenerationReques
 from lib.catalog import query as catalog
 from lib.catalog.errors import ModelDiscontinuedError, ModelNotInCatalogError
 from lib.catalog.query import factory_snapshot
+from lib.config.registry import PROVIDER_REGISTRY
 from lib.config.resolver import ConfigResolver
 from lib.config.service import ConfigService
 from tests.catalog_support import install_catalog, set_catalog_today, with_entry_changes, with_min_app_version
@@ -371,13 +372,21 @@ class TestAssembleBuiltinWithRealSdkClients:
             pytest.skip(f"模型目录里没有 {provider_id} 的 {media_type} 模型，无从构造")
         credentials_file = tmp_path / "vertex.json"
         credentials_file.write_text('{"project_id": "demo-project"}', encoding="utf-8")
-        await _seed_provider_config(
-            db_factory,
-            provider_id,
-            api_key="secret",
-            credentials_path=str(credentials_file),
-            gcs_bucket="demo-bucket",
-        )
+        if PROVIDER_REGISTRY[provider_id].login_kind is not None:
+            # 订阅供应商的凭证只能是登录建立的连线
+            from lib.db.repositories.credential_repository import CredentialRepository
+
+            async with db_factory() as session:
+                await CredentialRepository(session).create(provider=provider_id, name="signed-in", api_key="secret")
+                await session.commit()
+        else:
+            await _seed_provider_config(
+                db_factory,
+                provider_id,
+                api_key="secret",
+                credentials_path=str(credentials_file),
+                gcs_bucket="demo-bucket",
+            )
         # 服务账号私钥解析与事件循环无关，替掉它免得在测试里生成真私钥。
         with captured_vertex_credentials():
             backend = await assemble_backend(

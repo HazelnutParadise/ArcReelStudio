@@ -79,3 +79,7 @@ for _endpoint, _backend in {
     **KLING_IMAGE_BACKENDS,
 }.items():
     register_backend(_endpoint, _backend)
+
+from lib.backends.image_backends.codex import ChatGPTSubscriptionImageBackend
+
+register_backend("chatgpt-subscription", ChatGPTSubscriptionImageBackend)

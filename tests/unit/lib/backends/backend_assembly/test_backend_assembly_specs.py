@@ -634,7 +634,7 @@ class TestRegistryShape:
             assert (provider, "video") in PROVIDER_SPEC_REGISTRY
 
     def test_text_family_complete(self):
-        # 文本九对：七 provider + gemini 两 id（aistudio/vertex）
+        # 文本十二对：七 provider + gemini 两 id（aistudio/vertex）+ 三家订阅
         text_keys = {k for k in PROVIDER_SPEC_REGISTRY if k[1] == "text"}
         assert text_keys == {
             ("ark", "text"),
@@ -646,6 +646,9 @@ class TestRegistryShape:
             ("openai", "text"),
             ("dashscope", "text"),
             ("minimax", "text"),
+            ("claude-subscription", "text"),
+            ("chatgpt-subscription", "text"),
+            ("grok-subscription", "text"),
         }
 
     def test_bare_gemini_text_not_registered(self):

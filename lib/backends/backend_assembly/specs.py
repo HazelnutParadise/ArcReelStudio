@@ -18,6 +18,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from lib.backends.kling_shared import kling_auth_mode
@@ -444,6 +445,39 @@ def _build_text_simple(config: LoadedConfig, model_id: str | None, *, registry_b
     return _media_create_backend("text")(registry_backend, **kwargs)
 
 
+def _subscription_home(config: LoadedConfig, provider_id: str) -> Path:
+    """订阅连线专属的 HOME；没有连线时（理应不会，订阅只能经登录建立连线）明确报错。"""
+    from lib.subscriptions.connection_home import connection_home
+
+    if config.credential_id is None:
+        raise ValueError(f"{provider_id} needs a signed-in connection")
+    return connection_home(provider_id, config.credential_id)
+
+
+def _build_claude_subscription_text(config: LoadedConfig, model_id: str | None) -> Any:
+    return _media_create_backend("text")(
+        "claude-subscription", oauth_token=config.credentials.get("api_key"), model=model_id
+    )
+
+
+def _build_chatgpt_subscription_text(config: LoadedConfig, model_id: str | None) -> Any:
+    return _media_create_backend("text")(
+        "chatgpt-subscription", codex_home=_subscription_home(config, "chatgpt-subscription"), model=model_id
+    )
+
+
+def _build_chatgpt_subscription_image(config: LoadedConfig, model_id: str | None) -> Any:
+    return _media_create_backend("image")(
+        "chatgpt-subscription", codex_home=_subscription_home(config, "chatgpt-subscription"), model=model_id
+    )
+
+
+def _build_grok_subscription_text(config: LoadedConfig, model_id: str | None) -> Any:
+    return _media_create_backend("text")(
+        "grok-subscription", grok_home=_subscription_home(config, "grok-subscription"), model=model_id
+    )
+
+
 def _text_simple_spec(provider_id: str, endpoint: str) -> ProviderSpec:
     """登记一条简单文本 spec：registry_backend 即 provider_id 自身（文本侧无别名映射）。"""
     return ProviderSpec(
@@ -585,6 +619,10 @@ PROVIDER_ONLY_ENDPOINTS: Mapping[str, str] = {
     "agnes-video-2-5": "video",
     "gemini-vertex-video": "video",
     "gemini-vertex-interactions-video": "video",
+    "claude-subscription-chat": "text",
+    "codex-chat": "text",
+    "codex-image": "image",
+    "grok-cli-chat": "text",
 }
 
 #: 简单族的 image/video/audio：(provider_id, media_type) → 端点名。
@@ -731,6 +769,36 @@ _specs += [
     ),
     _text_openai_compat_spec("dashscope", derive_base_url=_dashscope_text_base_url, provider_name="dashscope"),
     _text_openai_compat_spec("minimax", derive_base_url=_minimax_text_base_url, provider_name="minimax"),
+]
+_specs += [
+    ProviderSpec(
+        provider_id="claude-subscription",
+        media_type="text",
+        registry_backend="claude-subscription",
+        build_backend=_build_claude_subscription_text,
+        endpoint="claude-subscription-chat",
+    ),
+    ProviderSpec(
+        provider_id="chatgpt-subscription",
+        media_type="text",
+        registry_backend="chatgpt-subscription",
+        build_backend=_build_chatgpt_subscription_text,
+        endpoint="codex-chat",
+    ),
+    ProviderSpec(
+        provider_id="chatgpt-subscription",
+        media_type="image",
+        registry_backend="chatgpt-subscription",
+        build_backend=_build_chatgpt_subscription_image,
+        endpoint="codex-image",
+    ),
+    ProviderSpec(
+        provider_id="grok-subscription",
+        media_type="text",
+        registry_backend="grok-subscription",
+        build_backend=_build_grok_subscription_text,
+        endpoint="grok-cli-chat",
+    ),
 ]
 
 #: (provider_id, 端点名) → 该供应商经这个端点调用时的构造规格。

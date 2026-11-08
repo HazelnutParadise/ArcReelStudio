@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -104,3 +105,24 @@ async def test_no_output_is_an_error() -> None:
         await run_claude_turn("t", "x", query_fn=FakeQuery(_result(result=None)))
 
     assert exc.value.code == "empty_output"
+
+
+async def test_images_are_copied_in_and_only_the_read_tool_is_allowed(tmp_path) -> None:
+    picture = tmp_path / "ref.jpg"
+    picture.write_bytes(b"jpg")
+    seen: dict[str, object] = {}
+
+    class Capture(FakeQuery):
+        def __call__(self, *, prompt: str, options):
+            seen["copied"] = (Path(options.cwd) / "image-1.jpg").read_bytes()
+            return super().__call__(prompt=prompt, options=options)
+
+    fake = Capture(_result())
+    await run_claude_turn("t", "describe", input_images=[picture], query_fn=fake)
+
+    options = fake.calls[0]["options"]
+    assert options.tools == ["Read"]
+    assert options.allowed_tools == ["Read"]
+    assert options.max_turns == 3
+    assert "./image-1.jpg" in fake.calls[0]["prompt"]
+    assert seen["copied"] == b"jpg"

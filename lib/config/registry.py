@@ -213,6 +213,7 @@ PROVIDER_REGISTRY: dict[str, ProviderMeta] = {
     "chatgpt-subscription": ProviderMeta(
         display_name="ChatGPT 订阅",
         required_keys=[],
+        optional_keys=["image_max_workers"],
         login_kind="device_code",
     ),
     "grok-subscription": ProviderMeta(
