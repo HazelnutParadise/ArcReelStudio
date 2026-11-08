@@ -1514,7 +1514,7 @@ export default {
   'pm_pe_qualifier_audio': 'audio',
   'pm_pe_meter_output_images': 'Generated images',
   'pm_pe_meter_input_images': 'Reference images',
-  'pm_pe_meter_output_seconds': 'Video duration',
+  'pm_pe_meter_output_seconds': 'Output duration',
   'pm_pe_meter_video_tokens': 'Video tokens',
   'pm_pe_meter_input_video_seconds': 'Input video duration',
   'pm_pe_meter_characters': 'Text',

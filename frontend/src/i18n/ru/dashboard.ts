@@ -1575,7 +1575,7 @@ export default {
   'pm_pe_qualifier_audio': 'аудио',
   'pm_pe_meter_output_images': 'Сгенерированные изображения',
   'pm_pe_meter_input_images': 'Референсы',
-  'pm_pe_meter_output_seconds': 'Длительность видео',
+  'pm_pe_meter_output_seconds': 'Длительность результата',
   'pm_pe_meter_video_tokens': 'Видеотокены',
   'pm_pe_meter_input_video_seconds': 'Длительность входного видео',
   'pm_pe_meter_characters': 'Текст',

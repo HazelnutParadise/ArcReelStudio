@@ -55,17 +55,17 @@ describe("PriceEditor", () => {
   it("builds a conditional meter with a free allowance into the price table structure", async () => {
     render(<Harness mediaType="video" resolutions={["720p", "1080p"]} />);
 
-    await pickMenuItem("添加计费项", "视频时长");
+    await pickMenuItem("添加计费项", "输出时长");
     await pickMenuItem(/按条件分价/, "分辨率");
-    fireEvent.change(screen.getByRole("textbox", { name: "视频时长的单价（分辨率：720p）" }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "输出时长的单价（分辨率：720p）" }), {
       target: { value: "0.4" },
     });
-    fireEvent.click(within(card("视频时长")).getByRole("button", { name: "添加一档" }));
+    fireEvent.click(within(card("输出时长")).getByRole("button", { name: "添加一档" }));
     // 新的一档沿用上一档的条件，点选条件标签改成 1080p
-    const tags = within(card("视频时长")).getAllByRole("button", { name: /修改条件：分辨率：720p/ });
+    const tags = within(card("输出时长")).getAllByRole("button", { name: /修改条件：分辨率：720p/ });
     fireEvent.click(tags[1]);
     fireEvent.click(screen.getByRole("button", { name: "1080p" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "视频时长的单价（分辨率：1080p）" }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "输出时长的单价（分辨率：1080p）" }), {
       target: { value: "0.8" },
     });
 
@@ -100,11 +100,12 @@ describe("PriceEditor", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "添加计费项" }));
     const audioMeters = (await screen.findAllByRole("menuitem")).map((item) => item.textContent);
-    expect(audioMeters).toEqual(["输入", "文字", "输出（音频）", "调用次数"]);
+    // 输出时长也适用于按时长计价的音乐（docs/adr/0126）
+    expect(audioMeters).toEqual(["输入", "输出时长", "文字", "输出（音频）", "调用次数"]);
     unmount();
 
     render(<Harness mediaType="video" />);
-    await pickMenuItem("添加计费项", "视频时长");
+    await pickMenuItem("添加计费项", "输出时长");
     fireEvent.click(screen.getByRole("button", { name: "按条件分价" }));
     const videoDims = (await screen.findAllByRole("menuitem")).map((item) => item.textContent);
     expect(videoDims).toEqual(["分辨率", "声音", "服务档", "时长", "输入视频", "参考生视频"]);
@@ -112,10 +113,10 @@ describe("PriceEditor", () => {
 
   it("keeps a condition once it has been added", async () => {
     render(<Harness mediaType="video" />);
-    await pickMenuItem("添加计费项", "视频时长");
+    await pickMenuItem("添加计费项", "输出时长");
     await pickMenuItem("按条件分价", "声音");
 
-    const meter = card("视频时长");
+    const meter = card("输出时长");
     expect(within(meter).queryByRole("button", { name: /(移除|删除)条件/ })).not.toBeInTheDocument();
     expect(within(meter).getByText(/加上的条件不能移除/)).toBeInTheDocument();
     // 已经加过的条件不再出现在选项里

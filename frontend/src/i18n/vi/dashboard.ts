@@ -1501,7 +1501,7 @@ export default {
   'pm_pe_qualifier_audio': 'âm thanh',
   'pm_pe_meter_output_images': 'Ảnh được tạo',
   'pm_pe_meter_input_images': 'Ảnh tham chiếu',
-  'pm_pe_meter_output_seconds': 'Thời lượng video',
+  'pm_pe_meter_output_seconds': 'Thời lượng đầu ra',
   'pm_pe_meter_video_tokens': 'Token video',
   'pm_pe_meter_input_video_seconds': 'Thời lượng video đầu vào',
   'pm_pe_meter_characters': 'Văn bản',

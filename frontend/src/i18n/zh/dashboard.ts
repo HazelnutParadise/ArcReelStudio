@@ -1448,7 +1448,7 @@ export default {
   'pm_pe_qualifier_audio': '音频',
   'pm_pe_meter_output_images': '生成图片',
   'pm_pe_meter_input_images': '参考图',
-  'pm_pe_meter_output_seconds': '视频时长',
+  'pm_pe_meter_output_seconds': '输出时长',
   'pm_pe_meter_video_tokens': '视频 token',
   'pm_pe_meter_input_video_seconds': '输入视频时长',
   'pm_pe_meter_characters': '文字',
