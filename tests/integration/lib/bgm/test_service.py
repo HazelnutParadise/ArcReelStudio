@@ -9,7 +9,7 @@ import pytest
 
 from lib.artifacts.artifact_activation import ArtifactCurrencyResolver
 from lib.artifacts.artifact_manifest import ArtifactStatus
-from lib.bgm.library import TARGET_LOUDNESS_LUFS, bgm_key
+from lib.bgm.library import TARGET_LOUDNESS_LUFS, bgm_entry, bgm_key
 from lib.bgm.service import BgmError, BgmLibraryService
 from lib.project.project_manager import ProjectManager
 from tests.factories import wav_bytes
@@ -41,7 +41,8 @@ async def test_upload_measures_loudness_once_and_registers_the_bytes(blank_pm: P
     assert -30 < track.integrated_lufs < -5
     assert track.gain_db == pytest.approx(TARGET_LOUDNESS_LUFS - track.integrated_lufs, abs=0.01)
     stored = json.loads((project_dir / "project.json").read_text(encoding="utf-8"))["bgm"]
-    assert stored == {track.id: track.model_dump(mode="json", exclude={"id"})}
+    assert stored == {track.id: bgm_entry(track)}
+    assert "source" not in stored[track.id]  # 上传是缺省来源，不写进 project.json
     assert await service.list("demo") == (track,)
     assert _leftovers(blank_pm) == [f"{track.id}.wav"]
     status = ArtifactCurrencyResolver(project_dir).compare(bgm_key(track.id), artifact_path=track.file).status
@@ -92,3 +93,23 @@ async def test_unknown_project_is_reported(blank_pm: ProjectManager) -> None:
         await BgmLibraryService(blank_pm).list("absent")
 
     assert refused.value.code == "project_not_found"
+
+
+async def test_generated_music_is_registered_with_its_origin_and_normalized(blank_pm: ProjectManager) -> None:
+    service = BgmLibraryService(blank_pm)
+
+    track = await service.register_generated(
+        "demo",
+        name="Rainy lofi",
+        extension=".WAV",
+        content=wav_bytes(2.0, tone_hz=440),
+        prompt="rainy night lofi",
+        model="stability/stable-audio-3",
+    )
+
+    assert (track.source, track.prompt, track.model) == ("ai", "rainy night lofi", "stability/stable-audio-3")
+    assert track.file == f"bgm/{track.id}.wav"
+    assert track.gain_db == pytest.approx(TARGET_LOUDNESS_LUFS - track.integrated_lufs, abs=0.01)
+    stored = json.loads((blank_pm.get_project_path("demo") / "project.json").read_text(encoding="utf-8"))["bgm"]
+    assert stored[track.id]["source"] == "ai"
+    assert await service.list("demo") == (track,)

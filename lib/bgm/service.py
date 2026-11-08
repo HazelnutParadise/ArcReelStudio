@@ -22,6 +22,7 @@ from lib.bgm.library import (
     BGM_NAME_MAX_LENGTH,
     PROJECT_BGM_FIELD,
     SILENCE_LOUDNESS_LUFS,
+    BgmOrigin,
     BgmTrack,
     bgm_basis,
     bgm_entry,
@@ -88,9 +89,37 @@ class BgmLibraryService:
         return self._projects.load_project(project_name)
 
     async def upload(self, project_name: str, *, filename: str, content: bytes) -> BgmTrack:
-        """登记一首 BGM：校验格式与大小，探测时长，实测积分响度并折算增益，原子落盘并按字节登记。"""
+        """登记一首使用者上传的 BGM：校验格式与大小，探测时长，实测积分响度并折算增益，原子落盘并按字节登记。"""
+        return await self._register(
+            project_name, name=bgm_display_name(filename), extension=Path(filename).suffix.lower(), content=content
+        )
+
+    async def register_generated(
+        self, project_name: str, *, name: str, extension: str, content: bytes, prompt: str, model: str
+    ) -> BgmTrack:
+        """登记一首 AI 生成的音乐：与上传走同一条登记（同样统一响度、按字节登记），并记下提示词与生成它的模型。"""
+        return await self._register(
+            project_name,
+            name=bgm_display_name(name),
+            extension=extension.lower(),
+            content=content,
+            source="ai",
+            prompt=prompt,
+            model=model,
+        )
+
+    async def _register(
+        self,
+        project_name: str,
+        *,
+        name: str,
+        extension: str,
+        content: bytes,
+        source: BgmOrigin = "upload",
+        prompt: str | None = None,
+        model: str | None = None,
+    ) -> BgmTrack:
         project_dir = await asyncio.to_thread(self._project_dir, project_name)
-        extension = Path(filename).suffix.lower()
         if extension not in BGM_EXTENSIONS:
             raise BgmError(
                 "bgm_unsupported_type",
@@ -114,13 +143,16 @@ class BgmLibraryService:
             integrated = await self._loudness(ffmpeg, staged, duration_us)
             track = BgmTrack(
                 id=bgm_id,
-                name=bgm_display_name(filename),
+                name=name,
                 file=bgm_file_path(bgm_id, extension),
                 duration_us=duration_us,
                 integrated_lufs=round(integrated, 2),
                 gain_db=loudness_gain_db(integrated),
                 content_digest=await asyncio.to_thread(sha256_file, staged),
                 uploaded_at=_utc_now(),
+                source=source,
+                prompt=prompt,
+                model=model,
             )
             await run_sync_transaction(self._commit, project_name, project_dir, staged, track)
         finally:

@@ -14,7 +14,7 @@ import re
 from collections.abc import Callable, Collection, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -41,8 +41,15 @@ BGM_BASIS_VERSION = 1
 _BGM_ID_RE = re.compile(BGM_ID_PATTERN)
 
 
+#: BGM 从哪来：使用者上传、AI 生成（docs/adr/0126）
+BgmOrigin = Literal["upload", "ai"]
+
+
 class BgmTrack(BaseModel):
-    """一首已登记的 BGM。``gain_db`` 是把实测积分响度统一到 −16 LUFS 的静态增益。"""
+    """一首已登记的 BGM。``gain_db`` 是把实测积分响度统一到 −16 LUFS 的静态增益。
+
+    ``source`` 之后的栏位记录来源：AI 生成的带提示词与生成它的 ``provider/model``。旧条目没有这些栏位，按上传读入。
+    """
 
     model_config = ConfigDict(extra="ignore", frozen=True)
 
@@ -54,6 +61,9 @@ class BgmTrack(BaseModel):
     gain_db: float
     content_digest: str = Field(min_length=1)
     uploaded_at: str
+    source: BgmOrigin = "upload"
+    prompt: str | None = None
+    model: str | None = None
 
     @property
     def gain(self) -> float:
@@ -101,7 +111,7 @@ def read_bgm_library(project: Mapping[str, Any]) -> dict[str, BgmTrack]:
 
 def bgm_entry(track: BgmTrack) -> dict[str, object]:
     """写进 ``project.json`` 的形态：ID 是键，不重复存。"""
-    return track.model_dump(mode="json", exclude={"id"})
+    return track.model_dump(mode="json", exclude={"id"}, exclude_defaults=True)
 
 
 def bgm_key(bgm_id: str) -> ArtifactKey:
