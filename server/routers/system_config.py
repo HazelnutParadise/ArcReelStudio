@@ -495,6 +495,8 @@ class SystemConfigPatchRequest(BaseModel):
     default_image_backend_i2i: str | None = None
     default_text_backend: str | None = None
     default_audio_backend: str | None = None
+    # 音乐模型（音频类型中能做音乐的，docs/adr/0126）
+    default_music_backend: str | None = None
     # 各模型字段同层的「连线」旁键（见 lib.config.model_setting_keys）：指定用该供应商的哪一条凭证，null = 默认连线
     default_video_backend_credential_id: int | None = None
     default_video_backend_i2v_credential_id: int | None = None
@@ -504,6 +506,7 @@ class SystemConfigPatchRequest(BaseModel):
     default_image_backend_i2i_credential_id: int | None = None
     default_text_backend_credential_id: int | None = None
     default_audio_backend_credential_id: int | None = None
+    default_music_backend_credential_id: int | None = None
     text_backend_simple_credential_id: int | None = None
     text_backend_complex_credential_id: int | None = None
     narration_voice: str | None = None
@@ -587,6 +590,7 @@ async def get_system_config(
         "default_image_backend_i2i": all_s.get("default_image_backend_i2i", ""),
         "default_text_backend": all_s.get("default_text_backend", ""),
         "default_audio_backend": all_s.get("default_audio_backend", ""),
+        "default_music_backend": all_s.get("default_music_backend", ""),
         "narration_voice": all_s.get("narration_voice", ""),
         "narration_speed": narration_speed,
         "video_generate_audio": video_generate_audio,

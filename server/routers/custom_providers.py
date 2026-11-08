@@ -133,6 +133,7 @@ _BACKEND_SETTING_KEYS = (
     "default_image_backend_i2i",
     "default_text_backend",
     "default_audio_backend",
+    "default_music_backend",
     "text_backend_simple",
     "text_backend_complex",
 )

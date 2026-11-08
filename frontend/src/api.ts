@@ -900,6 +900,17 @@ class API {
   }
 
   /** 上传一首 BGM：服务端实测响度并登记为项目级素材，各集的剪辑时间线都能用。 */
+  /** 排一个音乐生成任务；完成后这首音乐出现在项目的 BGM 库。 */
+  static async generateMusic(
+    projectName: string,
+    body: { prompt: string; duration_seconds?: number | null; instrumental?: boolean; name?: string | null },
+  ): Promise<{ success: boolean; task_id: string; message: string }> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/generate/music`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
   static async uploadBgm(projectName: string, file: File): Promise<{ success: boolean; bgm: ProjectBgm }> {
     return API.postFileUpload(`/projects/${encodeURIComponent(projectName)}/upload/bgm`, file);
   }

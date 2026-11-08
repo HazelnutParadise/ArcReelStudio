@@ -448,6 +448,12 @@ export default {
   'auto_select_unavailable': 'Tự chọn (không có nhà cung cấp khả dụng)',
   'no_video_providers_hint': 'Chưa có nhà cung cấp nào tạo được video.',
   'default_audio_model': 'Mô hình âm thanh thuyết minh mặc định',
+  'default_models_channel_music': 'Âm nhạc',
+  'default_music_model_hint': 'Dùng để tạo BGM khi biên tập và khi Agent tạo nhạc. Chưa đặt thì không thể tạo.',
+  'default_music_model': 'Mô hình tạo nhạc',
+  'music_model_unset': 'Chưa đặt',
+  'no_music_providers_hint':
+    'Chưa có nhà cung cấp nào tạo được nhạc. Hãy thêm API Key của AI Studio, Stability AI hoặc ElevenLabs trong trung tâm kết nối.',
   'narration_voice_label': 'ID giọng thuyết minh',
   'narration_voice_hint': 'Điền id giọng theo tài liệu nhà cung cấp; để trống để dùng giọng mặc định',
   'narration_voice_hint_with_voices':
@@ -2942,7 +2948,7 @@ export default {
   'tool_name_list_timelines': 'Liệt kê dòng thời gian dựng',
   'tool_name_read_timeline': 'Đọc dòng thời gian dựng',
   'tool_name_list_bgm': 'Liệt kê nhạc nền BGM',
-  'tool_name_generate_music': "Tạo nhạc",
+  'tool_name_generate_music': 'Tạo nhạc',
   'tool_name_edit_timeline': 'Chỉnh sửa dòng thời gian dựng',
   'tool_name_rename_timeline': 'Đổi tên dòng thời gian dựng',
   'tool_name_list_revisions': 'Liệt kê các phiên bản sửa của dòng thời gian dựng',
@@ -4257,6 +4263,17 @@ export default {
   'edit_view_bgm_title':
     '{{bgm}}: {{start}}–{{end}}s, âm lượng {{volume}}, tăng dần {{fadeIn}}s, giảm dần {{fadeOut}}s',
   'edit_view_bgm_upload': 'Tải lên BGM',
+  'edit_view_bgm_generate': 'Tạo nhạc',
+  'edit_view_bgm_generate_title': 'Tạo BGM',
+  'edit_view_bgm_generate_desc':
+    'Tạo một bản BGM bằng mô hình tạo nhạc đã đặt (có phí). Khi xong, bản nhạc xuất hiện trong thư viện BGM và có thể đặt lên dòng thời gian.',
+  'edit_view_bgm_generate_prompt': 'Muốn loại nhạc nào',
+  'edit_view_bgm_generate_prompt_placeholder': 'Ví dụ: đêm mưa, piano lo-fi chậm rãi',
+  'edit_view_bgm_generate_seconds': 'Độ dài (giây)',
+  'edit_view_bgm_generate_name': 'Tên (không bắt buộc)',
+  'edit_view_bgm_generate_instrumental': 'Chỉ nhạc cụ, không lời',
+  'edit_view_bgm_generate_submit': 'Tạo',
+  'edit_view_bgm_generate_failed': 'Không thể tạo nhạc: {{message}}',
   'edit_view_bgm_uploading': 'Đang tải lên BGM…',
   'edit_view_bgm_uploaded':
     'Đã tải lên BGM "{{name}}". Mọi dòng thời gian dựng của các tập đều dùng được; hãy nhờ Agent đặt vào dòng thời gian',

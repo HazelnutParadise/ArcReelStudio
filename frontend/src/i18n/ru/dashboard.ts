@@ -466,6 +466,13 @@ export default {
   'auto_select_unavailable': 'Автовыбор (нет доступного провайдера)',
   'no_video_providers_hint': 'Пока нет провайдера, который умеет генерировать видео.',
   'default_audio_model': 'Модель озвучки по умолчанию',
+  'default_models_channel_music': 'Музыка',
+  'default_music_model_hint':
+    'Используется для генерации BGM при монтаже и когда Agent создаёт музыку. Пока модель не выбрана, генерация недоступна.',
+  'default_music_model': 'Модель для музыки',
+  'music_model_unset': 'Не выбрана',
+  'no_music_providers_hint':
+    'Пока нет поставщика, который умеет генерировать музыку. Добавьте ключ API AI Studio, Stability AI или ElevenLabs в центре подключений.',
   'narration_voice_label': 'ID голоса для закадрового текста',
   'narration_voice_hint': 'Укажите ID голоса по документации провайдера; оставьте пустым для голоса по умолчанию',
   'narration_voice_hint_with_voices':
@@ -2837,7 +2844,7 @@ export default {
   'tool_name_list_timelines': 'Список монтажных таймлайнов',
   'tool_name_read_timeline': 'Прочитать монтажный таймлайн',
   'tool_name_list_bgm': 'Список фоновой музыки',
-  'tool_name_generate_music': "Сгенерировать музыку",
+  'tool_name_generate_music': 'Сгенерировать музыку',
   'tool_name_edit_timeline': 'Обновить монтажный таймлайн',
   'tool_name_rename_timeline': 'Переименовать монтажный таймлайн',
   'tool_name_list_revisions': 'Список ревизий монтажного таймлайна',
@@ -4462,6 +4469,17 @@ export default {
   'edit_view_bgm_title':
     '{{bgm}}: {{start}}–{{end}} с, громкость {{volume}}, нарастание {{fadeIn}} с, затухание {{fadeOut}} с',
   'edit_view_bgm_upload': 'Загрузить BGM',
+  'edit_view_bgm_generate': 'Сгенерировать музыку',
+  'edit_view_bgm_generate_title': 'Сгенерировать BGM',
+  'edit_view_bgm_generate_desc':
+    'Создать трек BGM выбранной моделью для музыки (платно). Готовый трек появится в библиотеке BGM, и его можно будет поставить на таймлайн.',
+  'edit_view_bgm_generate_prompt': 'Какая нужна музыка',
+  'edit_view_bgm_generate_prompt_placeholder': 'Например: дождливая ночь, ленивое lo-fi пианино, медленно',
+  'edit_view_bgm_generate_seconds': 'Длина (сек.)',
+  'edit_view_bgm_generate_name': 'Название (необязательно)',
+  'edit_view_bgm_generate_instrumental': 'Только инструментал, без вокала',
+  'edit_view_bgm_generate_submit': 'Сгенерировать',
+  'edit_view_bgm_generate_failed': 'Не удалось сгенерировать музыку: {{message}}',
   'edit_view_bgm_uploading': 'Загрузка BGM…',
   'edit_view_bgm_uploaded':
     'BGM «{{name}}» загружена. Её могут использовать монтажные таймлайны всех серий; попросите агента разместить её на таймлайне',

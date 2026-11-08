@@ -15,6 +15,7 @@ import { ItemPositionBadge } from "@/components/shared/episode-item/ItemPosition
 import { itemPositionLabel } from "@/utils/episode-display";
 import { episodeItemKind } from "@/utils/episode-item";
 import { formatSeconds, rulerStep, unitHue, unitPositionLabel } from "./timeline-view";
+import { GenerateMusicButton } from "./GenerateMusicDialog";
 
 function percentOf(seconds: number, duration: number): string {
   return duration > 0 ? `${(seconds / duration) * 100}%` : "0%";
@@ -109,7 +110,12 @@ export function EditTimelineTracks({
             <TrackRow
               label={translate("edit_view_track_bgm")}
               height="h-8 edit-short:h-6"
-              action={<BgmUploadButton projectName={projectName} />}
+              action={
+                <>
+                  <GenerateMusicButton projectName={projectName} />
+                  <BgmUploadButton projectName={projectName} />
+                </>
+              }
             >
               {bgm.length > 0 ? (
                 <BgmBlocks items={bgm} duration={duration} />

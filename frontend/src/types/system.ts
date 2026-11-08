@@ -7,6 +7,8 @@ export interface SystemConfigSettings extends GlobalCredentialSettings {
   default_image_backend_i2i?: string;
   default_text_backend: string;
   default_audio_backend?: string;
+  /** 音乐模型（音频类型中能做音乐的）。 */
+  default_music_backend?: string;
   narration_voice?: string;
   narration_speed?: number | null;
   text_backend_simple: string;
@@ -38,6 +40,7 @@ export const GLOBAL_MODEL_SETTING_KEYS = [
   "default_image_backend_i2i",
   "default_text_backend",
   "default_audio_backend",
+  "default_music_backend",
   "text_backend_simple",
   "text_backend_complex",
 ] as const;
@@ -51,6 +54,8 @@ export interface SystemConfigOptions {
   image_backends: string[];
   text_backends: string[];
   audio_backends?: string[];
+  /** 能做音乐的音频模型。 */
+  music_backends?: string[];
   provider_names?: Record<string, string>;
   /** "provider_id/model_id" → 按 Accept-Language 成文的模型名；缺键即退回 model id。 */
   model_names?: Record<string, string>;
@@ -175,6 +180,7 @@ export interface SystemConfigPatch extends GlobalCredentialSettings {
   default_image_backend_i2i?: string;
   default_text_backend?: string;
   default_audio_backend?: string;
+  default_music_backend?: string;
   narration_voice?: string;
   narration_speed?: number | null;
   text_backend_simple?: string;

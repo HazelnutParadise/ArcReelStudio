@@ -446,6 +446,13 @@ export default {
   'auto_select_unavailable': 'Auto-select (no provider available)',
   'no_video_providers_hint': 'No provider can generate video yet.',
   'default_audio_model': 'Default Narration Audio Model',
+  'default_models_channel_music': 'Music',
+  'default_music_model_hint':
+    "Used to generate BGM while editing and when the Agent generates music. Nothing can be generated until it's set.",
+  'default_music_model': 'Music model',
+  'music_model_unset': 'Not set',
+  'no_music_providers_hint':
+    'No provider can generate music yet. Add an AI Studio, Stability AI or ElevenLabs API key in the connection center.',
   'narration_voice_label': 'Narration Voice ID',
   'narration_voice_hint': 'Fill in a voice id per your provider docs; leave empty for the default voice',
   'narration_voice_hint_with_voices':
@@ -2706,7 +2713,7 @@ export default {
   'tool_name_list_timelines': 'List edit timelines',
   'tool_name_read_timeline': 'Read edit timeline',
   'tool_name_list_bgm': 'List BGM',
-  'tool_name_generate_music': "Generate music",
+  'tool_name_generate_music': 'Generate music',
   'tool_name_edit_timeline': 'Update edit timeline',
   'tool_name_rename_timeline': 'Rename edit timeline',
   'tool_name_list_revisions': 'List edit timeline revisions',
@@ -4264,6 +4271,17 @@ export default {
     '{{unit}} narration is dubbed in post-production and is silent in the preview, attached to {{clip}}',
   'edit_view_bgm_title': '{{bgm}}: {{start}}–{{end}}s, volume {{volume}}, fade in {{fadeIn}}s, fade out {{fadeOut}}s',
   'edit_view_bgm_upload': 'Upload BGM',
+  'edit_view_bgm_generate': 'Generate music',
+  'edit_view_bgm_generate_title': 'Generate BGM',
+  'edit_view_bgm_generate_desc':
+    "Generate a BGM track with your music model (paid). When it's done it appears in the BGM library, ready for the timeline.",
+  'edit_view_bgm_generate_prompt': 'What kind of music',
+  'edit_view_bgm_generate_prompt_placeholder': 'e.g. rainy night, lazy lo-fi piano, slow',
+  'edit_view_bgm_generate_seconds': 'Length (seconds)',
+  'edit_view_bgm_generate_name': 'Name (optional)',
+  'edit_view_bgm_generate_instrumental': 'Instrumental only, no vocals',
+  'edit_view_bgm_generate_submit': 'Generate',
+  'edit_view_bgm_generate_failed': "Couldn't generate music: {{message}}",
   'edit_view_bgm_uploading': 'Uploading BGM…',
   'edit_view_bgm_uploaded':
     'Uploaded BGM "{{name}}". Edit timelines in every episode can use it; ask the Agent to place it on the timeline',
