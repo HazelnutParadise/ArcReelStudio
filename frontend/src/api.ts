@@ -3540,10 +3540,10 @@ class API {
     loginId: string,
     code: string,
   ): Promise<SubscriptionLogin> {
-    return this.request(
-      `/providers/${encodeURIComponent(providerId)}/logins/${encodeURIComponent(loginId)}/code`,
-      { method: "POST", body: JSON.stringify({ code }) },
-    );
+    return this.request(`/providers/${encodeURIComponent(providerId)}/logins/${encodeURIComponent(loginId)}/code`, {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
   }
 
   static async cancelSubscriptionLogin(providerId: string, loginId: string): Promise<void> {

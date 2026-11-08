@@ -146,4 +146,3 @@ export interface ClaudeSubscriptionStatus {
   subscription: AgentAuthAvailability;
   api_key: AgentAuthAvailability;
 }
-
