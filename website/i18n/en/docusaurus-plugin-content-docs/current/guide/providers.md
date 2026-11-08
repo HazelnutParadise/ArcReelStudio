@@ -601,7 +601,15 @@ In "Settings › Connections", click "Add connection" and pick the subscription 
 - Signing in to the same account again updates its existing connection instead of adding another.
 - ChatGPT and Grok sign-in credentials are kept under `subscriptions/` in the data directory and renewed by the official CLIs; deleting the connection deletes them too.
 - The Docker image ships the Codex CLI and the Grok CLI used for sign-in. When not deploying with Docker, install both CLIs yourself and put them on PATH.
-- For now, subscription accounts are only used by the Agent (Claude subscription). Using subscription quota for text and image generation comes in a later release.
+- Subscription accounts can be used in these places, alongside API key connections. Pick them in "Default Models" and in project settings like any other model:
+
+  | Subscription | Text | Images | Agent |
+  | --- | --- | --- | --- |
+  | Claude | Yes, with image input | No | Yes |
+  | ChatGPT | Yes, with image input | Yes (`gpt-image-2`) | Later release |
+  | Grok | Yes, with image input | No | Later release |
+
+- No reference cost is recorded for subscription usage. Each call runs the official CLI once on the server, so it is slower than calling an API directly. When the quota runs out or the sign-in expires, that call fails with the reason and is not retried automatically.
 
 ## 12. Object Storage and Provider Asset Libraries {#object-storage-and-asset-library}
 

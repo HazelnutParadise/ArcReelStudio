@@ -3140,10 +3140,77 @@
         "display_name": "Claude 订阅",
         "description": "用 Claude 账号（Pro、Max 等订阅）登录，使用订阅额度，目前供 ArcReel Agent 使用。",
         "status": "unconfigured",
-        "media_types": [],
-        "capabilities": [],
+        "media_types": [
+          "text"
+        ],
+        "capabilities": [
+          "structured_output",
+          "text_generation",
+          "vision"
+        ],
         "credential_count": 0,
-        "models": {},
+        "models": {
+          "claude-sonnet-5-5": {
+            "display_name": "Claude Sonnet 5.5",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": true,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          },
+          "claude-opus-5-5": {
+            "display_name": "Claude Opus 5.5",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": false,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          },
+          "claude-haiku-5-5": {
+            "display_name": "Claude Haiku 5.5",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": false,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          },
+          "claude-fable-5-1": {
+            "display_name": "Claude Fable 5.1",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": false,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          }
+        },
         "login_kind": "code_paste"
       },
       {
@@ -3151,10 +3218,83 @@
         "display_name": "ChatGPT 订阅",
         "description": "用 ChatGPT 账号（Plus、Pro 等订阅）经 Codex 登录，使用订阅额度。",
         "status": "unconfigured",
-        "media_types": [],
-        "capabilities": [],
+        "media_types": [
+          "image",
+          "text"
+        ],
+        "capabilities": [
+          "image_to_image",
+          "structured_output",
+          "text_generation",
+          "text_to_image",
+          "vision"
+        ],
         "credential_count": 0,
-        "models": {},
+        "models": {
+          "gpt-5.5": {
+            "display_name": "GPT-5.5",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": true,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          },
+          "gpt-6-sol": {
+            "display_name": "GPT-6 Sol",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": false,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          },
+          "gpt-6-luna": {
+            "display_name": "GPT-6 Luna",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": false,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          },
+          "gpt-image-2": {
+            "display_name": "GPT Image 2",
+            "media_type": "image",
+            "capabilities": [
+              "text_to_image",
+              "image_to_image"
+            ],
+            "default": true,
+            "supported_durations": [],
+            "resolutions": [
+              "512px",
+              "1K",
+              "2K"
+            ],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          }
+        },
         "login_kind": "device_code"
       },
       {
@@ -3162,10 +3302,47 @@
         "display_name": "Grok 订阅",
         "description": "用 Grok 账号（SuperGrok、X Premium 等订阅）经 Grok CLI 登录，使用订阅额度。",
         "status": "unconfigured",
-        "media_types": [],
-        "capabilities": [],
+        "media_types": [
+          "text"
+        ],
+        "capabilities": [
+          "structured_output",
+          "text_generation",
+          "vision"
+        ],
         "credential_count": 0,
-        "models": {},
+        "models": {
+          "grok-build-0.1": {
+            "display_name": "Grok Build 0.1",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": true,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          },
+          "grok-4.7": {
+            "display_name": "Grok 4.7",
+            "media_type": "text",
+            "capabilities": [
+              "text_generation",
+              "structured_output",
+              "vision"
+            ],
+            "default": false,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          }
+        },
         "login_kind": "device_code"
       }
     ]

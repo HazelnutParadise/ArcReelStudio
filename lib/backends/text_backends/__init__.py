@@ -59,3 +59,13 @@ from lib.backends.providers import PROVIDER_AGNES
 from lib.backends.text_backends.agnes import AgnesTextBackend
 
 register_backend(PROVIDER_AGNES, AgnesTextBackend)
+
+from lib.backends.text_backends.subscription import (
+    ChatGPTSubscriptionTextBackend,
+    ClaudeSubscriptionTextBackend,
+    GrokSubscriptionTextBackend,
+)
+
+register_backend("claude-subscription", ClaudeSubscriptionTextBackend)
+register_backend("chatgpt-subscription", ChatGPTSubscriptionTextBackend)
+register_backend("grok-subscription", GrokSubscriptionTextBackend)
