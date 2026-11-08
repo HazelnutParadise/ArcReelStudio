@@ -73,8 +73,8 @@ from server.remote_mcp import mount_remote_mcp, remote_mcp_host
 from server.routers import (
     ad_script,
     agent_config,
-    agent_memory,
     agent_engine,
+    agent_memory,
     agent_subscription,
     api_keys,
     asset_library,
