@@ -146,3 +146,22 @@ export interface ClaudeSubscriptionStatus {
   subscription: AgentAuthAvailability;
   api_key: AgentAuthAvailability;
 }
+
+/** Agent 跑新会话的引擎：Claude Agent SDK 或 Codex（ChatGPT 订阅 / OpenAI API Key）。 */
+export type AgentEngine = "claude" | "codex";
+
+export interface AgentEngineStatus {
+  engine: AgentEngine;
+  /** 指定的 Codex 连线；null 表示用预设（ChatGPT 订阅优先，再来 OpenAI）。 */
+  codex_credential_id: number | null;
+  /** 新的 Codex 会话实际会用的连线；没有可用连线时为 null。 */
+  codex_effective_credential_id: number | null;
+  codex_model: string;
+  codex_models: string[];
+}
+
+export interface AgentEngineRequest {
+  engine: AgentEngine;
+  codex_credential_id: number | null;
+  codex_model: string;
+}

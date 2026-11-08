@@ -74,6 +74,7 @@ from server.routers import (
     ad_script,
     agent_config,
     agent_memory,
+    agent_engine,
     agent_subscription,
     api_keys,
     asset_library,
@@ -859,6 +860,7 @@ app.include_router(agent_config.router, prefix="/api/v1", dependencies=[Depends(
 app.include_router(
     agent_subscription.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["Agent 配置"]
 )
+app.include_router(agent_engine.router, prefix="/api/v1", dependencies=[Depends(get_current_user)], tags=["Agent 配置"])
 # 协作 WebSocket 在连接后的第一条消息里认证（浏览器的 WebSocket 不能带请求头），不挂请求级认证依赖
 app.include_router(collab.router, prefix="/api/v1")
 app.include_router(
