@@ -94,6 +94,8 @@ class SessionMeta(BaseModel):
     project_name: str
     title: str = ""
     status: SessionStatus = "idle"
+    engine: str = "claude"
+    """跑这个会话的 Agent 引擎（``claude`` / ``codex``）。"""
     superseded_by: str | None = None
     """非空表示本会话已被分支会话取代，值为新会话的 sdk_session_id。"""
     fork_parent_session_id: str | None = None

@@ -18,6 +18,7 @@ def _dict_to_session(d: dict) -> SessionMeta:
         project_name=d["project_name"],
         title=d.get("title") or "",
         status=d["status"],
+        engine=d.get("engine") or "claude",
         superseded_by=d.get("superseded_by"),
         fork_parent_session_id=d.get("fork_parent_session_id"),
         fork_anchor_uuid=d.get("fork_anchor_uuid"),
@@ -39,6 +40,7 @@ class SessionMetaStore:
         *,
         fork_parent_session_id: str | None = None,
         fork_anchor_uuid: str | None = None,
+        engine: str = "claude",
     ) -> SessionMeta:
 
         async with self._session_factory() as session:
@@ -48,6 +50,7 @@ class SessionMetaStore:
                 sdk_session_id=sdk_session_id,
                 fork_parent_session_id=fork_parent_session_id,
                 fork_anchor_uuid=fork_anchor_uuid,
+                engine=engine,
             )
         return _dict_to_session(d)
 

@@ -568,7 +568,11 @@ class UsageRepository(BaseRepository):
                     finished_at=now,
                     duration_ms=0,
                     provider=provider,
-                    credential_id=pricing.subscription_credential_id,
+                    credential_id=(
+                        pricing.provider_credential_id
+                        if pricing.provider_credential_id is not None
+                        else pricing.subscription_credential_id
+                    ),
                     user_id=user_id,
                     purpose=CallPurpose.ASSISTANT_SESSION,
                     session_id=session_id,

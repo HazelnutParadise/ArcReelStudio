@@ -16,6 +16,8 @@ class AgentSession(TimestampMixin, UserOwnedMixin, Base):
     project_name: Mapped[str] = mapped_column(String, nullable=False)
     title: Mapped[str] = mapped_column(String, server_default="")
     status: Mapped[str] = mapped_column(String, server_default="idle")
+    # 跑这个会话的 Agent 引擎（claude / codex），建行时写入；恢复会话照它选引擎（见 docs/adr/0124）
+    engine: Mapped[str] = mapped_column(String, server_default="claude")
     # 分支会话指针：非空即表示本会话已被改写分叉取代（见 docs/adr/0058）。
     # 指针即标记，不占用 status——status 承载生命周期，闲置驱逐与启动期
     # interrupt 都按它运转。

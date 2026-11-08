@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
-import sys
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -15,69 +13,17 @@ from claude_agent_sdk import AssistantMessage, ResultMessage, SystemMessage, Use
 from server.agent_runtime import sdk_frames
 from server.agent_runtime.codex_client import CodexAgentClient, CodexSessionConfig
 from server.agent_runtime.sdk_frames import CommandLifecycle
-
-_FAKE = f"""#!{sys.executable}
-import json, os, sys, threading, time
-here = os.path.dirname(os.path.abspath(__file__))
-behaviour = json.load(open(os.path.join(here, "behaviour.json")))
-lock = threading.Lock()
-seen = {{"argv": sys.argv[1:], "requests": [], "replies": []}}
-def dump():
-    with open(os.path.join(here, "seen.json"), "w") as f: json.dump(seen, f)
-def send(o):
-    with lock:
-        sys.stdout.write(json.dumps(o) + "\\n"); sys.stdout.flush()
-turns = [0]
-def run_turn(turn_id):
-    time.sleep(behaviour.get("turn_delay", 0))
-    if behaviour.get("tool"):
-        send({{"method": "item/started", "params": {{"threadId": "T1", "item": {{"type": "dynamicToolCall", "id": "C1", "tool": "list_projects", "arguments": {{"x": 1}}}}}}}})
-        send({{"id": 900, "method": "item/tool/call", "params": {{"threadId": "T1", "turnId": turn_id, "callId": "C1", "tool": "list_projects", "arguments": {{"x": 1}}}}}})
-        reply = waiting.get()
-        send({{"method": "item/completed", "params": {{"threadId": "T1", "item": {{"type": "dynamicToolCall", "id": "C1", "tool": "list_projects", "contentItems": reply["result"]["contentItems"], "success": reply["result"]["success"]}}}}}})
-    if behaviour.get("approval"):
-        send({{"id": 901, "method": "item/commandExecution/requestApproval", "params": {{"threadId": "T1"}}}})
-        waiting.get()
-    send({{"method": "item/completed", "params": {{"threadId": "T1", "item": {{"type": "agentMessage", "id": "M" + turn_id, "text": "done " + turn_id}}}}}})
-    send({{"method": "thread/tokenUsage/updated", "params": {{"threadId": "T1", "tokenUsage": {{"total": {{"inputTokens": 100, "cachedInputTokens": 40, "outputTokens": 7, "cacheWriteInputTokens": 0}}}}}}}})
-    status = behaviour.get("status", "completed")
-    turn = {{"id": turn_id, "status": status}}
-    if status == "failed":
-        turn["error"] = {{"message": "You've hit your usage limit", "codexErrorInfo": "usageLimitExceeded"}}
-    send({{"method": "turn/completed", "params": {{"threadId": "T1", "turn": turn}}}})
-import queue
-waiting = queue.Queue()
-for line in sys.stdin:
-    m = json.loads(line); method, mid = m.get("method"), m.get("id")
-    if method is None:
-        seen["replies"].append(m); dump(); waiting.put(m); continue
-    seen["requests"].append({{"method": method, "params": m.get("params")}}); dump()
-    if method == "initialize": send({{"id": mid, "result": {{}}}})
-    elif method in ("thread/start", "thread/resume"): send({{"id": mid, "result": {{"thread": {{"id": m["params"].get("threadId", "T1")}}, "model": "gpt-5.5"}}}})
-    elif method == "turn/start":
-        turns[0] += 1; turn_id = "U%d" % turns[0]
-        send({{"id": mid, "result": {{"turn": {{"id": turn_id}}}}}})
-        threading.Thread(target=run_turn, args=(turn_id,), daemon=True).start()
-    elif mid is not None: send({{"id": mid, "result": {{}}}})
-"""
+from tests.codex_fakes import install_fake_codex, read_fake_codex_seen
 
 
 @pytest.fixture
 def fake_app_server(tmp_path: Path):
     folder = tmp_path / "fake-codex"
-    folder.mkdir()
-    cli = folder / "codex"
-    cli.write_text(_FAKE, encoding="utf-8")
-    cli.chmod(0o755)
 
     def configure(**behaviour: Any) -> str:
-        (folder / "behaviour.json").write_text(json.dumps(behaviour), encoding="utf-8")
-        return str(cli)
+        return install_fake_codex(folder, **behaviour)
 
-    def seen() -> dict[str, Any]:
-        return json.loads((folder / "seen.json").read_text(encoding="utf-8"))
-
-    configure.seen = seen  # type: ignore[attr-defined]  # 让用例读假 app-server 记下的请求
+    configure.seen = lambda: read_fake_codex_seen(folder)  # type: ignore[attr-defined]  # 让用例读假 app-server 记下的请求
     return configure
 
 
@@ -145,9 +91,11 @@ async def test_a_turn_becomes_sdk_frames_with_tool_round_trip_and_usage(fake_app
         frames = await _collect_until_idle(client)
 
     kinds = [type(f).__name__ if not isinstance(f, CommandLifecycle) else f"lifecycle:{f.state}" for f in frames]
-    assert isinstance(frames[0], SystemMessage) and frames[0].subtype == "init"
+    assert isinstance(frames[0], SystemMessage)
+    assert frames[0].subtype == "init"
     assert frames[0].data["session_id"] == "T1"
-    assert "lifecycle:started" in kinds and "lifecycle:completed" in kinds
+    assert "lifecycle:started" in kinds
+    assert "lifecycle:completed" in kinds
     tool_use = next(
         f
         for f in frames

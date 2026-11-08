@@ -23,6 +23,7 @@ from lib.infra.data_root_layout import DataRootLayout
 from lib.infra.logging_utils import redact_diagnostic_text
 from lib.infra.path_safety import PathTraversalError, safe_join
 from server.agent_runtime.agent_access_policy import AgentAccessPolicy
+from server.agent_runtime.codex_client import CodexAgentClient
 from server.agent_runtime.entry_pipeline import SessionEntryPipeline
 from server.agent_runtime.event_log import (
     REPLAYED_USER_ECHO_ENTRY_UUID_KEY,
@@ -335,6 +336,8 @@ class ManagedSession:
     agent_pricing: AgentPricing = field(default_factory=AgentPricing)
     # 会话连接时用的认证来源（Claude 订阅或 API Key），这段连接的轮次都用它
     auth_source: AuthSource = "api_key"
+    #: 跑这个会话的 Agent 引擎；新会话落库时写进 agent_sessions.engine
+    engine: str = "claude"
     # 这段连接读到额度用完或认证失败：(读到过, 到期时间)；到期时间 None 表示要等重新配置。离开 running 时结算
     auth_failure: tuple[bool, float | None] = (False, None)
     # 本连接的用量计量：流内请求与 model_usage 的差分基线（docs/adr/0102）。
@@ -603,12 +606,25 @@ def _cli_session_state(msg: dict[str, Any]) -> str | None:
 
 
 def _agent_usage_provider(pricing: AgentPricing) -> str:
-    """用量记在哪个供应商名下：Claude 订阅会话记在订阅供应商，Agent 凭证会话记在那条凭证，都没有时记 Anthropic。"""
+    """用量记在哪个供应商名下：Codex 会话记在它的连线供应商，Claude 订阅会话记在订阅供应商，Agent 凭证会话记在那条凭证，
+    都没有时记 Anthropic。"""
+    if pricing.provider_id is not None:
+        return pricing.provider_id
     if pricing.subscription_credential_id is not None:
         return CLAUDE_SUBSCRIPTION_PROVIDER
     if pricing.credential_id is not None:
         return agent_provider_id(pricing.credential_id)
     return PROVIDER_ANTHROPIC
+
+
+@dataclass(frozen=True)
+class _SessionLaunch:
+    """一个会话的启动结果：给 actor 的 client 工厂，以及这段连接的计价、认证来源与引擎。"""
+
+    client_factory: Callable[[], Any]
+    agent_pricing: AgentPricing
+    auth_source: AuthSource
+    engine: str
 
 
 class SessionManager:
@@ -767,6 +783,44 @@ class SessionManager:
             session_id=session_id,
         )
 
+    async def _launch(
+        self,
+        project_name: str,
+        *,
+        engine: str,
+        resume_id: str | None,
+        session_id: str | None,
+        can_use_tool: Callable[[str, dict[str, Any], Any], Any] | None,
+        locale: str,
+        stderr: Callable[[str], None] | None,
+    ) -> _SessionLaunch:
+        """按引擎装配会话 client：Claude 走 SDK options，Codex 走 :meth:`OptionsAssembler.build_codex`。"""
+        if engine == "codex":
+            if session_id is not None:
+                raise ValueError("the Codex engine cannot open a session under a preassigned id")
+            launch = await self._options_assembler.build_codex(project_name, resume_thread_id=resume_id, locale=locale)
+            config = launch.config
+            return _SessionLaunch(
+                client_factory=lambda: CodexAgentClient(config, on_stderr=stderr),
+                agent_pricing=launch.pricing,
+                auth_source=launch.auth_source,
+                engine="codex",
+            )
+        options = await self._build_options(
+            project_name,
+            resume_id=resume_id,
+            can_use_tool=can_use_tool,
+            locale=locale,
+            stderr=stderr,
+            session_id=session_id,
+        )
+        return _SessionLaunch(
+            client_factory=lambda: ClaudeSDKClient(options=options),
+            agent_pricing=agent_pricing_of(options),
+            auth_source=auth_source_of(options),
+            engine="claude",
+        )
+
     def _build_session_store(self):
         """委派给装配器的 session store 单例。AssistantService 经此拿到与 SDK options
         同一份 store 实例（同一 per-user 命名空间），读写共享缓存。"""
@@ -918,9 +972,11 @@ class SessionManager:
         startup_stderr = _StartupStderrCollector()
 
         try:
-            options = await self._build_options(
+            launch = await self._launch(
                 project_name,
+                engine=await self._options_assembler.read_engine(),
                 resume_id=None,
+                session_id=None,
                 can_use_tool=await self._build_can_use_tool_callback(temp_id, managed_ref),
                 locale=locale,
                 stderr=startup_stderr,
@@ -935,7 +991,7 @@ class SessionManager:
                 sdk_stderr=sdk_stderr,
             ) from exc
         actor = SessionActor(
-            client_factory=lambda: ClaudeSDKClient(options=options),
+            client_factory=launch.client_factory,
             on_message=self._make_actor_message_callback(managed_ref),
             on_command_lifecycle=self._make_command_lifecycle_callback(managed_ref),
         )
@@ -945,8 +1001,9 @@ class SessionManager:
             actor=actor,
             status="running",
             project_name=project_name,
-            agent_pricing=agent_pricing_of(options),
-            auth_source=auth_source_of(options),
+            agent_pricing=launch.agent_pricing,
+            auth_source=launch.auth_source,
+            engine=launch.engine,
         )
         if user_entry is not None:
             managed.pending_initial_user_entry = {"entry": user_entry, "client_key": client_key}
@@ -1315,13 +1372,14 @@ class SessionManager:
         startup_stderr = _StartupStderrCollector()
 
         try:
-            options = await self._build_options(
+            launch = await self._launch(
                 meta.project_name,
-                meta.id if resumable else None,  # SessionMeta.id 就是 sdk_session_id
+                engine=meta.engine,
+                resume_id=meta.id if resumable else None,  # SessionMeta.id 就是 sdk_session_id（Codex 是 thread id）
+                session_id=None if resumable else meta.id,
                 can_use_tool=await self._build_can_use_tool_callback(session_id, managed_ref),
                 locale=locale,
                 stderr=startup_stderr,
-                session_id=None if resumable else meta.id,
             )
         except Exception as exc:
             sdk_stderr = startup_stderr.render()
@@ -1333,7 +1391,7 @@ class SessionManager:
                 sdk_stderr=sdk_stderr,
             ) from exc
         actor = SessionActor(
-            client_factory=lambda: ClaudeSDKClient(options=options),
+            client_factory=launch.client_factory,
             on_message=self._make_actor_message_callback(managed_ref),
             on_command_lifecycle=self._make_command_lifecycle_callback(managed_ref),
         )
@@ -1346,8 +1404,9 @@ class SessionManager:
             actor=actor,
             status=resumed_status,
             project_name=meta.project_name,
-            agent_pricing=agent_pricing_of(options),
-            auth_source=auth_source_of(options),
+            agent_pricing=launch.agent_pricing,
+            auth_source=launch.auth_source,
+            engine=launch.engine,
             # 恢复会话的 CLI 带着此前的累计用量，差分以恢复后第一条结果为起点
             usage_meter=TurnUsageMeter(resumed=resumable),
             resolved_sdk_id=meta.id,  # 标记为已注册，防止重复创建 DB 记录
@@ -1764,9 +1823,11 @@ class SessionManager:
 
     def _handle_special_message(self, managed: ManagedSession, msg_dict: dict[str, Any]) -> None:
         """Handle result messages before broadcast."""
-        seen, until = auth_failure_from_message(msg_dict, now=time.time())
-        if seen:
-            managed.auth_failure = (True, until)
+        # 认证来源的自动切换只在 Claude 引擎的订阅与 API Key 之间；Codex 会话的额度或认证失败照常报在这一轮的结果里
+        if managed.engine == "claude":
+            seen, until = auth_failure_from_message(msg_dict, now=time.time())
+            if seen:
+                managed.auth_failure = (True, until)
         if msg_dict.get("type") == "result":
             msg_dict["session_status"] = self._resolve_result_status(
                 msg_dict,
@@ -2350,7 +2411,7 @@ class SessionManager:
             if registered:
                 self._channels[sdk_id] = managed.channel
             try:
-                await self.meta_store.create(managed.project_name, sdk_id)
+                await self.meta_store.create(managed.project_name, sdk_id, engine=managed.engine)
             except BaseException:
                 if registered and self._channels.get(sdk_id) is managed.channel:
                     del self._channels[sdk_id]

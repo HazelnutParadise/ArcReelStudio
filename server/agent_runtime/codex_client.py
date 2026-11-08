@@ -73,8 +73,9 @@ class _QueuedQuery:
 class CodexAgentClient:
     """一个 Codex 会话。只在所属 SessionActor 的 task 里使用。"""
 
-    def __init__(self, config: CodexSessionConfig) -> None:
+    def __init__(self, config: CodexSessionConfig, *, on_stderr: Callable[[str], None] | None = None) -> None:
         self._config = config
+        self._on_stderr = on_stderr
         self._server: CodexAppServer | None = None
         self._frames: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue()
         self._thread_id: str | None = None
@@ -101,6 +102,7 @@ class CodexAgentClient:
             cli_path=self._config.cli_path,
             config_overrides=tuple(overrides),
             on_server_request=self._on_server_request,
+            on_stderr=self._on_stderr,
         )
         try:
             self._remove_listener = self._server.add_listener(self._on_notification)

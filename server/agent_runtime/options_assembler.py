@@ -282,6 +282,48 @@ class OptionsAssembler:
         self._session_store_resolved = True
         return store
 
+    async def read_engine(self) -> str:
+        """新会话用哪个 Agent 引擎（system_settings ``agent_engine``）。"""
+        from lib.config.repository import SystemSettingRepository
+        from server.agent_runtime.codex_engine import AGENT_ENGINE_SETTING_KEY, parse_agent_engine
+
+        factory = self._session_factory_provider() or default_async_session_factory
+        async with factory() as session:
+            raw = await SystemSettingRepository(session).get(AGENT_ENGINE_SETTING_KEY, "")
+        return parse_agent_engine(raw)
+
+    async def build_codex(
+        self,
+        project_name: str,
+        *,
+        resume_thread_id: str | None = None,
+        locale: str = DEFAULT_LOCALE,
+    ) -> Any:
+        """Codex 引擎会话的启动参数（:class:`server.agent_runtime.codex_engine.CodexLaunch`）：与 :meth:`build` 共用
+        访问规则、系统提示附加段、项目目录与用户。"""
+        from lib.config.repository import SystemSettingRepository
+        from server.agent_runtime.codex_engine import CodexConnectionMissing, build_codex_launch, codex_connection
+
+        policy = self._access_policy_provider()
+        project_cwd = await asyncio.to_thread(self._resolve_project_cwd, project_name)
+        factory = self._session_factory_provider() or default_async_session_factory
+        async with factory() as session:
+            settings = await SystemSettingRepository(session).get_all()
+            connection = await codex_connection(session, settings)
+        if connection is None:
+            raise CodexConnectionMissing("no ChatGPT subscription or OpenAI connection for the Codex engine")
+        return await build_codex_launch(
+            project_name=project_name,
+            project_cwd=project_cwd,
+            data_root=self.data_root,
+            user_id=self._user_id_provider(),
+            policy=policy,
+            settings=settings,
+            connection=connection,
+            developer_instructions=await self._build_append_prompt(project_name, locale),
+            resume_thread_id=resume_thread_id,
+        )
+
     async def build(
         self,
         project_name: str,

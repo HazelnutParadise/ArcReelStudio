@@ -75,6 +75,9 @@ class AgentPricing:
     tier_bindings: tuple[tuple[str, str], ...] = ()
     #: 会话用 Claude 订阅时是哪一条订阅连线（``provider_credential`` id）；用量记在它名下，不计费
     subscription_credential_id: int | None = None
+    #: 非 Anthropic 引擎（Codex）的会话：用量记在哪个供应商、哪条连线名下；``None`` 时按上面的 Claude 规则决定
+    provider_id: str | None = None
+    provider_credential_id: int | None = None
 
     def entry_binding_for(self, model: str) -> str | None:
         """API 模型名 ``model`` 所在档位的条目绑定；模型名比较忽略大小写与命名空间。同一模型名在几个档位时取第一个

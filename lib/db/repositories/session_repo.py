@@ -20,6 +20,7 @@ def _row_to_dict(row: AgentSession) -> dict[str, Any]:
         "project_name": row.project_name,
         "title": row.title or "",
         "status": row.status,
+        "engine": row.engine or "claude",
         "superseded_by": row.superseded_by,
         "fork_parent_session_id": row.fork_parent_session_id,
         "fork_anchor_uuid": row.fork_anchor_uuid,
@@ -38,6 +39,7 @@ class SessionRepository(BaseRepository):
         *,
         fork_parent_session_id: str | None = None,
         fork_anchor_uuid: str | None = None,
+        engine: str = "claude",
     ) -> dict[str, Any]:
         now = utc_now()
         row = AgentSession(
@@ -46,6 +48,7 @@ class SessionRepository(BaseRepository):
             project_name=project_name,
             title=title,
             status="idle",
+            engine=engine,
             fork_parent_session_id=fork_parent_session_id,
             fork_anchor_uuid=fork_anchor_uuid,
             created_at=now,
