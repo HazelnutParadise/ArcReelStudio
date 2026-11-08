@@ -2166,9 +2166,11 @@ export default {
   'claude_subscription_blocked_until_relogin': "It's used again after you sign in again.",
   'claude_subscription_mode_title': 'How the agent signs in',
   'agent_engine_title': 'Agent engine',
-  'agent_engine_desc': 'Which engine runs new conversations. Conversations already started keep the engine they began with.',
+  'agent_engine_desc':
+    'Which engine runs new conversations. Conversations already started keep the engine they began with.',
   'agent_engine_claude': 'Claude',
-  'agent_engine_claude_hint': 'Claude Agent SDK: uses a Claude subscription, an Anthropic API key or an Anthropic-compatible service.',
+  'agent_engine_claude_hint':
+    'Claude Agent SDK: uses a Claude subscription, an Anthropic API key or an Anthropic-compatible service.',
   'agent_engine_codex': 'Codex',
   'agent_engine_codex_hint': 'OpenAI Codex: uses a ChatGPT subscription or an OpenAI API key.',
   'agent_engine_admin_only': 'Only admins can change the engine.',
@@ -2176,7 +2178,8 @@ export default {
   'agent_engine_codex_model': 'Model',
   'agent_engine_codex_connection_subscription': 'ChatGPT subscription · {{name}}',
   'agent_engine_codex_connection_api_key': 'OpenAI API key · {{name}}',
-  'agent_engine_codex_limits': "The Codex engine doesn't yet support rewriting from an earlier message, the Agent asking you questions, or the read-only review sub-agents.",
+  'agent_engine_codex_limits':
+    "The Codex engine doesn't yet support rewriting from an earlier message, the Agent asking you questions, or the read-only review sub-agents.",
   'claude_subscription_admin_only': 'Only admins can sign in accounts, choose the connection or change this.',
   'claude_auth_mode_prefer_subscription': 'Prefer the subscription',
   'claude_auth_mode_prefer_subscription_hint':

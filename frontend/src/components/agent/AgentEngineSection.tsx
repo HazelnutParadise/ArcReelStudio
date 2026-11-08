@@ -94,11 +94,7 @@ export function AgentEngineSection() {
             onChange={(engine) => voidCall(save({ engine }))}
           />
           {status.engine === "codex" && (
-            <CodexOptions
-              status={status}
-              disabled={!isAdmin || busy}
-              onChange={(patch) => voidCall(save(patch))}
-            />
+            <CodexOptions status={status} disabled={!isAdmin || busy} onChange={(patch) => voidCall(save(patch))} />
           )}
           {!isAdmin && <p className="text-xs text-muted-foreground">{t("agent_engine_admin_only")}</p>}
         </>

@@ -2268,7 +2268,8 @@ export default {
   'agent_engine_title': 'Движок Agent',
   'agent_engine_desc': 'Какой движок запускает новые диалоги. Уже начатые диалоги продолжают работать на своём движке.',
   'agent_engine_claude': 'Claude',
-  'agent_engine_claude_hint': 'Claude Agent SDK: подписка Claude, ключ API Anthropic или совместимый с Anthropic сервис.',
+  'agent_engine_claude_hint':
+    'Claude Agent SDK: подписка Claude, ключ API Anthropic или совместимый с Anthropic сервис.',
   'agent_engine_codex': 'Codex',
   'agent_engine_codex_hint': 'OpenAI Codex: подписка ChatGPT или ключ API OpenAI.',
   'agent_engine_admin_only': 'Менять движок могут только администраторы.',
@@ -2276,7 +2277,8 @@ export default {
   'agent_engine_codex_model': 'Модель',
   'agent_engine_codex_connection_subscription': 'Подписка ChatGPT · {{name}}',
   'agent_engine_codex_connection_api_key': 'Ключ API OpenAI · {{name}}',
-  'agent_engine_codex_limits': 'Движок Codex пока не поддерживает перезапись с более раннего сообщения, вопросы Agent к вам и проверяющие под-агенты только для чтения.',
+  'agent_engine_codex_limits':
+    'Движок Codex пока не поддерживает перезапись с более раннего сообщения, вопросы Agent к вам и проверяющие под-агенты только для чтения.',
   'claude_subscription_admin_only':
     'Входить в аккаунты, выбирать подключение и менять это могут только администраторы.',
   'claude_auth_mode_prefer_subscription': 'Сначала подписка',
