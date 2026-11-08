@@ -32,21 +32,19 @@ function useSubscriptionLogin(providerId: string, onSucceeded: (credentialId: nu
   const [login, setLogin] = useState<SubscriptionLogin | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
   const activeRef = useRef<SubscriptionLogin | null>(null);
-  const reportSucceeded = useEffectEvent((credentialId: number) => onSucceeded(credentialId));
 
-  const finish = useCallback((next: SubscriptionLogin) => {
+  /** 登录结束（成功或失败）：记下结果；成功时更新各处的连线清单并回报新连线。 */
+  const settle = (next: SubscriptionLogin) => {
     // 登录不论成败都已结束：不必再在卸载时取消
     if (next.status !== "pending") activeRef.current = null;
     setLogin(next);
-  }, []);
-
-  // 登录成功：更新各处的连线清单，再回报新连线
-  const succeededId = login?.status === "succeeded" ? login.credential_id : null;
-  useEffect(() => {
-    if (succeededId === null) return;
-    voidCall(refreshConnections());
-    reportSucceeded(succeededId);
-  }, [refreshConnections, succeededId]);
+    if (next.status === "succeeded" && next.credential_id !== null) {
+      voidCall(refreshConnections());
+      onSucceeded(next.credential_id);
+    }
+  };
+  // 轮询计时器里拿到结果时用：读最新的回调，不让计时器随回调重建
+  const settlePolled = useEffectEvent(settle);
 
   // 挂载时开始登录；卸载时取消还没完成的登录，后台的 CLI 进程随之结束
   useEffect(() => {
@@ -82,7 +80,7 @@ function useSubscriptionLogin(providerId: string, onSucceeded: (credentialId: nu
         try {
           const next = await API.getSubscriptionLogin(providerId, login.login_id, { signal: controller.signal });
           if (controller.signal.aborted || next.status === "pending") return;
-          finish(next);
+          settlePolled(next);
         } catch (err) {
           if (!controller.signal.aborted) pushToast(errMsg(err), "error");
         }
@@ -93,16 +91,13 @@ function useSubscriptionLogin(providerId: string, onSucceeded: (credentialId: nu
       controller.abort();
       window.clearInterval(timer);
     };
-  }, [finish, login, providerId, pushToast]);
+  }, [login, providerId, pushToast]);
 
-  const submitCode = useCallback(
-    async (code: string) => {
-      if (!login) return;
-      // 贴码后登录不论成败都结束：失败要重新开始
-      finish(await API.submitSubscriptionLoginCode(providerId, login.login_id, code));
-    },
-    [finish, login, providerId],
-  );
+  const submitCode = async (code: string) => {
+    if (!login) return;
+    // 贴码后登录不论成败都结束：失败要重新开始
+    settle(await API.submitSubscriptionLoginCode(providerId, login.login_id, code));
+  };
 
   return { login, startError, submitCode };
 }
