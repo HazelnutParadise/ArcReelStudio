@@ -207,6 +207,14 @@ def bundle_grok_credentials(home: str) -> str | None:
     return json.dumps(files, ensure_ascii=False) if files else None
 
 
+def write_private_file(path: Path, content: str) -> None:
+    """凭证文件从建立起就只给自己读写（不先以默认权限建立再收紧），已存在时整份覆盖。"""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(content)
+    os.chmod(path, 0o600)
+
+
 def restore_grok_credentials(bundle: str, home: str) -> None:
     """把 :func:`bundle_grok_credentials` 的结果放回 ``HOME/.grok``，权限只给自己读写。"""
     root = Path(home) / ".grok"
@@ -217,9 +225,8 @@ def restore_grok_credentials(bundle: str, home: str) -> None:
         target = (root / str(relative)).resolve()
         if root.resolve() not in target.parents:
             raise ValueError(f"grok credential path escapes .grok: {relative}")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(str(content), encoding="utf-8")
-        target.chmod(0o600)
+        target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        write_private_file(target, str(content))
 
 
 async def _read_url_and_code(process: asyncio.subprocess.Process, output: list[str]) -> tuple[str, str]:

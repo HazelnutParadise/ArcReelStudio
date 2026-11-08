@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 
 from lib.infra.data_root_layout import DataRootLayout
-from lib.subscriptions.grok_login import restore_grok_credentials
+from lib.subscriptions.grok_login import restore_grok_credentials, write_private_file
 
 #: 凭证放在连线 HOME 里的供应商
 HOME_BASED_PROVIDERS = frozenset({"chatgpt-subscription", "grok-subscription"})
@@ -32,9 +32,7 @@ def install_credentials(provider_id: str, credential_id: int, secret: str) -> Pa
     home.mkdir(parents=True, mode=0o700)
     os.chmod(home, 0o700)
     if provider_id == "chatgpt-subscription":
-        target = home / "auth.json"
-        target.write_text(secret, encoding="utf-8")
-        target.chmod(0o600)
+        write_private_file(home / "auth.json", secret)
     else:
         restore_grok_credentials(secret, str(home))
     return home

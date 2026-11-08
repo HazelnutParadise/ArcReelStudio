@@ -33,7 +33,7 @@ async def device(db_factory):
 
 
 @pytest_asyncio.fixture
-async def service(db_factory, device):
+async def login_service(db_factory, device):
     svc = SubscriptionLoginService(
         db_factory,
         claude=FakeClaude(),
@@ -48,8 +48,8 @@ async def _client(service, role):
     return AsyncClient(transport=ASGITransport(app=_make_app(service, role)), base_url="http://t")
 
 
-async def test_device_login_is_polled_until_the_connection_exists(service, device, db_factory) -> None:
-    async with await _client(service, "admin") as client:
+async def test_device_login_is_polled_until_the_connection_exists(login_service, device, db_factory) -> None:
+    async with await _client(login_service, "admin") as client:
         started = (await client.post("/api/v1/providers/chatgpt-subscription/logins")).json()
         assert (started["kind"], started["user_code"], started["status"]) == ("device_code", "ABCD-1234", "pending")
 
@@ -68,8 +68,8 @@ async def test_device_login_is_polled_until_the_connection_exists(service, devic
     assert cred.provider == "chatgpt-subscription"
 
 
-async def test_claude_login_takes_the_pasted_code(service) -> None:
-    async with await _client(service, "admin") as client:
+async def test_claude_login_takes_the_pasted_code(login_service) -> None:
+    async with await _client(login_service, "admin") as client:
         started = (await client.post("/api/v1/providers/claude-subscription/logins")).json()
         assert (started["kind"], started["user_code"]) == ("code_paste", None)
 
@@ -81,8 +81,8 @@ async def test_claude_login_takes_the_pasted_code(service) -> None:
     assert "sk-ant-oat01" not in done.text
 
 
-async def test_a_failed_login_explains_why(service) -> None:
-    async with await _client(service, "admin") as client:
+async def test_a_failed_login_explains_why(login_service) -> None:
+    async with await _client(login_service, "admin") as client:
         started = (await client.post("/api/v1/providers/claude-subscription/logins")).json()
         done = (
             await client.post(
@@ -94,14 +94,14 @@ async def test_a_failed_login_explains_why(service) -> None:
     assert done["error"]
 
 
-async def test_unknown_logins_and_non_subscription_providers_are_errors(service) -> None:
-    async with await _client(service, "admin") as client:
+async def test_unknown_logins_and_non_subscription_providers_are_errors(login_service) -> None:
+    async with await _client(login_service, "admin") as client:
         assert (await client.get("/api/v1/providers/chatgpt-subscription/logins/nope")).status_code == 404
         assert (await client.post("/api/v1/providers/openai/logins")).status_code == 422
 
 
-async def test_cancel_forgets_the_login(service) -> None:
-    async with await _client(service, "admin") as client:
+async def test_cancel_forgets_the_login(login_service) -> None:
+    async with await _client(login_service, "admin") as client:
         started = (await client.post("/api/v1/providers/chatgpt-subscription/logins")).json()
         path = f"/api/v1/providers/chatgpt-subscription/logins/{started['login_id']}"
 
@@ -109,6 +109,6 @@ async def test_cancel_forgets_the_login(service) -> None:
         assert (await client.get(path)).status_code == 404
 
 
-async def test_members_cannot_log_in(service) -> None:
-    async with await _client(service, "member") as client:
+async def test_members_cannot_log_in(login_service) -> None:
+    async with await _client(login_service, "member") as client:
         assert (await client.post("/api/v1/providers/chatgpt-subscription/logins")).status_code == 403

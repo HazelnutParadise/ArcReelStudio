@@ -136,3 +136,16 @@ def test_credentials_round_trip_into_a_fresh_home(tmp_path: Path) -> None:
 def test_restoring_refuses_paths_outside_the_grok_folder(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="escapes"):
         restore_grok_credentials(json.dumps({"../evil": "x"}), str(tmp_path))
+
+
+def test_private_files_are_never_readable_by_others(tmp_path: Path) -> None:
+    from lib.subscriptions.grok_login import write_private_file
+
+    target = tmp_path / "auth.json"
+    target.write_text("old", encoding="utf-8")
+    target.chmod(0o644)
+
+    write_private_file(target, "new")
+
+    assert target.read_text(encoding="utf-8") == "new"
+    assert target.stat().st_mode & 0o777 == 0o600
