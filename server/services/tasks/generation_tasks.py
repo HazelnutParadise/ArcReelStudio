@@ -148,6 +148,7 @@ from server.services.tasks.generation_context import (
     resolve_generation_context,
 )
 from server.services.tasks.image_edit_tasks import execute_image_edit_task
+from server.services.tasks.music_task import MUSIC_TASK_TYPE, execute_music_task
 from server.services.tasks.reference_video_tasks import execute_reference_video_task
 from server.services.tasks.render_tasks import execute_render_task
 
@@ -1888,6 +1889,7 @@ _TASK_EXECUTORS = {
     "storyboard": execute_storyboard_task,
     "video": execute_video_task,
     "tts": execute_tts_task,
+    MUSIC_TASK_TYPE: execute_music_task,
     "voice_sample": execute_character_voice_sample_task,
     "character": execute_character_task,
     "scene": execute_scene_task,
