@@ -6,6 +6,7 @@ import { API } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -144,7 +145,9 @@ export function SubscriptionLoginDialog({
           <DialogTitle>{t("subscription_login_title", { name: providerName })}</DialogTitle>
           <DialogDescription>{t("subscription_login_desc")}</DialogDescription>
         </DialogHeader>
-        <LoginBody login={login} startError={startError} onSubmitCode={submitCode} />
+        <DialogBody>
+          <LoginBody login={login} startError={startError} onSubmitCode={submitCode} />
+        </DialogBody>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t("cancel")}

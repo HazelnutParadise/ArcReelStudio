@@ -79,7 +79,7 @@ export function ConnectionCenterSection() {
             <Plus aria-hidden data-icon="inline-start" />
             {t("connection_center_add")}
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="relative max-h-80 overflow-y-auto">
+          <DropdownMenuContent align="end" className="relative max-h-80 min-w-52 overflow-y-auto">
             {subscriptionProviders.length > 0 && (
               <>
                 <DropdownMenuGroup label={t("connection_center_add_subscription")}>
