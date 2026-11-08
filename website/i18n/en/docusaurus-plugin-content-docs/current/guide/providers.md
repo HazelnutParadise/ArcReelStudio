@@ -37,6 +37,12 @@ After signing in, choose how the Agent signs in:
 
 Switching happens on the next message: the turn in progress finishes the way it started. No reference cost is recorded while the subscription is in use.
 
+#### Agent engine {#agent-engine}
+
+New conversations can run on OpenAI's Codex instead: in "Settings › ArcReel Agent › Agent engine", choose Codex, then pick which ChatGPT subscription or OpenAI API key connection it uses, and the model. If no connection is chosen, the ChatGPT subscription's default connection is used, and the OpenAI default if there's no subscription. Only admins can change this. Conversations that have already started keep the engine they began with.
+
+Both engines use the same tools, skills and project instructions, and the chat looks the same. The Codex engine doesn't yet support rewriting from an earlier message, the Agent asking you questions, or the read-only review sub-agents. Automatic switching between a subscription and an API key is also only on the Claude engine.
+
 The Agent provider does not necessarily handle the actual image and video generation.
 
 ### 1.2 Media and Text Providers {#media-and-text-providers}
