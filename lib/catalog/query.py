@@ -46,6 +46,7 @@ from lib.app_version import app_version
 from lib.catalog.composition import ComposedCatalog, EntrySource, compose_catalog, merge_official
 from lib.catalog.entry_matching import match_entry
 from lib.catalog.errors import ModelDiscontinuedError, ModelNotInCatalogError
+from lib.catalog.fork_providers import with_fork_providers
 from lib.catalog.lifecycle import AVAILABLE, Lifecycle, entry_lifecycle
 
 logger = logging.getLogger(__name__)
@@ -101,9 +102,11 @@ class CatalogModel:
 @functools.cache
 def factory_snapshot() -> CatalogData:
     """随代码打包的出厂快照，进程内只读一次。快照无法通过校验时抛 ``CatalogFormatError``。"""
-    return load_catalog(
-        (SNAPSHOT_DIR / MANIFEST_FILENAME).read_bytes(),
-        (SNAPSHOT_DIR / CATALOG_FILENAME).read_bytes(),
+    return with_fork_providers(
+        load_catalog(
+            (SNAPSHOT_DIR / MANIFEST_FILENAME).read_bytes(),
+            (SNAPSHOT_DIR / CATALOG_FILENAME).read_bytes(),
+        )
     )
 
 
@@ -128,7 +131,7 @@ def official_data() -> CatalogData:
     if synced is None:
         return snapshot
     if not _official_cache or _official_cache[0][0] is not snapshot or _official_cache[0][1] is not synced:
-        _official_cache[:] = [(snapshot, synced, merge_official(snapshot, synced))]
+        _official_cache[:] = [(snapshot, synced, with_fork_providers(merge_official(snapshot, synced)))]
     return _official_cache[0][2]
 
 

@@ -198,7 +198,7 @@ def bundle_grok_credentials(home: str) -> str | None:
             continue
         try:
             content = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
+        except OSError, UnicodeDecodeError:
             continue
         total += len(content)
         if total > _MAX_BUNDLE_BYTES:

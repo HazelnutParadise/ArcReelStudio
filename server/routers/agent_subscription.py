@@ -19,7 +19,7 @@ from lib.agent.agent_auth import (
     auth_availability,
     parse_auth_mode,
 )
-from lib.agent.claude_subscription_login import ClaudeLoginError, ClaudeLoginManager
+from lib.subscriptions.claude_login import ClaudeLoginError, ClaudeLoginManager
 from lib.config.repository import SystemSettingRepository, mask_secret
 from lib.db import get_async_session
 from lib.db.base import dt_to_iso

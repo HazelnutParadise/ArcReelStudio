@@ -20,7 +20,32 @@ def test_all_providers_registered():
         "minimax",
         "kling",
         "agnes",
+        "claude-subscription",
+        "chatgpt-subscription",
+        "grok-subscription",
     }
+
+
+def test_subscription_providers_are_created_by_login_only():
+    assert PROVIDER_REGISTRY["claude-subscription"].login_kind == "code_paste"
+    assert PROVIDER_REGISTRY["chatgpt-subscription"].login_kind == "device_code"
+    assert PROVIDER_REGISTRY["grok-subscription"].login_kind == "device_code"
+    for provider_id in ("gemini-aistudio", "openai", "grok"):
+        assert PROVIDER_REGISTRY[provider_id].login_kind is None
+
+
+def test_login_providers_take_no_form_secrets_or_address():
+    for name, meta in PROVIDER_REGISTRY.items():
+        if meta.login_kind is None:
+            continue
+        assert meta.required_keys == [], name
+        assert not meta.accepts_base_url, name
+        assert not meta.credential_groups, name
+
+
+def test_login_kind_rejects_form_secrets():
+    with pytest.raises(ValueError, match="login_kind"):
+        ProviderMeta(display_name="X", required_keys=["api_key"], secret_keys=["api_key"], login_kind="device_code")
 
 
 def test_provider_meta_fields():
