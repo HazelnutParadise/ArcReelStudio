@@ -46,6 +46,7 @@ _EXEMPT: dict[str, str] = {
     "episode_planning:start_replan": _TASK,
     "episode_planning:stop_planning": _TASK,
     "generate:edit_image": _TASK,
+    "generate:generate_music": _TASK,
     "generate:generate_character": _TASK,
     "generate:generate_character_derivative": _TASK,
     "generate:generate_character_voice_sample": _TASK,

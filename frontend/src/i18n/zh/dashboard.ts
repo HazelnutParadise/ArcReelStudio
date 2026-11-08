@@ -1759,6 +1759,7 @@ export default {
   'global_bucket_label_text_backend_simple': '文本 - 简单档',
   'global_bucket_label_text_backend_complex': '文本 - 复杂档',
   'global_bucket_label_default_audio_backend': '默认音频模型',
+  'global_bucket_label_default_music_backend': '默认音乐模型',
   'duration_incompatible_warning': '当前秒数 {{value}} 不在模型支持范围 [{{supported}}] 内',
   'duration_incompatible_resolution_warning': '当前秒数 {{value}} 在当前分辨率下不可用，可选 [{{supported}}]',
   'duration_incompatible_reference_warning': '当前秒数 {{value}} 在参考生视频下不可用，可选 [{{supported}}]',

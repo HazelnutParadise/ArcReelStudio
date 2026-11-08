@@ -1826,6 +1826,7 @@ export default {
   'global_bucket_label_text_backend_simple': 'Văn bản - bậc đơn giản',
   'global_bucket_label_text_backend_complex': 'Văn bản - bậc phức tạp',
   'global_bucket_label_default_audio_backend': 'Model âm thanh mặc định',
+  'global_bucket_label_default_music_backend': 'Mô hình tạo nhạc mặc định',
   'duration_incompatible_warning': '{{value}}s đã chọn không nằm trong [{{supported}}] mà mô hình hỗ trợ',
   'duration_incompatible_resolution_warning':
     '{{value}}s đã chọn không khả dụng ở độ phân giải hiện tại — khả dụng: [{{supported}}]',

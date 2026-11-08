@@ -18,7 +18,7 @@ export const METERS = {
   uncached_image_input_tokens: { kind: "token", per: 1000000, mediaTypes: ["image"] },
   image_cache_read_tokens: { kind: "token", per: 1000000, mediaTypes: ["image"] },
   image_output_tokens: { kind: "token", per: 1000000, mediaTypes: ["image"] },
-  output_seconds: { kind: "count", per: 1, mediaTypes: ["video"] },
+  output_seconds: { kind: "count", per: 1, mediaTypes: ["video", "audio"] },
   video_tokens: { kind: "count", per: 1000000, mediaTypes: ["video"] },
   input_video_seconds: { kind: "count", per: 1, mediaTypes: ["video"] },
   characters: { kind: "count", per: 10000, mediaTypes: ["audio"] },

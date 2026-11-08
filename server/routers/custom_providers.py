@@ -146,6 +146,7 @@ _BACKEND_SETTING_KEYS = (
 _PROJECT_BACKEND_KEYS = (
     "video_backend",
     "audio_backend",
+    "music_backend",
     "image_provider_t2i",
     "image_provider_i2i",
     "default_image_backend",

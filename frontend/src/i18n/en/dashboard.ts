@@ -1839,6 +1839,7 @@ export default {
   'global_bucket_label_text_backend_simple': 'Text — simple tier',
   'global_bucket_label_text_backend_complex': 'Text — complex tier',
   'global_bucket_label_default_audio_backend': 'Default audio model',
+  'global_bucket_label_default_music_backend': 'Default music model',
   'duration_incompatible_warning': 'Selected {{value}}s not in model-supported [{{supported}}]',
   'duration_incompatible_resolution_warning':
     'Selected {{value}}s is unavailable at the current resolution — available: [{{supported}}]',

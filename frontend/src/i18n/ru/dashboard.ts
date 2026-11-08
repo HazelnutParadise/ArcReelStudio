@@ -1911,6 +1911,7 @@ export default {
   'global_bucket_label_text_backend_simple': 'Текст — простая градация',
   'global_bucket_label_text_backend_complex': 'Текст — сложная градация',
   'global_bucket_label_default_audio_backend': 'Модель аудио по умолчанию',
+  'global_bucket_label_default_music_backend': 'Модель для музыки по умолчанию',
   'duration_incompatible_warning': 'Выбранные {{value}} с не поддерживаются моделью [{{supported}}]',
   'duration_incompatible_resolution_warning':
     'Выбранные {{value}} с недоступны при текущем разрешении — доступно: [{{supported}}]',
