@@ -429,3 +429,44 @@ class TestDeleteCredential:
         ):
             resp = client.delete("/api/v1/providers/gemini-aistudio/credentials/1")
         assert resp.status_code == 204
+
+
+class TestSubscriptionConnections:
+    """订阅连线只能经登录建立，建立后只能改名；删除时连专属 HOME 一起删。"""
+
+    def test_creating_by_form_is_refused(self):
+        app, _ = _make_app()
+        mock_repo = AsyncMock()
+        with patch("server.routers.providers.CredentialRepository", return_value=mock_repo), TestClient(app) as client:
+            resp = client.post("/api/v1/providers/chatgpt-subscription/credentials", json={"name": "x", "api_key": "y"})
+        assert resp.status_code == 422
+        mock_repo.create.assert_not_called()
+
+    def test_only_the_name_can_change(self):
+        app, _ = _make_app()
+        mock_repo = AsyncMock()
+        mock_repo.get_by_id = AsyncMock(return_value=_fake_cred(provider="claude-subscription", api_key="sk-ant-oat01"))
+        with patch("server.routers.providers.CredentialRepository", return_value=mock_repo), TestClient(app) as client:
+            refused = client.patch("/api/v1/providers/claude-subscription/credentials/1", json={"api_key": "new"})
+            renamed = client.patch("/api/v1/providers/claude-subscription/credentials/1", json={"name": "Work"})
+        assert refused.status_code == 422
+        assert renamed.status_code == 204
+        mock_repo.update.assert_called_once()
+        assert mock_repo.update.call_args.kwargs.get("name") == "Work"
+        assert "api_key" not in mock_repo.update.call_args.kwargs
+
+    def test_deleting_removes_the_connection_home(self):
+        app, _ = _make_app()
+        mock_repo = AsyncMock()
+        mock_repo.get_by_id = AsyncMock(return_value=_fake_cred(id=5, provider="chatgpt-subscription", api_key=None))
+        with (
+            patch("server.routers.providers.CredentialRepository", return_value=mock_repo),
+            patch(
+                "server.routers.providers.find_credential_references", AsyncMock(return_value=CredentialReferences())
+            ),
+            patch("server.routers.providers.remove_credentials") as remove,
+            TestClient(app) as client,
+        ):
+            resp = client.delete("/api/v1/providers/chatgpt-subscription/credentials/5")
+        assert resp.status_code == 204
+        remove.assert_called_once_with("chatgpt-subscription", 5)
