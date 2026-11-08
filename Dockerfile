@@ -51,17 +51,19 @@ RUN set -eu; \
     rm /tmp/ffmpeg.tar.xz
 
 # ============================================================
-# Stage 3: ChatGPT 订阅用的 Codex CLI
+# Stage 3: 订阅登录与 Agent 引擎用的官方 CLI
 # ============================================================
-# ChatGPT 订阅经 Codex（app-server）登录与调用。Codex 以 Apache-2.0 发布，用官方的 Linux 静态二进制，版本与校验和
-# 随架构固定。Grok CLI 没有允许再分发的许可，不放进镜像：第一次登录 Grok 订阅时由服务按固定版本与校验和下载
-# （见 lib/subscriptions/grok_cli.py）。
+# ChatGPT 订阅经 Codex（app-server），Grok 订阅经 Grok CLI；都用官方发布的 Linux 静态二进制，版本与校验和随架构
+# 固定。
 FROM python:3.14-slim AS subscription-clis
 
 ARG TARGETARCH
 ARG CODEX_VERSION=0.166.0
 ARG CODEX_SHA256_AMD64=a0bf572d2f93f056c6712a6da348e96078dc84f3885fd7be67807ef389cb3978
 ARG CODEX_SHA256_ARM64=94eb707605ec2646b2e05b7edf7c4e7b3ccf02b16237c34ae9beb8cfb7f810a9
+ARG GROK_VERSION=1.0.77
+ARG GROK_SHA256_AMD64=243a669421d0af2c3a56b4283601d8c22815312224feb38a0059396659926250
+ARG GROK_SHA256_ARM64=ad0bdf44d84197f4a746d7f3fb949724c63023b89baefc54a4132303da7bff87
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates curl \
@@ -69,17 +71,21 @@ RUN apt-get update \
 
 RUN set -eux; \
     case "${TARGETARCH}" in \
-    amd64) codex_arch=x86_64; codex_sha="${CODEX_SHA256_AMD64}" ;; \
-    arm64) codex_arch=aarch64; codex_sha="${CODEX_SHA256_ARM64}" ;; \
+    amd64) arch=x86_64; codex_sha="${CODEX_SHA256_AMD64}"; grok_sha="${GROK_SHA256_AMD64}" ;; \
+    arm64) arch=aarch64; codex_sha="${CODEX_SHA256_ARM64}"; grok_sha="${GROK_SHA256_ARM64}" ;; \
     *) echo "不支持的架构：${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
     mkdir -p /out; \
     curl -fsSL -o /tmp/codex.tar.gz \
-    "https://github.com/openai/codex/releases/download/rust-v${CODEX_VERSION}/codex-${codex_arch}-unknown-linux-musl.tar.gz"; \
+    "https://github.com/openai/codex/releases/download/rust-v${CODEX_VERSION}/codex-${arch}-unknown-linux-musl.tar.gz"; \
     echo "${codex_sha}  /tmp/codex.tar.gz" | sha256sum -c -; \
     tar -xzf /tmp/codex.tar.gz -C /tmp; \
-    install -m 0755 "/tmp/codex-${codex_arch}-unknown-linux-musl" /out/codex; \
-    rm -f /tmp/codex.tar.gz "/tmp/codex-${codex_arch}-unknown-linux-musl"
+    install -m 0755 "/tmp/codex-${arch}-unknown-linux-musl" /out/codex; \
+    curl -fsSL -o /tmp/grok.gz "https://x.ai/cli/grok-${GROK_VERSION}-linux-${arch}.gz"; \
+    echo "${grok_sha}  /tmp/grok.gz" | sha256sum -c -; \
+    gunzip -c /tmp/grok.gz > /out/grok; \
+    chmod 0755 /out/grok; \
+    rm -f /tmp/codex.tar.gz /tmp/grok.gz "/tmp/codex-${arch}-unknown-linux-musl"
 
 # ============================================================
 # Stage 4: 生产镜像
@@ -137,8 +143,8 @@ COPY --from=frontend-builder /build/frontend/dist/ frontend/dist/
 # GPU 编码用的 ffmpeg，路径与 lib/infra/video_encoder.py 的 GPU_FFMPEG_PATH 一致
 COPY --from=gpu-ffmpeg /out/ffmpeg /opt/arcreel/ffmpeg-gpu/ffmpeg
 
-# ChatGPT 订阅用的 Codex CLI（PATH 上的 codex）
-COPY --from=subscription-clis /out/codex /usr/local/bin/codex
+# 订阅登录与 Agent 引擎用的官方 CLI（PATH 上的 codex、grok）
+COPY --from=subscription-clis /out/codex /out/grok /usr/local/bin/
 
 # 构建 commit 由 CI 传入，/health 据此返回运行版本；放在最后，值每次变化也不影响前面的层缓存
 ARG BUILD_COMMIT=

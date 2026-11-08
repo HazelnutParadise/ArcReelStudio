@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from lib.subscriptions.device_login import DeviceLoginResult, SubscriptionLoginError
-from lib.subscriptions.grok_cli import GrokCliUnavailable, ensure_grok_cli
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +35,10 @@ _URL = re.compile(r"https://accounts\.x\.ai/\S+")
 _CODE = re.compile(r"\b([A-Z0-9]{4}-[A-Z0-9]{4})\b")
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _ANSI = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+
+
+def grok_cli_path() -> str | None:
+    return shutil.which("grok")
 
 
 @dataclass
@@ -61,10 +64,9 @@ class GrokLoginManager:
     async def start(self) -> tuple[str, str, str]:
         """开始一次登录，返回 ``(login_id, 验证网址, 一次性代码)``。"""
         await self._sweep()
-        try:
-            cli = self._cli_path or await ensure_grok_cli()
-        except GrokCliUnavailable as exc:
-            raise SubscriptionLoginError("cli_unavailable", str(exc)) from exc
+        cli = self._cli_path or grok_cli_path()
+        if not cli:
+            raise SubscriptionLoginError("cli_unavailable", "grok CLI not found on PATH")
         home = await asyncio.to_thread(tempfile.mkdtemp, prefix="grok-login-")
         env = {
             "HOME": home,

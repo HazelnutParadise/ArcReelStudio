@@ -594,7 +594,7 @@ Claude、ChatGPT 与 Grok 的订阅账号也是连线，分别属于「Claude �
 - ChatGPT 第一次使用设备代码登录前，要先在 ChatGPT 设置的「安全」里开启设备代码登录。
 - 同一个账号重新登录时，更新原来的连线，不会多出一条。
 - ChatGPT 与 Grok 的登录凭证放在数据目录的 `subscriptions/` 下，由官方 CLI 自动续期；删除连线时一并删除。
-- Docker 镜像随附 ChatGPT 登录用的 Codex CLI。Grok CLI 不随附：第一次登录 Grok 订阅时，服务从 xAI 下载固定版本的官方构建并核对校验和，所以服务器要能连到 `x.ai`。不在 Linux 上运行时，请自行安装 Grok CLI 并放到 PATH 上。
+- Docker 镜像随附登录用的 Codex CLI 与 Grok CLI。不用 Docker 部署时，请自行安装这两个 CLI 并放到 PATH 上。
 - 目前订阅账号只供 Agent 使用（Claude 订阅）。文字与图片生成改用订阅额度会在后续版本开放。
 
 ## 12. 对象存储与供应商素材库 {#object-storage-and-asset-library}

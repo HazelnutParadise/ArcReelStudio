@@ -57,7 +57,7 @@ def fake_codex(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         (fake_dir / "outcome").write_text(outcome, encoding="utf-8")
         return str(cli)
 
-    configure.dir = fake_dir  # type: ignore[attr-defined]
+    configure.dir = fake_dir  # type: ignore[attr-defined]  # 测试里给闭包挂上目录，供用例找假 CLI 留下的标记文件
     return configure
 
 

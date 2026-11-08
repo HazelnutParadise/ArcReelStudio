@@ -16,4 +16,4 @@ Claude、ChatGPT、Grok 的订阅账号要能在网页登录、每家多个账�
 
 **Agent**：Claude 订阅那一方读 `claude-subscription` 的连线，`agent_subscription_credential_id` 旁键指定用哪一条，没指定用默认连线。订阅会话的用量记在 `claude-subscription` 名下与那条连线的 id，倍率 0。旧的 `claude_subscriptions` 表删除，不搬旧令牌（它没有账号信息）。
 
-**CLI 来源**：Codex 以 Apache-2.0 发布，官方 Linux 静态构建随镜像分发。Grok CLI 没有允许再分发的许可，不进镜像；第一次登录时按固定版本与校验和从 `x.ai` 下载到数据根。
+**CLI 来源**：Codex 与 Grok CLI 都用官方发布的 Linux 构建，版本与校验和固定，随镜像分发（见 NOTICE）。

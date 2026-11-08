@@ -600,7 +600,7 @@ In "Settings › Connections", click "Add connection" and pick the subscription 
 - Before the first device code sign-in to ChatGPT, turn on device code sign-in under Security in your ChatGPT settings.
 - Signing in to the same account again updates its existing connection instead of adding another.
 - ChatGPT and Grok sign-in credentials are kept under `subscriptions/` in the data directory and renewed by the official CLIs; deleting the connection deletes them too.
-- The Docker image ships the Codex CLI used for ChatGPT. The Grok CLI is not shipped: the first time someone signs in to a Grok subscription, the service downloads a pinned official build from xAI and verifies its checksum, so the server must be able to reach `x.ai`. When not running on Linux, install the Grok CLI yourself and put it on PATH.
+- The Docker image ships the Codex CLI and the Grok CLI used for sign-in. When not deploying with Docker, install both CLIs yourself and put them on PATH.
 - For now, subscription accounts are only used by the Agent (Claude subscription). Using subscription quota for text and image generation comes in a later release.
 
 ## 12. Object Storage and Provider Asset Libraries {#object-storage-and-asset-library}
