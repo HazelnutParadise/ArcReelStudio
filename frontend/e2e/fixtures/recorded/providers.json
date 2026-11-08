@@ -308,7 +308,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "gemini-vertex",
@@ -565,7 +566,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "ark",
@@ -871,7 +873,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "ark-agent-plan",
@@ -1170,7 +1173,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "grok",
@@ -1420,7 +1424,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "openai",
@@ -1712,7 +1717,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "vidu",
@@ -1874,7 +1880,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "dashscope",
@@ -2597,7 +2604,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "minimax",
@@ -2767,7 +2775,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "kling",
@@ -2928,7 +2937,8 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
       },
       {
         "id": "agnes",
@@ -3122,7 +3132,41 @@
             "reference_route_audio_track": "always_off",
             "voice_consistency": "none"
           }
-        }
+        },
+        "login_kind": null
+      },
+      {
+        "id": "claude-subscription",
+        "display_name": "Claude 订阅",
+        "description": "用 Claude 账号（Pro、Max 等订阅）登录，使用订阅额度，目前供 ArcReel Agent 使用。",
+        "status": "unconfigured",
+        "media_types": [],
+        "capabilities": [],
+        "credential_count": 0,
+        "models": {},
+        "login_kind": "code_paste"
+      },
+      {
+        "id": "chatgpt-subscription",
+        "display_name": "ChatGPT 订阅",
+        "description": "用 ChatGPT 账号（Plus、Pro 等订阅）经 Codex 登录，使用订阅额度。",
+        "status": "unconfigured",
+        "media_types": [],
+        "capabilities": [],
+        "credential_count": 0,
+        "models": {},
+        "login_kind": "device_code"
+      },
+      {
+        "id": "grok-subscription",
+        "display_name": "Grok 订阅",
+        "description": "用 Grok 账号（SuperGrok、X Premium 等订阅）经 Grok CLI 登录，使用订阅额度。",
+        "status": "unconfigured",
+        "media_types": [],
+        "capabilities": [],
+        "credential_count": 0,
+        "models": {},
+        "login_kind": "device_code"
       }
     ]
   }

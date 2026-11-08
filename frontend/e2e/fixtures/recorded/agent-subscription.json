@@ -3,9 +3,9 @@
   "path": "/api/v1/agent/subscription",
   "status": 200,
   "body": {
-    "logged_in": false,
-    "token_masked": null,
-    "logged_in_at": null,
+    "credential_id": null,
+    "credential_name": null,
+    "chosen_credential_id": null,
     "mode": "prefer_subscription",
     "has_api_key": false,
     "subscription": {
