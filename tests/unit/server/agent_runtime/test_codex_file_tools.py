@@ -204,9 +204,7 @@ async def test_read_non_utf8_file_fails(file_tools: CodexFileTools, project_cwd:
     assert re.search(r"utf-?8|编码|二进制|binary|decode", _text(result), re.IGNORECASE)
 
 
-async def test_relative_path_resolves_against_project_cwd(
-    file_tools: CodexFileTools, project_cwd: Path
-) -> None:
+async def test_relative_path_resolves_against_project_cwd(file_tools: CodexFileTools, project_cwd: Path) -> None:
     await asyncio.to_thread(_write_text, project_cwd / "sub" / "nested.txt", "relative\n")
 
     result = await file_tools.call("Read", {"file_path": "sub/nested.txt"})
@@ -305,9 +303,7 @@ async def test_edit_replaces_single_occurrence(file_tools: CodexFileTools, proje
     target = project_cwd / "draft.md"
     await asyncio.to_thread(_write_text, target, "hello world\n")
 
-    result = await file_tools.call(
-        "Edit", {"file_path": "draft.md", "old_string": "world", "new_string": "there"}
-    )
+    result = await file_tools.call("Edit", {"file_path": "draft.md", "old_string": "world", "new_string": "there"})
 
     assert result["success"] is True
     assert "1" in _text(result)
@@ -317,9 +313,7 @@ async def test_edit_replaces_single_occurrence(file_tools: CodexFileTools, proje
 async def test_edit_missing_old_string_fails(file_tools: CodexFileTools, project_cwd: Path) -> None:
     await asyncio.to_thread(_write_text, project_cwd / "draft.md", "hello world\n")
 
-    result = await file_tools.call(
-        "Edit", {"file_path": "draft.md", "old_string": "absent", "new_string": "there"}
-    )
+    result = await file_tools.call("Edit", {"file_path": "draft.md", "old_string": "absent", "new_string": "there"})
 
     assert result["success"] is False
     assert re.search(r"old_string|不存在|not found|未找到", _text(result), re.IGNORECASE)
@@ -354,18 +348,14 @@ async def test_edit_replace_all_replaces_every_occurrence(file_tools: CodexFileT
 async def test_edit_identical_old_and_new_string_fails(file_tools: CodexFileTools, project_cwd: Path) -> None:
     await asyncio.to_thread(_write_text, project_cwd / "draft.md", "hello\n")
 
-    result = await file_tools.call(
-        "Edit", {"file_path": "draft.md", "old_string": "hello", "new_string": "hello"}
-    )
+    result = await file_tools.call("Edit", {"file_path": "draft.md", "old_string": "hello", "new_string": "hello"})
 
     assert result["success"] is False
     assert _text(result)
 
 
 async def test_edit_missing_file_fails(file_tools: CodexFileTools) -> None:
-    result = await file_tools.call(
-        "Edit", {"file_path": "missing.md", "old_string": "a", "new_string": "b"}
-    )
+    result = await file_tools.call("Edit", {"file_path": "missing.md", "old_string": "a", "new_string": "b"})
 
     assert result["success"] is False
     assert _text(result)
