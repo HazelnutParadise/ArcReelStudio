@@ -16,6 +16,7 @@ import { itemPositionLabel } from "@/utils/episode-display";
 import { episodeItemKind } from "@/utils/episode-item";
 import { formatSeconds, rulerStep, unitHue, unitPositionLabel } from "./timeline-view";
 import { GenerateMusicButton } from "./GenerateMusicDialog";
+import { GenerateSfxButton } from "./GenerateSfxDialog";
 
 function percentOf(seconds: number, duration: number): string {
   return duration > 0 ? `${(seconds / duration) * 100}%` : "0%";
@@ -39,12 +40,14 @@ interface EditTimelineTracksProps {
   narration: readonly NarrationSpan[];
   subtitles: readonly PlacedSubtitle[];
   bgm: readonly AudioPlacement[];
+  sfx: readonly AudioPlacement[];
   onSelectClip: (clipId: string) => void;
   onSeek: (t: number) => void;
 }
 
 /**
- * 横向时间线：标尺，视频、旁白、字幕与 BGM 四条轨道，以及未使用的视频单元。每条轨道是一个 TrackRow；BGM 轨带上传入口。
+ * 横向时间线：标尺，视频、旁白、字幕、BGM 与音效五条轨道，以及未使用的视频单元。每条轨道是一个 TrackRow；
+ * BGM 轨与音效轨带生成与上传入口。
  * 高度固定、不随条目增多而变高：长时间线与很多未使用的视频单元都在各自一行里横向滚动。
  */
 export function EditTimelineTracks({
@@ -60,6 +63,7 @@ export function EditTimelineTracks({
   narration,
   subtitles,
   bgm,
+  sfx,
   onSelectClip,
   onSeek,
 }: EditTimelineTracksProps) {
@@ -113,7 +117,7 @@ export function EditTimelineTracks({
               action={
                 <>
                   <GenerateMusicButton projectName={projectName} />
-                  <BgmUploadButton projectName={projectName} />
+                  <AudioUploadButton projectName={projectName} kind="bgm" />
                 </>
               }
             >
@@ -122,6 +126,24 @@ export function EditTimelineTracks({
               ) : (
                 <span className="absolute inset-y-0 left-1 flex items-center text-xs text-muted-foreground">
                   {translate("edit_view_bgm_track_empty")}
+                </span>
+              )}
+            </TrackRow>
+            <TrackRow
+              label={translate("edit_view_track_sfx")}
+              height="h-10 edit-short:h-7"
+              action={
+                <>
+                  <GenerateSfxButton projectName={projectName} />
+                  <AudioUploadButton projectName={projectName} kind="sfx" />
+                </>
+              }
+            >
+              {sfx.length > 0 ? (
+                <SfxBlocks items={sfx} duration={duration} />
+              ) : (
+                <span className="absolute inset-y-0 left-1 flex items-center text-xs text-muted-foreground">
+                  {translate("edit_view_sfx_track_empty")}
                 </span>
               )}
             </TrackRow>
@@ -219,13 +241,13 @@ function TrackRow({ label, height, action, children }: TrackRowProps) {
   );
 }
 
-const BGM_ACCEPT = ".mp3,.wav,.m4a,audio/mpeg,audio/wav,audio/mp4";
+const AUDIO_ACCEPT = ".mp3,.wav,.m4a,audio/mpeg,audio/wav,audio/mp4";
 
 /**
- * 上传一首 BGM 到项目。按下按钮不触发轨道的跳转；上传后由 Agent 把 BGM 摆进剪辑时间线。
+ * 上传一首 BGM 或一个音效到项目。按下按钮不触发轨道的跳转；上传后由 Agent 把它摆进剪辑时间线。
  * 上传成功后界面上没有别的变化，所以仍用提示告诉创作者下一步。
  */
-function BgmUploadButton({ projectName }: { projectName: string }) {
+function AudioUploadButton({ projectName, kind }: { projectName: string; kind: "bgm" | "sfx" }) {
   const { t } = useTranslation("dashboard");
   const input = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -236,15 +258,18 @@ function BgmUploadButton({ projectName }: { projectName: string }) {
     setUploading(true);
     const { pushToast } = useAppStore.getState();
     try {
-      const { bgm } = await API.uploadBgm(projectName, file);
-      pushToast(t("edit_view_bgm_uploaded", { name: bgm.name }), "success");
+      const uploadedName =
+        kind === "bgm"
+          ? (await API.uploadBgm(projectName, file)).bgm.name
+          : (await API.uploadSfx(projectName, file)).sfx.name;
+      pushToast(t(`edit_view_${kind}_uploaded`, { name: uploadedName }), "success");
     } catch (cause) {
-      pushToast(t("edit_view_bgm_upload_failed", { message: errMsg(cause) }), "error");
+      pushToast(t(`edit_view_${kind}_upload_failed`, { message: errMsg(cause) }), "error");
     } finally {
       setUploading(false);
     }
   };
-  const label = uploading ? t("edit_view_bgm_uploading") : t("edit_view_bgm_upload");
+  const label = uploading ? t(`edit_view_${kind}_uploading`) : t(`edit_view_${kind}_upload`);
   return (
     <>
       <Button
@@ -253,7 +278,7 @@ function BgmUploadButton({ projectName }: { projectName: string }) {
         aria-label={label}
         title={label}
         disabled={uploading}
-        data-testid="edit-bgm-upload"
+        data-testid={`edit-${kind}-upload`}
         onPointerDown={(event) => event.stopPropagation()}
         onClick={() => input.current?.click()}
       >
@@ -262,9 +287,9 @@ function BgmUploadButton({ projectName }: { projectName: string }) {
       <input
         ref={input}
         type="file"
-        accept={BGM_ACCEPT}
+        accept={AUDIO_ACCEPT}
         hidden
-        data-testid="edit-bgm-upload-input"
+        data-testid={`edit-${kind}-upload-input`}
         onChange={(event) => void upload(event)}
       />
     </>
@@ -529,6 +554,63 @@ const BgmBlocks = memo(function BgmBlocks({ items, duration }: { items: readonly
               {
                 "--at": percentOf(item.start, duration),
                 "--span": percentOf(length, duration),
+                "--fade-in": `${fadeIn}%`,
+                "--fade-out": `${fadeOut}%`,
+              } as CSSProperties
+            }
+          >
+            {item.name ?? item.sourceId}
+          </span>
+        );
+      })}
+    </>
+  );
+});
+
+/** 重叠的音效依次放进第一条已空出的行，都不空就新开一行；轨道高度平分给各行。 */
+function sfxLanes(items: readonly AudioPlacement[]): { lanes: number; laneOf: Map<string, number> } {
+  const ends: number[] = [];
+  const laneOf = new Map<string, number>();
+  for (const item of [...items].sort((a, b) => a.start - b.start)) {
+    let lane = ends.findIndex((end) => end <= item.start);
+    if (lane === -1) {
+      lane = ends.length;
+      ends.push(item.end);
+    } else {
+      ends[lane] = item.end;
+    }
+    laneOf.set(item.id, lane);
+  }
+  return { lanes: Math.max(ends.length, 1), laneOf };
+}
+
+/** 音效片段：可以重叠，重叠的分行显示；淡入淡出同 BGM 画成两端的渐变。 */
+const SfxBlocks = memo(function SfxBlocks({ items, duration }: { items: readonly AudioPlacement[]; duration: number }) {
+  const { t } = useTranslation("dashboard");
+  const { lanes, laneOf } = sfxLanes(items);
+  return (
+    <>
+      {items.map((item) => {
+        const length = item.end - item.start;
+        const fadeIn = (Math.min(item.fadeIn, length) / length) * 100;
+        const fadeOut = 100 - (Math.min(item.fadeOut, length) / length) * 100;
+        return (
+          <span
+            key={item.id}
+            title={t("edit_view_sfx_title", {
+              sfx: item.name ?? item.sourceId,
+              start: formatSeconds(item.start),
+              end: formatSeconds(item.end),
+              volume: formatSeconds(item.volume),
+            })}
+            data-testid={`edit-${item.id}`}
+            className="absolute top-(--lane-top) left-(--at) flex h-(--lane-height) w-[calc(var(--span)-1px)] items-center overflow-hidden text-ellipsis rounded-xs px-1 text-xs leading-none whitespace-nowrap text-white sfx-fade"
+            style={
+              {
+                "--at": percentOf(item.start, duration),
+                "--span": percentOf(length, duration),
+                "--lane-top": `${((laneOf.get(item.id) ?? 0) / lanes) * 100}%`,
+                "--lane-height": `${100 / lanes}%`,
                 "--fade-in": `${fadeIn}%`,
                 "--fade-out": `${fadeOut}%`,
               } as CSSProperties

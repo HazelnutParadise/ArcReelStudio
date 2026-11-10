@@ -20,6 +20,7 @@ const ISSUE_DOT: Record<EditTimelineIssueCode, string> = {
   narration_source_collision: "bg-warn",
   subtitle_missing_glyphs: "bg-warn",
   bgm_missing: "bg-destructive",
+  sfx_missing: "bg-destructive",
 };
 
 interface ClipInspectorProps {

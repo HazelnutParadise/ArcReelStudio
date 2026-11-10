@@ -80,6 +80,7 @@ const INITIAL_CUT: EditTimelineReadout = {
     }),
   ],
   bgm: [],
+  sfx: [],
   issues: [
     { code: "unit_deleted", severity: "info", applies_to: "all", clip_ids: ["c2"], unit_id: "E1U2", params: {} },
     {
@@ -127,6 +128,7 @@ describe("EditTimelineView", () => {
       narration: "without_narration",
       units: [],
       bgm: [],
+      sfx: [],
     });
   });
 
@@ -215,6 +217,7 @@ describe("EditTimelineView", () => {
       narration: "without_narration",
       units: [unit("E1U1", false), unit("E1U3", true)],
       bgm: [],
+      sfx: [],
     });
 
     renderView();
@@ -587,6 +590,7 @@ describe("EditTimelineView", () => {
       timeline_id: "tl-00000002",
       revision: 3,
       narration: "with_narration",
+      sfx: [],
       units: [
         {
           unit_id: "E1U1",
@@ -697,6 +701,97 @@ describe("EditTimelineView", () => {
     expect(screen.getByRole("button", { name: "上传 BGM" })).toBeEnabled();
   });
 
+  it("stacks overlapping sound effects into lanes, plays them, and uploads from the sound effect track", async () => {
+    useAppStore.setState({ toast: null });
+    const withSfx: EditTimelineReadout = {
+      ...INITIAL_CUT,
+      sfx: [
+        {
+          id: "s1",
+          sfx_id: "sfx-0001",
+          name: "敲门",
+          start: 1,
+          end: 2,
+          source_in: 0,
+          source_out: 1,
+          volume: 1,
+          fade_in: 0,
+          fade_out: 0,
+        },
+        {
+          id: "s2",
+          sfx_id: "sfx-0001",
+          name: "敲门",
+          start: 1.5,
+          end: 2.5,
+          source_in: 0,
+          source_out: 1,
+          volume: 0.5,
+          fade_in: 0,
+          fade_out: 0,
+        },
+        {
+          id: "s3",
+          sfx_id: "sfx-0001",
+          name: "敲门",
+          start: 3,
+          end: 4,
+          source_in: 0,
+          source_out: 1,
+          volume: 1,
+          fade_in: 0,
+          fade_out: 0,
+        },
+      ],
+    };
+    vi.spyOn(API, "listEditTimelines").mockResolvedValue({
+      timelines: [summary("tl-00000002", "初剪", "2026-09-30T10:00:00Z", 3)],
+    });
+    vi.spyOn(API, "getEditTimeline").mockResolvedValue(withSfx);
+    vi.spyOn(API, "getEditTimelinePreviewMedia").mockResolvedValue({
+      timeline_id: "tl-00000002",
+      revision: 3,
+      narration: "without_narration",
+      units: [],
+      bgm: [],
+      sfx: [{ sfx_id: "sfx-0001", path: "sfx/sfx-0001.wav", gain: 1 }],
+    });
+    const upload = vi.spyOn(API, "uploadSfx").mockResolvedValue({
+      success: true,
+      sfx: {
+        id: "sfx-0002",
+        name: "关门",
+        duration: 1,
+        gain: 1,
+        path: "sfx/sfx-0002.wav",
+        url: "/x",
+        source: "upload",
+      },
+    });
+
+    renderView();
+
+    const lane = (id: string) => screen.getByTestId(`edit-sfx-${id}`).style.getPropertyValue("--lane-top");
+    await screen.findByTestId("edit-sfx-s1");
+    // s1 与 s2 重叠，分到两行；s3 不与前两者重叠，回到第一行
+    expect([lane("s1"), lane("s2"), lane("s3")]).toEqual(["0%", "50%", "0%"]);
+    expect(screen.getByTestId("edit-sfx-s2")).toHaveAttribute("title", "敲门：1.5～2.5s，音量 0.5");
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "播放" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "播放" }));
+    const sources = vi
+      .mocked(HTMLMediaElement.prototype.play)
+      .mock.contexts.filter((media): media is HTMLAudioElement => media instanceof HTMLAudioElement)
+      .map((media) => media.getAttribute("src"));
+    expect(sources).toEqual(expect.arrayContaining([expect.stringContaining("sfx/sfx-0001.wav")]));
+
+    const file = new File(["wav"], "关门.wav", { type: "audio/wav" });
+    fireEvent.change(screen.getByTestId("edit-sfx-upload-input"), { target: { files: [file] } });
+    await waitFor(() => expect(useAppStore.getState().toast?.tone).toBe("success"));
+    expect(upload).toHaveBeenCalledWith("demo", file);
+    expect(useAppStore.getState().toast?.text).toContain("关门");
+  });
+
   it("unlocks every narration on play but only loads the ones about to be heard", async () => {
     // c2 的旁白从 20s 开始，离播放起点超过预载窗口
     const long: EditTimelineReadout = {
@@ -739,6 +834,7 @@ describe("EditTimelineView", () => {
       narration: "with_narration",
       units: [narrationOf("E1U1"), narrationOf("E1U3")],
       bgm: [],
+      sfx: [],
     });
 
     renderView();

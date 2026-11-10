@@ -34,6 +34,7 @@ function readoutOf(id: string, name: string): EditTimelineReadout {
     duration: 0,
     clips: [],
     bgm: [],
+    sfx: [],
     issues: [],
   };
 }

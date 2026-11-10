@@ -27,6 +27,7 @@ import { EditTimelineTracks } from "./EditTimelineTracks";
 import { buildPlaybackPlan, locate, type PlaybackPlan, type PlaybackSegment } from "./playback-schedule";
 import {
   bgmPlacements,
+  sfxPlacements,
   narrationPlacements,
   narrationSpans,
   placeSubtitles,
@@ -348,7 +349,12 @@ function TimelinePreview({
   );
   // 音频摆放与旁白配音地址同样按内容去重，内容不变的刷新不打断正在播放的音频。
   const audioJson = useMemo(
-    () => JSON.stringify([...narrationPlacements(readout, media), ...bgmPlacements(readout, media)]),
+    () =>
+      JSON.stringify([
+        ...narrationPlacements(readout, media),
+        ...bgmPlacements(readout, media),
+        ...sfxPlacements(readout, media),
+      ]),
     [readout, media],
   );
   const audio = useMemo(() => JSON.parse(audioJson) as AudioPlacement[], [audioJson]);
@@ -359,6 +365,7 @@ function TimelinePreview({
           (media?.units ?? []).flatMap((unit) => (unit.narration_audio ? [[unit.unit_id, unit.narration_audio]] : [])),
         ),
         bgm: Object.fromEntries((media?.bgm ?? []).map((item) => [item.bgm_id, item.path])),
+        sfx: Object.fromEntries((media?.sfx ?? []).map((item) => [item.sfx_id, item.path])),
       }),
     [media],
   );
@@ -366,11 +373,12 @@ function TimelinePreview({
     const sources = JSON.parse(audioSourcesJson) as {
       narration: Record<string, EditPreviewNarrationAudio>;
       bgm: Record<string, string>;
+      sfx: Record<string, string>;
     };
     return (placement: AudioPlacement) => {
       // BGM 按字节登记（bgm/{随机 id}）、文件不再改写，地址本身就唯一，显式不带版本号。
-      if (placement.kind === "bgm") {
-        const path = sources.bgm[placement.sourceId];
+      if (placement.kind === "bgm" || placement.kind === "sfx") {
+        const path = sources[placement.kind][placement.sourceId];
         return path ? API.getFileUrl(projectName, path, null) : null;
       }
       const source = sources.narration[placement.sourceId];
@@ -381,6 +389,7 @@ function TimelinePreview({
   const narration = useMemo(() => narrationSpans(readout, ttsNarration), [readout, ttsNarration]);
   const subtitles = useMemo(() => placeSubtitles(readout, plan, media), [readout, plan, media]);
   const bgm = useMemo(() => audio.filter((placement) => placement.kind === "bgm"), [audio]);
+  const sfx = useMemo(() => audio.filter((placement) => placement.kind === "sfx"), [audio]);
 
   // 链接带了时间点：播放头移过去（暂停在那一刻），并选中落在该时间的片段。
   const { seek } = playback;
@@ -456,6 +465,7 @@ function TimelinePreview({
           narration={narration}
           subtitles={subtitles}
           bgm={bgm}
+          sfx={sfx}
           onSelectClip={setSelectedClipId}
           onSeek={playback.seek}
         />

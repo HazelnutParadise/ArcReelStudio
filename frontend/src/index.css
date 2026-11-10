@@ -269,6 +269,8 @@
   --color-unit-narration: oklch(0.5 0.08 var(--unit-hue, 0) / 0.75);
   /* 剪辑视图 BGM 轨的片段色 */
   --color-bgm: oklch(0.45 0.09 300);
+  /* 剪辑视图音效轨的片段色 */
+  --color-sfx: oklch(0.5 0.1 60);
 
   --shadow-overlay: 0 16px 40px -12px color-mix(in oklab, var(--shadow-ink) 60%, transparent);
 
@@ -434,6 +436,17 @@ body {
     color-mix(in oklab, var(--color-bgm) 85%, transparent) var(--fade-in, 0%),
     color-mix(in oklab, var(--color-bgm) 85%, transparent) var(--fade-out, 100%),
     color-mix(in oklab, var(--color-bgm) 25%, transparent)
+  );
+}
+
+/* 音效片段：同 BGM 的淡入淡出渐变，换成音效的颜色。 */
+@utility sfx-fade {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-sfx) 25%, transparent),
+    color-mix(in oklab, var(--color-sfx) 90%, transparent) var(--fade-in, 0%),
+    color-mix(in oklab, var(--color-sfx) 90%, transparent) var(--fade-out, 100%),
+    color-mix(in oklab, var(--color-sfx) 25%, transparent)
   );
 }
 

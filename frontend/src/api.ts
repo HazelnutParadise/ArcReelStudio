@@ -183,6 +183,7 @@ import type {
   EditTimelineSummary,
   EpisodeEditOverview,
   ProjectBgm,
+  ProjectSfx,
   TimelineNarration,
 } from "@/types/edit-timeline";
 import type {
@@ -909,6 +910,20 @@ class API {
       method: "POST",
       body: JSON.stringify(body),
     });
+  }
+
+  static async generateSfx(
+    projectName: string,
+    body: { prompt: string; duration_seconds?: number | null; name?: string | null },
+  ): Promise<{ success: boolean; task_id: string; message: string }> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/generate/sfx`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  static async uploadSfx(projectName: string, file: File): Promise<{ success: boolean; sfx: ProjectSfx }> {
+    return API.postFileUpload(`/projects/${encodeURIComponent(projectName)}/upload/sfx`, file);
   }
 
   static async uploadBgm(projectName: string, file: File): Promise<{ success: boolean; bgm: ProjectBgm }> {

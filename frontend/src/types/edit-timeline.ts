@@ -83,6 +83,21 @@ export interface EditBgmClip {
   fade_out: number;
 }
 
+/** 音效片段，字段含义同 BGM 片段；音效片段之间可以重叠。 */
+export interface EditSfxClip {
+  id: string;
+  sfx_id: string;
+  /** 所引用音效的名称；音效已不在项目里时为 null。 */
+  name: string | null;
+  start: number;
+  end: number;
+  source_in: number;
+  source_out: number;
+  volume: number;
+  fade_in: number;
+  fade_out: number;
+}
+
 export type EditTimelineIssueCode =
   | "trim_ignored"
   | "unit_deleted"
@@ -93,7 +108,8 @@ export type EditTimelineIssueCode =
   | "narration_overrun"
   | "narration_source_collision"
   | "subtitle_missing_glyphs"
-  | "bgm_missing";
+  | "bgm_missing"
+  | "sfx_missing";
 
 export interface EditTimelineIssue {
   code: EditTimelineIssueCode;
@@ -111,6 +127,7 @@ export interface EditTimelineReadout {
   duration: number;
   clips: EditClip[];
   bgm: EditBgmClip[];
+  sfx: EditSfxClip[];
   issues: EditTimelineIssue[];
 }
 
@@ -154,6 +171,13 @@ export interface EditPreviewBgm {
   gain: number;
 }
 
+/** 音效文件的项目内路径与峰值静态增益（线性倍数）；预览音量是片段音量乘以这个增益。 */
+export interface EditPreviewSfx {
+  sfx_id: string;
+  path: string;
+  gain: number;
+}
+
 /** 剪辑视图预览的素材层，与 server/services/presentation/timeline_preview.py 同形。 */
 export interface EditTimelinePreviewMedia {
   timeline_id: string;
@@ -162,6 +186,8 @@ export interface EditTimelinePreviewMedia {
   units: EditPreviewUnitMedia[];
   /** 只含 BGM 轨引用且文件在项目里的 BGM。 */
   bgm: EditPreviewBgm[];
+  /** 只含音效轨引用且文件在项目里的音效。 */
+  sfx: EditPreviewSfx[];
 }
 
 /** 项目里的一首 BGM（`GET /projects/{name}/bgm` 与上传结果）；`gain` 是把响度统一到 −16 LUFS 的线性增益。 */
@@ -172,4 +198,15 @@ export interface ProjectBgm {
   gain: number;
   path: string;
   url: string;
+}
+
+/** 项目里的一个音效（`GET /projects/{name}/sfx` 与上传结果）；`gain` 是把峰值统一到 −1 dBFS 的线性增益。 */
+export interface ProjectSfx {
+  id: string;
+  name: string;
+  duration: number;
+  gain: number;
+  path: string;
+  url: string;
+  source: "upload" | "ai";
 }

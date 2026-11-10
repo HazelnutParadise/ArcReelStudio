@@ -8,6 +8,7 @@ import {
   narrationPlacements,
   narrationSpans,
   placeSubtitles,
+  sfxPlacements,
   subtitleAt,
   subtitleLayout,
 } from "./preview-tracks";
@@ -32,6 +33,7 @@ function clip(overrides: Partial<EditClip> & Pick<EditClip, "id" | "unit_id" | "
 // c4 的单元已删除；c5 的旁白还没有配音。总长 13s。
 const READOUT: EditTimelineReadout = {
   timeline: { id: "tl-00000001", name: "初剪", episode: 1 },
+  sfx: [],
   revision: 2,
   latest_revision: 2,
   duration: 13,
@@ -106,6 +108,7 @@ const MEDIA: EditTimelinePreviewMedia = {
   timeline_id: "tl-00000001",
   revision: 2,
   narration: "with_narration",
+  sfx: [],
   units: [
     {
       unit_id: "E1U1",
@@ -291,6 +294,7 @@ describe("placeSubtitles", () => {
         }),
       ],
       bgm: [],
+      sfx: [],
     };
 
     expect(placeSubtitles(readout, buildPlaybackPlan(readout, null), MEDIA)).toEqual([
@@ -315,6 +319,7 @@ describe("placeSubtitles", () => {
         clip({ id: "c2", unit_id: "E1U5", start: 2, duration: 2 }),
       ],
       bgm: [],
+      sfx: [],
     };
 
     // 旁白字幕 0–2.5、2.5–5 与 c2 的台词 2–3、3–4 交错：按起点排列，每条在下一条开始时截止
@@ -355,5 +360,69 @@ describe("subtitleLayout", () => {
       centerFromTopPercent: 90,
       maxWidthPercent: 60,
     });
+  });
+});
+
+describe("sfxPlacements", () => {
+  it("keeps overlapping sound effects and scales the clip volume by the peak gain", () => {
+    const readout: EditTimelineReadout = {
+      ...READOUT,
+      sfx: [
+        {
+          id: "s1",
+          sfx_id: "sfx-0000000a",
+          name: "敲门",
+          start: 1,
+          end: 2,
+          source_in: 0,
+          source_out: 1,
+          volume: 1,
+          fade_in: 0,
+          fade_out: 0,
+        },
+        {
+          id: "s2",
+          sfx_id: "sfx-0000000a",
+          name: "敲门",
+          start: 1.5,
+          end: 2.5,
+          source_in: 0,
+          source_out: 1,
+          volume: 0.5,
+          fade_in: 0,
+          fade_out: 0.05,
+        },
+        {
+          id: "s3",
+          sfx_id: "sfx-0000000b",
+          name: null,
+          start: 13,
+          end: 13,
+          source_in: 0,
+          source_out: 1,
+          volume: 1,
+          fade_in: 0,
+          fade_out: 0,
+        },
+      ],
+    };
+    const media: EditTimelinePreviewMedia = {
+      ...MEDIA,
+      sfx: [{ sfx_id: "sfx-0000000a", path: "sfx/sfx-0000000a.wav", gain: 2 }],
+    };
+
+    expect(
+      sfxPlacements(readout, media).map((item) => [
+        item.id,
+        item.kind,
+        item.start,
+        item.end,
+        item.volume,
+        item.fadeOut,
+      ]),
+    ).toEqual([
+      ["sfx-s1", "sfx", 1, 2, 2, 0],
+      ["sfx-s2", "sfx", 1.5, 2.5, 1, 0.05],
+    ]);
   });
 });
