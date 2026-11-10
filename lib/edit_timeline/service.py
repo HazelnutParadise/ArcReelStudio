@@ -36,6 +36,7 @@ from lib.edit_timeline.readout import (
     BgmView,
     ClipView,
     EditTimelineReadout,
+    SfxView,
     TimelineIdentity,
     TimelineIssue,
     project_readout,
@@ -112,8 +113,8 @@ class EditTimelineWriteResult(BaseModel):
     """一批编辑的写入结果：只含受影响片段的新状态与更新后的 issues，不含整份时间线。
 
     ``clips`` 按播放顺序列出本批点名或改动过的片段（含新插入的片段、跟随相邻关系恢复硬切的
-    片段与旁白改挂到的片段）；``bgm`` 按起点列出本批点名或改动过的 BGM 片段；``deleted_clip_ids``
-    是本批删除的剪辑片段与 BGM 片段。
+    片段与旁白改挂到的片段）；``bgm`` / ``sfx`` 按起点列出本批点名或改动过的 BGM 片段与音效片段；
+    ``deleted_clip_ids`` 是本批删除的剪辑片段、BGM 片段与音效片段。
     """
 
     model_config = ConfigDict(frozen=True)
@@ -126,6 +127,7 @@ class EditTimelineWriteResult(BaseModel):
     duration: float
     clips: tuple[ClipView, ...]
     bgm: tuple[BgmView, ...]
+    sfx: tuple[SfxView, ...] = ()
     deleted_clip_ids: tuple[str, ...]
     issues: tuple[TimelineIssue, ...]
 
@@ -519,6 +521,7 @@ class EditTimelineService:
             duration=readout.duration,
             clips=tuple(clip for clip in readout.clips if clip.id in written.affected),
             bgm=tuple(item for item in readout.bgm if item.id in written.affected),
+            sfx=tuple(item for item in readout.sfx if item.id in written.affected),
             deleted_clip_ids=sorted_clip_ids(written.deleted),
             issues=readout.issues,
         )
