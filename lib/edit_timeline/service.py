@@ -189,6 +189,7 @@ def _new_document(
     author: RevisionAuthor,
     next_clip_number: int,
     next_bgm_number: int = 1,
+    next_sfx_number: int = 1,
 ) -> EditTimelineDocument:
     """以 ``content`` 为修订 1 的新剪辑时间线，ID 随机生成。"""
     now = _utc_now()
@@ -199,6 +200,7 @@ def _new_document(
         created_at=now,
         next_clip_number=next_clip_number,
         next_bgm_number=next_bgm_number,
+        next_sfx_number=next_sfx_number,
         revisions=(
             TimelineRevision(
                 number=1,
@@ -289,6 +291,7 @@ class EditTimelineService:
                 author=author,
                 next_clip_number=source.next_clip_number,
                 next_bgm_number=source.next_bgm_number,
+                next_sfx_number=source.next_sfx_number,
             )
             store.write(document)
         return document
@@ -558,6 +561,7 @@ class EditTimelineService:
                     operations,
                     sources,
                     next_bgm_number=document.next_bgm_number,
+                    next_sfx_number=document.next_sfx_number,
                 )
             changes = diff_content(latest.content, applied.content)
             revision = TimelineRevision(
@@ -574,6 +578,7 @@ class EditTimelineService:
                     **document.model_dump(),
                     "next_clip_number": applied.next_clip_number,
                     "next_bgm_number": applied.next_bgm_number,
+                    "next_sfx_number": applied.next_sfx_number,
                     "revisions": (*document.revisions, revision),
                 }
             )
@@ -614,6 +619,7 @@ class EditTimelineService:
             operations,
             sources,
             next_bgm_number=document.next_bgm_number,
+            next_sfx_number=document.next_sfx_number,
             check_windows=False,
         )
         touched = on_base.referenced | frozenset(on_base.last_operation)
@@ -638,6 +644,7 @@ class EditTimelineService:
             operations,
             sources,
             next_bgm_number=document.next_bgm_number,
+            next_sfx_number=document.next_sfx_number,
             check_windows=False,
         )
         if conflicting := frozenset(on_latest.last_operation) & since_base:
@@ -655,6 +662,7 @@ class EditTimelineService:
             operations,
             sources,
             next_bgm_number=document.next_bgm_number,
+            next_sfx_number=document.next_sfx_number,
         )
 
     async def list_timelines(self, project_name: str, *, episode: int | None = None) -> tuple[TimelineSummary, ...]:

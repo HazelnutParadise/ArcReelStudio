@@ -1,7 +1,7 @@
 """剪辑时间线的领域模型（``docs/adr/0090``）。
 
 一集可以有多条具名剪辑时间线；每条按集存成一个文件，内含不可变修订的追加序列。修订内容由
-剪辑片段排成的主轨与 BGM 轨组成；内部时间一律是整数微秒，秒制只出现在读取投影与工具入参上。
+剪辑片段排成的主轨、BGM 轨与音效轨组成；内部时间一律是整数微秒，秒制只出现在读取投影与工具入参上。
 """
 
 from __future__ import annotations
@@ -25,13 +25,17 @@ VOICEOVER_SOURCE_VOLUME = 0.3
 DEFAULT_BGM_VOLUME = 0.25
 DEFAULT_BGM_FADE_MICROSECONDS = 1_000_000
 
+DEFAULT_SFX_VOLUME = 1.0
+"""音效片段默认音量：峰值已统一到 −1 dBFS，保持原音量。"""
+
 TIMELINE_NAME_MAX_LENGTH = 40
 
 TIMELINE_ID_PATTERN = r"^tl-[0-9a-f]{8}$"
 CLIP_ID_PATTERN = r"^c[1-9][0-9]*$"
 BGM_CLIP_ID_PATTERN = r"^b[1-9][0-9]*$"
-ANY_CLIP_ID_PATTERN = r"^[cb][1-9][0-9]*$"
-"""剪辑片段（``c``）或 BGM 片段（``b``）的 ID。"""
+SFX_CLIP_ID_PATTERN = r"^s[1-9][0-9]*$"
+ANY_CLIP_ID_PATTERN = r"^[cbs][1-9][0-9]*$"
+"""剪辑片段（``c``）、BGM 片段（``b``）或音效片段（``s``）的 ID。"""
 
 _TIMELINE_ID_RE = re.compile(TIMELINE_ID_PATTERN)
 
@@ -143,11 +147,31 @@ class BgmClip(_Frozen):
         return self
 
 
+class SfxClip(_Frozen):
+    """音效轨上的一段：按绝对起点摆放，可以互相重叠；超出时间线末尾的部分截断。"""
+
+    id: str = Field(pattern=SFX_CLIP_ID_PATTERN)
+    sfx_id: str = Field(min_length=1)
+    start_us: Microseconds
+    in_us: Microseconds
+    out_us: Microseconds
+    volume: Volume = DEFAULT_SFX_VOLUME
+    fade_in_us: Microseconds = 0
+    fade_out_us: Microseconds = 0
+
+    @model_validator(mode="after")
+    def _out_after_in(self) -> SfxClip:
+        if self.out_us <= self.in_us:
+            raise ValueError("out_us must be greater than in_us")
+        return self
+
+
 class EditTimelineContent(_Frozen):
     """一个修订的剪辑内容：主轨按相对顺序排列，绝对时间由读取时计算。"""
 
     clips: tuple[EditClip, ...] = ()
     bgm: tuple[BgmClip, ...] = ()
+    sfx: tuple[SfxClip, ...] = ()
 
     @model_validator(mode="after")
     def _unique_ids(self) -> EditTimelineContent:
@@ -157,6 +181,9 @@ class EditTimelineContent(_Frozen):
         bgm_ids = [clip.id for clip in self.bgm]
         if len(set(bgm_ids)) != len(bgm_ids):
             raise ValueError("bgm clip ids must be unique")
+        sfx_ids = [clip.id for clip in self.sfx]
+        if len(set(sfx_ids)) != len(sfx_ids):
+            raise ValueError("sfx clip ids must be unique")
         return self
 
     @model_validator(mode="after")
@@ -168,7 +195,7 @@ class EditTimelineContent(_Frozen):
 
 
 def clip_number(clip_id: str) -> int:
-    """片段编号里的序号：``c12`` / ``b3`` → 12 / 3。"""
+    """片段编号里的序号：``c12`` / ``b3`` / ``s4`` → 12 / 3 / 4。"""
     return int(clip_id[1:])
 
 
@@ -192,7 +219,7 @@ class TimelineRevision(_Frozen):
     created_at: str
     content: EditTimelineContent
     changed_clip_ids: tuple[Annotated[str, Field(pattern=ANY_CLIP_ID_PATTERN)], ...] | None = None
-    """本修订实际改动的剪辑片段与 BGM 片段（含批内改后恢复）；旧修订缺省时由内容差异推断。"""
+    """本修订实际改动的剪辑片段、BGM 片段与音效片段（含批内改后恢复）；旧修订缺省时由内容差异推断。"""
     restored_from: int | None = Field(default=None, ge=1, strict=True)
     """回滚产生的修订记录它还原到的修订号；内容取自那一修订，历史不改写。"""
 
@@ -200,7 +227,7 @@ class TimelineRevision(_Frozen):
 class EditTimelineDocument(_Frozen):
     """一条剪辑时间线的持久化形态。
 
-    ``next_clip_number`` / ``next_bgm_number`` 是片段编号分配器：编号在这条时间线内稳定、不复用。
+    ``next_clip_number`` / ``next_bgm_number`` / ``next_sfx_number`` 是片段编号分配器：编号在这条时间线内稳定、不复用。
     """
 
     schema_version: Literal[1] = EDIT_TIMELINE_DOCUMENT_SCHEMA
@@ -210,6 +237,7 @@ class EditTimelineDocument(_Frozen):
     created_at: str
     next_clip_number: int = Field(ge=1, strict=True)
     next_bgm_number: int = Field(default=1, ge=1, strict=True)
+    next_sfx_number: int = Field(default=1, ge=1, strict=True)
     revisions: tuple[TimelineRevision, ...] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -222,6 +250,8 @@ class EditTimelineDocument(_Frozen):
                 raise ValueError("clip ids must be allocated below next_clip_number")
             if any(clip_number(clip.id) >= self.next_bgm_number for clip in revision.content.bgm):
                 raise ValueError("bgm clip ids must be allocated below next_bgm_number")
+            if any(clip_number(clip.id) >= self.next_sfx_number for clip in revision.content.sfx):
+                raise ValueError("sfx clip ids must be allocated below next_sfx_number")
         return self
 
     @property
@@ -240,9 +270,11 @@ __all__ = [
     "CLIP_ID_PATTERN",
     "DEFAULT_BGM_FADE_MICROSECONDS",
     "DEFAULT_BGM_VOLUME",
+    "DEFAULT_SFX_VOLUME",
     "DEFAULT_SOURCE_VOLUME",
     "EDIT_TIMELINE_DOCUMENT_SCHEMA",
     "MICROSECONDS_PER_SECOND",
+    "SFX_CLIP_ID_PATTERN",
     "TIMELINE_ID_PATTERN",
     "TIMELINE_NAME_MAX_LENGTH",
     "VOICEOVER_SOURCE_VOLUME",
@@ -253,6 +285,7 @@ __all__ = [
     "EditTimelineContent",
     "EditTimelineDocument",
     "RevisionAuthor",
+    "SfxClip",
     "TimelineName",
     "TimelineRevision",
     "Transition",
