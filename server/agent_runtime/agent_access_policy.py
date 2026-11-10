@@ -46,6 +46,7 @@ AGENT_PROTECTED_MEDIA_DIRS: tuple[str, ...] = (
     "audio",
     "thumbnails",
     "bgm",
+    "sfx",
     "renders",
 )
 AGENT_PROTECTED_MEDIA_FILES: tuple[str, ...] = tuple(f"style_reference.{ext}" for ext in ("png", "jpg", "jpeg", "webp"))

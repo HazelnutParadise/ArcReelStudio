@@ -81,9 +81,10 @@ class ArtifactKind(StrEnum):
     EPISODE_FINAL_CUT = "episode-final-cut"
     EPISODE_JIANYING_DRAFT = "episode-jianying-draft"
     PROJECT_BGM = "project-bgm"
+    PROJECT_SFX = "project-sfx"
 
 
-PROJECT_LEVEL_ARTIFACT_KINDS = frozenset({ArtifactKind.ASSET_SHEET, ArtifactKind.PROJECT_BGM})
+PROJECT_LEVEL_ARTIFACT_KINDS = frozenset({ArtifactKind.ASSET_SHEET, ArtifactKind.PROJECT_BGM, ArtifactKind.PROJECT_SFX})
 """不属于任何一集的产物种类。"""
 
 NARRATION_VERSIONS = frozenset({"without_narration", "with_narration"})
@@ -94,6 +95,7 @@ FINAL_CUT_SUBTITLE_MODES = frozenset({"no_subtitles", "burned_subtitles"})
 
 _EDIT_TIMELINE_ID_RE = re.compile(r"^tl-[0-9a-f]{8}$")
 _BGM_ID_RE = re.compile(r"^bgm-[0-9a-f]{8}$")
+_SFX_ID_RE = re.compile(r"^sfx-[0-9a-f]{8}$")
 
 
 class ArtifactStatus(StrEnum):
@@ -2022,6 +2024,9 @@ class ArtifactKey:
         elif self.kind is ArtifactKind.PROJECT_BGM and len(self.components) == 1:
             bgm_id = self.components[0]
             valid = isinstance(bgm_id, str) and _BGM_ID_RE.fullmatch(bgm_id) is not None
+        elif self.kind is ArtifactKind.PROJECT_SFX and len(self.components) == 1:
+            sfx_id = self.components[0]
+            valid = isinstance(sfx_id, str) and _SFX_ID_RE.fullmatch(sfx_id) is not None
         if not valid:
             raise ValueError(f"artifact key components do not match {self.kind!r}: {self.components!r}")
 
@@ -2109,6 +2114,12 @@ class ArtifactKey:
         """Identify one uploaded project-level BGM; its basis is the uploaded bytes."""
 
         return cls(ArtifactKind.PROJECT_BGM, (bgm_id,))
+
+    @classmethod
+    def project_sfx(cls, sfx_id: str) -> Self:
+        """Identify one project-level sound effect; its basis is the registered bytes."""
+
+        return cls(ArtifactKind.PROJECT_SFX, (sfx_id,))
 
     @classmethod
     def episode_resource_artifacts(cls, episode: int, resource_id: str) -> tuple[Self, ...]:
