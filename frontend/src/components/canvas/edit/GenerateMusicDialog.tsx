@@ -14,11 +14,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useAppStore } from "@/stores/app-store";
 import { errMsg, voidCall } from "@/utils/async";
+
+import { GenerateAudioFields } from "./GenerateAudioFields";
 
 const DEFAULT_SECONDS = 60;
 const MIN_SECONDS = 3;
@@ -52,7 +52,7 @@ export function GenerateMusicButton({ projectName }: { projectName: string }) {
 
 function GenerateMusicDialog({ projectName, onClose }: { projectName: string; onClose: () => void }) {
   const { t } = useTranslation("dashboard");
-  const ids = { prompt: useId(), seconds: useId(), name: useId(), instrumental: useId() };
+  const instrumentalId = useId();
   const [prompt, setPrompt] = useState("");
   const [seconds, setSeconds] = useState(String(DEFAULT_SECONDS));
   const [name, setName] = useState("");
@@ -89,47 +89,27 @@ function GenerateMusicDialog({ projectName, onClose }: { projectName: string; on
           <DialogDescription>{t("edit_view_bgm_generate_desc")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor={ids.prompt}>{t("edit_view_bgm_generate_prompt")}</Label>
-              <Textarea
-                id={ids.prompt}
-                value={prompt}
-                maxLength={2000}
-                rows={4}
-                placeholder={t("edit_view_bgm_generate_prompt_placeholder")}
-                onChange={(event) => setPrompt(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={ids.seconds}>{t("edit_view_bgm_generate_seconds")}</Label>
-                <Input
-                  id={ids.seconds}
-                  type="number"
-                  inputMode="numeric"
-                  min={MIN_SECONDS}
-                  max={MAX_SECONDS}
-                  value={seconds}
-                  aria-invalid={!secondsValid}
-                  onChange={(event) => setSeconds(event.target.value)}
-                  className="w-28"
-                />
-              </div>
-              <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-                <Label htmlFor={ids.name}>{t("edit_view_bgm_generate_name")}</Label>
-                <Input id={ids.name} value={name} maxLength={80} onChange={(event) => setName(event.target.value)} />
-              </div>
-            </div>
+          <GenerateAudioFields
+            kind="bgm"
+            prompt={prompt}
+            onPromptChange={setPrompt}
+            promptRows={4}
+            seconds={seconds}
+            onSecondsChange={setSeconds}
+            secondsRange={{ min: MIN_SECONDS, max: MAX_SECONDS }}
+            secondsValid={secondsValid}
+            name={name}
+            onNameChange={setName}
+          >
             <div className="flex items-center gap-2">
               <Checkbox
-                id={ids.instrumental}
+                id={instrumentalId}
                 checked={instrumental}
                 onCheckedChange={(checked) => setInstrumental(checked === true)}
               />
-              <Label htmlFor={ids.instrumental}>{t("edit_view_bgm_generate_instrumental")}</Label>
+              <Label htmlFor={instrumentalId}>{t("edit_view_bgm_generate_instrumental")}</Label>
             </div>
-          </div>
+          </GenerateAudioFields>
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

@@ -1,5 +1,5 @@
 import { Loader2, Sparkles } from "lucide-react";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
@@ -13,11 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useAppStore } from "@/stores/app-store";
 import { errMsg, voidCall } from "@/utils/async";
+
+import { GenerateAudioFields } from "./GenerateAudioFields";
 
 const DEFAULT_SECONDS = 3;
 const MIN_SECONDS = 1;
@@ -51,7 +50,6 @@ export function GenerateSfxButton({ projectName }: { projectName: string }) {
 
 function GenerateSfxDialog({ projectName, onClose }: { projectName: string; onClose: () => void }) {
   const { t } = useTranslation("dashboard");
-  const ids = { prompt: useId(), seconds: useId(), name: useId() };
   const [prompt, setPrompt] = useState("");
   const [seconds, setSeconds] = useState(String(DEFAULT_SECONDS));
   const [name, setName] = useState("");
@@ -86,39 +84,18 @@ function GenerateSfxDialog({ projectName, onClose }: { projectName: string; onCl
           <DialogDescription>{t("edit_view_sfx_generate_desc")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor={ids.prompt}>{t("edit_view_sfx_generate_prompt")}</Label>
-              <Textarea
-                id={ids.prompt}
-                value={prompt}
-                maxLength={2000}
-                rows={3}
-                placeholder={t("edit_view_sfx_generate_prompt_placeholder")}
-                onChange={(event) => setPrompt(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={ids.seconds}>{t("edit_view_sfx_generate_seconds")}</Label>
-                <Input
-                  id={ids.seconds}
-                  type="number"
-                  inputMode="numeric"
-                  min={MIN_SECONDS}
-                  max={MAX_SECONDS}
-                  value={seconds}
-                  aria-invalid={!secondsValid}
-                  onChange={(event) => setSeconds(event.target.value)}
-                  className="w-28"
-                />
-              </div>
-              <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-                <Label htmlFor={ids.name}>{t("edit_view_sfx_generate_name")}</Label>
-                <Input id={ids.name} value={name} maxLength={80} onChange={(event) => setName(event.target.value)} />
-              </div>
-            </div>
-          </div>
+          <GenerateAudioFields
+            kind="sfx"
+            prompt={prompt}
+            onPromptChange={setPrompt}
+            promptRows={3}
+            seconds={seconds}
+            onSecondsChange={setSeconds}
+            secondsRange={{ min: MIN_SECONDS, max: MAX_SECONDS }}
+            secondsValid={secondsValid}
+            name={name}
+            onNameChange={setName}
+          />
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
