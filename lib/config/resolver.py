@@ -257,6 +257,14 @@ _MUSIC_LAYERED_KEYS = _LayeredBackendKeys(
     auto_resolve=False,
 )
 
+# 音效键位：同属音频类型，以能力区分（docs/adr/0127）。项目层 sfx_backend，全局层 default_sfx_backend，不自动推断。
+_SFX_LAYERED_KEYS = _LayeredBackendKeys(
+    media_type="audio",
+    project_default_key="sfx_backend",
+    global_default_key="default_sfx_backend",
+    auto_resolve=False,
+)
+
 #: 视频任务类型桶：i2v（图生视频 / 宫格，由首帧驱动；另承接参考生视频无参考图视频单元的降级执行）、
 #: r2v（参考生视频中有参考图的视频单元）。t2v 不设桶（docs/adr/0054）。
 VideoGenerationType = Literal["i2v", "r2v"]
@@ -968,6 +976,21 @@ class ConfigResolver:
                         credential_id=parse_credential_id(payload.get(credential_key("music_provider"))),
                     )
             return await self._resolve_layered_backend(svc, session, project, _MUSIC_LAYERED_KEYS)
+
+    async def resolve_sfx_backend(self, project: dict | None, payload: dict | None) -> ProviderModel:
+        """解析音效生成任务应使用的 ProviderModel：payload（``sfx_provider`` / ``sfx_model``）> project（``sfx_backend``）
+        > 全局（``default_sfx_backend``）。没有设定时报未配置，不自动推断。"""
+        async with self._open_session() as (session, svc):
+            if payload:
+                provider_id = _trusted_payload_provider(payload.get("sfx_provider"))
+                model = payload.get("sfx_model")
+                if provider_id is not None and isinstance(model, str) and model:
+                    return ProviderModel(
+                        provider_id,
+                        model,
+                        credential_id=parse_credential_id(payload.get(credential_key("sfx_provider"))),
+                    )
+            return await self._resolve_layered_backend(svc, session, project, _SFX_LAYERED_KEYS)
 
     async def video_capabilities_for_project(
         self,

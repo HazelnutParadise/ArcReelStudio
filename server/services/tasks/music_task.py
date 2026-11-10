@@ -19,7 +19,7 @@ from lib.backends.music_backends import MusicGenerationRequest
 from lib.bgm.service import BgmLibraryService
 from lib.billing.ledger import Ledger
 from lib.billing.metering import Usage
-from lib.config.resolver import ConfigResolver
+from lib.config.resolver import ConfigResolver, ProviderModel
 from lib.db.base import DEFAULT_USER_ID
 
 MUSIC_TASK_TYPE = "music"
@@ -61,27 +61,20 @@ def _usage(provider_meter_seconds: float | None) -> Usage:
     return Usage(quantities=quantities)
 
 
-async def execute_music_task(
+async def generate_prompted_audio(
     project_name: str,
-    resource_id: str,
-    payload: dict[str, Any],
+    resolved: ProviderModel,
     *,
-    user_id: str = DEFAULT_USER_ID,
-    task_id: str | None = None,
-    claimed_provider_id: str | None = None,
-) -> dict[str, Any]:
-    del claimed_provider_id
-    prompt = str(payload.get("prompt") or "").strip()
-    if not prompt:
-        raise ValueError("music task 需要 payload.prompt")
-    # 晚导入：与其他任务执行入口一样经 lib.db / lib.config.resolver 取共用的会话工厂与项目管理器
-    from lib.config import resolver as resolver_module
-    from lib.db import async_session_factory
-
-    projects = resolver_module.get_project_manager()
-    resolver = ConfigResolver(async_session_factory)
-    project = await asyncio.to_thread(projects.load_project, project_name)
-    resolved = await resolver.resolve_music_backend(project, payload)
+    resolver: ConfigResolver,
+    prompt: str,
+    seconds: int,
+    instrumental: bool,
+    user_id: str,
+    task_id: str | None,
+    temp_prefix: str,
+    session_factory: Any,
+) -> tuple[bytes, str]:
+    """用解析好的模型把提示词生成一段音频并记账；回传音频字节与扩展名。音乐与音效任务共用（docs/adr/0127）。"""
     backend = await assemble_backend(
         provider_id=resolved.provider_id,
         media_type="audio",
@@ -90,14 +83,11 @@ async def execute_music_task(
         credential_id=resolved.credential_id,
     )
     if not hasattr(backend, "generate"):
-        raise ValueError(f"{resolved.provider_id}/{resolved.model_id} 不是音乐模型")
-    duration = payload.get("duration_seconds")
-    seconds = duration if isinstance(duration, int) and duration > 0 else DEFAULT_MUSIC_SECONDS
-    instrumental = payload.get("instrumental") is not False
-    tmp = Path(await asyncio.to_thread(tempfile.mkdtemp, prefix="arcreel-music-"))
+        raise ValueError(f"{resolved.provider_id}/{resolved.model_id} 不是能按提示词生成音频的模型")
+    tmp = Path(await asyncio.to_thread(tempfile.mkdtemp, prefix=temp_prefix))
     try:
-        output_path = tmp / f"music-{secrets.token_hex(4)}.mp3"
-        async with Ledger(session_factory=async_session_factory).record(
+        output_path = tmp / f"audio-{secrets.token_hex(4)}.mp3"
+        async with Ledger(session_factory=session_factory).record(
             project_name=project_name,
             call_type="audio",
             model=resolved.model_id,
@@ -114,13 +104,54 @@ async def execute_music_task(
                 )
             )
             call.success(result, usage=_usage(result.duration_seconds))
-        content = await asyncio.to_thread(output_path.read_bytes)
+        return await asyncio.to_thread(output_path.read_bytes), output_path.suffix
     finally:
         await asyncio.to_thread(shutil.rmtree, tmp, ignore_errors=True)  # hard-delete: temp -- 生成暂存目录
+
+
+def task_prompt(payload: dict[str, Any], task_type: str) -> str:
+    prompt = str(payload.get("prompt") or "").strip()
+    if not prompt:
+        raise ValueError(f"{task_type} task 需要 payload.prompt")
+    return prompt
+
+
+async def execute_music_task(
+    project_name: str,
+    resource_id: str,
+    payload: dict[str, Any],
+    *,
+    user_id: str = DEFAULT_USER_ID,
+    task_id: str | None = None,
+    claimed_provider_id: str | None = None,
+) -> dict[str, Any]:
+    del claimed_provider_id
+    prompt = task_prompt(payload, MUSIC_TASK_TYPE)
+    # 晚导入：与其他任务执行入口一样经 lib.db / lib.config.resolver 取共用的会话工厂与项目管理器
+    from lib.config import resolver as resolver_module
+    from lib.db import async_session_factory
+
+    projects = resolver_module.get_project_manager()
+    resolver = ConfigResolver(async_session_factory)
+    project = await asyncio.to_thread(projects.load_project, project_name)
+    resolved = await resolver.resolve_music_backend(project, payload)
+    duration = payload.get("duration_seconds")
+    content, extension = await generate_prompted_audio(
+        project_name,
+        resolved,
+        resolver=resolver,
+        prompt=prompt,
+        seconds=duration if isinstance(duration, int) and duration > 0 else DEFAULT_MUSIC_SECONDS,
+        instrumental=payload.get("instrumental") is not False,
+        user_id=user_id,
+        task_id=task_id,
+        temp_prefix="arcreel-music-",
+        session_factory=async_session_factory,
+    )
     track = await BgmLibraryService(projects).register_generated(
         project_name,
         name=str(payload.get("name") or prompt)[:80],
-        extension=output_path.suffix,
+        extension=extension,
         content=content,
         prompt=prompt,
         model=f"{resolved.provider_id}/{resolved.model_id}",
@@ -133,5 +164,7 @@ __all__ = [
     "MAX_PROMPT_CHARS",
     "MUSIC_TASK_TYPE",
     "execute_music_task",
+    "generate_prompted_audio",
     "music_task_payload",
+    "task_prompt",
 ]

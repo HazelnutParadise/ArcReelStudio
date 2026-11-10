@@ -1228,6 +1228,7 @@ class TestFilesRouter:
         payloads = {
             "character_audio_ref": ("v.wav", wav_bytes(3), "audio/wav"),
             "bgm": ("m.wav", wav_bytes(3), "audio/wav"),
+            "sfx": ("s.wav", wav_bytes(1), "audio/wav"),
             # source 不使用 name，但校验在其早返分支之前，同样应拒
             "source": ("novel.txt", b"chapter one", "text/plain"),
         }

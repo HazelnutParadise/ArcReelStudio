@@ -66,7 +66,7 @@ def _per_second(price: float) -> dict[str, object]:
     }
 
 
-#: 上游目录没有的音乐模型条目（价格取自各家官方价目页，2026-11-08）
+#: 上游目录没有的音乐与音效模型条目（价格取自各家官方价目页，2026-11-08）
 FORK_ENTRIES: tuple[CatalogEntry, ...] = tuple(
     parse_entry(raw)
     for raw in (
@@ -91,7 +91,7 @@ FORK_ENTRIES: tuple[CatalogEntry, ...] = tuple(
             "name": "stable-audio-3",
             "media_type": "audio",
             "display_name": "Stable Audio 3",
-            "facts": {"text_to_music": True, "max_seconds": 380},
+            "facts": {"text_to_music": True, "text_to_sfx": True, "max_seconds": 380},
             "price": _per_request(0.08),
         },
         {
@@ -103,18 +103,32 @@ FORK_ENTRIES: tuple[CatalogEntry, ...] = tuple(
             # $0.15 / 分钟
             "price": _per_second(0.0025),
         },
+        {
+            "maker": "elevenlabs",
+            "name": "eleven_text_to_sound_v3",
+            "media_type": "audio",
+            "display_name": "Eleven Sound Effects v3",
+            "facts": {"text_to_sfx": True, "max_seconds": 30},
+            # $0.12 / 分钟
+            "price": _per_second(0.002),
+        },
     )
 )
 
-#: 只做音乐的新供应商
-FORK_MUSIC_LISTINGS: Mapping[str, BuiltinProviderListing] = MappingProxyType(
+#: 只做音乐与音效的新供应商
+FORK_AUDIO_LISTINGS: Mapping[str, BuiltinProviderListing] = MappingProxyType(
     {
         "stability": BuiltinProviderListing(
             models=(BuiltinProviderModel("stable-audio-3", "stability/stable-audio-3", endpoint="stability-audio"),),
             defaults={"audio": "stable-audio-3"},
         ),
         "elevenlabs": BuiltinProviderListing(
-            models=(BuiltinProviderModel("music_v2_5", "elevenlabs/music_v2_5", endpoint="elevenlabs-music"),),
+            models=(
+                BuiltinProviderModel("music_v2_5", "elevenlabs/music_v2_5", endpoint="elevenlabs-music"),
+                BuiltinProviderModel(
+                    "eleven_text_to_sound_v3", "elevenlabs/eleven_text_to_sound_v3", endpoint="elevenlabs-sfx"
+                ),
+            ),
             defaults={"audio": "music_v2_5"},
         ),
     }
@@ -145,7 +159,7 @@ def with_fork_providers(data: CatalogData) -> CatalogData:
         return data
     known_entries = {(entry.maker, entry.name, entry.media_type) for entry in data.entries}
     entries = (*data.entries, *(e for e in FORK_ENTRIES if (e.maker, e.name, e.media_type) not in known_entries))
-    providers = {**data.builtin_providers, **FORK_PROVIDER_LISTINGS, **FORK_MUSIC_LISTINGS}
+    providers = {**data.builtin_providers, **FORK_PROVIDER_LISTINGS, **FORK_AUDIO_LISTINGS}
     for provider_id, additions in FORK_LISTING_ADDITIONS.items():
         listing = providers.get(provider_id)
         if listing is not None:
@@ -154,7 +168,7 @@ def with_fork_providers(data: CatalogData) -> CatalogData:
 
 
 def _already_applied(data: CatalogData) -> bool:
-    own = {**FORK_PROVIDER_LISTINGS, **FORK_MUSIC_LISTINGS}
+    own = {**FORK_PROVIDER_LISTINGS, **FORK_AUDIO_LISTINGS}
     if any(data.builtin_providers.get(pid) is not listing for pid, listing in own.items()):
         return False
     keys = {(entry.maker, entry.name, entry.media_type) for entry in data.entries}
