@@ -91,7 +91,9 @@ async def test_a_sound_effect_is_generated_billed_and_added_to_the_library(
     assert float(call.cost_amount) == pytest.approx(0.004)
 
 
-async def test_a_sound_effect_task_is_refused_when_no_sound_effect_model_is_set(sfx_project: ProjectManager, db_factory) -> None:
+async def test_a_sound_effect_task_is_refused_when_no_sound_effect_model_is_set(
+    sfx_project: ProjectManager, db_factory
+) -> None:
     async with db_factory() as session:
         await SystemSettingRepository(session).set("default_sfx_backend", "")
         await session.commit()
