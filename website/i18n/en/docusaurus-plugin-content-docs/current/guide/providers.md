@@ -473,6 +473,21 @@ Choose the music model in "Global settings › Default models › Music". Nothin
 
 ElevenLabs' music terms forbid making its music models available through a third-party platform. Running your own deployment with your own API key for your own team isn't affected; before opening it to other users, get permission from ElevenLabs.
 
+## 9.2 Sound effect generation {#sfx-providers}
+
+The timeline in the edit view has a "SFX" track. You can upload sound effects there, or choose "Generate sound effect" and describe what makes the sound, the action and the setting to have AI generate one. Sound effects go into the project's sound effect library and every episode can use them. Sound effects can overlap; the final cut mixes them in together with the BGM, and a CapCut draft export splits overlapping sound effects across several "SFX" tracks. The Agent can also generate them with `generate_sfx` and place them with `insert_sfx`.
+
+When a sound effect is registered, its peak level is brought to a common level, so sound effects from different sources come out at similar volumes; a clip's volume is a multiplier on top of that and defaults to 1.
+
+Choose the sound effect model in "Global settings › Default models › Sound effects". Nothing can be generated until it's set; no model is picked automatically. Currently supported:
+
+| Provider | Model | Pricing |
+| --- | --- | --- |
+| Stability AI | Stable Audio 3 (shared with music) | Per request |
+| ElevenLabs | Eleven Sound Effects v3 (up to 30 s) | Per second |
+
+ElevenLabs' free plan is for non-commercial use only; commercial use requires a paid plan.
+
 ## 10. Custom Providers {#custom-providers}
 
 ArcReel can connect to OpenAI-compatible or Google-compatible services. Typical uses include:
