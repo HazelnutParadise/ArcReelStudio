@@ -292,7 +292,7 @@ defineRegionScenarios("剪辑视图", [
     },
   },
   {
-    name: "播放器、详情栏与四条轨道同屏，只有详情栏滚动",
+    name: "播放器、详情栏与五条轨道同屏，只有详情栏滚动",
     path: EDIT_PATH,
     api: TIMELINE,
     ready: timelineReady,
@@ -306,7 +306,7 @@ defineRegionScenarios("剪辑视图", [
         "true",
       );
 
-      // 四条轨道完整落在视口内，轨道组的底边不超出视图
+      // 五条轨道完整落在视口内，轨道组的底边不超出视图
       const { height } = viewport(page);
       const group = await box(tracks(page));
       expect(group.y + group.height).toBeLessThanOrEqual(height);

@@ -227,7 +227,7 @@ defineRegionScenarios("全局设置", [
       const main = page.getByRole("main");
       await expect(page.getByRole("note", { name: "配置不完整" })).toHaveCount(0);
       // 视频、图片、文本、配音、音乐五个通道各一个空状态
-      await expect(main.getByRole("link", { name: "前往「供应商」配置" })).toHaveCount(5);
+      await expect(main.getByRole("link", { name: "前往「供应商」配置" })).toHaveCount(6);
     },
     screenshot: { name: "settings-default-models-empty", target: (page) => page.getByRole("main") },
   },
