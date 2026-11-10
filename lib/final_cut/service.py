@@ -5,6 +5,7 @@
 成片一出来就如实判为 stale。
 
 BGM 按片段起点混入整集音频，音量是登记时缓存的响度增益乘以片段音量，超出成片末尾的部分截断并在截断处淡出。
+音效同样按片段起点混入，音量是峰值增益乘以片段音量；音效之间可以重叠。
 
 带旁白或烧入字幕的版本另取各视频单元的素材层（:class:`~lib.jianying_draft.placement.UnitMaterialSource`，由服务端注入），
 与剪映草稿用同一份摆放：旁白从承载片段的起点整段混入，越界如实渲染；字幕跟随旁白或按源素材时间烧入。
@@ -34,7 +35,9 @@ from lib.edit_timeline.readout import (
     TimelineIssue,
     bgm_missing_issues,
     project_readout,
+    sfx_missing_issues,
 )
+from lib.edit_timeline.sfx import place_sfx, sfx_ids
 from lib.edit_timeline.sources import EpisodeScriptUnits, load_episode_script_units, load_episode_sources
 from lib.edit_timeline.store import EditTimelineStore
 from lib.final_cut.basis import (
@@ -77,6 +80,7 @@ from lib.jianying_draft.placement import (
 )
 from lib.material.storage import VersionSnapshotCorruptedError
 from lib.project.project_manager import ProjectManager
+from lib.sfx.library import resolve_sfx_sources
 from lib.speech.narration_config import project_narration_delivery
 from lib.speech.narration_delivery import USE_TTS
 
@@ -281,6 +285,19 @@ class FinalCutService:
                 + "、".join(dict.fromkeys(issue.params["bgm_id"] for issue in missing_bgm)),
                 issues=[issue.model_dump(mode="json") for issue in missing_bgm],
             )
+        sfx_sources = resolve_sfx_sources(
+            project_dir,
+            project,
+            sfx_ids(checked.revision.content.sfx),
+            lambda path: read_artifact_content_digest(adapter, path),
+        )
+        if missing_sfx := sfx_missing_issues(checked.revision.content, sfx_sources):
+            raise FinalCutError(
+                "final_cut_blocked",
+                "音效不在项目里或文件已不在："
+                + "、".join(dict.fromkeys(issue.params["sfx_id"] for issue in missing_sfx)),
+                issues=[issue.model_dump(mode="json") for issue in missing_sfx],
+            )
         inputs = resolve_final_cut_inputs(
             document=checked.document,
             revision=checked.revision,
@@ -295,6 +312,7 @@ class FinalCutService:
                 lambda path: read_artifact_content_digest(adapter, path),
             ),
             bgm_sources=bgm_sources,
+            sfx_sources=sfx_sources,
         )
         if inputs.missing_video_units:
             raise FinalCutError(
@@ -412,6 +430,33 @@ class FinalCutService:
             )
         return tuple(items)
 
+    @staticmethod
+    def _sfx(project_dir: Path, inputs: FinalCutInputs, total_us: int) -> tuple[BgmInput, ...]:
+        """按成片实际时长摆放音效；音量是音效的峰值增益乘以片段音量。混音与 BGM 共用同一种叠加输入。"""
+        items: list[BgmInput] = []
+        for placed in place_sfx(inputs.sfx, total_us):
+            source = inputs.sfx_sources[placed.sfx_id]
+            try:
+                path = safe_join(project_dir, source.path, require_file=True)
+            except (PathTraversalError, FileNotFoundError) as exc:
+                raise FinalCutError(
+                    "final_cut_render_failed",
+                    f"音效片段 {placed.clip_id} 的音效文件已不在：{source.path}",
+                    clip_id=placed.clip_id,
+                ) from exc
+            items.append(
+                BgmInput(
+                    path=path,
+                    start_us=placed.start_us,
+                    source_in_us=placed.source_in_us,
+                    duration_us=placed.duration_us,
+                    volume=placed.volume * source.gain,
+                    fade_in_us=placed.fade_in_us,
+                    fade_out_us=placed.fade_out_us,
+                )
+            )
+        return tuple(items)
+
     async def render(
         self,
         project_name: str,
@@ -446,7 +491,8 @@ class FinalCutService:
             narrations: tuple[NarrationInput, ...] = ()
             if placement is not None and variant.with_narration:
                 narrations = self._narrations(project_dir, placement)
-            return narrations, self._bgm(project_dir, inputs, plan.total_frames * 1_000_000 // plan.profile.fps)
+            total_us = plan.total_frames * 1_000_000 // plan.profile.fps
+            return narrations, (*self._bgm(project_dir, inputs, total_us), *self._sfx(project_dir, inputs, total_us))
 
         narrations, bgm = await asyncio.to_thread(audio_inputs)
         ffmpeg = ffmpeg_executable()

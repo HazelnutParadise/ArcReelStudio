@@ -31,7 +31,8 @@ from lib.edit_timeline import (
 )
 from lib.edit_timeline.bgm import bgm_ids
 from lib.edit_timeline.model import microseconds_to_seconds
-from lib.edit_timeline.readout import bgm_missing_issues
+from lib.edit_timeline.readout import bgm_missing_issues, sfx_missing_issues
+from lib.edit_timeline.sfx import sfx_ids
 from lib.edit_timeline.store import EditTimelineStore
 from lib.episode.episode_ids import episode_file_label
 from lib.i18n import _ as translate_default
@@ -58,6 +59,7 @@ from lib.jianying_draft.errors import JianyingDraftError
 from lib.jianying_draft.placement import DraftPlacement, UnitMaterialUnavailableError, place_timeline
 from lib.jianying_draft.results import JianyingDraftCheck, JianyingDraftRender, JianyingDraftStatus
 from lib.project.project_manager import ProjectManager
+from lib.sfx.library import SfxSource, resolve_sfx_sources
 from lib.speech.narration_config import project_narration_delivery
 from lib.speech.narration_delivery import USE_TTS
 from server.services.presentation.presentation_read_model import (
@@ -258,13 +260,30 @@ class TimelineJianyingDraftService:
                 lambda path: read_artifact_content_digest(adapter, path),
             )
 
+        def _resolve_sfx() -> dict[str, SfxSource]:
+            adapter = ProjectArtifactManifestAdapter(project_dir)
+            return resolve_sfx_sources(
+                project_dir,
+                checked.project,
+                sfx_ids(target.content.sfx),
+                lambda path: read_artifact_content_digest(adapter, path),
+            )
+
         bgm_sources = await asyncio.to_thread(_resolve_bgm)
+        sfx_sources = await asyncio.to_thread(_resolve_sfx)
         if missing_bgm := bgm_missing_issues(target.content, bgm_sources):
             raise JianyingDraftError(
                 "jianying_draft_blocked",
                 "BGM 不在项目里或文件已不在："
                 + "、".join(dict.fromkeys(issue.params["bgm_id"] for issue in missing_bgm)),
                 issues=[issue.model_dump(mode="json") for issue in missing_bgm],
+            )
+        if missing_sfx := sfx_missing_issues(target.content, sfx_sources):
+            raise JianyingDraftError(
+                "jianying_draft_blocked",
+                "音效不在项目里或文件已不在："
+                + "、".join(dict.fromkeys(issue.params["sfx_id"] for issue in missing_sfx)),
+                issues=[issue.model_dump(mode="json") for issue in missing_sfx],
             )
         return JianyingDraftJob(
             project_dir=project_dir,
@@ -278,11 +297,12 @@ class TimelineJianyingDraftService:
                 aspect_ratio=aspect_ratio,
                 units=unit_materials.bases,
                 bgm_sources=bgm_sources,
+                sfx_sources=sfx_sources,
             ),
             timeline_id=timeline_id,
             revision=number,
             narration=narration,
-            placement=place_timeline(target.content, unit_materials.materials, bgm_sources),
+            placement=place_timeline(target.content, unit_materials.materials, bgm_sources, sfx_sources),
             canvas=canvas_size(aspect_ratio),
             warnings=checked.check.warnings,
         )

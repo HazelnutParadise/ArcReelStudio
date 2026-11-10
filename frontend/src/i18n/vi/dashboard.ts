@@ -454,6 +454,13 @@ export default {
   'music_model_unset': 'Chưa đặt',
   'no_music_providers_hint':
     'Chưa có nhà cung cấp nào tạo được nhạc. Hãy thêm API Key của AI Studio, Stability AI hoặc ElevenLabs trong trung tâm kết nối.',
+  'default_models_channel_sfx': 'Hiệu ứng âm thanh',
+  'default_sfx_model_hint':
+    'Dùng khi tạo hiệu ứng âm thanh lúc dựng phim và khi Agent tạo hiệu ứng âm thanh. Chưa đặt thì không tạo được.',
+  'default_sfx_model': 'Mô hình hiệu ứng âm thanh',
+  'sfx_model_unset': 'Chưa đặt',
+  'no_sfx_providers_hint':
+    'Chưa có nhà cung cấp nào tạo được hiệu ứng âm thanh. Hãy thêm API Key của Stability AI hoặc ElevenLabs trong trung tâm kết nối.',
   'narration_voice_label': 'ID giọng thuyết minh',
   'narration_voice_hint': 'Điền id giọng theo tài liệu nhà cung cấp; để trống để dùng giọng mặc định',
   'narration_voice_hint_with_voices':
@@ -1827,6 +1834,7 @@ export default {
   'global_bucket_label_text_backend_complex': 'Văn bản - bậc phức tạp',
   'global_bucket_label_default_audio_backend': 'Model âm thanh mặc định',
   'global_bucket_label_default_music_backend': 'Mô hình tạo nhạc mặc định',
+  'global_bucket_label_default_sfx_backend': 'Mô hình hiệu ứng âm thanh mặc định',
   'duration_incompatible_warning': '{{value}}s đã chọn không nằm trong [{{supported}}] mà mô hình hỗ trợ',
   'duration_incompatible_resolution_warning':
     '{{value}}s đã chọn không khả dụng ở độ phân giải hiện tại — khả dụng: [{{supported}}]',
@@ -2950,6 +2958,8 @@ export default {
   'tool_name_read_timeline': 'Đọc dòng thời gian dựng',
   'tool_name_list_bgm': 'Liệt kê nhạc nền BGM',
   'tool_name_generate_music': 'Tạo nhạc',
+  'tool_name_list_sfx': 'Liệt kê hiệu ứng âm thanh',
+  'tool_name_generate_sfx': 'Tạo hiệu ứng âm thanh',
   'tool_name_edit_timeline': 'Chỉnh sửa dòng thời gian dựng',
   'tool_name_rename_timeline': 'Đổi tên dòng thời gian dựng',
   'tool_name_list_revisions': 'Liệt kê các phiên bản sửa của dòng thời gian dựng',
@@ -4280,6 +4290,24 @@ export default {
     'Đã tải lên BGM "{{name}}". Mọi dòng thời gian dựng của các tập đều dùng được; hãy nhờ Agent đặt vào dòng thời gian',
   'edit_view_bgm_upload_failed': 'Tải lên BGM thất bại: {{message}}',
   'edit_view_bgm_track_empty': 'Chưa có đoạn BGM. Sau khi tải lên BGM, hãy nhờ Agent đặt vào dòng thời gian',
+  'edit_view_track_sfx': 'Hiệu ứng',
+  'edit_view_sfx_title': '{{sfx}}: {{start}}–{{end}} giây, âm lượng {{volume}}',
+  'edit_view_sfx_upload': 'Tải hiệu ứng âm thanh lên',
+  'edit_view_sfx_generate': 'Tạo hiệu ứng âm thanh',
+  'edit_view_sfx_generate_title': 'Tạo hiệu ứng âm thanh',
+  'edit_view_sfx_generate_desc':
+    'Tạo một hiệu ứng âm thanh bằng mô hình đã đặt (có tính phí). Khi xong, nó sẽ xuất hiện trong thư viện hiệu ứng âm thanh và có thể đặt lên dòng thời gian.',
+  'edit_view_sfx_generate_prompt': 'Âm thanh nghe như thế nào',
+  'edit_view_sfx_generate_prompt_placeholder': 'Ví dụ: cánh cửa gỗ đóng sầm trong căn phòng trống, có chút tiếng vang',
+  'edit_view_sfx_generate_seconds': 'Độ dài (giây)',
+  'edit_view_sfx_generate_name': 'Tên (không bắt buộc)',
+  'edit_view_sfx_generate_submit': 'Bắt đầu tạo',
+  'edit_view_sfx_generate_failed': 'Không tạo được hiệu ứng âm thanh: {{message}}',
+  'edit_view_sfx_uploading': 'Đang tải hiệu ứng âm thanh lên…',
+  'edit_view_sfx_uploaded':
+    'Đã tải lên hiệu ứng âm thanh “{{name}}”. Dòng thời gian của mọi tập đều dùng được; hãy nhờ Agent đặt nó vào',
+  'edit_view_sfx_upload_failed': 'Tải hiệu ứng âm thanh lên thất bại: {{message}}',
+  'edit_view_sfx_track_empty': 'Chưa có hiệu ứng âm thanh. Hãy tải lên hoặc tạo một hiệu ứng, rồi nhờ Agent đặt nó vào',
   'edit_view_subtitles_toggle': 'Phụ đề',
   'edit_view_buffering': 'Đang tải đệm…',
   'edit_view_playback_blocked': 'Trình duyệt đã chặn tự động phát. Nhấp Phát để tiếp tục.',
@@ -4324,6 +4352,8 @@ export default {
   'edit_view_issue_subtitle_missing_glyphs':
     '{{clip}}: phụ đề của đơn vị video {{unit}} có ký tự mà phông phụ đề không có (“{{characters}}”); các ký tự này có thể không hiển thị đúng khi ghi vào video thành phẩm',
   'edit_view_issue_bgm_missing': '{{clip}}: BGM {{bgm_id}} không còn trong dự án nên không thể xuất video',
+  'edit_view_issue_sfx_missing':
+    '{{clip}}: hiệu ứng âm thanh {{sfx_id}} không còn trong dự án nên không thể xuất video',
   'edit_view_issue_other': '{{clip}}: {{code}}',
   'edit_view_menu_aria': "Thao tác khác cho '{{name}}'",
   'edit_view_menu_rename': 'Đổi tên',

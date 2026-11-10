@@ -40,7 +40,7 @@ from pyJianYingDraft import (
 
 from lib.edit_timeline.transitions import transition_preset
 from lib.infra.path_safety import PathTraversalError, safe_join
-from lib.jianying_draft.placement import DraftPlacement, PlacedClip, stack_tracks
+from lib.jianying_draft.placement import DraftPlacement, PlacedBgmAudio, PlacedClip, stack_tracks
 from lib.subtitle_style.baseline import subtitle_style_baseline
 
 type JianyingVersion = Literal["5", "6"]
@@ -55,6 +55,7 @@ INDEX_FORMAT = 1
 SUBTITLE_TRACK = "字幕"
 NARRATION_TRACK = "旁白"
 BGM_TRACK = "BGM"
+SFX_TRACK = "音效"
 SUBTITLE_FONT = FontType.SourceHanSansCN_Bold
 EXTRA_SUBTITLE_TRACK_RAISE = 0.2
 """每多一条字幕轨，整轨字幕比上一条再上移的距离，以剪映纵向位置计（半个画布高为 1）。"""
@@ -95,6 +96,24 @@ def _subtitle_style(width: int, height: int) -> tuple[TextStyle, TextBorder, Tex
         TextShadow(color=(0.0, 0.0, 0.0), alpha=0.7, diffuse=8.0, distance=3.0, angle=-45.0),
         baseline.transform_y,
     )
+
+
+def _layered_audio_segment(staging: _AssetStaging, item: PlacedBgmAudio) -> AudioSegment | None:
+    """BGM 或音效的一段；素材时长以 pyJianYingDraft 的探测为准，与登记时 ffmpeg 测得的时长有出入时截到素材末尾。"""
+    material = AudioMaterial(staging.project_file(item.audio_path))
+    duration = min(item.duration_us, material.duration - item.source_in_us)
+    if duration <= 0:
+        return None
+    fade_out = min(item.fade_out_us, duration)
+    segment = AudioSegment(
+        material,
+        trange(item.start_us, duration),
+        source_timerange=trange(item.source_in_us, duration),
+        volume=item.volume,
+    )
+    if item.fade_in_us > 0 or fade_out > 0:
+        segment.add_fade(min(item.fade_in_us, duration - fade_out), fade_out)
+    return segment
 
 
 def _track_name(base: str, index: int) -> str:
@@ -187,11 +206,13 @@ def write_jianying_draft(
     script = draft.DraftFolder(str(root / "drafts")).create_draft(DRAFT_DIR, width=width, height=height)
     subtitle_tracks = stack_tracks(placement.subtitles) or ((),)
     narration_tracks = (stack_tracks(placement.narrations) or ((),)) if with_narration_track else ()
+    sfx_tracks = stack_tracks(placement.sfx)
     tracks = [
         TrackSpec(TrackType.video),
         *(TrackSpec(TrackType.text, _track_name(SUBTITLE_TRACK, index)) for index in range(len(subtitle_tracks))),
         *(TrackSpec(TrackType.audio, _track_name(NARRATION_TRACK, index)) for index in range(len(narration_tracks))),
         *((TrackSpec(TrackType.audio, BGM_TRACK),) if placement.bgm else ()),
+        *(TrackSpec(TrackType.audio, _track_name(SFX_TRACK, index)) for index in range(len(sfx_tracks))),
     ]
     script.append_tracks(tracks)
 
@@ -231,21 +252,13 @@ def write_jianying_draft(
             )
 
     for bgm in placement.bgm:
-        material = AudioMaterial(staging.project_file(bgm.audio_path))
-        # 素材时长以 pyJianYingDraft 的探测为准；与登记时 ffmpeg 测得的时长有出入时，截到素材末尾。
-        duration = min(bgm.duration_us, material.duration - bgm.source_in_us)
-        if duration <= 0:
-            continue
-        fade_out = min(bgm.fade_out_us, duration)
-        segment = AudioSegment(
-            material,
-            trange(bgm.start_us, duration),
-            source_timerange=trange(bgm.source_in_us, duration),
-            volume=bgm.volume,
-        )
-        if bgm.fade_in_us > 0 or fade_out > 0:
-            segment.add_fade(min(bgm.fade_in_us, duration - fade_out), fade_out)
-        script.add_segment(segment, BGM_TRACK)
+        if (segment := _layered_audio_segment(staging, bgm)) is not None:
+            script.add_segment(segment, BGM_TRACK)
+    # 音效可以互相重叠，像旁白那样分到尽量少的几条轨上，每条轨内不重叠。
+    for index, track in enumerate(sfx_tracks):
+        for sound in track:
+            if (segment := _layered_audio_segment(staging, sound)) is not None:
+                script.add_segment(segment, _track_name(SFX_TRACK, index))
 
     style, border, shadow, transform_y = _subtitle_style(width, height)
     for index, track in enumerate(subtitle_tracks):

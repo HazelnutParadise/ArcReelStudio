@@ -20,9 +20,18 @@ from lib.artifacts.artifact_manifest import (
 from lib.bgm.service import BgmLibraryService
 from lib.edit_timeline import EditTimelineService
 from lib.edit_timeline.model import BgmClip, EditTimelineContent
-from lib.edit_timeline.operations import InsertBgm, SetHold, SetReason, SetTransition, SetVolume, TransitionSpec
+from lib.edit_timeline.operations import (
+    InsertBgm,
+    InsertSfx,
+    SetHold,
+    SetReason,
+    SetTransition,
+    SetVolume,
+    TransitionSpec,
+)
 from lib.edit_timeline.store import EditTimelineStore
 from lib.jianying_draft.errors import JianyingDraftError
+from lib.sfx.service import SfxLibraryService
 from server.services.presentation.timeline_jianying_draft import TimelineJianyingDraftService
 from tests.factories import wav_bytes
 from tests.integration.server.services.presentation.timeline_render_support import (
@@ -456,6 +465,37 @@ async def test_bgm_track_maps_placement_trim_gain_volume_and_fades_and_cuts_at_t
         )
         for segment in segments
     ] == [(300_000, 200_000), (500_000, 1_000_000)]
+
+
+async def test_overlapping_sound_effects_are_stacked_onto_separate_tracks(tmp_path: Path) -> None:
+    pm, project_path = setup_project(tmp_path)
+    sound = await SfxLibraryService(pm).upload("demo", filename="敲门.wav", content=wav_bytes(1.0, tone_hz=880))
+    timeline_id = await edited_timeline(pm)
+    revision = EditTimelineStore(pm, "demo").find(timeline_id).latest.number
+    # s1（0–1 秒）与 s2（0.5–1.5 秒）重叠，分到两条轨；s3 从 2 秒起，与前两个都不重叠，放回第一条轨。
+    await EditTimelineService(pm).edit(
+        "demo",
+        timeline_id,
+        base_revision=revision,
+        summary="加音效",
+        operations=[
+            InsertSfx(op="insert_sfx", sfx_id=sound.id, start=0),
+            InsertSfx(op="insert_sfx", sfx_id=sound.id, start=0.5, volume=0.5),
+            InsertSfx(op="insert_sfx", sfx_id=sound.id, start=2.0),
+        ],
+        author=CREATOR,
+    )
+
+    result = await TimelineJianyingDraftService(pm).render("demo", timeline_id, narration="without_narration")
+
+    content = _draft_content(project_path / result.artifact_path)
+    sfx_tracks = [
+        track for track in content["tracks"] if track["type"] == "audio" and track.get("name", "").startswith("音效")
+    ]
+    assert [[(_timing(segment), segment["volume"]) for segment in track["segments"]] for track in sfx_tracks] == [
+        [((0, 1_000_000), pytest.approx(sound.gain)), ((2_000_000, 1_000_000), pytest.approx(sound.gain))],
+        [((500_000, 1_000_000), pytest.approx(0.5 * sound.gain))],
+    ]
 
 
 async def test_a_bgm_missing_from_the_project_blocks_the_draft(tmp_path: Path) -> None:

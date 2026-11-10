@@ -1436,7 +1436,8 @@
           "audio"
         ],
         "capabilities": [
-          "text_to_music"
+          "text_to_music",
+          "text_to_sfx"
         ],
         "credential_count": 0,
         "models": {
@@ -1444,7 +1445,8 @@
             "display_name": "Stable Audio 3",
             "media_type": "audio",
             "capabilities": [
-              "text_to_music"
+              "text_to_music",
+              "text_to_sfx"
             ],
             "default": true,
             "supported_durations": [],
@@ -1465,7 +1467,8 @@
           "audio"
         ],
         "capabilities": [
-          "text_to_music"
+          "text_to_music",
+          "text_to_sfx"
         ],
         "credential_count": 0,
         "models": {
@@ -1476,6 +1479,19 @@
               "text_to_music"
             ],
             "default": true,
+            "supported_durations": [],
+            "resolutions": [],
+            "audio_track": "always_off",
+            "reference_route_audio_track": "always_off",
+            "voice_consistency": "none"
+          },
+          "eleven_text_to_sound_v3": {
+            "display_name": "Eleven Sound Effects v3",
+            "media_type": "audio",
+            "capabilities": [
+              "text_to_sfx"
+            ],
+            "default": false,
             "supported_durations": [],
             "resolutions": [],
             "audio_track": "always_off",

@@ -104,5 +104,5 @@ async def test_a_speech_model_cannot_run_a_music_task(music_project: ProjectMana
         await CredentialRepository(session).create(provider="minimax", name="k", api_key="sk")
         await session.commit()
 
-    with pytest.raises(ValueError, match="不是音乐模型"):
+    with pytest.raises(ValueError, match="不是能按提示词生成音频的模型"):
         await execute_music_task("demo", "music-3", payload)

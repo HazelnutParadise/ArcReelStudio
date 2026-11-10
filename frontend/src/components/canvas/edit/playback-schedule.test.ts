@@ -28,6 +28,7 @@ function readout(clips: EditClip[], duration: number): EditTimelineReadout {
     duration,
     clips,
     bgm: [],
+    sfx: [],
     issues: [],
   };
 }
@@ -143,6 +144,7 @@ describe("buildPlaybackPlan source volume", () => {
     narration: "without_narration",
     units,
     bgm: [],
+    sfx: [],
   });
 
   it("mutes a unit whose provider audio was switched off at generation, whatever the clip volume", () => {

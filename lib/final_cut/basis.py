@@ -6,6 +6,7 @@
 截取所依据的版本已不是 current 时截取被忽略，依据里也记为整段使用。
 
 剪辑时间线有 BGM 时，依据另收 BGM 片段与所引用每首 BGM 的内容指纹和静态增益；没有 BGM 的依据形态不变。
+音效同理：有音效片段时另收 ``sfx``，没有时依据形态不变。
 
 带旁白或烧入字幕的版本还消费各视频单元的素材层（与剪映草稿同源，见 :mod:`lib.jianying_draft.placement`），
 依据另收各单元的素材层指纹：其中含字幕草稿，带旁白版本还含旁白配音。不带旁白、不烧入字幕的版本不收，
@@ -28,10 +29,12 @@ from lib.artifacts.version_manager import VERSION_CONTENT_DIGEST, UnmanagedSnaps
 from lib.artifacts.video_visual_provenance import resolve_video_aspect_ratio
 from lib.bgm.library import BgmSource
 from lib.edit_timeline.bgm import bgm_sources_input
-from lib.edit_timeline.model import BgmClip, EditClip, EditTimelineDocument, TimelineRevision
+from lib.edit_timeline.model import BgmClip, EditClip, EditTimelineDocument, SfxClip, TimelineRevision
+from lib.edit_timeline.sfx import sfx_sources_input
 from lib.final_cut.render_plan import OutputProfile, output_profile_for_aspect_ratio
 from lib.jianying_draft.basis import DraftNarration, DraftUnitBasis, default_draft_narration
 from lib.project.resource_paths import resource_relative_path
+from lib.sfx.library import SfxSource
 
 FINAL_CUT_BASIS_KIND = "final-cut/episode"
 FINAL_CUT_BASIS_VERSION = 1
@@ -202,6 +205,9 @@ class FinalCutInputs:
     bgm: tuple[BgmClip, ...] = ()
     bgm_sources: Mapping[str, BgmSource] = field(default_factory=dict)
     """BGM 轨所引用的 BGM；不在项目里或文件已不在的不在其中。"""
+    sfx: tuple[SfxClip, ...] = ()
+    sfx_sources: Mapping[str, SfxSource] = field(default_factory=dict)
+    """音效轨所引用的音效；不在项目里或文件已不在的不在其中。"""
 
 
 def resolve_final_cut_inputs(
@@ -213,6 +219,7 @@ def resolve_final_cut_inputs(
     script_unit_ids: Collection[str],
     video_of: Callable[[str], CurrentVideo | None],
     bgm_sources: Mapping[str, BgmSource] | None = None,
+    sfx_sources: Mapping[str, SfxSource] | None = None,
 ) -> FinalCutInputs:
     """按修订的片段顺序解析每个剪辑片段用到的视频；视频单元已从脚本删除的片段跳过。
 
@@ -242,6 +249,8 @@ def resolve_final_cut_inputs(
         missing_video_units=tuple(missing),
         bgm=revision.content.bgm,
         bgm_sources=dict(bgm_sources or {}),
+        sfx=revision.content.sfx,
+        sfx_sources=dict(sfx_sources or {}),
     )
 
 
@@ -284,6 +293,11 @@ def final_cut_basis(inputs: FinalCutInputs) -> ArtifactBasis:
         basis_inputs["bgm"] = {
             "clips": [clip.model_dump(mode="json") for clip in sorted(inputs.bgm, key=lambda item: item.id)],
             "sources": bgm_sources_input(inputs.bgm, inputs.bgm_sources),
+        }
+    if inputs.sfx:
+        basis_inputs["sfx"] = {
+            "clips": [clip.model_dump(mode="json") for clip in sorted(inputs.sfx, key=lambda item: item.id)],
+            "sources": sfx_sources_input(inputs.sfx, inputs.sfx_sources),
         }
     return ArtifactBasis.build(FINAL_CUT_BASIS_KIND, kind_version=FINAL_CUT_BASIS_VERSION, inputs=basis_inputs)
 

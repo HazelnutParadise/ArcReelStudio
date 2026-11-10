@@ -27,7 +27,9 @@ from lib.edit_timeline import EditTimelineService, RevisionAuthor
 from lib.edit_timeline.model import BgmClip, EditTimelineContent, TimelineRevision
 from lib.edit_timeline.operations import (
     InsertBgm,
+    InsertSfx,
     SetReason,
+    SetSfx,
     SetTransition,
     SetTrim,
     SetVolume,
@@ -43,6 +45,7 @@ from lib.infra.media_probe import probe_media
 from lib.infra.video_encoder import NVENC_CODEC_ARGS, NVENC_ENCODER, VideoEncoding
 from lib.project.project_manager import ProjectManager
 from lib.project.resource_paths import resource_relative_path
+from lib.sfx.service import SfxLibraryService
 from tests.factories import install_current_video, make_test_clip, wav_bytes
 
 CREATOR = RevisionAuthor(kind="creator", user_id="u1")
@@ -393,6 +396,46 @@ async def test_bgm_is_mixed_in_and_cut_at_the_timeline_end_without_changing_the_
     assert audio.duration_seconds == pytest.approx(video.duration_seconds, abs=0.05)
     assert _max_volume_db(output, start=1.6, seconds=0.6) > -30
     assert _status(render_project, timeline_id, result.artifact_path) is ArtifactStatus.CURRENT
+
+
+@pytest.mark.usefixtures("media")
+async def test_overlapping_sound_effects_are_mixed_in_and_make_the_final_cut_stale_when_moved(
+    render_project: ProjectManager,
+) -> None:
+    sound = await SfxLibraryService(render_project).upload(
+        "demo", filename="hit.wav", content=wav_bytes(0.4, tone_hz=880)
+    )
+    timeline_id = await _create_timeline(render_project)
+    editor = EditTimelineService(render_project)
+    # E1U2 那段（1.0–2.5 秒）没有原声；两个音效在 1.6 秒附近重叠。
+    await editor.edit(
+        "demo",
+        timeline_id,
+        base_revision=1,
+        summary="加音效",
+        operations=[
+            InsertSfx(op="insert_sfx", sfx_id=sound.id, start=1.5),
+            InsertSfx(op="insert_sfx", sfx_id=sound.id, start=1.7, volume=0.5),
+        ],
+        author=CREATOR,
+    )
+
+    result = await FinalCutService(render_project).render("demo", timeline_id, **PLAIN)
+
+    output = render_project.get_project_path("demo") / result.artifact_path
+    assert _max_volume_db(output, start=1.55, seconds=0.4) > -20
+    assert _max_volume_db(output, start=2.2, seconds=0.25) < -40
+    assert _status(render_project, timeline_id, result.artifact_path) is ArtifactStatus.CURRENT
+
+    await editor.edit(
+        "demo",
+        timeline_id,
+        base_revision=2,
+        summary="挪音效",
+        operations=[SetSfx(op="set_sfx", clip="s1", start=1.2)],
+        author=CREATOR,
+    )
+    assert _status(render_project, timeline_id, result.artifact_path) is ArtifactStatus.STALE
 
 
 def _quiet_bgm_with_loud_hits(seconds: float, sample_rate: int = 8000) -> bytes:

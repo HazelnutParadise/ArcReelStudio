@@ -32,6 +32,14 @@ from server.media_tools.edit_timelines import (
     timeline_renamed_summary,
     timeline_write_summary,
 )
+from server.media_tools.sfx import (
+    GenerateSfxRequest,
+    ListSfxRequest,
+    generate_sfx,
+    generated_sfx_summary,
+    list_sfx,
+    sfx_list_summary,
+)
 
 CREATE_TIMELINE = ToolDeclaration(
     name="create_timeline",
@@ -91,6 +99,8 @@ READ_TIMELINE = ToolDeclaration(
         "bgm 按起点排列，每个 BGM 片段带 id（如 b2）、bgm_id 与 name（所引用的 BGM）、start、end（截到时间线末尾后的"
         "实际结束时间）、source_in / source_out（取用 BGM 的哪一段）、volume、fade_in 与 fade_out（实际生效的淡入淡出）；"
         "bgm_missing（blocking）表示 BGM 片段引用的 BGM 已不在项目里，clip_ids 为该 BGM 片段。"
+        "sfx 按起点排列，字段同 bgm（sfx_id 代替 bgm_id），音效片段之间可以重叠；"
+        "sfx_missing（blocking）表示音效片段引用的音效已不在项目里，clip_ids 为该音效片段。"
     ),
     request_model=ReadTimelineRequest,
     migration=BLOCKED,
@@ -124,8 +134,11 @@ EDIT_TIMELINE = ToolDeclaration(
         "同一时刻只能有一首：本批改动的 BGM 片段与其他 BGM 片段重叠或起点不在时间线内时返回 operation_invalid。"
         "超出时间线末尾的部分渲染时截断并在截断处淡出 1 秒；淡入淡出之和超过片段时长时按比例缩短。"
         "BGM 的响度已在上传时统一，volume 是在此之上的倍数，两端渲染一致。"
-        "结果只含新 revision、一行确认 message、受影响片段的新状态 clips（字段同 read_timeline）与 bgm、"
-        "deleted_clip_ids（含 BGM 片段）、总时长 duration 与更新后的 issues，不返回整份时间线。"
+        "音效轨：insert_sfx 摆放 list_sfx 列出的音效，ID（如 s2）由服务端分配；start、source_in / source_out 同 BGM，"
+        "volume 省略时 1（峰值已统一到 −1 dBFS），fade_in / fade_out 省略时 0；set_sfx 只改给出的字段；delete_sfx。"
+        "音效片段之间可以重叠，只检查起点在时间线内；超出时间线末尾的部分截断并在截断处短暂淡出。"
+        "结果只含新 revision、一行确认 message、受影响片段的新状态 clips（字段同 read_timeline）、bgm 与 sfx、"
+        "deleted_clip_ids（含 BGM 与音效片段）、总时长 duration 与更新后的 issues，不返回整份时间线。"
     ),
     request_model=EditTimelineRequest,
     migration=BLOCKED,
@@ -191,6 +204,35 @@ GENERATE_MUSIC = ToolDeclaration(
     summary=generated_music_summary,
 )
 
+LIST_SFX = ToolDeclaration(
+    name="list_sfx",
+    description=(
+        "列出项目里的音效（上传的与 generate_sfx 生成的）：id（如 sfx-3f9a0c21，edit_timeline 的 insert_sfx 用它引用）、"
+        "name 与 duration（秒），按加入先后排列。音效属于整个项目，各集的剪辑时间线都能用；"
+        "列表为空时可以用 generate_sfx 生成，或请创作者在剪辑视图的音效轨上传。只读，无副作用。"
+    ),
+    request_model=ListSfxRequest,
+    migration=BLOCKED,
+    domain_key="sfx",
+    handler=list_sfx,
+    summary=sfx_list_summary,
+)
+
+GENERATE_SFX = ToolDeclaration(
+    name="generate_sfx",
+    description=(
+        "用设定里的音效模型生成一个音效（付费生成），完成后登记进项目的音效库，回传它的 id、名字与长度，"
+        "可直接用 edit_timeline 的 insert_sfx 摆放。prompt 写发声物、动作、环境与质感；duration_seconds 不给时 3 秒。"
+        "没设定音效模型时回报 sfx_provider_not_configured，请创作者先设定。"
+    ),
+    request_model=GenerateSfxRequest,
+    migration=BLOCKED,
+    domain_key="sfx",
+    handler=generate_sfx,
+    long_task=True,
+    summary=generated_sfx_summary,
+)
+
 RESTORE_REVISION = ToolDeclaration(
     name="restore_revision",
     description=(
@@ -219,6 +261,8 @@ EDIT_TIMELINE_TOOLS = (
     RESTORE_REVISION,
     LIST_BGM,
     GENERATE_MUSIC,
+    LIST_SFX,
+    GENERATE_SFX,
 )
 
 __all__ = [
@@ -226,8 +270,10 @@ __all__ = [
     "EDIT_TIMELINE",
     "EDIT_TIMELINE_TOOLS",
     "GENERATE_MUSIC",
+    "GENERATE_SFX",
     "LIST_BGM",
     "LIST_REVISIONS",
+    "LIST_SFX",
     "LIST_TIMELINES",
     "READ_TIMELINE",
     "RENAME_TIMELINE",

@@ -17,11 +17,13 @@ from lib.artifacts.version_manager import VersionManager
 from lib.bgm.library import read_bgm_library
 from lib.edit_timeline.bgm import bgm_ids
 from lib.edit_timeline.model import microseconds_to_seconds
+from lib.edit_timeline.sfx import sfx_ids
 from lib.edit_timeline.store import EditTimelineStore
 from lib.final_cut.basis import current_provider_audio
 from lib.jianying_draft.basis import DraftNarration, default_draft_narration, draft_unit_ids
 from lib.project.project_manager import ProjectManager
 from lib.project.resource_paths import resource_relative_path
+from lib.sfx.library import read_sfx_library
 from lib.speech.narration_delivery import USE_TTS
 from server.services.presentation.presentation_read_model import (
     PresentationReadModelService,
@@ -69,14 +71,23 @@ class PreviewBgm(_View):
     gain: float
 
 
+class PreviewSfx(_View):
+    """音效文件的项目内路径与峰值静态增益（线性倍数）；预览音量是片段音量乘以这个增益。"""
+
+    sfx_id: str
+    path: str
+    gain: float
+
+
 class TimelinePreviewMedia(_View):
-    """``bgm`` 只含 BGM 轨引用且文件在项目里的 BGM。"""
+    """``bgm`` / ``sfx`` 只含 BGM 轨与音效轨引用、且文件在项目里的 BGM 与音效。"""
 
     timeline_id: str
     revision: int
     narration: DraftNarration
     units: tuple[PreviewUnitMedia, ...]
     bgm: tuple[PreviewBgm, ...] = ()
+    sfx: tuple[PreviewSfx, ...] = ()
 
 
 def _preview_bgm(project_dir: Path, project: Mapping[str, Any], referenced: tuple[str, ...]) -> tuple[PreviewBgm, ...]:
@@ -85,6 +96,15 @@ def _preview_bgm(project_dir: Path, project: Mapping[str, Any], referenced: tupl
         PreviewBgm(bgm_id=bgm_id, path=track.file, gain=track.gain)
         for bgm_id in referenced
         if (track := library.get(bgm_id)) is not None and (project_dir / track.file).is_file()
+    )
+
+
+def _preview_sfx(project_dir: Path, project: Mapping[str, Any], referenced: tuple[str, ...]) -> tuple[PreviewSfx, ...]:
+    library = read_sfx_library(project)
+    return tuple(
+        PreviewSfx(sfx_id=sfx_id, path=sound.file, gain=sound.gain)
+        for sfx_id in referenced
+        if (sound := library.get(sfx_id)) is not None and (project_dir / sound.file).is_file()
     )
 
 
@@ -153,12 +173,14 @@ class TimelinePreviewService:
                 )
             )
         bgm = await asyncio.to_thread(_preview_bgm, project_dir, project, bgm_ids(document.latest.content.bgm))
+        sfx = await asyncio.to_thread(_preview_sfx, project_dir, project, sfx_ids(document.latest.content.sfx))
         return TimelinePreviewMedia(
             timeline_id=document.id,
             revision=document.latest.number,
             narration=narration,
             units=tuple(units),
             bgm=bgm,
+            sfx=sfx,
         )
 
 
@@ -166,6 +188,7 @@ __all__ = [
     "PreviewBgm",
     "PreviewCue",
     "PreviewNarrationAudio",
+    "PreviewSfx",
     "PreviewUnitMedia",
     "TimelinePreviewMedia",
     "TimelinePreviewService",

@@ -17,6 +17,7 @@ _MEDIA_SUBDIRS = (
     "reference_videos",
     "audio",
     "bgm",
+    "sfx",
 )
 
 # 根目录下的已知媒体文件（如风格参考图）

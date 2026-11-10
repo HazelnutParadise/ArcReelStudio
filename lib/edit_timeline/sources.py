@@ -16,6 +16,7 @@ from lib.project.project_manager import ProjectManager
 from lib.project.resource_paths import resource_relative_path
 from lib.script.script_editor import ScriptEditError, resolve_items
 from lib.script.script_models import item_duration
+from lib.sfx.library import read_sfx_library
 from lib.speech.audio_utils import probe_existing_audio_duration_seconds, probe_existing_video_duration_seconds
 from lib.speech.narration_config import USE_TTS, project_narration_delivery
 from lib.speech.speech_composition import SpeechMode, admit_script_unit
@@ -66,13 +67,14 @@ class BgmMedia:
 class EpisodeSources:
     """``tts_narration`` 为项目的旁白交付方式是否为 TTS 配音；后期配音项目不检查旁白。
 
-    ``bgm`` 是项目里已上传、文件在场的 BGM，按 BGM ID 索引。
+    ``bgm`` 是项目里已上传、文件在场的 BGM，按 BGM ID 索引；``sfx`` 同理，是文件在场的音效。
     """
 
     script: EpisodeScriptUnits
     media: Mapping[str, UnitMedia]
     tts_narration: bool
     bgm: Mapping[str, BgmMedia] = field(default_factory=dict)
+    sfx: Mapping[str, BgmMedia] = field(default_factory=dict)
 
     def unit(self, unit_id: str) -> ScriptUnit | None:
         return next((unit for unit in self.script.units if unit.unit_id == unit_id), None)
@@ -177,6 +179,7 @@ async def load_episode_sources(
         media=dict(zip(wanted, media, strict=True)),
         tts_narration=project_narration_delivery(project) == USE_TTS,
         bgm=await asyncio.to_thread(_present_bgm, project_path, project),
+        sfx=await asyncio.to_thread(_present_sfx, project_path, project),
     )
 
 
@@ -185,6 +188,14 @@ def _present_bgm(project_path: Path, project: Mapping[str, Any]) -> dict[str, Bg
         track.id: BgmMedia(name=track.name, duration_us=track.duration_us)
         for track in read_bgm_library(project).values()
         if (project_path / track.file).is_file()
+    }
+
+
+def _present_sfx(project_path: Path, project: Mapping[str, Any]) -> dict[str, BgmMedia]:
+    return {
+        sound.id: BgmMedia(name=sound.name, duration_us=sound.duration_us)
+        for sound in read_sfx_library(project).values()
+        if (project_path / sound.file).is_file()
     }
 
 

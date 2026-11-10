@@ -55,6 +55,7 @@ function readout(issues: EditTimelineReadout["issues"]): EditTimelineReadout {
       },
     ],
     bgm: [],
+    sfx: [],
     issues,
   };
 }

@@ -473,6 +473,13 @@ export default {
   'music_model_unset': 'Не выбрана',
   'no_music_providers_hint':
     'Пока нет поставщика, который умеет генерировать музыку. Добавьте ключ API AI Studio, Stability AI или ElevenLabs в центре подключений.',
+  'default_models_channel_sfx': 'Звуковые эффекты',
+  'default_sfx_model_hint':
+    'Используется при генерации звуковых эффектов в монтаже и когда их генерирует Agent. Пока модель не выбрана, генерация недоступна.',
+  'default_sfx_model': 'Модель звуковых эффектов',
+  'sfx_model_unset': 'Не выбрана',
+  'no_sfx_providers_hint':
+    'Пока нет поставщика, который умеет генерировать звуковые эффекты. Добавьте ключ API Stability AI или ElevenLabs в центре подключений.',
   'narration_voice_label': 'ID голоса для закадрового текста',
   'narration_voice_hint': 'Укажите ID голоса по документации провайдера; оставьте пустым для голоса по умолчанию',
   'narration_voice_hint_with_voices':
@@ -1912,6 +1919,7 @@ export default {
   'global_bucket_label_text_backend_complex': 'Текст — сложная градация',
   'global_bucket_label_default_audio_backend': 'Модель аудио по умолчанию',
   'global_bucket_label_default_music_backend': 'Модель для музыки по умолчанию',
+  'global_bucket_label_default_sfx_backend': 'Модель звуковых эффектов по умолчанию',
   'duration_incompatible_warning': 'Выбранные {{value}} с не поддерживаются моделью [{{supported}}]',
   'duration_incompatible_resolution_warning':
     'Выбранные {{value}} с недоступны при текущем разрешении — доступно: [{{supported}}]',
@@ -2846,6 +2854,8 @@ export default {
   'tool_name_read_timeline': 'Прочитать монтажный таймлайн',
   'tool_name_list_bgm': 'Список фоновой музыки',
   'tool_name_generate_music': 'Сгенерировать музыку',
+  'tool_name_list_sfx': 'Список звуковых эффектов',
+  'tool_name_generate_sfx': 'Сгенерировать звуковой эффект',
   'tool_name_edit_timeline': 'Обновить монтажный таймлайн',
   'tool_name_rename_timeline': 'Переименовать монтажный таймлайн',
   'tool_name_list_revisions': 'Список ревизий монтажного таймлайна',
@@ -4486,6 +4496,26 @@ export default {
     'BGM «{{name}}» загружена. Её могут использовать монтажные таймлайны всех серий; попросите агента разместить её на таймлайне',
   'edit_view_bgm_upload_failed': 'Не удалось загрузить BGM: {{message}}',
   'edit_view_bgm_track_empty': 'Клипов BGM пока нет. После загрузки BGM попросите агента разместить её на таймлайне',
+  'edit_view_track_sfx': 'Эффекты',
+  'edit_view_sfx_title': '{{sfx}}: {{start}}–{{end}} с, громкость {{volume}}',
+  'edit_view_sfx_upload': 'Загрузить звуковой эффект',
+  'edit_view_sfx_generate': 'Сгенерировать звуковой эффект',
+  'edit_view_sfx_generate_title': 'Сгенерировать звуковой эффект',
+  'edit_view_sfx_generate_desc':
+    'Генерирует один звуковой эффект выбранной моделью (платно). Когда будет готов, он появится в библиотеке звуковых эффектов, и его можно будет поставить на таймлайн.',
+  'edit_view_sfx_generate_prompt': 'Каким должен быть звук',
+  'edit_view_sfx_generate_prompt_placeholder':
+    'Например: тяжёлая деревянная дверь захлопывается в пустой комнате, с лёгким эхом',
+  'edit_view_sfx_generate_seconds': 'Длина (секунды)',
+  'edit_view_sfx_generate_name': 'Название (необязательно)',
+  'edit_view_sfx_generate_submit': 'Сгенерировать',
+  'edit_view_sfx_generate_failed': 'Не удалось сгенерировать звуковой эффект: {{message}}',
+  'edit_view_sfx_uploading': 'Загрузка звукового эффекта…',
+  'edit_view_sfx_uploaded':
+    'Звуковой эффект «{{name}}» загружен. Его можно использовать в таймлайнах любой серии; попросите Agent поставить его',
+  'edit_view_sfx_upload_failed': 'Не удалось загрузить звуковой эффект: {{message}}',
+  'edit_view_sfx_track_empty':
+    'Звуковых эффектов пока нет. Загрузите или сгенерируйте эффект, а затем попросите Agent поставить его',
   'edit_view_subtitles_toggle': 'Субтитры',
   'edit_view_buffering': 'Буферизация…',
   'edit_view_playback_blocked': 'Браузер заблокировал автовоспроизведение. Нажмите «Воспроизвести», чтобы продолжить.',
@@ -4531,6 +4561,8 @@ export default {
     '{{clip}}: в субтитрах видеофрагмента {{unit}} есть символы, которых нет в шрифте субтитров («{{characters}}»); при вжигании в финальную сборку они могут отображаться неправильно',
   'edit_view_issue_bgm_missing':
     '{{clip}}: BGM {{bgm_id}} больше нет в проекте, поэтому финальную сборку нельзя отрендерить',
+  'edit_view_issue_sfx_missing':
+    '{{clip}}: звукового эффекта {{sfx_id}} больше нет в проекте, поэтому вывести ролик нельзя',
   'edit_view_issue_other': '{{clip}}: {{code}}',
   'edit_view_menu_aria': 'Другие действия для «{{name}}»',
   'edit_view_menu_rename': 'Переименовать',

@@ -81,6 +81,8 @@ from lib.script.source_loader import (
     SourceLoader,
     UnsupportedFormatError,
 )
+from lib.sfx.library import SFX_DIR, SFX_EXTENSIONS, SFX_MAX_BYTES, SfxSound
+from lib.sfx.service import SfxError, SfxLibraryService
 from lib.speech.audio_utils import (
     AUDIO_REFERENCE_MAX_BYTES,
     AUDIO_REFERENCE_MAX_SECONDS,
@@ -131,6 +133,7 @@ PUBLIC_MEDIA_DIRS: frozenset[str] = frozenset(
         "grids",
         "audio",
         "bgm",
+        "sfx",
         "renders",
     }
 )
@@ -288,6 +291,15 @@ UPLOAD_SPECS: dict[str, UploadSpec] = {
         content_check="delegated",
         unsupported_ext_key="unsupported_audio_type",
         max_bytes=BGM_MAX_BYTES,
+    ),
+    # 项目级音效：由 SfxLibraryService 全权接管（实测峰值、原子落盘并按字节登记），表项只提供类型校验与扩展名白名单。
+    "sfx": UploadSpec(
+        allowed_exts=SFX_EXTENSIONS,
+        subdir=(SFX_DIR,),
+        naming="delegated",
+        content_check="delegated",
+        unsupported_ext_key="unsupported_audio_type",
+        max_bytes=SFX_MAX_BYTES,
     ),
     "product_ref": UploadSpec(
         allowed_exts=_IMAGE_EXTS,
@@ -521,6 +533,8 @@ async def upload_file(
 
         if upload_type == "bgm":
             return await _handle_bgm_upload(project_name, original_filename, content, _t)
+        if upload_type == "sfx":
+            return await _handle_sfx_upload(project_name, original_filename, content, _t)
 
         if spec.content_check == "audio":
             try:
@@ -689,6 +703,54 @@ async def list_bgm(project_name: str, _t: Translator):
     except BgmError as exc:
         raise _bgm_http_error(exc, _t) from exc
     return {"bgm": [_bgm_view(project_name, track) for track in tracks]}
+
+
+_SFX_ERROR_STATUS: dict[str, tuple[int, str]] = {
+    "sfx_unsupported_type": (400, "unsupported_audio_type"),
+    "sfx_too_large": (400, "upload_too_large"),
+    "sfx_invalid_audio": (400, "invalid_audio_file"),
+    "sfx_silent": (400, "sfx_silent"),
+    "sfx_ffmpeg_unavailable": (503, "sfx_ffmpeg_unavailable"),
+}
+
+
+def _sfx_http_error(exc: SfxError, _t: Translator) -> HTTPException:
+    if exc.code == "project_not_found":
+        return HTTPException(status_code=404, detail=_t("project_not_found", name=exc.params.get("project", "")))
+    status, key = _SFX_ERROR_STATUS[exc.code]
+    return HTTPException(status_code=status, detail=_t(key, **exc.params))
+
+
+async def _handle_sfx_upload(project_name: str, filename: str, content: bytes, _t: Translator) -> dict[str, object]:
+    """登记一个项目级音效，返回它在音效列表里的形态。"""
+    await asyncio.to_thread(assert_project_migration_ok, project_name)
+    try:
+        sound = await SfxLibraryService(get_project_manager()).upload(project_name, filename=filename, content=content)
+    except SfxError as exc:
+        raise _sfx_http_error(exc, _t) from exc
+    return {"success": True, "sfx": _sfx_view(project_name, sound)}
+
+
+def _sfx_view(project_name: str, sound: SfxSound) -> dict[str, object]:
+    return {
+        "id": sound.id,
+        "name": sound.name,
+        "duration": sound.duration,
+        "gain": round(sound.gain, 6),
+        "path": sound.file,
+        "url": f"/api/v1/files/{project_name}/{sound.file}",
+        "source": sound.source,
+    }
+
+
+@router.get("/projects/{project_name}/sfx")
+async def list_sfx(project_name: str, _t: Translator):
+    """项目里已登记的音效，按加入先后排列；``gain`` 是把峰值统一到 −1 dBFS 的线性增益。"""
+    try:
+        sounds = await SfxLibraryService(get_project_manager()).list(project_name)
+    except SfxError as exc:
+        raise _sfx_http_error(exc, _t) from exc
+    return {"sfx": [_sfx_view(project_name, sound) for sound in sounds]}
 
 
 @router.delete("/projects/{project_name}/characters/{name}/reference-audio")

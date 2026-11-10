@@ -49,6 +49,7 @@ from lib.project.project_migrations.backups import is_versioned_backup_name
 from lib.project.resource_paths import CHARACTER_DERIVATIVE_RESOURCE_TYPE, END_FRAME_RESOURCE_TYPE
 from lib.script.draft_quarantine import QUARANTINE_FILENAMES
 from lib.script.script_models import get_generated_assets
+from lib.sfx.library import PROJECT_SFX_FIELD
 
 __all__ = ["FileOwner", "FileReference", "FileRole", "ReferenceIndex", "is_infrastructure_path"]
 
@@ -311,10 +312,11 @@ class ReferenceIndex:
 
     def _index_project_files(self, project: Mapping[str, Any]) -> None:
         self._mark(project.get("style_image"), FileRole.REFERENCED, _PROJECT)
-        bgm = project.get(PROJECT_BGM_FIELD)
-        for track in bgm.values() if isinstance(bgm, Mapping) else ():
-            if isinstance(track, Mapping):
-                self._mark(track.get("file"), FileRole.REFERENCED, _PROJECT)
+        for field in (PROJECT_BGM_FIELD, PROJECT_SFX_FIELD):
+            library = project.get(field)
+            for entry in library.values() if isinstance(library, Mapping) else ():
+                if isinstance(entry, Mapping):
+                    self._mark(entry.get("file"), FileRole.REFERENCED, _PROJECT)
 
     def _index_scripts(self, project_dir: Path, project: Mapping[str, Any]) -> None:
         for entry in _ledger(project):

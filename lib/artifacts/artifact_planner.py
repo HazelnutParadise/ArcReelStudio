@@ -61,7 +61,8 @@ from lib.artifacts.visual_artifact_provenance import (
 )
 from lib.bgm.library import BgmSource, bgm_basis, bgm_key, read_bgm_library, resolve_bgm_sources
 from lib.edit_timeline.bgm import bgm_ids
-from lib.edit_timeline.model import BgmClip
+from lib.edit_timeline.model import BgmClip, SfxClip
+from lib.edit_timeline.sfx import sfx_ids
 from lib.episode.episode_paths import episode_source_relpath
 from lib.episode.episode_sources import SOURCE_ORIGIN_FIELD, SourceOrigin, episode_entry, episode_source_origin
 from lib.jianying_draft.basis import (
@@ -94,6 +95,7 @@ from lib.script.grid.layout import grid_aspect_ratio_for
 from lib.script.grid.models import GridGeneration
 from lib.script.script_editor import resolve_items
 from lib.script.storyboard_sequence import get_storyboard_items
+from lib.sfx.library import SfxSource, read_sfx_library, resolve_sfx_sources, sfx_basis, sfx_key
 from lib.speech.narration_delivery import POST_PRODUCTION, USE_TTS
 from lib.speech.speech_artifact_provenance import (
     PRESENTATION_WITHOUT_TRANSITION_SCHEMA_VERSION,
@@ -358,6 +360,7 @@ class TargetStatePlanner:
             self._plan_typed_media()
             self._plan_persisted_presentations()
             self._plan_bgm()
+            self._plan_sfx()
         except ProjectMigrationError:
             # Already carries the episode / file it was rejected at.
             raise
@@ -429,6 +432,8 @@ class TargetStatePlanner:
             self._plan_jianying_draft(key)
         elif kind == "project-bgm":
             self._plan_bgm()
+        elif kind == "project-sfx":
+            self._plan_sfx()
 
     def load_episode_bindings(self) -> None:
         if self._bindings_loaded:
@@ -1457,6 +1462,7 @@ class TargetStatePlanner:
                 self.project_dir, versions, resource_type, unit_id, self._formal_content_digest
             ),
             bgm_sources=self._bgm_sources(document.latest.content.bgm),
+            sfx_sources=self._sfx_sources(document.latest.content.sfx),
         )
         if inputs.missing_video_units:
             return
@@ -1499,8 +1505,28 @@ class TargetStatePlanner:
             self._add_if_present(key, track.file, bgm_basis(observation.content_digest))
         self._planned.add("bgm")
 
+    def _plan_sfx(self) -> None:
+        """登记的音效按字节登记：依据只有正式文件当前字节的内容指纹，文件在场即可证明。"""
+
+        if "sfx" in self._planned:
+            return
+        for sound in read_sfx_library(self.project).values():
+            key = sfx_key(sound.id)
+            observation = self.adapter.inspect_artifact_content(sound.file)
+            if observation.blocker is not None:
+                self._skip_blocked(key, sound.file, observation.blocker)
+                continue
+            if not observation.present or observation.content_digest is None:
+                self._skip(key, sound.file, "sound effect file is not present")
+                continue
+            self._add_if_present(key, sound.file, sfx_basis(observation.content_digest))
+        self._planned.add("sfx")
+
     def _bgm_sources(self, bgm: Sequence[BgmClip]) -> dict[str, BgmSource]:
         return resolve_bgm_sources(self.project_dir, self.project, bgm_ids(bgm), self._formal_content_digest)
+
+    def _sfx_sources(self, sfx: Sequence[SfxClip]) -> dict[str, SfxSource]:
+        return resolve_sfx_sources(self.project_dir, self.project, sfx_ids(sfx), self._formal_content_digest)
 
     def _formal_content_digest(self, artifact_path: str) -> str:
         observation = self.adapter.inspect_artifact_content(artifact_path)
@@ -1548,6 +1574,7 @@ class TargetStatePlanner:
             aspect_ratio=resolve_video_aspect_ratio(self.project, resource_type),
             units=units,
             bgm_sources=self._bgm_sources(document.latest.content.bgm),
+            sfx_sources=self._sfx_sources(document.latest.content.sfx),
         )
         self._add_if_present(key, jianying_draft_artifact_path(episode_number, timeline_id, narration), basis)
 

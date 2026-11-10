@@ -58,6 +58,7 @@ from server.services.tasks.image_edit_tasks import (
     resolve_usable_image_edit_source,
 )
 from server.services.tasks.music_task import MAX_PROMPT_CHARS, MUSIC_TASK_TYPE, music_task_payload
+from server.services.tasks.sfx_task import MAX_SFX_SECONDS, SFX_TASK_TYPE, sfx_task_payload
 
 logger = logging.getLogger(__name__)
 
@@ -342,6 +343,51 @@ async def generate_music(project_name: str, req: GenerateMusicRequest, user: Cur
         user_id=user.id,
     )
     return {"success": True, "task_id": result["task_id"], "message": _t("music_task_submitted")}
+
+
+class GenerateSfxRequest(BaseModel):
+    """生成一个音效：提示词必填；长度不给时由模型按提示词决定（有上限）。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    prompt: str = Field(min_length=1, max_length=MAX_PROMPT_CHARS)
+    duration_seconds: int | None = Field(default=None, ge=1, le=MAX_SFX_SECONDS)
+    name: str | None = Field(default=None, max_length=80)
+
+
+@router.post("/projects/{project_name}/generate/sfx")
+async def generate_sfx(project_name: str, req: GenerateSfxRequest, user: CurrentUser, _t: Translator):
+    """排一个音效生成任务；完成后这个音效出现在项目的音效库，可以放上时间线的音效轨（docs/adr/0127）。"""
+    from lib.db import async_session_factory
+
+    prompt = req.prompt.strip()
+    if not prompt:
+        raise BadRequestError("prompt_text_empty")
+    project = await asyncio.to_thread(get_project_manager().load_project, project_name)
+    try:
+        resolved = await ConfigResolver(async_session_factory).resolve_sfx_backend(project, None)
+    except ModelNotInCatalogError:
+        raise
+    except ValueError as exc:
+        raise BadRequestError("sfx_provider_not_configured") from exc
+    payload = sfx_task_payload(
+        prompt=prompt,
+        provider_id=resolved.provider_id,
+        model_id=resolved.model_id,
+        credential_id=resolved.credential_id,
+        duration_seconds=req.duration_seconds,
+        name=(req.name or "").strip() or None,
+    )
+    result = await get_generation_queue().enqueue_task(
+        project_name=project_name,
+        task_type=SFX_TASK_TYPE,
+        media_type="audio",
+        resource_id=f"sfx-{secrets.token_hex(4)}",
+        payload=payload,
+        source="webui",
+        user_id=user.id,
+    )
+    return {"success": True, "task_id": result["task_id"], "message": _t("sfx_task_submitted")}
 
 
 # ==================== 旁白配音（TTS）生成 ====================

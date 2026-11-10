@@ -9,6 +9,7 @@
 
 BGM 片段按绝对起点摆放，与主轨的增删移动互不影响。整批应用后检查本批改动过的 BGM 片段：起点落在时间线内、
 淡入淡出容得下，且同一时刻只有一首。超出时间线末尾的部分不在这里拒绝，渲染时截断（见 :mod:`lib.edit_timeline.bgm`）。
+音效片段同样按绝对起点摆放，但可以互相重叠，只检查起点落在时间线内。
 """
 
 from __future__ import annotations
@@ -25,12 +26,14 @@ from lib.edit_timeline.errors import EditTimelineError
 from lib.edit_timeline.model import (
     DEFAULT_BGM_FADE_MICROSECONDS,
     DEFAULT_BGM_VOLUME,
+    DEFAULT_SFX_VOLUME,
     DEFAULT_SOURCE_VOLUME,
     VOICEOVER_SOURCE_VOLUME,
     BgmClip,
     ClipTrim,
     EditClip,
     EditTimelineContent,
+    SfxClip,
     Transition,
     TransitionType,
     clip_number,
@@ -50,6 +53,9 @@ MAX_TRANSITION_MICROSECONDS = 2_000_000
 REASON_MAX_LENGTH = 200
 MIN_BGM_MICROSECONDS = 1_000_000
 """BGM 片段截取后至少保留的时长。"""
+
+MIN_SFX_MICROSECONDS = 100_000
+"""音效片段截取后至少保留的时长。"""
 
 
 def default_source_volume(speech_mode: SpeechMode | None) -> float:
@@ -170,6 +176,40 @@ class DeleteBgm(_Operation):
     clip: str = _BGM_CLIP
 
 
+_SFX_CLIP = Field(min_length=1, description="音效片段 ID，如 s2")
+
+
+class InsertSfx(_Operation):
+    op: Literal["insert_sfx"]
+    sfx_id: str = Field(min_length=1, description="音效 ID（如 sfx-3f9a0c21），取自 list_sfx")
+    start: FiniteFloat = Field(description="在剪辑时间线上的绝对起点，秒，须在时间线内；可与其他音效重叠")
+    source_in: FiniteFloat = Field(default=0.0, description="从音效的第几秒开始用，秒；省略时从头开始")
+    source_out: FiniteFloat | None = Field(
+        default=None, description="用到音效的第几秒，须大于 source_in 且不超过音效时长；省略时用到结尾"
+    )
+    volume: FiniteFloat = Field(
+        default=DEFAULT_SFX_VOLUME, description="音量 0–1，乘在已统一到 −1 dBFS 的峰值上；省略时 1"
+    )
+    fade_in: FiniteFloat = Field(default=0.0, description="淡入，秒；省略时 0")
+    fade_out: FiniteFloat = Field(default=0.0, description="淡出，秒；省略时 0")
+
+
+class SetSfx(_Operation):
+    op: Literal["set_sfx"]
+    clip: str = _SFX_CLIP
+    start: FiniteFloat | None = Field(default=None, description="新的绝对起点，秒；省略不改")
+    source_in: FiniteFloat | None = Field(default=None, description="新的入点，秒；省略不改")
+    source_out: FiniteFloat | None = Field(default=None, description="新的出点，秒；省略不改")
+    volume: FiniteFloat | None = Field(default=None, description="新的音量 0–1；省略不改")
+    fade_in: FiniteFloat | None = Field(default=None, description="新的淡入，秒；省略不改")
+    fade_out: FiniteFloat | None = Field(default=None, description="新的淡出，秒；省略不改")
+
+
+class DeleteSfx(_Operation):
+    op: Literal["delete_sfx"]
+    clip: str = _SFX_CLIP
+
+
 type TimelineOperation = Annotated[
     InsertClip
     | DeleteClip
@@ -182,7 +222,10 @@ type TimelineOperation = Annotated[
     | PlaceNarration
     | InsertBgm
     | SetBgm
-    | DeleteBgm,
+    | DeleteBgm
+    | InsertSfx
+    | SetSfx
+    | DeleteSfx,
     Field(discriminator="op"),
 ]
 
@@ -200,6 +243,7 @@ class AppliedBatch:
     content: EditTimelineContent
     next_clip_number: int
     next_bgm_number: int
+    next_sfx_number: int
     targets: frozenset[str]
     referenced: frozenset[str]
     last_operation: dict[str, int]
@@ -215,12 +259,19 @@ def _invalid(index: int, message: str, *, clip_id: str | None = None, **params: 
 
 class _Batch:
     def __init__(
-        self, content: EditTimelineContent, next_clip_number: int, next_bgm_number: int, sources: EpisodeSources
+        self,
+        content: EditTimelineContent,
+        next_clip_number: int,
+        next_bgm_number: int,
+        sources: EpisodeSources,
+        next_sfx_number: int = 1,
     ) -> None:
         self.clips: list[EditClip] = list(content.clips)
         self.bgm: list[BgmClip] = list(content.bgm)
+        self.sfx: list[SfxClip] = list(content.sfx)
         self.next_clip_number = next_clip_number
         self.next_bgm_number = next_bgm_number
+        self.next_sfx_number = next_sfx_number
         self.sources = sources
         self.targets: set[str] = set()
         self.referenced: set[str] = set()
@@ -415,6 +466,12 @@ class _Batch:
                 self._set_bgm(index, operation)
             case DeleteBgm(clip=clip_id):
                 self._touch_bgm(index, self.bgm.pop(self._bgm_position(index, clip_id)))
+            case InsertSfx():
+                self._insert_sfx(index, operation)
+            case SetSfx():
+                self._set_sfx(index, operation)
+            case DeleteSfx(clip=clip_id):
+                self._touch_bgm(index, self.sfx.pop(self._sfx_position(index, clip_id)))
 
     def _insert(self, index: int, operation: InsertClip) -> None:
         unit = self.sources.unit(operation.unit_id)
@@ -503,7 +560,7 @@ class _Batch:
             allowed="当前修订里的 BGM 片段 ID",
         )
 
-    def _touch_bgm(self, index: int, clip: BgmClip) -> BgmClip:
+    def _touch_bgm[C: BgmClip | SfxClip](self, index: int, clip: C) -> C:
         self.last_operation[clip.id] = index
         return clip
 
@@ -592,6 +649,99 @@ class _Batch:
         if updated != current:
             self.bgm[position] = self._touch_bgm(index, updated)
 
+    # ---- 音效 ----
+
+    def _sfx_position(self, index: int, clip_id: str) -> int:
+        self.referenced.add(clip_id)
+        self.targets.add(clip_id)
+        for position, clip in enumerate(self.sfx):
+            if clip.id == clip_id:
+                return position
+        raise _invalid(
+            index,
+            "音效片段不存在（或已在本批前面的操作中删除）",
+            clip_id=clip_id,
+            field="clip",
+            allowed="当前修订里的音效片段 ID",
+        )
+
+    def _sfx_range(
+        self, index: int, clip_id: str | None, sfx_id: str, source_in: float, source_out: float | None
+    ) -> tuple[int, int]:
+        media = self.sources.sfx.get(sfx_id)
+        if media is None:
+            raise _invalid(
+                index,
+                f"音效 {sfx_id} 不在项目里（或文件已不在）",
+                clip_id=clip_id,
+                field="sfx_id",
+                allowed="list_sfx 列出的音效 ID",
+            )
+        whole_us = media.duration_us
+        whole = microseconds_to_seconds(whole_us)
+        out = whole if source_out is None else source_out
+        in_range = 0 <= source_in < out <= whole + 0.001
+        in_us = seconds_to_microseconds(source_in) if in_range else 0
+        out_us = min(seconds_to_microseconds(out), whole_us) if in_range else 0
+        minimum = microseconds_to_seconds(MIN_SFX_MICROSECONDS)
+        allowed = f"0 ≤ source_in < source_out ≤ {whole}，且至少保留 {minimum} 秒"
+        if not in_range or out_us - in_us < min(MIN_SFX_MICROSECONDS, whole_us):
+            raise _invalid(
+                index,
+                f"入出点 {source_in}–{out} 秒超出范围，音效 {sfx_id} 共 {whole} 秒；合法范围：{allowed}",
+                clip_id=clip_id,
+                field="source_in/source_out",
+                allowed=allowed,
+            )
+        return in_us, out_us
+
+    def _sfx_volume(self, index: int, clip_id: str | None, value: float) -> float:
+        if not 0.0 <= value <= 1.0:
+            raise _invalid(
+                index, f"音效音量 {value} 超出范围；合法范围：0–1", clip_id=clip_id, field="volume", allowed="0–1"
+            )
+        return value
+
+    def _insert_sfx(self, index: int, operation: InsertSfx) -> None:
+        in_us, out_us = self._sfx_range(index, None, operation.sfx_id, operation.source_in, operation.source_out)
+        clip = SfxClip(
+            id=f"s{self.next_sfx_number}",
+            sfx_id=operation.sfx_id,
+            start_us=self._seconds_at_least_zero(index, None, "start", operation.start),
+            in_us=in_us,
+            out_us=out_us,
+            volume=self._sfx_volume(index, None, operation.volume),
+            fade_in_us=self._seconds_at_least_zero(index, None, "fade_in", operation.fade_in),
+            fade_out_us=self._seconds_at_least_zero(index, None, "fade_out", operation.fade_out),
+        )
+        self.next_sfx_number += 1
+        self.sfx.append(self._touch_bgm(index, clip))
+
+    def _set_sfx(self, index: int, operation: SetSfx) -> None:
+        clip_id = operation.clip
+        position = self._sfx_position(index, clip_id)
+        current = self.sfx[position]
+        changes: dict[str, Any] = {}
+        if operation.source_in is not None or operation.source_out is not None:
+            changes["in_us"], changes["out_us"] = self._sfx_range(
+                index,
+                clip_id,
+                current.sfx_id,
+                operation.source_in if operation.source_in is not None else microseconds_to_seconds(current.in_us),
+                operation.source_out if operation.source_out is not None else microseconds_to_seconds(current.out_us),
+            )
+        if operation.start is not None:
+            changes["start_us"] = self._seconds_at_least_zero(index, clip_id, "start", operation.start)
+        if operation.volume is not None:
+            changes["volume"] = self._sfx_volume(index, clip_id, operation.volume)
+        if operation.fade_in is not None:
+            changes["fade_in_us"] = self._seconds_at_least_zero(index, clip_id, "fade_in", operation.fade_in)
+        if operation.fade_out is not None:
+            changes["fade_out_us"] = self._seconds_at_least_zero(index, clip_id, "fade_out", operation.fade_out)
+        updated = current.model_copy(update=changes)
+        if updated != current:
+            self.sfx[position] = self._touch_bgm(index, updated)
+
     # ---- 整批检查 ----
 
     def _duration_us(self, clip: EditClip) -> int | None:
@@ -664,8 +814,25 @@ class _Batch:
                 allowed=f"不与 {other.id} 重叠的起点或更短的截取",
             )
 
+    def check_sfx(self) -> None:
+        """被本批改动过的音效片段：起点在时间线内。音效可以互相重叠，不查重叠。"""
+        touched = [clip for clip in self.sfx if clip.id in self.last_operation]
+        if not touched:
+            return
+        total_us = self._timeline_duration_us()
+        total = microseconds_to_seconds(total_us)
+        for clip in touched:
+            if clip.start_us >= total_us:
+                raise _invalid(
+                    self.last_operation[clip.id],
+                    f"起点 {microseconds_to_seconds(clip.start_us)} 秒不在时间线内（时间线共 {total} 秒）",
+                    clip_id=clip.id,
+                    field="start",
+                    allowed=f"0 ≤ start < {total}",
+                )
 
-def _bgm_order(clip: BgmClip) -> tuple[int, int]:
+
+def _bgm_order(clip: BgmClip | SfxClip) -> tuple[int, int]:
     return clip.start_us, clip_number(clip.id)
 
 
@@ -676,22 +843,29 @@ def apply_operations(
     sources: EpisodeSources,
     *,
     next_bgm_number: int,
+    next_sfx_number: int = 1,
     check_windows: bool = True,
 ) -> AppliedBatch:
     """依次应用一批操作；任一条非法即抛出 ``operation_invalid``。
 
     ``check_windows`` 为 False 时跳过整批的转场窗口与 BGM 摆放检查，只用于先判断并发冲突的预演。
     """
-    batch = _Batch(content, next_clip_number, next_bgm_number, sources)
+    batch = _Batch(content, next_clip_number, next_bgm_number, sources, next_sfx_number)
     for index, operation in enumerate(operations):
         batch.apply(index, operation)
     if check_windows:
         batch.check_transition_windows()
         batch.check_bgm()
+        batch.check_sfx()
     return AppliedBatch(
-        content=EditTimelineContent(clips=tuple(batch.clips), bgm=tuple(sorted(batch.bgm, key=_bgm_order))),
+        content=EditTimelineContent(
+            clips=tuple(batch.clips),
+            bgm=tuple(sorted(batch.bgm, key=_bgm_order)),
+            sfx=tuple(sorted(batch.sfx, key=_bgm_order)),
+        ),
         next_clip_number=batch.next_clip_number,
         next_bgm_number=batch.next_bgm_number,
+        next_sfx_number=batch.next_sfx_number,
         targets=frozenset(batch.targets),
         referenced=frozenset(batch.referenced),
         last_operation=dict(batch.last_operation),
@@ -731,9 +905,9 @@ def _longest_common_subsequence(left: list[str], right: list[str]) -> set[str]:
 
 
 def diff_content(before: EditTimelineContent, after: EditTimelineContent) -> ContentDiff:
-    """剪辑片段与 BGM 片段一起比较；BGM 片段按绝对起点摆放，没有相对顺序，不计移动。"""
-    old: dict[str, EditClip | BgmClip] = {clip.id: clip for clip in (*before.clips, *before.bgm)}
-    new: dict[str, EditClip | BgmClip] = {clip.id: clip for clip in (*after.clips, *after.bgm)}
+    """剪辑片段、BGM 片段与音效片段一起比较；后两者按绝对起点摆放，没有相对顺序，不计移动。"""
+    old: dict[str, EditClip | BgmClip | SfxClip] = {clip.id: clip for clip in (*before.clips, *before.bgm, *before.sfx)}
+    new: dict[str, EditClip | BgmClip | SfxClip] = {clip.id: clip for clip in (*after.clips, *after.bgm, *after.sfx)}
     common_before = [clip.id for clip in before.clips if clip.id in new]
     common_after = [clip.id for clip in after.clips if clip.id in old]
     in_order = _longest_common_subsequence(common_before, common_after)
@@ -758,14 +932,15 @@ def restore_changed_clip_ids(before: EditTimelineContent, after: EditTimelineCon
 
 
 def sorted_clip_ids(clip_ids: set[str] | frozenset[str]) -> tuple[str, ...]:
-    """剪辑片段在前、BGM 片段在后，各按编号排列。"""
-    return tuple(sorted(clip_ids, key=lambda clip_id: (clip_id.startswith("b"), clip_number(clip_id))))
+    """剪辑片段在前，接着 BGM 片段，最后是音效片段，各按编号排列。"""
+    return tuple(sorted(clip_ids, key=lambda clip_id: ("cbs".index(clip_id[0]), clip_number(clip_id))))
 
 
 __all__ = [
     "MAX_HOLD_MICROSECONDS",
     "MAX_TRANSITION_MICROSECONDS",
     "MIN_BGM_MICROSECONDS",
+    "MIN_SFX_MICROSECONDS",
     "MIN_TRANSITION_MICROSECONDS",
     "MIN_TRIM_MICROSECONDS",
     "REASON_MAX_LENGTH",
@@ -773,13 +948,16 @@ __all__ = [
     "ContentDiff",
     "DeleteBgm",
     "DeleteClip",
+    "DeleteSfx",
     "InsertBgm",
     "InsertClip",
+    "InsertSfx",
     "MoveClip",
     "PlaceNarration",
     "SetBgm",
     "SetHold",
     "SetReason",
+    "SetSfx",
     "SetTransition",
     "SetTrim",
     "SetVolume",

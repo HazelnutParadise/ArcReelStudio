@@ -441,6 +441,8 @@ async def _extract_provider(task: dict[str, Any]) -> str:
             )
         elif task.get("task_type") == "music":
             resolved = await resolver.resolve_music_backend(project, payload)
+        elif task.get("task_type") == "sfx":
+            resolved = await resolver.resolve_sfx_backend(project, payload)
         elif is_audio:
             resolved = await resolver.resolve_audio_backend(project, payload)
         else:

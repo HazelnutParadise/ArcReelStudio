@@ -191,6 +191,7 @@ class DataValidator:
         "versions",
         "grids",
         "bgm",
+        "sfx",
         "renders",
     }
 

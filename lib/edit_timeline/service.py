@@ -36,6 +36,7 @@ from lib.edit_timeline.readout import (
     BgmView,
     ClipView,
     EditTimelineReadout,
+    SfxView,
     TimelineIdentity,
     TimelineIssue,
     project_readout,
@@ -112,8 +113,8 @@ class EditTimelineWriteResult(BaseModel):
     """一批编辑的写入结果：只含受影响片段的新状态与更新后的 issues，不含整份时间线。
 
     ``clips`` 按播放顺序列出本批点名或改动过的片段（含新插入的片段、跟随相邻关系恢复硬切的
-    片段与旁白改挂到的片段）；``bgm`` 按起点列出本批点名或改动过的 BGM 片段；``deleted_clip_ids``
-    是本批删除的剪辑片段与 BGM 片段。
+    片段与旁白改挂到的片段）；``bgm`` / ``sfx`` 按起点列出本批点名或改动过的 BGM 片段与音效片段；
+    ``deleted_clip_ids`` 是本批删除的剪辑片段、BGM 片段与音效片段。
     """
 
     model_config = ConfigDict(frozen=True)
@@ -126,6 +127,7 @@ class EditTimelineWriteResult(BaseModel):
     duration: float
     clips: tuple[ClipView, ...]
     bgm: tuple[BgmView, ...]
+    sfx: tuple[SfxView, ...] = ()
     deleted_clip_ids: tuple[str, ...]
     issues: tuple[TimelineIssue, ...]
 
@@ -189,6 +191,7 @@ def _new_document(
     author: RevisionAuthor,
     next_clip_number: int,
     next_bgm_number: int = 1,
+    next_sfx_number: int = 1,
 ) -> EditTimelineDocument:
     """以 ``content`` 为修订 1 的新剪辑时间线，ID 随机生成。"""
     now = _utc_now()
@@ -199,6 +202,7 @@ def _new_document(
         created_at=now,
         next_clip_number=next_clip_number,
         next_bgm_number=next_bgm_number,
+        next_sfx_number=next_sfx_number,
         revisions=(
             TimelineRevision(
                 number=1,
@@ -289,6 +293,7 @@ class EditTimelineService:
                 author=author,
                 next_clip_number=source.next_clip_number,
                 next_bgm_number=source.next_bgm_number,
+                next_sfx_number=source.next_sfx_number,
             )
             store.write(document)
         return document
@@ -516,6 +521,7 @@ class EditTimelineService:
             duration=readout.duration,
             clips=tuple(clip for clip in readout.clips if clip.id in written.affected),
             bgm=tuple(item for item in readout.bgm if item.id in written.affected),
+            sfx=tuple(item for item in readout.sfx if item.id in written.affected),
             deleted_clip_ids=sorted_clip_ids(written.deleted),
             issues=readout.issues,
         )
@@ -558,6 +564,7 @@ class EditTimelineService:
                     operations,
                     sources,
                     next_bgm_number=document.next_bgm_number,
+                    next_sfx_number=document.next_sfx_number,
                 )
             changes = diff_content(latest.content, applied.content)
             revision = TimelineRevision(
@@ -574,6 +581,7 @@ class EditTimelineService:
                     **document.model_dump(),
                     "next_clip_number": applied.next_clip_number,
                     "next_bgm_number": applied.next_bgm_number,
+                    "next_sfx_number": applied.next_sfx_number,
                     "revisions": (*document.revisions, revision),
                 }
             )
@@ -614,6 +622,7 @@ class EditTimelineService:
             operations,
             sources,
             next_bgm_number=document.next_bgm_number,
+            next_sfx_number=document.next_sfx_number,
             check_windows=False,
         )
         touched = on_base.referenced | frozenset(on_base.last_operation)
@@ -638,6 +647,7 @@ class EditTimelineService:
             operations,
             sources,
             next_bgm_number=document.next_bgm_number,
+            next_sfx_number=document.next_sfx_number,
             check_windows=False,
         )
         if conflicting := frozenset(on_latest.last_operation) & since_base:
@@ -655,6 +665,7 @@ class EditTimelineService:
             operations,
             sources,
             next_bgm_number=document.next_bgm_number,
+            next_sfx_number=document.next_sfx_number,
         )
 
     async def list_timelines(self, project_name: str, *, episode: int | None = None) -> tuple[TimelineSummary, ...]:

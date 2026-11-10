@@ -172,6 +172,8 @@ SAMPLE_ARGUMENTS: dict[str, dict[str, Any]] = {
     "read_timeline": {"timeline": "tl-0000abcd"},
     "list_bgm": {},
     "generate_music": {"prompt": "rainy night lofi piano"},
+    "list_sfx": {},
+    "generate_sfx": {"prompt": "door slam"},
     "edit_timeline": {
         "timeline": "tl-0000abcd",
         "base_revision": 1,

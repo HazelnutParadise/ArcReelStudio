@@ -637,6 +637,7 @@ PROVIDER_ONLY_ENDPOINTS: Mapping[str, str] = {
     "gemini-lyria": "audio",
     "stability-audio": "audio",
     "elevenlabs-music": "audio",
+    "elevenlabs-sfx": "audio",
 }
 
 #: 简单族的 image/video/audio：(provider_id, media_type) → 端点名。
@@ -826,6 +827,7 @@ _specs += [
         ("gemini-aistudio", "gemini-lyria"),
         ("stability", "stability-audio"),
         ("elevenlabs", "elevenlabs-music"),
+        ("elevenlabs", "elevenlabs-sfx"),
     )
 ]
 
@@ -862,6 +864,7 @@ _MULTI_ENDPOINT_DEFAULTS: Mapping[tuple[str, str], str] = {
     ("dashscope", "audio"): "dashscope-tts",
     # 音频类型下配音是默认端点；音乐模型在目录里挂接 gemini-lyria
     ("gemini-aistudio", "audio"): "gemini-tts",
+    ("elevenlabs", "audio"): "elevenlabs-music",
     ("agnes", "video"): "agnes-video-2-5",
     # 方舟的默认视频模型是 Seedance 2.0 系列
     ("ark", "video"): "ark-seedance-2",

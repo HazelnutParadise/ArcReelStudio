@@ -334,6 +334,8 @@ async def _derive_execution_model_for_enqueue(
         elif task_type == "music":
             # 音乐与配音同属音频类型，按任务类型分流，不能把音乐任务算到配音供应商的名额上（docs/adr/0126）
             resolved = await resolver.resolve_music_backend(project, payload or {})
+        elif task_type == "sfx":
+            resolved = await resolver.resolve_sfx_backend(project, payload or {})
         elif is_audio:
             resolved = await resolver.resolve_audio_backend(project, payload or {})
         else:

@@ -175,6 +175,7 @@ class TestGetSystemConfig:
             "text_backend_complex",
             "default_audio_backend",
             "default_music_backend",
+            "default_sfx_backend",
             "narration_voice",
             "narration_speed",
             "market_github_proxy_prefix",

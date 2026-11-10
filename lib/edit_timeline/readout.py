@@ -22,6 +22,7 @@ from lib.edit_timeline.model import (
     TimelineRevision,
     microseconds_to_seconds,
 )
+from lib.edit_timeline.sfx import place_sfx
 from lib.edit_timeline.sources import EpisodeSources, UnitMedia
 from lib.speech.speech_composition import SpeechMode
 from lib.subtitle_style.font import missing_glyphs
@@ -51,6 +52,7 @@ class IssueCode(StrEnum):
     NARRATION_SOURCE_COLLISION = "narration_source_collision"
     SUBTITLE_MISSING_GLYPHS = "subtitle_missing_glyphs"
     BGM_MISSING = "bgm_missing"
+    SFX_MISSING = "sfx_missing"
 
 
 ISSUE_LEVELS: dict[IssueCode, tuple[IssueSeverity, IssueScope]] = {
@@ -64,6 +66,7 @@ ISSUE_LEVELS: dict[IssueCode, tuple[IssueSeverity, IssueScope]] = {
     IssueCode.NARRATION_SOURCE_COLLISION: (IssueSeverity.WARNING, IssueScope.WITH_NARRATION),
     IssueCode.SUBTITLE_MISSING_GLYPHS: (IssueSeverity.WARNING, IssueScope.ALL),
     IssueCode.BGM_MISSING: (IssueSeverity.BLOCKING, IssueScope.ALL),
+    IssueCode.SFX_MISSING: (IssueSeverity.BLOCKING, IssueScope.ALL),
 }
 """每种 issue 的固定级别与影响范围；读取结果与出片前的阻断检查共用这张表。"""
 
@@ -154,6 +157,21 @@ class BgmView(_View):
     fade_out: float
 
 
+class SfxView(_View):
+    """音效片段的读取形态，字段含义同 :class:`BgmView`；音效可以互相重叠。"""
+
+    id: str
+    sfx_id: str
+    name: str | None
+    start: float
+    end: float
+    source_in: float
+    source_out: float
+    volume: float
+    fade_in: float
+    fade_out: float
+
+
 class TimelineIdentity(_View):
     id: str
     name: str
@@ -167,6 +185,7 @@ class EditTimelineReadout(_View):
     duration: float
     clips: tuple[ClipView, ...]
     bgm: tuple[BgmView, ...]
+    sfx: tuple[SfxView, ...] = ()
     issues: tuple[TimelineIssue, ...]
 
 
@@ -399,6 +418,15 @@ def bgm_missing_issues(content: EditTimelineContent, available: Collection[str])
     ]
 
 
+def sfx_missing_issues(content: EditTimelineContent, available: Collection[str]) -> list[TimelineIssue]:
+    """音效片段引用的音效不在 ``available`` 里（已不在项目里或文件已不在）时阻断出片。"""
+    return [
+        timeline_issue(IssueCode.SFX_MISSING, clip_ids=(item.id,), sfx_id=item.sfx_id)
+        for item in sorted(content.sfx, key=lambda item: (item.start_us, item.id))
+        if item.sfx_id not in available
+    ]
+
+
 def project_readout(
     document: EditTimelineDocument, revision: TimelineRevision, sources: EpisodeSources
 ) -> EditTimelineReadout:
@@ -427,6 +455,23 @@ def project_readout(
         for item in sorted(revision.content.bgm, key=lambda item: item.start_us)
         for placed in (placements.get(item.id),)
     )
+    sfx_placements = {placed.clip_id: placed for placed in place_sfx(revision.content.sfx, cursor_us)}
+    sfx = tuple(
+        SfxView(
+            id=item.id,
+            sfx_id=item.sfx_id,
+            name=media.name if (media := sources.sfx.get(item.sfx_id)) is not None else None,
+            start=microseconds_to_seconds(item.start_us),
+            end=microseconds_to_seconds(placed.end_us if placed is not None else item.start_us),
+            source_in=microseconds_to_seconds(item.in_us),
+            source_out=microseconds_to_seconds(item.out_us),
+            volume=item.volume,
+            fade_in=microseconds_to_seconds(placed.fade_in_us if placed is not None else item.fade_in_us),
+            fade_out=microseconds_to_seconds(placed.fade_out_us if placed is not None else item.fade_out_us),
+        )
+        for item in sorted(revision.content.sfx, key=lambda item: (item.start_us, item.id))
+        for placed in (sfx_placements.get(item.id),)
+    )
     return EditTimelineReadout(
         timeline=TimelineIdentity(id=document.id, name=document.name, episode=document.episode),
         revision=revision.number,
@@ -434,10 +479,12 @@ def project_readout(
         duration=microseconds_to_seconds(cursor_us),
         clips=tuple(clips),
         bgm=bgm,
+        sfx=sfx,
         issues=(
             *_structural_issues(revision, sources),
             *_narration_issues(placed, sources, cursor_us),
             *bgm_missing_issues(revision.content, sources.bgm),
+            *sfx_missing_issues(revision.content, sources.sfx),
         ),
     )
 
@@ -453,6 +500,7 @@ __all__ = [
     "IssueScope",
     "IssueSeverity",
     "NarrationView",
+    "SfxView",
     "TimelineIdentity",
     "TimelineIssue",
     "TransitionView",
@@ -461,6 +509,7 @@ __all__ = [
     "clip_source_duration_us",
     "effective_source_range_us",
     "project_readout",
+    "sfx_missing_issues",
     "timeline_issue",
     "trim_applies",
 ]

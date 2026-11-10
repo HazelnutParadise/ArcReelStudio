@@ -295,13 +295,19 @@ def timeline_readout_summary(readout: EditTimelineReadout) -> str:
     timeline = readout.timeline
     return (
         f"剪辑时间线「{timeline.name}」（{timeline.id}）属于集（id={timeline.episode}），修订 {readout.revision}："
-        f"{len(readout.clips)} 个剪辑片段、{len(readout.bgm)} 个 BGM 片段，总时长 {readout.duration} 秒；"
+        f"{len(readout.clips)} 个剪辑片段、{len(readout.bgm)} 个 BGM 片段、{len(readout.sfx)} 个音效片段，"
+        f"总时长 {readout.duration} 秒；"
         f"issues：{_issue_counts(readout.issues)}"
     )
 
 
 def timeline_write_summary(result: EditTimelineWriteResult) -> str:
-    changed = "、".join([*(clip.id for clip in result.clips), *(item.id for item in result.bgm)]) or "无"
+    changed = (
+        "、".join(
+            [*(clip.id for clip in result.clips), *(item.id for item in result.bgm), *(item.id for item in result.sfx)]
+        )
+        or "无"
+    )
     deleted = f"；删除 {'、'.join(result.deleted_clip_ids)}" if result.deleted_clip_ids else ""
     return (
         f"{result.message}\n受影响片段 {changed}{deleted}；总时长 {result.duration} 秒；"

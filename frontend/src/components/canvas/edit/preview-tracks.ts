@@ -13,8 +13,8 @@ import type { PlaybackPlan } from "./playback-schedule";
 /** 一段按全局时间播放的音频：全局区间 `[start, end)`，在 `start` 时刻对应源音频的 `sourceIn`。 */
 export interface AudioPlacement {
   id: string;
-  kind: "narration" | "bgm";
-  /** 旁白为视频单元 ID，BGM 为 BGM ID。 */
+  kind: "narration" | "bgm" | "sfx";
+  /** 旁白为视频单元 ID，BGM 为 BGM ID，音效为音效 ID。 */
   sourceId: string;
   start: number;
   end: number;
@@ -22,7 +22,7 @@ export interface AudioPlacement {
   volume: number;
   fadeIn: number;
   fadeOut: number;
-  /** BGM 的名称，BGM 已不在项目里时为 null；旁白不带。 */
+  /** BGM 或音效的名称，已不在项目里时为 null；旁白不带。 */
   name?: string | null;
 }
 
@@ -137,6 +137,28 @@ export function bgmPlacements(readout: EditTimelineReadout, media: EditTimelineP
         end: item.end,
         sourceIn: item.source_in,
         volume: round(item.volume * (gains.get(item.bgm_id) ?? 1)),
+        fadeIn: item.fade_in,
+        fadeOut: item.fade_out,
+      },
+    ];
+  });
+}
+
+/** 音效片段按读取结果的实际起止与淡入淡出摆放，音量是片段音量乘以音效的峰值增益；音效之间可以重叠。 */
+export function sfxPlacements(readout: EditTimelineReadout, media: EditTimelinePreviewMedia | null): AudioPlacement[] {
+  const gains = new Map((media?.sfx ?? []).map((item) => [item.sfx_id, item.gain]));
+  return (readout.sfx ?? []).flatMap((item) => {
+    if (item.end <= item.start) return [];
+    return [
+      {
+        id: `sfx-${item.id}`,
+        kind: "sfx" as const,
+        sourceId: item.sfx_id,
+        name: item.name,
+        start: item.start,
+        end: item.end,
+        sourceIn: item.source_in,
+        volume: round(item.volume * (gains.get(item.sfx_id) ?? 1)),
         fadeIn: item.fade_in,
         fadeOut: item.fade_out,
       },

@@ -115,6 +115,8 @@ BUILTIN_ENDPOINTS: Final[Mapping[str, BuiltinEndpoint]] = MappingProxyType(
         "gemini-lyria": BuiltinEndpoint("audio", since="0.35.1"),
         "stability-audio": BuiltinEndpoint("audio", since="0.35.1"),
         "elevenlabs-music": BuiltinEndpoint("audio", since="0.35.1"),
+        # 音效生成（音频类型，以能力区分）
+        "elevenlabs-sfx": BuiltinEndpoint("audio", since="0.35.1"),
     }
 )
 
@@ -134,7 +136,7 @@ BUILTIN_PROVIDER_ENDPOINTS: Final[Mapping[str, Mapping[str, ProviderEndpointOpti
         "claude-subscription": {"text": _single("claude-subscription-chat")},
         "grok-subscription": {"text": _single("grok-cli-chat")},
         "stability": {"audio": _single("stability-audio")},
-        "elevenlabs": {"audio": _single("elevenlabs-music")},
+        "elevenlabs": {"audio": ProviderEndpointOptions(("elevenlabs-music", "elevenlabs-sfx"), "elevenlabs-music")},
         "ark-agent-plan": {"text": _single("ark-chat"), "image": _SEEDREAM, "video": _SEEDANCE},
         "dashscope": {
             "text": _single("openai-chat"),
