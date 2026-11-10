@@ -454,10 +454,12 @@ export default {
   'no_music_providers_hint':
     'No provider can generate music yet. Add an AI Studio, Stability AI or ElevenLabs API key in the connection center.',
   'default_models_channel_sfx': 'Sound effects',
-  'default_sfx_model_hint': 'Used when you generate sound effects while editing and when the Agent generates them. Generation is unavailable until one is set.',
+  'default_sfx_model_hint':
+    'Used when you generate sound effects while editing and when the Agent generates them. Generation is unavailable until one is set.',
   'default_sfx_model': 'Sound effect model',
   'sfx_model_unset': 'Not set',
-  'no_sfx_providers_hint': 'No provider can generate sound effects yet. Add a Stability AI or ElevenLabs API key in the connection center.',
+  'no_sfx_providers_hint':
+    'No provider can generate sound effects yet. Add a Stability AI or ElevenLabs API key in the connection center.',
   'narration_voice_label': 'Narration Voice ID',
   'narration_voice_hint': 'Fill in a voice id per your provider docs; leave empty for the default voice',
   'narration_voice_hint_with_voices':
@@ -4301,15 +4303,18 @@ export default {
   'edit_view_sfx_upload': 'Upload sound effect',
   'edit_view_sfx_generate': 'Generate sound effect',
   'edit_view_sfx_generate_title': 'Generate a sound effect',
-  'edit_view_sfx_generate_desc': 'Generates one sound effect with the configured model (paid). When it\'s done it appears in the sound effect library and can be placed on the timeline.',
+  'edit_view_sfx_generate_desc':
+    "Generates one sound effect with the configured model (paid). When it's done it appears in the sound effect library and can be placed on the timeline.",
   'edit_view_sfx_generate_prompt': 'What should it sound like',
-  'edit_view_sfx_generate_prompt_placeholder': 'For example: a wooden door slammed shut in an empty room, with a little echo',
+  'edit_view_sfx_generate_prompt_placeholder':
+    'For example: a wooden door slammed shut in an empty room, with a little echo',
   'edit_view_sfx_generate_seconds': 'Length (seconds)',
   'edit_view_sfx_generate_name': 'Name (optional)',
   'edit_view_sfx_generate_submit': 'Generate',
-  'edit_view_sfx_generate_failed': 'Couldn\'t generate the sound effect: {{message}}',
+  'edit_view_sfx_generate_failed': "Couldn't generate the sound effect: {{message}}",
   'edit_view_sfx_uploading': 'Uploading sound effect…',
-  'edit_view_sfx_uploaded': 'Uploaded sound effect “{{name}}”. Every episode\'s timelines can use it; ask the Agent to place it',
+  'edit_view_sfx_uploaded':
+    "Uploaded sound effect “{{name}}”. Every episode's timelines can use it; ask the Agent to place it",
   'edit_view_sfx_upload_failed': 'Sound effect upload failed: {{message}}',
   'edit_view_sfx_track_empty': 'No sound effect clips yet. Upload or generate one, then ask the Agent to place it',
   'edit_view_subtitles_toggle': 'Subtitles',
@@ -4356,7 +4361,8 @@ export default {
     '{{clip}}: subtitles of video unit {{unit}} contain characters the subtitle font lacks (“{{characters}}”); they may not display correctly when burned into the final cut',
   'edit_view_issue_bgm_missing':
     '{{clip}}: BGM {{bgm_id}} is no longer in the project, so the final cut cannot be rendered',
-  'edit_view_issue_sfx_missing': '{{clip}}: sound effect {{sfx_id}} is no longer in the project, so this can\'t be rendered',
+  'edit_view_issue_sfx_missing':
+    "{{clip}}: sound effect {{sfx_id}} is no longer in the project, so this can't be rendered",
   'edit_view_issue_other': '{{clip}}: {{code}}',
   'edit_view_menu_aria': 'More actions for "{{name}}"',
   'edit_view_menu_rename': 'Rename',
