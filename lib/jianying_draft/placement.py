@@ -20,7 +20,9 @@ from lib.bgm.library import BgmSource
 from lib.edit_timeline.bgm import place_bgm
 from lib.edit_timeline.model import EditClip, EditTimelineContent, Transition
 from lib.edit_timeline.readout import effective_source_range_us
+from lib.edit_timeline.sfx import place_sfx
 from lib.jianying_draft.basis import DraftNarration, DraftUnitBasis
+from lib.sfx.library import SfxSource
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,7 +134,7 @@ class PlacedSubtitle:
 
 @dataclass(frozen=True, slots=True)
 class PlacedBgmAudio:
-    """BGM 轨上实际出声的一段：``volume`` 已是响度增益乘以片段音量，淡入淡出以微秒计。"""
+    """BGM 轨或音效轨上实际出声的一段：``volume`` 已是素材增益乘以片段音量，淡入淡出以微秒计。"""
 
     clip_id: str
     audio_path: str
@@ -143,6 +145,10 @@ class PlacedBgmAudio:
     fade_in_us: int
     fade_out_us: int
 
+    @property
+    def end_us(self) -> int:
+        return self.start_us + self.duration_us
+
 
 @dataclass(frozen=True, slots=True)
 class DraftPlacement:
@@ -151,6 +157,7 @@ class DraftPlacement:
     narrations: tuple[PlacedNarration, ...]
     subtitles: tuple[PlacedSubtitle, ...]
     bgm: tuple[PlacedBgmAudio, ...] = ()
+    sfx: tuple[PlacedBgmAudio, ...] = ()
 
 
 def _source_window(clip: EditClip, unit: UnitMaterial) -> tuple[int, int]:
@@ -182,7 +189,7 @@ def _within_timeline[T: (PlacedNarration, PlacedSubtitle)](items: list[T], durat
     return tuple(kept)
 
 
-def stack_tracks[T: (PlacedNarration, PlacedSubtitle)](items: Sequence[T]) -> tuple[tuple[T, ...], ...]:
+def stack_tracks[T: (PlacedNarration, PlacedSubtitle, PlacedBgmAudio)](items: Sequence[T]) -> tuple[tuple[T, ...], ...]:
     """把可能重叠的片段分到尽量少的轨上，每条轨内不重叠：按起点依次放进第一条已空出的轨，都不空就新开一条。"""
     tracks: list[list[T]] = []
     for item in sorted(items, key=lambda item: item.start_us):
@@ -198,10 +205,12 @@ def place_timeline(
     content: EditTimelineContent,
     units: Mapping[str, UnitMaterial],
     bgm_sources: Mapping[str, BgmSource] | None = None,
+    sfx_sources: Mapping[str, SfxSource] | None = None,
 ) -> DraftPlacement:
     """按修订内容摆放片段；``units`` 里没有的视频单元（已从脚本删除）渲染时跳过。
 
     ``bgm_sources`` 是 BGM 轨所引用的 BGM；不在其中的 BGM 片段不摆放（出片前的检查已拒绝这种时间线）。
+    ``sfx_sources`` 同理，是音效轨所引用的音效。
     """
     clips: list[PlacedClip] = []
     narrations: list[PlacedNarration] = []
@@ -231,6 +240,7 @@ def place_timeline(
     if clips and clips[-1].transition_to_next is not None:
         clips[-1] = replace(clips[-1], transition_to_next=None)
     sources = bgm_sources or {}
+    sounds = sfx_sources or {}
     return DraftPlacement(
         duration_us=cursor,
         clips=tuple(clips),
@@ -249,6 +259,20 @@ def place_timeline(
             )
             for placed in place_bgm(content.bgm, cursor)
             if (source := sources.get(placed.bgm_id)) is not None
+        ),
+        sfx=tuple(
+            PlacedBgmAudio(
+                clip_id=placed.clip_id,
+                audio_path=sound.path,
+                start_us=placed.start_us,
+                source_in_us=placed.source_in_us,
+                duration_us=placed.duration_us,
+                volume=placed.volume * sound.gain,
+                fade_in_us=placed.fade_in_us,
+                fade_out_us=placed.fade_out_us,
+            )
+            for placed in place_sfx(content.sfx, cursor)
+            if (sound := sounds.get(placed.sfx_id)) is not None
         ),
     )
 

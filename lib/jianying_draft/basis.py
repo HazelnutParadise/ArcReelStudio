@@ -18,7 +18,9 @@ from lib.artifacts.rendered_artifact import timeline_renders_dir
 from lib.bgm.library import BgmSource
 from lib.edit_timeline.bgm import bgm_sources_input
 from lib.edit_timeline.model import EditTimelineContent, TimelineRevision
+from lib.edit_timeline.sfx import sfx_sources_input
 from lib.infra.content_digest import canonical_json_bytes, prefixed
+from lib.sfx.library import SfxSource
 from lib.speech.narration_config import project_narration_delivery
 from lib.speech.narration_delivery import POST_PRODUCTION, USE_TTS
 from lib.speech.speech_artifact_provenance import RenditionVariant
@@ -49,10 +51,12 @@ def jianying_draft_artifact_path(episode: int, timeline_id: str, narration: Draf
 
 
 def timeline_render_fingerprint(content: EditTimelineContent) -> str:
-    """剪辑时间线修订里参与渲染部分的指纹；剪辑理由渲染时忽略，不计入。"""
+    """剪辑时间线修订里参与渲染部分的指纹；剪辑理由渲染时忽略，不计入。没有音效时不计音效轨，指纹与加入音效轨前相同。"""
     payload = content.model_dump(mode="json")
     for clip in payload["clips"]:
         clip.pop("reason", None)
+    if not payload["sfx"]:
+        del payload["sfx"]
     return prefixed(hashlib.sha256(canonical_json_bytes(payload, allow_nan=False)).hexdigest())
 
 
@@ -109,8 +113,10 @@ def build_jianying_draft_basis(
     aspect_ratio: str,
     units: Sequence[DraftUnitBasis],
     bgm_sources: Mapping[str, BgmSource] | None = None,
+    sfx_sources: Mapping[str, SfxSource] | None = None,
 ) -> ArtifactBasis:
-    """``bgm_sources`` 是 BGM 轨所引用的 BGM；修订没有 BGM 时依据不含这一项，形态与没有 BGM 的草稿相同。"""
+    """``bgm_sources`` 是 BGM 轨所引用的 BGM；修订没有 BGM 时依据不含这一项，形态与没有 BGM 的草稿相同。
+    ``sfx_sources`` 同理，是音效轨所引用的音效。"""
     inputs: dict[str, object] = {
         "timeline": {
             "id": timeline_id,
@@ -123,6 +129,8 @@ def build_jianying_draft_basis(
     }
     if revision.content.bgm:
         inputs["bgm"] = bgm_sources_input(revision.content.bgm, bgm_sources or {})
+    if revision.content.sfx:
+        inputs["sfx"] = sfx_sources_input(revision.content.sfx, sfx_sources or {})
     return ArtifactBasis.build(JIANYING_DRAFT_BASIS_KIND, kind_version=JIANYING_DRAFT_BASIS_VERSION, inputs=inputs)
 
 

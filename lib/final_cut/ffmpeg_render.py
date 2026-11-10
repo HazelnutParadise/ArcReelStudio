@@ -110,7 +110,7 @@ class NarrationInput:
 
 @dataclass(frozen=True, slots=True)
 class BgmInput:
-    """混进整集音频的一段 BGM：从 BGM 的 ``source_in_us`` 起取 ``duration_us``，放在成片时间 ``start_us``。
+    """混进整集音频的一段 BGM 或音效：从 BGM 的 ``source_in_us`` 起取 ``duration_us``，放在成片时间 ``start_us``。
 
     ``volume`` 已是响度增益乘以片段音量；淡入淡出以微秒计，0 表示不做。
     """
