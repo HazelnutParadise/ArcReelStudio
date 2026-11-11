@@ -212,6 +212,7 @@ import type {
   AssetSheetType,
 } from "@/types/asset-sheet";
 import type { StoryboardBatchKind, StoryboardBatchPreview, StoryboardBatchSubmitted } from "@/types/storyboard-batch";
+import type { Series, SeriesSettingsPatch } from "@/types/series";
 import type { StockItem, StockKind, StockSearchResult, StockSource } from "@/types/stock";
 import type {
   AgentAuthMode,
@@ -929,6 +930,47 @@ class API {
 
   static async uploadBgm(projectName: string, file: File): Promise<{ success: boolean; bgm: ProjectBgm }> {
     return API.postFileUpload(`/projects/${encodeURIComponent(projectName)}/upload/bgm`, file);
+  }
+
+  // ==================== 系列 ====================
+
+  static async listSeries(): Promise<{ series: Series[] }> {
+    return this.request("/series");
+  }
+
+  static async getSeries(seriesId: number): Promise<Series> {
+    return this.request(`/series/${seriesId}`);
+  }
+
+  static async createSeries(name: string, description = ""): Promise<Series> {
+    return this.request("/series", { method: "POST", body: JSON.stringify({ name, description }) });
+  }
+
+  /** 只改给出的字段：名称、简介、世界观、剧情设定。 */
+  static async updateSeries(seriesId: number, patch: SeriesSettingsPatch): Promise<Series> {
+    return this.request(`/series/${seriesId}`, { method: "PATCH", body: JSON.stringify(patch) });
+  }
+
+  /** 删除系列：它的项目回到不属于任何系列，项目与资产库里的资产都不受影响。 */
+  static async deleteSeries(seriesId: number): Promise<void> {
+    await this.request(`/series/${seriesId}`, { method: "DELETE" });
+  }
+
+  /** 把项目放进系列；它原本在别的系列时改到这里。 */
+  static async addSeriesProject(seriesId: number, projectName: string): Promise<Series> {
+    return this.request(`/series/${seriesId}/projects/${encodeURIComponent(projectName)}`, { method: "PUT" });
+  }
+
+  static async removeSeriesProject(seriesId: number, projectName: string): Promise<Series> {
+    return this.request(`/series/${seriesId}/projects/${encodeURIComponent(projectName)}`, { method: "DELETE" });
+  }
+
+  static async addSeriesAsset(seriesId: number, assetId: string): Promise<Series> {
+    return this.request(`/series/${seriesId}/assets/${encodeURIComponent(assetId)}`, { method: "PUT" });
+  }
+
+  static async removeSeriesAsset(seriesId: number, assetId: string): Promise<Series> {
+    return this.request(`/series/${seriesId}/assets/${encodeURIComponent(assetId)}`, { method: "DELETE" });
   }
 
   // ==================== 免版权素材库 ====================
