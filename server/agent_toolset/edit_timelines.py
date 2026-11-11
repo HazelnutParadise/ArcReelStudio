@@ -40,6 +40,14 @@ from server.media_tools.sfx import (
     list_sfx,
     sfx_list_summary,
 )
+from server.media_tools.stock import (
+    ImportStockAudioRequest,
+    SearchStockAudioRequest,
+    import_stock_audio,
+    imported_stock_audio_summary,
+    search_stock_audio,
+    stock_audio_search_summary,
+)
 
 CREATE_TIMELINE = ToolDeclaration(
     name="create_timeline",
@@ -233,6 +241,36 @@ GENERATE_SFX = ToolDeclaration(
     summary=generated_sfx_summary,
 )
 
+SEARCH_STOCK_AUDIO = ToolDeclaration(
+    name="search_stock_audio",
+    description=(
+        "在免版权素材库里找现成的音乐（kind=music）或音效（kind=sfx），不花生成费用。只列不用署名就能商用的素材"
+        "（CC0、公有领域）。音乐能找到的主要是公有领域的古典乐录音，搜索词用英文的曲名、作曲家或乐器。"
+        "音效的来源（Freesound）用的是成员自己的密钥，这里用不了：要音效时直接用 generate_sfx，或请创作者在音效轨"
+        "从素材库挑。结果每条有 source、id、title、duration（秒）与 license；用 import_stock_audio 把选中的一条存进项目。"
+        "unavailable 列出没有返回结果的来源与原因。只读，无副作用。"
+    ),
+    request_model=SearchStockAudioRequest,
+    migration=BLOCKED,
+    domain_key="stock_audio",
+    handler=search_stock_audio,
+    summary=stock_audio_search_summary,
+)
+
+IMPORT_STOCK_AUDIO = ToolDeclaration(
+    name="import_stock_audio",
+    description=(
+        "把 search_stock_audio 找到的一条素材存进项目：kind=music 存进 BGM 库，kind=sfx 存进音效库，回传它在库里的 id、"
+        "名字与长度，可直接用 edit_timeline 的 insert_bgm / insert_sfx 摆放。音量在登记时统一，与上传的一致。"
+        "素材已下架或授权变了时回报 stock_item_not_found。"
+    ),
+    request_model=ImportStockAudioRequest,
+    migration=BLOCKED,
+    domain_key="stock_audio",
+    handler=import_stock_audio,
+    summary=imported_stock_audio_summary,
+)
+
 RESTORE_REVISION = ToolDeclaration(
     name="restore_revision",
     description=(
@@ -263,6 +301,8 @@ EDIT_TIMELINE_TOOLS = (
     GENERATE_MUSIC,
     LIST_SFX,
     GENERATE_SFX,
+    SEARCH_STOCK_AUDIO,
+    IMPORT_STOCK_AUDIO,
 )
 
 __all__ = [
@@ -271,6 +311,7 @@ __all__ = [
     "EDIT_TIMELINE_TOOLS",
     "GENERATE_MUSIC",
     "GENERATE_SFX",
+    "IMPORT_STOCK_AUDIO",
     "LIST_BGM",
     "LIST_REVISIONS",
     "LIST_SFX",
@@ -278,4 +319,5 @@ __all__ = [
     "READ_TIMELINE",
     "RENAME_TIMELINE",
     "RESTORE_REVISION",
+    "SEARCH_STOCK_AUDIO",
 ]

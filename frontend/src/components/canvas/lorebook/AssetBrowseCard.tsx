@@ -7,6 +7,7 @@ import {
   History,
   ImageUp,
   Images,
+  ImagePlus,
   Layers,
   Library,
   Maximize2,
@@ -39,6 +40,7 @@ import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { errMsg } from "@/utils/async";
 import { isAssetBusy, rejectIfAssetBusy } from "./assetBusyGuard";
+import { AssetStockImageDialog } from "./AssetStockImageDialog";
 import { VERSION_RESOURCE, type GalleryAsset, type GalleryMarker } from "./gallery-model";
 import { GalleryStatusMarker } from "./GalleryStatusMarker";
 import { MergeAssetDialog } from "./MergeAssetDialog";
@@ -46,7 +48,15 @@ import { ProjectAssetDeleteDialog } from "./ProjectAssetDeleteDialog";
 import { useStaleRegenerateConfirm } from "./useStaleRegenerateConfirm";
 import type { AssetSheetStatusRow } from "@/types";
 
-type DialogKey = "image-edit" | "versions" | "library" | "merge" | "delete" | "provider-assets" | "provider-upload";
+type DialogKey =
+  | "image-edit"
+  | "versions"
+  | "library"
+  | "merge"
+  | "delete"
+  | "provider-assets"
+  | "provider-upload"
+  | "stock";
 
 export interface AssetBrowseCardProps {
   projectName: string;
@@ -217,6 +227,10 @@ export const AssetBrowseCard = memo(function AssetBrowseCard({
                       <ImageUp aria-hidden />
                       {t("assets:upload_sheet")}
                     </DropdownMenuItem>
+                    <DropdownMenuItem disabled={busy} onClick={() => openGuarded("stock")}>
+                      <ImagePlus aria-hidden />
+                      {t("assets:stock_pick_image")}
+                    </DropdownMenuItem>
                     <DropdownMenuItem disabled={!asset.sheetPath} onClick={() => setDialog("provider-upload")}>
                       <CloudUpload aria-hidden />
                       {t("assets:provider_asset_upload")}
@@ -282,6 +296,16 @@ export const AssetBrowseCard = memo(function AssetBrowseCard({
             onChange={(event) => void handleUpload(event)}
           />
           {staleConfirm.dialog}
+          {dialog === "stock" && (
+            <AssetStockImageDialog
+              projectName={projectName}
+              assetType={type}
+              name={name}
+              onUploadingChange={setUploading}
+              onReload={onReload}
+              onClose={() => setDialog(null)}
+            />
+          )}
           <ProviderAssetBrowserDialog
             open={dialog === "provider-assets"}
             onOpenChange={closeDialog}

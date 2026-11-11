@@ -27,6 +27,7 @@ export default {
   'upload_conflict_incomplete': 'Не удалось загрузить «{{filename}}»: сервер вернул 409 без подробностей конфликта',
   'memory_file_load_failed': 'Не удалось загрузить файл памяти',
   'file_view_load_failed': 'Не удалось загрузить файл',
+  'stock_image_load_failed': 'Не удалось загрузить изображение из библиотеки',
   'memory_file_save_failed': 'Не удалось сохранить файл памяти',
   'file_content_load_failed': 'Не удалось загрузить содержимое файла',
   'file_replace_failed': 'Не удалось заменить файл',

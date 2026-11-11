@@ -661,6 +661,9 @@ describe("EditTimelineView", () => {
         gain: 1,
         path: "bgm/bgm-0001.mp3",
         url: "/api/v1/files/demo/bgm/bgm-0001.mp3",
+        source: "upload",
+        license: null,
+        source_url: null,
       },
     });
 
@@ -766,6 +769,8 @@ describe("EditTimelineView", () => {
         path: "sfx/sfx-0002.wav",
         url: "/x",
         source: "upload",
+        license: null,
+        source_url: null,
       },
     });
 

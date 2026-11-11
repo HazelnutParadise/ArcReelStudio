@@ -12,6 +12,7 @@ export default {
   "conflict_warning": 'Thư viện đã có {{type}} tên "{{name}}". Hãy đổi tên hoặc ghi đè mục hiện có.',
   "upload_image_optional": "Nhấn để tải ảnh lên (tùy chọn)",
   "upload_sheet": "Tải lên hình tài sản",
+  "stock_pick_image": "Chọn từ thư viện tư liệu",
   "rename_asset": "Đổi tên",
   "renaming": "Đang đổi tên...",
   "rename_busy_hint": "Tài nguyên này đang được tạo. Hãy đổi tên sau khi hoàn tất",

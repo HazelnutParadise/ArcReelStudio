@@ -12,6 +12,7 @@ export default {
   "conflict_warning": "資產庫裡已有同名{{type}}「{{name}}」。改個名稱，或覆蓋已有的。",
   "upload_image_optional": "點選上傳圖片（可選）",
   "upload_sheet": "上傳資產圖",
+  "stock_pick_image": "從免版權素材庫挑圖",
   "rename_asset": "重新命名",
   "renaming": "重新命名中…",
   "rename_busy_hint": "該資產正在生成中，請等生成結束後再重新命名",

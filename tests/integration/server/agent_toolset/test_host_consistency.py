@@ -174,6 +174,8 @@ SAMPLE_ARGUMENTS: dict[str, dict[str, Any]] = {
     "generate_music": {"prompt": "rainy night lofi piano"},
     "list_sfx": {},
     "generate_sfx": {"prompt": "door slam"},
+    "search_stock_audio": {"kind": "music", "query": "calm piano"},
+    "import_stock_audio": {"kind": "sfx", "source": "freesound", "id": "1"},
     "edit_timeline": {
         "timeline": "tl-0000abcd",
         "base_revision": 1,
@@ -565,6 +567,8 @@ _PROBLEM_ON_SAMPLE = frozenset(
         GET_PROMPT_PREVIEW.name,
         GET_GENERATION_BATCH.name,
         CANCEL_GENERATION_BATCH.name,
+        # Freesound 的密钥属于成员，Agent 没有成员身份，导入被拒。
+        "import_stock_audio",
         # 测试项目已有正式脚本：确认需要覆盖认可，取回编辑副本被拒；没有在场草稿可改、可晋升。
         CONFIRM_SCRIPT_REVIEW.name,
         OPEN_DRAFT.name,

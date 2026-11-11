@@ -112,6 +112,7 @@ describe("AssetGallery", () => {
       "查看大图",
       "重新生成资产图",
       "上传资产图",
+      "从免版权素材库挑图",
       "上传到供应商素材库",
       "从供应商素材库选择",
       "局部修改",
@@ -120,6 +121,51 @@ describe("AssetGallery", () => {
       "并入…",
       "删除",
     ]);
+  });
+
+  it("stores an image picked from the stock library as the asset sheet", async () => {
+    const user = userEvent.setup();
+    const onReload = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(API, "listStockSources").mockResolvedValue({ sources: [] });
+    vi.spyOn(API, "searchStock").mockResolvedValue({
+      items: [
+        {
+          source: "pixabay",
+          id: "7",
+          kind: "image",
+          title: "courtyard at dusk",
+          creator: "shooter",
+          license: "pixabay",
+          license_url: "https://pixabay.com/service/license-summary/",
+          page_url: "https://pixabay.com/photos/7/",
+          preview_url: "https://pixabay.com/get/7_640.jpg",
+          duration_seconds: null,
+          width: 4000,
+          height: 3000,
+        },
+      ],
+      sources: [{ source: "pixabay", status: "ok" }],
+    });
+    const fetchImage = vi.spyOn(API, "fetchStockImage").mockResolvedValue(new Blob(["png"], { type: "image/png" }));
+    const uploadFile = vi.spyOn(API, "uploadFile").mockResolvedValue({ path: "x" } as never);
+    renderGallery({ onReload });
+
+    const menu = await openMenu(user, "庭院");
+    await user.click(within(menu).getByRole("menuitem", { name: "从免版权素材库挑图" }));
+    await user.type(await screen.findByLabelText("搜索词"), "courtyard");
+    await user.click(screen.getByRole("button", { name: "搜索" }));
+    expect(await screen.findByRole("img", { name: "courtyard at dusk" })).toHaveAttribute(
+      "src",
+      "https://pixabay.com/get/7_640.jpg",
+    );
+    await user.click(screen.getByRole("button", { name: "使用" }));
+
+    await waitFor(() => expect(uploadFile).toHaveBeenCalledTimes(1));
+    expect(fetchImage).toHaveBeenCalledWith(expect.objectContaining({ source: "pixabay", id: "7" }));
+    const [project, type, file, name] = uploadFile.mock.calls[0];
+    expect([project, type, name]).toEqual(["demo", "scene", "庭院"]);
+    expect((file as File).name).toBe("stock.png");
+    await waitFor(() => expect(onReload).toHaveBeenCalled());
   });
 
   it("disables restoring a version once another task occupies the asset", async () => {

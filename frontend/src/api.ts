@@ -212,6 +212,7 @@ import type {
   AssetSheetType,
 } from "@/types/asset-sheet";
 import type { StoryboardBatchKind, StoryboardBatchPreview, StoryboardBatchSubmitted } from "@/types/storyboard-batch";
+import type { StockItem, StockKind, StockSearchResult, StockSource } from "@/types/stock";
 import type {
   AgentAuthMode,
   AgentEngineRequest,
@@ -928,6 +929,55 @@ class API {
 
   static async uploadBgm(projectName: string, file: File): Promise<{ success: boolean; bgm: ProjectBgm }> {
     return API.postFileUpload(`/projects/${encodeURIComponent(projectName)}/upload/bgm`, file);
+  }
+
+  // ==================== 免版权素材库 ====================
+
+  static async listStockSources(): Promise<{ sources: StockSource[] }> {
+    return this.request("/stock/sources");
+  }
+
+  /** 设置一个来源的密钥：工作区共用的只有管理员能设，成员自己的各设各的。 */
+  static async setStockSourceKey(sourceId: string, apiKey: string): Promise<{ sources: StockSource[] }> {
+    return this.request(`/stock/sources/${encodeURIComponent(sourceId)}/key`, {
+      method: "PUT",
+      body: JSON.stringify({ api_key: apiKey }),
+    });
+  }
+
+  static async deleteStockSourceKey(sourceId: string): Promise<{ sources: StockSource[] }> {
+    return this.request(`/stock/sources/${encodeURIComponent(sourceId)}/key`, { method: "DELETE" });
+  }
+
+  /** 问所有提供这种素材的来源；缺密钥或失败的来源写在 `sources` 里，其余来源的结果照常返回。 */
+  static async searchStock(
+    kind: StockKind,
+    query: string,
+    page = 1,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<StockSearchResult> {
+    const params = new URLSearchParams({ kind, q: query, page: String(page) }).toString();
+    return this.request(`/stock/search?${params}`, { signal: options.signal });
+  }
+
+  /** 取一张素材图片的档案，交给现有的图片上传接口存进项目。 */
+  static async fetchStockImage(item: Pick<StockItem, "source" | "id">): Promise<Blob> {
+    const url = `/stock/image?${new URLSearchParams({ source: item.source, id: item.id }).toString()}`;
+    const response = await fetch(`${API_BASE}${url}`, withAuth(url));
+    await throwIfNotOk(response, i18n.t("errors:stock_image_load_failed"));
+    return response.blob();
+  }
+
+  /** 把素材库里的一首音乐或一个音效存进项目的 BGM 库或音效库。 */
+  static async importStockAudio(
+    projectName: string,
+    item: Pick<StockItem, "source" | "id">,
+    kind: "music" | "sfx",
+  ): Promise<{ success: boolean; bgm?: ProjectBgm; sfx?: ProjectSfx }> {
+    return this.request(`/projects/${encodeURIComponent(projectName)}/stock/import`, {
+      method: "POST",
+      body: JSON.stringify({ source: item.source, id: item.id, kind }),
+    });
   }
 
   /**

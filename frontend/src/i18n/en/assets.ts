@@ -11,6 +11,7 @@ export default {
     'The library already has a {{type}} named "{{name}}". Change the name, or overwrite the existing one.',
   "upload_image_optional": "Click to upload image (optional)",
   "upload_sheet": "Upload Asset Sheet",
+  "stock_pick_image": "Pick from the stock library",
   "rename_asset": "Rename",
   "renaming": "Renaming...",
   "rename_busy_hint": "This asset is being generated. Try renaming after it finishes",

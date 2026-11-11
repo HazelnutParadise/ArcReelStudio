@@ -488,6 +488,33 @@ Choose the sound effect model in "Global settings › Default models › Sound e
 
 ElevenLabs' free plan is for non-commercial use only; commercial use requires a paid plan.
 
+## 9.3 Stock library {#stock-library}
+
+Besides uploading and AI generation, you can pick ready-made media from the stock library at no generation cost. There are three entry points:
+
+- "Pick music from the stock library" on the BGM track in the edit view. The music you choose is saved to the project's BGM library.
+- "Pick a sound effect from the stock library" on the SFX track in the edit view. The sound effect you choose is saved to the project's sound effect library.
+- "Pick from the stock library" in the card menu of a character, scene, prop or product. The image you choose becomes that asset sheet.
+
+The stock library only lists media you can use commercially without attribution: CC0, public domain, and the Pixabay and Pexels licenses. Media that requires attribution (CC BY, for example) or forbids commercial use is not listed. Each result shows its license and links to its page on the source site, so you can check it before using it.
+
+| Source | Provides | Key |
+| --- | --- | --- |
+| Openverse | Images, music | Not needed |
+| Pixabay | Images | Shared by the whole workspace, entered by an admin |
+| Pexels | Images | Shared by the whole workspace, entered by an admin |
+| Freesound | Sound effects, music | Each member enters their own |
+
+Sources that still need a key are listed under the search box, and anyone allowed to set the key can enter it there. Freesound's terms do not allow passing its content on to people without a Freesound account, so each member applies for a key with their own Freesound account and enters their own.
+
+A few notes:
+
+- English search terms return the most results.
+- The music you can find without a key is mostly public-domain classical recordings from Wikimedia Commons. For more music clips and for sound effects, enter a Freesound key.
+- Openverse does not guarantee that the license shown for each item is correct. For important uses, open the source page and check.
+- The Agent can find stock music with `search_stock_audio` and `import_stock_audio`. The Agent does not act as a particular member, so it cannot use Freesound; when it needs a sound effect it generates one.
+- The stock library does not provide video.
+
 ## 10. Custom Providers {#custom-providers}
 
 ArcReel can connect to OpenAI-compatible or Google-compatible services. Typical uses include:
