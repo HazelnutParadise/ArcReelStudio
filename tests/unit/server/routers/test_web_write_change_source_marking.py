@@ -33,8 +33,12 @@ _NOT_PROJECT_CHANGE = "Agent 会话、Agent 记忆或项目整体操作，不产
 _SERVICE = "来源在服务层标记：{}"
 _ASSET_LINK = "只写数据库里的供应商素材关联与入库任务；早期版本记录按需补写内容版本身份，不改变创作内容"
 _PRESENCE = "在线成员登记只在服务进程内存里，不写项目文件"
+_SERIES = "项目属于哪个系列只记在数据库里，不写项目文件"
 
 _EXEMPT: dict[str, str] = {
+    # 系列归属
+    "series:add_project": _SERIES,
+    "series:remove_project": _SERIES,
     # 任务提交与控制
     "ad_script:generate_ad_script": _TASK,
     "asset_sheets:submit_asset_sheet_batch_route": _TASK,
