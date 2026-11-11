@@ -661,13 +661,13 @@ async def test_execute_reference_video_task_blocks_on_request_facts_failure_with
         monkeypatch,
         rvt,
         fake_generator,
-        backend_name="gemini-aistudio",
-        backend_model="veo-3.1-generate-preview",
+        backend_name="gemini-vertex",
+        backend_model="veo-3.1-generate-001",
         request_facts_failure=VideoRequestFactsFailure(
             "reference_supported_durations_incompatible",
             (
                 ("provider", "gemini-aistudio"),
-                ("model", "veo-3.1-generate-preview"),
+                ("model", "veo-3.1-generate-001"),
                 ("resolution", "1080p"),
                 ("capability", "r2v"),
             ),
@@ -686,7 +686,7 @@ async def test_execute_reference_video_task_blocks_on_request_facts_failure_with
     assert exc_info.value.params == {
         "capability": "r2v",
         "provider": "gemini-aistudio",
-        "model": "veo-3.1-generate-preview",
+        "model": "veo-3.1-generate-001",
         "resolution": "1080p",
     }
     fake_generator.generate_video_async.assert_not_awaited()
@@ -1204,8 +1204,8 @@ async def test_execute_reference_video_task_picks_the_tier_from_narrowed_request
         rvt,
         fake_generator,
         backend_name="ark-agent-plan",
-        registry_provider_id="gemini-aistudio",
-        backend_model="veo-3.1-generate-preview",
+        registry_provider_id="gemini-vertex",
+        backend_model="veo-3.1-generate-001",
         supported_durations=(4, 6, 8),
         allowed_durations=(8,),
     )

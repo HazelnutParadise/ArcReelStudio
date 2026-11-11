@@ -1476,12 +1476,12 @@ class TestGenerationTasks:
             monkeypatch,
             fake_resolve_ctx(
                 fake_generator,
-                video_provider=("gemini-aistudio", "veo-3.1-generate-preview"),
+                video_provider=("gemini-vertex", "veo-3.1-generate-001"),
                 video_resolution="4k",
                 supported_durations=(4, 6, 8),
                 video_request_facts=make_video_request_facts(
-                    provider_id="gemini-aistudio",
-                    model_id="veo-3.1-generate-preview",
+                    provider_id="gemini-vertex",
+                    model_id="veo-3.1-generate-001",
                     resolution="4k",
                     allowed_durations=(8,),
                 ),

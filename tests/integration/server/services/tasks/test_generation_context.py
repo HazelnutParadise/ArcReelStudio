@@ -599,7 +599,7 @@ class TestVideoRequestFacts:
             pytest.param(
                 "storyboard",
                 "i2v",
-                {"video_provider_i2v": "gemini-aistudio/veo-3.1-generate-preview"},
+                {"video_provider_i2v": "gemini-vertex/veo-3.1-generate-001"},
                 (4, 6, 8),
                 id="storyboard-i2v",
             ),
@@ -608,8 +608,8 @@ class TestVideoRequestFacts:
                 "r2v",
                 {
                     "generation_mode": "reference_video",
-                    "video_provider_r2v": "gemini-aistudio/veo-3.1-generate-preview",
-                    "video_provider_i2v": "gemini-aistudio/veo-3.1-generate-preview",
+                    "video_provider_r2v": "gemini-vertex/veo-3.1-generate-001",
+                    "video_provider_i2v": "gemini-vertex/veo-3.1-generate-001",
                 },
                 (8,),
                 id="reference-r2v",
@@ -619,8 +619,8 @@ class TestVideoRequestFacts:
                 "i2v",
                 {
                     "generation_mode": "reference_video",
-                    "video_provider_r2v": "gemini-aistudio/veo-3.1-generate-preview",
-                    "video_provider_i2v": "gemini-aistudio/veo-3.1-generate-preview",
+                    "video_provider_r2v": "gemini-vertex/veo-3.1-generate-001",
+                    "video_provider_i2v": "gemini-vertex/veo-3.1-generate-001",
                 },
                 (4, 6, 8),
                 id="reference-i2v",
@@ -634,8 +634,8 @@ class TestVideoRequestFacts:
             monkeypatch,
             with_entry_changes(
                 factory_snapshot(),
-                "gemini-aistudio",
-                "veo-3.1-generate-preview",
+                "gemini-vertex",
+                "veo-3.1-generate-001",
                 discontinued=False,
                 shutdown_date=None,
             ),

@@ -23,7 +23,7 @@ from lib.generation.video_request_facts import (
 from tests.catalog_support import install_catalog, with_entry_changes, with_entry_facts
 from tests.factories import seed_endpoint_fixed_video_model
 
-VEO_PROVIDER, VEO_MODEL = "gemini-aistudio", "veo-3.1-generate-preview"
+VEO_PROVIDER, VEO_MODEL = "gemini-vertex", "veo-3.1-generate-001"
 VEO = f"{VEO_PROVIDER}/{VEO_MODEL}"
 VIDU2 = "vidu/vidu2.0"
 
@@ -500,7 +500,8 @@ async def test_auto_resolution_override_falls_back_to_the_custom_model_default(r
 @pytest.mark.parametrize(
     ("pair", "generation_type", "requested", "expected", "voice_consistency"),
     [
-        (VEO, "i2v", False, (False, True, True, False), "soft"),
+        ("gemini-aistudio/gemini-omni-1.1-flash", "i2v", False, (False, True, True, False), "soft"),
+        (VEO, "i2v", False, (False, False, True, True), "soft"),
         ("dashscope/wan2.7-i2v", "i2v", False, (False, False, True, False), "soft"),
         ("kling/kling-v3-omni", "i2v", False, (False, False, True, True), "soft"),
         ("kling/kling-v3-omni", "r2v", False, (False, False, False, False), "none"),

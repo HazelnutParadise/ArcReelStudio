@@ -54,7 +54,7 @@ async def _add_custom_video_model(db_session: AsyncSession, model_id: str, resol
 
 @pytest.mark.asyncio
 async def test_returns_none_when_nothing_configured(resolver: ConfigResolver):
-    assert await resolver.resolve_resolution({}, "gemini-aistudio", "veo-3.1-lite-generate-preview") is None
+    assert await resolver.resolve_resolution({}, "gemini-vertex", "veo-3.1-fast-generate-001") is None
 
 
 @pytest.mark.asyncio
@@ -179,7 +179,7 @@ async def test_falls_through_to_custom_when_project_empty_string(resolver: Confi
 # 时长联动约束
 # ---------------------------------------------------------------------------
 
-_VEO = ("gemini-aistudio", "veo-3.1-generate-preview")  # 声明 {1080p:[8], 4k:[8]} + 参考图 [8]
+_VEO = ("gemini-vertex", "veo-3.1-generate-001")  # 声明 {1080p:[8], 4k:[8]} + 参考图 [8]
 _HAILUO = ("minimax", "MiniMax-Hailuo-2.3")  # 声明 {1080p:[6]}，无参考图声明
 
 
@@ -218,7 +218,7 @@ def test_constrain_durations_falls_back():
     # 该分辨率无声明
     assert constrain_durations(*_VEO, [4, 6, 8], resolution="720p") == [4, 6, 8]
     # 型号未登记（中转站 / 自定义供应商包装）
-    assert constrain_durations("gemini-aistudio", "veo-3.1-via-relay", [4, 6, 8], resolution="4k") == [4, 6, 8]
+    assert constrain_durations("gemini-vertex", "veo-3.1-via-relay", [4, 6, 8], resolution="4k") == [4, 6, 8]
     # 交集为空时保持空集，由事实消费方处理。
     assert constrain_durations(*_VEO, [4, 6], resolution="4k") == []
     assert constrain_durations(*_VEO, [4, 6], uses_reference_images=True) == []
