@@ -25,6 +25,7 @@ export default {
   'upload_conflict_incomplete': '上傳「{{filename}}」失敗：服務端返回 409，但衝突詳情不完整',
   'memory_file_load_failed': '獲取記憶檔案失敗',
   'file_view_load_failed': '無法讀取檔案',
+  'stock_image_load_failed': '無法取得這張素材圖片',
   'memory_file_save_failed': '儲存記憶檔案失敗',
   'file_content_load_failed': '獲取檔案內容失敗',
   'file_replace_failed': '替換檔案失敗',

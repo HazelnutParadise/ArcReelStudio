@@ -198,6 +198,11 @@ export interface ProjectBgm {
   gain: number;
   path: string;
   url: string;
+  /** 从哪来：上传、AI 生成、免版权素材库。 */
+  source: "upload" | "ai" | "library";
+  /** 素材库来的条目的授权代号与它在来源站的页面。 */
+  license: string | null;
+  source_url: string | null;
 }
 
 /** 项目里的一个音效（`GET /projects/{name}/sfx` 与上传结果）；`gain` 是把峰值统一到 −1 dBFS 的线性增益。 */
@@ -208,5 +213,9 @@ export interface ProjectSfx {
   gain: number;
   path: string;
   url: string;
-  source: "upload" | "ai";
+  /** 从哪来：上传、AI 生成、免版权素材库。 */
+  source: "upload" | "ai" | "library";
+  /** 素材库来的条目的授权代号与它在来源站的页面。 */
+  license: string | null;
+  source_url: string | null;
 }
