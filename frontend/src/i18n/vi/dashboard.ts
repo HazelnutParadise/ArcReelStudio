@@ -2960,6 +2960,8 @@ export default {
   'tool_name_generate_music': 'Tạo nhạc',
   'tool_name_list_sfx': 'Liệt kê hiệu ứng âm thanh',
   'tool_name_generate_sfx': 'Tạo hiệu ứng âm thanh',
+  'tool_name_search_stock_audio': 'Tìm tư liệu miễn phí bản quyền',
+  'tool_name_import_stock_audio': 'Nhập tư liệu miễn phí bản quyền',
   'tool_name_edit_timeline': 'Chỉnh sửa dòng thời gian dựng',
   'tool_name_rename_timeline': 'Đổi tên dòng thời gian dựng',
   'tool_name_list_revisions': 'Liệt kê các phiên bản sửa của dòng thời gian dựng',

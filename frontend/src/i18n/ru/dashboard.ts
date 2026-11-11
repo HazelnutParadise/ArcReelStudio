@@ -2856,6 +2856,8 @@ export default {
   'tool_name_generate_music': 'Сгенерировать музыку',
   'tool_name_list_sfx': 'Список звуковых эффектов',
   'tool_name_generate_sfx': 'Сгенерировать звуковой эффект',
+  'tool_name_search_stock_audio': 'Искать в библиотеке материалов',
+  'tool_name_import_stock_audio': 'Импортировать материал',
   'tool_name_edit_timeline': 'Обновить монтажный таймлайн',
   'tool_name_rename_timeline': 'Переименовать монтажный таймлайн',
   'tool_name_list_revisions': 'Список ревизий монтажного таймлайна',

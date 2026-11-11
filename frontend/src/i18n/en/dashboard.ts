@@ -2725,6 +2725,8 @@ export default {
   'tool_name_generate_music': 'Generate music',
   'tool_name_list_sfx': 'List sound effects',
   'tool_name_generate_sfx': 'Generate sound effect',
+  'tool_name_search_stock_audio': 'Search stock audio',
+  'tool_name_import_stock_audio': 'Import stock audio',
   'tool_name_edit_timeline': 'Update edit timeline',
   'tool_name_rename_timeline': 'Rename edit timeline',
   'tool_name_list_revisions': 'List edit timeline revisions',

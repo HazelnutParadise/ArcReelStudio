@@ -2602,6 +2602,8 @@ export default {
   'tool_name_generate_music': '生成音乐',
   'tool_name_list_sfx': '列出音效',
   'tool_name_generate_sfx': '生成音效',
+  'tool_name_search_stock_audio': '搜索免版权素材',
+  'tool_name_import_stock_audio': '导入免版权素材',
   'tool_name_edit_timeline': '修改剪辑时间线',
   'tool_name_rename_timeline': '重命名剪辑时间线',
   'tool_name_list_revisions': '查看剪辑时间线修订历史',
