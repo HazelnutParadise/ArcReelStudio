@@ -281,13 +281,14 @@ function SourceKeyRow({ source, onChange }: { source: StockSource; onChange: (so
           />
         </div>
         {source.key_url && (
-          <Button
-            variant="link"
-            size="sm"
-            render={<a href={source.key_url} target="_blank" rel="noreferrer noopener" />}
+          <a
+            href={source.key_url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex h-8 items-center text-sm underline underline-offset-2"
           >
             {t("stock_key_get")}
-          </Button>
+          </a>
         )}
         <Button type="submit" variant="outline" size="sm" disabled={!value.trim() || saving}>
           {saving && <Loader2 aria-hidden className="animate-spin" />}

@@ -21,7 +21,6 @@ import { API } from "@/api";
 import { AddToLibraryDialog, type LibraryImportPreview } from "@/components/assets/AddToLibraryDialog";
 import { ProviderAssetBrowserDialog } from "@/components/assets/ProviderAssetBrowserDialog";
 import { ProviderAssetUploadDialog } from "@/components/assets/ProviderAssetUploadDialog";
-import { StockPickerDialog } from "@/components/stock/StockPickerDialog";
 import { ASSET_SHEET_TYPE_ICON } from "@/components/assets/asset-type-icons";
 import { CrossfadeImage } from "@/components/canvas/shared/CrossfadeImage";
 import { refreshAfterWrite } from "@/components/canvas/shared/refreshAfterWrite";
@@ -41,13 +40,13 @@ import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { errMsg } from "@/utils/async";
 import { isAssetBusy, rejectIfAssetBusy } from "./assetBusyGuard";
+import { AssetStockImageDialog } from "./AssetStockImageDialog";
 import { VERSION_RESOURCE, type GalleryAsset, type GalleryMarker } from "./gallery-model";
 import { GalleryStatusMarker } from "./GalleryStatusMarker";
 import { MergeAssetDialog } from "./MergeAssetDialog";
 import { ProjectAssetDeleteDialog } from "./ProjectAssetDeleteDialog";
 import { useStaleRegenerateConfirm } from "./useStaleRegenerateConfirm";
 import type { AssetSheetStatusRow } from "@/types";
-import type { StockItem } from "@/types/stock";
 
 type DialogKey =
   | "image-edit"
@@ -161,21 +160,6 @@ export const AssetBrowseCard = memo(function AssetBrowseCard({
       useAppStore.getState().pushToast(errMsg(err), "error");
     } finally {
       // react-doctor-disable-next-line react-doctor/no-unowned-async-error-clear -- 上传在途时 busy 禁用入口并在开头拦截，同一卡片不会有更新的上传共享这个标志；错误走提示，不存本地 state
-      setUploading(false);
-    }
-  };
-
-  // 素材库里选中的图片与上传走同一条路：取回档案后经图片上传接口存成这张资产图。
-  const useStockImage = async (item: StockItem) => {
-    if (rejectIfAssetBusy(type, projectName, name, t)) return;
-    setUploading(true);
-    try {
-      const blob = await API.fetchStockImage(item);
-      const extension = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
-      await API.uploadFile(projectName, type, new File([blob], `stock.${extension}`, { type: blob.type }), name);
-      await onReload?.();
-    } finally {
-      // react-doctor-disable-next-line react-doctor/no-unowned-async-error-clear -- 与上传共用 busy 标志：在途时入口禁用并在开头拦截，同一卡片不会有更新的写入共享这个标志
       setUploading(false);
     }
   };
@@ -313,7 +297,14 @@ export const AssetBrowseCard = memo(function AssetBrowseCard({
           />
           {staleConfirm.dialog}
           {dialog === "stock" && (
-            <StockPickerDialog kind="image" onPick={useStockImage} onClose={() => setDialog(null)} />
+            <AssetStockImageDialog
+              projectName={projectName}
+              assetType={type}
+              name={name}
+              onUploadingChange={setUploading}
+              onReload={onReload}
+              onClose={() => setDialog(null)}
+            />
           )}
           <ProviderAssetBrowserDialog
             open={dialog === "provider-assets"}
