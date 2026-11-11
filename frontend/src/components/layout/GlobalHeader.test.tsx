@@ -193,6 +193,12 @@ describe("GlobalHeader", () => {
     });
   });
 
+  it("links to the series page next to the asset library", () => {
+    renderHeader();
+
+    expect(screen.getByRole("link", { name: "系列" })).toHaveAttribute("href", "/app/series");
+  });
+
   it("renders the usage entry for the current project", () => {
     useProjectsStore.setState({ currentProjectName: "real-project" });
 

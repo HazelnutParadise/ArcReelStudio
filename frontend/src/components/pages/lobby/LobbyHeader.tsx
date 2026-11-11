@@ -1,9 +1,9 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Link } from "wouter";
-import { Bot, ChevronDown, FileArchive, Library, Loader2, Plus, Search, Settings, Trash2 } from "lucide-react";
+import { Bot, ChevronDown, FileArchive, Layers, Library, Loader2, Plus, Search, Settings, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
-import { ROUTE_APP_ASSETS, ROUTE_APP_SETTINGS, settingsSectionPath } from "@/app-routes";
+import { ROUTE_APP_ASSETS, ROUTE_APP_SERIES, ROUTE_APP_SETTINGS, settingsSectionPath } from "@/app-routes";
 import { BRAND } from "@/branding";
 import { PageHeader } from "@/components/shared/page-shell/PageHeader";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -52,6 +52,10 @@ export function LobbyHeader({ query, onQueryChange, onCreate, onImport, importin
           <Link href={ROUTE_APP_ASSETS} className={buttonVariants({ variant: "ghost" })}>
             <Library aria-hidden data-icon="inline-start" />
             {t("assets:library_title")}
+          </Link>
+          <Link href={ROUTE_APP_SERIES} className={buttonVariants({ variant: "ghost" })}>
+            <Layers aria-hidden data-icon="inline-start" />
+            {t("dashboard:series_title")}
           </Link>
           <IconLink href={settingsSectionPath("external-agent")} label={t("dashboard:settings_external_agent")}>
             <Bot aria-hidden />

@@ -7,6 +7,7 @@ export const ROUTE_APP = "/app";
 export const ROUTE_APP_PROJECTS = "/app/projects";
 export const ROUTE_APP_SETTINGS = "/app/settings";
 export const ROUTE_APP_ASSETS = "/app/assets";
+export const ROUTE_APP_SERIES = "/app/series";
 
 /** 全局设置的分区，即地址参数 `section` 的取值，顺序同侧栏；缺省或无法识别时落在 `providers`。 */
 export const SETTINGS_SECTIONS = [
@@ -105,7 +106,13 @@ export function endpointSettingsPath(endpointKey?: string, options: { fromCustom
 }
 
 /** 无子路由的单页顶层路由——精确匹配，前缀不算数。 */
-export const APP_TOP_LEVEL_ROUTES = [ROUTE_APP, ROUTE_APP_PROJECTS, ROUTE_APP_SETTINGS, ROUTE_APP_ASSETS] as const;
+export const APP_TOP_LEVEL_ROUTES = [
+  ROUTE_APP,
+  ROUTE_APP_PROJECTS,
+  ROUTE_APP_SETTINGS,
+  ROUTE_APP_ASSETS,
+  ROUTE_APP_SERIES,
+] as const;
 
 /**
  * `/app/projects/:projectName` 下的路由段常量——`router.tsx`（项目设置页）与

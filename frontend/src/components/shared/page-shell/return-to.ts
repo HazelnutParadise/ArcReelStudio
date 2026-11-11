@@ -4,6 +4,7 @@ import { useLocation, useSearch } from "wouter";
 import {
   ROUTE_APP,
   ROUTE_APP_ASSETS,
+  ROUTE_APP_SERIES,
   ROUTE_APP_PROJECTS,
   ROUTE_APP_SETTINGS,
   WORKSPACE_ROUTE_SETTINGS,
@@ -13,7 +14,7 @@ import { DEMO_PROJECT_NAME } from "@/onboarding/demo-project";
 const RETURN_TO_KEY = "arcreel:returnTo";
 
 /** 「返回」回到进入之前位置的页面。在这些页面之间往来不改变返回目标。 */
-const RETURN_TO_PAGES = [ROUTE_APP_SETTINGS, ROUTE_APP_ASSETS];
+const RETURN_TO_PAGES = [ROUTE_APP_SETTINGS, ROUTE_APP_ASSETS, ROUTE_APP_SERIES];
 
 /** 只做重定向、不会停留的入口。记成返回目标的话，返回后又被重定向回来。 */
 const REDIRECT_ONLY_PATHS = [`${ROUTE_APP_PROJECTS}/${DEMO_PROJECT_NAME}/${WORKSPACE_ROUTE_SETTINGS}`];

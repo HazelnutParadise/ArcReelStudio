@@ -26,6 +26,7 @@ import { lazyNamed } from "@/utils/lazy-component";
 import {
   ROUTE_APP,
   ROUTE_APP_ASSETS,
+  ROUTE_APP_SERIES,
   ROUTE_APP_PROJECTS,
   ROUTE_APP_SETTINGS,
   WORKSPACE_ROUTE_SETTINGS,
@@ -36,6 +37,7 @@ import {
 const SystemConfigPage = lazyNamed(() => import("@/components/pages/SystemConfigPage"), "SystemConfigPage");
 const ProjectSettingsPage = lazyNamed(() => import("@/components/pages/ProjectSettingsPage"), "ProjectSettingsPage");
 const AssetLibraryPage = lazyNamed(() => import("@/components/pages/AssetLibraryPage"), "AssetLibraryPage");
+const SeriesPage = lazyNamed(() => import("@/components/pages/SeriesPage"), "SeriesPage");
 // 引导（driver.js）不参与首屏绘制，拆出后与页面并行加载；它自身不渲染 DOM，加载期间无需占位。
 const OnboardingTour = lazyNamed(() => import("@/onboarding/OnboardingTour"), "OnboardingTour");
 
@@ -246,6 +248,13 @@ export function AppRoutes() {
           <Route path={ROUTE_APP_ASSETS}>
             <AuthGuard>
               <AssetLibraryPage />
+            </AuthGuard>
+          </Route>
+
+          {/* Series */}
+          <Route path={ROUTE_APP_SERIES}>
+            <AuthGuard>
+              <SeriesPage />
             </AuthGuard>
           </Route>
 

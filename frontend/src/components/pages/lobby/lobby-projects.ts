@@ -1,4 +1,5 @@
 import type { ProjectStatus, ProjectSummary } from "@/types";
+import type { Series } from "@/types/series";
 
 /**
  * 大厅的筛选维度：按集进度分「进行中 / 已完成」，另有与之正交的「待修复」
@@ -48,4 +49,21 @@ export function greetingKeyOf(d = new Date()): GreetingKey {
   if (h >= 11 && h < 14) return "lobby_hero_greeting_afternoon";
   if (h >= 14 && h < 22) return "lobby_hero_greeting_evening";
   return "lobby_hero_greeting_late";
+}
+
+/** 按系列筛选：全部、不属于任何系列，或某个系列的 id（字符串形式，便于直接作下拉选项的值）。 */
+export const SERIES_FILTER_ALL = "all";
+export const SERIES_FILTER_NONE = "none";
+
+/** 项目 ID 到所属系列的对应。一个项目至多属于一个系列。 */
+export function seriesByProject(series: Series[]): Map<string, Series> {
+  const out = new Map<string, Series>();
+  for (const item of series) for (const name of item.project_names) out.set(name, item);
+  return out;
+}
+
+export function matchesSeriesFilter(projectName: string, filter: string, byProject: Map<string, Series>): boolean {
+  if (filter === SERIES_FILTER_ALL) return true;
+  const owner = byProject.get(projectName);
+  return filter === SERIES_FILTER_NONE ? owner === undefined : String(owner?.id) === filter;
 }
