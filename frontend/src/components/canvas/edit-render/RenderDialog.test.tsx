@@ -232,7 +232,6 @@ describe("RenderDialog", () => {
     await userEvent.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
   });
-  });
 
   it("提交被入队前检查拒绝时显示原因", async () => {
     vi.spyOn(API, "getFinalCutStatus").mockResolvedValue(finalCut());
