@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
@@ -225,6 +225,10 @@ describe("RenderDialog", () => {
 
     accept({ task_id: "task-1", deduped: false, artifact_path: "renders/x.mp4" });
     expect(await screen.findByText("正在渲染成片…")).toBeInTheDocument();
+    // 「请求已返回」经面板的 effect 才传到对话框：进度文字出现的那一帧，对话框可能还没收到，先让 effect 跑完
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     await userEvent.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
   });
