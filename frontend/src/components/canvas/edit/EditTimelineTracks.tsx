@@ -24,8 +24,8 @@ function percentOf(seconds: number, duration: number): string {
 }
 /** 每秒至少占这么宽，长时间线横向滚动而不是把片段挤成细条。 */
 const MIN_PIXELS_PER_SECOND = 14;
-/** 轨道名一列的宽度，与下方 `pl-28` / `-left-28` 一致。 */
-const LABEL_WIDTH = 112;
+/** 轨道名一列的宽度，与下方 `pl-32` / `-left-32` 一致。 */
+const LABEL_WIDTH = 128;
 
 interface EditTimelineTracksProps {
   projectName: string;
@@ -84,7 +84,7 @@ export function EditTimelineTracks({
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-sidebar/60 p-3 edit-short:p-2">
       <div className="relative overflow-x-auto scroll-fade-x">
         <div
-          className="relative min-w-(--track-min-width) pl-28"
+          className="relative min-w-(--track-min-width) pl-32"
           style={{ "--track-min-width": `${LABEL_WIDTH + duration * MIN_PIXELS_PER_SECOND}px` } as CSSProperties}
         >
           <Ruler duration={duration} percent={percent} />
@@ -235,7 +235,7 @@ interface TrackRowProps {
 function TrackRow({ label, height, action, children }: TrackRowProps) {
   return (
     <div className={cn("relative border-b border-border/50 last:border-b-0", height)}>
-      <span className="absolute top-1/2 -left-28 flex w-26 -translate-y-1/2 items-center gap-0.5 text-xs text-muted-foreground">
+      <span className="absolute top-1/2 -left-32 flex w-30 -translate-y-1/2 items-center gap-0.5 text-xs text-muted-foreground">
         <span className="min-w-0 truncate">{label}</span>
         {action}
       </span>
