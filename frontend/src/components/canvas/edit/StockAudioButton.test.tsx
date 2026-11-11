@@ -118,12 +118,34 @@ describe("StockAudioButton", () => {
     render(<StockAudioButton projectName="demo" kind="sfx" />);
     await userEvent.click(screen.getByRole("button", { name: "从素材库挑音效" }));
 
-    const needsKey = await screen.findByRole("list", { name: "还需要密钥的来源" });
+    const needsKey = await screen.findByRole("list", { name: "需要密钥的来源" });
     await userEvent.type(within(needsKey).getByLabelText("Freesound 密钥（只给你自己用）"), "my-token");
     await userEvent.click(within(needsKey).getByRole("button", { name: "保存" }));
 
     await waitFor(() => expect(setKey).toHaveBeenCalledWith("freesound", "my-token"));
-    await waitFor(() => expect(screen.queryByRole("list", { name: "还需要密钥的来源" })).not.toBeInTheDocument());
+    expect(await screen.findByText("Freesound 密钥已设置（ab…yz）")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Freesound 密钥（只给你自己用）")).not.toBeInTheDocument();
+  });
+
+  it("lets a member remove their key and says so when a source rejects it", async () => {
+    vi.spyOn(API, "listStockSources").mockResolvedValue({
+      sources: [source({}), { ...FREESOUND, available: true, key_masked: "ab…yz" }],
+    });
+    vi.spyOn(API, "searchStock").mockResolvedValue({
+      items: [],
+      sources: [
+        { source: "openverse", status: "ok" },
+        { source: "freesound", status: "key_rejected" },
+      ],
+    });
+    const removeKey = vi.spyOn(API, "deleteStockSourceKey").mockResolvedValue({ sources: [source({}), FREESOUND] });
+    await openAndSearch("sfx", "从素材库挑音效");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("这些来源拒绝了密钥：Freesound");
+    await userEvent.click(screen.getByRole("button", { name: "移除 Freesound 密钥" }));
+
+    await waitFor(() => expect(removeKey).toHaveBeenCalledWith("freesound"));
+    expect(await screen.findByLabelText("Freesound 密钥（只给你自己用）")).toBeInTheDocument();
   });
 
   it("tells a member to ask an admin when the key is shared by the workspace", async () => {

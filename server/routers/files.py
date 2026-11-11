@@ -93,7 +93,7 @@ from lib.speech.audio_utils import (
     probe_audio_duration_seconds,
 )
 from lib.stock.model import StockError
-from lib.stock.service import StockLibraryService
+from lib.stock.service import StockLibraryService, stock_file_name
 from server.auth import CurrentUser
 from server.dependencies import require_project_migration_ok
 from server.i18n import Translator
@@ -108,7 +108,7 @@ from server.routers._source_file_changes import (
 from server.routers._source_uploads import extract_uploaded_source_text, source_loader_http_error
 from server.services.currency.upload_finalize import install_manual_asset_sheet_upload
 from server.services.project.script_review import ScriptReviewError, ScriptReviewService
-from server.services.stock_access import stock_http_error, stock_keys, stock_library
+from server.services.stock_access import member_account, stock_http_error, stock_keys, stock_library
 
 router = APIRouter()
 
@@ -786,13 +786,13 @@ async def import_stock_audio(
     （同样统一音量、按字节登记），并记下授权与它在来源站的页面。
     """
     await asyncio.to_thread(assert_project_migration_ok, project_name)
-    keys = await stock_keys(session, library, user.id)
+    keys = await stock_keys(session, library, member_account(user))
     try:
         file = await library.fetch(source_id=body.source, kind=body.kind, item_id=body.id, key=keys.get(body.source))
     except StockError as exc:
         raise stock_http_error(exc, _t) from exc
     # 标题会被当成文件名取显示名：去掉路径分隔符，免得只剩最后一段
-    name = f"{file.item.title.replace('/', ' ').replace(chr(92), ' ')}{file.extension}"
+    name = stock_file_name(file.item.title, file.extension)
     if body.kind == "music":
         try:
             with project_change_source("webui"):

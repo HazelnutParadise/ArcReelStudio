@@ -13,7 +13,7 @@ from lib.db import get_async_session
 from lib.project.project_manager import ProjectManager
 from lib.stock.model import KeyScope, ResolvedStockItem, StockError, StockItem, StockKind
 from lib.stock.service import StockLibraryService
-from server.auth import CurrentUserInfo, get_current_user
+from server.auth import EMBEDDED_AGENT_SUB, CurrentUserInfo, get_current_user
 from server.error_handlers import register_error_handlers
 from server.routers import files, stock
 from server.services.stock_access import stock_library
@@ -68,10 +68,8 @@ class _FakeSource:
         )
 
 
-def _download(request: httpx2.Request) -> httpx2.Response:
-    if request.url.path.endswith(".wav"):
-        return httpx2.Response(200, content=wav_bytes(1, tone_hz=440))
-    return httpx2.Response(200, content=b"\x89PNG-bytes")
+async def _download(url: str) -> bytes:
+    return wav_bytes(1, tone_hz=440) if url.endswith(".wav") else b"\x89PNG-bytes"
 
 
 class _Stock:
@@ -81,7 +79,7 @@ class _Stock:
         self.personal = _FakeSource("personal", {"sfx"}, "member", ".wav")
         self.library = StockLibraryService(
             sources={source.id: source for source in (self.free, self.shared, self.personal)},
-            download_client=lambda: httpx2.AsyncClient(transport=httpx2.MockTransport(_download)),
+            download=_download,
         )
 
 
@@ -246,3 +244,40 @@ async def test_importing_an_item_the_source_no_longer_offers_adds_nothing(db_fac
     assert response.status_code == 404
     assert wrong_kind.status_code == 400
     assert listed == []
+
+
+async def test_the_embedded_agent_cannot_use_or_change_a_members_key(db_factory, stock_env) -> None:
+    # 内嵌 Agent 的令牌解析出的 id 就是预设管理员的账号 id：它不能因此用到那位管理员自己的密钥
+    admin_user = CurrentUserInfo(id="default", sub="default", role="admin", username="admin")
+    agent_user = CurrentUserInfo(id="default", sub=EMBEDDED_AGENT_SUB, role="user")
+    async with (
+        AsyncClient(transport=ASGITransport(app=_app(db_factory, stock_env, admin_user)), base_url="http://t") as admin,
+        AsyncClient(transport=ASGITransport(app=_app(db_factory, stock_env, agent_user)), base_url="http://t") as agent,
+    ):
+        await admin.put(f"{BASE}/sources/personal/key", json={"api_key": "admin-token"})
+        sources = _by_id((await agent.get(f"{BASE}/sources")).json())
+        searched = (await agent.get(f"{BASE}/search", params={"kind": "sfx", "q": "door"})).json()
+        imported = await agent.post(
+            "/api/v1/projects/demo/stock/import", json={"source": "personal", "id": "s1", "kind": "sfx"}
+        )
+        overwritten = await agent.put(f"{BASE}/sources/personal/key", json={"api_key": "agent-token"})
+        removed = await agent.delete(f"{BASE}/sources/personal/key")
+        still_there = _by_id((await admin.get(f"{BASE}/sources")).json())["personal"]
+
+    assert (sources["personal"]["available"], sources["personal"]["can_set_key"]) == (False, False)
+    assert sources["personal"]["key_masked"] is None
+    assert {entry["source"]: entry["status"] for entry in searched["sources"]}["personal"] == "key_missing"
+    assert imported.status_code == 400
+    assert (overwritten.status_code, removed.status_code) == (403, 403)
+    assert still_there["available"] is True
+    assert stock_env.personal.seen_keys == []
+
+
+async def test_saving_a_key_twice_replaces_it(db_factory, stock_env) -> None:
+    async with _client(db_factory, stock_env, account="u-alice", role="user") as alice:
+        await alice.put(f"{BASE}/sources/personal/key", json={"api_key": "first-token"})
+        second = await alice.put(f"{BASE}/sources/personal/key", json={"api_key": "second-token"})
+        await alice.get(f"{BASE}/search", params={"kind": "sfx", "q": "door"})
+
+    assert second.status_code == 200
+    assert stock_env.personal.seen_keys == ["second-token"]

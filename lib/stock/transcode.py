@@ -20,6 +20,8 @@ STORABLE_AUDIO_EXTENSIONS = (".mp3", ".wav", ".m4a")
 TRANSCODABLE_AUDIO_EXTENSIONS = (".ogg", ".oga", ".flac")
 
 _TRANSCODE_DEADLINE_SECONDS = 300.0
+#: 转码输出的上限，与单个素材档案的上限一致：码率极低的长音频转成 192 kbps 后会膨胀很多倍
+_MAX_OUTPUT_BYTES = 100 * 1024 * 1024
 
 
 async def to_storable_audio(content: bytes, extension: str) -> tuple[bytes, str]:
@@ -36,7 +38,18 @@ async def to_storable_audio(content: bytes, extension: str) -> tuple[bytes, str]
     try:
         source, target = workdir / f"in{extension}", workdir / "out.mp3"
         await asyncio.to_thread(source.write_bytes, content)
-        args = [ffmpeg, "-nostdin", "-y", *local_file_input(source), "-vn", "-b:a", "192k", str(target)]
+        args = [
+            ffmpeg,
+            "-nostdin",
+            "-y",
+            *local_file_input(source),
+            "-vn",
+            "-b:a",
+            "192k",
+            "-fs",
+            str(_MAX_OUTPUT_BYTES + 1),
+            str(target),
+        ]
         try:
             result = await run_with_deadline(args, deadline_seconds=_TRANSCODE_DEADLINE_SECONDS, capture_stderr=True)
         except SubprocessDeadlineExceeded:
@@ -44,6 +57,8 @@ async def to_storable_audio(content: bytes, extension: str) -> tuple[bytes, str]
         if result.returncode != 0 or not await asyncio.to_thread(target.is_file):
             detail = result.stderr.decode(errors="replace").strip()[-300:]
             raise StockError("stock_file_unsupported", f"素材的音频无法转换：{detail}")
+        if (await asyncio.to_thread(target.stat)).st_size > _MAX_OUTPUT_BYTES:
+            raise StockError("stock_file_too_large", "素材转成 MP3 后过大", max_mb=_MAX_OUTPUT_BYTES // (1024 * 1024))
         return await asyncio.to_thread(target.read_bytes), ".mp3"
     finally:
         await asyncio.to_thread(shutil.rmtree, workdir, True)  # hard-delete: temp -- 转码用的临时目录

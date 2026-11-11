@@ -7,8 +7,15 @@ from collections.abc import Iterable
 import httpx2
 import pytest
 
+from lib.backends.artifact_download_guard import ArtifactTooLargeError
 from lib.stock.model import StockError
-from lib.stock.service import STOCK_FILE_MAX_BYTES, StockLibraryService, check_public_destination
+from lib.stock.service import (
+    STOCK_FILE_MAX_BYTES,
+    StockLibraryService,
+    check_public_destination,
+    download_public,
+    stock_file_name,
+)
 from lib.stock.sources import STOCK_SOURCES
 from tests.http_capture import capture_http, only_request
 
@@ -19,9 +26,18 @@ _PEXELS_SEARCH = "https://api.pexels.com/v1/search"
 _FREESOUND_SEARCH = "https://freesound.org/apiv2/search/text/"
 
 
+async def _plain_download(url: str) -> bytes:
+    async with httpx2.AsyncClient(follow_redirects=True) as client:
+        response = await client.get(url)
+        declared = int(response.headers.get("Content-Length", "0"))
+        if declared > STOCK_FILE_MAX_BYTES:
+            raise ArtifactTooLargeError("too large")
+        return response.content
+
+
 def _service() -> StockLibraryService:
-    # 下载端不接公网校验：测试里的主机名解析不到公网地址，校验本身另有用例。
-    return StockLibraryService(download_client=lambda: httpx2.AsyncClient(follow_redirects=True))
+    # 下载端不接公网校验：测试里的主机名解析不到公网地址，校验与连到校验过的地址另有用例。
+    return StockLibraryService(download=_plain_download)
 
 
 def _openverse_audio(item_id: str, *, license_code: str = "cc0", source: str = "jamendo", ext: str = "mp3") -> dict:
@@ -217,6 +233,9 @@ async def test_a_source_is_refused_for_a_kind_it_does_not_provide() -> None:
         ("https://metadata.example.org/a.mp3", ["169.254.169.254"]),
         ("https://mixed.example.org/a.mp3", ["93.184.216.34", "192.168.1.1"]),
         ("https://192.168.0.10/a.mp3", []),
+        ("https://nat64.example.org/a.mp3", ["64:ff9b::7f00:1"]),
+        ("https://compat.example.org/a.mp3", ["::127.0.0.1"]),
+        ("https://mapped.example.org/a.mp3", ["::ffff:10.0.0.1"]),
     ],
 )
 async def test_downloads_are_refused_unless_the_destination_is_public_https(url: str, addresses: list[str]) -> None:
@@ -265,3 +284,85 @@ async def test_openverse_offers_no_sound_effects() -> None:
     with pytest.raises(StockError) as caught:
         await _service().resolve(source_id="openverse", kind="sfx", item_id="x", key=None)
     assert caught.value.code == "stock_kind_unsupported"
+
+
+def _recording_client(handler):
+    return lambda: httpx2.AsyncClient(transport=httpx2.MockTransport(handler))
+
+
+async def test_a_download_connects_to_the_address_that_was_checked() -> None:
+    seen: list[httpx2.Request] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.append(request)
+        return httpx2.Response(200, content=b"AUDIO")
+
+    async def resolver(_host: str, _port: int) -> Iterable[str]:
+        return ["93.184.216.34"]
+
+    content = await download_public(
+        "https://cdn.example.org/a.mp3?x=1", resolver=resolver, client=_recording_client(handler)
+    )
+
+    assert content == b"AUDIO"
+    (request,) = seen
+    assert str(request.url) == "https://93.184.216.34/a.mp3?x=1"
+    assert request.headers["Host"] == "cdn.example.org"
+    assert request.extensions["sni_hostname"] == "cdn.example.org"
+
+
+async def test_a_redirect_to_a_private_address_is_refused_before_connecting() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.append(request.headers["Host"])
+        return httpx2.Response(302, headers={"Location": "https://internal.example.org/secret"})
+
+    async def resolver(host: str, _port: int) -> Iterable[str]:
+        return ["10.0.0.5"] if host == "internal.example.org" else ["93.184.216.34"]
+
+    with pytest.raises(StockError) as caught:
+        await download_public("https://cdn.example.org/a.mp3", resolver=resolver, client=_recording_client(handler))
+
+    assert caught.value.code == "stock_download_rejected"
+    assert seen == ["cdn.example.org"]
+
+
+async def test_a_redirect_is_followed_to_another_public_host_and_loops_are_cut_off() -> None:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        if request.headers["Host"] == "cdn.example.org":
+            return httpx2.Response(301, headers={"Location": "https://files.example.org/b.mp3"})
+        return httpx2.Response(200, content=b"MOVED")
+
+    def loop(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(302, headers={"Location": "https://cdn.example.org/again"})
+
+    async def resolver(_host: str, _port: int) -> Iterable[str]:
+        return ["93.184.216.34"]
+
+    moved = await download_public("https://cdn.example.org/a.mp3", resolver=resolver, client=_recording_client(handler))
+    assert moved == b"MOVED"
+    with pytest.raises(StockError) as caught:
+        await download_public("https://cdn.example.org/a.mp3", resolver=resolver, client=_recording_client(loop))
+    assert caught.value.code == "stock_download_rejected"
+
+
+async def test_a_download_stops_at_the_size_limit() -> None:
+    def handler(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, content=b"x", headers={"Content-Length": str(STOCK_FILE_MAX_BYTES + 1)})
+
+    with pytest.raises(ArtifactTooLargeError):
+        await download_public("https://93.184.216.34/big.wav", client=_recording_client(handler))
+
+
+@pytest.mark.parametrize(
+    ("title", "extension", "expected"),
+    [
+        ("door_slam.wav", ".mp3", "door_slam.mp3"),
+        ("rain / on a roof v1.2", ".wav", "rain   on a roof v1.2.wav"),
+        ("Chopin", ".mp3", "Chopin.mp3"),
+        (".ogg", ".mp3", ".ogg.mp3"),
+    ],
+)
+def test_the_file_name_drops_a_duplicate_audio_extension(title: str, extension: str, expected: str) -> None:
+    assert stock_file_name(title, extension) == expected

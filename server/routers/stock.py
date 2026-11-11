@@ -19,7 +19,7 @@ from lib.stock.model import KeyScope, StockError, StockKind, StockSource
 from lib.stock.service import StockLibraryService, StockSearchResult
 from server.auth import CurrentUser
 from server.i18n import Translator
-from server.services.stock_access import key_owner, stock_http_error, stock_keys, stock_library
+from server.services.stock_access import key_owner, member_account, stock_http_error, stock_keys, stock_library
 
 router = APIRouter(prefix="/stock", tags=["素材库"])
 
@@ -51,11 +51,14 @@ class StockKeyRequest(BaseModel):
 
 
 def _can_set_key(source: StockSource, user: CurrentUser) -> bool:
+    """成员自己的密钥本人可设，工作区共用的只有管理员可设；内嵌 Agent 与 API Key 调用都不能设密钥。"""
+    if member_account(user) is None or user.sub.startswith("apikey:"):
+        return False
     return source.key_scope == "member" or (source.key_scope == "workspace" and user.role == "admin")
 
 
 async def _sources(session: AsyncSession, library: StockLibraryService, user: CurrentUser) -> StockSourcesResponse:
-    keys = await stock_keys(session, library, user.id)
+    keys = await stock_keys(session, library, member_account(user))
     return StockSourcesResponse(
         sources=[
             StockSourceView(
@@ -123,7 +126,7 @@ async def search(
     page: Annotated[int, Query(ge=1, le=50)] = 1,
 ) -> StockSearchResult:
     """问所有提供这种素材的来源。某个来源缺密钥或失败时照常返回其他来源的结果，状态写在 ``sources`` 里。"""
-    keys = await stock_keys(session, library, user.id)
+    keys = await stock_keys(session, library, member_account(user))
     return await library.search(kind=kind, query=q.strip(), page=page, keys=keys)
 
 
@@ -137,7 +140,7 @@ async def fetch_image(
     id: Annotated[str, Query(min_length=1, max_length=128)],
 ) -> Response:
     """取一张素材图片的档案。页面拿到后经现有的图片上传接口存进项目，与使用者自己上传的图片走同一条路。"""
-    keys = await stock_keys(session, library, user.id)
+    keys = await stock_keys(session, library, member_account(user))
     try:
         file = await library.fetch(source_id=source, kind="image", item_id=id, key=keys.get(source))
     except StockError as exc:

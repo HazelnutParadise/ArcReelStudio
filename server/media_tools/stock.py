@@ -11,10 +11,9 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from lib.bgm.service import BgmError, BgmLibraryService
-from lib.db.models.stock_source_key import WORKSPACE_OWNER
 from lib.sfx.service import SfxError, SfxLibraryService
 from lib.stock.model import StockError, StockItem
-from lib.stock.service import StockLibraryService
+from lib.stock.service import StockLibraryService, stock_file_name
 from server.media_tools.context import tool_error, tool_problem
 from server.services.stock_access import stock_keys
 from server.tool_runtime import CallerContext, ProjectScope, Services, ToolOutcome, ToolRequest
@@ -56,7 +55,7 @@ def _audio_item(item: StockItem) -> StockAudioItem:
 
 async def _workspace_keys(services: Services, library: StockLibraryService) -> dict[str, str]:
     async with services.sessions() as session:
-        return await stock_keys(session, library, WORKSPACE_OWNER)
+        return await stock_keys(session, library, None)
 
 
 async def search_stock_audio(
@@ -121,7 +120,7 @@ async def import_stock_audio(
     try:
         keys = await _workspace_keys(services, library)
         file = await library.fetch(source_id=args.source, kind=args.kind, item_id=args.id, key=keys.get(args.source))
-        name = f"{file.item.title.replace('/', ' ').replace(chr(92), ' ')}{file.extension}"
+        name = stock_file_name(file.item.title, file.extension)
         if args.kind == "music":
             track = await BgmLibraryService(services.projects).register_library(
                 scope.project_name,

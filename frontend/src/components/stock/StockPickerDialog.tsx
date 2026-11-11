@@ -82,9 +82,8 @@ export function StockPickerDialog({ kind, onPick, onClose }: StockPickerDialogPr
 
   const relevant = sources.filter((source) => source.kinds.includes(kind));
   const names = new Map(sources.map((source) => [source.id, source.display_name]));
-  const failed = (result?.sources ?? []).filter(
-    (entry) => entry.status === "failed" || entry.status === "key_rejected",
-  );
+  const failed = (result?.sources ?? []).filter((entry) => entry.status === "failed");
+  const rejected = (result?.sources ?? []).filter((entry) => entry.status === "key_rejected");
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
@@ -112,6 +111,13 @@ export function StockPickerDialog({ kind, onPick, onClose }: StockPickerDialogPr
               </Button>
             </form>
             <SourceKeys sources={relevant} onChange={setSources} />
+            {rejected.length > 0 && (
+              <p role="alert" className="text-xs text-destructive">
+                {t("stock_sources_key_rejected", {
+                  sources: rejected.map((entry) => names.get(entry.source) ?? entry.source).join("、"),
+                })}
+              </p>
+            )}
             {failed.length > 0 && (
               <p role="status" className="text-xs text-muted-foreground">
                 {t("stock_sources_failed", {
@@ -221,20 +227,52 @@ function StockResult({ item, sourceName, picking, disabled, onPick }: StockResul
   );
 }
 
-/** 还不能用的来源：能设置密钥的人当场填，不能设的人看到该找谁。 */
+/** 需要密钥的来源：还不能用的当场填密钥（不能设的人看到该找谁），已经设好的可以移除后重填。 */
 function SourceKeys({ sources, onChange }: { sources: StockSource[]; onChange: (sources: StockSource[]) => void }) {
   const { t } = useTranslation("dashboard");
   const missing = sources.filter((source) => !source.available);
-  if (missing.length === 0) return null;
+  const configured = sources.filter((source) => source.available && source.can_set_key && source.key_masked);
+  if (missing.length === 0 && configured.length === 0) return null;
   return (
     <ul
-      aria-label={t("stock_sources_need_key")}
+      aria-label={t("stock_sources_keys")}
       className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-3"
     >
       {missing.map((source) => (
         <SourceKeyRow key={source.id} source={source} onChange={onChange} />
       ))}
+      {configured.map((source) => (
+        <ConfiguredKeyRow key={source.id} source={source} onChange={onChange} />
+      ))}
     </ul>
+  );
+}
+
+function ConfiguredKeyRow({ source, onChange }: { source: StockSource; onChange: (sources: StockSource[]) => void }) {
+  const { t } = useTranslation("dashboard");
+  const [removing, setRemoving] = useState(false);
+
+  const remove = async () => {
+    setRemoving(true);
+    try {
+      onChange((await API.deleteStockSourceKey(source.id)).sources);
+    } catch (cause) {
+      useAppStore.getState().pushToast(errMsg(cause), "error");
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  return (
+    <li className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <span className="min-w-0 flex-1">
+        {t("stock_key_configured", { source: source.display_name, key: source.key_masked })}
+      </span>
+      <Button variant="outline" size="sm" disabled={removing} onClick={() => voidCall(remove())}>
+        {removing && <Loader2 aria-hidden className="animate-spin" />}
+        {t("stock_key_remove", { source: source.display_name })}
+      </Button>
+    </li>
   );
 }
 
