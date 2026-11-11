@@ -107,6 +107,20 @@ class SfxLibraryService:
             model=model,
         )
 
+    async def register_library(
+        self, project_name: str, *, name: str, extension: str, content: bytes, license: str, source_url: str
+    ) -> SfxSound:
+        """登记一条从免版权素材库导入的音效：与上传走同一条登记，并记下授权与它在来源站的页面。"""
+        return await self._register(
+            project_name,
+            name=sfx_display_name(name),
+            extension=extension.lower(),
+            content=content,
+            source="library",
+            license=license,
+            source_url=source_url,
+        )
+
     async def _register(
         self,
         project_name: str,
@@ -117,6 +131,8 @@ class SfxLibraryService:
         source: SfxOrigin = "upload",
         prompt: str | None = None,
         model: str | None = None,
+        license: str | None = None,
+        source_url: str | None = None,
     ) -> SfxSound:
         project_dir = await asyncio.to_thread(self._project_dir, project_name)
         if extension not in SFX_EXTENSIONS:
@@ -152,6 +168,8 @@ class SfxLibraryService:
                 source=source,
                 prompt=prompt,
                 model=model,
+                license=license,
+                source_url=source_url,
             )
             await run_sync_transaction(self._commit, project_name, project_dir, staged, sound)
         finally:

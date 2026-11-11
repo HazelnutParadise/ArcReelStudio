@@ -139,6 +139,8 @@ class StockLibraryService:
         source = self.source(source_id)
         if kind not in source.kinds:
             raise StockError("stock_kind_unsupported", f"{source_id} 不提供 {kind}", source=source_id, kind=kind)
+        if source.key_scope != "none" and not key:
+            raise StockError("stock_key_missing", f"{source_id} 需要密钥", source=source.display_name)
         async with self._api_client() as client:
             return await source.resolve(client, kind=kind, item_id=item_id, key=key)
 

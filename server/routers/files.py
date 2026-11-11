@@ -21,11 +21,14 @@ logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import PlainTextResponse
+from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from lib.bgm.library import BGM_DIR, BGM_EXTENSIONS, BGM_MAX_BYTES, BgmTrack
 from lib.bgm.service import BgmError, BgmLibraryService
 from lib.catalog.errors import ModelNotInCatalogError
 from lib.config.resolver import NoAvailableProviderError, VisionCapabilityError
+from lib.db import get_async_session
 from lib.episode.episode_ledger import is_derived_episode_name
 from lib.episode.episode_paths import (
     REFERENCE_VIDEO_SCRIPT_PLAN_FILENAME,
@@ -89,6 +92,9 @@ from lib.speech.audio_utils import (
     AUDIO_REFERENCE_MIN_SECONDS,
     probe_audio_duration_seconds,
 )
+from lib.stock.model import StockError
+from lib.stock.service import StockLibraryService
+from server.auth import CurrentUser
 from server.dependencies import require_project_migration_ok
 from server.i18n import Translator
 from server.routers._episode_source_errors import episode_source_http_error
@@ -102,6 +108,7 @@ from server.routers._source_file_changes import (
 from server.routers._source_uploads import extract_uploaded_source_text, source_loader_http_error
 from server.services.currency.upload_finalize import install_manual_asset_sheet_upload
 from server.services.project.script_review import ScriptReviewError, ScriptReviewService
+from server.services.stock_access import stock_http_error, stock_keys, stock_library
 
 router = APIRouter()
 
@@ -692,6 +699,9 @@ def _bgm_view(project_name: str, track: BgmTrack) -> dict[str, object]:
         "gain": round(track.gain, 6),
         "path": track.file,
         "url": f"/api/v1/files/{project_name}/{track.file}",
+        "source": track.source,
+        "license": track.license,
+        "source_url": track.source_url,
     }
 
 
@@ -740,6 +750,8 @@ def _sfx_view(project_name: str, sound: SfxSound) -> dict[str, object]:
         "path": sound.file,
         "url": f"/api/v1/files/{project_name}/{sound.file}",
         "source": sound.source,
+        "license": sound.license,
+        "source_url": sound.source_url,
     }
 
 
@@ -751,6 +763,63 @@ async def list_sfx(project_name: str, _t: Translator):
     except SfxError as exc:
         raise _sfx_http_error(exc, _t) from exc
     return {"sfx": [_sfx_view(project_name, sound) for sound in sounds]}
+
+
+class StockImportRequest(BaseModel):
+    source: str = Field(min_length=1, max_length=32)
+    id: str = Field(min_length=1, max_length=128)
+    kind: Literal["music", "sfx"]
+
+
+@router.post("/projects/{project_name}/stock/import")
+async def import_stock_audio(
+    project_name: str,
+    body: StockImportRequest,
+    user: CurrentUser,
+    _t: Translator,
+    library: Annotated[StockLibraryService, Depends(stock_library)],
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+):
+    """把免版权素材库里的一首音乐或一个音效存进项目的 BGM 库或音效库（docs/adr/0128）。
+
+    下载地址不由页面给：按 ``(来源, id)`` 向来源重取，授权不在免署名范围内的条目取不到。登记与上传走同一条路
+    （同样统一音量、按字节登记），并记下授权与它在来源站的页面。
+    """
+    await asyncio.to_thread(assert_project_migration_ok, project_name)
+    keys = await stock_keys(session, library, user.id)
+    try:
+        file = await library.fetch(source_id=body.source, kind=body.kind, item_id=body.id, key=keys.get(body.source))
+    except StockError as exc:
+        raise stock_http_error(exc, _t) from exc
+    # 标题会被当成文件名取显示名：去掉路径分隔符，免得只剩最后一段
+    name = f"{file.item.title.replace('/', ' ').replace(chr(92), ' ')}{file.extension}"
+    if body.kind == "music":
+        try:
+            with project_change_source("webui"):
+                track = await BgmLibraryService(get_project_manager()).register_library(
+                    project_name,
+                    name=name,
+                    extension=file.extension,
+                    content=file.content,
+                    license=file.item.license,
+                    source_url=file.item.page_url,
+                )
+        except BgmError as exc:
+            raise _bgm_http_error(exc, _t) from exc
+        return {"success": True, "bgm": _bgm_view(project_name, track)}
+    try:
+        with project_change_source("webui"):
+            sound = await SfxLibraryService(get_project_manager()).register_library(
+                project_name,
+                name=name,
+                extension=file.extension,
+                content=file.content,
+                license=file.item.license,
+                source_url=file.item.page_url,
+            )
+    except SfxError as exc:
+        raise _sfx_http_error(exc, _t) from exc
+    return {"success": True, "sfx": _sfx_view(project_name, sound)}
 
 
 @router.delete("/projects/{project_name}/characters/{name}/reference-audio")

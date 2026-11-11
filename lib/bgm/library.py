@@ -41,8 +41,8 @@ BGM_BASIS_VERSION = 1
 _BGM_ID_RE = re.compile(BGM_ID_PATTERN)
 
 
-#: BGM 从哪来：使用者上传、AI 生成（docs/adr/0126）
-BgmOrigin = Literal["upload", "ai"]
+#: 从哪来：使用者上传、AI 生成、免版权素材库（docs/adr/0128）
+BgmOrigin = Literal["upload", "ai", "library"]
 
 
 class BgmTrack(BaseModel):
@@ -64,6 +64,9 @@ class BgmTrack(BaseModel):
     source: BgmOrigin = "upload"
     prompt: str | None = None
     model: str | None = None
+    # 素材库来的条目：授权代号（cc0 / pdm / pixabay / pexels）与素材在来源站的页面
+    license: str | None = None
+    source_url: str | None = None
 
     @property
     def gain(self) -> float:

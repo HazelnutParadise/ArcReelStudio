@@ -42,8 +42,8 @@ SFX_BASIS_VERSION = 1
 
 _SFX_ID_RE = re.compile(SFX_ID_PATTERN)
 
-#: 音效从哪来：使用者上传、AI 生成
-SfxOrigin = Literal["upload", "ai"]
+#: 从哪来：使用者上传、AI 生成、免版权素材库（docs/adr/0128）
+SfxOrigin = Literal["upload", "ai", "library"]
 
 
 class SfxSound(BaseModel):
@@ -62,6 +62,9 @@ class SfxSound(BaseModel):
     source: SfxOrigin = "upload"
     prompt: str | None = None
     model: str | None = None
+    # 素材库来的条目：授权代号（cc0 / pdm / pixabay / pexels）与素材在来源站的页面
+    license: str | None = None
+    source_url: str | None = None
 
     @property
     def gain(self) -> float:
