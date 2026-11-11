@@ -25,9 +25,9 @@
 <p align="center">
   <a href="#快速開始"><strong>快速開始</strong></a>
   ·
-  <a href="https://docs.arc-reel.com/guide/getting-started">入門教學</a>
+  <a href="https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/guide/getting-started.md">入門教學</a>
   ·
-  <a href="https://docs.arc-reel.com/">完整文件</a>
+  <a href="https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/index.mdx">完整文件</a>
 </p>
 
 <p align="center">
@@ -108,7 +108,7 @@ flowchart LR
     F --> H["匯出剪映草稿"]
 ```
 
-每個階段都可以交給 Agent（AI 助理）自動安排，也可以由使用者在工作台裡審核、調整或重新生成。怎麼選模式，請看 [創作流程與模式](https://docs.arc-reel.com/guide/workflows)。
+每個階段都可以交給 Agent（AI 助理）自動安排，也可以由使用者在工作台裡審核、調整或重新生成。怎麼選模式，請看 [創作流程與模式](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/guide/workflows.md)。
 
 ## 快速開始
 
@@ -124,11 +124,11 @@ docker compose up -d
 
 用瀏覽器開啟 <http://localhost:1241>。預設使用者名稱是 `admin`。`AUTH_PASSWORD` 留空時，第一次啟動會產生一組初始密碼，存在 `deploy/projects/runtime/initial-admin-password`。登入後可以在 **設定 › 帳號與成員** 修改密碼、新增成員。
 
-> 預設的 Compose 設定會把 `1241` 連接埠開放給主機上所有網路介面。請不要把服務直接放到公開網路上。要從遠端連線，請先設定登入驗證，並透過 HTTPS、VPN 或安全通道存取，詳見 [反向代理與 HTTPS](https://docs.arc-reel.com/ops/deployment#reverse-proxy-and-https)。
+> 預設的 Compose 設定會把 `1241` 連接埠開放給主機上所有網路介面。請不要把服務直接放到公開網路上。要從遠端連線，請先設定登入驗證，並透過 HTTPS、VPN 或安全通道存取，詳見 [反向代理與 HTTPS](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/ops/deployment.md#reverse-proxy-and-https)。
 
 登入後進入 **設定** 頁面，設定 Agent 以及文字、圖像、影片等生成能力，接著建立專案就能開始製作。
 
-第一次使用的完整流程見 [完整入門教學](https://docs.arc-reel.com/guide/getting-started)。正式部署、升級、備份和反向代理見 [部署與維運](https://docs.arc-reel.com/ops/deployment)。
+第一次使用的完整流程見 [完整入門教學](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/guide/getting-started.md)。正式部署、升級、備份和反向代理見 [部署與維運](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/ops/deployment.md)。
 
 ## 文件
 
@@ -136,16 +136,16 @@ docker compose up -d
 
 | 頁面 | 內容 |
 |---|---|
-| [文件首頁](https://docs.arc-reel.com/) | 依使用者、維運人員和開發者分流的入口 |
-| [完整入門教學](https://docs.arc-reel.com/guide/getting-started) | 從第一次部署到生成第一支影片 |
-| [創作流程與模式](https://docs.arc-reel.com/guide/workflows) | 小說、劇本與創作構想三種創作類型，以及兩種生成模式 |
-| [供應商與模型設定](https://docs.arc-reel.com/guide/providers) | Agent、文字、圖像、影片、TTS 供應商的選擇和設定 |
-| [剪映草稿匯出](https://docs.arc-reel.com/guide/jianying-export) | 把生成結果交給剪映繼續編輯 |
-| [常見問題](https://docs.arc-reel.com/guide/faq) | 部署、費用、模型、資料和授權問題 |
-| [部署與維運](https://docs.arc-reel.com/ops/deployment) | SQLite、PostgreSQL、升級、備份和反向代理 |
-| [從 SQLite 遷移到 PostgreSQL](https://docs.arc-reel.com/ops/migrate-to-postgres) | 資料遷移、驗證與還原流程 |
-| [架構說明](https://docs.arc-reel.com/dev/architecture) | Agent Runtime、任務佇列、供應商抽象層和資料層 |
-| [貢獻指南](https://docs.arc-reel.com/dev/contributing) | 本機開發、測試、程式碼規範和 PR 流程 |
+| [文件首頁](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/index.mdx) | 依使用者、維運人員和開發者分流的入口 |
+| [完整入門教學](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/guide/getting-started.md) | 從第一次部署到生成第一支影片 |
+| [創作流程與模式](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/guide/workflows.md) | 小說、劇本與創作構想三種創作類型，以及兩種生成模式 |
+| [供應商與模型設定](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/guide/providers.md) | Agent、文字、圖像、影片、TTS 供應商的選擇和設定 |
+| [剪映草稿匯出](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/guide/jianying-export.md) | 把生成結果交給剪映繼續編輯 |
+| [常見問題](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/guide/faq.md) | 部署、費用、模型、資料和授權問題 |
+| [部署與維運](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/ops/deployment.md) | SQLite、PostgreSQL、升級、備份和反向代理 |
+| [從 SQLite 遷移到 PostgreSQL](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/ops/migrate-to-postgres.md) | 資料遷移、驗證與還原流程 |
+| [架構說明](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/docs/dev/architecture.md) | Agent Runtime、任務佇列、供應商抽象層和資料層 |
+| [貢獻指南](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/CONTRIBUTING.md) | 本機開發、測試、程式碼規範和 PR 流程 |
 
 ## 回報問題與貢獻
 

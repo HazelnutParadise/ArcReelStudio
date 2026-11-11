@@ -599,7 +599,7 @@ Google 已关闭 AI Studio 上的 Veo，Veo 只能经 Vertex AI 调用，可以�
 npx skills add ArcReel/skills
 ```
 
-在安装列表中同时选择 `setup-arcreel-skills` 与 `adapt-custom-endpoint`。也可以直接[查看或下载同一份适配 skill 源文件](https://github.com/ArcReel/ArcReel/tree/main/agent_runtime_profile/.claude/skills/adapt-custom-endpoint)。
+在安装列表中同时选择 `setup-arcreel-skills` 与 `adapt-custom-endpoint`。也可以直接[查看或下载同一份适配 skill 源文件](https://github.com/HazelnutParadise/ArcReelStudio/tree/main/agent_runtime_profile/.claude/skills/adapt-custom-endpoint)。
 
 先使用 `setup-arcreel-skills` skill 完成 ArcReel MCP 接入；它会在当前工作区持久化同一连接，供
 `adapt-custom-endpoint` 的本地脚本跨会话复用。

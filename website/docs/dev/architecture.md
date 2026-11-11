@@ -106,16 +106,16 @@ Agent 面板的开合状态在 `useAppStore`。程序打开面板（如把指令
 
 项目数据的刷新收口在 `frontend/src/stores/projects-store.ts` 的 `refreshProject`。编辑写入、项目事件 SSE、路由加载等多个入口都调用这一个 action，由 action 内部做在途合并：已有刷新在途时排队，结束后再执行一轮，各调用方分别拿到结算值；排队中的目标项目被另一个项目覆盖时，被覆盖的调用方立即以 `cancelled` 结算，不分享新项目的结果。新增需要多入口刷新的数据时沿用这个结构，不要让调用方各自发请求，否则并发刷新会交错写回。合并多入口刷新用 store action，取消一份数据的加载用 AbortSignal，两者互补。
 
-写入成功后的刷新一律经 `frontend/src/components/canvas/shared/refreshAfterWrite`。`refreshProject` 以结算值报告失败而不 reject；写入已提交、刷新却失败时，界面停在旧数据上，看着像写入没生效，创作者容易重复操作。`refreshAfterWrite` 在结算为 `failed` 时提示 `common:write_refresh_failed`，`cancelled`（项目已切走）时静默，并原样返回结算值，调用方据此决定依赖新数据的后续动作；后续动作的审查规则见[前端规范](https://github.com/ArcReel/ArcReel/blob/main/docs/standards/frontend.md)「依赖新数据的后续动作只在刷新结算为 `success` 后提供」，可以不经它的调用点见它的 TSDoc。路由首屏加载、项目事件 SSE 这类加载与同步路径不属于写入后的刷新，应传 `onError` 或按结算值处理。ESLint 的 `RESTRICT_DISCARDED_REFRESH` 会拦截丢弃结算值又没传 `onError` 的调用。参考：`frontend/src/components/canvas/episodes/CreateEpisodeDialog.tsx`（刷新成功后才定位到新集）。
+写入成功后的刷新一律经 `frontend/src/components/canvas/shared/refreshAfterWrite`。`refreshProject` 以结算值报告失败而不 reject；写入已提交、刷新却失败时，界面停在旧数据上，看着像写入没生效，创作者容易重复操作。`refreshAfterWrite` 在结算为 `failed` 时提示 `common:write_refresh_failed`，`cancelled`（项目已切走）时静默，并原样返回结算值，调用方据此决定依赖新数据的后续动作；后续动作的审查规则见[前端规范](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/standards/frontend.md)「依赖新数据的后续动作只在刷新结算为 `success` 后提供」，可以不经它的调用点见它的 TSDoc。路由首屏加载、项目事件 SSE 这类加载与同步路径不属于写入后的刷新，应传 `onError` 或按结算值处理。ESLint 的 `RESTRICT_DISCARDED_REFRESH` 会拦截丢弃结算值又没传 `onError` 的调用。参考：`frontend/src/components/canvas/episodes/CreateEpisodeDialog.tsx`（刷新成功后才定位到新集）。
 
 ### 3.5 编辑单元与离开拦截 {#edit-unit-and-leave-guard}
 
-一个设置视图或一块画布内容是一个[编辑单元](https://github.com/ArcReel/ArcReel/blob/main/GLOSSARY.md)，由 `components/shared/edit-unit/useEditUnit` 持有已保存内容与未保存修改。字段（描述、提示词、时长、引用，设置表单里的开关与下拉）写进 `unit.setValue`，由单元统一保存或放弃；上传、生成、改名、删除、排序这类动作不进入未保存修改，立即执行。
+一个设置视图或一块画布内容是一个[编辑单元](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/GLOSSARY.md)，由 `components/shared/edit-unit/useEditUnit` 持有已保存内容与未保存修改。字段（描述、提示词、时长、引用，设置表单里的开关与下拉）写进 `unit.setValue`，由单元统一保存或放弃；上传、生成、改名、删除、排序这类动作不进入未保存修改，立即执行。
 
 - 已保存内容经 `source` 传入，加载结果与之后的推送都从这里进来，不在 effect 里把本地状态重置成服务端数据。没有未保存修改时 hook 直接采用新内容；有修改时保留修改，并在保存栏或提示条上标出内容已被 Agent 更新。
 - `save(value, savedValue)` 提交修改，返回保存后的内容，失败时抛错，错误显示在保存栏或提示条上。一次保存分几步提交、前几步已经落盘时抛 `PartialSaveError` 并带上已落盘的内容，放弃修改与下次保存都以它为基准，否则会把旧值写回。
 - 设置表单用常驻的 `SaveBar`，位置见[页面外壳与档位](#page-shell)；画布内容用 `UnsavedChangesBar`，放在所属内容下方。
-- 有未保存修改时，生成经 `unit.saveAndGenerate` 先保存再生成，审查规则见[前端规范](https://github.com/ArcReel/ArcReel/blob/main/docs/standards/frontend.md)。
+- 有未保存修改时，生成经 `unit.saveAndGenerate` 先保存再生成，审查规则见[前端规范](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/standards/frontend.md)。
 - 界面文案与代码命名不单称「草稿」，这个词已指待修复草稿与可编辑草稿。
 
 `AppRoutes` 根部的 `LeaveGuardProvider` 是唯一的离开拦截。它经 wouter 的 `aroundNav` 拦截应用内跳转（`navigate`、`Link`、`Redirect`），截住浏览器的前进与后退，并在关闭标签页或刷新时请求浏览器原生提示。对话框的三个按钮是「继续编辑 / 放弃修改 / 保存并离开」；保存失败时留在原处，错误由编辑单元自己显示。`useEditUnit` 挂载期间自动登记，自行管理表单状态的页面调用 `useLeaveGuard` 登记。不经路由的切换、二次确认动作等场景的接入义务见前端规范「离开与切换交给离开拦截」。
@@ -203,11 +203,11 @@ flowchart TD
 
 这类操作不应反复交给语言模型自由生成。
 
-Agent 工具在 `server/agent_toolset/` 只声明一次：内嵌会话经 `server/agent_runtime/arcreel_mcp.py` 构建进程内 MCP server，外部 Agent 经远程 MCP，两侧都从这份声明投影（[ADR 0087](https://github.com/ArcReel/ArcReel/blob/main/docs/adr/0087-agent-toolset-single-declaration.md)）。`tests/integration/server/agent_toolset/test_host_consistency.py` 校验两侧宿主注册的工具集合与声明相同。
+Agent 工具在 `server/agent_toolset/` 只声明一次：内嵌会话经 `server/agent_runtime/arcreel_mcp.py` 构建进程内 MCP server，外部 Agent 经远程 MCP，两侧都从这份声明投影（[ADR 0087](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/adr/0087-agent-toolset-single-declaration.md)）。`tests/integration/server/agent_toolset/test_host_consistency.py` 校验两侧宿主注册的工具集合与声明相同。
 
 ### 5.4 会话串行 {#session-actor}
 
-每个会话的 `ClaudeSDKClient` 由该会话专属的 `SessionActor` task 独占，query、interrupt、撤回排队消息与 disconnect 都经命令队列投递，在 actor 内串行执行。新增会话操作同样走命令队列，不直接持有 client（[ADR 0028](https://github.com/ArcReel/ArcReel/blob/main/docs/adr/0028-session-actor-single-task-serialization.md)）。
+每个会话的 `ClaudeSDKClient` 由该会话专属的 `SessionActor` task 独占，query、interrupt、撤回排队消息与 disconnect 都经命令队列投递，在 actor 内串行执行。新增会话操作同样走命令队列，不直接持有 client（[ADR 0028](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/adr/0028-session-actor-single-task-serialization.md)）。
 
 ### 5.5 内嵌 Agent 配置源 {#agent-profile}
 
@@ -325,7 +325,7 @@ flowchart LR
 
 ### 8.3 取消与中断的来源 {#cancellation-sources}
 
-用户取消只作用于排队中的任务（[ADR 0006](https://github.com/ArcReel/ArcReel/blob/main/docs/adr/0006-cancel-only-queued-tasks.md)）。任务开始执行后，已发出的供应商调用照常跑完，结果照常成为产物。
+用户取消只作用于排队中的任务（[ADR 0006](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/adr/0006-cancel-only-queued-tasks.md)）。任务开始执行后，已发出的供应商调用照常跑完，结果照常成为产物。
 
 生成任务与非流式请求处理中，会打断执行中协程的来源只有两类：
 
@@ -336,7 +336,7 @@ flowchart LR
 
 这一范围之外，有些场景会自己发起取消：SSE 流式响应在客户端断开时取消事件生产协程，`TrialRunManager.cancel()` 取消进行中的供应商试跑，`SessionManager` 在会话驱逐或启动失败时取消收件处理任务，应用关停时取消模型目录官方同步、回收站过期清理等后台循环。在这些场景里写对取消敏感的代码之前，先从代码找出全部取消来源。
 
-取消正在经 httpx 发请求的任务时，一次 `Task.cancel()` 可能被 anyio 吞掉：建立连接时 httpcore 进入 anyio 的任务组，anyio 恰在同一轮调度里取消自己的域时，两次取消合并成一次，在域出口一并消失，任务照常往下跑。不要从外部反复取消来补发：重投的取消会打断任务在 `asyncio.shield` 里的收尾，例如 SQLAlchemy 会话的回滚与连接归还，等待方返回时收尾还没做完。由任务自己在 httpx 调用之后的检查点调用 `lib/infra/task_cancel.py` 的 `raise_if_cancel_absorbed`，等待方只取消一次，一直等到任务结束。线程调用怎样防取消，见[后端规范](https://github.com/ArcReel/ArcReel/blob/main/docs/standards/backend.md)「线程里写入正式文件或创建临时产物时，用 `run_sync_transaction`」与「供应商返回之后的落账段不可中断」。
+取消正在经 httpx 发请求的任务时，一次 `Task.cancel()` 可能被 anyio 吞掉：建立连接时 httpcore 进入 anyio 的任务组，anyio 恰在同一轮调度里取消自己的域时，两次取消合并成一次，在域出口一并消失，任务照常往下跑。不要从外部反复取消来补发：重投的取消会打断任务在 `asyncio.shield` 里的收尾，例如 SQLAlchemy 会话的回滚与连接归还，等待方返回时收尾还没做完。由任务自己在 httpx 调用之后的检查点调用 `lib/infra/task_cancel.py` 的 `raise_if_cancel_absorbed`，等待方只取消一次，一直等到任务结束。线程调用怎样防取消，见[后端规范](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/standards/backend.md)「线程里写入正式文件或创建临时产物时，用 `run_sync_transaction`」与「供应商返回之后的落账段不可中断」。
 
 ## 9. 项目和资产模型 {#project-and-asset-model}
 
@@ -361,7 +361,7 @@ ArcReel 的项目不仅是一条数据库记录，还包括文件系统中的媒
 2. 兼容变量 `AI_ANIME_PROJECTS`
 3. 默认 `<仓库根>/projects/`
 
-数据根下的布局（[ADR 0088](https://github.com/ArcReel/ArcReel/blob/main/docs/adr/0088-data-root-layered-projects-subdirectory.md)）：
+数据根下的布局（[ADR 0088](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/adr/0088-data-root-layered-projects-subdirectory.md)）：
 
 ```text
 <数据根>/
@@ -573,7 +573,7 @@ ArcReel 在支持的环境中使用 `bwrap` 等机制限制这些能力。Docker
 安全原则：
 
 - 默认最小权限；
-- 文件访问按策略放行，网络出站不设域名白名单（[ADR 0069](https://github.com/ArcReel/ArcReel/blob/main/docs/adr/0069-embedded-agent-http-api-access.md)）；
+- 文件访问按策略放行，网络出站不设域名白名单（[ADR 0069](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/adr/0069-embedded-agent-http-api-access.md)）；
 - 不挂载 Docker Socket；
 - 不挂载不必要的宿主机路径；
 - 对外只暴露反向代理；
@@ -581,7 +581,7 @@ ArcReel 在支持的环境中使用 `bwrap` 等机制限制这些能力。Docker
 - 定期更新；
 - 把未知项目输入视为不可信数据。
 
-Agent 能访问什么由 `server/agent_runtime/agent_access_policy.py` 的 `AgentAccessPolicy` 一处定义，同时投影到两层：内核沙箱（macOS sandbox-exec、Linux bwrap）约束 Bash 及其子进程的读写与网络，PreToolUse hook 约束 SDK 内置的 Read、Write、Edit、Glob、Grep（[ADR 0026](https://github.com/ArcReel/ArcReel/blob/main/docs/adr/0026-agent-file-guard-two-layers.md)）。沙箱不可用时 server 拒绝启动，只有 Windows 降级为 Bash 前缀白名单（[ADR 0025](https://github.com/ArcReel/ArcReel/blob/main/docs/adr/0025-sandbox-unavailable-startup-hard-fail.md)）。新增依赖文件或网络的 Agent 能力时，在 `AgentAccessPolicy` 里放行所需路径，不在调用处绕过。
+Agent 能访问什么由 `server/agent_runtime/agent_access_policy.py` 的 `AgentAccessPolicy` 一处定义，同时投影到两层：内核沙箱（macOS sandbox-exec、Linux bwrap）约束 Bash 及其子进程的读写与网络，PreToolUse hook 约束 SDK 内置的 Read、Write、Edit、Glob、Grep（[ADR 0026](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/adr/0026-agent-file-guard-two-layers.md)）。沙箱不可用时 server 拒绝启动，只有 Windows 降级为 Bash 前缀白名单（[ADR 0025](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/docs/adr/0025-sandbox-unavailable-startup-hard-fail.md)）。新增依赖文件或网络的 Agent 能力时，在 `AgentAccessPolicy` 里放行所需路径，不在调用处绕过。
 
 依赖沙箱专属隔离（文件系统、网络或子进程）的 Agent 工具，要么提供 Windows 降级路径，要么在沙箱不可用时显式拒绝运行；否则它在 Windows 上会以无隔离的状态执行。
 
@@ -641,4 +641,4 @@ Agent 能访问什么由 `server/agent_runtime/agent_access_policy.py` 的 `Agen
 - [供应商与模型配置](../guide/providers.md)
 - [部署与运维](../ops/deployment.md)
 - [贡献指南](./contributing.md)
-- [ADR 目录](https://github.com/ArcReel/ArcReel/tree/main/docs/adr)
+- [ADR 目录](https://github.com/HazelnutParadise/ArcReelStudio/tree/main/docs/adr)

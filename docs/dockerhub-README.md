@@ -1,11 +1,12 @@
-# ArcReel
+# ArcReelStudio
 
-> 中文说明见[项目文档](https://docs.arc-reel.com/)与 [GitHub 仓库](https://github.com/ArcReel/ArcReel)。
+> 中文说明见 [GitHub 仓库](https://github.com/HazelnutParadise/ArcReelStudio)。ArcReelStudio 是 [ArcReel](https://github.com/ArcReel/ArcReel) 的修改版本。
 
 An open-source, self-hosted AI video production workspace. Turn novels, finished screenplays, or product assets into character-consistent, controllable, cost-trackable short videos that remain editable.
 
-- **Source**: https://github.com/ArcReel/ArcReel
-- **Documentation**: https://docs.arc-reel.com/en/
+- **Source**: https://github.com/HazelnutParadise/ArcReelStudio
+- **Documentation**: https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/i18n/en/docusaurus-plugin-content-docs/current/index.mdx
+- **Based on**: [ArcReel](https://github.com/ArcReel/ArcReel)
 - **License**: AGPL-3.0
 
 ## Supported tags
@@ -24,8 +25,8 @@ Images are published for `linux/amd64` and `linux/arm64`, with SBOM and provenan
 Compose is the supported way to run ArcReel — the application needs a database, a data volume, and specific kernel capabilities for its sandbox:
 
 ```bash
-git clone https://github.com/ArcReel/ArcReel.git
-cd ArcReel/deploy
+git clone https://github.com/HazelnutParadise/ArcReelStudio.git
+cd ArcReelStudio/deploy
 
 cp .env.example .env
 docker compose up -d
@@ -35,7 +36,7 @@ Open <http://localhost:1241>. The default username is `admin`. If `AUTH_PASSWORD
 
 > Default Compose publishes port `1241` on all host interfaces. Do not expose ArcReel directly to the public Internet; before enabling remote access, configure authentication and use HTTPS, a VPN, or a secure tunnel.
 
-For the complete first-run walkthrough see [Getting Started](https://docs.arc-reel.com/en/guide/getting-started); for production deployment, upgrades, backups, and reverse proxies see [Deployment and Operations](https://docs.arc-reel.com/en/ops/deployment).
+For the complete first-run walkthrough see [Getting Started](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/i18n/en/docusaurus-plugin-content-docs/current/guide/getting-started.md); for production deployment, upgrades, backups, and reverse proxies see [Deployment and Operations](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/website/i18n/en/docusaurus-plugin-content-docs/current/ops/deployment.md).
 
 ## What you get
 
@@ -46,4 +47,4 @@ For the complete first-run walkthrough see [Getting Started](https://docs.arc-re
 
 ## Support
 
-Reproducible bugs and focused feature requests are welcome in [GitHub Issues](https://github.com/ArcReel/ArcReel/issues).
+Reproducible bugs and focused feature requests are welcome in [GitHub Issues](https://github.com/HazelnutParadise/ArcReelStudio/issues).

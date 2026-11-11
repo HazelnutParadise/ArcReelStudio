@@ -93,7 +93,7 @@ ArcReel 当前支持的预置供应商包括：
 ### 2.1 克隆项目 {#clone-repository}
 
 ```bash
-git clone https://github.com/ArcReel/ArcReel.git
+git clone https://github.com/HazelnutParadise/ArcReelStudio.git
 cd ArcReel
 ```
 
