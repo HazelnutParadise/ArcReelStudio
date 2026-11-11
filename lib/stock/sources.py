@@ -24,7 +24,10 @@ from lib.stock.model import (
 
 PAGE_SIZE = 20
 
-_AUDIO_EXTENSIONS = (".mp3", ".wav", ".m4a")
+#: 音频来源给的格式：前三种库里直接收，其余由 :mod:`lib.stock.transcode` 转成 MP3
+_AUDIO_EXTENSIONS = (".mp3", ".wav", ".m4a", ".ogg", ".oga", ".flac")
+#: 短于这个长度的「音乐」不列：维基共享资源里大量几秒钟的单词发音录音会混进音乐搜索
+_MIN_MUSIC_SECONDS = 15.0
 _IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
 
 
@@ -85,19 +88,20 @@ def _rows(payload: object, field: str) -> list[Mapping[str, Any]]:
 
 
 class OpenverseSource:
-    """Openverse：CC0 与公有领域的图片、音乐、音效。不需要密钥（匿名额度每分钟 20 次）。
+    """Openverse：CC0 与公有领域的图片与音乐。不需要密钥（匿名额度每分钟 20 次）。
 
     音频不取 Freesound 来的条目：那些档案受 Freesound 条款约束，要用成员自己的 Freesound 密钥经 Freesound 来源取。
+    剩下的免署名音频主要是维基共享资源里的公有领域音乐录音（多为 OGG）与单词发音录音，所以这里只提供音乐、
+    不提供音效，并按长度滤掉发音录音。
     """
 
     id = "openverse"
     display_name = "Openverse"
-    kinds: frozenset[StockKind] = frozenset({"music", "sfx", "image"})
+    kinds: frozenset[StockKind] = frozenset({"music", "image"})
     key_scope: KeyScope = "none"
     key_url: str | None = None
 
     _BASE = "https://api.openverse.org/v1"
-    _CATEGORY: Mapping[str, str] = {"music": "music", "sfx": "sound_effect"}
 
     def _endpoint(self, kind: StockKind) -> str:
         return f"{self._BASE}/{'images' if kind == 'image' else 'audio'}/"
@@ -112,6 +116,8 @@ class OpenverseSource:
         if extension is None:
             return None
         duration_ms = _number(row.get("duration"))
+        if kind == "music" and duration_ms is not None and duration_ms < _MIN_MUSIC_SECONDS * 1000:
+            return None
         item = StockItem(
             source=self.id,
             id=item_id,
@@ -131,11 +137,13 @@ class OpenverseSource:
     async def search(
         self, client: httpx2.AsyncClient, *, kind: StockKind, query: str, page: int, key: str | None
     ) -> list[StockItem]:
+        if kind not in self.kinds:
+            raise _unsupported(self.id, kind)
         params: dict[str, str | int] = {"q": query, "license": "cc0,pdm", "page": page, "page_size": PAGE_SIZE}
         if kind == "image":
             params["extension"] = "jpg,jpeg,png,webp"
         else:
-            params.update(category=self._CATEGORY[kind], extension="mp3,wav,m4a", excluded_source="freesound")
+            params.update(extension="mp3,wav,m4a,ogg,oga,flac", excluded_source="freesound")
         payload = await _get_json(client, self.id, self._endpoint(kind), params=params)
         resolved = (self._item(kind, row) for row in _rows(payload, "results"))
         return [entry.item for entry in resolved if entry is not None]
@@ -143,6 +151,8 @@ class OpenverseSource:
     async def resolve(
         self, client: httpx2.AsyncClient, *, kind: StockKind, item_id: str, key: str | None
     ) -> ResolvedStockItem:
+        if kind not in self.kinds:
+            raise _unsupported(self.id, kind)
         payload = await _get_json(client, self.id, f"{self._endpoint(kind)}{item_id}/")
         resolved = self._item(kind, payload) if isinstance(payload, Mapping) else None
         if resolved is None:
@@ -281,14 +291,16 @@ class PexelsSource:
 
 
 class FreesoundSource:
-    """Freesound：真实录音的音效，只取 CC0。每位成员用自己的 Freesound 密钥；取的是高音质试听档（MP3）。
+    """Freesound：真实录音的音效与音乐片段，只取 CC0。每位成员用自己的 Freesound 密钥；取的是高音质试听档（MP3）。
+
+    找音乐时只列 15 秒以上的录音，免得结果被单个音效占满。
 
     Freesound 的条款不允许把它的内容转供给没有 Freesound 账号的人，所以密钥按成员存，不设工作区共用的一把。
     """
 
     id = "freesound"
     display_name = "Freesound"
-    kinds: frozenset[StockKind] = frozenset({"sfx"})
+    kinds: frozenset[StockKind] = frozenset({"music", "sfx"})
     key_scope: KeyScope = "member"
     key_url: str | None = "https://freesound.org/apiv2/apply"
 
@@ -296,7 +308,7 @@ class FreesoundSource:
     _FIELDS = "id,name,username,license,url,duration,previews"
     _CC0_MARKERS = ("creative commons 0", "publicdomain/zero")
 
-    def _item(self, row: Mapping[str, Any]) -> ResolvedStockItem | None:
+    def _item(self, kind: StockKind, row: Mapping[str, Any]) -> ResolvedStockItem | None:
         item_id, license_text = _integer(row.get("id")), (_text(row.get("license")) or "").lower()
         previews = row.get("previews")
         if item_id is None or not isinstance(previews, Mapping):
@@ -309,7 +321,7 @@ class FreesoundSource:
         item = StockItem(
             source=self.id,
             id=str(item_id),
-            kind="sfx",
+            kind=kind,
             title=_text(row.get("name")) or str(item_id),
             creator=_text(row.get("username")),
             license="cc0",
@@ -326,7 +338,7 @@ class FreesoundSource:
     async def search(
         self, client: httpx2.AsyncClient, *, kind: StockKind, query: str, page: int, key: str | None
     ) -> list[StockItem]:
-        if kind != "sfx":
+        if kind not in self.kinds:
             raise _unsupported(self.id, kind)
         payload = await _get_json(
             client,
@@ -334,20 +346,20 @@ class FreesoundSource:
             f"{self._BASE}/search/text/",
             params={
                 "query": query,
-                "filter": 'license:"Creative Commons 0"',
+                "filter": 'license:"Creative Commons 0"' + (" duration:[15 TO *]" if kind == "music" else ""),
                 "fields": self._FIELDS,
                 "page": page,
                 "page_size": PAGE_SIZE,
             },
             headers=self._headers(key),
         )
-        resolved = (self._item(row) for row in _rows(payload, "results"))
+        resolved = (self._item(kind, row) for row in _rows(payload, "results"))
         return [entry.item for entry in resolved if entry is not None]
 
     async def resolve(
         self, client: httpx2.AsyncClient, *, kind: StockKind, item_id: str, key: str | None
     ) -> ResolvedStockItem:
-        if kind != "sfx":
+        if kind not in self.kinds:
             raise _unsupported(self.id, kind)
         payload = await _get_json(
             client,
@@ -356,9 +368,9 @@ class FreesoundSource:
             params={"fields": self._FIELDS},
             headers=self._headers(key),
         )
-        resolved = self._item(payload) if isinstance(payload, Mapping) else None
+        resolved = self._item(kind, payload) if isinstance(payload, Mapping) else None
         if resolved is None:
-            raise StockError("stock_item_not_found", "Freesound 没有这条可用的音效", source=self.id)
+            raise StockError("stock_item_not_found", "Freesound 没有这条可用的素材", source=self.id)
         return resolved
 
 

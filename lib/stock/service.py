@@ -24,9 +24,13 @@ from lib.backends.artifact_download_guard import (
 )
 from lib.stock.model import ResolvedStockItem, StockError, StockItem, StockKind, StockSource
 from lib.stock.sources import STOCK_SOURCES
+from lib.stock.transcode import to_storable_audio
 
 #: 单个素材档案的上限：音频与 BGM 库的上限一致，图片远小于此。
 STOCK_FILE_MAX_BYTES = 100 * 1024 * 1024
+
+#: 素材来源（尤其维基共享资源）会拒绝没有标明身份的请求：带上应用名与项目主页。
+_HEADERS = {"User-Agent": "ArcReelStudio (+https://github.com/HazelnutParadise/ArcReelStudio)"}
 
 _API_TIMEOUT_SECONDS = 15.0
 _DOWNLOAD_TIMEOUT_SECONDS = 120.0
@@ -83,7 +87,11 @@ def _download_client(resolver: Resolver) -> httpx2.AsyncClient:
         await check_public_destination(request.url, resolver=resolver)
 
     return httpx2.AsyncClient(
-        event_hooks={"request": [guard]}, follow_redirects=True, max_redirects=3, timeout=_DOWNLOAD_TIMEOUT_SECONDS
+        event_hooks={"request": [guard]},
+        follow_redirects=True,
+        max_redirects=3,
+        timeout=_DOWNLOAD_TIMEOUT_SECONDS,
+        headers=_HEADERS,
     )
 
 
@@ -98,7 +106,7 @@ class StockLibraryService:
         download_client: Callable[[], httpx2.AsyncClient] | None = None,
     ) -> None:
         self._sources = sources
-        self._api_client = api_client or (lambda: httpx2.AsyncClient(timeout=_API_TIMEOUT_SECONDS))
+        self._api_client = api_client or (lambda: httpx2.AsyncClient(timeout=_API_TIMEOUT_SECONDS, headers=_HEADERS))
         self._download_client = download_client or (lambda: _download_client(resolve_host))
 
     def sources(self) -> tuple[StockSource, ...]:
@@ -145,7 +153,7 @@ class StockLibraryService:
             return await source.resolve(client, kind=kind, item_id=item_id, key=key)
 
     async def fetch(self, *, source_id: str, kind: StockKind, item_id: str, key: str | None) -> StockFile:
-        """按 id 向来源重取这条素材并下载档案。"""
+        """按 id 向来源重取这条素材并下载档案。音频若是库里不收的格式（OGG、FLAC），转成 MP3 再返回。"""
         resolved = await self.resolve(source_id=source_id, kind=kind, item_id=item_id, key=key)
         async with self._download_client() as client:
             try:
@@ -161,4 +169,7 @@ class StockLibraryService:
                 ) from exc
             except httpx2.HTTPError as exc:
                 raise StockError("stock_source_failed", f"素材下载失败：{exc}", source=source_id) from exc
-        return StockFile(item=resolved.item, extension=resolved.extension, content=content)
+        extension = resolved.extension
+        if kind != "image":
+            content, extension = await to_storable_audio(content, extension)
+        return StockFile(item=resolved.item, extension=extension, content=content)

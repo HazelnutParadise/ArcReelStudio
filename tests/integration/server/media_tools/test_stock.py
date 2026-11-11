@@ -9,7 +9,6 @@ import httpx2
 from lib.bgm.service import BgmLibraryService
 from lib.db.base import DEFAULT_USER_ID
 from lib.project.project_manager import ProjectManager
-from lib.sfx.service import SfxLibraryService
 from server.agent_toolset.edit_timelines import IMPORT_STOCK_AUDIO, SEARCH_STOCK_AUDIO
 from server.tool_runtime import CallerContext
 from tests.factories import wav_bytes
@@ -38,7 +37,7 @@ def _row(item_id: str, *, license_code: str = "cc0") -> dict:
         "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
         "foreign_landing_url": f"https://example.org/{item_id}",
         "url": _FILE_URL,
-        "duration": 2000,
+        "duration": 20000,
         "source": "wikimedia_audio",
     }
 
@@ -47,11 +46,11 @@ async def test_search_lists_items_and_says_which_sources_gave_nothing(tmp_path: 
     with capture_http() as router:
         router.get(_OPENVERSE_AUDIO).mock(return_value=httpx2.Response(200, json={"results": [_row("ov-1")]}))
         freesound = router.get(_FREESOUND_SEARCH).mock(return_value=httpx2.Response(200, json={"results": []}))
-        found = await run_declared_tool(SEARCH_STOCK_AUDIO, _harness(tmp_path), {"kind": "sfx", "query": "rain"})
+        found = await run_declared_tool(SEARCH_STOCK_AUDIO, _harness(tmp_path), {"kind": "music", "query": "rain"})
 
     assert found.problem is None
     assert [(item.source, item.id, item.duration, item.license) for item in found.value.items] == [
-        ("openverse", "ov-1", 2.0, "cc0")
+        ("openverse", "ov-1", 20.0, "cc0")
     ]
     # Freesound 的密钥属于成员，Agent 不代表某位成员，所以不会去问它
     assert found.value.unavailable == {"freesound": "key_missing"}
@@ -77,18 +76,11 @@ async def test_import_stores_music_in_the_bgm_library_with_its_origin(tmp_path: 
     assert "insert_bgm" in IMPORT_STOCK_AUDIO.summary(imported.value)
 
 
-async def test_import_stores_a_sound_effect_in_the_sfx_library(tmp_path: Path) -> None:
-    harness = _harness(tmp_path)
-    with capture_http() as router:
-        router.get(f"{_OPENVERSE_AUDIO}ov-2/").mock(return_value=httpx2.Response(200, json=_row("ov-2")))
-        router.get(_FILE_URL).mock(return_value=httpx2.Response(200, content=wav_bytes(0.5, tone_hz=660)))
-        imported = await run_declared_tool(
-            IMPORT_STOCK_AUDIO, harness, {"kind": "sfx", "source": "openverse", "id": "ov-2"}
-        )
+async def test_sound_effects_have_no_source_the_agent_can_use(tmp_path: Path) -> None:
+    found = await run_declared_tool(SEARCH_STOCK_AUDIO, _harness(tmp_path), {"kind": "sfx", "query": "door"})
 
-    (sound,) = await SfxLibraryService(harness.pm).list("demo")
-    assert (imported.value.kind, imported.value.id) == ("sfx", sound.id)
-    assert sound.source == "library"
+    assert found.value.items == ()
+    assert found.value.unavailable == {"freesound": "key_missing"}
 
 
 async def test_an_item_whose_license_needs_attribution_is_not_imported(tmp_path: Path) -> None:

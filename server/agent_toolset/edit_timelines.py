@@ -245,8 +245,10 @@ SEARCH_STOCK_AUDIO = ToolDeclaration(
     name="search_stock_audio",
     description=(
         "在免版权素材库里找现成的音乐（kind=music）或音效（kind=sfx），不花生成费用。只列不用署名就能商用的素材"
-        "（CC0、公有领域）。结果每条有 source、id、title、duration（秒）与 license；用 import_stock_audio 把选中的一条"
-        "存进项目。unavailable 列出没有返回结果的来源与原因。搜索词用英文结果最多。只读，无副作用。"
+        "（CC0、公有领域）。音乐能找到的主要是公有领域的古典乐录音，搜索词用英文的曲名、作曲家或乐器。"
+        "音效的来源（Freesound）用的是成员自己的密钥，这里用不了：要音效时直接用 generate_sfx，或请创作者在音效轨"
+        "从素材库挑。结果每条有 source、id、title、duration（秒）与 license；用 import_stock_audio 把选中的一条存进项目。"
+        "unavailable 列出没有返回结果的来源与原因。只读，无副作用。"
     ),
     request_model=SearchStockAudioRequest,
     migration=BLOCKED,

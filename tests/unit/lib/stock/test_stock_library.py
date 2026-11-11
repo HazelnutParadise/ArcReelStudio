@@ -68,8 +68,9 @@ async def test_openverse_music_search_asks_for_public_domain_only_and_drops_anyt
         _openverse_audio("a"),
         _openverse_audio("b", license_code="by"),
         _openverse_audio("c", source="freesound"),
-        _openverse_audio("d", ext="ogg"),
-        _openverse_audio("e", license_code="pdm"),
+        _openverse_audio("d", ext="mid"),
+        _openverse_audio("e", license_code="pdm", ext="ogg"),
+        {**_openverse_audio("f"), "duration": 1200},
     ]
     with capture_http() as router:
         route = router.get(_OPENVERSE_AUDIO).mock(return_value=httpx2.Response(200, json={"results": rows}))
@@ -77,14 +78,18 @@ async def test_openverse_music_search_asks_for_public_domain_only_and_drops_anyt
 
     params = only_request(route).url.params
     assert params["license"] == "cc0,pdm"
-    assert params["category"] == "music"
+    assert "category" not in params
+    assert "ogg" in params["extension"]
     assert params["excluded_source"] == "freesound"
     assert params["page"] == "2"
     assert [item.id for item in result.items] == ["a", "e"]
     first = result.items[0]
     assert (first.source, first.kind, first.license, first.duration_seconds) == ("openverse", "music", "cc0", 61.5)
     assert first.preview_url == "https://cdn.example.org/a.mp3"
-    assert [(entry.source, entry.status) for entry in result.sources] == [("openverse", "ok")]
+    assert [(entry.source, entry.status) for entry in result.sources] == [
+        ("openverse", "ok"),
+        ("freesound", "key_missing"),
+    ]
 
 
 async def test_image_search_merges_sources_in_turn_and_reports_a_source_without_a_key() -> None:
@@ -147,7 +152,6 @@ async def test_freesound_uses_the_members_token_and_keeps_only_cc0() -> None:
         _freesound_row(3, "Creative Commons 0"),
     ]
     with capture_http() as router:
-        router.get(_OPENVERSE_AUDIO).mock(return_value=httpx2.Response(200, json={"results": []}))
         route = router.get(_FREESOUND_SEARCH).mock(return_value=httpx2.Response(200, json={"results": rows}))
         result = await _service().search(kind="sfx", query="door", page=1, keys={"freesound": "member-token"})
 
@@ -167,6 +171,7 @@ async def test_fetch_resolves_the_item_again_by_id_and_downloads_from_the_source
         file = await _service().fetch(source_id="pixabay", kind="image", item_id="9", key="pix-key")
 
     assert only_request(resolve).url.params["id"] == "9"
+    assert "ArcReelStudio" in only_request(resolve).headers["User-Agent"]
     assert (file.item.id, file.extension, file.content) == ("9", ".jpg", b"JPEGDATA")
 
 
@@ -237,8 +242,26 @@ async def test_a_public_https_destination_passes_and_an_unresolvable_host_is_ref
 
 def test_every_source_declares_what_it_provides_and_whose_key_it_needs() -> None:
     assert {source_id: (sorted(source.kinds), source.key_scope) for source_id, source in STOCK_SOURCES.items()} == {
-        "openverse": (["image", "music", "sfx"], "none"),
+        "openverse": (["image", "music"], "none"),
         "pixabay": (["image"], "workspace"),
         "pexels": (["image"], "workspace"),
-        "freesound": (["sfx"], "member"),
+        "freesound": (["music", "sfx"], "member"),
     }
+
+
+async def test_freesound_music_search_asks_for_longer_recordings() -> None:
+    with capture_http() as router:
+        router.get(_OPENVERSE_AUDIO).mock(return_value=httpx2.Response(200, json={"results": []}))
+        route = router.get(_FREESOUND_SEARCH).mock(
+            return_value=httpx2.Response(200, json={"results": [_freesound_row(5, "Creative Commons 0")]})
+        )
+        result = await _service().search(kind="music", query="loop", page=1, keys={"freesound": "member-token"})
+
+    assert only_request(route).url.params["filter"] == 'license:"Creative Commons 0" duration:[15 TO *]'
+    assert [(item.source, item.kind) for item in result.items] == [("freesound", "music")]
+
+
+async def test_openverse_offers_no_sound_effects() -> None:
+    with pytest.raises(StockError) as caught:
+        await _service().resolve(source_id="openverse", kind="sfx", item_id="x", key=None)
+    assert caught.value.code == "stock_kind_unsupported"
