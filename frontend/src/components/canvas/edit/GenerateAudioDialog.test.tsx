@@ -70,6 +70,8 @@ describe("GenerateAudioButton on the sound effect track", () => {
     render(<GenerateAudioButton projectName="demo" kind="sfx" />);
 
     await userEvent.click(screen.getByRole("button", { name: "生成音效" }));
+    // 「只要器乐」只属于音乐，音效对话框不该出现
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("想要什么样的声音"), "玻璃碎裂");
     await userEvent.clear(screen.getByLabelText("长度（秒）"));
     await userEvent.type(screen.getByLabelText("长度（秒）"), "2");

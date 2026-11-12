@@ -32,7 +32,7 @@ LIBRARIES = [
 
 
 @pytest.fixture
-def pm(tmp_path: Path) -> ProjectManager:
+def audio_pm(tmp_path: Path) -> ProjectManager:
     manager = ProjectManager(str(tmp_path / "projects"))
     manager.create_project("demo")
     manager.create_project_metadata("demo", "Demo", "Anime", "narration")
@@ -58,39 +58,39 @@ def test_every_failure_kind_maps_to_the_library_own_code(library: _Library, kind
 
 
 @pytest.mark.parametrize("library", LIBRARIES)
-async def test_unknown_project_is_reported_with_the_library_error(pm: ProjectManager, library: _Library) -> None:
+async def test_unknown_project_is_reported_with_the_library_error(audio_pm: ProjectManager, library: _Library) -> None:
     with pytest.raises(library.error) as refused:
-        await library.service(pm).list("missing")
+        await library.service(audio_pm).list("missing")
 
     assert refused.value.code == "project_not_found"
 
 
 @pytest.mark.parametrize("library", LIBRARIES)
-async def test_too_large_files_are_refused_without_leaving_files(pm: ProjectManager, library: _Library) -> None:
+async def test_too_large_files_are_refused_without_leaving_files(audio_pm: ProjectManager, library: _Library) -> None:
     content = wav_bytes(1.0)
-    service = AudioLibraryService(replace(library.kind, max_bytes=len(content) - 1), pm)
+    service = AudioLibraryService(replace(library.kind, max_bytes=len(content) - 1), audio_pm)
 
     with pytest.raises(library.error) as refused:
         await service.upload("demo", filename="clip.wav", content=content)
 
     assert refused.value.code == f"{library.prefix}_too_large"
-    assert _leftovers(pm, library.kind.directory) == []
+    assert _leftovers(audio_pm, library.kind.directory) == []
     assert await service.list("demo") == ()
 
 
 @pytest.mark.parametrize("library", LIBRARIES)
 async def test_missing_ffmpeg_is_reported_without_leaving_files(
-    pm: ProjectManager, library: _Library, monkeypatch: pytest.MonkeyPatch
+    audio_pm: ProjectManager, library: _Library, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     def unavailable() -> str:
         raise FfmpegUnavailableError("ffmpeg is missing")
 
     monkeypatch.setattr("lib.audio_library.service.ffmpeg_executable", unavailable)
-    service = library.service(pm)
+    service = library.service(audio_pm)
 
     with pytest.raises(library.error) as refused:
         await service.upload("demo", filename="clip.wav", content=wav_bytes(1.0, tone_hz=440))
 
     assert refused.value.code == f"{library.prefix}_ffmpeg_unavailable"
-    assert _leftovers(pm, library.kind.directory) == []
+    assert _leftovers(audio_pm, library.kind.directory) == []
     assert await service.list("demo") == ()
