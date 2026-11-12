@@ -4,7 +4,6 @@ import { memo, useRef, useState, type ChangeEvent, type CSSProperties, type Poin
 import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
-import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { errMsg } from "@/utils/async";
@@ -15,9 +14,9 @@ import { ItemPositionBadge } from "@/components/shared/episode-item/ItemPosition
 import { itemPositionLabel } from "@/utils/episode-display";
 import { episodeItemKind } from "@/utils/episode-item";
 import { formatSeconds, rulerStep, unitHue, unitPositionLabel } from "./timeline-view";
-import { GenerateMusicButton } from "./GenerateMusicDialog";
-import { GenerateSfxButton } from "./GenerateSfxDialog";
+import { GenerateAudioButton } from "./GenerateAudioDialog";
 import { StockAudioButton } from "./StockAudioButton";
+import { TrackActionButton } from "./TrackActionButton";
 
 function percentOf(seconds: number, duration: number): string {
   return duration > 0 ? `${(seconds / duration) * 100}%` : "0%";
@@ -117,7 +116,7 @@ export function EditTimelineTracks({
               height="h-8 edit-short:h-6"
               action={
                 <>
-                  <GenerateMusicButton projectName={projectName} />
+                  <GenerateAudioButton projectName={projectName} kind="bgm" />
                   <StockAudioButton projectName={projectName} kind="bgm" />
                   <AudioUploadButton projectName={projectName} kind="bgm" />
                 </>
@@ -136,7 +135,7 @@ export function EditTimelineTracks({
               height="h-10 edit-short:h-7"
               action={
                 <>
-                  <GenerateSfxButton projectName={projectName} />
+                  <GenerateAudioButton projectName={projectName} kind="sfx" />
                   <StockAudioButton projectName={projectName} kind="sfx" />
                   <AudioUploadButton projectName={projectName} kind="sfx" />
                 </>
@@ -275,18 +274,14 @@ function AudioUploadButton({ projectName, kind }: { projectName: string; kind: "
   const label = uploading ? t(`edit_view_${kind}_uploading`) : t(`edit_view_${kind}_upload`);
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        aria-label={label}
-        title={label}
+      <TrackActionButton
+        label={label}
+        testId={`edit-${kind}-upload`}
         disabled={uploading}
-        data-testid={`edit-${kind}-upload`}
-        onPointerDown={(event) => event.stopPropagation()}
         onClick={() => input.current?.click()}
       >
         {uploading ? <Loader2 aria-hidden className="animate-spin" /> : <Upload aria-hidden />}
-      </Button>
+      </TrackActionButton>
       <input
         ref={input}
         type="file"

@@ -4,9 +4,10 @@ import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
 import { StockPickerDialog } from "@/components/stock/StockPickerDialog";
-import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/stores/app-store";
 import type { StockItem } from "@/types/stock";
+
+import { TrackActionButton } from "./TrackActionButton";
 
 /**
  * BGM 轨与音效轨上的「从素材库挑」：在免版权素材库里找一首音乐或一个音效，存进项目的 BGM 库或音效库（docs/adr/0128）。
@@ -25,17 +26,9 @@ export function StockAudioButton({ projectName, kind }: { projectName: string; k
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        aria-label={label}
-        title={label}
-        data-testid={`edit-${kind}-stock`}
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={() => setOpen(true)}
-      >
+      <TrackActionButton label={label} testId={`edit-${kind}-stock`} onClick={() => setOpen(true)}>
         <Library aria-hidden />
-      </Button>
+      </TrackActionButton>
       {open && (
         <StockPickerDialog kind={kind === "bgm" ? "music" : "sfx"} onPick={importItem} onClose={() => setOpen(false)} />
       )}
