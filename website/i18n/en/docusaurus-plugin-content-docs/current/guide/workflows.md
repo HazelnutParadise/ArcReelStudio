@@ -436,6 +436,17 @@ ArcReel's advantage is not “skipping review,” but placing review where the c
 
 ## 8. Consistency Practices {#consistency-practices}
 
+### Series: several dramas sharing one setting {#consistency-series}
+
+When you make several dramas in the same world, put those projects into one series. Open it from "Series" in the top bar.
+
+- **Shared setting**: fill in "World setting" and "Plot setting" on the series. When an Agent conversation starts in any project of the series, the Agent reads both and writes to match them. If the setting conflicts with the project's own source text, the Agent asks you first.
+- **Shared assets**: pick the characters, scenes and props this series shares from the global asset library. Use "Apply series assets" on a project in the series to copy them into that project.
+- **Independent afterwards**: what lands in the project is a copy. Changing the asset in the library later does not change the projects; apply again to the project you want to update.
+- **One series per project**: adding a project to another series moves it out of the one it was in. Deleting a series does not delete its projects or any asset in the library.
+
+The series setting is read once when a conversation starts. After you change it, start a new conversation for the change to take effect.
+
 ### Characters {#consistency-characters}
 
 - Keep age, hairstyle, body type, and core costume descriptions fixed;

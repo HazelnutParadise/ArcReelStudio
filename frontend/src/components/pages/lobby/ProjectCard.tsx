@@ -4,7 +4,7 @@
  */
 
 import { Link } from "wouter";
-import { Download, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Download, Layers, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,11 @@ export interface ProjectCardActions {
 }
 
 /** 大厅里的真实卡片必须给 `actions`；只读演示卡不接受它。 */
-type ProjectCardProps = { project: ProjectSummary } & (
-  | { readOnly: true; actions?: never }
-  | { readOnly?: false; actions: ProjectCardActions }
-);
+type ProjectCardProps = {
+  project: ProjectSummary;
+  /** 项目所属系列的名称；不属于任何系列时不传。 */
+  seriesName?: string;
+} & ({ readOnly: true; actions?: never } | { readOnly?: false; actions: ProjectCardActions });
 
 const PROGRESS_DOT: Record<ProjectProgress, string> = {
   empty: "bg-muted-foreground",
@@ -40,7 +41,7 @@ const PROGRESS_DOT: Record<ProjectProgress, string> = {
   completed: "bg-good",
 };
 
-export function ProjectCard({ project, readOnly, actions }: ProjectCardProps) {
+export function ProjectCard({ project, seriesName, readOnly, actions }: ProjectCardProps) {
   const { t, i18n } = useTranslation(["dashboard", "onboarding"]);
   const status = asProjectStatus(project.status);
   const progress = projectProgress(status);
@@ -67,6 +68,15 @@ export function ProjectCard({ project, readOnly, actions }: ProjectCardProps) {
               <span className="rounded-full bg-warn/15 px-1.5 text-warn">{t("dashboard:lobby_card_needs_repair")}</span>
             )}
           </div>
+          {seriesName && (
+            <span
+              title={t("dashboard:lobby_series_badge_label", { name: seriesName })}
+              className="inline-flex max-w-full items-center gap-1 self-start rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+            >
+              <Layers aria-hidden className="size-3 shrink-0" />
+              <span className="truncate">{seriesName}</span>
+            </span>
+          )}
           {repairReason && <p className="line-clamp-2 text-xs break-words text-muted-foreground">{repairReason}</p>}
           <EpisodeStrip summary={status?.episodes_summary} />
           <p className="mt-auto text-xs text-muted-foreground">

@@ -1,8 +1,14 @@
 import { startTransition, useEffect, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Download, Library, Loader2, Settings } from "lucide-react";
+import { ChevronLeft, Download, Layers, Library, Loader2, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ROUTE_APP_ASSETS, ROUTE_APP_PROJECTS, ROUTE_APP_SETTINGS, episodeEditViewPath } from "@/app-routes";
+import {
+  ROUTE_APP_ASSETS,
+  ROUTE_APP_PROJECTS,
+  ROUTE_APP_SERIES,
+  ROUTE_APP_SETTINGS,
+  episodeEditViewPath,
+} from "@/app-routes";
 import { UsageHeaderEntry } from "@/components/usage/UsageHeaderEntry";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -143,6 +149,9 @@ export function GlobalHeader() {
         </span>
         <IconLink href={`~${ROUTE_APP_ASSETS}`} label={t("assets:library_title")}>
           <Library aria-hidden />
+        </IconLink>
+        <IconLink href={`~${ROUTE_APP_SERIES}`} label={t("dashboard:series_title")}>
+          <Layers aria-hidden />
         </IconLink>
         <IconLink href={`~${ROUTE_APP_SETTINGS}`} label={t("dashboard:global_settings")}>
           <Settings aria-hidden />

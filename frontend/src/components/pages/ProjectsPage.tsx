@@ -18,7 +18,15 @@ import { LobbyToolbar } from "./lobby/LobbyToolbar";
 import { ProjectCard, type ProjectCardActions } from "./lobby/ProjectCard";
 import { DeletedProjectsDialog } from "./lobby/DeletedProjectsDialog";
 import { DeleteProjectDialog, RenameProjectDialog } from "./lobby/ProjectDialogs";
-import { LOBBY_FILTERS, asProjectStatus, matchesFilter, type LobbyFilter } from "./lobby/lobby-projects";
+import {
+  LOBBY_FILTERS,
+  SERIES_FILTER_ALL,
+  asProjectStatus,
+  matchesFilter,
+  matchesSeriesFilter,
+  type LobbyFilter,
+} from "./lobby/lobby-projects";
+import { useLobbySeries } from "./lobby/useLobbySeries";
 import { useProjectExport } from "@/components/layout/useProjectExport";
 import { useProjectImport } from "./lobby/useProjectImport";
 
@@ -72,6 +80,8 @@ export function ProjectsPage() {
   const tourActive = useOnboardingStore((s) => s.active);
   const [filter, setFilter] = useState<LobbyFilter>("all");
   const [query, setQuery] = useState("");
+  const [seriesFilter, setSeriesFilter] = useState(SERIES_FILTER_ALL);
+  const { series, byProject } = useLobbySeries();
   const [renaming, setRenaming] = useState<ProjectSummary | null>(null);
   const [deleting, setDeleting] = useState<ProjectSummary | null>(null);
   const [showDeleted, setShowDeleted] = useState(false);
@@ -103,9 +113,10 @@ export function ProjectsPage() {
     return projects.filter(
       (project) =>
         matchesFilter(asProjectStatus(project.status), filter) &&
+        matchesSeriesFilter(project.name, seriesFilter, byProject) &&
         (!q || `${project.title} ${project.name}`.toLowerCase().includes(q)),
     );
-  }, [projects, filter, query]);
+  }, [projects, filter, query, seriesFilter, byProject]);
 
   const openCreate = () => setShowCreateModal(true);
   const actions: ProjectCardActions = {
@@ -151,7 +162,12 @@ export function ProjectsPage() {
   } else {
     content = (
       <>
-        <LobbyToolbar filter={filter} onFilterChange={setFilter} counts={counts} />
+        <LobbyToolbar
+          filter={filter}
+          onFilterChange={setFilter}
+          counts={counts}
+          seriesFilter={series.length > 0 ? { series, value: seriesFilter, onChange: setSeriesFilter } : undefined}
+        />
         {shown.length === 0 ? (
           <Empty>
             <EmptyHeader>
@@ -163,6 +179,7 @@ export function ProjectsPage() {
                 variant="outline"
                 onClick={() => {
                   setFilter("all");
+                  setSeriesFilter(SERIES_FILTER_ALL);
                   setQuery("");
                 }}
               >
@@ -177,7 +194,7 @@ export function ProjectsPage() {
           >
             {shown.map((project) => (
               <li key={project.name} className="flex min-w-0 flex-col">
-                <ProjectCard project={project} actions={actions} />
+                <ProjectCard project={project} seriesName={byProject.get(project.name)?.name} actions={actions} />
               </li>
             ))}
           </ul>

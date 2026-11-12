@@ -113,6 +113,8 @@ const RECORDINGS: Recording[] = [
   { file: "agent-subscription", method: "GET", path: "/api/v1/agent/subscription" },
   { file: "agent-engine", method: "GET", path: "/api/v1/agent/engine" },
   { file: "auth-me", method: "GET", path: "/api/v1/auth/me" },
+  // 大厅的系列徽章与筛选、系列页：系列列表（录制环境没有系列，大厅不显示筛选）。
+  { file: "series", method: "GET", path: "/api/v1/series" },
   // 全局设置「Agent 记忆」：用户记忆目录（录制环境没有记忆文件，多条目与正文由场景替换）。
   { file: "agent-memory", method: "GET", path: "/api/v1/agent/memory" },
   // 全局设置「使用记录」：默认最近 30 天（起点由固定时间与 Asia/Shanghai 推出）与进行中的调用。

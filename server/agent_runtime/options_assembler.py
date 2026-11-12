@@ -30,6 +30,7 @@ from lib.agent.agent_session_store.store import DbSessionStore
 from lib.agent.credential_tiers import AgentPricing
 from lib.db.base import DEFAULT_USER_ID
 from lib.db.engine import async_session_factory as default_async_session_factory
+from lib.db.repositories.series_repo import SeriesRepository
 from lib.i18n import DEFAULT_LOCALE, LOCALE_LANGUAGE_MAP
 from lib.infra.async_thread import run_sync_transaction
 from lib.infra.data_root_layout import DataRootLayout
@@ -175,11 +176,45 @@ class OptionsAssembler:
         if project_context:
             parts.append(project_context)
 
+        series_context = await self._build_series_context(project_name)
+        if series_context:
+            parts.append(series_context)
+
         user_memory = await self._build_user_memory_section()
         if user_memory:
             parts.append(user_memory)
 
         return "\n\n".join(parts)
+
+    async def _build_series_context(self, project_name: str) -> str:
+        """项目所属系列的共用设定（docs/adr/0129）：系列名、世界观与剧情设定，会话开始时读一次。
+
+        同一系列的几个项目靠这段保持设定一致。项目不属于任何系列、或系列没有填设定时返回空串；
+        读取失败时按没有系列处理，不拦住会话。
+        """
+        factory = self._session_factory_provider() or default_async_session_factory
+        try:
+            async with factory() as session:
+                series = await SeriesRepository(session).series_of_project(project_name)
+        except Exception:
+            logger.exception("系列设定读取失败，当前会话按不属于任何系列装配: %s", project_name)
+            return ""
+        if series is None:
+            return ""
+        world, plot = series.world_setting.strip(), series.plot_setting.strip()
+        if not world and not plot:
+            return ""
+        parts = [
+            "## 所属系列的共用设定",
+            "",
+            f"这个项目属于系列「{series.name}」。同一系列的其他项目共用下面的设定，创作时与它保持一致；"
+            "设定与项目自己的原文或概述冲突时，先向创作者确认。",
+        ]
+        if world:
+            parts += ["", "### 世界观", "", world]
+        if plot:
+            parts += ["", "### 剧情设定", "", plot]
+        return "\n".join(parts)
 
     async def _build_user_memory_section(self) -> str:
         """用户记忆段：目录位置、两级分流规则、读写方式，外加截断后的索引。
