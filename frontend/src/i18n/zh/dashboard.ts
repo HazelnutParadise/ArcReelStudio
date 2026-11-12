@@ -421,7 +421,7 @@ export default {
   'default_video_model': '默认视频模型',
   'auto_select': '自动选择',
   'auto_select_current': '自动选择（当前：{{model}}）',
-  'auto_select_unavailable': '自动选择（没有可用的供应商）',
+  'auto_select_unavailable': '自动选择（没有默认模型）',
   'no_video_providers_hint': '还没有可生成视频的供应商。',
   'default_audio_model': '默认旁白配音模型',
   'default_models_channel_music': '音乐',

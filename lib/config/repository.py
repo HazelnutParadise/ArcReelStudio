@@ -107,6 +107,21 @@ class SystemSettingRepository:
         stmt = insert(SystemSetting).values(key=key, value=value, updated_at=datetime.now(UTC))
         await self.session.execute(stmt.on_conflict_do_nothing(index_elements=[SystemSetting.key]))
 
+    async def fill_if_unset(self, key: str, value: str, *, set_marker: str) -> None:
+        """单条语句写入：键不存在，或现值不含 ``set_marker``（还没有设置）时写入，已有设置不改。
+
+        判断与写入在同一条语句里，读到「没有设置」之后别人提交的值不会被覆盖。
+        """
+        insert = pg_insert if self.session.get_bind().dialect.name == "postgresql" else sqlite_insert
+        stmt = insert(SystemSetting).values(key=key, value=value, updated_at=datetime.now(UTC))
+        await self.session.execute(
+            stmt.on_conflict_do_update(
+                index_elements=[SystemSetting.key],
+                set_={"value": stmt.excluded.value, "updated_at": stmt.excluded.updated_at},
+                where=~SystemSetting.value.contains(set_marker, autoescape=True),
+            )
+        )
+
     async def get_prefixed(self, prefix: str) -> dict[str, str]:
         """键以 ``prefix`` 开头的全部设置。"""
         stmt = select(SystemSetting.key, SystemSetting.value).where(

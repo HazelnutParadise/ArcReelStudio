@@ -443,7 +443,7 @@ export default {
   'default_video_model': 'Default Video Model',
   'auto_select': 'Auto-select',
   'auto_select_current': 'Auto-select (current: {{model}})',
-  'auto_select_unavailable': 'Auto-select (no provider available)',
+  'auto_select_unavailable': 'Auto-select (no default model)',
   'no_video_providers_hint': 'No provider can generate video yet.',
   'default_audio_model': 'Default Narration Audio Model',
   'default_models_channel_music': 'Music',

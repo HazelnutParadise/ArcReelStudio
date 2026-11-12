@@ -463,7 +463,7 @@ export default {
   'default_video_model': 'Видеомодель по умолчанию',
   'auto_select': 'Автовыбор',
   'auto_select_current': 'Автовыбор (текущая: {{model}})',
-  'auto_select_unavailable': 'Автовыбор (нет доступного провайдера)',
+  'auto_select_unavailable': 'Автовыбор (нет модели по умолчанию)',
   'no_video_providers_hint': 'Пока нет провайдера, который умеет генерировать видео.',
   'default_audio_model': 'Модель озвучки по умолчанию',
   'default_models_channel_music': 'Музыка',

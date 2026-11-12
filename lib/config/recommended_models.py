@@ -55,9 +55,13 @@ class StaleRecommendationError(ValueError):
     """要确认的推荐模型已不是供应商当前的推荐（推荐在提示之后又变了）。"""
 
 
+#: 全局默认模型设置有值的判据：只有含 ``/`` 的 ``provider/model`` 完整形态算，与解析链的全局层同口径。
+_SET_MARKER = "/"
+
+
 def _is_set(value: str | None) -> bool:
-    """全局默认模型设置有值：只有 ``provider/model`` 完整形态算，与解析链的全局层同口径。"""
-    return isinstance(value, str) and "/" in value
+    """全局默认模型设置有值（见 :data:`_SET_MARKER`）。"""
+    return isinstance(value, str) and _SET_MARKER in value
 
 
 def _seen_key(provider_id: str, media_type: str) -> str:
@@ -96,7 +100,8 @@ async def seed_provider_recommendations(session: AsyncSession, provider_id: str)
     """供应商首次配置：全局默认模型还没有设置的媒体类型写入它的推荐，并为还没有记录的媒体类型记下推荐。
 
     只写 ``provider/model``，不写连线旁键：没有旁键就用该供应商的默认连线。已有设置不覆盖；已记下的推荐也不覆盖，
-    连线删除重建不会吞掉还没处理的推荐变化。不是内置供应商时什么都不写。由调用方提交事务。
+    连线删除重建不会吞掉还没处理的推荐变化。「没有设置才写」在同一条语句里判断，读写之间用户存下的默认模型或
+    并发的另一次首次配置不会被覆盖。不是内置供应商时什么都不写。由调用方提交事务。
     """
     if provider_id not in PROVIDER_REGISTRY:
         return
@@ -105,8 +110,7 @@ async def seed_provider_recommendations(session: AsyncSession, provider_id: str)
         model_id = await _recommendation(session, provider_id, media_type)
         if model_id is None:
             continue
-        if not _is_set(await repo.get(key, "")):
-            await repo.upsert(key, f"{provider_id}/{model_id}")
+        await repo.fill_if_unset(key, f"{provider_id}/{model_id}", set_marker=_SET_MARKER)
         await repo.insert_if_absent(_seen_key(provider_id, media_type), model_id)
 
 

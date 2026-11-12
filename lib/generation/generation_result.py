@@ -168,6 +168,8 @@ _TASK_FAILURE_ACTIONS: dict[str, GenerationAction] = {
     "model_not_in_provider_catalog": GenerationAction.CONFIGURE_PROVIDER,
     "model_not_selected": GenerationAction.CONFIGURE_PROVIDER,
     "credential_not_found": GenerationAction.CONFIGURE_PROVIDER,
+    # 没有默认模型：到设置里选默认模型（或先配置供应商），与只选了供应商的 model_not_selected 同一类指引。
+    "default_model_not_set": GenerationAction.CONFIGURE_PROVIDER,
     "model_discontinued": GenerationAction.CONFIGURE_PROVIDER,
     # 上游按确定性 4xx 拒了这个请求：原样重发只会被同样拒绝，还要再付一次。
     "provider_rejected": GenerationAction.FIX_INPUT,

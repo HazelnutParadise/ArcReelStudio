@@ -421,7 +421,7 @@ export default {
   'default_video_model': '預設影片模型',
   'auto_select': '自動選擇',
   'auto_select_current': '自動選擇（當前：{{model}}）',
-  'auto_select_unavailable': '自動選擇（沒有可用的供應商）',
+  'auto_select_unavailable': '自動選擇（沒有預設模型）',
   'no_video_providers_hint': '還沒有可生成影片的供應商。',
   'default_audio_model': '預設旁白配音模型',
   'default_models_channel_music': '音樂',

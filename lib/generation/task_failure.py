@@ -146,6 +146,9 @@ FAILURE_CODE_KEYS: dict[str, str] = {
     # 译文模板：它不该被翻译，读侧按独立字段原样展示。
     "provider_rejected": "task_fail_provider_rejected",
     "dispatch_provider_requeue_failed": "task_fail_dispatch_provider_requeue_failed",
+    # 这一媒体类型没有默认模型（``NoAvailableProviderError``）：params 带 media_type，文案按它选（见
+    # failure_message_key），指引到默认模型设置（docs/adr/0130）。
+    "default_model_not_set": "task_fail_default_model_not_set",
     # 设置里指定的连线（凭证）已删除或不属于该供应商：不换账号，由用户重新选择连线。
     "credential_not_found": "task_fail_credential_not_found",
     # 项目在任务执行期间被删除：任务放弃落盘，见 lib.project.task_project_claim。
@@ -375,13 +378,24 @@ def bound_reason(reason: str, limit: int) -> str:
     return encoded
 
 
+#: ``default_model_not_set`` 有专属文案的媒体类型；其余媒体类型用不点名媒体的通用文案。
+_DEFAULT_MODEL_MEDIA_TYPES = frozenset({"text", "image", "video", "audio"})
+
 #: 文案里带一段「该端点应产出的扩展名」的两条失败码；清单在渲染时按落库的 media_type 现算。
 _COMFYUI_ARTIFACT_MISMATCH_CODES = frozenset({"comfyui_output_type_mismatch", "comfyui_output_container_mismatch"})
 
 
 def failure_message_key(code: str, params: Mapping[str, Any]) -> str:
-    """已登记失败码的文案 key。``model_discontinued`` 按参数里有没有下线日期与后继，选用省去对应一句的文案。"""
+    """已登记失败码的文案 key。
+
+    ``model_discontinued`` 按参数里有没有下线日期与后继，选用省去对应一句的文案；``default_model_not_set``
+    按 ``media_type`` 选用点名该媒体类型的文案。
+    """
     key = FAILURE_CODE_KEYS[code]
+    if code == "default_model_not_set":
+        media_type = params.get("media_type")
+        if media_type in _DEFAULT_MODEL_MEDIA_TYPES:
+            key += f"_{media_type}"
     if code == "model_discontinued":
         if not params.get("shutdown_date"):
             key += "_undated"

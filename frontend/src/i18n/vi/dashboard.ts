@@ -445,7 +445,7 @@ export default {
   'default_video_model': 'Mô hình video mặc định',
   'auto_select': 'Tự chọn',
   'auto_select_current': 'Tự chọn (hiện tại: {{model}})',
-  'auto_select_unavailable': 'Tự chọn (không có nhà cung cấp khả dụng)',
+  'auto_select_unavailable': 'Tự chọn (không có mô hình mặc định)',
   'no_video_providers_hint': 'Chưa có nhà cung cấp nào tạo được video.',
   'default_audio_model': 'Mô hình âm thanh thuyết minh mặc định',
   'default_models_channel_music': 'Âm nhạc',

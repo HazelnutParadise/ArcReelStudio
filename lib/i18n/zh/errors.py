@@ -79,6 +79,12 @@ MESSAGES = {
     "task_fail_provider_unsupported_media": "供应商 {provider_id} 不支持 {media_type} 生成",
     "task_fail_provider_rejected": "供应商拒绝了这次生成请求（HTTP {status}）",
     "task_fail_credential_not_found": "设置里为「{provider}」指定的连线已被删除，请在设置中重新选择连线。",
+    # 生成时这一媒体类型没有默认模型（NoAvailableProviderError），按落库的 media_type 选文案，未知媒体类型用通用的一句。
+    "task_fail_default_model_not_set": "没有设置默认模型：请在「全局设置 → 默认模型」中选择；还没有配置供应商时，先在「全局设置 → 供应商」配置",
+    "task_fail_default_model_not_set_text": "没有设置文本默认模型：请在「全局设置 → 默认模型」中选择；还没有配置供应商时，先在「全局设置 → 供应商」配置",
+    "task_fail_default_model_not_set_image": "没有设置图片默认模型：请在「全局设置 → 默认模型」中选择；还没有配置供应商时，先在「全局设置 → 供应商」配置",
+    "task_fail_default_model_not_set_video": "没有设置视频默认模型：请在「全局设置 → 默认模型」中选择；还没有配置供应商时，先在「全局设置 → 供应商」配置",
+    "task_fail_default_model_not_set_audio": "没有设置音频默认模型：请在「全局设置 → 默认模型」中选择；还没有配置供应商时，先在「全局设置 → 供应商」配置",
     "task_fail_dispatch_provider_requeue_failed": "任务供应商从 {claimed_provider_id} 变为 {actual_provider_id}，但无法回队重新认领，请重试",
     "task_fail_project_deleted_during_task": "项目已在任务执行期间删除，本次生成结果未保存",
     "task_fail_restart_lost_image": "图片任务在服务重启时中断且无法接续，请手动重试以避免重复计费",
