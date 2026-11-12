@@ -16,9 +16,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field
 
 from lib.artifacts.artifact_manifest import ArtifactBasis, ArtifactKey
+from lib.audio_library.library import read_audio_library
 
 BGM_DIR = "bgm"
 PROJECT_BGM_FIELD = "bgm"
@@ -91,25 +92,16 @@ def loudness_gain_db(integrated_lufs: float) -> float:
     return round(TARGET_LOUDNESS_LUFS - integrated_lufs, 2)
 
 
-def _parse_track(bgm_id: object, raw: object) -> BgmTrack | None:
-    if not is_bgm_id(bgm_id) or not isinstance(raw, Mapping):
-        return None
-    try:
-        track = BgmTrack.model_validate({**raw, "id": bgm_id})
-    except ValidationError:
-        return None
-    if track.file not in {bgm_file_path(track.id, extension) for extension in BGM_EXTENSIONS}:
-        return None
-    return track
-
-
 def read_bgm_library(project: Mapping[str, Any]) -> dict[str, BgmTrack]:
     """``project.json`` 里登记的 BGM，按上传先后排列；形态不对的条目不计。"""
-    bucket = project.get(PROJECT_BGM_FIELD)
-    if not isinstance(bucket, Mapping):
-        return {}
-    tracks = (_parse_track(bgm_id, raw) for bgm_id, raw in bucket.items())
-    return {track.id: track for track in sorted((t for t in tracks if t is not None), key=lambda t: t.uploaded_at)}
+    return read_audio_library(
+        project,
+        field=PROJECT_BGM_FIELD,
+        is_id=is_bgm_id,
+        validate=BgmTrack.model_validate,
+        allowed_files=lambda bgm_id: (bgm_file_path(bgm_id, extension) for extension in BGM_EXTENSIONS),
+        order=lambda track: track.uploaded_at,
+    )
 
 
 def bgm_entry(track: BgmTrack) -> dict[str, object]:

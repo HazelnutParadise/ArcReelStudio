@@ -15,9 +15,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field
 
 from lib.artifacts.artifact_manifest import ArtifactBasis, ArtifactKey
+from lib.audio_library.library import read_audio_library
 
 SFX_DIR = "sfx"
 PROJECT_SFX_FIELD = "sfx"
@@ -88,25 +89,16 @@ def peak_gain_db(peak_dbfs: float) -> float:
     return round(min(TARGET_PEAK_DBFS - peak_dbfs, MAX_GAIN_DB), 2)
 
 
-def _parse_sound(sfx_id: object, raw: object) -> SfxSound | None:
-    if not is_sfx_id(sfx_id) or not isinstance(raw, Mapping):
-        return None
-    try:
-        sound = SfxSound.model_validate({**raw, "id": sfx_id})
-    except ValidationError:
-        return None
-    if sound.file not in {sfx_file_path(sound.id, extension) for extension in SFX_EXTENSIONS}:
-        return None
-    return sound
-
-
 def read_sfx_library(project: Mapping[str, Any]) -> dict[str, SfxSound]:
     """``project.json`` 里登记的音效，按加入先后排列；形态不对的条目不计。"""
-    bucket = project.get(PROJECT_SFX_FIELD)
-    if not isinstance(bucket, Mapping):
-        return {}
-    sounds = (_parse_sound(sfx_id, raw) for sfx_id, raw in bucket.items())
-    return {sound.id: sound for sound in sorted((s for s in sounds if s is not None), key=lambda s: s.added_at)}
+    return read_audio_library(
+        project,
+        field=PROJECT_SFX_FIELD,
+        is_id=is_sfx_id,
+        validate=SfxSound.model_validate,
+        allowed_files=lambda sfx_id: (sfx_file_path(sfx_id, extension) for extension in SFX_EXTENSIONS),
+        order=lambda sound: sound.added_at,
+    )
 
 
 def sfx_entry(sound: SfxSound) -> dict[str, object]:
