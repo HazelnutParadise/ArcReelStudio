@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import itertools
 import json
+import os
 import tempfile
 import threading
 from collections.abc import AsyncIterator, Callable, Generator, Mapping, Sequence
@@ -1216,6 +1217,19 @@ def use_projects_session_factory(monkeypatch, factory) -> None:
 def use_assets_router_sessions(monkeypatch, factory) -> None:
     """全局资产库路由经 *factory* 开数据库会话：它在模块顶部绑定了 ``async_session_factory``。"""
     monkeypatch.setattr("server.routers.assets.async_session_factory", factory)
+
+
+def use_system_config_sessions(monkeypatch, factory) -> None:
+    """系统配置路由经 *factory* 开数据库会话：它在模块顶部绑定了 ``async_session_factory``。"""
+    monkeypatch.setattr("server.routers.system_config.async_session_factory", factory)
+
+
+def use_os_replace(monkeypatch, replace: Callable[..., Any]) -> None:
+    """``os.replace``（原子替换的文件系统边界）改调 *replace*；传入先保存的真实 ``os.replace`` 即还原。
+
+    各用例注入的失败、记录与交错行为不同，替身由用例自己写；这里只收口替换目标。
+    """
+    monkeypatch.setattr(os, "replace", replace)
 
 
 def use_object_storage_sdk(monkeypatch, factory: Callable[..., Any]) -> None:

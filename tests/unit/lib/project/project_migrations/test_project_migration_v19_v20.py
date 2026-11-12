@@ -17,28 +17,20 @@ from lib.catalog import query as catalog
 from lib.config.model_setting_keys import MODEL_SETTING_MEDIA_TYPES, PROJECT_MODEL_SETTING_KEYS
 from lib.project.project_migrations import MIGRATORS
 from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
-from tests.catalog_support import install_catalog, with_recommendation
-
-#: 与出厂快照不同的推荐：期望值只能来自「迁移这一刻目录的推荐」，不是写死的出厂默认。
-ARK_VIDEO = "doubao-seedance-2-0-260128"
-OPENAI_IMAGE = "gpt-image-2.5-flare"
-GROK_TEXT = "grok-4.5"
-DASHSCOPE_TTS = "qwen3-tts-flash"
+from tests.catalog_support import (
+    ARK_VIDEO,
+    DASHSCOPE_TTS,
+    GROK_TEXT,
+    OPENAI_IMAGE,
+    install_catalog,
+    with_recommendation,
+)
+from tests.fakes import use_os_replace
 
 _RECOMMENDED_PROVIDER = {"text": "grok", "image": "openai", "video": "ark", "audio": "dashscope"}
 _RECOMMENDED_MODEL = {"text": GROK_TEXT, "image": OPENAI_IMAGE, "video": ARK_VIDEO, "audio": DASHSCOPE_TTS}
 
-
-@pytest.fixture(autouse=True)
-def recommendations(monkeypatch: pytest.MonkeyPatch) -> None:
-    snapshot = catalog.factory_snapshot()
-    for provider_id, media_type, model in (
-        ("ark", "video", ARK_VIDEO),
-        ("openai", "image", OPENAI_IMAGE),
-        ("grok", "text", GROK_TEXT),
-    ):
-        snapshot = with_recommendation(snapshot, provider_id, media_type, model)
-    install_catalog(monkeypatch, snapshot)
+pytestmark = pytest.mark.usefixtures("recommended_models")
 
 
 def _write(tmp_path: Path, project: dict[str, Any]) -> Path:
@@ -204,7 +196,7 @@ def test_project_json_is_written_once_through_an_atomic_replace(
         replaced.append(Path(dst).name)
         real_replace(src, dst)
 
-    monkeypatch.setattr(os, "replace", recording_replace)
+    use_os_replace(monkeypatch, recording_replace)
 
     MIGRATORS[19](project_dir)
 
@@ -221,7 +213,7 @@ def test_a_failed_write_leaves_the_old_file_for_the_retry(tmp_path: Path, monkey
 
     # 只撤掉这一处替身：monkeypatch.undo() 会连同装入的测试目录一起撤掉
     with monkeypatch.context() as patched:
-        patched.setattr(os, "replace", failing_replace)
+        use_os_replace(patched, failing_replace)
         with pytest.raises(OSError, match="disk full"):
             MIGRATORS[19](project_dir)
 

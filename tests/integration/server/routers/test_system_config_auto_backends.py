@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from lib.db.models.custom_provider import CustomProvider, CustomProviderModel
 from server.routers import system_config
 from tests.auth_deps import AUTH_DEPENDENCIES, override_auth
+from tests.fakes import use_system_config_sessions
 
 
 async def test_auto_backends_returns_bucket_models_and_null_for_unavailable(db_factory, monkeypatch):
@@ -28,7 +29,7 @@ async def test_auto_backends_returns_bucket_models_and_null_for_unavailable(db_f
         await session.commit()
         provider_id = provider.provider_id
 
-    monkeypatch.setattr(system_config, "async_session_factory", db_factory)
+    use_system_config_sessions(monkeypatch, db_factory)
     app = FastAPI()
     override_auth(app)
     app.include_router(system_config.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)

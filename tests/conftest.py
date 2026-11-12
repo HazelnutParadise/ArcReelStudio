@@ -185,6 +185,28 @@ def video_request_facts(set_video_request_facts) -> None:
 
 
 @pytest.fixture
+def recommended_models(monkeypatch: pytest.MonkeyPatch) -> None:
+    """目录的推荐与出厂快照不同（ark 视频、openai 图片、grok 文本）；用 ``pytestmark = usefixtures`` 整个文件启用。"""
+    from lib.catalog import query as catalog
+    from tests.catalog_support import (
+        ARK_VIDEO,
+        GROK_TEXT,
+        OPENAI_IMAGE,
+        install_catalog,
+        with_recommendation,
+    )
+
+    snapshot = catalog.factory_snapshot()
+    for provider_id, media_type, model in (
+        ("ark", "video", ARK_VIDEO),
+        ("openai", "image", OPENAI_IMAGE),
+        ("grok", "text", GROK_TEXT),
+    ):
+        snapshot = with_recommendation(snapshot, provider_id, media_type, model)
+    install_catalog(monkeypatch, snapshot)
+
+
+@pytest.fixture
 def set_error_handler_sessions(monkeypatch: pytest.MonkeyPatch) -> Callable[[async_sessionmaker[AsyncSession]], None]:
     """让 app 级错误处理器加载显示名目录时用测试给定的会话工厂。
 

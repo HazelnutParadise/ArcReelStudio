@@ -22,26 +22,17 @@ from lib.project.project_manager import ProjectManager
 from lib.project.project_migrations import CURRENT_SCHEMA_VERSION, run_project_migrations
 from lib.project.project_migrations.runner import migrate_project_dir
 from lib.workflow.workflow_state import WorkflowStateService
-from tests.catalog_support import install_catalog, with_recommendation
+from tests.catalog_support import (
+    ARK_VIDEO,
+    DASHSCOPE_TTS,
+    GROK_TEXT,
+    OPENAI_IMAGE,
+    install_catalog,
+    with_recommendation,
+)
 from tests.legacy_project_shapes import write_legacy_bare_provider_project
 
-ARK_VIDEO = "doubao-seedance-2-0-260128"
-OPENAI_IMAGE = "gpt-image-2.5-flare"
-GROK_TEXT = "grok-4.5"
-DASHSCOPE_TTS = "qwen3-tts-flash"
-
-
-@pytest.fixture(autouse=True)
-def recommendations(monkeypatch: pytest.MonkeyPatch) -> None:
-    """目录的推荐与出厂快照不同：迁移结果只能来自迁移这一刻目录给的推荐。"""
-    snapshot = catalog.factory_snapshot()
-    for provider_id, media_type, model in (
-        ("ark", "video", ARK_VIDEO),
-        ("openai", "image", OPENAI_IMAGE),
-        ("grok", "text", GROK_TEXT),
-    ):
-        snapshot = with_recommendation(snapshot, provider_id, media_type, model)
-    install_catalog(monkeypatch, snapshot)
+pytestmark = pytest.mark.usefixtures("recommended_models")
 
 
 _KEPT = (

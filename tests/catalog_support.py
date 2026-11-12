@@ -20,6 +20,13 @@ def install_catalog(monkeypatch: pytest.MonkeyPatch, data: CatalogData) -> None:
     monkeypatch.setattr(query, "factory_snapshot", lambda: data)
 
 
+#: 与出厂快照不同的推荐：期望值只能来自「迁移这一刻目录的推荐」，不是写死的出厂默认。
+ARK_VIDEO = "doubao-seedance-2-0-260128"
+OPENAI_IMAGE = "gpt-image-2.5-flare"
+GROK_TEXT = "grok-4.5"
+DASHSCOPE_TTS = "qwen3-tts-flash"
+
+
 def set_catalog_today(monkeypatch: pytest.MonkeyPatch, day: date) -> None:
     """让目录读模型在本用例内把 ``day`` 当作今天（UTC 日期），判定生命周期用；可在用例中途再次调用跨日。"""
     monkeypatch.setattr(lifecycle, "utc_today", lambda: day)

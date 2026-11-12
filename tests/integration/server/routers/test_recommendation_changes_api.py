@@ -7,9 +7,9 @@ from collections.abc import Iterator
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from lib.config.recommended_models import seed_provider_recommendations
 
 from lib.catalog import query as catalog
+from lib.config.recommended_models import seed_provider_recommendations
 from lib.config.service import ConfigService
 from lib.db import get_async_session
 from lib.db.repositories.credential_repository import CredentialRepository
@@ -18,6 +18,7 @@ from server.error_handlers import register_error_handlers
 from server.routers import system_config
 from tests.auth_deps import AUTH_DEPENDENCIES, override_auth
 from tests.catalog_support import install_catalog, with_recommendation
+from tests.fakes import use_system_config_sessions
 
 NEXT_IMAGE = "doubao-seedream-4-5-251128"
 LIST_URL = "/api/v1/system/config/recommendation-changes"
@@ -26,7 +27,7 @@ ACK_URL = "/api/v1/system/config/recommendation-changes/acknowledge"
 
 @pytest.fixture
 def recommendation_client(db_factory, monkeypatch) -> Iterator[TestClient]:
-    monkeypatch.setattr(system_config, "async_session_factory", db_factory)
+    use_system_config_sessions(monkeypatch, db_factory)
     app = FastAPI()
     override_auth(app)
     register_error_handlers(app)

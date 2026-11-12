@@ -14,32 +14,21 @@ from typing import Any
 
 import pytest
 
-from lib.catalog import query as catalog
 from lib.db.models.builtin_provider_model import BuiltinProviderModelState
 from lib.project.project_manager import ProjectManager
 from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.services.project import project_archive as project_archive_module
 from server.services.project.project_archive import ProjectArchiveService
-from tests.catalog_support import install_catalog, with_recommendation
+from tests.catalog_support import (
+    ARK_VIDEO,
+    DASHSCOPE_TTS,
+    GROK_TEXT,
+    OPENAI_IMAGE,
+)
 from tests.integration.server.routers.projects_router_support import build_projects_client
 from tests.legacy_project_shapes import write_legacy_bare_provider_project
 
-ARK_VIDEO = "doubao-seedance-2-0-260128"
-OPENAI_IMAGE = "gpt-image-2.5-flare"
-GROK_TEXT = "grok-4.5"
-DASHSCOPE_TTS = "qwen3-tts-flash"
-
-
-@pytest.fixture(autouse=True)
-def recommendations(monkeypatch: pytest.MonkeyPatch) -> None:
-    snapshot = catalog.factory_snapshot()
-    for provider_id, media_type, model in (
-        ("ark", "video", ARK_VIDEO),
-        ("openai", "image", OPENAI_IMAGE),
-        ("grok", "text", GROK_TEXT),
-    ):
-        snapshot = with_recommendation(snapshot, provider_id, media_type, model)
-    install_catalog(monkeypatch, snapshot)
+pytestmark = pytest.mark.usefixtures("recommended_models")
 
 
 def _v19_archive(tmp_path: Path) -> bytes:

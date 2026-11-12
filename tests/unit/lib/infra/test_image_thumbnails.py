@@ -17,6 +17,7 @@ from lib.infra.image_thumbnails import (
     snap_thumbnail_width,
     thumbnail_cache_path,
 )
+from tests.fakes import use_os_replace
 
 _EXIF_ORIENTATION = 0x0112
 
@@ -203,13 +204,13 @@ def test_pruning_keeps_the_version_the_source_currently_has(tmp_path: Path, monk
 
     def _publish_then_source_changes(src, dst) -> None:
         real_replace(src, dst)
-        monkeypatch.setattr(os, "replace", real_replace)
+        use_os_replace(monkeypatch, real_replace)
         _replace_source(source, (1200, 600), 1_700_000_100_000_000_000)
         result = _thumb(source, cache_dir, 320)
         assert result is not None
         newer.append(result[0])
 
-    monkeypatch.setattr(os, "replace", _publish_then_source_changes)
+    use_os_replace(monkeypatch, _publish_then_source_changes)
 
     ensure_image_thumbnail(source, stale_stat, cache_dir=cache_dir, source_key="storyboards/a.png", width=320)
 

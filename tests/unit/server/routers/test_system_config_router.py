@@ -29,6 +29,7 @@ from server.dependencies import get_config_service
 from server.error_handlers import register_error_handlers
 from server.routers import system_config as system_config_router
 from tests.auth_deps import AUTH_DEPENDENCIES
+from tests.fakes import use_system_config_sessions
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -765,7 +766,7 @@ class TestNarrationDefaults:
                 await session.commit()
 
         asyncio.run(_seed())
-        monkeypatch.setattr(system_config_router, "async_session_factory", db_factory)
+        use_system_config_sessions(monkeypatch, db_factory)
         with TestClient(_make_app_with_mock(_make_mock_svc())) as client:
             resp = client.get("/api/v1/system/narration-defaults")
         assert resp.status_code == 200
