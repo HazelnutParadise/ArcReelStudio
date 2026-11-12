@@ -433,9 +433,8 @@ def shared_db_schema():
     """把模块级 engine 所指的库迁到 head，使任何用例都能直接用它。
 
     只对本 conftest 自建的临时库执行：外部给定 DATABASE_URL 时（postgres-compat job）
-    schema 由该 job 的 alembic 步骤负责。走 alembic 而非 ``create_all``，因为
-    ``lib.db.init_db()`` 对「有表无 alembic_version」的库会先 stamp base 再 upgrade，
-    预置的 create_all schema 会让它重复建表。
+    schema 由该 job 的 alembic 步骤负责。走 alembic 而非 ``create_all``：出厂数据（单用户的 ``default``
+    用户与默认隐藏的 Agnes 模型）只由迁移写入，``create_all`` 不写。
     """
     if _OWNED_TEST_DB_DIR is None:
         return
