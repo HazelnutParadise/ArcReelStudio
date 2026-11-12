@@ -169,6 +169,7 @@ MESSAGES = {
     "audio_provider_not_configured": "請先設定音訊供應商：在「全域性設定 → 供應商」頁面設定支援語音合成的供應商",
     "music_provider_not_configured": "還沒有設定音樂模型，請在「全域設定 → 預設模型」選擇一個音樂模型",
     "model_not_selected": "專案設定裡有一項模型只選了供應商 {provider}，沒有選定具體模型；請在專案設定中重新選擇模型",
+    "recommendation_changed_again": "推薦模型剛剛又變了，請重新選擇",
     "text_default_model_not_set": "還沒有設定文字預設模型：請在「全域設定 → 預設模型」中選擇；還沒有設定供應商時，先在「全域設定 → 供應商」設定",
     "audio_default_model_not_set": "還沒有設定旁白配音的預設模型：請在「全域設定 → 預設模型」中選擇；還沒有設定支援語音合成的供應商時，先在「全域設定 → 供應商」設定",
     "narration_speed_must_be_positive": "旁白語速必須是正數",

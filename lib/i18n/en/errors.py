@@ -174,6 +174,7 @@ MESSAGES = {
     "audio_provider_not_configured": "Please configure an audio provider first: add a text-to-speech capable provider in Settings → Providers",
     "music_provider_not_configured": "No music model is set. Choose one in Global settings → Default models",
     "model_not_selected": "A model setting in this project names only the provider {provider} and no model; re-select a model in Project Settings",
+    "recommendation_changed_again": "The recommended model just changed again. Choose again.",
     "text_default_model_not_set": "No default text model is set: choose one in Settings → Default models; if no provider is configured yet, add one in Settings → Providers first",
     "audio_default_model_not_set": "No default narration voice-over model is set: choose one in Settings → Default models; if no text-to-speech capable provider is configured yet, add one in Settings → Providers first",
     "narration_speed_must_be_positive": "Narration speed must be a positive number",

@@ -169,6 +169,7 @@ MESSAGES = {
     "audio_provider_not_configured": "请先配置音频供应商：在「全局设置 → 供应商」页面配置支持语音合成的供应商",
     "music_provider_not_configured": "还没有设定音乐模型，请在「全局设置 → 默认模型」选择一个音乐模型",
     "model_not_selected": "项目设置里有一项模型只选了供应商 {provider}，没有选定具体模型；请在项目设置中重新选择模型",
+    "recommendation_changed_again": "推荐模型刚刚又有变化，请重新选择",
     "text_default_model_not_set": "还没有设置文本默认模型：请在「全局设置 → 默认模型」中选择；还没有配置供应商时，先在「全局设置 → 供应商」配置",
     "audio_default_model_not_set": "还没有设置旁白配音的默认模型：请在「全局设置 → 默认模型」中选择；还没有配置支持语音合成的供应商时，先在「全局设置 → 供应商」配置",
     "narration_speed_must_be_positive": "旁白语速必须是正数",

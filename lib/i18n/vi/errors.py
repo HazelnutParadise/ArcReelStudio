@@ -174,6 +174,7 @@ MESSAGES = {
     "audio_provider_not_configured": "Vui lòng cấu hình nhà cung cấp âm thanh trước: thêm nhà cung cấp hỗ trợ chuyển văn bản thành giọng nói trong Cài đặt → Nhà cung cấp",
     "music_provider_not_configured": "Chưa đặt mô hình tạo nhạc. Hãy chọn trong Cài đặt chung → Mô hình mặc định",
     "model_not_selected": "Một thiết lập mô hình trong dự án chỉ chọn nhà cung cấp {provider} mà chưa chọn mô hình; hãy chọn lại mô hình trong Cài đặt dự án",
+    "recommendation_changed_again": "Mô hình đề xuất vừa thay đổi lần nữa. Hãy chọn lại.",
     "text_default_model_not_set": "Chưa đặt mô hình văn bản mặc định: hãy chọn trong Cài đặt → Mô hình mặc định; nếu chưa cấu hình nhà cung cấp nào, hãy thêm trong Cài đặt → Nhà cung cấp trước",
     "audio_default_model_not_set": "Chưa đặt mô hình lồng tiếng thuyết minh mặc định: hãy chọn trong Cài đặt → Mô hình mặc định; nếu chưa cấu hình nhà cung cấp hỗ trợ chuyển văn bản thành giọng nói, hãy thêm trong Cài đặt → Nhà cung cấp trước",
     "narration_speed_must_be_positive": "Tốc độ thuyết minh phải là số dương",
