@@ -1,12 +1,14 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import userEvent from "@testing-library/user-event";
 import i18n from "@/i18n";
 import { API } from "@/api";
 import * as providerModels from "@/utils/provider-models";
 import { useAppStore } from "@/stores/app-store";
+import { useConnectionsStore } from "@/stores/connections-store";
 import { MediaModelSection } from "./MediaModelSection";
-import type { ProviderInfo, VideoAudioControl } from "@/types/provider";
+import type { ProviderCredential, ProviderInfo, VideoAudioControl } from "@/types/provider";
+import type { RecommendationChange } from "@/types";
 
 const CONFIG = {
   options: {
@@ -475,6 +477,324 @@ describe("MediaModelSection", () => {
     const imageSection = screen.getAllByRole("button", { name: /按用途指定模型/ })[1];
     expect(imageSection).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("已指定 1 项")).toBeInTheDocument();
+  });
+});
+
+describe("MediaModelSection – 推荐变化提示", () => {
+  const SWITCH_OR_KEEP = /切换到|保留当前|设为默认|暂不设置/;
+
+  const connection = (id: number, provider: string, name: string, isActive = false): ProviderCredential => ({
+    id,
+    provider,
+    name,
+    api_key_masked: "sk…abcd",
+    credentials_filename: null,
+    base_url: null,
+    is_active: isActive,
+    created_at: "2026-11-01T00:00:00Z",
+  });
+
+  // 模拟服务端：配置与待处理的推荐变化都存在这里，确认时按后端规则写入全局默认
+  // （换了供应商就清掉该字段旁的连线，同一供应商保留）。
+  let server: Record<string, unknown>;
+  let pending: RecommendationChange[];
+  const DEFAULT_KEY = {
+    video: "default_video_backend",
+    image: "default_image_backend",
+    text: "default_text_backend",
+    audio: "default_audio_backend",
+  } as const;
+
+  const videoChange: RecommendationChange = {
+    media_type: "video",
+    provider_id: "ark",
+    recommended: "ark/seedance",
+    current: "gemini/veo-3",
+  };
+  const imageChange: RecommendationChange = {
+    media_type: "image",
+    provider_id: "openai",
+    recommended: "openai/gpt-image-edit",
+    current: "openai/gpt-image-1",
+  };
+
+  function card(title: string) {
+    const section = screen.getByRole("heading", { name: title, level: 3 }).closest("section");
+    if (!section) throw new Error(`no card for ${title}`);
+    return within(section);
+  }
+
+  beforeEach(() => {
+    useAppStore.setState(useAppStore.getInitialState(), true);
+    vi.restoreAllMocks();
+    server = {
+      default_image_backend: "openai/gpt-image-1",
+      default_audio_backend: "dashscope/tts-a",
+      default_music_backend: "suno/music-a",
+      default_sfx_backend: "eleven/sfx-a",
+    };
+    pending = [];
+    useConnectionsStore.setState({
+      loaded: true,
+      connections: [
+        connection(7, "gemini", "公司帐", true),
+        connection(8, "gemini", "个人帐"),
+        connection(21, "ark", "方舟帐", true),
+        connection(11, "openai", "OpenAI 主", true),
+        connection(12, "openai", "OpenAI 备"),
+      ],
+    });
+    vi.spyOn(API, "getSystemConfig").mockImplementation(
+      async () =>
+        ({
+          options: {
+            ...CONFIG.options,
+            image_backends: ["gemini/nano-banana", "openai/gpt-image-1", "openai/gpt-image-edit"],
+            text_backends: ["gemini/g25", "gemini/g25-pro"],
+            audio_backends: ["dashscope/tts-a", "gemini/tts-b"],
+            music_backends: ["suno/music-a"],
+            sfx_backends: ["eleven/sfx-a"],
+          },
+          settings: { ...CONFIG.settings, ...server },
+        }) as unknown as Awaited<ReturnType<typeof API.getSystemConfig>>,
+    );
+    vi.spyOn(API, "getAutoBackends").mockResolvedValue(NO_AUTO);
+    vi.spyOn(API, "getModelCandidates").mockResolvedValue(
+      CANDIDATES as unknown as Awaited<ReturnType<typeof API.getModelCandidates>>,
+    );
+    vi.spyOn(providerModels, "getProviderModels").mockResolvedValue([]);
+    vi.spyOn(providerModels, "getCustomProviderModels").mockResolvedValue([]);
+    vi.spyOn(API, "getTtsModelCapabilities").mockResolvedValue({ supports_speed: true, voices: [] });
+    vi.spyOn(API, "getRecommendationChanges").mockImplementation(async () => ({ changes: [...pending] }));
+    vi.spyOn(API, "acknowledgeRecommendation").mockImplementation(async (change, apply) => {
+      pending = pending.filter((c) => c.media_type !== change.media_type || c.provider_id !== change.provider_id);
+      if (!apply) return;
+      const key = DEFAULT_KEY[change.media_type];
+      const before = String(server[key] ?? "");
+      server[key] = change.recommended;
+      if (before.split("/")[0] !== change.provider_id) server[`${key}_credential_id`] = null;
+    });
+  });
+
+  afterEach(() => {
+    useConnectionsStore.setState(useConnectionsStore.getInitialState(), true);
+  });
+
+  it("shows a notice next to the video, image, text and narration channels, and none on music or sound effects", async () => {
+    pending = [
+      videoChange,
+      imageChange,
+      { media_type: "text", provider_id: "gemini", recommended: "gemini/g25-pro", current: "gemini/g25" },
+      { media_type: "audio", provider_id: "gemini", recommended: "gemini/tts-b", current: "dashscope/tts-a" },
+    ];
+    render(<MediaModelSection />);
+
+    await screen.findByText("ark 现在推荐 seedance，当前使用 veo-3");
+    expect(card("视频").getByText("ark 现在推荐 seedance，当前使用 veo-3")).toBeInTheDocument();
+    expect(card("图片").getByText("openai 现在推荐 gpt-image-edit，当前使用 gpt-image-1")).toBeInTheDocument();
+    expect(card("文本").getByText("gemini 现在推荐 g25-pro，当前使用 g25")).toBeInTheDocument();
+    expect(card("旁白配音").getByText("gemini 现在推荐 tts-b，当前使用 tts-a")).toBeInTheDocument();
+    for (const title of ["视频", "图片", "文本", "旁白配音"]) {
+      expect(card(title).getByRole("button", { name: /^切换到 / })).toBeInTheDocument();
+      expect(card(title).getByRole("button", { name: "保留当前" })).toBeInTheDocument();
+    }
+    for (const title of ["音乐", "音效"]) {
+      expect(card(title).queryByRole("button", { name: SWITCH_OR_KEEP })).not.toBeInTheDocument();
+      expect(card(title).queryByRole("status")).not.toBeInTheDocument();
+    }
+  });
+
+  it("shows no notice when the list is empty", async () => {
+    render(<MediaModelSection />);
+    await screen.findByRole("combobox", { name: "默认视频模型" });
+    await waitFor(() => expect(API.getRecommendationChanges).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: SWITCH_OR_KEEP })).not.toBeInTheDocument();
+  });
+
+  it("shows no notice, and the form still works, when the request fails", async () => {
+    vi.spyOn(API, "getRecommendationChanges").mockRejectedValue(new Error("boom"));
+    render(<MediaModelSection />);
+
+    expect(await screen.findByRole("combobox", { name: "默认视频模型" })).toBeInTheDocument();
+    await waitFor(() => expect(API.getRecommendationChanges).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: SWITCH_OR_KEEP })).not.toBeInTheDocument();
+  });
+
+  it("switches to the recommended model: acknowledges with apply, shows it in the field and drops the notice", async () => {
+    const user = userEvent.setup();
+    pending = [videoChange];
+    const patch = vi.spyOn(API, "updateSystemConfig");
+    render(<MediaModelSection />);
+
+    expect(await screen.findByText("ark 现在推荐 seedance，当前使用 veo-3")).toBeInTheDocument();
+    // 只提示，不替用户改
+    expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(/veo-3/);
+    await user.click(screen.getByRole("button", { name: "切换到 seedance" }));
+
+    expect(API.acknowledgeRecommendation).toHaveBeenCalledWith(videoChange, true);
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(/seedance/));
+    await waitFor(() => expect(screen.queryByText("ark 现在推荐 seedance，当前使用 veo-3")).not.toBeInTheDocument());
+    // 服务端已写入，不经保存栏，也没有剩余的未保存修改
+    expect(patch).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+  });
+
+  it("keeps the current model: acknowledges without apply, leaves the field alone and drops the notice", async () => {
+    const user = userEvent.setup();
+    pending = [videoChange];
+    render(<MediaModelSection />);
+
+    await user.click(await screen.findByRole("button", { name: "保留当前" }));
+
+    expect(API.acknowledgeRecommendation).toHaveBeenCalledWith(videoChange, false);
+    await waitFor(() => expect(screen.queryByText("ark 现在推荐 seedance，当前使用 veo-3")).not.toBeInTheDocument());
+    expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(/veo-3/);
+    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+  });
+
+  it("keeps unsaved edits to other fields after a switch and does not write the old model back on save", async () => {
+    const user = userEvent.setup();
+    server.default_image_backend = "gemini/nano-banana";
+    pending = [{ ...imageChange, current: "gemini/nano-banana" }];
+    const patch = vi.spyOn(API, "updateSystemConfig").mockResolvedValue(CONFIG as never);
+    render(<MediaModelSection />);
+
+    // 未保存的修改：轮询超时，以及另一个字段（默认视频模型）
+    const timeout = await screen.findByRole("textbox", { name: "视频轮询超时（秒）" });
+    await user.clear(timeout);
+    await user.type(timeout, "7200");
+    await user.click(screen.getByRole("combobox", { name: "默认视频模型" }));
+    await user.click(await screen.findByRole("option", { name: /seedance/ }));
+
+    await user.click(await screen.findByRole("button", { name: "切换到 gpt-image-edit" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "切换到 gpt-image-edit" })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("combobox", { name: "默认图片模型" })).toHaveTextContent(/gpt-image-edit/);
+    expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(/seedance/);
+    expect(timeout).toHaveValue("7200");
+
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(patch).toHaveBeenCalledTimes(1));
+    const sent = patch.mock.calls[0][0] as Record<string, unknown>;
+    expect(sent).toMatchObject({ video_poll_timeout_seconds: 7200, default_video_backend: "ark/seedance" });
+    // 不把旧图片默认模型写回去：不带这个键，或带的就是推荐模型
+    expect(sent.default_image_backend ?? "openai/gpt-image-edit").toBe("openai/gpt-image-edit");
+  });
+
+  it("resets the connection to the provider's default when the switch changes provider", async () => {
+    const user = userEvent.setup();
+    pending = [videoChange];
+    const patch = vi.spyOn(API, "updateSystemConfig").mockResolvedValue(CONFIG as never);
+    render(<MediaModelSection />);
+
+    // 未保存地给当前模型（gemini）选了第二条连线
+    await user.click(await screen.findByRole("combobox", { name: "默认视频模型的连线" }));
+    await user.click(await screen.findByRole("option", { name: "个人帐" }));
+    expect(screen.getByRole("combobox", { name: "默认视频模型的连线" })).toHaveTextContent("个人帐");
+
+    await user.click(screen.getByRole("button", { name: "切换到 seedance" }));
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(/seedance/));
+    // ark 只有一条连线、也没选过：不出现连线下拉；旧的 gemini 连线留在 ark 上的话会显示「已删除的连线」
+    await waitFor(() => expect(screen.queryByRole("combobox", { name: "默认视频模型的连线" })).not.toBeInTheDocument());
+
+    const timeout = screen.getByRole("textbox", { name: "视频轮询超时（秒）" });
+    await user.clear(timeout);
+    await user.type(timeout, "7200");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(patch).toHaveBeenCalledTimes(1));
+    const sent = patch.mock.calls[0][0] as Record<string, unknown>;
+    expect(sent.video_poll_timeout_seconds).toBe(7200);
+    // 不带这个键，或带的是「清空」，都不能是旧连线 8
+    expect(sent.default_video_backend_credential_id ?? null).toBeNull();
+    expect(sent.default_video_backend ?? "ark/seedance").toBe("ark/seedance");
+  });
+
+  it("keeps the chosen connection when the switch stays within the same provider", async () => {
+    const user = userEvent.setup();
+    pending = [imageChange];
+    server.default_image_backend_credential_id = 12;
+    const patch = vi.spyOn(API, "updateSystemConfig").mockResolvedValue(CONFIG as never);
+    render(<MediaModelSection />);
+
+    expect(await screen.findByRole("combobox", { name: "默认图片模型的连线" })).toHaveTextContent("OpenAI 备");
+    await user.click(screen.getByRole("button", { name: "切换到 gpt-image-edit" }));
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: "默认图片模型" })).toHaveTextContent(/gpt-image-edit/),
+    );
+
+    expect(screen.getByRole("combobox", { name: "默认图片模型的连线" })).toHaveTextContent("OpenAI 备");
+    // 之后保存别的字段，也不会把连线改回默认
+    const timeout = screen.getByRole("textbox", { name: "视频轮询超时（秒）" });
+    await user.clear(timeout);
+    await user.type(timeout, "7200");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(patch).toHaveBeenCalledWith({ video_poll_timeout_seconds: 7200 }));
+  });
+
+  it("shows the error and refreshes the notices when the recommendation changed again", async () => {
+    const user = userEvent.setup();
+    const newer: RecommendationChange = { ...videoChange, recommended: "ark/seedance-2" };
+    pending = [videoChange];
+    vi.mocked(API.acknowledgeRecommendation).mockImplementation(async () => {
+      pending = [newer];
+      throw new Error("recommendation_changed_again");
+    });
+    const pushToast = vi.spyOn(useAppStore.getState(), "pushToast");
+    render(<MediaModelSection />);
+
+    await user.click(await screen.findByRole("button", { name: "切换到 seedance" }));
+
+    await waitFor(() => expect(pushToast).toHaveBeenCalledWith(expect.any(String), "error"));
+    // 重新读取提示：显示新的推荐，字段没有被改
+    expect(await screen.findByText("ark 现在推荐 seedance-2，当前使用 veo-3")).toBeInTheDocument();
+    expect(screen.queryByText("ark 现在推荐 seedance，当前使用 veo-3")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(/veo-3/);
+    expect(screen.getByRole("button", { name: "保存" })).toBeDisabled();
+  });
+
+  describe("默认模型为空", () => {
+    const change: RecommendationChange = {
+      media_type: "image",
+      provider_id: "openai",
+      recommended: "openai/gpt-image-edit",
+      current: null,
+    };
+
+    beforeEach(() => {
+      server.default_image_backend = "";
+      pending = [change];
+    });
+
+    it("offers to set the recommended model, and sets it on request", async () => {
+      const user = userEvent.setup();
+      render(<MediaModelSection />);
+
+      expect(await screen.findByText("openai 推荐 gpt-image-edit 作为默认模型")).toBeInTheDocument();
+      expect(screen.getByRole("combobox", { name: "默认图片模型" })).toHaveTextContent("自动选择");
+      await user.click(screen.getByRole("button", { name: "设为默认" }));
+
+      expect(API.acknowledgeRecommendation).toHaveBeenCalledWith(change, true);
+      await waitFor(() =>
+        expect(screen.getByRole("combobox", { name: "默认图片模型" })).toHaveTextContent(/gpt-image-edit/),
+      );
+      expect(screen.queryByText("openai 推荐 gpt-image-edit 作为默认模型")).not.toBeInTheDocument();
+    });
+
+    it("leaves the default empty when the user declines", async () => {
+      const user = userEvent.setup();
+      render(<MediaModelSection />);
+
+      await screen.findByText("openai 推荐 gpt-image-edit 作为默认模型");
+      await user.click(screen.getByRole("button", { name: "暂不设置" }));
+
+      expect(API.acknowledgeRecommendation).toHaveBeenCalledWith(change, false);
+      await waitFor(() =>
+        expect(screen.queryByText("openai 推荐 gpt-image-edit 作为默认模型")).not.toBeInTheDocument(),
+      );
+      expect(screen.getByRole("combobox", { name: "默认图片模型" })).toHaveTextContent("自动选择");
+    });
   });
 });
 
