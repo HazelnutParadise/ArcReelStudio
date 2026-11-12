@@ -408,6 +408,7 @@ describe("OnboardingTour", () => {
     click(".driver-popover-next-btn");
     click(".driver-popover-next-btn"); // 没有渲染设置页，锚点不存在——等待超时后应当降级为居中气泡而不是卡住
 
+    // tour.ts 的 ANCHOR_WAIT_MS 是 1500ms，真实等完它才降级，默认 1 秒的 waitFor 等不到；3 秒留出淡入与负载余量。
     await waitFor(() => expect(popoverTitle()).toBe("配置供应商"), { timeout: 3000 });
     // 讲解照常进行，丢的只是高亮——driver 顶上自己的占位元素，气泡回到屏幕中央。
     expect(document.getElementById("driver-dummy-element")?.classList.contains("driver-active-element")).toBe(true);
