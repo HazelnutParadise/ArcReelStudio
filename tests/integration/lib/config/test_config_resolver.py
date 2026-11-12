@@ -1146,7 +1146,7 @@ class TestLayeredBackendSkeleton:
             project["img_default"] = "p-def/m"
 
         resolver = ConfigResolver.__new__(ConfigResolver)
-        resolver._auto_resolve_backend = AsyncMock(return_value=("custom-1", "m"))  # type: ignore[method-assign]  # 测试替身替换实例方法
+        resolver._auto_resolve_backend = AsyncMock(return_value=("custom-1", "m"))  # 测试替身替换实例方法
         fake_svc = _FakeConfigService(settings=settings)
         result = await resolver._resolve_layered_backend(fake_svc, None, project, self._keys())
 
@@ -1692,7 +1692,7 @@ class TestTextBackendTierResolution:
             expected = self._AUTO
 
         resolver = ConfigResolver.__new__(ConfigResolver)
-        resolver._auto_resolve_backend = AsyncMock(return_value=self._AUTO)  # type: ignore[method-assign]  # 测试替身替换实例方法
+        resolver._auto_resolve_backend = AsyncMock(return_value=self._AUTO)  # 测试替身替换实例方法
         fake_svc = _FakeConfigService(settings=settings)
         with patch("lib.config.resolver.get_project_manager") as mock_pm:
             mock_pm.return_value.load_project.return_value = project
