@@ -176,8 +176,8 @@ export function ProviderModelSelect({
     [allowDefault, groups, unavailableGroup],
   );
 
-  // 配置值也可以是不带 model 的裸 provider id（下游按该供应商默认模型执行）。按 "provider/model"
-  // 硬拆会让它显示成空的「 · 」，故拆不出 model 时整串当作 provider 名呈现。
+  // 存量配置值可能是不带 model 的裸 provider id（运行时不补模型，按「没有选定模型」报错，见 docs/adr/0130）。
+  // 按 "provider/model" 硬拆会让它显示成空的「 · 」，故拆不出 model 时整串当作 provider 名呈现，让用户看清并重选。
   const describe = (fullValue: string) => {
     const idx = fullValue.indexOf("/");
     if (idx === -1) return providerNames[fullValue] || fullValue;

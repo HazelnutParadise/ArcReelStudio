@@ -2296,6 +2296,7 @@ export default {
     '{{reason}}；請在專案設定中設定可用的{{bucket}}模型，或在「設定 → 供應商」中修復模型設定。',
   'reference_unit_tier_reason_unsupported': '當前模型不支援{{bucket}}',
   'reference_unit_tier_reason_removed': '{{bucket}}模型已刪除或停用',
+  'reference_unit_tier_reason_not_selected': '專案設定裡的{{bucket}}模型只選了供應商，沒有選定模型',
   'reference_unit_tier_reason_discontinued': '{{bucket}}模型已下線',
   'reference_unit_tier_reason_missing_tiers': '{{bucket}}模型未宣告時長檔位',
   'reference_unit_tier_reason_invalid_tiers': '{{bucket}}模型的時長檔位無效',
