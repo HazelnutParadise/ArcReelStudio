@@ -5,9 +5,10 @@ Revises:
 Create Date: 2026-11-12 23:26:16.939496
 
 一次建出完整的数据库结构，取代此前的 87 个迁移脚本（本项目从未部署，旧库不需要升级路径）。
-由模型自动生成，再对照旧迁移链在空 SQLite 与 PostgreSQL 上建出的结果补齐模型里没有的部分：
-约束名、旧链设过的服务端默认值、任务去重的部分唯一索引，以及出厂数据（``default`` 用户与默认隐藏的
-Agnes 模型）。与旧链的唯一差别是 SQLite 上部分时间列由 VARCHAR 改为 DATETIME，与模型一致，读写结果不变。
+由模型自动生成，再对照旧迁移链在空 SQLite 与 PostgreSQL 上建出的结果补齐：模型里没有的约束名与旧链设过的
+服务端默认值、autogenerate 会略过的表达式索引（任务去重的部分唯一索引，模型里有声明），以及出厂数据
+（``default`` 用户与默认隐藏的 Agnes 模型）。与旧链的唯一差别是 SQLite 上部分时间列由 VARCHAR 改为 DATETIME，
+与模型一致，读写结果不变。
 """
 
 from collections.abc import Sequence
@@ -771,6 +772,7 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f("ix_tasks_batch_id"), ["batch_id"], unique=False)
         batch_op.create_index(batch_op.f("ix_tasks_user_id"), ["user_id"], unique=False)
 
+    # 模型里声明了这条索引，但它的键含表达式，autogenerate 会略过，只能在这里手写
     _active = sa.text("status IN ('queued', 'running')")
     op.create_index(
         "idx_tasks_dedupe_active",
