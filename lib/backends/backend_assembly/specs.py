@@ -166,7 +166,6 @@ def seedance_endpoint_for_name(name: str) -> str | None:
     用 ``in`` 子串兼容多套前缀命名（doubao- 火山国内站 / dreamina- BytePlus 国际站），版本号收窄到已登记的代际：同代的
     未知后缀（fast、mini、日期快照）落同一端点。只用于添加模型时的预填
     （``lib.custom_provider.endpoints.infer_endpoint``）。
-    alembic ``e5b1c9a3d7f2`` 冻结了一份同样的规则回填已有模型。
     """
     lowered = name.lower()
     if "seedance-2-5" in lowered or "seedance-2.5" in lowered:

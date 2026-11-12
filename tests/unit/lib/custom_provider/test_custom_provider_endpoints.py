@@ -606,7 +606,7 @@ class TestInferEndpoint:
             ),
             # Fast × 非 Fast 前缀碰撞：Fast 只认精确型号名（剥离命名空间前缀后比较）。
             # 非精确的 Fast 形态别名上游是不是 Fast 无从确知，落通用海螺键（无输入要求），
-            # 不落首帧必需的 Fast 定义——与迁移 8c2b1e7d4a90 同一口径。
+            # 不落首帧必需的 Fast 定义。
             ("proxy/MiniMax-Hailuo-2.3-Fast", "openai", "minimax-hailuo-v1-fast"),
             ("proxy/MiniMax-Hailuo-2.3", "openai", "minimax-hailuo-v1"),
             ("vendor:MiniMax-Hailuo-2.3-Fast", "openai", "minimax-hailuo-v1-fast"),
