@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -21,6 +22,7 @@ from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS
 from lib.config.service import ConfigService, ProviderStatus
 from lib.db import get_async_session
 from lib.db.base import Base
+from lib.i18n.zh import errors as zh_errors
 from lib.infra.video_encoder import GpuEncoderStatus
 from server.auth import CurrentUserInfo, get_current_user
 from server.dependencies import get_config_service
@@ -486,6 +488,18 @@ class TestPatchSystemConfig:
         with TestClient(self._make_patch_app(mock_svc)) as client:
             res = client.patch("/api/v1/system/config", json={"default_audio_backend": "stability/stable-audio-3"})
         assert res.status_code == 400
+
+    @pytest.mark.parametrize("key", GLOBAL_MODEL_SETTING_KEYS)
+    @pytest.mark.parametrize("value", ["gemini-aistudio", "  ark  "])
+    def test_patch_rejects_a_provider_without_a_model(self, key, value):
+        """全局默认模型只写了内置供应商：报格式无效，不存也不按目录推荐补模型（docs/adr/0130）。"""
+        mock_svc = _make_mock_svc()
+        with TestClient(self._make_patch_app(mock_svc)) as client:
+            res = client.patch("/api/v1/system/config", json={key: value})
+        assert res.status_code == 400
+        assert res.json()["detail"] == zh_errors.MESSAGES["invalid_backend_format"]
+        assert res.json()["diagnostic"] == f"field: {key}"
+        mock_svc.set_setting.assert_not_awaited()
 
     def test_patch_rejects_invalid_backend_format(self):
         mock_svc = _make_mock_svc()

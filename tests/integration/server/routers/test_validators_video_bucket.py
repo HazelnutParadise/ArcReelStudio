@@ -58,3 +58,15 @@ class TestRequireVideoBucketCapability:
             await require_video_bucket_capability({"video_backend": "openai"}, "i2v")
 
         assert (exc_info.value.provider_id, exc_info.value.media_type) == ("openai", "video")
+
+    async def test_bare_builtin_provider_with_a_video_model_asks_to_select_one(self, db_factory, monkeypatch):
+        """项目层只写了内置供应商、而该供应商有视频模型：提交期就报没有选定模型，不补推荐，也不放行入队（docs/adr/0130）。"""
+        from lib.catalog.errors import ModelNotSelectedError
+
+        await _set_default_video_backend(db_factory, "grok/grok-imagine-video")
+        bind_session_factory(monkeypatch, db_factory)
+
+        with pytest.raises(ModelNotSelectedError) as exc_info:
+            await require_video_bucket_capability({"video_backend": "ark"}, "i2v")
+
+        assert (exc_info.value.code, exc_info.value.params) == ("model_not_selected", {"provider": "ark"})

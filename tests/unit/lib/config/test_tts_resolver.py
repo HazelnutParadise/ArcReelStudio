@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from lib.config.resolver import ConfigResolver, ProviderModel
+import pytest
+
+from lib.config.resolver import ConfigResolver, NoAvailableProviderError, ProviderModel
 from lib.config.service import ProviderStatus
 
 
@@ -73,12 +75,44 @@ class TestResolveAudioProviderModel:
         result = await resolver._resolve_audio_provider_model(svc, None, None, None)
         assert result == ProviderModel("dashscope", "qwen3-tts-flash")
 
-    async def test_falls_back_to_auto_resolve(self):
-        # 无 payload / project / 全局设置 → auto-resolve 挑首个 ready 且支持 audio 的 provider
+    async def test_unset_settings_do_not_pick_a_catalog_recommendation(self, db_session):
+        # 无 payload / project / 全局设置 → 不按就绪供应商的目录推荐挑选（docs/adr/0130）
         resolver = ConfigResolver.__new__(ConfigResolver)
         svc = _FakeSvc(settings={}, ready=[_ready("dashscope", ["audio"])])
-        result = await resolver._resolve_audio_provider_model(svc, None, None, None)
-        assert result == ProviderModel("dashscope", "qwen3-tts-flash")
+        with pytest.raises(NoAvailableProviderError) as exc_info:
+            await resolver._resolve_audio_provider_model(svc, db_session, None, None)
+        assert exc_info.value.media_type == "audio"
+
+    @pytest.mark.parametrize(
+        "ready_names",
+        [["elevenlabs"], ["stability"], ["stability", "elevenlabs"]],
+        ids=["elevenlabs-only", "stability-only", "both"],
+    )
+    async def test_music_only_connections_never_become_the_narration_model(self, db_session, ready_names):
+        """只配了 Stability / ElevenLabs、没有默认配音模型：目录里这两家 audio 的默认是音乐模型，
+        旁白配音不能被挑成它，要报错请用户设置（docs/adr/0130）。"""
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        svc = _FakeSvc(settings={}, ready=[_ready(name, ["audio"]) for name in ready_names])
+        with pytest.raises(NoAvailableProviderError) as exc_info:
+            await resolver._resolve_audio_provider_model(svc, db_session, None, None)
+        assert exc_info.value.media_type == "audio"
+
+    async def test_project_bare_builtin_provider_is_rejected(self, db_session):
+        """项目的 audio_backend 只写了内置供应商：报「没有选定模型」，不补配音推荐，也不用全局设置顶替。"""
+        from lib.catalog.errors import ModelNotSelectedError
+
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        svc = _FakeSvc(settings={"default_audio_backend": "minimax/speech-2.8-hd"})
+        with pytest.raises(ModelNotSelectedError) as exc_info:
+            await resolver._resolve_audio_provider_model(svc, db_session, {"audio_backend": "dashscope"}, None)
+        assert (exc_info.value.code, exc_info.value.params) == ("model_not_selected", {"provider": "dashscope"})
+
+    async def test_payload_without_a_model_falls_back_to_the_settings(self, db_session):
+        """历史 payload 只有 audio_provider、缺 audio_model：不补推荐，回退全局设置。"""
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        svc = _FakeSvc(settings={"default_audio_backend": "minimax/speech-2.8-hd"})
+        result = await resolver._resolve_audio_provider_model(svc, db_session, None, {"audio_provider": "dashscope"})
+        assert result == ProviderModel("minimax", "speech-2.8-hd")
 
 
 class TestResolveDefaultAudioBackend:
@@ -87,10 +121,20 @@ class TestResolveDefaultAudioBackend:
         svc = _FakeSvc(settings={"default_audio_backend": "dashscope/qwen3-tts-flash"})
         assert await resolver._resolve_default_audio_backend(svc, None) == ("dashscope", "qwen3-tts-flash")
 
-    async def test_empty_setting_auto_resolves(self):
+    async def test_empty_setting_does_not_pick_a_catalog_recommendation(self, db_session):
         resolver = ConfigResolver.__new__(ConfigResolver)
         svc = _FakeSvc(settings={}, ready=[_ready("dashscope", ["audio"])])
-        assert await resolver._resolve_default_audio_backend(svc, None) == ("dashscope", "qwen3-tts-flash")
+        with pytest.raises(NoAvailableProviderError) as exc_info:
+            await resolver._resolve_default_audio_backend(svc, db_session)
+        assert exc_info.value.media_type == "audio"
+        assert "全局设置 → 默认模型" in str(exc_info.value)
+
+    @pytest.mark.parametrize("ready_name", ["elevenlabs", "stability"])
+    async def test_music_only_connection_never_becomes_the_default_narration_model(self, db_session, ready_name):
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        svc = _FakeSvc(settings={}, ready=[_ready(ready_name, ["audio"])])
+        with pytest.raises(NoAvailableProviderError):
+            await resolver._resolve_default_audio_backend(svc, db_session)
 
 
 class TestDefaultNarrationTts:

@@ -4,6 +4,8 @@ import re
 from pathlib import Path
 from typing import get_args
 
+import pytest
+
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.i18n import MESSAGES, SUPPORTED_LOCALES
 from lib.i18n.en import emails as en_emails
@@ -292,3 +294,30 @@ def test_model_display_names_have_no_translation_keys():
     for locale in SUPPORTED_LOCALES:
         model_keys = sorted(key for key in MESSAGES[locale] if key.startswith("model_name_"))
         assert not model_keys, f"{locale} 仍有模型译名: {model_keys}"
+
+
+#: 各语言界面里「默认模型」设置页的名字，取自音乐、音效「还没有设定模型」那两条已有提示。
+_DEFAULT_MODELS_PAGE = {
+    "zh": "默认模型",
+    "zh-TW": "預設模型",
+    "en": "Default models",
+    "vi": "Mô hình mặc định",
+    "ru": "Модели по умолчанию",
+}
+
+
+def test_default_models_page_names_match_the_existing_music_guidance():
+    for locale, label in _DEFAULT_MODELS_PAGE.items():
+        assert label in MESSAGES[locale]["music_provider_not_configured"], locale
+
+
+@pytest.mark.parametrize("locale", SUPPORTED_LOCALES)
+@pytest.mark.parametrize("key", ["text_default_model_not_set", "audio_default_model_not_set"])
+def test_missing_default_model_messages_point_to_the_default_models_page(locale, key):
+    """没有文本、旁白配音的默认模型：提示指到「默认模型」设置页，不是只叫人去配供应商（docs/adr/0130）。"""
+    assert _DEFAULT_MODELS_PAGE[locale] in MESSAGES[locale][key]
+
+
+@pytest.mark.parametrize("locale", SUPPORTED_LOCALES)
+def test_model_not_selected_message_names_the_provider_placeholder(locale):
+    assert "{provider}" in MESSAGES[locale]["model_not_selected"]

@@ -378,6 +378,17 @@ def test_a_registered_failure_code_keeps_its_code_and_gets_a_sharper_action() ->
     assert problem.action is GenerationAction.CONFIRM_REQUEST_DURATION
 
 
+@pytest.mark.parametrize("code", ["model_not_in_provider_catalog", "model_not_selected"])
+def test_a_model_reference_failure_asks_to_configure_the_provider(code: str) -> None:
+    """模型引用不可用（不在清单中，或项目只选了供应商没选模型）：下一步都是去改模型设置，重试只会再失败。"""
+    params = {"provider": "ark", "model": "m"} if code == "model_not_in_provider_catalog" else {"provider": "ark"}
+
+    problem = problem_from_task_failure(encode_failure(code, **params))
+
+    assert problem.code == code
+    assert problem.action is GenerationAction.CONFIGURE_PROVIDER
+
+
 def test_unparseable_provider_text_keeps_its_text_and_stays_retryable() -> None:
     problem = problem_from_task_failure("HTTP 503 from upstream")
 

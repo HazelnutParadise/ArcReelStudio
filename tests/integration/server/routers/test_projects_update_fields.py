@@ -2,6 +2,8 @@
 
 import pytest
 
+from lib.i18n.zh import errors as zh_errors
+from server.services.project.project_settings_patch import PROJECT_BACKEND_FIELDS
 from tests.integration.server.routers.projects_router_support import (
     _FakePM,
     build_projects_client,
@@ -245,6 +247,20 @@ class TestProjectsRouter:
             resp = client.patch("/api/v1/projects/ready", json={"episode_target_duration": bad})
             assert resp.status_code == 422
             assert "episode_target_duration" not in fake_pm.project_data["ready"]
+
+    @pytest.mark.parametrize("field", [*PROJECT_BACKEND_FIELDS, "audio_backend"])
+    @pytest.mark.parametrize("value", ["gemini-aistudio", "  ark  "])
+    def test_update_project_rejects_a_provider_without_a_model(self, tmp_path, monkeypatch, field, value):
+        """项目的模型字段只写了内置供应商：整次 PATCH 报格式无效，不写回（docs/adr/0130）。"""
+        fake_pm = _FakePM(tmp_path)
+        before = dict(fake_pm.project_data["ready"])
+        client = build_projects_client(monkeypatch, fake_pm)
+        with client:
+            resp = client.patch("/api/v1/projects/ready", json={field: value})
+            assert resp.status_code == 400
+            assert resp.json()["detail"] == zh_errors.MESSAGES["invalid_backend_format"]
+            assert resp.json()["diagnostic"] == f"field: {field}"
+            assert fake_pm.project_data["ready"] == before
 
     def test_update_project_rejects_invalid_audio_backend(self, tmp_path, monkeypatch):
         """TTS 模型非法 provider 应 400（复用 backend 格式校验）。"""

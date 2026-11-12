@@ -1,5 +1,5 @@
 from typing import cast
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from sqlalchemy import select
@@ -8,6 +8,7 @@ from lib.catalog.errors import ModelNotInCatalogError
 from lib.config.resolver import (
     _VIDEO_LAYERED_KEYS,
     ConfigResolver,
+    NoAvailableProviderError,
     ProviderModel,
     VideoBucketCapabilityError,
     VideoGenerationType,
@@ -174,22 +175,18 @@ class TestDefaultBackends:
         result = await resolver._resolve_default_video_backend(fake_svc, None)
         assert result == ("ark", "doubao-seedance-1-5-pro")
 
-    async def test_video_backend_auto_resolve(self, db_factory):
-        """DB 无值时走 auto-resolve，选第一个有默认 video 模型的 ready 供应商。"""
+    @pytest.mark.parametrize(
+        "ready", [[], _ready_with_aistudio_and_vertex_video()], ids=["no-provider", "ready-builtin"]
+    )
+    async def test_video_backend_without_settings_does_not_read_catalog_recommendations(self, db_factory, ready):
+        """DB 无值、也没有自定义供应商默认模型时报「没有默认模型」：就绪的内置供应商不按目录推荐被挑中（docs/adr/0130）。"""
         resolver = ConfigResolver.__new__(ConfigResolver)
-        fake_svc = _FakeConfigService(settings={}, ready_providers=_ready_with_aistudio_and_vertex_video())
-        # auto-resolve 会在 PROVIDER_REGISTRY 中找到 ready 供应商，不会走到 custom provider 分支
+        fake_svc = _FakeConfigService(settings={}, ready_providers=ready)
         async with db_factory() as session:
-            result = await resolver._resolve_default_video_backend(fake_svc, session)
-        assert result == ("gemini-aistudio", "gemini-omni-1.1-flash")
-
-    async def test_video_backend_auto_resolve_no_ready_provider(self, db_factory):
-        """无 ready 供应商且无自定义供应商时抛出 ValueError。"""
-        resolver = ConfigResolver.__new__(ConfigResolver)
-        fake_svc = _FakeConfigService(settings={}, ready_providers=[])
-        async with db_factory() as session:
-            with pytest.raises(ValueError, match="未找到可用的 video 供应商"):
+            with pytest.raises(NoAvailableProviderError) as exc_info:
                 await resolver._resolve_default_video_backend(fake_svc, session)
+        assert exc_info.value.media_type == "video"
+        assert "全局设置 → 默认模型" in str(exc_info.value)
 
     async def test_image_backend_explicit(self):
         """DB 有显式值时直接返回。"""
@@ -200,21 +197,16 @@ class TestDefaultBackends:
         result = await resolver._resolve_default_image_backend(fake_svc, None)
         assert result == ("grok", "grok-2-image")
 
-    async def test_image_backend_auto_resolve(self, db_factory):
-        """DB 无值时走 auto-resolve。"""
+    @pytest.mark.parametrize("ready", [None, []], ids=["default-ready-providers", "no-provider"])
+    async def test_image_backend_without_settings_does_not_read_catalog_recommendations(self, db_factory, ready):
+        """DB 无值时不按就绪内置供应商的目录推荐挑选，也不再给出「未找到供应商」式的提示（docs/adr/0130）。"""
         resolver = ConfigResolver.__new__(ConfigResolver)
-        fake_svc = _FakeConfigService(settings={})
+        fake_svc = _FakeConfigService(settings={}, ready_providers=ready)
         async with db_factory() as session:
-            result = await resolver._resolve_default_image_backend(fake_svc, session)
-        assert result[0] in ("gemini-aistudio", "gemini-vertex", "ark", "grok")
-
-    async def test_image_backend_auto_resolve_no_ready_provider(self, db_factory):
-        """无 ready 供应商且无自定义供应商时抛出 ValueError。"""
-        resolver = ConfigResolver.__new__(ConfigResolver)
-        fake_svc = _FakeConfigService(settings={}, ready_providers=[])
-        async with db_factory() as session:
-            with pytest.raises(ValueError, match="未找到可用的 image 供应商"):
+            with pytest.raises(NoAvailableProviderError) as exc_info:
                 await resolver._resolve_default_image_backend(fake_svc, session)
+        assert exc_info.value.media_type == "image"
+        assert "全局设置 → 默认模型" in str(exc_info.value)
 
     @pytest.mark.parametrize(("generation_type", "expected_model"), [("t2i", "t2i-m"), ("i2i", "i2i-m")])
     async def test_image_backend_auto_resolve_picks_the_custom_default_of_the_bucket(
@@ -1060,14 +1052,27 @@ class TestResolveImageBackend:
         resolved = await resolver._resolve_image_provider_model(fake_svc, None, project, {}, "t2i")
         assert resolved.provider_id == "grok"
 
-    async def test_project_bare_provider_pins_provider_with_default_model(self, db_session):
-        """裸 provider 项目覆盖（写边界放行）→ pin 该 provider 并补全其默认 model，不静默回退全局默认。"""
+    @pytest.mark.parametrize("value", ["openai", "openai/", "  openai  ", " openai/ "])
+    async def test_project_bare_builtin_provider_is_rejected(self, db_session, value):
+        """项目层只写了内置供应商（含缺 model 的脏值 "openai/"、带空白的写法）→ 报「没有选定模型」让用户重新选择：
+        不按目录推荐补模型，也不静默回退到全局默认的另一供应商（docs/adr/0130）。"""
+        from lib.catalog.errors import ModelNotSelectedError
+
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"default_image_backend_t2i": "grok/grok-2-image"})
-        project = {"image_provider_t2i": "openai"}  # 裸 provider，无 model
-        resolved = await resolver._resolve_image_provider_model(fake_svc, db_session, project, {}, "t2i")
-        assert resolved.provider_id == "openai"
-        assert resolved.model_id == "gpt-image-2"  # registry 中 openai 的默认 image model
+        with pytest.raises(ModelNotSelectedError) as exc_info:
+            await resolver._resolve_image_provider_model(fake_svc, db_session, {"image_provider_t2i": value}, {}, "t2i")
+        assert (exc_info.value.code, exc_info.value.params) == ("model_not_selected", {"provider": "openai"})
+
+    async def test_project_bare_builtin_provider_in_the_bucket_does_not_fall_to_the_project_default(self, db_session):
+        """项目桶只写了供应商、项目默认层是完整模型：仍按桶报错，不退到下一层。"""
+        from lib.catalog.errors import ModelNotSelectedError
+
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        fake_svc = _FakeConfigService(settings={})
+        project = {"image_provider_t2i": "openai", "default_image_backend": "grok/grok-2-image"}
+        with pytest.raises(ModelNotSelectedError):
+            await resolver._resolve_image_provider_model(fake_svc, db_session, project, {}, "t2i")
 
     async def test_project_unknown_bare_provider_falls_through(self):
         """裸 provider 不在 registry（无默认 model 可补）→ 退回全局默认。"""
@@ -1076,14 +1081,6 @@ class TestResolveImageBackend:
         project = {"image_provider_t2i": "does-not-exist"}
         resolved = await resolver._resolve_image_provider_model(fake_svc, None, project, {}, "t2i")
         assert resolved.provider_id == "grok"
-
-    async def test_project_provider_with_trailing_slash_uses_provider_default(self, db_session):
-        """脏值 "openai/"（缺 model，写校验器会放行）→ 取 openai 默认 model，不带空 model 下游。"""
-        resolver = ConfigResolver.__new__(ConfigResolver)
-        fake_svc = _FakeConfigService(settings={"default_image_backend_t2i": "grok/grok-2-image"})
-        project = {"image_provider_t2i": "openai/"}
-        resolved = await resolver._resolve_image_provider_model(fake_svc, db_session, project, {}, "t2i")
-        assert (resolved.provider_id, resolved.model_id) == ("openai", "gpt-image-2")
 
     async def test_payload_legacy_provider_not_trusted_falls_through_to_project(self):
         """in-flight 历史任务 payload 携带 legacy 名（写边界拦不到）→ 不予信任，回退已迁移的 project。"""
@@ -1094,35 +1091,21 @@ class TestResolveImageBackend:
         resolved = await resolver._resolve_image_provider_model(fake_svc, None, project, payload, "t2i")
         assert (resolved.provider_id, resolved.model_id) == ("openai", "gpt-image-2")
 
-    async def test_payload_known_provider_missing_model_uses_provider_default(self, db_session):
-        """半截 payload（已知 provider 但缺 model）→ 补该 provider 默认 model，不带空 model 到执行层。"""
+    async def test_payload_known_provider_missing_model_falls_back_to_settings(self, db_session):
+        """半截 payload（已知 provider 但缺 model）→ 不按目录推荐补模型，回退配置层，不带空 model 到执行层。"""
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"default_image_backend_t2i": "grok/grok-2-image"})
         payload = {"image_provider": "openai"}  # 只有 provider，无 image_model
         resolved = await resolver._resolve_image_provider_model(fake_svc, db_session, {}, payload, "t2i")
-        assert (resolved.provider_id, resolved.model_id) == ("openai", "gpt-image-2")
-
-    async def test_disabled_default_model_is_not_filled_in(self, db_session):
-        """用户停用了供应商的默认模型：裸 provider 项目覆盖与缺 model 的 payload 都不补它，按没有默认模型处理。"""
-        from lib.catalog.errors import ModelNotInCatalogError
-        from lib.db.models.builtin_provider_model import BuiltinProviderModelState
-
-        db_session.add(BuiltinProviderModelState(provider_id="openai", model_id="gpt-image-2", enabled=False))
-        await db_session.flush()
-        resolver = ConfigResolver.__new__(ConfigResolver)
-        fake_svc = _FakeConfigService(settings={"default_image_backend_t2i": "grok/grok-2-image"})
-
-        # payload 补不出默认模型 → 回退配置层
-        resolved = await resolver._resolve_image_provider_model(
-            fake_svc, db_session, {}, {"image_provider": "openai"}, "t2i"
-        )
         assert (resolved.provider_id, resolved.model_id) == ("grok", "grok-2-image")
-        # 项目层的裸内置供应商补不出默认模型 → 报错让用户重新选择，不回退到另一供应商
-        with pytest.raises(ModelNotInCatalogError) as exc_info:
-            await resolver._resolve_image_provider_model(
-                fake_svc, db_session, {"image_provider_t2i": "openai"}, {}, "t2i"
-            )
-        assert exc_info.value.code == "provider_unsupported_media"
+
+    async def test_payload_without_a_model_and_without_settings_never_takes_a_recommendation(self, db_session):
+        """半截 payload 且配置层也没有设置：报「没有默认模型」，不拿该供应商的推荐补上。"""
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        fake_svc = _FakeConfigService(settings={}, ready_providers=[])
+        with pytest.raises(NoAvailableProviderError) as exc_info:
+            await resolver._resolve_image_provider_model(fake_svc, db_session, {}, {"image_provider": "openai"}, "t2i")
+        assert exc_info.value.media_type == "image"
 
 
 class TestLayeredBackendSkeleton:
@@ -1163,6 +1146,7 @@ class TestLayeredBackendSkeleton:
             project["img_default"] = "p-def/m"
 
         resolver = ConfigResolver.__new__(ConfigResolver)
+        resolver._auto_resolve_backend = AsyncMock(return_value=("custom-1", "m"))  # type: ignore[method-assign]  # 测试替身替换实例方法
         fake_svc = _FakeConfigService(settings=settings)
         result = await resolver._resolve_layered_backend(fake_svc, None, project, self._keys())
 
@@ -1175,7 +1159,10 @@ class TestLayeredBackendSkeleton:
         elif g_def:
             assert (result.provider_id, result.model_id) == ("g-def", "m")
         else:
-            assert result.provider_id == "gemini-aistudio"  # 全层缺失 → 自动推断到 ready provider
+            assert (result.provider_id, result.model_id) == (
+                "custom-1",
+                "m",
+            )  # 全层缺失 → 最后一层（自定义供应商默认模型）
 
     async def test_none_keys_skip_that_level(self):
         """键位为 None 的层直接跳过——项目默认层未声明时项目里的同名字段不生效。"""
@@ -1193,12 +1180,23 @@ class TestLayeredBackendSkeleton:
         result = await resolver._resolve_layered_backend(fake_svc, None, None, self._keys())
         assert (result.provider_id, result.model_id) == ("g-def", "m")
 
-    async def test_project_bare_provider_supported(self, db_session):
-        """项目层兼容裸 provider 覆盖（补该 provider 默认 model），与既有图片/视频项目字段语义一致。"""
+    async def test_project_bare_provider_is_rejected(self, db_session):
+        """项目层的裸内置供应商报「没有选定模型」，不按目录推荐补模型，也不回退全局默认（docs/adr/0130）。"""
+        from lib.catalog.errors import ModelNotSelectedError
+
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"global_default": "g-def/m"})
-        result = await resolver._resolve_layered_backend(fake_svc, db_session, {"img_bucket": "openai"}, self._keys())
-        assert (result.provider_id, result.model_id) == ("openai", "gpt-image-2")
+        with pytest.raises(ModelNotSelectedError) as exc_info:
+            await resolver._resolve_layered_backend(fake_svc, db_session, {"img_bucket": "openai"}, self._keys())
+        assert (exc_info.value.provider_id, exc_info.value.media_type) == ("openai", "image")
+
+    async def test_nothing_set_in_any_layer_asks_for_a_default_model(self, db_session):
+        """各层都没有设置：真实的最后一层不读目录推荐，报「没有默认模型」并带上媒体类型。"""
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        fake_svc = _FakeConfigService(settings={}, ready_providers=_ready_with_aistudio_and_vertex_video())
+        with pytest.raises(NoAvailableProviderError) as exc_info:
+            await resolver._resolve_layered_backend(fake_svc, db_session, {}, self._keys())
+        assert exc_info.value.media_type == self._keys().media_type
 
     async def test_the_connection_comes_from_the_layer_that_supplied_the_model(self):
         """连线随取到模型的那一层走：项目桶给了模型，就用项目桶旁边的连线，不拿全局层的。"""
@@ -1345,8 +1343,10 @@ class TestResolveVideoBackend:
                 )
             )
             await session.flush()
-            with pytest.raises(ValueError, match="未找到可用的 video 供应商"):
+            with pytest.raises(NoAvailableProviderError) as exc_info:
                 await resolver._auto_resolve_backend(fake_svc, session, "video")
+        assert exc_info.value.media_type == "video"
+        assert "全局设置 → 默认模型" in str(exc_info.value)
 
     async def test_falls_through_to_global_default(self):
         resolver = ConfigResolver.__new__(ConfigResolver)
@@ -1354,14 +1354,17 @@ class TestResolveVideoBackend:
         resolved = await resolver._resolve_video_provider_model(fake_svc, None, None, None)
         assert (resolved.provider_id, resolved.model_id) == ("ark", "doubao-seedance-1-5-pro")
 
-    async def test_project_bare_provider_pins_provider_with_default_model(self, db_session):
-        """裸 video_backend(如 "ark") → pin ark 并补全其默认 video model，不回退全局默认的另一供应商。"""
+    @pytest.mark.parametrize("value", ["ark", "ark/", " ark "])
+    async def test_project_bare_builtin_provider_is_rejected(self, db_session, value):
+        """裸 video_backend(如 "ark") → 报「没有选定模型」，不补该供应商的推荐，也不回退全局默认的另一供应商。"""
+        from lib.catalog.errors import ModelNotSelectedError
+
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"default_video_backend": "grok/grok-imagine-video"})
-        project = {"video_backend": "ark"}  # 裸 provider
-        resolved = await resolver._resolve_video_provider_model(fake_svc, db_session, project, {})
-        assert resolved.provider_id == "ark"
-        assert resolved.model_id == "doubao-seedance-2-0-mini-260615"  # registry 中 ark 的默认 video model
+        with pytest.raises(ModelNotSelectedError) as exc_info:
+            await resolver._resolve_video_provider_model(fake_svc, db_session, {"video_backend": value}, {})
+        assert (exc_info.value.code, exc_info.value.params) == ("model_not_selected", {"provider": "ark"})
+        assert exc_info.value.media_type == "video"
 
     async def test_project_bare_provider_without_video_models_is_rejected(self):
         """裸 provider 在模型目录里没有视频模型（openai 已移出 Sora）→ 报「不在模型清单中」，不回退到全局默认的另一供应商。"""
@@ -1372,6 +1375,8 @@ class TestResolveVideoBackend:
         project = {"video_backend": "openai"}
         with pytest.raises(ModelNotInCatalogError) as exc_info:
             await resolver._resolve_video_provider_model(fake_svc, None, project, {})
+        # 供应商在这个媒体类型上根本没有模型：报「不在模型清单」，不是「没有选定模型」（后者暗示选个模型就行）
+        assert type(exc_info.value) is ModelNotInCatalogError
         assert (exc_info.value.provider_id, exc_info.value.media_type) == ("openai", "video")
         # 没有模型名可报：文案说该供应商给不出这一类生成，不渲染出 "openai/" 这样的残缺引用
         assert (exc_info.value.code, exc_info.value.params) == (
@@ -1433,11 +1438,12 @@ class TestResolveVideoBackendBuckets:
         resolved = await resolver._resolve_video_provider_model(fake_svc, None, None, None, "r2v")
         assert (resolved.provider_id, resolved.model_id) == ("grok", "grok-imagine-video")
 
-    async def test_auto_resolve_when_nothing_configured(self):
+    async def test_nothing_configured_does_not_pick_a_catalog_recommendation(self, db_session):
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={}, ready_providers=_ready_with_aistudio_and_vertex_video())
-        resolved = await resolver._resolve_video_provider_model(fake_svc, None, None, None, "i2v")
-        assert (resolved.provider_id, resolved.model_id) == ("gemini-aistudio", "gemini-omni-1.1-flash")
+        with pytest.raises(NoAvailableProviderError) as exc_info:
+            await resolver._resolve_video_provider_model(fake_svc, db_session, None, None, "i2v")
+        assert exc_info.value.media_type == "video"
 
     async def test_missing_i2v_capability_raises_structured_error(self):
         from lib.config.resolver import VideoBucketCapabilityError
@@ -1652,7 +1658,7 @@ class TestReferencePayloadLimits:
 class TestTextBackendTierResolution:
     """文本档位五级解析链：项目档位 > 项目默认 > 全局档位 > 全局默认 > 自动推断。"""
 
-    _AUTO = ("gemini-aistudio", "gemini-3-flash-preview")  # ready gemini 的 registry 默认 text model
+    _AUTO = ("custom-1", "m")  # 全层缺失时的最后一层（自定义供应商默认模型），由用例替换
 
     @pytest.mark.parametrize("p_tier", [False, True])
     @pytest.mark.parametrize("p_def", [False, True])
@@ -1686,6 +1692,7 @@ class TestTextBackendTierResolution:
             expected = self._AUTO
 
         resolver = ConfigResolver.__new__(ConfigResolver)
+        resolver._auto_resolve_backend = AsyncMock(return_value=self._AUTO)  # type: ignore[method-assign]  # 测试替身替换实例方法
         fake_svc = _FakeConfigService(settings=settings)
         with patch("lib.config.resolver.get_project_manager") as mock_pm:
             mock_pm.return_value.load_project.return_value = project
@@ -1735,17 +1742,29 @@ class TestTextBackendTierResolution:
         result = await resolver._resolve_text_backend(fake_svc, MagicMock(), TextTaskType.SCRIPT, None)
         assert (result.provider_id, result.model_id) == ("g-def", "m")
 
-    async def test_project_bare_provider_pins_its_default_model(self, db_session):
-        """项目档位写裸 provider（写边界放行的合法值）→ pin 住该 provider 补默认 model，
-        不静默回退到全局默认的另一供应商。与图片 / 视频的项目层同构。"""
+    async def test_project_bare_provider_is_rejected(self, db_session):
+        """项目档位写裸 provider → 报「没有选定模型」，不按目录推荐补模型，也不回退到全局默认的另一供应商。
+        与图片 / 视频的项目层同构。"""
         from lib.backends.text_backends.base import TextTaskType
+        from lib.catalog.errors import ModelNotSelectedError
 
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={"default_text_backend": "g-def/m"})
         with patch("lib.config.resolver.get_project_manager") as mock_pm:
             mock_pm.return_value.load_project.return_value = {"text_backend_complex": "openai"}
-            result = await resolver._resolve_text_backend(fake_svc, db_session, TextTaskType.SCRIPT, "demo")
-        assert (result.provider_id, result.model_id) == ("openai", "gpt-5.4-mini")
+            with pytest.raises(ModelNotSelectedError) as exc_info:
+                await resolver._resolve_text_backend(fake_svc, db_session, TextTaskType.SCRIPT, "demo")
+        assert (exc_info.value.code, exc_info.value.params) == ("model_not_selected", {"provider": "openai"})
+
+    async def test_nothing_set_asks_for_a_default_text_model(self, db_session):
+        """各层都没有文本模型设置：报「没有默认模型」并带上 text，不挑就绪供应商的推荐。"""
+        from lib.backends.text_backends.base import TextTaskType
+
+        resolver = ConfigResolver.__new__(ConfigResolver)
+        fake_svc = _FakeConfigService(settings={}, ready_providers=_ready_with_aistudio_and_vertex_video())
+        with pytest.raises(NoAvailableProviderError) as exc_info:
+            await resolver._resolve_text_backend(fake_svc, db_session, TextTaskType.SCRIPT, None)
+        assert exc_info.value.media_type == "text"
 
 
 class TestStyleAnalysisVisionGuard:
@@ -2089,20 +2108,15 @@ class TestAutoResolvedBackendsPreview:
             "text": await _or_none(resolver._resolve_text_backend(svc, session, TextTaskType.SCRIPT, None)),
         }
 
-    async def test_builtin_provider_preview_matches_execution(self, db_factory):
+    async def test_ready_builtin_providers_are_not_previewed(self, db_factory):
+        """就绪的内置供应商不按目录推荐进入预览，与执行期一致（docs/adr/0130）。"""
         resolver = ConfigResolver.__new__(ConfigResolver)
         fake_svc = _FakeConfigService(settings={}, ready_providers=_ready_with_aistudio_and_vertex_video())
         async with db_factory() as session:
             preview = await resolver._resolve_auto_backends(fake_svc, session)
             executed = await self._execution_pairs(resolver, fake_svc, session)
         assert preview == executed
-        assert {purpose: pair[0] if pair else None for purpose, pair in preview.items()} == {
-            "t2i": "gemini-aistudio",
-            "i2i": "gemini-aistudio",
-            "i2v": "gemini-aistudio",
-            "r2v": "gemini-aistudio",
-            "text": "gemini-aistudio",
-        }
+        assert preview == {"t2i": None, "i2i": None, "i2v": None, "r2v": None, "text": None}
 
     async def test_custom_fallback_filters_by_bucket_and_reports_missing_media(self, db_factory):
         """无就绪内置供应商时按桶取自定义默认；该媒体一个候选都没有时为 None，不报错。"""
@@ -2176,3 +2190,27 @@ class TestPinnedConnection:
         _, _, other = await self._two_accounts(db_factory)
         with pytest.raises(CredentialNotFoundError):
             await ConfigResolver(db_factory).provider_config_with_credential("gemini-aistudio", other)
+
+
+class TestMusicAndSoundEffectWithoutASetting:
+    """音乐与音效没有设置时请用户去设置，沿用自己的「未设定」提示，不自动推断（docs/adr/0126、0127）。"""
+
+    @pytest.mark.parametrize(
+        ("method", "setting"),
+        [("resolve_music_backend", "default_music_backend"), ("resolve_sfx_backend", "default_sfx_backend")],
+    )
+    async def test_no_setting_reports_which_setting_is_missing(self, db_factory, method, setting):
+        resolver = ConfigResolver(db_factory)
+        with pytest.raises(NoAvailableProviderError, match=setting) as exc_info:
+            await getattr(resolver, method)(None, None)
+        assert exc_info.value.media_type == "audio"
+
+    @pytest.mark.parametrize(
+        ("method", "field"), [("resolve_music_backend", "music_backend"), ("resolve_sfx_backend", "sfx_backend")]
+    )
+    async def test_a_project_naming_only_a_provider_is_rejected(self, db_factory, method, field):
+        from lib.catalog.errors import ModelNotSelectedError
+
+        resolver = ConfigResolver(db_factory)
+        with pytest.raises(ModelNotSelectedError):
+            await getattr(resolver, method)({field: "elevenlabs"}, None)

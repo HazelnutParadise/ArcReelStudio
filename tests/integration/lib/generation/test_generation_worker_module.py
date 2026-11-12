@@ -70,8 +70,17 @@ class TestExtractProvider:
 
     async def test_image_payload_provider(self):
         """payload 携带历史 image_provider → 投影取到。"""
-        task = {"payload": {"image_provider": "gemini-vertex"}, "task_type": "storyboard"}
+        task = {
+            "payload": {"image_provider": "gemini-vertex", "image_model": "gemini-3.1-flash-image"},
+            "task_type": "storyboard",
+        }
         assert await _extract_provider(task) == "gemini-vertex"
+
+    @pytest.mark.usefixtures("patch_empty_db")
+    async def test_image_payload_provider_without_a_model_is_not_pinned(self):
+        """半截 payload（只有供应商、缺模型）不按目录推荐补模型，也就不能凭它认领供应商：回退设置层，没有设置时只给限流默认。"""
+        task = {"payload": {"image_provider": "gemini-vertex"}, "task_type": "storyboard"}
+        assert await _extract_provider(task) == DEFAULT_PROVIDER
 
     @pytest.mark.usefixtures("patch_empty_db")
     async def test_default_when_unresolvable(self):

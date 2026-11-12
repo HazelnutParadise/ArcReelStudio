@@ -175,6 +175,15 @@ async def test_model_missing_from_catalog_fails_asking_to_reselect(resolver):
     )
 
 
+@pytest.mark.parametrize("field", ["video_provider_i2v", "video_backend"])
+async def test_project_naming_only_the_provider_fails_asking_to_select_a_model(resolver, field):
+    """项目的视频模型只写了内置供应商：失败码是没有选定模型，修复指引是改视频模型，不补该供应商的推荐。"""
+    facts = await _read(resolver, {field: "ark"})
+
+    assert facts == VideoRequestFactsFailure("model_not_selected", (("provider", "ark"),))
+    assert facts.action == "configure_video_model"
+
+
 async def test_no_configured_video_model_fails_as_capability_unavailable(resolver):
     facts = await _read(resolver, {})
 
