@@ -392,7 +392,7 @@ async def test_prompt_authoring_rejects_formal_duration_outside_effective_tiers(
 async def test_no_image_five_second_unit_uses_i2v_facts_through_conversion_and_authoring(
     tmp_path: Path, set_video_request_facts
 ):
-    project = _write_reference_project(tmp_path, video_backend="gemini-aistudio/veo-3.1-generate-preview")
+    project = _write_reference_project(tmp_path, video_backend="gemini-vertex/veo-3.1-generate-001")
     _write_script_plan(
         project,
         _json.dumps(
@@ -435,7 +435,7 @@ async def test_no_image_five_second_unit_uses_i2v_facts_through_conversion_and_a
 async def test_no_image_conversion_rejects_unavailable_i2v_even_when_r2v_accepts_duration(
     tmp_path: Path, set_video_request_facts
 ):
-    project = _write_reference_project(tmp_path, video_backend="gemini-aistudio/veo-3.1-generate-preview")
+    project = _write_reference_project(tmp_path, video_backend="gemini-vertex/veo-3.1-generate-001")
     _write_script_plan(
         project,
         _json.dumps({"units": [{"unit_id": "E1U01", "text": "镜头1：空镜，街道渐亮。", "duration_seconds": 8}]}),

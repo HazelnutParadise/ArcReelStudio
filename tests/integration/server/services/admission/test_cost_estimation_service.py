@@ -10,7 +10,6 @@ from arcreel_market_core.video_backend_contract import VideoGenerationRequest, V
 from lib.backends.backend_assembly.specs import builtin_video_metered_usage
 from lib.backends.providers import PROVIDER_GEMINI
 from lib.backends.video_backends.ark import Seedance2VideoBackend
-from lib.catalog import query as catalog
 from lib.config.resolver import ConfigResolver
 from lib.db.models.api_call import ApiCall
 from lib.db.repositories.usage_repo import SettlementInput, UsageRepository
@@ -27,7 +26,7 @@ from lib.script.reference_video.request_projection import (
 )
 from server.services.admission import cost_estimation
 from server.services.admission.cost_estimation import CostEstimationService, quote_video_request
-from tests.catalog_support import install_catalog, with_entry_changes
+from tests.catalog_support import install_catalog
 from tests.factories import activate_reference_project, make_video_request_facts
 from tests.fakes import fake_reference_request_facts
 
@@ -171,28 +170,19 @@ def _make_reference_video_script(episode: int, content_mode: str, unit_specs: li
     }
 
 
-@pytest.fixture(autouse=True)
-def active_video_pricing_models(monkeypatch):
-    """费用用例验证请求与计量，关停行为由生命周期用例验证。"""
-    data = catalog.factory_snapshot()
-    for model in ("veo-3.1-generate-preview", "veo-3.1-fast-generate-preview", "veo-3.1-lite-generate-preview"):
-        data = with_entry_changes(data, "gemini-aistudio", model, discontinued=False, shutdown_date=None)
-    install_catalog(monkeypatch, data)
-
-
 class TestCostEstimationService:
     async def test_storyboard_facts_failure_reports_each_segment_without_video_quote(
         self, db_factory, set_video_request_facts
     ):
         failure = VideoRequestFactsFailure(
             "video_supported_durations_incompatible",
-            (("provider", "gemini-aistudio"), ("model", "veo-3.1-generate-preview"), ("resolution", "1080p")),
+            (("provider", "gemini-vertex"), ("model", "veo-3.1-generate-001"), ("resolution", "1080p")),
         )
         set_video_request_facts(failure)
         project = {
             "content_mode": "narration",
             "generation_mode": "storyboard",
-            "video_provider_i2v": "gemini-aistudio/veo-3.1-generate-preview",
+            "video_provider_i2v": "gemini-vertex/veo-3.1-generate-001",
             "episodes": [{"episode": 1, "title": "Ep1", "script_file": "ep1.json"}],
         }
         result = await CostEstimationService(ConfigResolver(db_factory), db_factory).compute(
@@ -213,7 +203,7 @@ class TestCostEstimationService:
     @pytest.mark.parametrize(
         ("provider", "model", "selected_resolution", "duration"),
         [
-            ("gemini-aistudio", "veo-3.1-generate-preview", "1080p", 8),
+            ("gemini-vertex", "veo-3.1-generate-001", "1080p", 8),
             ("grok", "grok-imagine-video-1.5", "1080p", 8),
             ("dashscope", "wan3.0-video", "1080p", 8),
             ("grok", "grok-imagine-video", "720p", 8),
@@ -312,8 +302,8 @@ class TestCostEstimationService:
         assert estimate == actual["billed"]["video"]
 
     async def test_reference_bucket_quotes_match_execution_facts_and_settlement(self, db_factory):
-        i2v = "gemini-aistudio/veo-3.1-generate-preview"
-        r2v = "gemini-aistudio/veo-3.1-fast-generate-preview"
+        i2v = "gemini-vertex/veo-3.1-generate-001"
+        r2v = "gemini-vertex/veo-3.1-fast-generate-001"
         project = {
             "content_mode": "narration",
             "generation_mode": "reference_video",
@@ -386,12 +376,12 @@ class TestCostEstimationService:
         set_video_request_facts(
             {
                 "i2v": make_video_request_facts(
-                    route="reference_video", generation_type="i2v", model_id="veo-3.1-generate-preview"
+                    route="reference_video", generation_type="i2v", model_id="veo-3.1-generate-001"
                 ),
                 "r2v": make_video_request_facts(
                     route="reference_video",
                     generation_type="r2v",
-                    model_id="veo-3.1-fast-generate-preview",
+                    model_id="veo-3.1-fast-generate-001",
                     supported_durations=(8,),
                     allowed_durations=(8,),
                 ),
@@ -1412,7 +1402,7 @@ class TestCostEstimationService:
             "content_mode": "ad",
             "generation_mode": "storyboard",
             "image_provider_t2i": "gemini-aistudio/gemini-3.1-flash-image",
-            "video_provider_i2v": "gemini-aistudio/veo-3.1-generate-preview",
+            "video_provider_i2v": "gemini-vertex/veo-3.1-generate-001",
             "target_duration": 30,
             "episodes": [{"episode": 1, "title": "", "script_file": "ep1.json"}],
         }
@@ -1574,7 +1564,7 @@ class TestCostEstimationService:
             "title": "Narration",
             "content_mode": "narration",
             "generation_mode": "reference_video",
-            "video_provider_i2v": "gemini-aistudio/veo-3.1-generate-preview",
+            "video_provider_i2v": "gemini-vertex/veo-3.1-generate-001",
             "target_duration": 30,
             "episodes": [{"episode": 1, "title": "", "script_file": "ep1.json"}],
         }
@@ -1788,7 +1778,7 @@ class TestCostEstimationService:
             db_factory,
             "narration-unenqueueable-units",
             "video",
-            "veo-3.1-lite-generate-preview",
+            "veo-3.1-fast-generate-001",
             segment_id="E1U2",
             cost_amount=1.23,
             currency="USD",
@@ -1820,7 +1810,7 @@ class TestCostEstimationService:
             db_factory,
             "ad-replan-cost",
             "video",
-            "veo-3.1-lite-generate-preview",
+            "veo-3.1-fast-generate-001",
             segment_id="E1U1",
             cost_amount=1.23,
             currency="USD",
@@ -2016,11 +2006,7 @@ class TestCostEstimationService:
     @pytest.mark.parametrize(
         ("video_backend", "configured_generate_audio", "expected_usd"),
         [
-            # 未设分辨率时 Veo 按 720p 出片。AI Studio 无 audio-off 档，供应商恒按含音价出账：
-            # 无论开关状态，预估都须落在 veo-3.1-lite-generate-preview 720p 的含音价 0.05 USD/s。
-            ("gemini-aistudio/veo-3.1-lite-generate-preview", True, 0.05),
-            ("gemini-aistudio/veo-3.1-lite-generate-preview", False, 0.05),
-            # Vertex 有独立的 audio-off 档，不受 AI Studio 修正影响，预估随开关走
+            # 未设分辨率时 Veo 按 720p 出片。Vertex 有独立的 audio-off 档，预估随开关走
             # （veo-3.1-fast-generate-001 720p：含音 0.10 / 无音 0.08 USD/s）。
             ("gemini-vertex/veo-3.1-fast-generate-001", True, 0.10),
             ("gemini-vertex/veo-3.1-fast-generate-001", False, 0.08),
@@ -2165,7 +2151,7 @@ class TestCostEstimationService:
             "generation_mode": "reference_video",
             "target_duration": 30,
             "video_provider_i2v": "kling/kling-v3",
-            "video_provider_r2v": "gemini-aistudio/veo-3.1-generate-preview",
+            "video_provider_r2v": "gemini-vertex/veo-3.1-generate-001",
             "characters": {"A": {"name": "A"}},
             "episodes": [{"episode": 1, "title": "", "script_file": "ep1.json"}],
         }
@@ -2174,7 +2160,7 @@ class TestCostEstimationService:
 
         await service.compute(project_data, scripts, project_name="r2v-duration-slots")
 
-        assert priced == [("veo-3.1-generate-preview", 8)]
+        assert priced == [("veo-3.1-generate-001", 8)]
 
     async def test_degenerate_unit_prices_by_i2v_bucket_model(self, db_factory, monkeypatch):
         """无参考图退化 unit 降级到 i2v 桶：取档与算价都读 i2v 桶模型。
@@ -2199,7 +2185,7 @@ class TestCostEstimationService:
             "generation_mode": "reference_video",
             "target_duration": 30,
             "video_provider_i2v": "kling/kling-v3",
-            "video_provider_r2v": "gemini-aistudio/veo-3.1-generate-preview",
+            "video_provider_r2v": "gemini-vertex/veo-3.1-generate-001",
             "episodes": [{"episode": 1, "title": "", "script_file": "ep1.json"}],
         }
         scripts = {"ep1.json": _make_reference_video_script(1, "narration", [("E1U1", 5)])}
@@ -2649,7 +2635,7 @@ class TestImageBatchEstimate:
     async def test_openai_output_tokens_estimated_from_size_and_quality(self, db_factory, monkeypatch):
         from lib.catalog import query
         from server.services.admission.cost_estimation import estimate_image_batch_cost
-        from tests.catalog_support import install_catalog, with_entry_facts
+        from tests.catalog_support import with_entry_facts
 
         # 输出 token 按条目上的质量档基数估算；用例自己给出基数，不依赖出厂快照的收录情况
         bases = {"low": 16, "medium": 48, "high": 96}

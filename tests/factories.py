@@ -398,8 +398,8 @@ def make_video_request_facts(**overrides: Any):
     fields: dict[str, Any] = {
         "route": "storyboard",
         "generation_type": "i2v",
-        "provider_id": "gemini-aistudio",
-        "model_id": "veo-3.1-generate-preview",
+        "provider_id": "gemini-vertex",
+        "model_id": "veo-3.1-generate-001",
         "resolution": None,
         "supported_durations": (4, 6, 8),
         "allowed_durations": (4, 6, 8),

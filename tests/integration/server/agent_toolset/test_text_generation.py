@@ -82,8 +82,8 @@ async def test_get_video_capabilities_annotates_reference_unit_tiers(
     fake_ctx.pm.project_payload["generation_mode"] = "reference_video"
     use_fake_caps(
         fake_ctx,
-        provider_id="gemini-aistudio",
-        model="veo-3.1-generate-preview",
+        provider_id="gemini-vertex",
+        model="veo-3.1-generate-001",
         supported_durations=[4, 6, 8],
         generation_mode="reference_video",
     )
@@ -126,8 +126,8 @@ async def test_get_video_capabilities_reports_both_successful_buckets(
     fake_ctx.pm.project_payload["generation_mode"] = "reference_video"
     use_fake_caps(
         fake_ctx,
-        provider_id="gemini-aistudio",
-        model="veo-3.1-generate-preview",
+        provider_id="gemini-vertex",
+        model="veo-3.1-generate-001",
         supported_durations=[4, 6, 8],
         generation_mode="reference_video",
     )
@@ -186,8 +186,8 @@ async def test_get_video_capabilities_skips_tiers_off_episode_reference_path(
     """非剧集参考路径不补该字段：其它路径没有逐 unit 引用状态，ad 分镜时长也不受档位枚举管辖。"""
     use_fake_caps(
         fake_ctx,
-        provider_id="gemini-aistudio",
-        model="veo-3.1-generate-preview",
+        provider_id="gemini-vertex",
+        model="veo-3.1-generate-001",
         supported_durations=[4, 6, 8],
         generation_mode=generation_mode,
         content_mode=content_mode,
@@ -218,9 +218,7 @@ async def test_get_video_capabilities_duration_constraints_come_from_request_fac
             resolution="1080p", allowed_durations=(8,), excluded_durations=((4, "resolution"), (6, "resolution"))
         )
     )
-    use_fake_caps(
-        fake_ctx, provider_id="gemini-aistudio", model="veo-3.1-generate-preview", supported_durations=[4, 6, 8]
-    )
+    use_fake_caps(fake_ctx, provider_id="gemini-vertex", model="veo-3.1-generate-001", supported_durations=[4, 6, 8])
     out = await run_declared_tool(GET_VIDEO_CAPABILITIES, fake_ctx, {})
     assert out.problem is None, out
     payload = _as_json(out.value)
@@ -238,20 +236,18 @@ async def test_get_video_capabilities_reports_request_facts_failure(
     set_video_request_facts(
         VideoRequestFactsFailure(
             "video_supported_durations_incompatible",
-            (("provider", "gemini-aistudio"), ("model", "veo-3.1-generate-preview"), ("resolution", "4k")),
+            (("provider", "gemini-vertex"), ("model", "veo-3.1-generate-001"), ("resolution", "4k")),
         )
     )
-    use_fake_caps(
-        fake_ctx, provider_id="gemini-aistudio", model="veo-3.1-generate-preview", supported_durations=[4, 6, 8]
-    )
+    use_fake_caps(fake_ctx, provider_id="gemini-vertex", model="veo-3.1-generate-001", supported_durations=[4, 6, 8])
     out = await run_declared_tool(GET_VIDEO_CAPABILITIES, fake_ctx, {})
     assert out.problem is not None
     assert out.problem is not None
     problem = out.problem.model_dump()
     assert problem["code"] == "video_supported_durations_incompatible"
-    assert problem["params"] == {"provider": "gemini-aistudio", "model": "veo-3.1-generate-preview", "resolution": "4k"}
+    assert problem["params"] == {"provider": "gemini-vertex", "model": "veo-3.1-generate-001", "resolution": "4k"}
     assert problem["action"] == "configure_video_model"
-    assert "video_supported_durations_incompatible（provider=gemini-aistudio" in problem["detail"]
+    assert "video_supported_durations_incompatible（provider=gemini-vertex" in problem["detail"]
 
 
 async def test_get_video_capabilities_error(fake_ctx: ToolHarness) -> None:
@@ -1459,8 +1455,8 @@ async def test_get_video_capabilities_annotates_each_formal_unit(
     }
     use_fake_caps(
         fake_ctx,
-        provider_id="gemini-aistudio",
-        model="veo-3.1-generate-preview",
+        provider_id="gemini-vertex",
+        model="veo-3.1-generate-001",
         supported_durations=[4, 6, 8],
         generation_mode="reference_video",
     )

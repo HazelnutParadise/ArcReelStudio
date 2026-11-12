@@ -47,7 +47,7 @@ web
 
 ## Evidence on Hand
 
-- 产品文档站 `website/`（docs.arc-reel.com）：入门教程、创作流程、供应商配置、剪映导出、FAQ、部署运维、架构说明。
+- 产品文档 `website/`（源文件在本仓库，目前没有单独发布的文档站）：入门教程、创作流程、供应商配置、剪映导出、FAQ、部署运维、架构说明。
 - 界面截图 `docs/assets/screenshots/`；风格模版缩略图 `frontend/public/style-thumbnails`；品牌图标与 manifest 位于 `frontend/public/`。
 
 ## Product Principles

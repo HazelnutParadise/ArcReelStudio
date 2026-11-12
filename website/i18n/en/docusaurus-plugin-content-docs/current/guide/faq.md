@@ -24,7 +24,7 @@ This page covers the most common installation, configuration, production, and tr
 Docker is the preferred option for most users. The recommended environments are Linux, macOS, WSL2, or Docker Desktop:
 
 ```bash
-git clone https://github.com/ArcReel/ArcReel.git
+git clone https://github.com/HazelnutParadise/ArcReelStudio.git
 cd ArcReel/deploy
 cp .env.example .env
 docker compose up -d
@@ -337,7 +337,7 @@ Linux, macOS, WSL2, or Docker is recommended for the server. Native Windows guar
 
 ### Can I use ArcReel commercially or build derivative software? {#commercial-use}
 
-ArcReel is released under [AGPL-3.0](https://github.com/ArcReel/ArcReel/blob/main/LICENSE) with the attribution and modification-notice requirements in [NOTICE](https://github.com/ArcReel/ArcReel/blob/main/NOTICE). The ArcReel name and Logo are not licensed under AGPL-3.0.
+ArcReel is released under [AGPL-3.0](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/LICENSE) with the attribution and modification-notice requirements in [NOTICE](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/NOTICE). The ArcReel name and Logo are not licensed under AGPL-3.0.
 
 To use ArcReel commercially without taking on AGPL open-source obligations, contact [support@arc-reel.com](mailto:support@arc-reel.com) about a commercial license. Users must evaluate compliance for their specific distribution and deployment model. This information is not legal advice.
 
@@ -355,7 +355,7 @@ You can also download diagnostic logs from the About section of Settings. The di
 
 ### How do I submit an actionable issue? {#how-to-report-issue}
 
-When filing a [GitHub Issue](https://github.com/ArcReel/ArcReel/issues) or asking the community for help, include:
+When filing a [GitHub Issue](https://github.com/HazelnutParadise/ArcReelStudio/issues) or asking the community for help, include:
 
 - The ArcReel version
 - The operating system and whether you deployed with Docker, WSL, or from source

@@ -93,7 +93,7 @@ For detailed recommendations, see [Provider and Model Configuration](./providers
 ### 2.1 Clone the Repository {#clone-repository}
 
 ```bash
-git clone https://github.com/ArcReel/ArcReel.git
+git clone https://github.com/HazelnutParadise/ArcReelStudio.git
 cd ArcReel
 ```
 

@@ -756,12 +756,12 @@ class TestAudioChannel:
 
 
 def _veo_backend(**result_fields: Any) -> _FakeVideoBackend:
-    """AI Studio 的 Veo 3.1：按 GeminiVideoBackend 的用量契约上报计量，价目表按输出秒数 × 分辨率 × 有声计价。"""
+    """Vertex 的 Veo 3.1：按 GeminiVideoBackend 的用量契约上报计量，价目表按输出秒数 × 分辨率 × 有声计价。"""
     return _FakeVideoBackend(
-        provider="gemini-aistudio",
-        model="veo-3.1-generate-preview",
+        provider="gemini-vertex",
+        model="veo-3.1-generate-001",
         result_fields=result_fields,
-        metered=lambda request, result: GeminiVideoBackend.metered_usage("veo-3.1-generate-preview", request, result),
+        metered=lambda request, result: GeminiVideoBackend.metered_usage("veo-3.1-generate-001", request, result),
     )
 
 
@@ -779,7 +779,7 @@ def _expected_video_row(**overrides: Any) -> dict[str, Any]:
     defaults: dict[str, Any] = {
         "purpose": "generation_task",
         "call_type": "video",
-        "model": "veo-3.1-generate-preview",
+        "model": "veo-3.1-generate-001",
         "prompt": "p",
         "resolution": "720p",
         "duration_seconds": 8,
@@ -801,7 +801,7 @@ class TestVideoChannel:
         # (720p, 有声) 0.40 USD/s × 8s
         _assert_full_row(
             await acct.fetch_only_row(),
-            _expected_video_row(provider="gemini-aistudio", cost_amount=pytest.approx(3.2), usage_tokens=0),
+            _expected_video_row(provider="gemini-vertex", cost_amount=pytest.approx(3.2), usage_tokens=0),
         )
 
     async def test_backend_reported_audio_flag_overrides_request(self, tmp_path: Path, acct: _AccountingDb) -> None:
@@ -813,7 +813,7 @@ class TestVideoChannel:
         _assert_full_row(
             await acct.fetch_only_row(),
             _expected_video_row(
-                provider="gemini-aistudio", generate_audio=False, cost_amount=pytest.approx(1.6), usage_tokens=0
+                provider="gemini-vertex", generate_audio=False, cost_amount=pytest.approx(1.6), usage_tokens=0
             ),
         )
 
@@ -826,7 +826,7 @@ class TestVideoChannel:
         _assert_full_row(
             await acct.fetch_only_row(),
             _expected_video_row(
-                provider="gemini-aistudio", duration_seconds=6, cost_amount=pytest.approx(2.4), usage_tokens=0
+                provider="gemini-vertex", duration_seconds=6, cost_amount=pytest.approx(2.4), usage_tokens=0
             ),
         )
 
@@ -839,7 +839,7 @@ class TestVideoChannel:
         _assert_full_row(
             await acct.fetch_only_row(),
             _expected_video_row(
-                provider="gemini-aistudio", duration_seconds=8, cost_amount=pytest.approx(3.2), usage_tokens=0
+                provider="gemini-vertex", duration_seconds=8, cost_amount=pytest.approx(3.2), usage_tokens=0
             ),
         )
 
@@ -878,7 +878,7 @@ class TestVideoChannel:
             acct,
             video_backend=_FakeVideoBackend(
                 provider="gemini",
-                model="veo-3.1-generate-preview",
+                model="veo-3.1-generate-001",
                 error=RuntimeError("v" * 600),
             ),
         )
@@ -901,7 +901,7 @@ class TestVideoChannel:
             acct,
             video_backend=_FakeVideoBackend(
                 provider="gemini",
-                model="veo-3.1-generate-preview",
+                model="veo-3.1-generate-001",
                 error=asyncio.CancelledError(),
             ),
         )
@@ -1441,7 +1441,7 @@ class TestIdentityInvariant:
         with pytest.raises(ValueError, match=r"video backend 与 provider_id 必须成对提供"):
             MediaGenerator(
                 tmp_path / "projects" / "demo",
-                video_provider_id="gemini-aistudio",
+                video_provider_id="gemini-vertex",
             )
 
     def test_text_missing_provider_id_raises(self, acct: _AccountingDb) -> None:
@@ -1472,13 +1472,13 @@ async def _pending_video_call(acct: _AccountingDb, *, task_id: str | None = _RES
         return await UsageRepository(session).start_call(
             project_name="demo",
             call_type="video",
-            model="veo-3.1-generate-preview",
+            model="veo-3.1-generate-001",
             prompt="p",
             resolution="720p",
             duration_seconds=8,
             aspect_ratio="9:16",
             generate_audio=True,
-            provider="gemini-aistudio",
+            provider="gemini-vertex",
             segment_id="E1S01",
             task_id=task_id,
             purpose=CallPurpose.GENERATION_TASK,
@@ -1502,10 +1502,10 @@ def _expected_resume_row(**overrides: Any) -> dict[str, Any]:
     # resume 补账不回写 output_path：finalize 只翻状态与费用口径字段
     defaults: dict[str, Any] = {
         "purpose": "generation_task",
-        "provider": "gemini-aistudio",
+        "provider": "gemini-vertex",
         "task_id": _RESUME_TASK_ID,
         "call_type": "video",
-        "model": "veo-3.1-generate-preview",
+        "model": "veo-3.1-generate-001",
         "prompt": "p",
         "resolution": "720p",
         "duration_seconds": 8,
@@ -1565,7 +1565,7 @@ class TestResumeChannel:
             acct,
             video_backend=_FakeVideoBackend(
                 provider="gemini",
-                model="veo-3.1-generate-preview",
+                model="veo-3.1-generate-001",
                 resume_error=ResumeExpiredError(job_id="job-1", provider="gemini"),
             ),
         )
@@ -1611,9 +1611,9 @@ class TestResumeChannel:
             await acct.fetch_only_row(),
             _expected_pending_row(
                 purpose="generation_task",
-                provider="gemini-aistudio",
+                provider="gemini-vertex",
                 call_type="video",
-                model="veo-3.1-generate-preview",
+                model="veo-3.1-generate-001",
                 prompt="p",
                 resolution="720p",
                 duration_seconds=8,

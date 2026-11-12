@@ -18,17 +18,17 @@ class TestModelSettingsApi:
                     "name": "demo-res",
                     "title": "T",
                     "model_settings": {
-                        "gemini-aistudio/veo-3.1-lite-generate-preview": {"resolution": "720p"},
+                        "gemini-vertex/veo-3.1-fast-generate-001": {"resolution": "720p"},
                     },
                 },
             )
             assert resp.status_code == 200
             # 直接从 create 返回值验证 model_settings 已持久化
             project = resp.json()["project"]
-            assert project["model_settings"]["gemini-aistudio/veo-3.1-lite-generate-preview"]["resolution"] == "720p"
+            assert project["model_settings"]["gemini-vertex/veo-3.1-fast-generate-001"]["resolution"] == "720p"
             # 也验证 fake_pm 内部存储
             stored = fake_pm.project_data["demo-res"]
-            assert stored["model_settings"]["gemini-aistudio/veo-3.1-lite-generate-preview"]["resolution"] == "720p"
+            assert stored["model_settings"]["gemini-vertex/veo-3.1-fast-generate-001"]["resolution"] == "720p"
 
     def test_patch_project_model_settings(self, tmp_path, monkeypatch):
         fake_pm = _FakePM(tmp_path)
@@ -37,12 +37,12 @@ class TestModelSettingsApi:
             # 先创建（利用现有 ready 项目）
             resp = client.patch(
                 "/api/v1/projects/ready",
-                json={"model_settings": {"gemini-aistudio/veo-3.1": {"resolution": "1080p"}}},
+                json={"model_settings": {"gemini-vertex/veo-3.1": {"resolution": "1080p"}}},
             )
             assert resp.status_code == 200
             # 直接从 patch 返回值验证 model_settings
             project = resp.json()["project"]
-            assert project["model_settings"]["gemini-aistudio/veo-3.1"]["resolution"] == "1080p"
+            assert project["model_settings"]["gemini-vertex/veo-3.1"]["resolution"] == "1080p"
             # 也验证 fake_pm 内部存储
             stored = fake_pm.project_data["ready"]
-            assert stored["model_settings"]["gemini-aistudio/veo-3.1"]["resolution"] == "1080p"
+            assert stored["model_settings"]["gemini-vertex/veo-3.1"]["resolution"] == "1080p"

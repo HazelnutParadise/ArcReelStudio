@@ -127,9 +127,9 @@ class TestVideoDurations:
             else:
                 assert m.supported_durations == [], f"{pid}/{mid} 不是视频模型但有 supported_durations"
 
-    @pytest.mark.parametrize("provider_id", ["gemini-aistudio", "gemini-vertex"])
-    def test_veo_declares_high_resolution_constraints(self, provider_id):
-        """两侧 Veo 模型每个可选高分辨率档都声明「仅 8s」，UI 才能据此收窄时长选项。"""
+    def test_veo_declares_high_resolution_constraints(self):
+        """Veo 模型每个可选高分辨率档都声明「仅 8s」，UI 才能据此收窄时长选项。Veo 只在 Vertex 上列出。"""
+        provider_id = "gemini-vertex"
         for model_id, model in _models_of(provider_id, "video").items():
             for resolution in model.resolutions:
                 if resolution in ("1080p", "4k"):
@@ -137,18 +137,15 @@ class TestVideoDurations:
                         f"{provider_id}/{model_id} 的 {resolution} 未声明仅 8s"
                     )
 
-    @pytest.mark.parametrize("provider_id", ["gemini-aistudio", "gemini-vertex"])
-    def test_veo_declares_reference_image_durations(self, provider_id):
-        """Veo 带参考图时只接受 8s，两侧全系声明，与 backend 的执行期拒绝对齐。"""
+    def test_veo_declares_reference_image_durations(self):
+        """Veo 带参考图时只接受 8s，全系声明，与 backend 的执行期拒绝对齐。Veo 只在 Vertex 上列出。"""
+        provider_id = "gemini-vertex"
         for model_id, model in _models_of(provider_id, "video").items():
             assert model.reference_image_durations == [8], f"{provider_id}/{model_id} 参考图时长约束缺失"
 
     def test_veo_4k_only_where_officially_supported(self):
-        """4k 仅 Veo 3.1 Standard 两侧 + AI Studio 的 Fast 支持；Lite 与 Vertex Fast 不支持。"""
+        """4k 仅 Vertex 的 Veo 3.1 Standard 支持，Vertex Fast 不支持。AI Studio 上的 Veo 预览版已关闭、不再列出。"""
         expected_4k = {
-            ("gemini-aistudio", "veo-3.1-generate-preview"): True,
-            ("gemini-aistudio", "veo-3.1-fast-generate-preview"): True,
-            ("gemini-aistudio", "veo-3.1-lite-generate-preview"): False,
             ("gemini-vertex", "veo-3.1-generate-001"): True,
             ("gemini-vertex", "veo-3.1-fast-generate-001"): False,
         }

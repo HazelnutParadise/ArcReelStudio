@@ -137,12 +137,12 @@ class TestFinalizePendingByCallId:
         call_id = await repo.start_call(
             project_name="demo",
             call_type="video",
-            model="veo-3.1-generate-preview",
+            model="veo-3.1-generate-001",
             duration_seconds=8,
             resolution="1080p",
             aspect_ratio="9:16",
             generate_audio=True,
-            provider="gemini-aistudio",
+            provider="gemini-vertex",
         )
 
         usage = Usage(quantities={"output_seconds": 8}, dimensions={"resolution": "1080p", "audio": True})
@@ -358,11 +358,11 @@ class TestFinalizePendingByCallId:
         call_id = await repo.start_call(
             project_name="demo",
             call_type="video",
-            model="veo-3.1-generate-preview",
+            model="veo-3.1-generate-001",
             duration_seconds=8,
             resolution="720p",
             generate_audio=True,
-            provider="gemini-aistudio",
+            provider="gemini-vertex",
         )
 
         # provider 实际降级到关闭音频
@@ -978,7 +978,7 @@ class TestSettleInterruptedPendingCalls:
         return await UsageRepository(async_session).start_call(
             project_name="demo",
             call_type="video",
-            model="veo-3.1-generate-preview",
+            model="veo-3.1-generate-001",
             provider="gemini",
             duration_seconds=8,
             task_id=task_id,

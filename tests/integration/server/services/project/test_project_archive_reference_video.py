@@ -225,11 +225,11 @@ class TestProjectArchiveReferenceVideo:
         project_file = project_dir / "project.json"
         payload = json.loads(project_file.read_text(encoding="utf-8"))
         payload["video_provider_r2v"] = "minimax/MiniMax-Hailuo-2.3"
-        payload["video_provider_i2v"] = "gemini-aistudio/veo-3.1-generate-preview"
+        payload["video_provider_i2v"] = "gemini-vertex/veo-3.1-generate-001"
         payload.pop("schema_version", None)
         project_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
         assert _durations("minimax", "MiniMax-Hailuo-2.3") == [6, 10]
-        assert _durations("gemini-aistudio", "veo-3.1-generate-preview") == [4, 6, 8]
+        assert _durations("gemini-vertex", "veo-3.1-generate-001") == [4, 6, 8]
 
         service = ProjectArchiveService(pm)
         archive_path = tmp_path / "legacy-two-buckets.zip"
@@ -269,7 +269,7 @@ class TestProjectArchiveReferenceVideo:
         # legacy 别名：档位只能靠归一化后查 registry 得到。
         project_file = project_dir / "project.json"
         payload = json.loads(project_file.read_text(encoding="utf-8"))
-        payload["video_backend"] = "gemini/veo-3.1-generate-preview"
+        payload["video_backend"] = "vertex/veo-3.1-generate-001"
         payload.pop("schema_version", None)
         project_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
@@ -284,7 +284,7 @@ class TestProjectArchiveReferenceVideo:
             (pm.get_project_path(result.project_name) / "scripts" / "episode_1.json").read_text(encoding="utf-8")
         )
         # 求和 10s 不是该型号档位成员，取档后落盘的秒数必是成员。
-        veo_tiers = _durations("gemini-aistudio", "veo-3.1-generate-preview")
+        veo_tiers = _durations("gemini-vertex", "veo-3.1-generate-001")
         assert imported["video_units"][0]["duration_seconds"] in veo_tiers
 
     def test_import_restores_video_clip_from_version(self, tmp_path):

@@ -298,7 +298,7 @@ class TestProjectsRouter:
 
             wrong_media = client.patch(
                 "/api/v1/projects/ready",
-                json={"default_image_backend": "gemini-aistudio/veo-3.1-generate-preview"},
+                json={"default_image_backend": "gemini-aistudio/gemini-omni-1.1-flash"},
             )
             assert wrong_media.status_code == 400
 

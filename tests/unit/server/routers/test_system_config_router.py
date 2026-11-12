@@ -715,7 +715,7 @@ class TestPatchSystemConfig:
         with TestClient(self._make_patch_app(mock_svc)) as client:
             res = client.patch(
                 "/api/v1/system/config",
-                json={"text_backend_simple": "gemini-aistudio/veo-3.1-generate-preview"},
+                json={"text_backend_simple": "gemini-aistudio/gemini-omni-1.1-flash"},
             )
         assert res.status_code == 400
 

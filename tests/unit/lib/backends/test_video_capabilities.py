@@ -148,15 +148,15 @@ class TestCandidatesAndExecutionReadTheSameResult:
         assert exc.value.code == "video_reference_audio_unsupported"
 
     def test_explicit_zero_drops_the_candidate_and_rejects_at_execution(self, tmp_path: Path):
-        """Veo 3.1 Lite 的条目记录参考图上限 0：通道实现了参考图，Lite 仍不进参考生视频候选，带参考图被拒。"""
-        lite = catalog.get_model("gemini-aistudio", "veo-3.1-lite-generate-preview")
-        regular = catalog.get_model("gemini-aistudio", "veo-3.1-generate-preview")
+        """Grok Imagine 1.5 Lite 的条目记录参考图上限 0：通道实现了参考图，Lite 仍不进参考生视频候选，带参考图被拒。"""
+        lite = catalog.get_model("grok", "grok-imagine-video-1.5-lite")
+        regular = catalog.get_model("grok", "grok-imagine-video-1.5")
         assert lite is not None
         assert regular is not None
-        assert builtin_model_buckets("gemini-aistudio", "veo-3.1-lite-generate-preview", lite) == frozenset({"i2v"})
-        assert "r2v" in builtin_model_buckets("gemini-aistudio", "veo-3.1-generate-preview", regular)
+        assert builtin_model_buckets("grok", "grok-imagine-video-1.5-lite", lite) == frozenset({"i2v"})
+        assert "r2v" in builtin_model_buckets("grok", "grok-imagine-video-1.5", regular)
 
-        caps = builtin_video_capabilities_for_model("gemini-aistudio", "veo-3.1-lite-generate-preview")
+        caps = builtin_video_capabilities_for_model("grok", "grok-imagine-video-1.5-lite")
         with pytest.raises(VideoCapabilityError) as exc:
             _gate(caps, tmp_path, reference_images=_images(tmp_path, 1))
         assert exc.value.code == "video_reference_images_unsupported"

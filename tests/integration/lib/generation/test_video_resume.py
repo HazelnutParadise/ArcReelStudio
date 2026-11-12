@@ -75,12 +75,12 @@ class TestVideoResumeRunner:
         monkeypatch.setattr(stub_executors, "resume", _fake_resume)
 
         task = storyboard_resume_task("resume-locked", provider_id="openai", job_id="openai-job")
-        task["payload"] = {"video_provider_i2v": "gemini-aistudio/veo-3.1-fast-generate-preview"}
+        task["payload"] = {"video_provider_i2v": "gemini-vertex/veo-3.1-fast-generate-001"}
         await worker._resume.run(task)
         assert len(captured) == 1
         captured_task, captured_job_id = captured[0]
         # Resume executor receives the row unchanged and loads its immutable checkpoint itself.
-        assert captured_task["payload"] == {"video_provider_i2v": "gemini-aistudio/veo-3.1-fast-generate-preview"}
+        assert captured_task["payload"] == {"video_provider_i2v": "gemini-vertex/veo-3.1-fast-generate-001"}
         assert captured_job_id == "openai-job"
         assert queue.succeeded == [("resume-locked", {"ok": True})]
 

@@ -8,7 +8,8 @@
 ``arcreel_catalog_core.BUILTIN_PROVIDER_ENDPOINTS``）；模型名是官方 CLI 认得的名字。
 
 音乐模型（docs/adr/0126）的条目上游目录没有，写在 :data:`FORK_ENTRIES`；Lyria 挂在上游已有的 AI Studio 清单上，
-由 :data:`FORK_LISTING_ADDITIONS` 追加，不取代上游的清单。同一身份的条目若上游日后收录，以上游为准。
+由 :data:`FORK_LISTING_ADDITIONS` 追加，不取代上游的清单。上游清单里已经用不了的模型由
+:data:`FORK_LISTING_REMOVALS` 拿掉。同一身份的条目若上游日后收录，以上游为准。
 """
 
 from __future__ import annotations
@@ -140,9 +141,42 @@ FORK_LISTING_ADDITIONS: Mapping[str, tuple[BuiltinProviderModel, ...]] = Mapping
         "gemini-aistudio": (
             BuiltinProviderModel("lyria-3.5", "google/lyria-3.5", endpoint="gemini-lyria"),
             BuiltinProviderModel("lyria-3-clip-preview", "google/lyria-3-clip-preview", endpoint="gemini-lyria"),
+            # AI Studio 上的 Veo 预览版已关闭（见 FORK_LISTING_REMOVALS），视频改由 Gemini Omni 承担
+            BuiltinProviderModel(
+                "gemini-omni-1.1-flash", "google/gemini-omni-1.1-flash", endpoint="gemini-interactions-video"
+            ),
         ),
     }
 )
+
+#: 上游清单在某个媒体类型上没有默认模型（或默认模型被拿掉）时补上的默认模型
+FORK_LISTING_DEFAULTS: Mapping[str, Mapping[str, str]] = MappingProxyType(
+    {"gemini-aistudio": {"video": "gemini-omni-1.1-flash"}}
+)
+
+
+#: 从上游清单里拿掉的模型：Google 已在 2026-10-22 关闭 AI Studio 上的 Veo 3.1 预览版，选了一定失败。
+#: 上游每日同步会把它们带回来，所以在叠加层拿掉；Vertex 上的 Veo 不受影响。
+FORK_LISTING_REMOVALS: Mapping[str, frozenset[str]] = MappingProxyType(
+    {
+        "gemini-aistudio": frozenset(
+            {"veo-3.1-generate-preview", "veo-3.1-fast-generate-preview", "veo-3.1-lite-generate-preview"}
+        ),
+    }
+)
+
+
+def _without_removed(listing: BuiltinProviderListing, removed: frozenset[str]) -> BuiltinProviderListing:
+    kept = tuple(model for model in listing.models if model.api_model_name not in removed)
+    if len(kept) == len(listing.models):
+        return listing
+    defaults = {media: name for media, name in listing.defaults.items() if name not in removed}
+    return replace(listing, models=kept, defaults=defaults)
+
+
+def _with_missing_defaults(listing: BuiltinProviderListing, defaults: Mapping[str, str]) -> BuiltinProviderListing:
+    missing = {media: name for media, name in defaults.items() if media not in listing.defaults}
+    return replace(listing, defaults={**listing.defaults, **missing}) if missing else listing
 
 
 def _with_additions(
@@ -164,6 +198,14 @@ def with_fork_providers(data: CatalogData) -> CatalogData:
         listing = providers.get(provider_id)
         if listing is not None:
             providers[provider_id] = _with_additions(listing, additions)
+    for provider_id, removed in FORK_LISTING_REMOVALS.items():
+        listing = providers.get(provider_id)
+        if listing is not None:
+            providers[provider_id] = _without_removed(listing, removed)
+    for provider_id, defaults in FORK_LISTING_DEFAULTS.items():
+        listing = providers.get(provider_id)
+        if listing is not None:
+            providers[provider_id] = _with_missing_defaults(listing, defaults)
     return replace(data, entries=entries, builtin_providers=providers)
 
 
@@ -177,5 +219,13 @@ def _already_applied(data: CatalogData) -> bool:
     for provider_id, additions in FORK_LISTING_ADDITIONS.items():
         listing = data.builtin_providers.get(provider_id)
         if listing is not None and _with_additions(listing, additions) is not listing:
+            return False
+    for provider_id, removed in FORK_LISTING_REMOVALS.items():
+        listing = data.builtin_providers.get(provider_id)
+        if listing is not None and _without_removed(listing, removed) is not listing:
+            return False
+    for provider_id, defaults in FORK_LISTING_DEFAULTS.items():
+        listing = data.builtin_providers.get(provider_id)
+        if listing is not None and _with_missing_defaults(listing, defaults) is not listing:
             return False
     return True

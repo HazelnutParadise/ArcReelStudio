@@ -24,7 +24,7 @@ update_docs: fact-check
 普通用户优先使用 Docker。推荐环境为 Linux、macOS、WSL2 或 Docker Desktop：
 
 ```bash
-git clone https://github.com/ArcReel/ArcReel.git
+git clone https://github.com/HazelnutParadise/ArcReelStudio.git
 cd ArcReel/deploy
 cp .env.example .env
 docker compose up -d
@@ -337,7 +337,7 @@ ArcReel 是自托管 Web 应用，目前没有独立的 iOS 或 Android 原生 A
 
 ### 可以商用或二次开发吗？ {#commercial-use}
 
-ArcReel 按 [AGPL-3.0](https://github.com/ArcReel/ArcReel/blob/main/LICENSE) 发布，并附带 [NOTICE](https://github.com/ArcReel/ArcReel/blob/main/NOTICE) 中的署名和修改声明要求。ArcReel 名称与 Logo 不在 AGPL-3.0 授权范围内。
+ArcReel 按 [AGPL-3.0](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/LICENSE) 发布，并附带 [NOTICE](https://github.com/HazelnutParadise/ArcReelStudio/blob/main/NOTICE) 中的署名和修改声明要求。ArcReel 名称与 Logo 不在 AGPL-3.0 授权范围内。
 
 如果希望在不承担 AGPL 开源义务的前提下进行商业使用，请联系 [support@arc-reel.com](mailto:support@arc-reel.com) 了解商业授权。具体项目是否合规应由使用者根据实际分发和部署方式自行评估；本说明不构成法律意见。
 
@@ -355,7 +355,7 @@ docker compose logs arcreel
 
 ### 怎样提交一个可以有效排查的问题？ {#how-to-report-issue}
 
-提交 [GitHub Issue](https://github.com/ArcReel/ArcReel/issues) 或寻求社区帮助时，请提供：
+提交 [GitHub Issue](https://github.com/HazelnutParadise/ArcReelStudio/issues) 或寻求社区帮助时，请提供：
 
 - ArcReel 版本
 - 操作系统以及 Docker、WSL 或源码部署方式

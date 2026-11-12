@@ -145,8 +145,8 @@ class TestListProviders:
                     required_keys=["api_key"],
                     credential_count=1,
                     models={
-                        "veo-3.1-fast-generate-preview": {
-                            "display_name": "Veo 3.1 Fast",
+                        "gemini-omni-1.1-flash": {
+                            "display_name": "Gemini Omni Flash",
                             "media_type": "video",
                             "capabilities": ["text_to_video"],
                             "default": False,
@@ -195,14 +195,14 @@ class TestListProviders:
         with _make_client(self._mock_svc_with_models()) as client:
             resp = client.get("/api/v1/providers")
         models = resp.json()["providers"][0]["models"]
-        assert models["veo-3.1-fast-generate-preview"]["resolutions"] == ["720p", "1080p"]
+        assert models["gemini-omni-1.1-flash"]["resolutions"] == ["720p", "1080p"]
         assert models["imagen-4.0-generate-001"]["resolutions"] == []
 
     def test_always_audible_model_reports_switch_not_controllable(self):
-        """AI Studio 的 Veo 恒有声、请求里没有开关：两条路径都报 always_on，设置页据此置灰音频开关。"""
+        """AI Studio 的 Gemini Omni 恒有声、请求里没有开关：两条路径都报 always_on，设置页据此置灰音频开关。"""
         with _make_client(self._mock_svc_with_models()) as client:
             resp = client.get("/api/v1/providers")
-        model = resp.json()["providers"][0]["models"]["veo-3.1-fast-generate-preview"]
+        model = resp.json()["providers"][0]["models"]["gemini-omni-1.1-flash"]
         assert model["audio_track"] == "always_on"
         assert model["reference_route_audio_track"] == "always_on"
 
