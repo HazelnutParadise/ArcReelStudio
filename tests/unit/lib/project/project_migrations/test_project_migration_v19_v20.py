@@ -219,10 +219,11 @@ def test_a_failed_write_leaves_the_old_file_for_the_retry(tmp_path: Path, monkey
     def failing_replace(src: Any, dst: Any) -> None:
         raise OSError("disk full")
 
-    monkeypatch.setattr(os, "replace", failing_replace)
-    with pytest.raises(OSError, match="disk full"):
-        MIGRATORS[19](project_dir)
-    monkeypatch.undo()
+    # 只撤掉这一处替身：monkeypatch.undo() 会连同装入的测试目录一起撤掉
+    with monkeypatch.context() as patched:
+        patched.setattr(os, "replace", failing_replace)
+        with pytest.raises(OSError, match="disk full"):
+            MIGRATORS[19](project_dir)
 
     assert (project_dir / "project.json").read_bytes() == before
     assert not list(project_dir.glob("*.tmp"))

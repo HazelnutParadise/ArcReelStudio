@@ -15,7 +15,7 @@ import pytest
 from lib.backends.text_backends.base import TextTaskType
 from lib.catalog import query as catalog
 from lib.catalog.errors import ModelNotSelectedError
-from lib.config.resolver import ConfigResolver
+from lib.config.resolver import ConfigResolver, ProviderModel
 from lib.db.models.builtin_provider_model import BuiltinProviderModelState
 from lib.infra.app_data_dir import app_data_dir
 from lib.project.project_manager import ProjectManager
@@ -92,7 +92,9 @@ async def test_bare_providers_become_the_recommended_models_and_stay_that_way(
     assert (caps["provider_id"], caps["model"]) == ("ark", ARK_VIDEO)
     image = await resolver.resolve_image_backend(migrated, None, generation_type="t2i")
     assert (image.provider_id, image.model_id) == ("openai", OPENAI_IMAGE)
-    assert await resolver.text_backend_for_task(TextTaskType.SCRIPT, project_dir.name) == ("grok", GROK_TEXT)
+    assert await resolver.text_backend_for_task(TextTaskType.SCRIPT, project_dir.name) == ProviderModel(
+        "grok", GROK_TEXT
+    )
     assert _storyboard_counts(project_dir) == (2, 0)
 
 
