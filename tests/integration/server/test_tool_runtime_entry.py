@@ -39,6 +39,10 @@ from server.tool_runtime import (
     upload_source,
 )
 
+# 等工作线程到达阻塞点、或放行后把写入收尾的上限。正常几毫秒就完成，只是 CI 负载高时线程调度会拖过 1 秒；
+# 断言的是「取消要等写入收尾才传出」，这个上限放宽不影响断言本身。
+_SETTLE_SECONDS = 10
+
 
 class _Unused:
     pass
@@ -161,7 +165,7 @@ async def test_create_project_settles_publication_before_propagating_cancellatio
         )
     )
     try:
-        assert await asyncio.to_thread(started.wait, 1)
+        assert await asyncio.to_thread(started.wait, _SETTLE_SECONDS)
         assert not projects.project_exists("demo")
         listed = await list_projects(ToolRequest(NoArguments()), caller, services)
         assert listed.value == []
@@ -170,7 +174,9 @@ async def test_create_project_settles_publication_before_propagating_cancellatio
         assert not creation.done()
     finally:
         release.set()
-        creation_results = await asyncio.wait_for(asyncio.gather(creation, return_exceptions=True), timeout=1)
+        creation_results = await asyncio.wait_for(
+            asyncio.gather(creation, return_exceptions=True), timeout=_SETTLE_SECONDS
+        )
 
     assert isinstance(creation_results[0], asyncio.CancelledError)
     assert projects.project_exists("demo")
@@ -314,14 +320,14 @@ async def test_upload_source_settles_write_before_propagating_cancellation(tmp_p
         )
     )
     try:
-        assert await asyncio.to_thread(started.wait, 1)
+        assert await asyncio.to_thread(started.wait, _SETTLE_SECONDS)
         task.cancel()
         await asyncio.sleep(0)
         assert not task.done()
     finally:
         release.set()
-        task_results = await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), timeout=1)
-        assert await asyncio.to_thread(finished.wait, 1)
+        task_results = await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), timeout=_SETTLE_SECONDS)
+        assert await asyncio.to_thread(finished.wait, _SETTLE_SECONDS)
 
     assert isinstance(task_results[0], asyncio.CancelledError)
     assert (projects.get_project_path("demo") / "source" / "novel.txt").read_text() == "hello"
@@ -428,13 +434,13 @@ async def test_reset_episode_planning_settles_write_before_propagating_cancellat
         )
     )
     try:
-        assert await asyncio.to_thread(started.wait, 1)
+        assert await asyncio.to_thread(started.wait, _SETTLE_SECONDS)
         task.cancel()
         await asyncio.sleep(0)
         assert not task.done()
     finally:
         release.set()
-        task_results = await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), timeout=1)
+        task_results = await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), timeout=_SETTLE_SECONDS)
 
     assert isinstance(task_results[0], asyncio.CancelledError)
     assert finished.is_set()
@@ -465,13 +471,13 @@ async def test_rename_asset_settles_write_before_propagating_cancellation(tmp_pa
         )
     )
     try:
-        assert await asyncio.to_thread(started.wait, 1)
+        assert await asyncio.to_thread(started.wait, _SETTLE_SECONDS)
         task.cancel()
         await asyncio.sleep(0)
         assert not task.done()
     finally:
         release.set()
-        task_results = await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), timeout=1)
+        task_results = await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), timeout=_SETTLE_SECONDS)
 
     assert isinstance(task_results[0], asyncio.CancelledError)
     assert finished.is_set()
@@ -499,13 +505,13 @@ async def test_retry_migration_settles_write_before_propagating_cancellation(tmp
         )
     )
     try:
-        assert await asyncio.to_thread(started.wait, 1)
+        assert await asyncio.to_thread(started.wait, _SETTLE_SECONDS)
         task.cancel()
         await asyncio.sleep(0)
         assert not task.done()
     finally:
         release.set()
-        task_results = await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), timeout=1)
+        task_results = await asyncio.wait_for(asyncio.gather(task, return_exceptions=True), timeout=_SETTLE_SECONDS)
 
     assert isinstance(task_results[0], asyncio.CancelledError)
     assert finished.is_set()

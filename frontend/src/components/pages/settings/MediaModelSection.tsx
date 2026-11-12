@@ -30,7 +30,7 @@ import { TextTierFields } from "@/components/shared/TextTierFields";
 import { videoOptionMetaRenderer } from "@/components/shared/video-option-meta";
 import { VideoModelSpecBar } from "@/components/shared/VideoModelSpecBar";
 import { InlineWarning } from "@/components/shared/InlineWarning";
-import { ModelLifecycleNotice } from "@/components/shared/ModelLifecycleNotice";
+import { ModelLifecycleNotice, type ModelLifecycleNoticeProps } from "@/components/shared/ModelLifecycleNotice";
 import { NarrationVoiceInput } from "@/components/shared/NarrationVoiceInput";
 import { SaveBar } from "@/components/shared/edit-unit/SaveBar";
 import { PageShellFooter } from "@/components/shared/page-shell/PageShell";
@@ -119,6 +119,61 @@ function NoProviders({ message }: { message: string }) {
         {t("default_models_configure_providers")}
       </Link>
     </p>
+  );
+}
+
+interface DefaultBackendFieldsProps {
+  /** 选中的 `provider/model`；空串是未设定（或自动选择）。 */
+  value: string;
+  options: string[];
+  providerNames: Record<string, string>;
+  modelNames: Record<string, string>;
+  lifecycle: ModelLifecycleNoticeProps["notices"];
+  /** 这个默认模型的名称：模型下拉的无障碍标签，也拼进连线下拉的标签。 */
+  label: string;
+  defaultLabel: string;
+  defaultHint?: string;
+  credentialId: number | null | undefined;
+  onChange: (value: string) => void;
+  onCredentialChange: (next: number | null) => void;
+}
+
+/** 一个默认模型：选哪个模型、走哪条连线，以及它将下线时的提示与一键切换。 */
+function DefaultBackendFields({
+  value,
+  options,
+  providerNames,
+  modelNames,
+  lifecycle,
+  label,
+  defaultLabel,
+  defaultHint,
+  credentialId,
+  onChange,
+  onCredentialChange,
+}: DefaultBackendFieldsProps) {
+  const { t } = useTranslation("dashboard");
+  return (
+    <div className="flex flex-col gap-3">
+      <ProviderModelSelect
+        value={value}
+        options={options}
+        providerNames={providerNames}
+        modelNames={modelNames}
+        onChange={onChange}
+        allowDefault
+        defaultLabel={defaultLabel}
+        defaultHint={defaultHint}
+        aria-label={label}
+      />
+      <ConnectionSelect
+        backendValue={value}
+        value={credentialId}
+        onChange={onCredentialChange}
+        label={t("connection_field_label", { field: label })}
+      />
+      <ModelLifecycleNotice value={value} notices={lifecycle} modelNames={modelNames} onSwitch={onChange} />
+    </div>
   );
 }
 
@@ -547,31 +602,19 @@ export function MediaModelSection() {
       {/* 旁白配音：模型、音色与语速只是新建 TTS 配音项目的预填值，说明放在通道开头。 */}
       <ChannelCard title={t("default_models_channel_audio")} description={t("global_tts_defaults_prefill_hint")}>
         {audioBackends.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            <ProviderModelSelect
-              value={currentAudioBackend}
-              options={audioBackends}
-              providerNames={allProviderNames}
-              modelNames={allModelNames}
-              onChange={(v) => setFields((prev) => ({ ...prev, default_audio_backend: v }))}
-              allowDefault
-              defaultLabel={t("auto_select")}
-              defaultHint={t("auto")}
-              aria-label={t("default_audio_model")}
-            />
-            <ConnectionSelect
-              backendValue={currentAudioBackend}
-              value={fields.default_audio_backend_credential_id}
-              onChange={(next) => setFields((prev) => ({ ...prev, default_audio_backend_credential_id: next }))}
-              label={t("connection_field_label", { field: t("default_audio_model") })}
-            />
-            <ModelLifecycleNotice
-              value={currentAudioBackend}
-              notices={lifecycle}
-              modelNames={allModelNames}
-              onSwitch={(v) => setFields((prev) => ({ ...prev, default_audio_backend: v }))}
-            />
-          </div>
+          <DefaultBackendFields
+            value={currentAudioBackend}
+            options={audioBackends}
+            providerNames={allProviderNames}
+            modelNames={allModelNames}
+            lifecycle={lifecycle}
+            label={t("default_audio_model")}
+            defaultLabel={t("auto_select")}
+            defaultHint={t("auto")}
+            credentialId={fields.default_audio_backend_credential_id}
+            onChange={(v) => setFields((prev) => ({ ...prev, default_audio_backend: v }))}
+            onCredentialChange={(next) => setFields((prev) => ({ ...prev, default_audio_backend_credential_id: next }))}
+          />
         ) : (
           <NoProviders message={t("no_audio_providers_hint")} />
         )}
@@ -618,30 +661,18 @@ export function MediaModelSection() {
       {/* 音乐：剪辑时「生成 BGM」与 Agent 的 generate_music 用它；没设定就不能生成，不会自动挑。 */}
       <ChannelCard title={t("default_models_channel_music")} description={t("default_music_model_hint")}>
         {musicBackends.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            <ProviderModelSelect
-              value={currentMusicBackend}
-              options={musicBackends}
-              providerNames={allProviderNames}
-              modelNames={allModelNames}
-              onChange={(v) => setFields((prev) => ({ ...prev, default_music_backend: v }))}
-              allowDefault
-              defaultLabel={t("music_model_unset")}
-              aria-label={t("default_music_model")}
-            />
-            <ConnectionSelect
-              backendValue={currentMusicBackend}
-              value={fields.default_music_backend_credential_id}
-              onChange={(next) => setFields((prev) => ({ ...prev, default_music_backend_credential_id: next }))}
-              label={t("connection_field_label", { field: t("default_music_model") })}
-            />
-            <ModelLifecycleNotice
-              value={currentMusicBackend}
-              notices={lifecycle}
-              modelNames={allModelNames}
-              onSwitch={(v) => setFields((prev) => ({ ...prev, default_music_backend: v }))}
-            />
-          </div>
+          <DefaultBackendFields
+            value={currentMusicBackend}
+            options={musicBackends}
+            providerNames={allProviderNames}
+            modelNames={allModelNames}
+            lifecycle={lifecycle}
+            label={t("default_music_model")}
+            defaultLabel={t("music_model_unset")}
+            credentialId={fields.default_music_backend_credential_id}
+            onChange={(v) => setFields((prev) => ({ ...prev, default_music_backend: v }))}
+            onCredentialChange={(next) => setFields((prev) => ({ ...prev, default_music_backend_credential_id: next }))}
+          />
         ) : (
           <NoProviders message={t("no_music_providers_hint")} />
         )}
@@ -650,30 +681,18 @@ export function MediaModelSection() {
       {/* 音效：剪辑时「生成音效」与 Agent 的 generate_sfx 用它；没设定就不能生成，不会自动挑。 */}
       <ChannelCard title={t("default_models_channel_sfx")} description={t("default_sfx_model_hint")}>
         {sfxBackends.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            <ProviderModelSelect
-              value={currentSfxBackend}
-              options={sfxBackends}
-              providerNames={allProviderNames}
-              modelNames={allModelNames}
-              onChange={(v) => setFields((prev) => ({ ...prev, default_sfx_backend: v }))}
-              allowDefault
-              defaultLabel={t("sfx_model_unset")}
-              aria-label={t("default_sfx_model")}
-            />
-            <ConnectionSelect
-              backendValue={currentSfxBackend}
-              value={fields.default_sfx_backend_credential_id}
-              onChange={(next) => setFields((prev) => ({ ...prev, default_sfx_backend_credential_id: next }))}
-              label={t("connection_field_label", { field: t("default_sfx_model") })}
-            />
-            <ModelLifecycleNotice
-              value={currentSfxBackend}
-              notices={lifecycle}
-              modelNames={allModelNames}
-              onSwitch={(v) => setFields((prev) => ({ ...prev, default_sfx_backend: v }))}
-            />
-          </div>
+          <DefaultBackendFields
+            value={currentSfxBackend}
+            options={sfxBackends}
+            providerNames={allProviderNames}
+            modelNames={allModelNames}
+            lifecycle={lifecycle}
+            label={t("default_sfx_model")}
+            defaultLabel={t("sfx_model_unset")}
+            credentialId={fields.default_sfx_backend_credential_id}
+            onChange={(v) => setFields((prev) => ({ ...prev, default_sfx_backend: v }))}
+            onCredentialChange={(next) => setFields((prev) => ({ ...prev, default_sfx_backend_credential_id: next }))}
+          />
         ) : (
           <NoProviders message={t("no_sfx_providers_hint")} />
         )}
