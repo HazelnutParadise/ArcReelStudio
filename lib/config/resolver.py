@@ -336,8 +336,8 @@ def project_video_backend_ids(
 
     纯读 project.json、不查 DB，供没有配置库会话的同步路径（归档导入按自报身份查 registry 档位）
     使用：桶键与默认键都在同一个明文文件里，不该把桶口径降成项目默认层——否则配了
-    ``video_provider_r2v`` 的参考生视频项目会拿 ``video_backend`` 的档位取档。层内取值口径与
-    ``_resolve_layered_backend`` 的项目层一致（含裸供应商覆盖）。
+    ``video_provider_r2v`` 的参考生视频项目会拿 ``video_backend`` 的档位取档。层内只认 ``provider/model``：只写供应商的键
+    跳过（运行时那一层报「没有选定模型」，这里只影响归档导入取档位）。
     """
     bucket = generation_type or video_bucket_for_generation_mode(project.get("generation_mode"))
     keys = _VIDEO_LAYERED_KEYS[bucket]
