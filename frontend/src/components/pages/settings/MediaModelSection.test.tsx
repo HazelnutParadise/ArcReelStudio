@@ -220,9 +220,9 @@ describe("MediaModelSection", () => {
     expect(screen.getByRole("combobox", { name: "默认图片模型" })).toHaveTextContent(
       "自动选择（当前：gemini · nano-banana）",
     );
-    // 自动推断按用途过滤：图生图选不出模型时如实说没有可用供应商
+    // 自动推断按用途过滤：图生图选不出模型时如实说没有默认模型
     await user.click(screen.getAllByText("按用途指定模型")[1]);
-    expect(screen.getByRole("combobox", { name: "图生图" })).toHaveTextContent("自动选择（没有可用的供应商）");
+    expect(screen.getByRole("combobox", { name: "图生图" })).toHaveTextContent("自动选择（没有默认模型）");
   });
 
   it("persists a sub-field selection to its own settings key", async () => {

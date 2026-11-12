@@ -9,6 +9,10 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.sql.dml import Insert
+
+from lib.catalog import query as catalog
 from lib.config.recommended_models import (
     RecommendationChange,
     StaleRecommendationError,
@@ -16,10 +20,6 @@ from lib.config.recommended_models import (
     recommendation_changes,
     seed_provider_recommendations,
 )
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from sqlalchemy.sql.dml import Insert
-
-from lib.catalog import query as catalog
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.config.resolver import ConfigResolver, ProviderModel
 from lib.config.service import ConfigService
@@ -378,6 +378,44 @@ class TestApplyingARecommendationAndTheConnectionSideKey:
         settings = await _settings(session_factory)
         assert settings["default_image_backend"] == f"ark/{NEXT_IMAGE}"
         assert settings["default_image_backend_credential_id"] == str(chosen)
+
+
+async def test_a_default_saved_between_the_read_and_the_write_of_seeding_is_kept(concurrent_session_factory):
+    """首次配置读完全局默认模型、写入推荐之前，用户在另一个事务里存下默认模型并提交：用户的值不被推荐覆盖。
+
+    握手放在数据库边界（首次配置的第一条写语句之前），用户的写入走独立连接；SQLite 文件库与 PostgreSQL 下都成立。
+    """
+    sessions = concurrent_session_factory
+    user_value = "openai/gpt-5.4"
+
+    class _UserSavesBeforeFirstWrite(AsyncSession):
+        """执行第一条写语句前，让用户在另一个会话里存下文本默认模型并提交。"""
+
+        saved = False
+
+        async def execute(self, statement, *args, **kwargs):
+            if isinstance(statement, Insert) and not self.saved:
+                self.saved = True
+                await _set(sessions, default_text_backend=user_value)
+            return await super().execute(statement, *args, **kwargs)
+
+    racing = async_sessionmaker(sessions.kw["bind"], class_=_UserSavesBeforeFirstWrite, expire_on_commit=False)
+    async with racing() as session:
+        await seed_provider_recommendations(session, "ark")
+        await session.commit()
+
+    settings = await _settings(sessions)
+    assert settings["default_text_backend"] == user_value
+    assert settings["default_video_backend"] == f"ark/{_recommended('ark', 'video')}"
+
+
+async def test_seeding_fills_a_default_that_was_cleared_to_an_empty_value(session_factory):
+    """键还在但值为空（用户清空过）算没有设置，首次配置写入推荐。"""
+    await _set(session_factory, default_image_backend="")
+
+    await _seed(session_factory, "ark")
+
+    assert (await _settings(session_factory))["default_image_backend"] == f"ark/{_recommended('ark', 'image')}"
 
 
 async def test_concurrent_acknowledgements_of_two_media_types_are_both_kept(concurrent_session_factory, monkeypatch):

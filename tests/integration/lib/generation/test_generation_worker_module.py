@@ -551,6 +551,23 @@ class TestGenerationWorker:
         assert queue.failed == [("t_deleted", "[project_deleted_during_task]")]
 
     @pytest.mark.asyncio
+    async def test_process_task_without_a_default_model_stores_a_locale_neutral_code(self, monkeypatch):
+        """执行时这一媒体类型没有默认模型：落库的是带 media_type 的失败码，不是解析器的中文原文。"""
+        from lib.config.resolver import NoAvailableProviderError
+
+        queue = FakeWorkerQueue()
+        worker = GenerationWorker(
+            queue=queue, executor=stub_executors.execute, resume_executor=stub_executors.execute_resume
+        )
+
+        async def _raise_no_default_model(_task, **_kwargs):
+            raise NoAvailableProviderError("没有设置 image 默认模型。", media_type="image")
+
+        monkeypatch.setattr(stub_executors, "generation", _raise_no_default_model)
+        await worker._process_task({"task_id": "t_no_default"}, claimed_provider_id="test")
+        assert queue.failed == [("t_no_default", '[default_model_not_set] {"media_type": "image"}')]
+
+    @pytest.mark.asyncio
     async def test_process_task_script_edit_error_unregistered_key_falls_back(self, monkeypatch):
         """两份登记（errors.py 的翻译 key、task_failure.FAILURE_CODE_KEYS 的 worker 编码表）
         靠约定同步，非运行时校验——新 raise 点忘了同步登记时，encode_failure 对未登记 key
