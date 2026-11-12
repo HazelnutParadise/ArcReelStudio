@@ -117,6 +117,7 @@ from server.services.project.project_activity import project_last_activity_at
 from server.services.project.project_archive import (
     ProjectArchiveService,
     ProjectArchiveValidationError,
+    disabled_recommendations_on,
     provider_asset_link_archive_on,
 )
 from server.services.project.project_cover import resolve_project_cover
@@ -201,6 +202,7 @@ async def get_archive_service() -> ProjectArchiveService:
         retire_project=retire_project_on(bridge, async_session_factory),
         formal_commit=formal_commit_on(bridge, async_session_factory),
         provider_asset_links=provider_asset_link_archive_on(bridge, async_session_factory),
+        disabled_recommendations=disabled_recommendations_on(bridge, async_session_factory),
     )
 
 

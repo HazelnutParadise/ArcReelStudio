@@ -46,6 +46,7 @@ from lib.asset_library.links import (
     archivable_links,
 )
 from lib.catalog import query as catalog
+from lib.catalog.builtin_models import disabled_builtin_models
 from lib.config.resolver import VideoGenerationType, project_video_backend_ids
 from lib.episode.episode_ledger import parse_positive_episode_num
 from lib.infra.api_errors import BadGatewayError
@@ -83,6 +84,13 @@ from lib.project.project_migration_report import (
 from lib.project.project_migrations.runner import migrate_project_dir
 from lib.project.project_migrations.v1_to_v2_normalize_providers import (
     migrate_project_dict as normalize_legacy_providers,
+)
+from lib.project.project_migrations.v19_to_v20_bare_provider_models import TARGET_SCHEMA_VERSION as V20
+from lib.project.project_migrations.v19_to_v20_bare_provider_models import (
+    ExcludedRecommendations,
+)
+from lib.project.project_migrations.v19_to_v20_bare_provider_models import (
+    migrate_project_dict as rewrite_bare_provider_models,
 )
 from lib.project.project_schema import project_schema_is_current
 from lib.project.resource_paths import (
@@ -143,6 +151,25 @@ def provider_asset_link_archive_on(
 ) -> ProviderAssetLinkArchive:
     """给工作线程里的导出与导入用的关联读写：投回 ``bridge`` 的事件循环执行，只能在工作线程里使用。"""
     return _LinkArchiveOnLoop(bridge, session_factory)
+
+
+#: 归档导入时用户停用的内置供应商模型（供应商 id → 模型键），v19→v20 不把它们写进导入的项目。
+DisabledRecommendations = Callable[[], ExcludedRecommendations]
+
+
+def disabled_recommendations_on(
+    bridge: EventLoopBridge, session_factory: async_sessionmaker[AsyncSession]
+) -> DisabledRecommendations:
+    """导入这一刻用户停用的内置供应商模型：投回 ``bridge`` 的事件循环查库，只能在工作线程里使用。"""
+
+    async def _query() -> ExcludedRecommendations:
+        async with session_factory() as session:
+            return await disabled_builtin_models(session)
+
+    def _load() -> ExcludedRecommendations:
+        return bridge.run(_query())
+
+    return _load
 
 
 logger = logging.getLogger(__name__)
@@ -408,6 +435,7 @@ class ProjectArchiveService:
         retire_project: RetireProject | None = None,
         formal_commit: FormalCommit | None = None,
         provider_asset_links: ProviderAssetLinkArchive | None = None,
+        disabled_recommendations: DisabledRecommendations | None = None,
     ):
         """``retire_project`` 收尾覆盖导入替换掉的现有项目，覆盖现有项目时必需。
 
@@ -416,11 +444,17 @@ class ProjectArchiveService:
 
         ``provider_asset_links`` 读写归档携带的供应商素材关联（:func:`provider_asset_link_archive_on`）；缺省时导出
         不带关联，导入也不写入。
+
+        ``disabled_recommendations`` 给出导入这一刻用户停用的模型（:func:`disabled_recommendations_on`）：旧归档里只写了
+        内置供应商的模型字段补推荐时跳过它们，字段留裸值；缺省时直接用目录的推荐。
         """
         self.project_manager = project_manager
         self._retire_project = retire_project
         self._formal_commit = formal_commit
         self._provider_asset_links = provider_asset_links
+        self._disabled_recommendations = disabled_recommendations
+        # 每次导入开始时取一次，修复与迁移用同一份
+        self._excluded_recommendations: ExcludedRecommendations = {}
         self.validator = DataValidator(projects_dir=str(project_manager.projects_dir))
 
     @asynccontextmanager
@@ -704,6 +738,7 @@ class ProjectArchiveService:
                 errors=[ValidationMessage("arch_conflict_policy_unsupported", {"value": conflict_policy})],
             )
 
+        self._excluded_recommendations = self._disabled_recommendations() if self._disabled_recommendations else {}
         try:
             with zipfile.ZipFile(archive_path) as archive:
                 members = self._scan_archive_members(archive)
@@ -756,7 +791,7 @@ class ProjectArchiveService:
                     except _ARTIFACT_ACTIVATION_ERRORS as exc:
                         self._raise_artifact_activation_validation_error(diagnostics, exc)
                     try:
-                        migrate_project_dir(staging_dir)
+                        migrate_project_dir(staging_dir, excluded_recommendations=self._excluded_recommendations)
                     except Exception as exc:
                         self._raise_migration_validation_error(diagnostics, exc)
                     if preserved_manifest is not None and staged:
@@ -1741,8 +1776,12 @@ class ProjectArchiveService:
         # 偏移由之后的预检 / 执行取档承担。
         # provider 先在副本上归一化：本方法跑在 migrate_project_dir 之前，存量归档里可能还是
         # legacy 别名（如 gemini/…），registry 查不到会让档位解析落空，而迁移幂等、归一化之后
-        # 再无机会取档。归一化是纯函数且幂等，不影响随后的正式迁移。
+        # 再无机会取档。v20 之前的归档里只写了供应商的旧值同样先按导入这一刻的推荐补上模型（v19→v20 的同一改写），
+        # 否则查不到档位。两步都是纯函数且幂等，不影响随后的正式迁移。
         normalized_project = normalize_legacy_providers(project_payload)
+        schema_version = normalized_project.get("schema_version")
+        if not isinstance(schema_version, int) or schema_version < V20:
+            normalized_project = rewrite_bare_provider_models(normalized_project, self._excluded_recommendations)
         migrated, migration_warnings = migrate_unit_durations(
             raw_units, supported_durations=_registry_supported_durations(normalized_project)
         )
