@@ -9,7 +9,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Literal
 
-from lib.audio_library.library import audio_display_name
 from lib.audio_library.service import AudioDraft, AudioErrorKind, AudioLibraryKind, AudioLibraryService, AudioMessages
 from lib.infra.subprocess_deadline import Spawner
 from lib.project.project_manager import ProjectManager
@@ -61,11 +60,6 @@ _ERROR_CODES: Mapping[AudioErrorKind, SfxErrorCode] = {
 
 def _error(kind: AudioErrorKind, message: str, /, **params: Any) -> SfxError:
     return SfxError(_ERROR_CODES[kind], message, **params)
-
-
-def sfx_display_name(filename: str) -> str:
-    """音效的显示名取文件名去掉扩展名，过长截断；取不出时为「音效」。"""
-    return audio_display_name(filename, max_length=SFX_NAME_MAX_LENGTH, fallback="音效")
 
 
 def _sound(draft: AudioDraft) -> SfxSound:
@@ -122,4 +116,4 @@ class SfxLibraryService(AudioLibraryService[SfxSound]):
         super().__init__(SFX_LIBRARY, projects, spawn=spawn)
 
 
-__all__ = ["SFX_LIBRARY", "SfxError", "SfxErrorCode", "SfxLibraryService", "sfx_display_name"]
+__all__ = ["SFX_LIBRARY", "SfxError", "SfxErrorCode", "SfxLibraryService"]

@@ -9,7 +9,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Literal
 
-from lib.audio_library.library import audio_display_name
 from lib.audio_library.service import AudioDraft, AudioErrorKind, AudioLibraryKind, AudioLibraryService, AudioMessages
 from lib.bgm.library import (
     BGM_DIR,
@@ -61,11 +60,6 @@ _ERROR_CODES: Mapping[AudioErrorKind, BgmErrorCode] = {
 
 def _error(kind: AudioErrorKind, message: str, /, **params: Any) -> BgmError:
     return BgmError(_ERROR_CODES[kind], message, **params)
-
-
-def bgm_display_name(filename: str) -> str:
-    """BGM 的显示名取文件名去掉扩展名，过长截断；取不出时为「BGM」。"""
-    return audio_display_name(filename, max_length=BGM_NAME_MAX_LENGTH, fallback="BGM")
 
 
 def _track(draft: AudioDraft) -> BgmTrack:
@@ -122,4 +116,4 @@ class BgmLibraryService(AudioLibraryService[BgmTrack]):
         super().__init__(BGM_LIBRARY, projects, spawn=spawn)
 
 
-__all__ = ["BGM_LIBRARY", "BgmError", "BgmErrorCode", "BgmLibraryService", "bgm_display_name"]
+__all__ = ["BGM_LIBRARY", "BgmError", "BgmErrorCode", "BgmLibraryService"]
