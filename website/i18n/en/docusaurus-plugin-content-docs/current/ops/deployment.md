@@ -174,6 +174,8 @@ The locations of `pgdata/`, `projects/`, and `claude_data/` are likewise set by 
 
 ArcReel runs Alembic migrations at application startup to upgrade the database schema to the current version.
 
+The schema is built from a single baseline migration. A database created by upstream ArcReel or by an early development build of this project has no matching starting point; startup stops with an error that the migration revision cannot be found, so start with a new database instead.
+
 At startup, ArcReel also converts historical call output paths to project-relative paths when it can identify the project root, so usage detail thumbnails can survive a data directory move. Ambiguous old paths remain unchanged and are logged. Queued legacy text tasks use the current data directory; any old directory in their payload is ignored.
 
 You must still create a backup before upgrading. Automatic migration handles schema upgrades; it does not replace a rollback-capable data backup.
