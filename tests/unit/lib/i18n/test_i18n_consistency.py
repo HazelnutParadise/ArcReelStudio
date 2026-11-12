@@ -321,3 +321,9 @@ def test_missing_default_model_messages_point_to_the_default_models_page(locale,
 @pytest.mark.parametrize("locale", SUPPORTED_LOCALES)
 def test_model_not_selected_message_names_the_provider_placeholder(locale):
     assert "{provider}" in MESSAGES[locale]["model_not_selected"]
+
+
+@pytest.mark.parametrize("locale", SUPPORTED_LOCALES)
+def test_recommendation_changed_again_message_exists(locale):
+    """推荐在提示之后又变了：确认接口返回 409 时界面显示的文案，每种语言都要有。"""
+    assert MESSAGES[locale]["recommendation_changed_again"].strip()
