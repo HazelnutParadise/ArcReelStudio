@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -14,6 +15,12 @@ from lib.db.repositories.credential_repository import CredentialRepository
 from server.routers import providers
 from server.services.credential_references import CredentialReferences
 from tests.auth_deps import AUTH_DEPENDENCIES, override_auth
+
+
+@pytest.fixture(autouse=True)
+def _no_recommendation_seeding(monkeypatch: pytest.MonkeyPatch) -> None:
+    """这里的会话是替身，首个连线写入推荐要真库；写入推荐另由 test_provider_first_connection_seeding.py 在真库上验证。"""
+    monkeypatch.setattr(providers, "seed_provider_recommendations", AsyncMock())
 
 
 def _make_app() -> tuple[FastAPI, MagicMock]:

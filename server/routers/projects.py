@@ -39,6 +39,7 @@ from lib.catalog.errors import ModelNotInCatalogError
 from lib.config.model_setting_keys import CREDENTIAL_KEY_SUFFIX
 from lib.config.resolver import (
     ConfigResolver,
+    NoAvailableProviderError,
     VideoBucketCapabilityError,
     caps_generation_mode,
     video_bucket_for_generation_mode,
@@ -116,6 +117,7 @@ from server.services.project.project_activity import project_last_activity_at
 from server.services.project.project_archive import (
     ProjectArchiveService,
     ProjectArchiveValidationError,
+    disabled_recommendations_on,
     provider_asset_link_archive_on,
 )
 from server.services.project.project_cover import resolve_project_cover
@@ -200,6 +202,7 @@ async def get_archive_service() -> ProjectArchiveService:
         retire_project=retire_project_on(bridge, async_session_factory),
         formal_commit=formal_commit_on(bridge, async_session_factory),
         provider_asset_links=provider_asset_link_archive_on(bridge, async_session_factory),
+        disabled_recommendations=disabled_recommendations_on(bridge, async_session_factory),
     )
 
 
@@ -685,8 +688,8 @@ async def get_video_capabilities(
 
     `video_backend`（"provider/model"）用于设置表单里尚未保存的候选模型：不带该参数时按已
     落盘配置解析，带上则按候选模型 × 本项目的生成模式解析，使 voice_consistency 等二维派生值
-    对应用户当前选中的模型而非上一次保存的模型；候选身份先过所属桶能力闸。裸 provider（无 "/"）按其 registry
-    默认视频 model 补全，与 project.json 存量裸 provider 覆盖同口径（见 `_parse_project_provider`）。
+    对应用户当前选中的模型而非上一次保存的模型；候选身份先过所属桶能力闸。只写供应商、没写模型的值回 400
+    ``video_backend_malformed``，不按目录推荐补全（docs/adr/0130）。
 
     `resolution` / `uses_reference_images` 是表单里编辑中的未保存值：`uses_reference_images` 决定
     按哪个任务类型桶解析（缺省按项目生成模式），`resolution` 作为「覆盖分辨率」交给该桶的视频请求
@@ -1910,13 +1913,18 @@ async def generate_overview(name: str, _t: Translator):
         return BadRequestError("text_provider_not_configured")
 
     try:
-        # EmptySourceError / PydanticValidationError / ModelNotInCatalogError 都是 ValueError 子类，须放行给
-        # 下方各自的处理，不能被 domain_error_on_value_error 的通用 ValueError 处理误判为「未配置供应商」
+        # EmptySourceError / PydanticValidationError / ModelNotInCatalogError / NoAvailableProviderError 都是 ValueError
+        # 子类，须放行给下方各自的处理，不能被 domain_error_on_value_error 的通用 ValueError 处理误判为「未配置供应商」
         with (
             project_change_source("webui"),
             domain_error_on_value_error(
                 _provider_not_configured,
-                extra_passthrough=(EmptySourceError, PydanticValidationError, ModelNotInCatalogError),
+                extra_passthrough=(
+                    EmptySourceError,
+                    PydanticValidationError,
+                    ModelNotInCatalogError,
+                    NoAvailableProviderError,
+                ),
             ),
         ):
             overview = await get_project_manager().generate_overview(name)
@@ -1937,6 +1945,10 @@ async def generate_overview(name: str, _t: Translator):
     except EmptySourceError as e:
         logger.warning("生成概述参数错误: name=%s (%s)", name, e)
         raise BadRequestError("overview_source_empty") from e
+    except NoAvailableProviderError as exc:
+        # 没有文本默认模型：指引到默认模型设置，不说成未配置供应商（带用户指引的异常先于宽捕获处理）
+        logger.warning("生成概述缺少文本默认模型: name=%s", name)
+        raise BadRequestError("text_default_model_not_set") from exc
     except json.JSONDecodeError as exc:
         # 供应商解析链路内部会重新 load_project，project.json 损坏时不能误判为「未配置供应商」
         logger.exception("生成概述失败：项目数据损坏 name=%s", name)

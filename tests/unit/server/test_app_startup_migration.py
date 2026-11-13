@@ -100,3 +100,41 @@ async def test_data_root_layout_migration_runs_before_every_project_walk(tmp_pat
     )
     assert not (project_dir / stale_backup.name).exists()
     assert (project_dir / "CLAUDE.md").is_file()
+
+
+@pytest.mark.asyncio
+async def test_catalog_layers_load_before_project_migrations(tmp_path, monkeypatch):
+    """项目迁移按目录的推荐改写裸供应商：官方同步数据、用户修改的条目副本与用户添加的模型都装入之后才跑迁移（docs/adr/0130）。"""
+    data_root = tmp_path / "data"
+    DataRootLayout(data_root).projects_dir.mkdir(parents=True)
+    events: list[str] = []
+
+    def recording(name: str):
+        async def _load(*_args, **_kwargs) -> None:
+            events.append(name)
+
+        return _load
+
+    real_run_project_migrations = app_module.run_project_migrations
+
+    def run_project_migrations(*args, **kwargs):
+        events.append("project-migrations")
+        return real_run_project_migrations(*args, **kwargs)
+
+    monkeypatch.setenv("ARCREEL_DATA_DIR", str(data_root))
+    monkeypatch.setattr("lib.project.project_manager.get_project_manager", lambda: ProjectManager(data_root))
+    monkeypatch.setattr("lib.catalog.official_sync.load_synced_data", recording("synced-data"))
+    monkeypatch.setattr("lib.catalog.user_entries.reload_user_entries", recording("user-entries"))
+    monkeypatch.setattr("server.routers.provider_models.reload_user_added_models", recording("user-added-models"))
+    monkeypatch.setattr(app_module, "run_project_migrations", run_project_migrations)
+    stub_lifespan_dependencies(monkeypatch)
+    monkeypatch.setattr(app_module, "migrate_local_transcripts_to_store", _noop_async)
+
+    app = app_module.app
+    app.state = SimpleNamespace()
+
+    async with app_module.lifespan(app):
+        pass
+
+    # 三层按叠加顺序装入（官方数据 → 用户修改的条目 → 用户添加的模型），迁移最后跑
+    assert events == ["synced-data", "user-entries", "user-added-models", "project-migrations"]

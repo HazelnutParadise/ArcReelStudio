@@ -18,7 +18,7 @@ function makeConfigResponse(overrides?: Partial<GetSystemConfigResponse["setting
     settings: {
       default_video_backend: "gemini/veo-3",
       default_image_backend: "gemini/imagen-4",
-      default_text_backend: "",
+      default_text_backend: "gemini/gemini-3-flash",
       text_backend_simple: "",
       text_backend_complex: "",
       video_generate_audio: true,
@@ -193,6 +193,38 @@ describe("SystemConfigPage", () => {
       expect(within(nav).getByRole("link", { name: "供应商" })).toHaveAttribute("aria-current", "page"),
     );
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+
+  it("有供应商却没有默认模型时，在「默认模型」分区与其侧栏项提示", async () => {
+    // 内置供应商的推荐只在首次配置时写进默认模型，运行时不按推荐挑选：默认模型留空时生成会失败
+    vi.spyOn(API, "getSystemConfig").mockResolvedValue(
+      makeConfigResponse({ default_video_backend: "", text_backend_complex: "gemini/gemini-3-pro" }),
+    );
+
+    renderPage("/app/settings", "section=default-models");
+
+    const notice = await screen.findByRole("note", { name: "未设置视频默认模型" });
+    expect(notice).toHaveTextContent("默认模型留空时无法生成");
+    const nav = screen.getByRole("navigation", { name: "设置" });
+    const flagged = within(nav)
+      .getAllByRole("link")
+      .filter((link) => within(link).queryByRole("img", { name: "配置不完整" }))
+      .map((link) => link.textContent);
+    expect(flagged).toEqual(["默认模型"]);
+    expect(useConfigStatusStore.getState().isComplete).toBe(false);
+  });
+
+  it("读不到自动选择预览时，不把空的默认模型报成配置问题", async () => {
+    vi.spyOn(API, "getAutoBackends").mockRejectedValue(new Error("boom"));
+    vi.spyOn(API, "getSystemConfig").mockResolvedValue(makeConfigResponse({ default_video_backend: "" }));
+
+    renderPage("/app/settings", "section=default-models");
+
+    await waitFor(() => expect(useConfigStatusStore.getState().initialized).toBe(true));
+    expect(screen.queryByRole("note", { name: "未设置视频默认模型" })).not.toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: "设置" });
+    expect(within(nav).queryByRole("img", { name: "配置不完整" })).not.toBeInTheDocument();
+    expect(useConfigStatusStore.getState().isComplete).toBe(true);
   });
 
   it("缺少供应商时只在「供应商」分区与其侧栏项提示，其他分区不出现提示", async () => {

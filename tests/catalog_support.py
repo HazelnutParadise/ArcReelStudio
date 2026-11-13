@@ -20,6 +20,13 @@ def install_catalog(monkeypatch: pytest.MonkeyPatch, data: CatalogData) -> None:
     monkeypatch.setattr(query, "factory_snapshot", lambda: data)
 
 
+#: 与出厂快照不同的推荐：期望值只能来自「迁移这一刻目录的推荐」，不是写死的出厂默认。
+ARK_VIDEO = "doubao-seedance-2-0-260128"
+OPENAI_IMAGE = "gpt-image-2.5-flare"
+GROK_TEXT = "grok-4.5"
+DASHSCOPE_TTS = "qwen3-tts-flash"
+
+
 def set_catalog_today(monkeypatch: pytest.MonkeyPatch, day: date) -> None:
     """让目录读模型在本用例内把 ``day`` 当作今天（UTC 日期），判定生命周期用；可在用例中途再次调用跨日。"""
     monkeypatch.setattr(lifecycle, "utc_today", lambda: day)
@@ -43,6 +50,18 @@ def with_min_app_version(data: CatalogData, provider_id: str, api_model_name: st
         for model in listing.models
     )
     providers = {**data.builtin_providers, provider_id: replace(listing, models=models)}
+    return replace(data, builtin_providers=providers)
+
+
+def with_recommendation(
+    data: CatalogData, provider_id: str, media_type: str, api_model_name: str | None
+) -> CatalogData:
+    """改写内置供应商在这个媒体类型下的推荐模型（目录里的默认模型）；``None`` 即去掉这一项。"""
+    listing = data.builtin_providers[provider_id]
+    defaults = {key: value for key, value in listing.defaults.items() if key != media_type}
+    if api_model_name is not None:
+        defaults[media_type] = api_model_name
+    providers = {**data.builtin_providers, provider_id: replace(listing, defaults=defaults)}
     return replace(data, builtin_providers=providers)
 
 

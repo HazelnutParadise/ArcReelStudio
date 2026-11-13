@@ -407,7 +407,7 @@ describe("ProjectSettingsPage – 模型分页的覆盖来源", () => {
 
     expect(await screen.findByText("跟随全局 · 自动选择（当前：veo-3）")).toBeInTheDocument();
     expect(screen.getByText("跟随全局 · 自动选择（当前：nano-banana）")).toBeInTheDocument();
-    expect(screen.getByText("跟随全局 · 自动选择（没有可用的供应商）")).toBeInTheDocument();
+    expect(screen.getByText("跟随全局 · 自动选择（没有默认模型）")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /^默认视频模型$/ })).toHaveTextContent(/自动选择（当前：.*veo-3）/);
   });
 

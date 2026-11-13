@@ -18,6 +18,7 @@ from typing import Literal, Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from lib.config.recommended_models import seed_provider_recommendations
 from lib.config.registry import PROVIDER_REGISTRY, LoginKind
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.subscriptions.claude_login import ClaudeLoginError, ClaudeLoginManager
@@ -209,6 +210,9 @@ class SubscriptionLoginService:
             else:
                 created = await repo.create(provider=provider_id, name=name, api_key=stored_secret)
                 credential_id = created.id
+                if created.is_active:
+                    # 第一条连线生效：空的全局默认模型写入该供应商的推荐（docs/adr/0130）
+                    await seed_provider_recommendations(session, provider_id)
             if provider_id in HOME_BASED_PROVIDERS:
                 await asyncio.to_thread(install_credentials, provider_id, credential_id, secret)
             await session.commit()

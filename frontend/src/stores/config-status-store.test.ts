@@ -104,6 +104,94 @@ describe("config-status-store", () => {
     expect(isEmbeddedAgentConfigured).toBe(true);
   });
 
+  describe("默认模型缺失", () => {
+    const NO_AUTO = { t2i: null, i2i: null, i2v: null, r2v: null, text: null };
+
+    function mockReadyProvider() {
+      vi.spyOn(API, "getProviders").mockResolvedValue(
+        makeProviders([
+          {
+            id: "gemini",
+            display_name: "Google Gemini",
+            status: "ready",
+            media_types: ["image", "video", "text"],
+            capabilities: [],
+            credential_count: 1,
+            models: {},
+          },
+        ]),
+      );
+      vi.spyOn(API, "listCustomProviders").mockResolvedValue({ providers: [] });
+    }
+
+    const defaultModelIssues = () =>
+      useConfigStatusStore
+        .getState()
+        .issues.filter((issue) => issue.section === "default-models")
+        .map((issue) => issue.key);
+
+    it("flags a media type with a provider but no default model in any layer or auto preview", async () => {
+      mockReadyProvider();
+      vi.spyOn(API, "getAutoBackends").mockResolvedValue(NO_AUTO);
+      vi.spyOn(API, "getSystemConfig").mockResolvedValue(
+        makeConfigResponse({ default_video_backend: "", default_text_backend: "gemini/gemini-3-flash" }),
+      );
+
+      await useConfigStatusStore.getState().fetch();
+
+      expect(defaultModelIssues()).toEqual(["no-default-video-model"]);
+      expect(useConfigStatusStore.getState().isComplete).toBe(false);
+    });
+
+    it("accepts a default set only in a purpose-specific key, or only by the auto preview", async () => {
+      mockReadyProvider();
+      vi.spyOn(API, "getAutoBackends").mockResolvedValue({
+        ...NO_AUTO,
+        i2i: "gemini/imagen-4",
+        t2i: "gemini/imagen-4",
+      });
+      vi.spyOn(API, "getSystemConfig").mockResolvedValue(
+        makeConfigResponse({
+          default_video_backend: "",
+          default_video_backend_i2v: "gemini/veo-3",
+          default_video_backend_r2v: "gemini/veo-3",
+          default_image_backend: "",
+          default_text_backend: "",
+          text_backend_simple: "gemini/gemini-3-flash",
+          text_backend_complex: "gemini/gemini-3-pro",
+        }),
+      );
+
+      await useConfigStatusStore.getState().fetch();
+
+      expect(defaultModelIssues()).toEqual([]);
+    });
+
+    it("reports no default-model issue when the auto preview cannot be read", async () => {
+      mockReadyProvider();
+      vi.spyOn(API, "getAutoBackends").mockRejectedValue(new Error("boom"));
+      vi.spyOn(API, "getSystemConfig").mockResolvedValue(
+        makeConfigResponse({ default_video_backend: "", default_image_backend: "", default_text_backend: "" }),
+      );
+
+      await useConfigStatusStore.getState().fetch();
+
+      expect(useConfigStatusStore.getState().initialized).toBe(true);
+      expect(defaultModelIssues()).toEqual([]);
+    });
+
+    it("does not add a default-model issue for a media type that has no provider at all", async () => {
+      vi.spyOn(API, "getProviders").mockResolvedValue(makeProviders());
+      vi.spyOn(API, "listCustomProviders").mockResolvedValue({ providers: [] });
+      vi.spyOn(API, "getAutoBackends").mockResolvedValue(NO_AUTO);
+      vi.spyOn(API, "getSystemConfig").mockResolvedValue(makeConfigResponse({ default_video_backend: "" }));
+
+      await useConfigStatusStore.getState().fetch();
+
+      expect(defaultModelIssues()).toEqual([]);
+    });
+  });
+
   it("allows fetch to retry after a transient error", async () => {
     vi.spyOn(API, "getProviders")
       .mockRejectedValueOnce(new Error("temporary failure"))

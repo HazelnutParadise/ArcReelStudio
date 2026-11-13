@@ -102,6 +102,13 @@ The priority is generally:
 Project-level configuration > Global default configuration
 ```
 
+Each preset provider has one recommended model per media type, maintained in the official data and marked "Recommended" in the provider's model list. A recommendation is only a suggestion; generation always uses the model selected in global and project settings. Recommendations come into play only at these moments:
+
+- When a preset provider's first connection becomes active (an API key, an uploaded credential, or a subscription login), text, image, video, and narration defaults that are not set yet get that provider's recommended model; existing settings are kept. Narration only takes a recommendation that can do text-to-speech, and music and sound effects are never set automatically.
+- When the preset provider of a global default model changes its recommendation, or a media type has no default model and a configured preset provider offers a new recommendation, a notice appears below that default model in "Global Settings → Default Models". You can switch to the recommendation or keep the current setting; after that the notice stays away until the recommendation changes again. ArcReel never switches models for you.
+
+When neither global nor project settings have a default model for a media type, generation uses the model marked as default in a custom provider; without one it fails, and the settings page also reports the missing default model. Older projects whose settings name only a preset provider without a model get the recommendation of the time when they are upgraded.
+
 Project-level overrides are suitable when:
 
 - A project needs a specific visual style;
@@ -115,12 +122,12 @@ Project-level overrides are suitable when:
 The detail page of a Preset Provider lists all of its models grouped into text, image, video, and audio. Each row shows the model name,
 model ID, and a price summary; models that are retiring, discontinued, or whose calls will be recorded as "Unpriced", are flagged,
 and the retiring flag shows the shutdown date. From its shutdown date (a UTC date) on, a model counts as discontinued: it stays in the list,
-but it no longer appears among any model candidates, even if you enabled it by hand, and it no longer serves as the provider's default model;
+but it no longer appears among any model candidates, even if you enabled it by hand, and it no longer serves as the provider's recommended model;
 calls from places that still select it fail with an error that gives the shutdown date and the officially recommended successor.
 Video tasks already submitted to the vendor before the shutdown date are not affected: when the service restarts and resumes them, their results are retrieved as usual. Tasks submitted after the shutdown date still fail, including tasks queued before it that only reach submission afterwards.
 Use "All / Enabled" to switch what is shown.
 
-Models that need a newer version of ArcReel are listed here too, at the end of their group, labelled "Requires ArcReel ≥ version". The current version cannot call them: the toggle is unavailable and the model settings cannot be opened, and they do not appear among any model candidates or serve as the provider's default model. After you upgrade to the required version, they can be enabled like any other model.
+Models that need a newer version of ArcReel are listed here too, at the end of their group, labelled "Requires ArcReel ≥ version". The current version cannot call them: the toggle is unavailable and the model settings cannot be opened, and they do not appear among any model candidates or serve as the provider's recommended model. After you upgrade to the required version, they can be enabled like any other model.
 
 In global and project settings, when a default model, a per-purpose model, or the narration model is set to a retiring or discontinued model,
 a notice below the dropdown gives the shutdown date and the officially recommended successor.
@@ -130,7 +137,7 @@ ArcReel never switches models for you.
 A notice also appears when the selected model is no longer in the provider's model list: if ArcReel has received its discontinuation details, the notice says it is discontinued and names the officially recommended successor (if any); otherwise it says the model is no longer available and needs to be reselected.
 
 - Turning off a model's switch disables it immediately: disabled models no longer appear among the global and project default model
-  candidates, and when a provider's default model is disabled, automatic selection skips it;
+  candidates, and when a provider's recommended model is disabled, it is not written into default models and no switch to it is offered;
 - A model already selected in settings or a project keeps working after it is disabled; to replace it, pick another one in the default model settings;
 - The old Agnes models that were hidden in earlier versions appear as disabled after upgrading, and can be re-enabled if needed.
 

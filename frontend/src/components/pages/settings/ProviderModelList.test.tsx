@@ -82,7 +82,7 @@ describe("ProviderModelList", () => {
     vi.restoreAllMocks();
   });
 
-  it("groups models by media type with default badge, status flags and price summary", async () => {
+  it("groups models by media type with recommended badge, status flags and price summary", async () => {
     vi.spyOn(API, "listProviderModels").mockResolvedValue({ models: MODELS, discoverable: false });
 
     render(<ProviderModelList providerId="acme" providerName="Acme" />);
@@ -92,7 +92,9 @@ describe("ProviderModelList", () => {
     expect(lists).toHaveLength(2);
     const [text, image] = lists;
     expect(within(text).getByText("Chat One")).toBeInTheDocument();
-    expect(within(text).getByText("默认")).toBeInTheDocument();
+    // 内置供应商的默认模型来自官方数据，只作推荐（docs/adr/0130）：徽标写「推荐」，不再写「默认」
+    expect(within(text).getByText("推荐")).toBeInTheDocument();
+    expect(within(text).queryByText("默认")).not.toBeInTheDocument();
     expect(within(text).getByText("$0.05/百万 token 输入，$0.15–0.3/百万 token 输出")).toBeInTheDocument();
     // 没有显示名时显示模型 ID
     expect(within(text).getAllByText("chat-legacy")).toHaveLength(2);
@@ -103,6 +105,22 @@ describe("ProviderModelList", () => {
     expect(within(image).getByText("已修改")).toBeInTheDocument();
     // 没有模型列表接口的供应商没有「获取模型」
     expect(screen.queryByRole("button", { name: "获取模型" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["zh", "推荐"],
+    ["zh-TW", "推薦"],
+    ["en", "Recommended"],
+    ["ru", "Рекомендуется"],
+    ["vi", "Đề xuất"],
+  ])("labels the recommended model with the %s badge wording", async (language, badge) => {
+    vi.spyOn(API, "listProviderModels").mockResolvedValue({ models: MODELS, discoverable: false });
+    await act(async () => i18n.changeLanguage(language));
+
+    render(<ProviderModelList providerId="acme" providerName="Acme" />);
+
+    const [text] = await screen.findAllByRole("list");
+    expect(within(text).getByText(badge)).toBeInTheDocument();
   });
 
   it("filters to enabled models", async () => {
@@ -202,7 +220,7 @@ describe("ProviderModelList", () => {
 
     await waitFor(() => expect(setEnabled).toHaveBeenCalledWith("acme", "chat-1", false));
     await waitFor(() => expect(toggle).not.toBeChecked());
-    expect(screen.queryByText("默认")).not.toBeInTheDocument();
+    expect(screen.queryByText("推荐")).not.toBeInTheDocument();
     // 上层按已启用的模型判断（如自定义供应商不填密钥时的冲突提示），启停后要通知它
     expect(onModelsChanged).toHaveBeenCalledTimes(1);
   });

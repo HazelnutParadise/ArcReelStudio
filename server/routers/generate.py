@@ -24,7 +24,7 @@ from lib.artifacts.artifact_activation import (
 )
 from lib.artifacts.artifact_manifest import ArtifactKey
 from lib.catalog.errors import ModelNotInCatalogError
-from lib.config.resolver import ConfigResolver, video_bucket_for_generation_mode
+from lib.config.resolver import ConfigResolver, NoAvailableProviderError, video_bucket_for_generation_mode
 from lib.generation.generation_queue import get_generation_queue
 from lib.generation.generation_queue_client import TaskSpec
 from lib.infra.api_errors import BadRequestError, ConflictError, NotFoundError
@@ -394,9 +394,9 @@ async def generate_sfx(project_name: str, req: GenerateSfxRequest, user: Current
 
 
 async def _require_audio_provider_configured(project: dict) -> str:
-    """未配置任何 audio 供应商时直接 400，让用户在生成入口就看到清晰提示。
+    """没有可用的旁白配音模型时直接 400，让用户在生成入口就看到清晰提示。
 
-    解析失败（无全局默认且 auto-resolve 找不到 ready 的 audio 供应商）即视为未配置；
+    各层都没有配音模型设置（也没有自定义供应商的默认配音模型）时指引到默认模型设置，其余解析失败视为未配置；
     解析成功但凭证失效等运行期错误与图片/视频一致，留给 worker 在任务面板暴露。
     返回解析出的 provider_id，入队时直接复用，避免每段重复解析。
     """
@@ -407,6 +407,9 @@ async def _require_audio_provider_configured(project: dict) -> str:
     except ModelNotInCatalogError:
         # 引用的模型不在供应商清单中：交 app 级 handler 返回要求重新选择模型的 400（ValueError 子类，须先于其捕获）
         raise
+    except NoAvailableProviderError as exc:
+        # 没有旁白配音的默认模型：指引到默认模型设置，不是供应商页
+        raise BadRequestError("audio_default_model_not_set") from exc
     except ValueError as exc:
         raise BadRequestError("audio_provider_not_configured") from exc
     return resolved.provider_id
@@ -584,7 +587,7 @@ VOICE_SAMPLE_TEXT_MAX_LENGTH = 200
 async def get_audio_backend_voices(project_name: str, _t: Translator):
     """返回当前项目实际生效的 audio backend 音色枚举，供 TTS 试听弹窗选择音色。
 
-    未配置任何 audio 供应商时返回 configured=false + 空列表，不 400——前端据此禁用
+    没有可用的配音模型（未配置供应商或没有默认配音模型）时返回 configured=false + 空列表，不 400——前端据此禁用
     生成入口而非报错，与角色卡「audio_backend 未配置该入口不可用」的口径一致。
     """
     project = await asyncio.to_thread(get_project_manager().load_project, project_name)

@@ -108,6 +108,21 @@ async def test_default_model_settings_read_and_write_with_the_settings_api_rules
     assert settings["default_image_backend_credential_id"] is None
 
 
+@pytest.mark.parametrize(
+    "field", ["default_text_backend", "default_image_backend", "default_video_backend", "default_audio_backend"]
+)
+async def test_default_model_settings_reject_a_provider_without_a_model(db_factory, field) -> None:
+    """协作写回与设置接口同一套校验：默认模型只写了内置供应商被拒，不存也不补推荐（docs/adr/0130）。"""
+    from server.services.collab.units import DefaultModelSettingsUnit
+
+    unit = DefaultModelSettingsUnit(db_factory)
+    with pytest.raises(UnitWriteError) as exc:
+        await unit.write("", {field: "gemini-aistudio"})
+
+    assert exc.value.code == "invalid_backend_format"
+    assert (await unit.read(""))[field] == ""
+
+
 async def test_default_model_settings_reject_what_the_settings_api_rejects(db_factory) -> None:
     from server.services.collab.units import DefaultModelSettingsUnit
 

@@ -37,15 +37,18 @@ class TestGetVideoCapabilities:
         monkeypatch.setattr(projects, "ConfigResolver", lambda _factory: resolver_instance)
         return resolver_instance
 
-    def test_malformed_video_backend_returns_400(self, tmp_path, monkeypatch):
+    @pytest.mark.parametrize("value", ["no-slash", "grok", "grok/", "/grok-imagine-video"])
+    def test_malformed_video_backend_returns_400(self, tmp_path, monkeypatch, value):
+        """拆不出 ``provider/model`` 的值报 400；只写内置供应商也不按目录推荐补模型（docs/adr/0130）。"""
         self._patch_resolver(monkeypatch, return_value={})
         client = build_projects_client(monkeypatch, _FakePM(tmp_path))
         with client:
             resp = client.get(
                 "/api/v1/projects/ready/video-capabilities",
-                params={"video_backend": "no-slash"},
+                params={"video_backend": value},
             )
         assert resp.status_code == 400
+        assert resp.json()["detail"] == zh_errors.MESSAGES["video_backend_malformed"].format(value=value)
 
     def test_unknown_project_returns_404(self, tmp_path, monkeypatch):
         self._patch_resolver(monkeypatch, return_value={})
@@ -193,10 +196,11 @@ class TestRealResolverResponse:
         assert constraints["allowed"] == [8]
         assert constraints["excluded"] == {"4": "reference", "6": "reference"}
 
-    @pytest.mark.parametrize("candidate", ["grok/grok-imagine-video", "grok"])
-    def test_candidate_identity_and_project_preferences(self, client, candidate):
+    def test_candidate_identity_and_project_preferences(self, client):
         with client:
-            response = client.get("/api/v1/projects/ready/video-capabilities", params={"video_backend": candidate})
+            response = client.get(
+                "/api/v1/projects/ready/video-capabilities", params={"video_backend": "grok/grok-imagine-video"}
+            )
         assert response.status_code == 200
         body = response.json()
         assert body["provider_id"] == "grok"

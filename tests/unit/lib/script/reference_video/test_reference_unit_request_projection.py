@@ -7,6 +7,7 @@ import pytest
 from lib.generation.video_request_facts import VideoRequestFacts, VideoRequestFactsFailure
 from lib.script.reference_video.request_projection import (
     FilesystemReferenceAssets,
+    ProjectionProblem,
     ReferenceRequestOptions,
     ReferenceUnitRequestProjector,
     ResolvedReferenceAsset,
@@ -471,6 +472,18 @@ async def test_projection_folds_request_facts_failure_into_a_blocking_problem(
     assert [(problem.code, problem.blocking) for problem in result.problems] == [(failure.code, True)]
     assert result.problems[0].parameters() == expected_params
     assert result.problems[0].to_payload(unit_id="E1U1")["action"] == "configure_video_model"
+
+
+@pytest.mark.parametrize("code", ["model_not_in_provider_catalog", "model_not_selected"])
+def test_a_model_reference_problem_points_at_the_video_model_setting(code: str) -> None:
+    """模型引用不可用（不在清单中，或项目只选了供应商没选模型）：修复指引都是改视频模型，落在说明文字上。"""
+
+    problem = ProjectionProblem(code=code, blocking=True, params=(("provider", "ark"),))
+
+    payload = problem.to_payload(unit_id="E1U1")
+
+    assert payload["action"] == "configure_video_model"
+    assert payload["locations"] == [{"path": ["text"], "line": None}]
 
 
 @pytest.mark.asyncio

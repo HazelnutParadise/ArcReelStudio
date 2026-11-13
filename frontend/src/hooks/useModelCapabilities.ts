@@ -59,8 +59,8 @@ export interface ModelCapabilities {
   /**
    * 能力实际查自哪个 `provider/model`；未知为 null。
    *
-   * 传入的后端可能是裸 provider（服务端补全默认视频模型）或留空跟随全局默认，此时该值取服务端
-   * 解析结果。凡按「项目为该后端保存了什么」查项目配置的调用点都须用它。
+   * 传入的后端可能留空跟随全局默认，此时该值取服务端解析结果（服务端只接受 `provider/model`，
+   * 不补全裸 provider）。凡按「项目为该后端保存了什么」查项目配置的调用点都须用它。
    */
   resolvedVideoBackend: string | null;
   /** 首帧 / 尾帧生效值（含用户覆盖）；尚未查到或查询失败时为 null（未知），不谎报不支持。 */

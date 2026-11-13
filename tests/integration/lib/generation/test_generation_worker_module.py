@@ -70,8 +70,17 @@ class TestExtractProvider:
 
     async def test_image_payload_provider(self):
         """payload 携带历史 image_provider → 投影取到。"""
-        task = {"payload": {"image_provider": "gemini-vertex"}, "task_type": "storyboard"}
+        task = {
+            "payload": {"image_provider": "gemini-vertex", "image_model": "gemini-3.1-flash-image"},
+            "task_type": "storyboard",
+        }
         assert await _extract_provider(task) == "gemini-vertex"
+
+    @pytest.mark.usefixtures("patch_empty_db")
+    async def test_image_payload_provider_without_a_model_is_not_pinned(self):
+        """半截 payload（只有供应商、缺模型）不按目录推荐补模型，也就不能凭它认领供应商：回退设置层，没有设置时只给限流默认。"""
+        task = {"payload": {"image_provider": "gemini-vertex"}, "task_type": "storyboard"}
+        assert await _extract_provider(task) == DEFAULT_PROVIDER
 
     @pytest.mark.usefixtures("patch_empty_db")
     async def test_default_when_unresolvable(self):
@@ -540,6 +549,23 @@ class TestGenerationWorker:
         await worker._process_task({"task_id": "t_deleted", "project_name": "demo"}, claimed_provider_id="test")
         assert queue.succeeded == []
         assert queue.failed == [("t_deleted", "[project_deleted_during_task]")]
+
+    @pytest.mark.asyncio
+    async def test_process_task_without_a_default_model_stores_a_locale_neutral_code(self, monkeypatch):
+        """执行时这一媒体类型没有默认模型：落库的是带 media_type 的失败码，不是解析器的中文原文。"""
+        from lib.config.resolver import NoAvailableProviderError
+
+        queue = FakeWorkerQueue()
+        worker = GenerationWorker(
+            queue=queue, executor=stub_executors.execute, resume_executor=stub_executors.execute_resume
+        )
+
+        async def _raise_no_default_model(_task, **_kwargs):
+            raise NoAvailableProviderError("没有设置 image 默认模型。", media_type="image")
+
+        monkeypatch.setattr(stub_executors, "generation", _raise_no_default_model)
+        await worker._process_task({"task_id": "t_no_default"}, claimed_provider_id="test")
+        assert queue.failed == [("t_no_default", '[default_model_not_set] {"media_type": "image"}')]
 
     @pytest.mark.asyncio
     async def test_process_task_script_edit_error_unregistered_key_falls_back(self, monkeypatch):

@@ -1,12 +1,30 @@
-"""设置里「连线」旁键的写入校验：指定的连线必须存在，且属于同一字段所选的供应商。"""
+"""设置里模型字段值与「连线」旁键的写入校验：值必须是 ``provider/model``；指定的连线必须存在，且属于同一字段所选的供应商。"""
 
 from __future__ import annotations
 
 import pytest
 
+from lib.config.model_setting_keys import MODEL_SETTING_MEDIA_TYPES
+from lib.config.registry import PROVIDER_REGISTRY
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.infra.api_errors import BadRequestError
-from server.services.backend_values import validate_backend_credential
+from server.services.backend_values import validate_backend_credential, validate_backend_value
+
+
+@pytest.mark.parametrize("field_name", sorted(MODEL_SETTING_MEDIA_TYPES))
+@pytest.mark.parametrize("provider_id", ["gemini-aistudio", "ark", "openai", "dashscope"])
+def test_a_provider_without_a_model_is_rejected_in_every_model_field(field_name, provider_id) -> None:
+    """只写了内置供应商的值在任何模型字段都被拒：运行时不按目录推荐补模型（docs/adr/0130）。"""
+    assert provider_id in PROVIDER_REGISTRY
+    with pytest.raises(BadRequestError) as exc:
+        validate_backend_value(provider_id, field_name)
+    assert exc.value.key == "invalid_backend_format"
+    # 字段名只进诊断信息，不进面向使用者的摘要
+    assert exc.value.diagnostic == f"field: {field_name}"
+
+
+def test_a_full_provider_model_value_is_still_accepted() -> None:
+    assert validate_backend_value("gemini-aistudio/gemini-3-flash-preview", "default_text_backend") is None
 
 
 @pytest.fixture

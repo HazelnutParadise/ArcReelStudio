@@ -14,6 +14,7 @@ import type {
   SystemConfigOptions,
   SystemConfigPatch,
   GlobalModelSettingKey,
+  RecommendationChange,
 } from "@/types/system";
 import { GLOBAL_MODEL_SETTING_KEYS } from "@/types/system";
 import { ConnectionSelect } from "@/components/shared/ConnectionSelect";
@@ -36,7 +37,7 @@ import { SaveBar } from "@/components/shared/edit-unit/SaveBar";
 import { PageShellFooter } from "@/components/shared/page-shell/PageShell";
 import { useEditUnit } from "@/components/shared/edit-unit/useEditUnit";
 import { useCapabilitiesStore } from "@/stores/capabilities-store";
-import { useConfigStatusStore } from "@/stores/config-status-store";
+import { useConfigStatusStore, useSectionConfigIssues } from "@/stores/config-status-store";
 import { useEndpointCatalogStore } from "@/stores/endpoint-catalog-store";
 import { useDisplayNames } from "@/hooks/useDisplayNames";
 import { useModelCandidates } from "@/hooks/useModelCandidates";
@@ -50,6 +51,8 @@ import {
   lookupVideoAudioControl,
 } from "@/utils/provider-models";
 import type { ProviderInfo, VideoRoute } from "@/types/provider";
+import { ConfigIssueNotice } from "./ConfigIssueNotice";
+import { RecommendationNotice } from "./RecommendationNotice";
 
 /** 本页编辑单元包含的系统设置字段；保存时只提交改过的字段。 */
 const MEDIA_MODEL_KEYS = [
@@ -73,6 +76,35 @@ const MEDIA_MODEL_KEYS = [
 ] as const satisfies readonly (keyof SystemConfigPatch & keyof SystemConfigSettings)[];
 
 type MediaModelFields = Pick<SystemConfigPatch, (typeof MEDIA_MODEL_KEYS)[number]>;
+
+/** 推荐变化「切换」写入的全局默认模型字段，与服务端 `GLOBAL_DEFAULT_KEYS` 一致。 */
+const RECOMMENDATION_DEFAULT_KEYS = {
+  text: "default_text_backend",
+  image: "default_image_backend",
+  video: "default_video_backend",
+  audio: "default_audio_backend",
+} as const satisfies Record<RecommendationChange["media_type"], GlobalModelSettingKey>;
+
+const providerOf = (value: string | undefined) => (value ?? "").split("/", 1)[0];
+
+/**
+ * 把服务端已切换的推荐并进表单：模型字段改成推荐模型。表单里这个字段的供应商与推荐的不同时，连线也换成
+ * 服务端此刻的值（原供应商同为推荐的供应商时保留已保存的连线，否则回到默认连线），免得把别家的连线留在新供应商上；
+ * 同一供应商时保留表单里选的连线。
+ */
+function withAppliedRecommendation(
+  fields: MediaModelFields,
+  saved: MediaModelFields,
+  change: RecommendationChange,
+): MediaModelFields {
+  const key = RECOMMENDATION_DEFAULT_KEYS[change.media_type];
+  const credentialKey = `${key}_credential_id` as const;
+  const next: MediaModelFields = { ...fields, [key]: change.recommended };
+  if (providerOf(fields[key]) !== change.provider_id) {
+    next[credentialKey] = providerOf(saved[key]) === change.provider_id ? (saved[credentialKey] ?? null) : null;
+  }
+  return next;
+}
 
 function fieldsFrom(settings: SystemConfigSettings | null): MediaModelFields {
   const fields: Record<string, unknown> = {};
@@ -200,6 +232,9 @@ export function MediaModelSection() {
   const [customProviders, setCustomProviders] = useState<CustomProviderInfo[]>([]);
   // 「自动选择」的实际模型；读不到时为 null，下拉退回只显示「自动选择」。
   const [auto, setAuto] = useState<AutoBackendsResponse | null>(null);
+  // 内置供应商推荐模型的变化（docs/adr/0130）：各通道在默认模型下方提示，读不到时不提示。
+  const [recommendations, setRecommendations] = useState<RecommendationChange[]>([]);
+  const issues = useSectionConfigIssues("default-models");
   // 轮询超时编辑期的原始字符串（null = 未在编辑）：受控 value 若直接取数字，
   // 「60.」等中间态与清空会被数字化吞掉；失焦时统一解析写回未保存修改。
   const [pollTimeoutInput, setPollTimeoutInput] = useState<string | null>(null);
@@ -222,17 +257,19 @@ export function MediaModelSection() {
   // 也让重试不必重取整页配置。启动后不等它落地——候选接口
   // 慢或悬挂时，整页 spinner 和保存流程都会跟着卡住，而细分区本就有自己的加载叙事。
   const fetchConfig = useCallback(async () => {
-    const [res, catalog, custom, autoBackends] = await Promise.all([
+    const [res, catalog, custom, autoBackends, changes] = await Promise.all([
       API.getSystemConfig(),
       getProviderModels().catch(() => [] as ProviderInfo[]),
       getCustomProviderModels().catch(() => [] as CustomProviderInfo[]),
       API.getAutoBackends().catch(() => null),
+      API.getRecommendationChanges().catch(() => ({ changes: [] as RecommendationChange[] })),
     ]);
     setSettings(res.settings);
     setOptions(res.options);
     setProviders(catalog);
     setCustomProviders(custom);
     setAuto(autoBackends);
+    setRecommendations(changes.changes);
   }, []);
 
   useEffect(() => {
@@ -277,6 +314,21 @@ export function MediaModelSection() {
   const unit = useEditUnit({ source, save: saveFields, collab });
   const fields = unit.value;
   const setFields = unit.setValue;
+  const savedFields = unit.savedValue;
+  // 推荐变化处理后，服务端可能已改了全局默认模型：与保存后一样重取配置、候选与配置问题。
+  // 切换写进的默认模型同时并入表单：其余字段有未保存修改时，表单保留修改而不采用重取的配置，
+  // 不并入的话这一字段仍是旧模型，下次保存会把它写回去。协作房间每隔几秒重读存储才会收到服务端的写入，
+  // 这里并入后房间里立刻是新值，写回的也是同一个值。
+  const onRecommendationResolved = useCallback(
+    async (change: RecommendationChange, applied: boolean) => {
+      if (applied) setFields((prev) => withAppliedRecommendation(prev, savedFields, change));
+      useCapabilitiesStore.getState().invalidate();
+      await fetchConfig();
+      void reloadCandidates();
+      void useConfigStatusStore.getState().refresh();
+    },
+    [fetchConfig, reloadCandidates, setFields, savedFields],
+  );
   // 默认音频模型留空（自动选择）时不列音色：实际模型由运行时推断，列出某一家的音色会误导
   const audioVoices = useTtsModelCapabilities(fields.default_audio_backend ?? "")?.voices ?? [];
 
@@ -422,6 +474,14 @@ export function MediaModelSection() {
   };
 
   const lifecycle = candidates?.lifecycle;
+  const recommendationNotice = (mediaType: RecommendationChange["media_type"]) => (
+    <RecommendationNotice
+      change={recommendations.find((change) => change.media_type === mediaType)}
+      providerNames={allProviderNames}
+      modelNames={allModelNames}
+      onResolved={onRecommendationResolved}
+    />
+  );
 
   const candidatesSubFieldsError = candidatesError
     ? { onRetry: () => void reloadCandidates(), retrying: candidatesRetrying }
@@ -433,6 +493,7 @@ export function MediaModelSection() {
         <h2 className="text-lg font-medium">{t("settings_default_models")}</h2>
         <p className="text-sm text-muted-foreground">{t("model_selection_desc")}</p>
       </header>
+      <ConfigIssueNotice issues={issues} />
 
       <ChannelCard title={t("default_models_channel_video")}>
         {videoBackends.length > 0 ? (
@@ -464,6 +525,7 @@ export function MediaModelSection() {
         ) : (
           <NoProviders message={t("no_video_providers_hint")} />
         )}
+        {recommendationNotice("video")}
 
         <div className="flex flex-col gap-2">
           <Label className="items-start">
@@ -553,6 +615,7 @@ export function MediaModelSection() {
         ) : (
           <NoProviders message={t("no_image_providers_hint")} />
         )}
+        {recommendationNotice("image")}
       </ChannelCard>
 
       <ChannelCard title={t("default_models_channel_text")} description={t("text_models_desc")}>
@@ -597,6 +660,7 @@ export function MediaModelSection() {
         ) : (
           <NoProviders message={t("no_text_providers_hint")} />
         )}
+        {recommendationNotice("text")}
       </ChannelCard>
 
       {/* 旁白配音：模型、音色与语速只是新建 TTS 配音项目的预填值，说明放在通道开头。 */}
@@ -618,6 +682,7 @@ export function MediaModelSection() {
         ) : (
           <NoProviders message={t("no_audio_providers_hint")} />
         )}
+        {recommendationNotice("audio")}
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="narration-voice-input">{t("narration_voice_label")}</Label>

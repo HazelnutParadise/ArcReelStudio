@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from server.services.project.project_settings_patch import ProjectSettingsPatch, apply_project_settings_patch
+import pytest
+
+from lib.infra.api_errors import BadRequestError
+from server.services.project.project_settings_patch import (
+    PROJECT_BACKEND_FIELDS,
+    ProjectSettingsPatch,
+    apply_project_settings_patch,
+)
 
 
 def _apply(project: dict, **values: object) -> dict:
@@ -36,3 +43,13 @@ def test_changing_only_the_model_keeps_the_connection() -> None:
 def test_a_connection_without_a_model_field_is_not_kept() -> None:
     project = _apply({}, video_backend_credential_id=3)
     assert "video_backend_credential_id" not in project
+
+
+@pytest.mark.parametrize("field", [*PROJECT_BACKEND_FIELDS, "audio_backend"])
+def test_a_provider_without_a_model_is_rejected_and_nothing_is_written(field) -> None:
+    """项目设置补丁里的模型字段只写了内置供应商：报格式无效，原有内容不变（docs/adr/0130）。"""
+    project = {"title": "Demo"}
+    with pytest.raises(BadRequestError) as exc:
+        _apply(project, **{field: "gemini-aistudio"})
+    assert exc.value.key == "invalid_backend_format"
+    assert project == {"title": "Demo"}

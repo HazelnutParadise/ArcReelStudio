@@ -441,6 +441,35 @@ async def lifespan(app: FastAPI):
             len(source_migration_summary),
         )
 
+    # 目录查询的三层数据先于项目迁移装入：v19→v20 按合成后目录此刻的推荐改写只写了内置供应商的项目模型字段。
+    # 这三步只读库、装入内存，不依赖之后的步骤。
+    # 官方同步取回的目录数据装入目录查询；读不到时暂用出厂快照，等下一轮同步
+    try:
+        from lib.catalog.official_sync import load_synced_data
+
+        async with async_session_factory() as session:
+            await load_synced_data(session)
+    except Exception:
+        logger.exception("loading synced catalog data failed (non-fatal)")
+
+    # 用户修改的模型条目副本并进目录查询；读不到时这些条目暂按官方数据，其余照常
+    try:
+        from lib.catalog.user_entries import reload_user_entries
+
+        async with async_session_factory() as session:
+            await reload_user_entries(session)
+    except Exception:
+        logger.exception("loading user-modified catalog entries failed (non-fatal)")
+
+    # 内置供应商下用户添加的模型并进目录查询；读不到时这些模型暂不可用，其余模型照常
+    try:
+        from server.routers.provider_models import reload_user_added_models
+
+        async with async_session_factory() as session:
+            await reload_user_added_models(session)
+    except Exception:
+        logger.exception("loading user-added built-in provider models failed (non-fatal)")
+
     # Run any pending project.json schema migrations (file-based).
     # Both calls are synchronous filesystem walks — offload to a worker thread
     # so they don't block the event loop during uvicorn startup.
@@ -508,33 +537,6 @@ async def lifespan(app: FastAPI):
             await seed_official_source(session)
     except Exception as exc:
         logger.warning("official market source seed failed (non-fatal): %s", exc)
-
-    # 官方同步取回的目录数据装入目录查询；读不到时暂用出厂快照，等下一轮同步
-    try:
-        from lib.catalog.official_sync import load_synced_data
-
-        async with async_session_factory() as session:
-            await load_synced_data(session)
-    except Exception:
-        logger.exception("loading synced catalog data failed (non-fatal)")
-
-    # 用户修改的模型条目副本并进目录查询；读不到时这些条目暂按官方数据，其余照常
-    try:
-        from lib.catalog.user_entries import reload_user_entries
-
-        async with async_session_factory() as session:
-            await reload_user_entries(session)
-    except Exception:
-        logger.exception("loading user-modified catalog entries failed (non-fatal)")
-
-    # 内置供应商下用户添加的模型并进目录查询；读不到时这些模型暂不可用，其余模型照常
-    try:
-        from server.routers.provider_models import reload_user_added_models
-
-        async with async_session_factory() as session:
-            await reload_user_added_models(session)
-    except Exception:
-        logger.exception("loading user-added built-in provider models failed (non-fatal)")
 
     # 把 agent_runtime_profile 物化到存量项目（文件 I/O → worker 线程）
     from lib.project.project_manager import get_project_manager

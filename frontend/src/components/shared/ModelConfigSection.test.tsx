@@ -873,7 +873,7 @@ describe("ModelConfigSection", () => {
       expect(screen.queryByRole("radio", { name: "5 秒" })).not.toBeInTheDocument();
     });
 
-    it("says no provider is available when nothing can be auto-selected", () => {
+    it("says there is no default model when nothing can be auto-selected", () => {
       render(
         <ModelConfigSection
           value={EMPTY_VALUE}
@@ -883,7 +883,7 @@ describe("ModelConfigSection", () => {
           globalDefaults={{ ...EMPTY_GLOBALS, auto: { ...AUTO, i2v: null } }}
         />,
       );
-      expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent("自动选择（没有可用的供应商）");
+      expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent("自动选择（没有默认模型）");
       expect(screen.queryByRole("radio", { name: "5 秒" })).not.toBeInTheDocument();
     });
   });

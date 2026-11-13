@@ -128,6 +128,25 @@ class TestRenderKnownCodes:
         assert expected in rendered
         assert "{" not in rendered
 
+    @pytest.mark.parametrize("locale", ["zh", "zh-TW", "en", "vi", "ru"])
+    def test_model_not_selected_names_the_provider_in_every_locale(self, locale):
+        """项目只选了供应商没选模型：任务失败带着供应商名落库，各语言都能渲染，不留未替换的占位。"""
+        from lib.catalog.errors import ModelNotSelectedError
+
+        error = ModelNotSelectedError(provider_id="ark", media_type="image")
+        encoded = encode_failure(error.code, **error.params)
+
+        assert parse_failure(encoded) == ("model_not_selected", {"provider": "ark"})
+        rendered = render_failure(encoded, _translator(locale), make_display_names(locale))
+        assert rendered
+        assert not rendered.startswith("[")
+        assert "{" not in rendered
+        assert rendered != render_failure(
+            encode_failure("provider_unsupported_media", provider_id="ark", media_type="image"),
+            _translator(locale),
+            make_display_names(locale),
+        )
+
     def test_renders_code_only(self):
         encoded = encode_failure("restart_lost_image")
         zh = render_failure(encoded, _translator("zh"), make_display_names("zh"))

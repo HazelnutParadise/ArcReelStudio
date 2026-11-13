@@ -5,7 +5,6 @@ from __future__ import annotations
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 
-from lib.catalog import query as catalog
 from lib.catalog.errors import ModelNotInCatalogError
 from lib.config.resolver import ConfigResolver, VideoBucketCapabilityError, VideoGenerationType
 from lib.infra.api_errors import BadRequestError
@@ -14,13 +13,10 @@ from lib.infra.api_errors import BadRequestError
 def split_video_backend_query(video_backend: str) -> tuple[str, str]:
     """把能力查询的 ``video_backend`` 查询参数拆成 ``(provider_id, model_id)``。
 
-    裸 provider（无 "/"）按其在模型目录中的默认视频 model 补全，与 project.json 存量裸 provider
-    覆盖同口径（见 ``_parse_project_provider``）；拆不出两段时抛 ``BadRequestError``
-    （``video_backend_malformed``）。
+    只接受 ``provider/model``：裸 provider 不按目录推荐补模型（docs/adr/0130），与解析链同口径。拆不出两段时抛
+    ``BadRequestError``（``video_backend_malformed``）。
     """
-    provider_id, sep, model_id = video_backend.partition("/")
-    if not sep:
-        provider_id, model_id = video_backend, catalog.default_model(video_backend, "video") or ""
+    provider_id, _, model_id = video_backend.partition("/")
     if not provider_id or not model_id:
         raise BadRequestError("video_backend_malformed", value=video_backend)
     return provider_id, model_id

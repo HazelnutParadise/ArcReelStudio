@@ -225,6 +225,16 @@ def test_project_settings_rejects_what_the_patch_rejects_with_its_message_key(un
     assert "speech_rate_units_per_second" not in unit_project_files.load_project(PROJECT)
 
 
+@pytest.mark.parametrize("field", ["video_backend", "image_provider_t2i", "default_text_backend", "audio_backend"])
+def test_project_settings_rejects_a_provider_without_a_model(unit_project_files, field) -> None:
+    """协作写回与项目 PATCH 同一套校验：模型字段只写了内置供应商被拒，不落盘（docs/adr/0130）。"""
+    with pytest.raises(UnitWriteError) as exc:
+        PROJECT_UNIT_SPECS["project_settings"].write(unit_project_files, PROJECT, "", {field: "gemini-aistudio"})
+
+    assert exc.value.code == "invalid_backend_format"
+    assert field not in unit_project_files.load_project(PROJECT)
+
+
 def test_project_settings_ignores_derived_fields_written_by_the_browser(unit_project_files) -> None:
     PROJECT_UNIT_SPECS["project_settings"].write(
         unit_project_files, PROJECT, "", {"style_image": "elsewhere.png", "style_description": "改不到"}

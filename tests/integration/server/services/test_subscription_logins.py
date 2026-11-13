@@ -7,6 +7,8 @@ import json
 
 import pytest
 
+from lib.catalog import query as catalog
+from lib.config.service import ConfigService
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.infra.data_root_layout import DataRootLayout
 from lib.subscriptions.device_login import DeviceLoginResult
@@ -142,3 +144,89 @@ async def test_a_login_cannot_be_read_through_another_provider(session_factory) 
 
     with pytest.raises(SubscriptionLoginServiceError):
         service.get("chatgpt-subscription", record.login_id)
+
+
+async def _written(session_factory) -> dict[str, str]:
+    """除「已见过的推荐」外写进系统设置、且有值的键。"""
+    async with session_factory() as session:
+        settings = await ConfigService(session).get_all_settings()
+    return {key: value for key, value in settings.items() if value and not key.startswith("recommendation_seen:")}
+
+
+async def _set(session_factory, **values: str) -> None:
+    async with session_factory() as session:
+        svc = ConfigService(session)
+        for key, value in values.items():
+            await svc.set_setting(key, value)
+        await session.commit()
+
+
+async def _login_chatgpt(service: SubscriptionLoginService, device: FakeDevice, label: str):
+    device.result = DeviceLoginResult(status="succeeded", secret=AUTH_JSON, account_label=label)
+    device.release.set()
+    return await _until_done(service, "chatgpt-subscription", (await service.start("chatgpt-subscription")).login_id)
+
+
+async def test_the_first_login_writes_the_recommendations_into_empty_defaults(session_factory) -> None:
+    """订阅登录建出该供应商第一条生效的连线：空的全局默认模型写入推荐，只写 provider/model，不写连线旁键。"""
+    device = FakeDevice(DeviceLoginResult(status="pending"))
+    service = _service(session_factory, device=device)
+
+    await _login_chatgpt(service, device, "me@x.com (plus)")
+
+    assert await _written(session_factory) == {
+        "default_text_backend": f"chatgpt-subscription/{catalog.default_model('chatgpt-subscription', 'text')}",
+        "default_image_backend": f"chatgpt-subscription/{catalog.default_model('chatgpt-subscription', 'image')}",
+    }
+
+
+async def test_a_claude_subscription_login_writes_the_text_recommendation(session_factory) -> None:
+    service = _service(session_factory)
+    record = await service.start("claude-subscription")
+
+    await service.submit_code("claude-subscription", record.login_id, "good")
+
+    assert await _written(session_factory) == {
+        "default_text_backend": f"claude-subscription/{catalog.default_model('claude-subscription', 'text')}"
+    }
+
+
+async def test_a_default_the_user_already_has_is_not_overwritten_by_a_login(session_factory) -> None:
+    await _set(session_factory, default_text_backend="openai/gpt-5.4-mini")
+    device = FakeDevice(DeviceLoginResult(status="pending"))
+    service = _service(session_factory, device=device)
+
+    await _login_chatgpt(service, device, "me@x.com (plus)")
+
+    written = await _written(session_factory)
+    assert written["default_text_backend"] == "openai/gpt-5.4-mini"
+    assert (
+        written["default_image_backend"]
+        == f"chatgpt-subscription/{catalog.default_model('chatgpt-subscription', 'image')}"
+    )
+
+
+async def test_logging_in_to_the_same_account_again_does_not_write(session_factory) -> None:
+    device = FakeDevice(DeviceLoginResult(status="pending"))
+    service = _service(session_factory, device=device)
+    await _login_chatgpt(service, device, "me@x.com (plus)")
+    await _set(session_factory, default_text_backend="", default_image_backend="")
+
+    await _login_chatgpt(service, device, "me@x.com (plus)")
+
+    assert await _written(session_factory) == {}
+
+
+async def test_a_login_for_another_account_is_not_the_active_connection_and_does_not_write(session_factory) -> None:
+    device = FakeDevice(DeviceLoginResult(status="pending"))
+    service = _service(session_factory, device=device)
+    await _login_chatgpt(service, device, "me@x.com (plus)")
+    await _set(session_factory, default_text_backend="", default_image_backend="")
+
+    second = await _login_chatgpt(service, device, "other@x.com (plus)")
+
+    async with session_factory() as session:
+        cred = await CredentialRepository(session).get_by_id(second.credential_id)
+    assert cred is not None
+    assert cred.is_active is False
+    assert await _written(session_factory) == {}

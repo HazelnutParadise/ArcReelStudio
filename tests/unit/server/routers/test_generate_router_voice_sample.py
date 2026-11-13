@@ -4,19 +4,22 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Event
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import lib.project.project_manager as project_manager_module
 from lib.backends.audio_backends.base import VoiceOption
 from lib.catalog.errors import ModelNotInCatalogError
-from lib.config.resolver import ConfigResolver, ProviderModel
+from lib.config.resolver import ConfigResolver, NoAvailableProviderError, ProviderModel
+from lib.i18n.zh import errors as zh_errors
 from lib.project.resource_paths import resource_relative_path
 from server.auth import CurrentUserInfo, get_current_user
 from server.error_handlers import register_error_handlers
 from server.routers import generate
 from server.services.tasks.generation_context import AudioLaneResult, GenerationContext
 from tests.auth_deps import AUTH_DEPENDENCIES
+from tests.factories import make_display_names
 from tests.fakes import use_generation_queue, use_project_manager
 
 
@@ -217,6 +220,59 @@ class TestGenerateCharacterVoiceSample:
             )
 
         assert res.status_code == 400
+
+    @pytest.mark.parametrize("locale", ["zh", "zh-TW", "en", "vi", "ru"])
+    def test_missing_default_audio_model_points_to_the_default_model_settings(self, tmp_path, monkeypatch, locale):
+        """没有旁白配音的默认模型：指引到默认模型设置，不说成「未配置音频供应商」（docs/adr/0130）。"""
+        from lib.i18n import MESSAGES
+
+        fake_pm = _FakePM(tmp_path / "projects" / "demo")
+        fake_queue = _FakeQueue()
+        error = NoAvailableProviderError("没有设置 audio 默认模型", media_type="audio")
+        client = _client(monkeypatch, fake_pm, fake_queue, resolve_error=error)
+
+        with client:
+            res = client.post(
+                "/api/v1/projects/demo/characters/艾莉/voice-sample",
+                json={"text": "你好", "voice": "Cherry"},
+                headers={"Accept-Language": locale},
+            )
+
+        assert res.status_code == 400
+        assert res.json()["detail"] == MESSAGES[locale]["audio_default_model_not_set"]
+        assert res.json()["detail"] != MESSAGES[locale]["audio_provider_not_configured"]
+        assert fake_queue.calls == []
+
+    def test_missing_default_audio_model_keeps_the_voice_list_unconfigured(self, tmp_path, monkeypatch):
+        """试听弹窗的音色列表在没有默认配音模型时与未配置同形：configured=false，不报错。"""
+        error = NoAvailableProviderError("没有设置 audio 默认模型", media_type="audio")
+        client = _client(monkeypatch, _FakePM(tmp_path / "projects" / "demo"), _FakeQueue(), resolve_error=error)
+
+        with client:
+            res = client.get("/api/v1/projects/demo/audio-backend/voices")
+
+        assert res.status_code == 200
+        assert res.json() == {"configured": False, "provider_id": None, "model": None, "voices": []}
+
+    def test_project_naming_only_a_provider_asks_to_select_a_model(self, tmp_path, monkeypatch):
+        """项目的配音模型只写了供应商：报没有选定模型，不说成未配置，也不入队（docs/adr/0130）。"""
+        from lib.catalog.errors import ModelNotSelectedError
+
+        fake_queue = _FakeQueue()
+        error = ModelNotSelectedError(provider_id="dashscope", media_type="audio")
+        client = _client(monkeypatch, _FakePM(tmp_path / "projects" / "demo"), fake_queue, resolve_error=error)
+
+        with client:
+            res = client.post(
+                "/api/v1/projects/demo/characters/艾莉/voice-sample",
+                json={"text": "你好", "voice": "Cherry"},
+            )
+
+        assert res.status_code == 400
+        assert res.json()["detail"] == zh_errors.MESSAGES["model_not_selected"].format(
+            **make_display_names().apply({"provider": "dashscope"})
+        )
+        assert fake_queue.calls == []
 
     def test_provider_without_audio_model_asks_to_reselect(self, tmp_path, monkeypatch):
         """项目裸写的内置供应商没有语音模型：报该供应商不支持语音生成，不说成「未配置 audio 供应商」。"""
