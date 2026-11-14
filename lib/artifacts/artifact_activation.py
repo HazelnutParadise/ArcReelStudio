@@ -253,6 +253,7 @@ ArchiveClaimOutcome = Literal[
     "left_out_old_version",
     "left_out_unreadable",
     "left_out_unverifiable",
+    "kept_stale_inputs_changed",
 ]
 """导出时一条登记没能原样随包的去向。
 
@@ -263,12 +264,16 @@ ArchiveClaimOutcome = Literal[
 - ``left_out_unreadable``：源项目里正式文件是符号链接或读不出（判 blocked），包里没有它；登记不随包，导入后读作
   missing。规划器只看得见导出副本，这一种由调用方对照源项目从 ``left_out_missing`` 改判。
 - ``left_out_unverifiable``：其他证明不了的登记；不随包，文件照常在包里，导入时按文件重新判定。
+- ``kept_stale_inputs_changed``：导出副本清掉悬空引用之前不是 current、清掉之后依据对上了（``source_stale_keys``）；
+  按 :data:`UNPROVEN_MEDIA_BASIS_DIGEST` 随包，导入后仍判 stale，不经导出变成最新。
 """
 
 _MEDIA_KINDS = frozenset({ArtifactKind.EPISODE_VIDEO, ArtifactKind.EPISODE_AUDIO})
 
 UNPROVEN_MEDIA_BASIS_DIGEST = ArtifactBasis.build("archive/unproven-media", kind_version=1, inputs={}).digest
-"""以 stale 随包的视频与音频登记的依据摘要：不等于任何能投影出的依据，导入后不论包里的文件能否自证都判 stale。
+"""以 stale 随包的登记的依据摘要：不等于任何能投影出的依据，导入后不论包里的文件能否自证都判 stale。
+
+主要用于证明不了是所选版本的视频与音频；源项目判 stale、却因导出副本的修复依据又对上的其他产物同样用它。
 
 证明不了是所选版本的媒体随包时既不带内容事实、也不带原来的依据：否则导入端若能用包里的快照与版本记录重新证明，
 这条登记就会被洗成最新（例如改写过版本记录指纹的包），再导出一次也一样。用户重新生成或切换版本时按真实依据重新登记
@@ -299,6 +304,7 @@ def snapshot_preserved_artifact_manifest(
     preserved_entries: Mapping[ArtifactKey, ArtifactManifestEntry],
     *,
     ships_unselected_versions: bool,
+    source_stale_keys: frozenset[ArtifactKey] = frozenset(),
 ) -> ArtifactManifestArchiveExport:
     """Rebase preserved claims and bind them to one stable formal-byte snapshot.
 
@@ -331,13 +337,18 @@ def snapshot_preserved_artifact_manifest(
                     ArchiveClaimNotice(key, archived.artifact_path, _left_out_outcome(adapter, key, archived))
                 )
                 continue
-            carried_as_stale = current is None and key.kind in _MEDIA_KINDS
+            already_unproven = archived.basis_digest == UNPROVEN_MEDIA_BASIS_DIGEST
+            carried_as_stale = key.kind in _MEDIA_KINDS and (current is None or already_unproven)
+            # 导出副本清掉了它的某个生成输入的引用才显得对上了依据（``source_stale_keys``）：不是它变新了。
+            kept_stale = not carried_as_stale and (already_unproven or key in source_stale_keys)
             rebased[key] = ArtifactManifestEntry(
                 artifact_path=artifact_path,
-                basis_digest=UNPROVEN_MEDIA_BASIS_DIGEST if carried_as_stale else archived.basis_digest,
+                basis_digest=UNPROVEN_MEDIA_BASIS_DIGEST if carried_as_stale or kept_stale else archived.basis_digest,
             )
             if carried_as_stale:
                 notices.append(ArchiveClaimNotice(key, artifact_path, "carried_as_stale"))
+            elif kept_stale:
+                notices.append(ArchiveClaimNotice(key, artifact_path, "kept_stale_inputs_changed"))
         assert_artifact_target_state_plan_unchanged(project_dir, plan)
         content_digests = {
             key: read_artifact_content_digest(adapter, entry.artifact_path) for key, entry in rebased.items()

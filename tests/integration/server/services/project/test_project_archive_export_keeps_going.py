@@ -273,7 +273,7 @@ def test_an_unreadable_script_stops_the_export_with_a_localised_reason(tmp_path:
     with pytest.raises(ApiError) as exc:
         ProjectArchiveService(pm).export_project("demo", scope="full")
 
-    assert (exc.value.status_code, exc.value.key) == (422, "export_project_unreadable")
+    assert (exc.value.status_code, exc.value.key) == (422, "export_project_unreadable_at")
 
 
 class _ChurningArchiveService(ProjectArchiveService):
@@ -312,7 +312,7 @@ def test_a_file_or_directory_the_export_cannot_read_stops_with_its_location(tmp_
     target = project_dir / relative
     target.chmod(0)
     try:
-        assert _unreadable(project_dir) == (422, "export_project_unreadable", relative)
+        assert _unreadable(project_dir) == (422, "export_project_unreadable_at", relative)
     finally:
         target.chmod(0o755)
 
@@ -321,7 +321,7 @@ def test_a_script_that_is_not_an_object_stops_the_export_with_its_location(tmp_p
     _pm, project_dir = _current_project(tmp_path)
     (project_dir / "scripts" / "episode_1.json").write_text("[]", encoding="utf-8")
 
-    assert _unreadable(project_dir) == (422, "export_project_unreadable", "scripts/episode_1.json (episode 1)")
+    assert _unreadable(project_dir) == (422, "export_project_unreadable_at", "scripts/episode_1.json (episode 1)")
 
 
 @pytest.mark.parametrize("payload", ["{ not json", "[]"])
@@ -329,7 +329,7 @@ def test_unreadable_version_history_names_its_own_file(tmp_path: Path, payload: 
     _pm, project_dir = _current_project(tmp_path)
     (project_dir / "versions" / "versions.json").write_text(payload, encoding="utf-8")
 
-    assert _unreadable(project_dir) == (422, "export_project_unreadable", "versions/versions.json")
+    assert _unreadable(project_dir) == (422, "export_project_unreadable_at", "versions/versions.json")
 
 
 def test_export_diagnostics_for_an_unparseable_project_name_no_server_paths(tmp_path: Path) -> None:
@@ -420,3 +420,43 @@ def test_validating_one_episode_file_names_it_relative_to_the_project(tmp_path: 
         "scripts/episode_1.json",
         "scripts/episode_9.json",
     ]
+
+
+def test_a_snapshot_path_that_is_a_directory_stops_the_export_with_its_location(tmp_path: Path) -> None:
+    _pm, project_dir = _current_project(tmp_path)
+    snapshot_rel = drop_selected_version_snapshot(project_dir, "videos", "E1S1")
+    (project_dir / snapshot_rel).mkdir()
+    (project_dir / snapshot_rel / "inner").write_bytes(b"x")
+
+    assert _unreadable(project_dir) == (422, "export_project_unreadable_at", snapshot_rel)
+
+
+class _QuotaExceededArchiveService(ProjectArchiveService):
+    """写导出副本时超出磁盘配额。"""
+
+    def _copy_visible_tree(self, source_dir: Path, target_dir: Path) -> tuple[tuple[str, str], ...]:
+        raise OSError(errno.EDQUOT, "Disc quota exceeded", str(target_dir / "videos" / "scene_E1S1.mp4"))
+
+
+@pytest.mark.parametrize("service_type", [_DiskFullArchiveService, _QuotaExceededArchiveService])
+@pytest.mark.parametrize("entry", ["export_project", "get_export_diagnostics"])
+def test_running_out_of_disk_space_stops_every_export_entry_with_its_own_reason(
+    tmp_path: Path, service_type: type[ProjectArchiveService], entry: str
+) -> None:
+    pm, _project_dir = _current_project(tmp_path)
+
+    with pytest.raises(ApiError) as exc:
+        getattr(service_type(pm), entry)("demo", scope="full")
+
+    assert (exc.value.status_code, exc.value.key) == (507, "export_disk_full")
+
+
+def test_an_unreadable_location_is_part_of_the_message_the_user_sees(tmp_path: Path) -> None:
+    _pm, project_dir = _current_project(tmp_path)
+    (project_dir / "scripts" / "episode_1.json").write_text("[]", encoding="utf-8")
+
+    with pytest.raises(ApiError) as exc:
+        ProjectArchiveService(ProjectManager(tmp_path)).export_project("demo", scope="full")
+
+    assert exc.value.key == "export_project_unreadable_at"
+    assert exc.value.params == {"location": "scripts/episode_1.json (episode 1)"}

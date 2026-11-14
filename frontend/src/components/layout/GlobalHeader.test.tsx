@@ -171,6 +171,29 @@ describe("GlobalHeader", () => {
     });
   });
 
+  it("shows where an export stopped when the server names the location", async () => {
+    // 走真实的请求层：服务端 422 的原因里写着出问题的位置，通知原样带上它
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) =>
+      String(input).includes("/export/token")
+        ? new Response(
+            JSON.stringify({
+              detail: "项目数据读不出或结构不完整，无法导出。出问题的位置：versions/versions.json。检查这个文件后重试",
+              diagnostic: "versions/versions.json",
+            }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+          )
+        : new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
+    useProjectsStore.setState({ currentProjectName: "demo", currentProjectData: PROJECT_WITH_EPISODES as never });
+
+    renderHeader();
+    await openExportScope("current");
+
+    await waitFor(() => {
+      expect(useAppStore.getState().workspaceNotifications[0]?.text).toContain("versions/versions.json");
+    });
+  });
+
   it("「导出项目」只剩项目归档，并提示成片与剪映草稿在剪辑视图导出", async () => {
     useProjectsStore.setState({ currentProjectName: "demo", currentProjectData: PROJECT_WITH_EPISODES as never });
 

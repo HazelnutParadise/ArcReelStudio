@@ -10,6 +10,7 @@ import shutil
 import stat
 import tempfile
 import zipfile
+from collections import Counter
 from collections.abc import AsyncGenerator, Callable, Iterator, Mapping
 from contextlib import AbstractContextManager, asynccontextmanager, nullcontext
 from dataclasses import dataclass, field, replace
@@ -23,8 +24,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from arcreel_market_core.validation_messages import MessageRef, ValidationMessage
 from lib.artifacts.artifact_activation import (
+    UNPROVEN_MEDIA_BASIS_DIGEST,
     ArchiveClaimNotice,
     ArchiveClaimOutcome,
+    ArtifactCurrencyResolver,
     ArtifactManifestArchiveExport,
     ArtifactTargetStateChangedError,
     ensure_imported_artifact_target_state,
@@ -34,11 +37,13 @@ from lib.artifacts.artifact_activation import (
     take_migrated_artifact_claims,
 )
 from lib.artifacts.artifact_manifest import (
+    MANIFEST_FILENAME,
     ArtifactKey,
     ArtifactKind,
     ArtifactManifestArchiveSnapshot,
     ArtifactManifestEntry,
     ArtifactManifestError,
+    ArtifactStatus,
     ProjectArtifactManifestAdapter,
     decode_artifact_manifest_payload,
     encode_artifact_manifest_payload,
@@ -244,10 +249,25 @@ class ExportDiskFullError(ApiError):
 
 
 class ExportProjectUnreadableError(UnprocessableError):
-    """项目数据读不出、结构损坏或路径不安全，导不出可用的归档（HTTP 422）。"""
+    """项目数据读不出、结构损坏或路径不安全，导不出可用的归档（HTTP 422）。
 
-    def __init__(self) -> None:
-        super().__init__("export_project_unreadable")
+    知道出问题的位置（项目内相对路径）时，位置写进用户看到的原因里，同时挂在 ``diagnostic`` 上。
+    """
+
+    def __init__(self, location: str | None = None) -> None:
+        if location is None:
+            super().__init__("export_project_unreadable")
+        else:
+            super().__init__("export_project_unreadable_at", location=location)
+            self.with_diagnostic(location)
+
+
+_DISK_FULL_ERRNOS = frozenset(code for code in (errno.ENOSPC, getattr(errno, "EDQUOT", None)) if code is not None)
+
+
+def _is_disk_full(exc: BaseException) -> bool:
+    """磁盘写满或超出磁盘配额：两者对用户是同一件事，清出空间后重试。"""
+    return isinstance(exc, OSError) and exc.errno in _DISK_FULL_ERRNOS
 
 
 @dataclass(frozen=True, slots=True)
@@ -283,6 +303,7 @@ _ARCHIVE_CLAIM_NOTICES: Mapping[ArchiveClaimOutcome, tuple[str, str]] = MappingP
         ),
         "left_out_unreadable": ("claim_left_out_unreadable", "arch_claim_left_out_unreadable"),
         "left_out_unverifiable": ("claim_left_out_unverifiable", "arch_claim_left_out_unverifiable"),
+        "kept_stale_inputs_changed": ("claim_kept_stale_inputs_changed", "arch_claim_kept_stale_inputs_changed"),
     }
 )
 
@@ -692,7 +713,7 @@ class ProjectArchiveService:
                 )
         except Exception as exc:
             archive_path.unlink(missing_ok=True)  # hard-delete: temp -- 导出失败的半成品归档
-            if isinstance(exc, OSError) and exc.errno == errno.ENOSPC:
+            if _is_disk_full(exc):
                 raise ExportDiskFullError() from exc
             raise
         finally:
@@ -969,10 +990,10 @@ class ProjectArchiveService:
                     except _ARTIFACT_ACTIVATION_ERRORS as exc:
                         self._raise_artifact_activation_validation_error(diagnostics, exc)
                     if preserved_manifest is not None:
-                        self._report_media_imported_as_stale(staging_dir, preserved_manifest, diagnostics)
                         # 带信封的包判完时效再补快照：补回的快照只让恢复版本与成片取材可用，不把这次判成 stale 的
-                        # 登记借包里的快照证明改回最新。
+                        # 登记借包里的快照证明改回最新。补完再告知，才说得准能不能切回那个版本。
                         self._restore_version_snapshots(staging_dir, diagnostics, side="import")
+                        self._report_media_imported_as_stale(staging_dir, preserved_manifest, diagnostics)
 
                     # 修复期补的占位、导入激活没能登记的产物与迁移链的结果一起进报告，不分归档的
                     # schema 版本：导入前请用户确认一次（ADR 0098）。占位从诊断移进报告，导入成功
@@ -1093,7 +1114,12 @@ class ProjectArchiveService:
                 refused_formal_paths=refused,
                 claim_digests=claim_digests,
             )
-            self._clear_dangling_references(snapshot_dir, diagnostics, unreadable_in_source=unreadable_in_source)
+            inputs_changed_keys = self._clear_dangling_references(
+                snapshot_dir,
+                diagnostics,
+                unreadable_in_source=unreadable_in_source,
+                claims=source_manifest_entries if isinstance(source_manifest_entries, Mapping) else {},
+            )
             # 源项目已在当前 schema 上，正文就位，与导入路径共用同一遍提及自愈。
             self._repair_unit_mentions_tree(snapshot_dir, diagnostics)
             diagnostics.extend_validation(self.validator.validate_project_tree(snapshot_dir))
@@ -1126,6 +1152,7 @@ class ProjectArchiveService:
                     scope=scope,
                     diagnostics=diagnostics,
                     unreadable_in_source=unreadable_in_source,
+                    source_stale_keys=inputs_changed_keys,
                 )
             manifest = self._build_archive_manifest(
                 project_name,
@@ -1139,7 +1166,7 @@ class ProjectArchiveService:
             )
         except OSError as exc:
             temp_dir.cleanup()
-            if exc.errno == errno.ENOSPC:
+            if _is_disk_full(exc):
                 raise ExportDiskFullError() from exc
             raise
         except BaseException:
@@ -1155,6 +1182,7 @@ class ProjectArchiveService:
         scope: str,
         diagnostics: ArchiveDiagnostics,
         unreadable_in_source: _SourceSymlinks,
+        source_stale_keys: frozenset[ArtifactKey] = frozenset(),
     ) -> dict[str, object]:
         """归档信封里的清单快照。证明不了的登记不让导出失败，逐条进警告；项目本身读不出或不安全才停。
 
@@ -1169,7 +1197,10 @@ class ProjectArchiveService:
                 )
                 if source_manifest_entries is None
                 else snapshot_preserved_artifact_manifest(
-                    snapshot_dir, source_manifest_entries, ships_unselected_versions=ships_unselected_versions
+                    snapshot_dir,
+                    source_manifest_entries,
+                    ships_unselected_versions=ships_unselected_versions,
+                    source_stale_keys=source_stale_keys,
                 )
             )
         except ArtifactTargetStateChangedError as exc:
@@ -1178,9 +1209,7 @@ class ProjectArchiveService:
         except ArtifactManifestError as exc:
             # 规划器对项目文件、剧本、版本记录、宫格记录读不出或路径不安全的拒绝（ProjectMigrationError 也在其中）。
             logger.warning("导出时项目数据读不出：%s", exc)
-            error = ExportProjectUnreadableError()
-            location = _failure_location(exc)
-            raise (error.with_diagnostic(location) if location is not None else error) from exc
+            raise ExportProjectUnreadableError(_failure_location(exc)) from exc
         for notice in exported.notices:
             if notice.outcome == "left_out_missing" and unreadable_in_source.covers(notice.artifact_path):
                 notice = replace(notice, outcome="left_out_unreadable")
@@ -1197,25 +1226,62 @@ class ProjectArchiveService:
             location=notice.artifact_path,
         )
 
-    @staticmethod
     def _report_media_imported_as_stale(
-        project_dir: Path, preserved_manifest: ArtifactManifestArchiveSnapshot, diagnostics: ArchiveDiagnostics
+        self, project_dir: Path, preserved_manifest: ArtifactManifestArchiveSnapshot, diagnostics: ArchiveDiagnostics
     ) -> None:
         """包里证明不了是所选版本、按 stale 导入的视频与配音，逐条告诉用户（ADR 0134）。
 
-        证明成立的视频与配音导入后带内容事实；带着信封里的登记、却没有内容事实的，就是这一类。
+        这一类是带着信封里的登记、却没有内容事实的，或登记依据是占位摘要的（上一次导出就以 stale 带出）。
+        选中版本的版本文件在场且对得上记录时，告诉用户切回那个版本即可恢复；否则不作这个承诺。
         """
         committed = ProjectArtifactManifestAdapter(project_dir).snapshot_entries()
+        versions = self._load_json_file(project_dir / "versions" / "versions.json")
         for key in sorted(preserved_manifest.entries, key=ArtifactKey.encode):
             entry = committed.get(key)
-            if key.kind not in _MEDIA_ARTIFACT_KINDS or entry is None or entry.content is not None:
+            if key.kind not in _MEDIA_ARTIFACT_KINDS or entry is None:
                 continue
+            if entry.content is not None and entry.basis_digest != UNPROVEN_MEDIA_BASIS_DIGEST:
+                continue
+            restorable = self._selected_version_is_restorable(project_dir, versions, entry.artifact_path)
+            code, message_key = (
+                ("claim_imported_as_stale", "arch_claim_imported_as_stale")
+                if restorable
+                else ("claim_imported_as_stale_unrestorable", "arch_claim_imported_as_stale_unrestorable")
+            )
             diagnostics.add(
                 "warnings",
-                "claim_imported_as_stale",
-                ValidationMessage("arch_claim_imported_as_stale", {"path": entry.artifact_path}),
+                code,
+                ValidationMessage(message_key, {"path": entry.artifact_path}),
                 location=entry.artifact_path,
             )
+
+    @staticmethod
+    def _selected_version_is_restorable(project_dir: Path, versions: object, artifact_path: str) -> bool:
+        """这件媒体选中版本的版本文件在场、是普通文件，且（记录有指纹时）对得上记录：切回它会成功。"""
+        resource = resource_of_path(artifact_path)
+        if resource is None or not isinstance(versions, dict):
+            return False
+        bucket = versions.get(resource[0])
+        history = bucket.get(resource[1]) if isinstance(bucket, dict) else None
+        if not isinstance(history, dict):
+            return False
+        records = history.get("versions")
+        selected = next(
+            (
+                record
+                for record in (records if isinstance(records, list) else [])
+                if isinstance(record, dict) and record.get("version") == history.get("current_version")
+            ),
+            None,
+        )
+        snapshot_rel = selected.get("file") if selected is not None else None
+        if not VersionManager.is_managed_snapshot_path(resource[0], snapshot_rel):
+            return False
+        snapshot = try_safe_join(project_dir, cast(str, snapshot_rel))
+        if snapshot is None or snapshot.is_symlink() or not snapshot.is_file():
+            return False
+        recorded = cast(dict[str, Any], selected).get(CONTENT_DIGEST)
+        return not isinstance(recorded, str) or sha256_file(snapshot) == recorded
 
     def _shipped_version_files(self, snapshot_dir: Path, scope: str) -> frozenset[str] | None:
         """仅当前版本的包会带上的版本快照；完整包不裁历史，返回 ``None``。"""
@@ -1287,11 +1353,31 @@ class ProjectArchiveService:
             if isinstance(history, dict)
         }
         formal_digests: dict[str, str | None] = {}
-        for resource_type, resource_id, record in iter_version_records(versions):
+        records = list(iter_version_records(versions))
+        # 同一个快照路径被几条记录共用时，它对得上哪一条都可能是对的：不补、不换。
+        references = Counter(record.get("file") for _resource_type, _resource_id, record in records)
+        for resource_type, resource_id, record in records:
             snapshot_rel = record.get("file")
             if not VersionManager.is_managed_snapshot_path(resource_type, snapshot_rel) or (
                 shipped is not None and snapshot_rel not in shipped
             ):
+                continue
+            snapshot = try_safe_join(project_dir, cast(str, snapshot_rel))
+            if snapshot is None or references[snapshot_rel] > 1:
+                continue
+            if not self._regular_file_or_absent(snapshot):
+                # 快照位置上是目录或特殊文件：从不补、从不换。导出时这是读不出的项目数据，点名位置停下；
+                # 导入时原样保留并告知。
+                if side == "export":
+                    raise ExportProjectUnreadableError(cast(str, snapshot_rel))
+                diagnostics.add(
+                    "warnings",
+                    "version_snapshot_not_a_file",
+                    ValidationMessage(
+                        "arch_version_snapshot_not_a_file", {"target": snapshot_rel, "version": record.get("version")}
+                    ),
+                    location=cast(str, snapshot_rel),
+                )
                 continue
             try:
                 formal_rel = resource_relative_path(resource_type, resource_id)
@@ -1309,8 +1395,7 @@ class ProjectArchiveService:
             if formal_rel not in formal_digests:
                 formal = try_safe_join(project_dir, formal_rel)
                 formal_digests[formal_rel] = sha256_file(formal) if formal is not None and formal.is_file() else None
-            snapshot = try_safe_join(project_dir, cast(str, snapshot_rel))
-            if formal_digests[formal_rel] != recorded or snapshot is None:
+            if formal_digests[formal_rel] != recorded:
                 continue
             if snapshot.is_file():
                 if sha256_file(snapshot) == recorded:
@@ -1337,6 +1422,17 @@ class ProjectArchiveService:
                 ),
                 location=cast(str, snapshot_rel),
             )
+
+    @staticmethod
+    def _is_hidden_reference(path: str) -> bool:
+        return any(part.startswith(".") and part not in {".", ".."} for part in path.replace("\\", "/").split("/"))
+
+    @staticmethod
+    def _regular_file_or_absent(path: Path) -> bool:
+        try:
+            return stat.S_ISREG(path.lstat().st_mode)
+        except FileNotFoundError:
+            return True
 
     def _drop_unmanaged_version_records(self, project_dir: Path, diagnostics: ArchiveDiagnostics) -> None:
         """导出副本里去掉导入会拒收的版本历史：结构损坏的桶或资源，以及快照路径不在本类型历史目录里的记录。
@@ -1376,8 +1472,13 @@ class ProjectArchiveService:
             self._write_json_file(versions_path, payload)
 
     def _clear_dangling_references(
-        self, project_dir: Path, diagnostics: ArchiveDiagnostics, *, unreadable_in_source: _SourceSymlinks
-    ) -> None:
+        self,
+        project_dir: Path,
+        diagnostics: ArchiveDiagnostics,
+        *,
+        unreadable_in_source: _SourceSymlinks,
+        claims: Mapping[ArtifactKey, ArtifactManifestEntry],
+    ) -> frozenset[ArtifactKey]:
         """导出副本里清掉指向不在包里的文件、又没有版本可恢复的引用，让包能通过导入校验。
 
         哪些引用必须在场由导入用的同一个校验器回答（``DataValidator.validate_project_tree`` 的
@@ -1386,15 +1487,19 @@ class ProjectArchiveService:
         """
         missing: list[MissingReference] = []
         self.validator.validate_project_tree(project_dir, missing_references=missing)
+        if not missing:
+            return frozenset()
+        before = self._claim_statuses(project_dir, claims)
         documents: dict[str, dict[str, Any]] = {}
         for reference in missing:
             documents[reference.document] = reference.clear()
-            symlinked = unreadable_in_source.covers(reference.path)
-            code, message_key = (
-                ("symlink_reference_cleared", "arch_symlink_reference_cleared")
-                if symlinked
-                else ("missing_reference_cleared", "arch_missing_reference_cleared")
-            )
+            if unreadable_in_source.covers(reference.path):
+                code, message_key = "symlink_reference_cleared", "arch_symlink_reference_cleared"
+            elif self._is_hidden_reference(reference.path):
+                # 归档不带隐藏文件（它们是运行期的 sidecar），所以这类引用在包里必然悬空，导入校验也会拒收。
+                code, message_key = "hidden_reference_cleared", "arch_hidden_reference_cleared"
+            else:
+                code, message_key = "missing_reference_cleared", "arch_missing_reference_cleared"
             location = f"{reference.document}:{reference.field}"
             diagnostics.add(
                 "auto_fixed",
@@ -1404,6 +1509,42 @@ class ProjectArchiveService:
             )
         for document, payload in documents.items():
             self._write_json_file(project_dir / document, payload)
+        # 清掉的引用若是某件已登记产物的生成输入，它会从 stale 变成依据对上：那不是它变新了，仍按 stale 带出。
+        after = self._claim_statuses(project_dir, claims)
+        return frozenset(
+            key
+            for key, status in after.items()
+            if status is ArtifactStatus.CURRENT and before.get(key) is not ArtifactStatus.CURRENT
+        )
+
+    @staticmethod
+    def _claim_statuses(
+        project_dir: Path, claims: Mapping[ArtifactKey, ArtifactManifestEntry]
+    ) -> dict[ArtifactKey, ArtifactStatus]:
+        """导出副本里按源清单的登记判出的时效；只在副本里临时放一份清单，判完即撤下。"""
+        adapter = ProjectArtifactManifestAdapter(project_dir)
+        # 文件不在副本里的登记导入后只会是 missing，不会「变成 current」，不必判。
+        present = {}
+        for key, entry in claims.items():
+            observation = adapter.inspect_artifact(entry.artifact_path)
+            if observation.blocker is None and observation.present:
+                present[key] = entry
+        if not present:
+            return {}
+        claims = present
+        adapter.replace_entries_atomically(claims)
+        try:
+            resolver = ArtifactCurrencyResolver(project_dir)
+            statuses: dict[ArtifactKey, ArtifactStatus] = {}
+            for key, entry in claims.items():
+                try:
+                    statuses[key] = resolver.compare(key, artifact_path=entry.artifact_path).status
+                except OSError, RuntimeError, ValueError:
+                    # 判不出来的登记不算「变成了 current」，交给导出规划器照常处理。
+                    continue
+            return statuses
+        finally:
+            (project_dir / MANIFEST_FILENAME).unlink(missing_ok=True)  # hard-delete: temp -- 导出副本里临时放的清单
 
     def _build_archive_manifest(
         self,
@@ -1613,7 +1754,7 @@ class ProjectArchiveService:
                     location = self._source_location(source_dir, exc)
                     if location is None:
                         raise
-                    raise ExportProjectUnreadableError().with_diagnostic(location) from exc
+                    raise ExportProjectUnreadableError(location) from exc
             if manifest_before == manifest_after and source_after == copied:
                 return manifest_before
         if target_dir.exists():
@@ -2458,7 +2599,9 @@ class ProjectArchiveService:
         resolved_raw = self._resolve_existing_relative(project_dir, normalized_value)
 
         if canonical_path.exists():
-            if normalized_value != canonical_rel:
+            # 与原值比较而不是与规整后的值比较：「storyboards\\scene.png」这类只差分隔符的引用也写回规范路径，
+            # 否则规划器按原值找不到登记的文件。
+            if raw_value != canonical_rel:
                 payload[field_name] = canonical_rel
                 diagnostics.add(
                     "auto_fixed",
@@ -2862,6 +3005,7 @@ class ProjectArchiveService:
 
     def _scan_archive_members(self, archive: zipfile.ZipFile) -> list[ArchiveMember]:
         members: list[ArchiveMember] = []
+        seen_names: set[str] = set()
         for info in archive.infolist():
             if info.flag_bits & 0x1:
                 raise ProjectArchiveValidationError(
@@ -2879,6 +3023,14 @@ class ProjectArchiveService:
             stripped_name = normalized_name.strip("/")
             if not stripped_name:
                 continue
+
+            if stripped_name in seen_names:
+                # 同名条目解压时后一份覆盖前一份，哪一份算数取决于解压实现：一律拒绝。
+                raise ProjectArchiveValidationError(
+                    ValidationMessage("arch_import_validation_failed"),
+                    errors=[ValidationMessage("arch_zip_duplicate_entry", {"name": info.filename})],
+                )
+            seen_names.add(stripped_name)
 
             parts = tuple(part for part in stripped_name.split("/") if part)
             if parts and len(parts[0]) == 2 and parts[0][1] == ":":

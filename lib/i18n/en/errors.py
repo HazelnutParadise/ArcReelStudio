@@ -960,6 +960,7 @@ MESSAGES = {
     "export_project_busy": "The project kept changing during export, so no consistent snapshot could be taken. Try again once generation or editing has finished",
     "export_disk_full": "There is not enough disk space to finish writing the export. Free up some space and try again",
     "export_project_unreadable": "The project data cannot be read or is incomplete, so it cannot be exported. Check the project files and try again",
+    "export_project_unreadable_at": "The project data cannot be read or is incomplete, so it cannot be exported. The problem is in {location}. Check that file and try again",
     "material_object_connection_unavailable": "This image is stored in its original object storage bucket, but the current connection was deleted or points to another bucket, so it cannot be read for now",
     "asset_library_region_unsupported": "The asset library does not support region {region}",
     "asset_library_account_not_found": "This asset library account does not exist. It may have been deleted; refresh and try again",

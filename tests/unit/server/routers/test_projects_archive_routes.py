@@ -452,3 +452,5 @@ class TestExportKeepsGoing:
         for response in (token, download):
             assert response.status_code == 422
             assert response.json()["detail"].startswith("The project data cannot be read")
+            # 出问题的位置写在用户看到的原因里
+            assert "(episode 1)" in response.json()["detail"]

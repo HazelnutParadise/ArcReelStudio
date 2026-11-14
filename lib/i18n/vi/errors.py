@@ -962,6 +962,7 @@ MESSAGES = {
     "export_project_busy": "Dự án liên tục thay đổi trong lúc xuất nên không lấy được bản chụp nhất quán. Hãy thử lại sau khi tạo hoặc chỉnh sửa xong",
     "export_disk_full": "Không đủ dung lượng đĩa để ghi xong bản xuất. Hãy giải phóng dung lượng rồi thử lại",
     "export_project_unreadable": "Không đọc được dữ liệu dự án hoặc dữ liệu không đầy đủ nên không xuất được. Hãy kiểm tra các tệp dự án rồi thử lại",
+    "export_project_unreadable_at": "Không đọc được dữ liệu dự án hoặc dữ liệu không đầy đủ nên không xuất được. Vấn đề nằm ở {location}. Hãy kiểm tra tệp đó rồi thử lại",
     "material_object_connection_unavailable": "Ảnh này được lưu trong bucket lưu trữ đối tượng ban đầu, nhưng kết nối hiện tại đã bị xóa hoặc trỏ tới bucket khác nên tạm thời không đọc được",
     "asset_library_region_unsupported": "Thư viện tư liệu không hỗ trợ khu vực {region}",
     "asset_library_account_not_found": "Tài khoản thư viện tư liệu không tồn tại, có thể đã bị xóa; hãy làm mới rồi thử lại",

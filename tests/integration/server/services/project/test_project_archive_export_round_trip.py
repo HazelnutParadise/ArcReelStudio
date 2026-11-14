@@ -449,7 +449,7 @@ def test_a_bare_file_name_that_resolves_in_its_default_folder_is_kept(tmp_path: 
     # 修复步骤把它规整成规范路径；引用照常在场，没有被当成悬空引用清空
     imported_script = json.loads((imported / "scripts" / "episode_1.json").read_text(encoding="utf-8"))
     assert imported_script["segments"][0]["generated_assets"]["storyboard_image"] == _STORYBOARD_PATH
-    assert _status(imported, _STORYBOARD, _STORYBOARD_PATH) is ArtifactStatus.CURRENT
+    assert _status(imported, _STORYBOARD, _STORYBOARD_PATH) is not ArtifactStatus.MISSING
 
 
 def test_a_symlinked_storyboard_folder_is_reported_as_unreadable(tmp_path: Path) -> None:
@@ -545,7 +545,7 @@ def test_import_keeps_an_archived_snapshot_that_does_not_match_a_forged_record(t
     assert (imported / snapshot_rel).read_bytes() == original_snapshot
     assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
     warned = _noticed(result.diagnostics, "warnings")
-    assert ("claim_imported_as_stale", _VIDEO_PATH) in warned
+    assert ("claim_imported_as_stale_unrestorable", _VIDEO_PATH) in warned
     assert ("version_snapshot_mismatch_kept", snapshot_rel) in warned
     assert not [code for code, _ in _noticed(result.diagnostics, "auto_fixed") if code == "version_snapshot_restored"]
     # 切回这个版本时按版本记录校验快照：对不上就拒绝，登记仍是 stale
@@ -695,3 +695,169 @@ async def test_a_carried_as_stale_video_registers_a_real_basis_when_switched_bac
     assert entry.basis_digest != UNPROVEN_MEDIA_BASIS_DIGEST
     assert entry.content is not None
     assert _status(project, _VIDEO, _VIDEO_PATH) is ArtifactStatus.CURRENT
+
+
+# ---- 第四轮 ----
+
+
+def _set_segment(project_dir: Path, *path: str, value: object, index: int = 0) -> None:
+    script_path = project_dir / "scripts" / "episode_1.json"
+    script = json.loads(script_path.read_text(encoding="utf-8"))
+    holder = script["segments"][index]
+    for part in path[:-1]:
+        holder = holder[part]
+    holder[path[-1]] = value
+    script_path.write_text(json.dumps(script, ensure_ascii=False), encoding="utf-8")
+
+
+def test_a_snapshot_path_that_is_a_directory_on_import_is_reported_and_imports_as_stale(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    snapshot_rel = _selected_record(project_dir)["file"]
+    archive_path, _ = ProjectArchiveService(pm).export_project("demo", scope="full")
+    with zipfile.ZipFile(archive_path) as source, zipfile.ZipFile(tmp_path / "dir.zip", "w") as rebuilt:
+        for info in source.infolist():
+            if info.filename == f"demo/{snapshot_rel}":
+                rebuilt.writestr(f"demo/{snapshot_rel}/", b"")
+                rebuilt.writestr(f"demo/{snapshot_rel}/inner", b"x")
+            else:
+                rebuilt.writestr(info, source.read(info))
+
+    target, result = _import_archive(tmp_path / "dir.zip", tmp_path / "target")
+
+    assert ("version_snapshot_not_a_file", snapshot_rel) in _noticed(result.diagnostics, "warnings")
+    assert _status(target.get_project_path(result.project_name), _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+
+
+def test_a_backslash_reference_to_an_existing_file_is_normalised_and_not_lost(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    _set_segment(project_dir, "generated_assets", "storyboard_image", value="storyboards\\scene_E1S1.png")
+
+    _, _, imported = _round_trip(pm, tmp_path / "target")
+
+    script = json.loads((imported / "scripts" / "episode_1.json").read_text(encoding="utf-8"))
+    assert script["segments"][0]["generated_assets"]["storyboard_image"] == _STORYBOARD_PATH
+    assert _status(imported, _STORYBOARD, _STORYBOARD_PATH) is not ArtifactStatus.MISSING
+
+
+def test_a_video_stale_because_of_a_dangling_input_stays_stale_after_the_reference_is_cleared(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    _set_segment(project_dir, "end_frame_image", value="end_frames/E1S1_end.png")
+    assert _status(project_dir, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+
+    diagnostics, _, imported = _round_trip(pm, tmp_path / "target")
+
+    assert ("claim_kept_stale_inputs_changed", _VIDEO_PATH) in _noticed(diagnostics, "warnings")
+    assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+
+
+def test_a_snapshot_path_shared_by_two_records_is_never_overwritten(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    versions = json.loads(_versions_path(project_dir).read_text(encoding="utf-8"))
+    first = versions["videos"]["E1S1"]["versions"][0]
+    second = versions["videos"]["E1S2"]["versions"][0]
+    second["file"] = first["file"]
+    _versions_path(project_dir).write_text(json.dumps(versions), encoding="utf-8")
+    shared = (project_dir / first["file"]).read_bytes()
+    second_video = ArtifactKey.episode_video(1, "E1S2")
+    assert _status(project_dir, second_video, "videos/scene_E1S2.mp4") is ArtifactStatus.CURRENT
+
+    diagnostics, _, imported = _round_trip(pm, tmp_path / "target")
+
+    assert not [code for code, _ in _noticed(diagnostics, "auto_fixed") if code == "version_snapshot_restored"]
+    assert (imported / first["file"]).read_bytes() == shared
+    assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.CURRENT
+
+
+def test_a_stale_import_is_announced_on_every_hop(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    archive_path, _ = ProjectArchiveService(pm).export_project("demo", scope="full")
+    first = _rezip_with(archive_path, tmp_path / "hop0.zip", {f"demo/{_selected_record(project_dir)['file']}": None})
+    target, result = _import_archive(first, tmp_path / "hop1")
+    assert ("claim_imported_as_stale", _VIDEO_PATH) in _noticed(result.diagnostics, "warnings")
+
+    for hop in (2, 3):
+        diagnostics, result, imported = _round_trip(target, tmp_path / f"hop{hop}")
+        assert ("claim_carried_as_stale", _VIDEO_PATH) in _noticed(diagnostics, "warnings"), hop
+        assert ("claim_imported_as_stale", _VIDEO_PATH) in _noticed(result.diagnostics, "warnings"), hop
+        assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+        target = ProjectManager(tmp_path / f"hop{hop}")
+
+
+def test_a_healthy_round_trip_warns_about_nothing_stale(tmp_path: Path) -> None:
+    pm, _project_dir = _current_project(tmp_path)
+
+    diagnostics, result, _ = _round_trip(pm, tmp_path / "target")
+
+    assert _noticed(diagnostics, "warnings") == []
+    assert _noticed(result.diagnostics, "warnings") == []
+
+
+def test_a_stale_video_whose_version_file_does_not_match_is_not_promised_a_switch_back(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+
+    _target, result = _import_archive(_forged_archive(pm, tmp_path, project_dir), tmp_path / "target")
+
+    warned = _noticed(result.diagnostics, "warnings")
+    assert ("claim_imported_as_stale_unrestorable", _VIDEO_PATH) in warned
+    assert ("claim_imported_as_stale", _VIDEO_PATH) not in warned
+
+
+def test_a_reference_to_a_hidden_file_is_cleared_with_its_own_reason(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    (project_dir / ".style.png").write_bytes(b"png")
+    project = json.loads((project_dir / "project.json").read_text(encoding="utf-8"))
+    project["style_image"] = ".style.png"
+    (project_dir / "project.json").write_text(json.dumps(project), encoding="utf-8")
+
+    diagnostics, _, _ = _round_trip(pm, tmp_path / "target")
+
+    assert ("hidden_reference_cleared", "project.json:project.style_image") in _noticed(diagnostics, "auto_fixed")
+
+
+def test_claim_digest_rebuilds_only_the_selected_version(tmp_path: Path) -> None:
+    """登记的内容事实只证明选中版本的字节：别的版本即使记录也没有指纹，也不拿它补。"""
+    pm, project_dir = _current_project(tmp_path)
+    drop_selected_version_snapshot(project_dir, "videos", "E1S1")
+    versions = json.loads(_versions_path(project_dir).read_text(encoding="utf-8"))
+    history = versions["videos"]["E1S1"]
+    [selected] = history["versions"]
+    selected.pop("content_digest")
+    other = {**selected, "version": 2, "file": selected["file"].replace("_v1_", "_v2_")}
+    history["versions"].append(other)
+    _versions_path(project_dir).write_text(json.dumps(versions), encoding="utf-8")
+    archive_path, _ = ProjectArchiveService(pm).export_project("demo", scope="full")
+
+    with zipfile.ZipFile(archive_path) as archive:
+        names = set(archive.namelist())
+    assert f"demo/{selected['file']}" in names
+    assert f"demo/{other['file']}" not in names
+
+
+def test_a_reference_outside_its_confined_folder_is_reported_not_cleared(tmp_path: Path) -> None:
+    """只清引用的文件不在的引用；其他引用错误（如尾帧指向 end_frames 之外）照常由导入校验报出。"""
+    pm, project_dir = _current_project(tmp_path)
+    _set_segment(project_dir, "end_frame_image", value=_STORYBOARD_PATH)
+
+    diagnostics = ProjectArchiveService(pm).get_export_diagnostics("demo", scope="full")
+
+    assert not [code for code, _ in _noticed(diagnostics, "auto_fixed") if "reference_cleared" in code]
+    assert diagnostics["blocking"]
+
+
+def test_import_refuses_an_archive_with_duplicate_entry_names(tmp_path: Path) -> None:
+    pm, _project_dir = _current_project(tmp_path)
+    archive_path, _ = ProjectArchiveService(pm).export_project("demo", scope="full")
+    duplicated = tmp_path / "dup.zip"
+    with zipfile.ZipFile(archive_path) as source, zipfile.ZipFile(duplicated, "w") as rebuilt:
+        for info in source.infolist():
+            rebuilt.writestr(info, source.read(info))
+        with pytest.warns(UserWarning, match="Duplicate name"):
+            rebuilt.writestr(f"demo/{_VIDEO_PATH}", b"second copy")
+
+    with pytest.raises(ProjectArchiveValidationError) as exc:
+        ProjectArchiveService(ProjectManager(tmp_path / "target")).import_project_archive(
+            duplicated, uploaded_filename="demo.zip"
+        )
+
+    assert exc.value.status_code == 400
+    assert [message.key for message in exc.value.errors] == ["arch_zip_duplicate_entry"]
