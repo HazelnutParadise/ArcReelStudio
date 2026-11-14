@@ -430,7 +430,7 @@ async def test_text_dedup_rejects_different_request_facts(batch_queue: Generatio
         task_type="text_episode_script",
         media_type="text",
         resource_id="episode-1",
-        payload={"episode": 1, "instructions": "first", "projects_root": "/same-projects"},
+        payload={"episode": 1, "instructions": "first"},
     )
     assert repeated["task_id"] == first["task_id"]
     assert repeated["deduped"] is True

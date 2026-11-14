@@ -367,11 +367,9 @@ Do not paste complete logs directly into a public issue. Remove the following be
 4. Record the current image version;
 5. Perform the upgrade during an acceptable maintenance window.
 
-> ArcReel does not support downgrades. An upgrade may rewrite the data root layout, the database schema, and project structures, and older versions cannot read the upgraded data. To go back to an older version, stop the service and restore the backup taken before the upgrade.
+> ArcReel does not support downgrades. An upgrade may rewrite the database schema and project structures, and older versions cannot read the upgraded data. To go back to an older version, stop the service and restore the backup taken before the upgrade.
 
 ### 5.2 Upgrade the Default Deployment {#upgrade-sqlite-deployment}
-
-When upgrading from a version released before the data root layout change, run the commands below with your existing Compose file first, then switch to the single-volume Compose file as described in [Data Root Layout Migration](#data-root-layout-migration).
 
 From `deploy/`:
 
@@ -386,8 +384,6 @@ curl -f http://localhost:1241/health
 ```
 
 ### 5.3 Upgrade the Production Deployment {#upgrade-postgresql-deployment}
-
-When upgrading from a version released before the data root layout change, likewise keep your existing Compose file first, then switch to the single-volume Compose file as described in [Data Root Layout Migration](#data-root-layout-migration).
 
 From `deploy/production/`:
 
@@ -404,49 +400,11 @@ curl -f http://localhost:1241/health
 
 The application runs database migrations when it starts. Do not skip multiple versions and upgrade directly without a backup.
 
-### 5.4 Data Root Layout Migration {#data-root-layout-migration}
+### 5.4 Moving In from Upstream ArcReel {#from-upstream-arcreel}
 
-When you upgrade from an older version in which projects, the database, and other data sat side by side at the top of the data root, the first startup automatically reorganizes the data root into the layout shown in [Persistent Directories](#sqlite-volumes). The data root stays the same directory you already configured and mounted, so no environment variables need to change:
+This version does not take over an upstream ArcReel installation. The data root is read and written only in the layout shown in [Persistent Directories](#sqlite-volumes); the old flat layout, the old default database file name `.arcreel.db`, the `logs/` directory under the code directory, and the old system configuration file are neither moved nor imported. The database can only be created from an empty database; an upstream database cannot be attached.
 
-- Project directories move into `projects/` under the data root. Directories with valid names but no `project.json` move there unchanged as well, but are not shown as projects; directories named after system directories such as `logs`, `users`, and `runtime` are the exception and stay where they are. A project named `projects` keeps its name after the move.
-- `_global_assets/` is renamed to `global_assets/`, `.arcreel/users/` moves to `users/`, and runtime state such as migration markers moves into `runtime/`.
-- Credentials in `vertex_keys/` one level above the data root (the `./vertex_keys` volume in Docker) are merged into `vertex_keys/` under the data root: files referenced by credential records are saved by credential ID as `vertex_cred_<credential-id>.json`, and other `.json` files keep their names.
-- Existing Agent sessions, global assets, Vertex credentials, usage records, and queued tasks are rewritten accordingly and keep working after the upgrade.
-
-These steps run one by one, and every step is safe to rerun: if the container is killed or the process crashes, the next startup finishes the job. When all steps are done, a completion marker is written to `runtime/`, and later startups only check that marker. If a step fails, startup logs an ERROR and the service stops starting instead of running on a half-migrated layout; fix the cause shown in the log and restart to resume. For example, if `projects/` under the data root already contains a directory with the same name as a project being moved, the migration stops and you need to decide manually which copy to keep. When a file with the same name already exists at the new location of global assets or user memory, the migration does not stop: the old file stays in its old location and the startup log records a warning.
-
-Two more items are not governed by the completion marker and are checked on every startup:
-
-- The default SQLite database `.arcreel.db` (with `-wal` / `-shm`) is renamed to `arcreel.db`. This happens when the database address is resolved, so the original database is used whether the application or Alembic runs first. If both the old and new files exist, nothing is renamed, `arcreel.db` stays in use, and the startup log records a warning. When `DATABASE_URL` is set (including PostgreSQL), the database is left untouched.
-- Files in the old log directory under the code directory (the `./logs` volume in Docker) are merged into `logs/` under the data root; files whose names already exist at the new location stay where they are. Errors in this step are only logged and do not block startup. A custom log directory set through `ARCREEL_LOG_DIR` is not moved.
-
-**Back up the entire data root before upgrading**, together with the old log and credential directories outside it (the `./logs` and `./vertex_keys` volumes in Docker; otherwise `logs/` under the code directory and `vertex_keys/` one level above the data root). Back up an external database separately. The migration moves files from those two directories into the data root. Older versions treat `projects/` as a project and do not recognize the new database file name; downgrading requires restoring that backup.
-
-The new Compose files mount a single data volume, `./projects`, plus `claude_data/`; they no longer mount `./logs` or `./vertex_keys`. Files in the old volumes are merged into the data root only while those volumes are still mounted at startup, and Vertex credentials are moved only once, during the layout migration; after the completion marker is written they are no longer processed. A Docker deployment therefore upgrades from an older version in two phases (the examples use `deploy/`; for the production deployment use `deploy/production/`):
-
-1. **Upgrade with your existing Compose file (no configuration changes).** Leave the Compose file as it is and run `docker compose pull` and `docker compose up -d` as described in [Upgrade the Default Deployment](#upgrade-sqlite-deployment) or [Upgrade the Production Deployment](#upgrade-postgresql-deployment). Both old volumes are still mounted, so the first startup merges their files into the data root. Confirm that the startup log contains the data root layout migration completion message (「数据根布局迁移完成」), and that the original log and credential files now appear under `deploy/projects/logs/` and `deploy/projects/vertex_keys/` (credential files may have been renamed to `vertex_cred_<credential-id>.json`).
-2. **Then switch to the single-volume Compose file.** Remove the `./logs` and `./vertex_keys` volume lines from the Compose file (or switch to the new Compose file), then run `docker compose up -d` again. You can then delete `deploy/logs/` and `deploy/vertex_keys/`; if files remain in them (for example because a file with the same name already existed in the data root, or because the old volume was mounted read-only), first confirm that you no longer need them.
-
-If you already switched to the new Compose file but have not started the new version yet, temporarily add the two volume lines back before the first startup, then follow the two phases above.
-
-If you already switched to the new Compose file and started the new version, files in the old volumes are no longer merged automatically and must be copied by hand. The container wrote the old files as root, so prefix the commands with `sudo` if needed:
-
-```bash
-# Run in deploy/
-docker compose stop arcreel
-
-# Vertex credentials uploaded in Settings are saved as vertex_cred_<credential-id>.json, and ArcReel reads them by that file name, so keep the names unchanged
-cp -p vertex_keys/vertex_cred_*.json projects/vertex_keys/
-chmod 600 projects/vertex_keys/vertex_cred_*.json
-
-# Put the old logs in a subdirectory of logs/ so they do not overwrite the arcreel.log already written by the new version
-mkdir -p projects/logs/pre-upgrade
-cp -Rp logs/. projects/logs/pre-upgrade/
-
-docker compose start arcreel
-```
-
-After confirming that the Vertex credentials work in Settings, delete `deploy/logs/` and `deploy/vertex_keys/`. Credential files in the old directory whose names do not follow the `vertex_cred_<credential-id>.json` pattern are not read; upload those credentials again in Settings.
+To bring projects over from upstream, first open them in upstream ArcReel so they are upgraded to schema 19 or later, export them as archives, and import those archives into this version; see [Project Schema Migrations](#project-schema-migrations). Enter provider settings and credentials again on the Settings page.
 
 ### 5.5 Project Schema Migrations {#project-schema-migrations}
 

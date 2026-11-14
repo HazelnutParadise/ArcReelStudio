@@ -23,7 +23,7 @@ update_docs: fact-check
 
 - 已安装 Docker 和 Docker Compose
 - 已安装 `sqlite3` 命令行工具（先运行 `sqlite3 --version` 确认）
-- ArcReel 当前使用默认 SQLite 部署，数据库位于 `deploy/projects/arcreel.db`。如果那里仍是旧文件名 `.arcreel.db`，说明还没有用新版本启动过，先按[数据根布局迁移](./deployment.md#data-root-layout-migration)完成升级
+- ArcReel 当前使用默认 SQLite 部署，数据库位于 `deploy/projects/arcreel.db`
 - `deploy/production/pgdata/` 与 `deploy/production/projects/` 尚未存放需要保留的生产数据
 
 ## 迁移步骤 {#migration-steps}

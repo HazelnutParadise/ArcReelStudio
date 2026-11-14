@@ -88,7 +88,7 @@ docker compose pull
 docker compose up -d
 ```
 
-ArcReel 启动时会自动执行数据库与项目结构迁移。正常更新不会主动删除已挂载的数据目录，但更新前仍应备份数据根和数据库。ArcReel 不支持降级，回到旧版本需要恢复更新前的备份。从数据根布局调整之前的版本升级时，Compose 卷的调整步骤见[数据根布局迁移](../ops/deployment.md#data-root-layout-migration)。不要使用会删除数据卷的清理命令代替普通更新。
+ArcReel 启动时会自动执行数据库与项目结构迁移。正常更新不会主动删除已挂载的数据目录，但更新前仍应备份数据根和数据库。ArcReel 不支持降级，回到旧版本需要恢复更新前的备份。从上游 ArcReel 迁入项目的方式见[从上游 ArcReel 迁入](../ops/deployment.md#from-upstream-arcreel)。不要使用会删除数据卷的清理命令代替普通更新。
 
 设置页的“关于”区域可以检查新版本并打开发布页，但不会在网页中自动升级服务器。
 

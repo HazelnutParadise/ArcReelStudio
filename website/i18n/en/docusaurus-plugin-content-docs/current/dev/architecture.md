@@ -371,14 +371,14 @@ Layout of the data root ([ADR 0088](https://github.com/HazelnutParadise/ArcReelS
 ├── logs/                      file logs
 ├── vertex_keys/               Vertex credentials
 ├── trial_runs/                output of endpoint "Test connection" runs
-└── runtime/                   generation admission locks, migration completion markers, migration error log, image thumbnail cache
+└── runtime/                   generation admission locks, session import completion marker, migration error log, image thumbnail cache
 ```
 
 - The location of every entry comes only from `DataRootLayout` in `lib/infra/data_root_layout.py`; other code neither builds these paths itself nor derives the data root from a project directory.
 - "What is a project" is answered only by `is_project_dir`: a directory under `projects/` whose name matches the project name rule and that contains `project.json`. No other entry in the data root is a project, so new system directories need no prefix or registration list.
 - Agent read access to the data root is denied by default; only the current project and the current user's memory are allowed.
 - The code directory holds only code and configuration; nothing writes runtime data into it.
-- When upgrading from the old layout, the data root layout migration at startup (`lib/infra/data_root_layout_migration.py`) moves entries into the locations above and then writes a completion marker under `runtime/`.
+- Only the layout above is recognized; the old layout of an upstream ArcReel installation is not migrated (`docs/adr/0132`).
 
 ## 10. Database {#database}
 

@@ -367,11 +367,9 @@ docker compose logs -f postgres
 4. 记录当前镜像版本；
 5. 在可接受的维护窗口执行升级。
 
-> ArcReel 不支持降级。升级可能改写数据根布局、数据库结构和项目结构，旧版本无法读取升级后的数据；要回到旧版本，需要停止服务并恢复升级前的备份。
+> ArcReel 不支持降级。升级可能改写数据库结构和项目结构，旧版本无法读取升级后的数据；要回到旧版本，需要停止服务并恢复升级前的备份。
 
 ### 5.2 默认部署升级 {#upgrade-sqlite-deployment}
-
-从数据根布局调整之前的版本升级时，先沿用原来的 Compose 文件执行下面的命令，再按[数据根布局迁移](#data-root-layout-migration)切到单卷 Compose。
 
 在 `deploy/` 中：
 
@@ -386,8 +384,6 @@ curl -f http://localhost:1241/health
 ```
 
 ### 5.3 生产部署升级 {#upgrade-postgresql-deployment}
-
-从数据根布局调整之前的版本升级时，同样先沿用原来的 Compose 文件，再按[数据根布局迁移](#data-root-layout-migration)切到单卷 Compose。
 
 在 `deploy/production/` 中：
 
@@ -404,49 +400,11 @@ curl -f http://localhost:1241/health
 
 应用启动时会执行数据库迁移。不要在没有备份的情况下跳过多个版本直接升级。
 
-### 5.4 数据根布局迁移 {#data-root-layout-migration}
+### 5.4 从上游 ArcReel 迁入 {#from-upstream-arcreel}
 
-从项目、数据库等平铺在数据根下的旧版本升级时，首次启动会自动把数据根整理成[持久化目录](#sqlite-volumes)一节所示的布局。数据根仍是原来配置和挂载的那个目录，不需要修改环境变量：
+本版本不接管上游 ArcReel 的安装：数据根只按[持久化目录](#sqlite-volumes)一节所示的布局读写，旧的平铺布局、旧的默认数据库文件名 `.arcreel.db`、代码目录下的 `logs/` 和旧系统配置文件都不会被搬动或导入；数据库也只能从空库建出，不能接上上游的数据库。
 
-- 项目目录搬进数据根下的 `projects/`。名字合法但没有 `project.json` 的目录也原样搬入，只是不显示为项目；与 `logs`、`users`、`runtime` 等系统目录同名的目录除外，它们留在原位。名为 `projects` 的项目搬入后名字不变。
-- `_global_assets/` 改名为 `global_assets/`，`.arcreel/users/` 搬到 `users/`，迁移标记等运行时状态收进 `runtime/`。
-- 数据根上一级 `vertex_keys/`（Docker 中为 `./vertex_keys` 卷）里的凭据并入数据根下的 `vertex_keys/`：凭据记录对应的文件按凭据编号保存为 `vertex_cred_<凭据编号>.json`，其余 `.json` 文件保持原名。
-- 已有的 Agent 会话、全局资产、Vertex 凭据、费用记录和排队中的任务随之改写，升级后照常可用。
-
-这些步骤逐步执行，每一步都可以安全重跑：容器被杀或进程崩溃后，下次启动会接着完成。全部完成后在 `runtime/` 写入完成标记，之后每次启动只检查这个标记。某一步失败时，启动日志记录 ERROR，服务停止启动，不会在半迁移的布局上继续运行；按日志处理后重启即可续跑。例如数据根的 `projects/` 下已有与待搬项目同名的目录时，迁移会停下，需要人工确认保留哪一份。全局资产和用户记忆在新位置已有同名文件时不会停下：旧文件留在原位置，启动日志记录告警。
-
-另有两项不受完成标记控制，每次启动都会检查：
-
-- 默认 SQLite 数据库 `.arcreel.db`（连同 `-wal` / `-shm`）改名为 `arcreel.db`。这一步在解析数据库地址时完成，先启动应用还是先运行 Alembic 都会连到原来的库。新旧两个文件同时存在时不改名，继续使用 `arcreel.db`，启动日志记录告警。设置了 `DATABASE_URL`（含 PostgreSQL）时不动数据库。
-- 原先代码目录下的日志目录（Docker 中为 `./logs` 卷）里的文件并入数据根下的 `logs/`，新位置已有同名文件时旧文件留在原处。这一步出错只记录日志、不阻止启动。`ARCREEL_LOG_DIR` 指向的自定义日志目录不会搬动。
-
-**升级前备份整个数据根**，连同数据根外的旧日志目录与旧凭据目录（Docker 中为 `./logs`、`./vertex_keys` 卷，其余部署为代码目录下的 `logs/` 与数据根上一级的 `vertex_keys/`）；外部数据库另行备份。迁移会把这两处的文件搬进数据根。旧版本会把 `projects/` 当成一个项目，也不认识新的数据库文件名；降级需要恢复这份备份。
-
-新版 Compose 只挂载一个数据卷 `./projects`，外加 `claude_data/`，不再挂载 `./logs` 与 `./vertex_keys`。旧卷里的文件只有在启动时仍挂着才会并入数据根，其中 Vertex 凭据只在布局迁移那一次搬入，写下完成标记后不再处理。因此 Docker 部署从旧版本升级分两个阶段（以下以 `deploy/` 为例，生产部署换成 `deploy/production/`）：
-
-1. **沿用原来的 Compose 升级（零配置）。** 不改 Compose 文件，按[默认部署升级](#upgrade-sqlite-deployment)或[生产部署升级](#upgrade-postgresql-deployment)执行 `docker compose pull` 与 `docker compose up -d`。此时两个旧卷仍挂着，首次启动会把其中的文件并入数据根。在启动日志中确认出现「数据根布局迁移完成」，并确认原来的日志和凭据文件已出现在 `deploy/projects/logs/`、`deploy/projects/vertex_keys/` 下（凭据文件名可能已改为 `vertex_cred_<凭据编号>.json`）。
-2. **之后再切到单卷 Compose。** 删去 Compose 中 `./logs` 与 `./vertex_keys` 两行卷（或换用新版 Compose 文件），再执行 `docker compose up -d`。之后 `deploy/logs/`、`deploy/vertex_keys/` 可以删除；如果其中还有文件（例如数据根里已有同名文件，或旧卷是只读挂载），先确认不再需要。
-
-如果已经换成新版 Compose、但还没有用新版本启动过，首次启动前把这两行卷临时加回去，再按上面两个阶段操作。
-
-如果已经换成新版 Compose 并用新版本启动过，旧卷里的文件不会再自动并入，需要手工补齐。旧卷里的文件由容器以 root 写入，必要时在命令前加 `sudo`：
-
-```bash
-# 在 deploy/ 中执行
-docker compose stop arcreel
-
-# 设置页上传的 Vertex 凭据保存为 vertex_cred_<凭据编号>.json，ArcReel 按这个文件名读取，拷贝时保持原名
-cp -p vertex_keys/vertex_cred_*.json projects/vertex_keys/
-chmod 600 projects/vertex_keys/vertex_cred_*.json
-
-# 旧日志放进 logs/ 下的子目录，避免与新版本已写出的 arcreel.log 同名覆盖
-mkdir -p projects/logs/pre-upgrade
-cp -Rp logs/. projects/logs/pre-upgrade/
-
-docker compose start arcreel
-```
-
-确认设置页中的 Vertex 凭据可以正常使用后，再删除 `deploy/logs/`、`deploy/vertex_keys/`。旧目录里不是 `vertex_cred_<凭据编号>.json` 这种名字的凭据文件不会被读取，对应凭据需要在设置页重新上传。
+要带走上游的项目，先在上游 ArcReel 中把项目升级到 schema 19 或更高版本并导出归档，再在本版本中导入，见[项目结构迁移](#project-schema-migrations)。供应商配置与凭据在设置页重新填写。
 
 ### 5.5 项目结构迁移 {#project-schema-migrations}
 

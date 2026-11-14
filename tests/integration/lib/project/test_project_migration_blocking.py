@@ -263,7 +263,6 @@ def test_web_retry_reports_the_reason_then_unblocks_once_repaired(tmp_path: Path
 
 
 async def test_retry_success_uses_caller_scoped_queue_and_capabilities(tmp_path: Path, file_db_factory) -> None:
-    projects_root = tmp_path / "projects"
     projects = ProjectManager(tmp_path)
     projects.create_project("demo", content_mode="ad")
     projects.create_project_metadata("demo", "Demo", "", "ad", target_duration=30)
@@ -308,7 +307,7 @@ async def test_retry_success_uses_caller_scoped_queue_and_capabilities(tmp_path:
         task_type="storyboard",
         media_type="image",
         resource_id="E1S01",
-        payload={"projects_root": str(projects_root)},
+        payload={},
         script_file="episode_1.json",
         source="mcp",
         user_id="tenant-user",
