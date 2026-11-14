@@ -171,6 +171,29 @@ export function mergeExternalFields<T>(base: T, mine: T, theirs: T): { value: T;
   return { value: merged as T, conflict };
 }
 
+/** 把新到的已保存内容并入单元状态：自己写入的回显保留未保存修改，别人的修改按合并规则或标为外部更新。 */
+function adoptSource<T>(
+  state: UnitState<T>,
+  source: T,
+  isEqual: (a: T, b: T) => boolean,
+  mergeFields: boolean,
+): UnitState<T> {
+  // 命中某个预期时，它和更早的预期都已兑现，只留下之后的；没命中说明掺进了别人的修改，预期全部作废
+  const hit = state.expected.findIndex((expected) => isEqual(source, expected));
+  const ownWrite = hit >= 0;
+  const next = { ...state, seenSource: source, expected: ownWrite ? state.expected.slice(hit + 1) : [] };
+  if (isEqual(source, state.saved)) return next;
+  if (isEqual(state.value, state.saved)) {
+    return { ...next, saved: source, value: source, externallyUpdated: false };
+  }
+  if (mergeFields || ownWrite) {
+    const { value: merged, conflict } = mergeExternalFields(state.saved, state.value, source);
+    // 先前标出的冲突仍未解决（保存或放弃才清除），本次合并没有新冲突也保留标记
+    return { ...next, saved: source, value: merged, externallyUpdated: state.externallyUpdated || conflict };
+  }
+  return { ...next, saved: source, externallyUpdated: !isEqual(state.value, source) };
+}
+
 /**
  * 编辑单元：一次显式保存所提交的界面范围（一个设置视图、一张资产、一个分镜详情、一个记忆文件等）。
  * 单元内的字段先进入未保存修改，由 `save` 统一提交；挂载期间自动登记到离开拦截。
@@ -198,21 +221,7 @@ export function useEditUnit<T>({
   // 避免先用旧内容渲染一帧。与当前已保存内容相同的推送（如自己保存后的回显）不算外部更新。
   let current = state;
   if (!isEqual(source, state.seenSource)) {
-    // 命中某个预期时，它和更早的预期都已兑现，只留下之后的；没命中说明掺进了别人的修改，预期全部作废
-    const hit = state.expected.findIndex((expected) => isEqual(source, expected));
-    const ownWrite = hit >= 0;
-    const next = { ...state, seenSource: source, expected: ownWrite ? state.expected.slice(hit + 1) : [] };
-    if (isEqual(source, state.saved)) {
-      current = next;
-    } else if (isEqual(state.value, state.saved)) {
-      current = { ...next, saved: source, value: source, externallyUpdated: false };
-    } else if (mergeFields || ownWrite) {
-      const { value: merged, conflict } = mergeExternalFields(state.saved, state.value, source);
-      // 先前标出的冲突仍未解决（保存或放弃才清除），本次合并没有新冲突也保留标记
-      current = { ...next, saved: source, value: merged, externallyUpdated: state.externallyUpdated || conflict };
-    } else {
-      current = { ...next, saved: source, externallyUpdated: !isEqual(state.value, source) };
-    }
+    current = adoptSource(state, source, isEqual, mergeFields);
     setState(current);
   }
 
