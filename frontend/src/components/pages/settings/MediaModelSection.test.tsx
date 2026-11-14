@@ -710,6 +710,37 @@ describe("MediaModelSection – 推荐变化提示", () => {
       expect(screen.queryByText(EXTERNAL)).not.toBeInTheDocument();
     });
 
+    it("does not report an external update when a second switch lands before the first re-read", async () => {
+      const user = userEvent.setup();
+      pending = [videoChange, imageChange];
+      render(<MediaModelSection />);
+      const timeout = await editTimeout(user);
+
+      // 两次重读都先挂起：内容按发起时的服务端取，之后才依次交回
+      const read = vi.mocked(API.getSystemConfig).getMockImplementation();
+      if (!read) throw new Error("getSystemConfig has no implementation");
+      const held: Array<() => void> = [];
+      vi.mocked(API.getSystemConfig).mockImplementation(async () => {
+        const response = await read();
+        return new Promise((resolve) => held.push(() => resolve(response)));
+      });
+
+      await user.click(screen.getByRole("button", { name: "切换到 seedance" }));
+      await user.click(screen.getByRole("button", { name: "切换到 gpt-image-edit" }));
+      await waitFor(() => expect(held).toHaveLength(2));
+      for (const release of held) {
+        release();
+        await waitFor(() => expect(API.getRecommendationChanges).toHaveBeenCalled());
+      }
+
+      await waitFor(() => expect(screen.queryByRole("button", { name: /^切换到 / })).not.toBeInTheDocument());
+      expect(screen.getByRole("combobox", { name: "默认视频模型" })).toHaveTextContent(/seedance/);
+      expect(screen.getByRole("combobox", { name: "默认图片模型" })).toHaveTextContent(/gpt-image-edit/);
+      expect(timeout).toHaveValue("7200");
+      expect(screen.getByText("有未保存的修改")).toBeInTheDocument();
+      expect(screen.queryByText(EXTERNAL)).not.toBeInTheDocument();
+    });
+
     it("still reports an external update when the re-read also brings another member's save", async () => {
       const user = userEvent.setup();
       pending = [imageChange];

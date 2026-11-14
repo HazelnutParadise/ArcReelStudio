@@ -102,10 +102,11 @@ export interface EditUnit<T> {
   discard: () => void;
   /**
    * 调用方绕过 `save` 自己写入了已保存内容（如在提示上一键切换），随后重读会得到 `expected`。
-   * 下一次 `source` 恰好等于它时当作自己的写入：成为已保存内容，未保存修改按字段保留，不标出外部更新；
-   * 不等时（重读还带来了别人的修改）照常按外部更新处理。需在触发重读之前调用。
+   * 传函数时以上一个仍在等待的预期为底（没有时为当前已保存内容）推出新的预期：前一次重读还没回来就又写了一次，
+   * 两次写入都算进去。之后 `source` 等于其中某个预期时当作自己的写入：成为已保存内容，未保存修改按字段保留，
+   * 不标出外部更新；都不等时（重读还带来了别人的修改）照常按外部更新处理。需在触发重读之前调用。
    */
-  expectSource: (expected: T) => void;
+  expectSource: (expected: T | ((pending: T) => T)) => void;
   /**
    * 「保存并生成」：确认（如需要）→ 保存（有修改时）→ 生成。
    * 确认被取消时什么都不保存，保存失败时不生成；返回是否执行了生成。
@@ -123,8 +124,8 @@ interface UnitState<T> {
   status: SaveStatus;
   error: string | null;
   externallyUpdated: boolean;
-  /** `expectSource` 登记的、下一次重读应当得到的已保存内容。 */
-  expected: { value: T } | null;
+  /** `expectSource` 登记的、之后的重读应当得到的已保存内容，按写入顺序。 */
+  expected: T[];
 }
 
 /**
@@ -190,16 +191,17 @@ export function useEditUnit<T>({
     status: "idle",
     error: null,
     externallyUpdated: false,
-    expected: null,
+    expected: [],
   }));
 
   // 已保存内容来自外部的变化：在渲染期同步（React 的「随 props 调整 state」写法），
   // 避免先用旧内容渲染一帧。与当前已保存内容相同的推送（如自己保存后的回显）不算外部更新。
   let current = state;
   if (!isEqual(source, state.seenSource)) {
-    // 登记的预期只管这一次变化，无论是否命中都随之清除
-    const ownWrite = state.expected !== null && isEqual(source, state.expected.value);
-    const next = { ...state, seenSource: source, expected: null };
+    // 命中某个预期时，它和更早的预期都已兑现，只留下之后的；没命中说明掺进了别人的修改，预期全部作废
+    const hit = state.expected.findIndex((expected) => isEqual(source, expected));
+    const ownWrite = hit >= 0;
+    const next = { ...state, seenSource: source, expected: ownWrite ? state.expected.slice(hit + 1) : [] };
     if (isEqual(source, state.saved)) {
       current = next;
     } else if (isEqual(state.value, state.saved)) {
@@ -236,8 +238,12 @@ export function useEditUnit<T>({
   }, []);
 
   const expectSource = useCallback(
-    (expected: T) => {
-      setState((prev) => ({ ...prev, expected: isEqual(expected, prev.seenSource) ? null : { value: expected } }));
+    (expected: T | ((pending: T) => T)) => {
+      setState((prev) => {
+        const base = prev.expected.at(-1) ?? prev.seenSource;
+        const value = typeof expected === "function" ? (expected as (pending: T) => T)(base) : expected;
+        return isEqual(value, base) ? prev : { ...prev, expected: [...prev.expected, value] };
+      });
     },
     [isEqual],
   );

@@ -35,13 +35,11 @@ from arcreel_market_core.endpoint_definition import definition_media_type
 from arcreel_market_core.video_backend_contract import (
     ProviderResponseStage,
     VideoCapabilities,
-    VideoCapabilityError,
     VideoGenerationRequest,
 )
 from lib.backends.backend_assembly.specs import effective_builtin_video_capabilities
 from lib.backends.container_sniff import CONTAINER_HEAD_BYTES, sniff_container
 from lib.backends.image_backends.base import (
-    ImageCapabilityError,
     ImageGenerationRequest,
     ReferenceImage,
 )
@@ -51,12 +49,11 @@ from lib.backends.video_frame_slots import resolve_first_frame_aspect_ratio, res
 from lib.billing.ledger import Ledger
 from lib.config.resolver import ConfigResolver
 from lib.custom_provider import is_custom_provider
-from lib.custom_provider.comfyui.failures import ComfyuiError
-from lib.custom_provider.declarative_backend import DeclarativeRuntimeError, DeclarativeVideoBackend
+from lib.custom_provider.declarative_backend import DeclarativeVideoBackend
 from lib.custom_provider.declarative_image_backend import DeclarativeImageBackend
 from lib.db.base import DEFAULT_USER_ID
 from lib.db.repositories.usage_repo import bound_provider_response
-from lib.generation.task_failure import encode_failure
+from lib.generation.task_failure_encoding import encode_task_failure_message
 from lib.infra.async_thread import run_noninterruptible_async, run_noninterruptible_sync, run_sync_transaction
 from lib.infra.data_root_layout import DataRootLayout
 
@@ -518,12 +515,9 @@ class TrialRunManager:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            # 两种运行时与两道能力闸的失败载体同形（稳定 code + 可序列化 params），编码成失败码后
-            # 读侧按同一条路径本地化；其余异常没有稳定码可编，原样留字符串。
-            structured = isinstance(
-                exc, DeclarativeRuntimeError | ComfyuiError | VideoCapabilityError | ImageCapabilityError
-            )
-            run.error = encode_failure(exc.code, **exc.params) if structured else str(exc)
+            # 与生成任务的失败同一份编码：带稳定码的失败（两种运行时、两道能力闸、装配期的结构化错误如
+            # Vertex 凭证缺失）编成失败码，读侧按请求语言本地化；其余异常没有稳定码可编，原样留字符串。
+            run.error = encode_task_failure_message(exc)
             self._settling.add(run.id)
             await run_noninterruptible_async(self._finish(run, run_dir, target, capture, TrialRunStatus.FAILED))
 

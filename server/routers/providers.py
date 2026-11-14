@@ -42,6 +42,7 @@ from lib.config.resolver import (
 )
 from lib.config.service import ConfigService, ProviderConfigValueError
 from lib.config.url_utils import normalize_base_url
+from lib.config.vertex_credentials import VERTEX_PROVIDER_ID, has_vertex_credentials_file
 from lib.custom_provider import is_custom_provider, parse_provider_id
 from lib.db import async_session_factory, get_async_session
 from lib.db.base import dt_to_iso
@@ -938,14 +939,8 @@ def _check_gemini_vertex(config: dict[str, str], _t: Callable[..., str]) -> Conn
     from google import genai
     from google.oauth2 import service_account
 
-    credentials_path = config.get("credentials_path", "")
-    if not credentials_path or not Path(credentials_path).is_file():
-        return ConnectivityCheckResponse(
-            success=False,
-            available_models=[],
-            message=_t("file_not_found", path=credentials_path),
-        )
-
+    # 凭证文件是否存在由调用方先核对（报出连线名，不报服务端路径）
+    credentials_path = config["credentials_path"]
     with open(credentials_path, encoding="utf-8") as f:
         creds_data = json.load(f)
 
@@ -1199,7 +1194,8 @@ async def check_provider_connectivity(
 
     svc = ConfigService(session)
     config = await svc.get_provider_config(provider_id)
-    cred.overlay_config(config)
+    # 叠加凭证时会探测 Vertex 凭证文件是否存在，放进线程
+    await asyncio.to_thread(cred.overlay_config, config)
 
     # 与简单族 backend 构造的 base_url 优先级对称：用户未显式配 base_url
     # 时，注入 ProviderMeta.default_base_url，使连通性检查命中正确 endpoint。
@@ -1207,6 +1203,15 @@ async def check_provider_connectivity(
         meta = PROVIDER_REGISTRY.get(provider_id)
         if meta and meta.default_base_url:
             config["base_url"] = meta.default_base_url
+
+    if provider_id == VERTEX_PROVIDER_ID and not await asyncio.to_thread(
+        has_vertex_credentials_file, config.get("credentials_path")
+    ):
+        return ConnectivityCheckResponse(
+            success=False,
+            available_models=[],
+            message=_t("vertex_credential_file_missing", connection=cred.name),
+        )
 
     check_fn = _CONNECTIVITY_CHECK_DISPATCH.get(provider_id)
     if check_fn is None:

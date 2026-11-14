@@ -324,7 +324,7 @@ export function MediaModelSection() {
   const onRecommendationResolved = useCallback(
     async (change: RecommendationChange, applied: boolean) => {
       if (applied) setFields((prev) => withAppliedRecommendation(prev, savedFields, change));
-      expectSource(applied ? withAppliedRecommendation(savedFields, savedFields, change) : savedFields);
+      if (applied) expectSource((pending) => withAppliedRecommendation(pending, pending, change));
       useCapabilitiesStore.getState().invalidate();
       await fetchConfig();
       void reloadCandidates();

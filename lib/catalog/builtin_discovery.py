@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Literal
 
 from arcreel_catalog_core import CatalogEntry
@@ -186,9 +185,8 @@ def _list_google_vertex(config: Mapping[str, str]) -> list[str]:
 
     from lib.backends.gemini_shared import VERTEX_SCOPES
 
-    credentials_path = config.get("credentials_path", "")
-    if not credentials_path or not Path(credentials_path).is_file():
-        raise BuiltinDiscoveryConfigError("file_not_found", path=credentials_path)
+    # 凭证文件是否存在由调用方先核对（报出连线名，不报服务端路径）
+    credentials_path = config["credentials_path"]
     with open(credentials_path, encoding="utf-8") as f:
         project_id = json.load(f).get("project_id")
     if not project_id:

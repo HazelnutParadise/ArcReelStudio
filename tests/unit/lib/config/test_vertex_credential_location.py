@@ -103,3 +103,27 @@ async def test_uploaded_credential_is_stored_in_data_root_and_loadable(
 
     assert _loaded_project_id(config) == "uploaded"
     assert Path(config["credentials_path"]).is_relative_to(layout.root)
+
+
+async def test_connection_check_without_the_file_names_the_connection_not_the_server_path(
+    layout: DataRootLayout, db_factory: async_sessionmaker[AsyncSession]
+) -> None:
+    async with db_factory() as session:
+        await _active_vertex_credential(session, credentials_path=None)
+        await session.commit()
+    app = FastAPI()
+
+    async def _session():
+        async with db_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_async_session] = _session
+    override_auth(app)
+    app.include_router(providers.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
+    async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/api/v1/providers/gemini-vertex/test", headers={"Accept-Language": "en"})
+
+    body = resp.json()
+    assert body["success"] is False
+    assert "“Vertex”" in body["message"]
+    assert str(layout.root) not in body["message"]

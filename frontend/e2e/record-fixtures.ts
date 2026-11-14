@@ -144,7 +144,7 @@ const RECORDINGS: Recording[] = [
     method: "GET",
     path: "/api/v1/prompt-templates/partials/shared/additional_instructions",
   },
-  // 全局设置「调用端点」：自定义端点列表（录制环境为空，多条目由场景替换）与各端点的分享提交（决定是否提供分享入口）；官方服务开关见上。
+  // 全局设置「调用端点」：自定义端点列表（录制环境为空，多条目由场景替换）与各端点的分享提交（官方服务开启时才请求，决定是否提供分享入口）；官方服务开关见上。
   { file: "custom-endpoints", method: "GET", path: "/api/v1/custom-endpoints" },
   // 内置端点详情的只读定义。
   {
@@ -152,7 +152,8 @@ const RECORDINGS: Recording[] = [
     method: "GET",
     path: "/api/v1/custom-providers/endpoints/newapi-video/definition",
   },
-  { file: "market-submissions", method: "GET", path: "/api/v1/market/submissions" },
+  // 官方服务默认关闭（docs/adr/0133），录制环境没有打开它，分享提交照实录下 409；要看提交状态的场景自己替换。
+  { file: "market-submissions", method: "GET", path: "/api/v1/market/submissions", status: 409 },
   // 全局设置「素材库与存储」：对象存储连接与新增图片保存位置（录制环境没有连接，保存位置为本地）、素材库账号与推理凭证绑定（为空）；已配置的状态由场景替换。
   { file: "object-storage-connection", method: "GET", path: "/api/v1/object-storage/connection" },
   { file: "asset-library-accounts", method: "GET", path: "/api/v1/asset-library/accounts" },
