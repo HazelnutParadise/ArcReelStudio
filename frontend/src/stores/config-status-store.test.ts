@@ -16,7 +16,6 @@ function makeConfigResponse(overrides?: Partial<GetSystemConfigResponse["setting
       video_poll_timeout_seconds: 3600,
       gpu_encoding_enabled: true,
       anthropic_api_key: { is_set: false, masked: null },
-      anthropic_base_url: "",
       anthropic_model: "",
       anthropic_default_haiku_model: "",
       anthropic_default_opus_model: "",

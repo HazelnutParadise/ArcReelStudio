@@ -10,7 +10,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, BeforeValidator, Field
 
-from lib.config.model_setting_keys import PROJECT_MODEL_SETTING_KEYS, credential_key
+from lib.config.model_setting_keys import PROJECT_MODEL_SETTING_KEYS, credential_key, provider_of
 from lib.episode.episode_target_duration import (
     EPISODE_TARGET_DURATION_FIELD,
     MAX_EPISODE_TARGET_DURATION,
@@ -139,7 +139,7 @@ def apply_project_settings_patch(project: dict, patch: ProjectSettingsPatch) -> 
     """把 ``patch`` 里出现的字段写进 ``project``（原地修改）；不合规时抛 ``ApiError``，调用方整次放弃。"""
     fields = patch.model_fields_set
     is_ad = project.get("content_mode") == "ad"
-    providers_before = {key: _provider_of(project.get(key)) for key in PROJECT_MODEL_SETTING_KEYS}
+    providers_before = {key: provider_of(project.get(key)) for key in PROJECT_MODEL_SETTING_KEYS}
     for field in PROJECT_BACKEND_FIELDS:
         if field in fields:
             value = getattr(patch, field)
@@ -238,16 +238,12 @@ def _apply_credentials(project: dict, patch: ProjectSettingsPatch, providers_bef
         cred_key = credential_key(key)
         if cred_key in fields:
             value = getattr(patch, cred_key)
-            if value is None or not _provider_of(project.get(key)):
+            if value is None or not provider_of(project.get(key)):
                 project.pop(cred_key, None)
             else:
                 project[cred_key] = value
-        elif _provider_of(project.get(key)) != providers_before[key]:
+        elif provider_of(project.get(key)) != providers_before[key]:
             project.pop(cred_key, None)
-
-
-def _provider_of(value: object) -> str:
-    return value.split("/", 1)[0].strip() if isinstance(value, str) and value else ""
 
 
 def _apply_narration(project: dict, patch: ProjectSettingsPatch) -> None:

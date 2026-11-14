@@ -29,7 +29,7 @@ export function useLiveEditUnit<T>({
   value,
   isEqual,
   onJoined,
-}: LiveEditUnitOptions<T>): { saving: boolean; unit: EditUnit<T> } | null {
+}: LiveEditUnitOptions<T>): { saving: boolean; unit: Omit<EditUnit<T>, "expectSource"> } | null {
   const { room, snapshot } = useCollabRoom(collab?.ref ?? null);
   const fromUnit = collab?.fromUnit;
   const toUnit = collab?.toUnit;

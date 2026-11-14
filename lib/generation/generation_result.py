@@ -175,6 +175,8 @@ _TASK_FAILURE_ACTIONS: dict[str, GenerationAction] = {
     "model_not_in_provider_catalog": GenerationAction.CONFIGURE_PROVIDER,
     "model_not_selected": GenerationAction.CONFIGURE_PROVIDER,
     "credential_not_found": GenerationAction.CONFIGURE_PROVIDER,
+    "vertex_credential_file_missing": GenerationAction.CONFIGURE_PROVIDER,
+    "vertex_connection_missing": GenerationAction.CONFIGURE_PROVIDER,
     # 没有默认模型：到设置里选默认模型（或先配置供应商），与只选了供应商的 model_not_selected 同一类指引。
     "default_model_not_set": GenerationAction.CONFIGURE_PROVIDER,
     "model_discontinued": GenerationAction.CONFIGURE_PROVIDER,

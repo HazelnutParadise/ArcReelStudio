@@ -80,6 +80,8 @@ MESSAGES = {
     "task_fail_provider_unsupported_media": "Nhà cung cấp {provider_id} không hỗ trợ tạo {media_type}",
     "task_fail_provider_rejected": "Nhà cung cấp đã từ chối yêu cầu tạo này (HTTP {status})",
     "task_fail_credential_not_found": "Kết nối đã chọn cho “{provider}” trong thiết lập đã bị xóa. Hãy chọn lại kết nối trong thiết lập.",
+    "vertex_credential_file_missing": "Tệp thông tin xác thực của kết nối Vertex AI “{connection}” không còn nữa nên không thể gọi. Hãy tải lại tệp thông tin xác thực của tài khoản dịch vụ này trong Trung tâm kết nối",
+    "vertex_connection_missing": "Vertex AI chưa có kết nối nên không thể gọi. Hãy tải tệp thông tin xác thực của tài khoản dịch vụ lên trong Trung tâm kết nối",
     "task_fail_default_model_not_set": "Chưa đặt mô hình mặc định: hãy chọn trong Cài đặt → Mô hình mặc định; nếu chưa cấu hình nhà cung cấp nào, hãy thêm trong Cài đặt → Nhà cung cấp trước",
     "task_fail_default_model_not_set_text": "Chưa đặt mô hình văn bản mặc định: hãy chọn trong Cài đặt → Mô hình mặc định; nếu chưa cấu hình nhà cung cấp nào, hãy thêm trong Cài đặt → Nhà cung cấp trước",
     "task_fail_default_model_not_set_image": "Chưa đặt mô hình ảnh mặc định: hãy chọn trong Cài đặt → Mô hình mặc định; nếu chưa cấu hình nhà cung cấp nào, hãy thêm trong Cài đặt → Nhà cung cấp trước",

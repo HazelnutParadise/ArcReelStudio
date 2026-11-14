@@ -116,16 +116,12 @@ class TestGeminiVideoBackendProperties:
 
     def test_vertex_backend_constructs_from_credentials_file(self, mock_rate_limiter, tmp_path):
         # 准备 mock vertex 凭证文件
-        creds_file = tmp_path / "vertex_credentials.json"
+        creds_file = tmp_path / "vertex_cred_1.json"
         creds_file.write_text('{"project_id": "test-project"}')
 
         with (
             patch("google.genai") as genai_mock,
             patch("google.genai.types"),
-            patch(
-                "lib.backends.video_backends.gemini.resolve_vertex_credentials_path",
-                return_value=creds_file,
-            ),
             captured_vertex_credentials() as from_service_account_file,
         ):
             from lib.backends.video_backends.gemini import GeminiVideoBackend
@@ -133,6 +129,7 @@ class TestGeminiVideoBackendProperties:
             b = GeminiVideoBackend(
                 backend_type="vertex",
                 rate_limiter=mock_rate_limiter,
+                credentials_path=str(creds_file),
             )
             assert b.name == "gemini-vertex"
             # 凭证从服务账号文件按 Vertex scopes 加载；client 以 vertexai 模式 + 凭证文件里的 project_id 构造

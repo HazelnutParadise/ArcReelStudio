@@ -11,7 +11,7 @@ The market lets you browse call endpoints that others have already adapted, from
 
 ## 1. What Are the Market and Market Sources {#what-is-market}
 
-- **Market**: the "Market" section of global settings, with three tabs: "Browse", "My shares", and "Settings". Browsing and installing run only on your local ArcReel and the market source repositories. They do not depend on any central service, and no account is required. Install counts and ratings come from an official service you can turn off; see [Install Counts, Ratings, and the Official Service](#official-service). In the first release, the only market entry type is call endpoints.
+- **Market**: the "Market" section of global settings, with three tabs: "Browse", "My shares", and "Settings". Browsing and installing run only on your local ArcReel and the market source repositories. They do not depend on any central service, and no account is required. Install counts and ratings come from an official service that is off by default and can be turned on in settings; see [Install Counts, Ratings, and the Official Service](#official-service). In the first release, the only market entry type is call endpoints.
 - **Market source**: a GitHub repository (or an equivalent `https://` direct link) whose root index file `arcreel-market.json` lists its market entries. The ArcReel backend fetches the index and definitions on your behalf and only accesses raw file URLs.
 - **Official market source**: [`ArcReel/arcreel-market`](https://github.com/ArcReel/arcreel-market) ships preconfigured. It can be disabled, renamed, and reordered, but not deleted. Every other source you add yourself is a third-party market source.
 - **Market entry**: an installable item in an index, whose payload is a call endpoint definition, either a declarative endpoint or a ComfyUI endpoint. An entry is uniquely identified by its slug within its market source. The same slug in different market sources does not mean the same definition; such entries are displayed side by side.
@@ -156,6 +156,8 @@ Disabling or deleting a market source does not uninstall installed endpoints.
 
 The official service is an overlay run by the ArcReel team that records install counts and ratings for entries from the official market source. It takes no part in browsing or installing: when it is turned off or unreachable, the market works as usual and simply shows no numbers. The frontend only talks to your local server, which sends every request to the official service on its behalf.
 
+The official service is off by default. Until you turn it on in the "Settings" tab, the local server sends it no requests and creates no instance ID.
+
 ### 6.1 Install Counts and Ratings {#installs-and-ratings}
 
 - Cards of entries from the official market source show install counts and ratings next to the market source: the download icon marks the install count (a rounded display value from the official service), and the star marks the average rating and the number of ratings. Until there are enough ratings, only the number of ratings appears. Entries from third-party market sources show no numbers and are never sent to the official service.
@@ -169,11 +171,11 @@ The instance ID is a randomly generated UUID, created the first time it is neede
 
 The first time you open the "Market" section with the official service on, a notice at the top explains what is reported. Click "Got it", or click "Turn off official service" right away.
 
-### 6.3 Turn Off the Official Service and Reset the Instance ID {#turn-off-official-service}
+### 6.3 Turn the Official Service On or Off and Reset the Instance ID {#turn-off-official-service}
 
 On the "Settings" tab of the "Market" section, the "Official service" block provides:
 
-- **Use the official service**: when turned off, the market page no longer shows install counts, ratings, or the notice, and the local server sends nothing to the official service.
+- **Use the official service**: off by default. When turned on, the market page shows install counts and ratings, you can rate entries and share to the official market, and first installs from the official market source are reported. When turned off, the market page no longer shows install counts, ratings, or the notice, and the local server sends nothing to the official service.
 - **Reset instance ID**: deletes the current instance ID; a new one is created the next time the official service is contacted. The official service then treats this ArcReel as a new instance, and earlier install reports and ratings are no longer linked to it. Entries installed before the reset must be reinstalled before you can rate them again.
 
 For self-hosted deployments, set the environment variable `ARCREEL_OFFICIAL_SERVICE_URL` to empty to turn off the official service entirely; see [Deployment](../ops/deployment.md).

@@ -62,17 +62,6 @@ def test_google_form_strips_path_prefix():
     assert ids == ["gemini-3-flash-preview", "veo-3.1-generate-preview"]
 
 
-@pytest.mark.parametrize("credentials_path", ["", "missing.json"])
-def test_vertex_without_a_credentials_file_is_a_config_error(tmp_path, credentials_path: str):
-    path = str(tmp_path / credentials_path) if credentials_path else ""
-
-    with pytest.raises(builtin_discovery.BuiltinDiscoveryConfigError) as exc_info:
-        builtin_discovery.list_model_ids("gemini-vertex", {"credentials_path": path})
-
-    assert exc_info.value.code == "file_not_found"
-    assert exc_info.value.params == {"path": path}
-
-
 def test_classify_lists_amphibious_listing_once_per_model_key_and_infers_unknown_media():
     rows = builtin_discovery.classify_model_ids("kling", ["kling-v3-omni", "acme-video-x"])
 

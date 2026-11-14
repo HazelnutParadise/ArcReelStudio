@@ -101,6 +101,13 @@ export interface EditUnit<T> {
   /** 丢弃未保存修改，回到最新的已保存内容。 */
   discard: () => void;
   /**
+   * 调用方绕过 `save` 自己写入了已保存内容（如在提示上一键切换），随后重读会得到 `expected`。
+   * 传函数时以上一个仍在等待的预期为底（没有时为当前已保存内容）推出新的预期：前一次重读还没回来就又写了一次，
+   * 两次写入都算进去。之后 `source` 等于其中某个预期时当作自己的写入：成为已保存内容，未保存修改按字段保留，
+   * 不标出外部更新；都不等时（重读还带来了别人的修改）照常按外部更新处理。需在触发重读之前调用。
+   */
+  expectSource: (expected: T | ((pending: T) => T)) => void;
+  /**
    * 「保存并生成」：确认（如需要）→ 保存（有修改时）→ 生成。
    * 确认被取消时什么都不保存，保存失败时不生成；返回是否执行了生成。
    */
@@ -117,6 +124,8 @@ interface UnitState<T> {
   status: SaveStatus;
   error: string | null;
   externallyUpdated: boolean;
+  /** `expectSource` 登记的、之后的重读应当得到的已保存内容，按写入顺序。 */
+  expected: T[];
 }
 
 /**
@@ -162,6 +171,29 @@ export function mergeExternalFields<T>(base: T, mine: T, theirs: T): { value: T;
   return { value: merged as T, conflict };
 }
 
+/** 把新到的已保存内容并入单元状态：自己写入的回显保留未保存修改，别人的修改按合并规则或标为外部更新。 */
+function adoptSource<T>(
+  state: UnitState<T>,
+  source: T,
+  isEqual: (a: T, b: T) => boolean,
+  mergeFields: boolean,
+): UnitState<T> {
+  // 命中某个预期时，它和更早的预期都已兑现，只留下之后的；没命中说明掺进了别人的修改，预期全部作废
+  const hit = state.expected.findIndex((expected) => isEqual(source, expected));
+  const ownWrite = hit >= 0;
+  const next = { ...state, seenSource: source, expected: ownWrite ? state.expected.slice(hit + 1) : [] };
+  if (isEqual(source, state.saved)) return next;
+  if (isEqual(state.value, state.saved)) {
+    return { ...next, saved: source, value: source, externallyUpdated: false };
+  }
+  if (mergeFields || ownWrite) {
+    const { value: merged, conflict } = mergeExternalFields(state.saved, state.value, source);
+    // 先前标出的冲突仍未解决（保存或放弃才清除），本次合并没有新冲突也保留标记
+    return { ...next, saved: source, value: merged, externallyUpdated: state.externallyUpdated || conflict };
+  }
+  return { ...next, saved: source, externallyUpdated: !isEqual(state.value, source) };
+}
+
 /**
  * 编辑单元：一次显式保存所提交的界面范围（一个设置视图、一张资产、一个分镜详情、一个记忆文件等）。
  * 单元内的字段先进入未保存修改，由 `save` 统一提交；挂载期间自动登记到离开拦截。
@@ -182,34 +214,14 @@ export function useEditUnit<T>({
     status: "idle",
     error: null,
     externallyUpdated: false,
+    expected: [],
   }));
 
   // 已保存内容来自外部的变化：在渲染期同步（React 的「随 props 调整 state」写法），
   // 避免先用旧内容渲染一帧。与当前已保存内容相同的推送（如自己保存后的回显）不算外部更新。
   let current = state;
   if (!isEqual(source, state.seenSource)) {
-    if (isEqual(source, state.saved)) {
-      current = { ...state, seenSource: source };
-    } else if (isEqual(state.value, state.saved)) {
-      current = { ...state, seenSource: source, saved: source, value: source, externallyUpdated: false };
-    } else if (mergeFields) {
-      const { value: merged, conflict } = mergeExternalFields(state.saved, state.value, source);
-      // 先前标出的冲突仍未解决（保存或放弃才清除），本次合并没有新冲突也保留标记
-      current = {
-        ...state,
-        seenSource: source,
-        saved: source,
-        value: merged,
-        externallyUpdated: state.externallyUpdated || conflict,
-      };
-    } else {
-      current = {
-        ...state,
-        seenSource: source,
-        saved: source,
-        externallyUpdated: !isEqual(state.value, source),
-      };
-    }
+    current = adoptSource(state, source, isEqual, mergeFields);
     setState(current);
   }
 
@@ -233,6 +245,17 @@ export function useEditUnit<T>({
       error: null,
     }));
   }, []);
+
+  const expectSource = useCallback(
+    (expected: T | ((pending: T) => T)) => {
+      setState((prev) => {
+        const base = prev.expected.at(-1) ?? prev.seenSource;
+        const value = typeof expected === "function" ? (expected as (pending: T) => T)(base) : expected;
+        return isEqual(value, base) ? prev : { ...prev, expected: [...prev.expected, value] };
+      });
+    },
+    [isEqual],
+  );
 
   const discard = useCallback(() => {
     setState((prev) => ({ ...prev, value: prev.saved, status: "idle", error: null, externallyUpdated: false }));
@@ -301,7 +324,7 @@ export function useEditUnit<T>({
   // 放弃修改后等待落定的删除自己移除了本单元，不当作外部移除保留
   useRetainWhile((pending.dirty || pending.saving) && !discarding);
 
-  if (live) return { ...live.unit, externalChangeMessage: retention?.message };
+  if (live) return { ...live.unit, expectSource, externalChangeMessage: retention?.message };
 
   return {
     value,
@@ -314,6 +337,7 @@ export function useEditUnit<T>({
     externalChangeMessage: retention?.message,
     save,
     discard,
+    expectSource,
     saveAndGenerate,
     live: null,
   };

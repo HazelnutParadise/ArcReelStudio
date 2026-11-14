@@ -80,6 +80,8 @@ MESSAGES = {
     "task_fail_provider_unsupported_media": "供應商 {provider_id} 不支援 {media_type} 生成",
     "task_fail_provider_rejected": "供應商拒絕了這次生成請求（HTTP {status}）",
     "task_fail_credential_not_found": "設定裡為「{provider}」指定的連線已經被刪除，請到設定重新選擇連線。",
+    "vertex_credential_file_missing": "Vertex AI 連線「{connection}」的憑證檔案不見了，無法呼叫；請到連線中心重新上傳這個服務帳戶的憑證檔案",
+    "vertex_connection_missing": "Vertex AI 還沒有連線，無法呼叫；請到連線中心上傳服務帳戶的憑證檔案",
     "task_fail_default_model_not_set": "還沒有設定預設模型：請在「全域設定 → 預設模型」中選擇；還沒有設定供應商時，先在「全域設定 → 供應商」設定",
     "task_fail_default_model_not_set_text": "還沒有設定文字預設模型：請在「全域設定 → 預設模型」中選擇；還沒有設定供應商時，先在「全域設定 → 供應商」設定",
     "task_fail_default_model_not_set_image": "還沒有設定圖片預設模型：請在「全域設定 → 預設模型」中選擇；還沒有設定供應商時，先在「全域設定 → 供應商」設定",

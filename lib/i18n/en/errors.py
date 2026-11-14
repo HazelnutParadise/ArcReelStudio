@@ -80,6 +80,8 @@ MESSAGES = {
     "task_fail_provider_unsupported_media": "Provider {provider_id} does not support {media_type} generation",
     "task_fail_provider_rejected": "The provider rejected this generation request (HTTP {status})",
     "task_fail_credential_not_found": "The connection chosen for “{provider}” in settings has been deleted. Choose a connection again in settings.",
+    "vertex_credential_file_missing": "The credential file for the Vertex AI connection “{connection}” is missing, so it can't be called. Upload this service account's credential file again in Connections",
+    "vertex_connection_missing": "Vertex AI has no connection yet, so it can't be called. Upload a service account credential file in Connections",
     "task_fail_default_model_not_set": "No default model is set: choose one in Settings → Default models; if no provider is configured yet, add one in Settings → Providers first",
     "task_fail_default_model_not_set_text": "No default text model is set: choose one in Settings → Default models; if no provider is configured yet, add one in Settings → Providers first",
     "task_fail_default_model_not_set_image": "No default image model is set: choose one in Settings → Default models; if no provider is configured yet, add one in Settings → Providers first",

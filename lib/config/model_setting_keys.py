@@ -82,6 +82,14 @@ MODEL_SETTING_CAPABILITIES: dict[str, str] = {
 CREDENTIAL_KEY_SUFFIX = "_credential_id"
 
 
+def provider_of(value: object) -> str:
+    """引用模型的字段值 ``provider/model`` 的供应商部分；不是非空字符串时为空串。
+
+    项目文件可能被手改或由 Agent 写入，取不到字符串时不报错；供应商部分去掉首尾空白再比较。
+    """
+    return value.split("/", 1)[0].strip() if isinstance(value, str) and value else ""
+
+
 def credential_key(model_key: str) -> str:
     """引用模型的字段对应的连线旁键名。"""
     return f"{model_key}{CREDENTIAL_KEY_SUFFIX}"

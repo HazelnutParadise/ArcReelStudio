@@ -3167,6 +3167,7 @@ export default {
   'lobby_hero_summary': '{{completed}} episodes wrapped, {{inProduction}} still in production.',
   'lobby_filter_all': 'All',
   'lobby_card_needs_repair': 'NEEDS REPAIR',
+  'lobby_card_schema_unsupported': 'VERSION TOO OLD',
   'lobby_new_project': 'New project',
   'lobby_more_create_options': 'More ways to create',
   'lobby_import_zip_ellipsis': 'Import ZIP…',

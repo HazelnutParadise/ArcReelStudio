@@ -23,6 +23,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from arcreel_market_core.video_backend_contract import VideoCapabilities, VideoGenerationRequest
 from lib.billing.ledger import Ledger
+from lib.catalog import query as catalog
+from lib.config.resolver import ConfigResolver
 from lib.custom_provider.declarative_backend import DeclarativeVideoBackend
 from lib.custom_provider.endpoint_test import (
     TRIAL_RUN_TTL_SECONDS,
@@ -37,7 +39,11 @@ from lib.custom_provider.endpoint_test import (
     provider_from_base_url,
 )
 from lib.db.models.api_call import ApiCall
-from tests.factories import custom_endpoint_definition, image_endpoint_definition
+from lib.db.repositories.credential_repository import CredentialRepository
+from lib.generation.task_failure import render_failure
+from lib.i18n import _ as translate_message
+from lib.infra.app_data_dir import reset_for_tests
+from tests.factories import custom_endpoint_definition, image_endpoint_definition, make_display_names
 from tests.fakes import PNG_BYTES, bounded_poll_clock
 from tests.http_capture import capture_http
 
@@ -535,6 +541,38 @@ class TestTrialRun:
 
         assert run.status is TrialRunStatus.FAILED
         assert "quota exceeded" in (run.error or "")
+
+    async def test_a_vertex_connection_without_its_file_fails_with_a_localised_reason(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        trial_runs: TrialRunManager,
+        db_factory: async_sessionmaker,
+    ):
+        monkeypatch.setenv("ARCREEL_DATA_DIR", str(tmp_path / "data"))
+        reset_for_tests()
+        async with db_factory() as session:
+            repo = CredentialRepository(session)
+            cred = await repo.create(provider="gemini-vertex", name="Studio account", credentials_path=None)
+            await repo.activate(cred.id, "gemini-vertex")
+            await session.commit()
+        model = catalog.default_model("gemini-vertex", "video")
+        assert model is not None
+        target = model_ref_target("gemini-vertex", model, resolver=ConfigResolver(db_factory))
+
+        try:
+            started = await trial_runs.start(target, PARAMETERS)
+            run = await _await_terminal(trial_runs, started.id)
+        finally:
+            reset_for_tests()
+
+        assert run.status is TrialRunStatus.FAILED
+        rendered = render_failure(
+            run.error, lambda key, **params: translate_message(key, locale="en", **params), make_display_names("en")
+        )
+        assert rendered is not None
+        assert "Studio account" in rendered
+        assert rendered.startswith("The credential file for the Vertex AI connection")
 
     async def test_a_backend_that_cannot_be_built_is_not_billed(
         self, trial_runs: TrialRunManager, db_factory: async_sessionmaker

@@ -31,7 +31,7 @@
         "api_key_url": "https://api.arc-reel.com/",
         "notes": null,
         "api_key_pattern": null,
-        "is_recommended": true,
+        "is_recommended": false,
         "fixed_endpoint": false
       },
       {
