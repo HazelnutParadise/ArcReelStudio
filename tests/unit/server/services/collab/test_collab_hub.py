@@ -358,17 +358,36 @@ class SilentChanges:
         yield _iter()
 
 
-def _quiet_hub(pm: ProjectManager, specs: dict[str, Any]) -> CollabHub:
+def _quiet_hub(pm: ProjectManager, specs: dict[str, Any], **overrides: Any) -> CollabHub:
+    params: dict[str, Any] = {"debounce": 3600, "max_wait": 3600, "close_grace": 3600, "poll_interval": 3600}
     return CollabHub(
         pm,
         specs,
         SilentChanges(),
         error_text=lambda code, _detail, locale, _params: f"[{locale}] {code}",
-        debounce=3600,
-        max_wait=3600,
-        close_grace=3600,
-        poll_interval=3600,
+        **{**params, **overrides},
     )
+
+
+@pytest.fixture
+async def quiet_global_hub(hub_project_files):
+    """按给定的全局单元替身造中枢；用例结束时（含失败）一律关停。"""
+    hubs: list[CollabHub] = []
+
+    def _make(unit: Any, **overrides: Any) -> CollabHub:
+        instance = _quiet_hub(hub_project_files, {**UNIT_SPECS, "note": unit}, **overrides)
+        hubs.append(instance)
+        return instance
+
+    yield _make
+    for instance in hubs:
+        await instance.shutdown()
+
+
+async def _join_global(hub: CollabHub, *conns: FakeConn) -> None:
+    for conn in conns:
+        await hub.join(conn, GLOBAL_REF)
+        await hub.on_sync(conn, GLOBAL_REF, create_sync_message(conn.doc))
 
 
 @pytest.fixture
@@ -411,13 +430,11 @@ async def test_an_outside_change_to_another_field_reaches_every_member(quiet_hub
         assert (conn.text("synopsis"), conn.text("genre")) == ("深夜，雨夜", "爱情")
 
 
-async def test_an_outside_change_to_a_global_unit_is_merged_not_overwritten(hub_project_files) -> None:
+async def test_an_outside_change_to_a_global_unit_is_merged_not_overwritten(quiet_global_hub) -> None:
     unit = InMemoryGlobalUnit()
-    hub = _quiet_hub(hub_project_files, {**UNIT_SPECS, "note": unit})
+    hub = quiet_global_hub(unit)
     alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
-    for conn in (alice, bob):
-        await hub.join(conn, GLOBAL_REF)
-        await hub.on_sync(conn, GLOBAL_REF, create_sync_message(conn.doc))
+    await _join_global(hub, alice, bob)
 
     await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
     unit.store["k"]["body"] = "初稿。"
@@ -425,7 +442,6 @@ async def test_an_outside_change_to_a_global_unit_is_merged_not_overwritten(hub_
 
     assert unit.store["k"]["body"] == "新初稿。"
     assert alice.text("body") == bob.text("body") == "新初稿。"
-    await hub.shutdown()
 
 
 class EverChangingGlobalUnit(InMemoryGlobalUnit):
@@ -446,12 +462,11 @@ class EverChangingGlobalUnit(InMemoryGlobalUnit):
         await super().write(key, changes)
 
 
-async def test_an_outside_writer_that_never_stops_ends_in_an_error_instead_of_looping(hub_project_files) -> None:
+async def test_an_outside_writer_that_never_stops_ends_in_an_error_instead_of_looping(quiet_global_hub) -> None:
     unit = EverChangingGlobalUnit()
-    hub = _quiet_hub(hub_project_files, {**UNIT_SPECS, "note": unit})
+    hub = quiet_global_hub(unit)
     alice = FakeConn("c1", "alice")
-    await hub.join(alice, GLOBAL_REF)
-    await hub.on_sync(alice, GLOBAL_REF, create_sync_message(alice.doc))
+    await _join_global(hub, alice)
 
     await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
     unit.armed = True
@@ -463,7 +478,6 @@ async def test_an_outside_writer_that_never_stops_ends_in_an_error_instead_of_lo
     assert alice.statuses()[-1]["state"] == "error"
     # 别处的改动已并进文档，Alice 打的字也还在
     assert alice.text("body").startswith("新初稿。")
-    await hub.shutdown()
 
 
 async def test_a_write_back_cancelled_midway_is_not_merged_in_again(quiet_hub, hub_project_files, monkeypatch) -> None:
@@ -476,7 +490,7 @@ async def test_a_write_back_cancelled_midway_is_not_merged_in_again(quiet_hub, h
 
     def _held_write(*args: Any, **kwargs: Any) -> None:
         loop.call_soon_threadsafe(entered.set)
-        release.wait()
+        release.wait(timeout=30)
         original(*args, **kwargs)
 
     monkeypatch.setattr(spec, "write", _held_write)
@@ -492,3 +506,208 @@ async def test_a_write_back_cancelled_midway_is_not_merged_in_again(quiet_hub, h
 
     assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "深夜，雨夜"
     assert alice.text("synopsis") == "深夜，雨夜"
+
+
+# ── 外部删掉字段、读回失败、外部写入与正在打的字相同、放弃后的收敛、卡住的写入 ─────────────
+
+SCRIPT_REF = UnitRef(project="drama", kind="script_item", key="episode_1.json#E1S01")
+
+
+@pytest.fixture
+def script_project(tmp_path) -> ProjectManager:
+    manager = ProjectManager(tmp_path / "script-projects")
+    manager.create_project("drama", content_mode="narration")
+    manager.create_project_metadata("drama", "Drama", "Anime", "narration")
+    segment = {
+        "segment_id": "E1S01",
+        "duration_seconds": 4,
+        "novel_text": "风吹过旷野。",
+        "characters_in_segment": [],
+        "image_prompt": {
+            "scene": "荒野",
+            "composition": {"shot_type": "Medium Shot", "lighting": "暖光", "ambiance": "薄雾"},
+        },
+        "video_prompt": {"action": "转身", "camera_motion": "Static", "ambiance_audio": "风声"},
+        "generated_assets": {},
+        "note": "放慢",
+    }
+    manager.save_script(
+        "drama",
+        {
+            "episode": 1,
+            "title": "t",
+            "content_mode": "narration",
+            "summary": "s",
+            "novel": {"title": "n", "chapter": "c"},
+            "segments": [segment],
+        },
+        "episode_1.json",
+    )
+    return manager
+
+
+def _drop_note(pm: ProjectManager) -> None:
+    script = pm.load_script("drama", "episode_1.json")
+    del script["segments"][0]["note"]
+    pm.save_script("drama", script, "episode_1.json")
+
+
+async def test_typing_in_a_field_removed_elsewhere_keeps_both_edits(script_project) -> None:
+    hub = _quiet_hub(script_project, UNIT_SPECS)
+    try:
+        alice = FakeConn("c1", "alice")
+        await hub.join(alice, SCRIPT_REF)
+        await hub.on_sync(alice, SCRIPT_REF, create_sync_message(alice.doc))
+
+        await hub.on_sync(alice, SCRIPT_REF, alice.type_into("note", 0, "再"))
+        await hub.on_sync(alice, SCRIPT_REF, alice.type_into("novel_text", 0, "夜，"))
+        # Agent 重写这一格时去掉了选填的备注，中枢还没重读
+        _drop_note(script_project)
+        await hub.flush(alice, SCRIPT_REF, 1)
+
+        saved = script_project.load_script("drama", "episode_1.json")["segments"][0]
+        assert (saved["novel_text"], saved.get("note")) == ("夜，风吹过旷野。", "再放慢")
+        assert (alice.text("novel_text"), alice.text("note")) == ("夜，风吹过旷野。", "再放慢")
+        assert alice.messages[-1]["ok"] is True
+    finally:
+        await hub.shutdown()
+
+
+async def test_a_field_removed_elsewhere_leaves_every_member_when_nobody_typed_in_it(script_project) -> None:
+    hub = _quiet_hub(script_project, UNIT_SPECS)
+    try:
+        alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
+        for conn in (alice, bob):
+            await hub.join(conn, SCRIPT_REF)
+            await hub.on_sync(conn, SCRIPT_REF, create_sync_message(conn.doc))
+
+        await hub.on_sync(alice, SCRIPT_REF, alice.type_into("novel_text", 0, "夜，"))
+        _drop_note(script_project)
+        await hub.flush(alice, SCRIPT_REF, 1)
+        # 外部改动的事件随后到达
+        await hub.refresh_project("drama")
+        await hub.on_sync(alice, SCRIPT_REF, alice.type_into("novel_text", 0, "深"))
+        await hub.flush(alice, SCRIPT_REF, 2)
+
+        saved = script_project.load_script("drama", "episode_1.json")["segments"][0]
+        assert (saved["novel_text"], "note" in saved) == ("深夜，风吹过旷野。", False)
+        for conn in (alice, bob):
+            assert (conn.text("novel_text"), "note" in unit_json(conn.doc)) == ("深夜，风吹过旷野。", False)
+        assert alice.messages[-1]["ok"] is True
+    finally:
+        await hub.shutdown()
+
+
+class FlakyReadBackUnit(InMemoryGlobalUnit):
+    """写入之后的第一次读回失败一次。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.fail_next_read_after_write = False
+
+    async def read(self, key: str) -> dict[str, Any]:
+        if self.fail_next_read_after_write:
+            self.fail_next_read_after_write = False
+            raise OSError("transient")
+        return await super().read(key)
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        await super().write(key, changes)
+        self.fail_next_read_after_write = True
+
+
+async def test_a_failed_read_back_after_a_successful_write_does_not_merge_the_write_in_again(quiet_global_hub) -> None:
+    unit = FlakyReadBackUnit()
+    hub = quiet_global_hub(unit)
+    alice = FakeConn("c1", "alice")
+    await _join_global(hub, alice)
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "深夜，"))
+    await hub.flush(alice, GLOBAL_REF, 1)
+    assert alice.messages[-1]["ok"] is True
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", len("深夜，初稿".encode()), "。"))
+    await hub.flush(alice, GLOBAL_REF, 2)
+
+    assert unit.store["k"]["body"] == alice.text("body") == "深夜，初稿。"
+    assert alice.messages[-1]["ok"] is True
+
+
+async def test_an_outside_write_equal_to_the_unsaved_text_is_not_merged_twice(quiet_global_hub) -> None:
+    unit = InMemoryGlobalUnit()
+    hub = quiet_global_hub(unit)
+    alice = FakeConn("c1", "alice")
+    await _join_global(hub, alice)
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "深夜，"))
+    unit.store["k"]["body"] = "深夜，初稿"
+    await hub.flush(alice, GLOBAL_REF, 1)
+
+    assert unit.store["k"]["body"] == alice.text("body") == "深夜，初稿"
+
+
+async def test_a_refresh_bringing_the_unsaved_text_does_not_merge_it_twice(quiet_hub, hub_project_files) -> None:
+    alice = FakeConn("c1", "alice")
+    await _join(quiet_hub, alice)
+
+    await quiet_hub.on_sync(alice, REF, alice.type_into("synopsis", 0, "深夜，"))
+    hub_project_files.update_project(PROJECT, lambda data: data["overview"].update({"synopsis": "深夜，雨夜"}))
+    await quiet_hub.refresh_project(PROJECT)
+    await quiet_hub.flush(alice, REF, 1)
+
+    assert alice.text("synopsis") == "深夜，雨夜"
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "深夜，雨夜"
+
+
+class StatusConn(FakeConn):
+    """记下「写回失败之后又存好」的那一刻。"""
+
+    def __init__(self, conn_id: str, username: str) -> None:
+        super().__init__(conn_id, username)
+        self.saved_after_error = asyncio.Event()
+
+    async def send(self, message: dict[str, Any]) -> None:
+        await super().send(message)
+        states = [m["state"] for m in self.statuses()]
+        if "error" in states and states[-1] == "saved":
+            self.saved_after_error.set()
+
+
+async def test_a_write_back_given_up_on_is_retried_after_the_quiet_period(quiet_global_hub) -> None:
+    unit = EverChangingGlobalUnit()
+    hub = quiet_global_hub(unit, debounce=0, max_wait=0)
+    alice = StatusConn("c1", "alice")
+    await _join_global(hub, alice)
+
+    # 别处恰好连改三次，用完这次写回的尝试次数；之后别处停手
+    bumps = iter(range(3))
+    unit.armed = True
+    original_read = unit.read
+
+    async def _read(key: str) -> dict[str, Any]:
+        if next(bumps, None) is None:
+            unit.armed = False
+        return await original_read(key)
+
+    unit.read = _read
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
+    await alice.saved_after_error.wait()
+
+    assert unit.store["k"]["body"] == alice.text("body") == "新初稿。。。"
+
+
+class HangingGlobalUnit(InMemoryGlobalUnit):
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        await asyncio.Event().wait()
+
+
+async def test_a_hanging_global_write_fails_after_the_write_timeout(quiet_global_hub) -> None:
+    unit = HangingGlobalUnit()
+    hub = quiet_global_hub(unit, global_write_timeout=0.01)
+    alice = FakeConn("c1", "alice")
+    await _join_global(hub, alice)
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
+    await hub.flush(alice, GLOBAL_REF, 1)
+
+    assert alice.messages[-1]["ok"] is False
+    assert alice.statuses()[-1]["state"] == "error"
