@@ -161,6 +161,13 @@ MESSAGES = {
     "arch_canonical_path_normalized": "{location}: 規範化為 {path}",
     "arch_current_asset_materialized": "{location}: 從 {source} 恢復當前檔案 {target}",
     "arch_current_asset_restored_from_version": "{location}: 從 {source} 恢復當前檔案 {target}",
+    "arch_version_snapshot_restored": "{target}：所選版本 v{version} 的版本檔案不見了，{source} 與版本紀錄的內容指紋一致，已在封存檔裡依它補回",
+    "arch_claim_carried_as_stale": "{path}：無法確認它仍是所選版本（版本檔案不見了、與版本紀錄不符，或版本紀錄缺漏），檔案與登記照常帶上；匯入後顯示為已過期，仍可檢視和使用",
+    "arch_claim_left_out_missing": "{path}：檔案已不在專案裡，封存檔不帶它的登記；匯入後與現在一樣顯示為缺少",
+    "arch_presentation_claim_left_out": "{path}：與它依據的影片或配音版本對不上，封存檔不帶它的登記；匯入後預覽、剪輯或匯出剪映草稿時，會在本機依當時選取的媒體重新產生，不會產生費用",
+    "arch_old_version_presentation_claim_left_out": "{path}：依據的是舊版本的影片或配音，僅目前版本的封存檔不含舊版本，不帶它的登記；匯入後用到時會在本機依當時選取的媒體重新產生，不會產生費用",
+    "arch_claim_left_out_unverifiable": "{path}：無法核對這件產物的登記，封存檔只帶檔案、不帶登記；匯入後顯示為缺少",
+    "arch_manifest_unreadable_exported_without_claims": "產物清單讀不出來，封存檔不帶產物登記；匯入時會依檔案重新登記，現有產物都顯示為最新，原本的已過期標記不會保留",
     # ---- 歸檔匯入異常 ----
     "arch_invalid_conflict_policy": "無效的衝突策略",
     "arch_conflict_policy_unsupported": "conflict_policy 僅支援 prompt、rename 或 overwrite，收到：{value}",

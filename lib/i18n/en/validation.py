@@ -189,6 +189,13 @@ MESSAGES = {
     "arch_canonical_path_normalized": "{location}: normalized to {path}",
     "arch_current_asset_materialized": "{location}: restored the current file {target} from {source}",
     "arch_current_asset_restored_from_version": "{location}: restored the current file {target} from {source}",
+    "arch_version_snapshot_restored": "{target}: the file for selected version v{version} was missing; {source} matches the version record's content fingerprint, so the archive carries it in its place",
+    "arch_claim_carried_as_stale": "{path}: it can no longer be confirmed as the selected version (the version file is missing, differs from the version record, or the record is gone). The file and its registration are included; after import it shows as stale and stays usable",
+    "arch_claim_left_out_missing": "{path}: the file is no longer in the project, so its registration is left out of the archive; after import it shows as missing, as it does now",
+    "arch_presentation_claim_left_out": "{path}: it no longer matches the video or narration version it was built from, so its registration is left out of the archive; after import it is rebuilt locally from the selected media the next time you preview, edit or export a Jianying draft, at no cost",
+    "arch_old_version_presentation_claim_left_out": "{path}: it was built from an older video or narration version that a current-version archive does not include, so its registration is left out; after import it is rebuilt locally from the selected media when needed, at no cost",
+    "arch_claim_left_out_unverifiable": "{path}: its registration could not be verified, so the archive carries the file without it; after import it shows as missing",
+    "arch_manifest_unreadable_exported_without_claims": "The artifact manifest could not be read, so the archive carries no artifact registrations; import registers the files again, every artifact shows as up to date and the existing stale marks are not kept",
     # ---- archive import errors ----
     "arch_invalid_conflict_policy": "Invalid conflict policy",
     "arch_conflict_policy_unsupported": "conflict_policy only supports prompt, rename or overwrite; got: {value}",

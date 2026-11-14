@@ -955,6 +955,8 @@ MESSAGES = {
     "archive_import_remote_save_failed": "The images could not be saved to object storage, so this import did not write any project. Check the object storage connection and try again",
     "material_project_retiring": "The project is being deleted or replaced by an import, so this image was not saved. Make sure the project still exists, then try again",
     "material_remote_fetch_failed": "The image could not be retrieved from object storage. Check the object storage connection and the network, then try again",
+    "export_project_busy": "The project kept changing during export, so no consistent snapshot could be taken. Try again once generation or editing has finished",
+    "export_project_unreadable": "The project data cannot be read or is incomplete, so it cannot be exported. Check the project files and try again",
     "material_object_connection_unavailable": "This image is stored in its original object storage bucket, but the current connection was deleted or points to another bucket, so it cannot be read for now",
     "asset_library_region_unsupported": "The asset library does not support region {region}",
     "asset_library_account_not_found": "This asset library account does not exist. It may have been deleted; refresh and try again",

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal, cast
 
@@ -244,30 +244,97 @@ def take_migrated_artifact_claims(
     )
 
 
+ArchiveClaimOutcome = Literal[
+    "carried_as_stale",
+    "left_out_missing",
+    "left_out_presentation",
+    "left_out_old_version",
+    "left_out_unverifiable",
+]
+"""导出时一条登记没能原样随包的去向。
+
+- ``carried_as_stale``：视频或音频的正式文件在，但证明不了它就是选中版本；登记不带内容事实随包，导入后判 stale。
+- ``left_out_missing``：正式文件已不在；登记不随包，导入后与源项目一样读作 missing。
+- ``left_out_presentation``：字幕或呈现对不上它依据的媒体版本；登记不随包。
+- ``left_out_old_version``：字幕或呈现依据的是旧媒体版本，仅当前版本的包不带那个版本；登记不随包。
+- ``left_out_unverifiable``：其他证明不了的登记；不随包，文件照常在包里。
+"""
+
+_MEDIA_KINDS = frozenset({ArtifactKind.EPISODE_VIDEO, ArtifactKind.EPISODE_AUDIO})
+_PRESENTATION_KINDS = frozenset({ArtifactKind.EPISODE_SUBTITLE, ArtifactKind.EPISODE_PRESENTATION})
+
+
+@dataclass(frozen=True, slots=True)
+class ArchiveClaimNotice:
+    """一条没能原样随包的登记：导出不因它失败，但要让用户知道导入后它是什么状态。"""
+
+    key: ArtifactKey
+    artifact_path: str
+    outcome: ArchiveClaimOutcome
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactManifestArchiveExport:
+    """导出信封里的清单快照，连同没能原样随包的登记。"""
+
+    snapshot: ArtifactManifestArchiveSnapshot
+    notices: tuple[ArchiveClaimNotice, ...]
+
+
 def snapshot_preserved_artifact_manifest(
     project_dir: Path,
     preserved_entries: Mapping[ArtifactKey, ArtifactManifestEntry],
     *,
     ships_unselected_versions: bool,
-) -> ArtifactManifestArchiveSnapshot:
+) -> ArtifactManifestArchiveExport:
     """Rebase preserved claims and bind them to one stable formal-byte snapshot.
 
-    依据的视频或音频已不是选中版本的字幕与呈现登记暂不适用、不让导出失败。``ships_unselected_versions`` 为假时
-    包里没有它们依据的旧版本快照，导入方核验不了，这些登记不随包。
+    导出只管导出（ADR 0134）：证明不了的登记不让导出失败。视频与音频的正式文件在场时登记照常随包、不带内容
+    事实；正式文件已不在、字幕与呈现对不上依据，或依据的旧版本快照不在包里（``ships_unselected_versions``
+    为假）的登记不随包。每一条都记进 ``notices``，由调用方告诉用户。
     """
 
     with project_metadata_lock(project_dir):
         plan = _plan_preserved_artifact_target_state(project_dir)
-        rebased = _rebase_preserved_artifact_entries(
-            plan, preserved_entries, keep_unselected_media_claims=ships_unselected_versions
-        )
-        assert_artifact_target_state_plan_unchanged(project_dir, plan)
         adapter = ProjectArtifactManifestAdapter(project_dir)
+        rebased: dict[ArtifactKey, ArtifactManifestEntry] = {}
+        notices: list[ArchiveClaimNotice] = []
+        for key, archived in sorted(preserved_entries.items(), key=lambda item: item[0].encode()):
+            current = plan.entries.get(key)
+            artifact_path = current.artifact_path if current is not None else plan.formal_paths.get(key)
+            if artifact_path is None and key in plan.unselected_media_formal_paths:
+                if not ships_unselected_versions:
+                    notices.append(ArchiveClaimNotice(key, archived.artifact_path, "left_out_old_version"))
+                    continue
+                artifact_path = plan.unselected_media_formal_paths[key]
+            if artifact_path is None:
+                notices.append(
+                    ArchiveClaimNotice(key, archived.artifact_path, _left_out_outcome(adapter, key, archived))
+                )
+                continue
+            rebased[key] = ArtifactManifestEntry(artifact_path=artifact_path, basis_digest=archived.basis_digest)
+            if current is None and key.kind in _MEDIA_KINDS:
+                notices.append(ArchiveClaimNotice(key, artifact_path, "carried_as_stale"))
+        assert_artifact_target_state_plan_unchanged(project_dir, plan)
         content_digests = {
             key: read_artifact_content_digest(adapter, entry.artifact_path) for key, entry in rebased.items()
         }
         assert_artifact_target_state_plan_unchanged(project_dir, plan)
-    return ArtifactManifestArchiveSnapshot(entries=rebased, content_digests=content_digests)
+    return ArtifactManifestArchiveExport(
+        snapshot=ArtifactManifestArchiveSnapshot(entries=rebased, content_digests=content_digests),
+        notices=tuple(notices),
+    )
+
+
+def _left_out_outcome(
+    adapter: ProjectArtifactManifestAdapter, key: ArtifactKey, archived: ArtifactManifestEntry
+) -> ArchiveClaimOutcome:
+    observation = adapter.inspect_artifact(archived.artifact_path)
+    if observation.blocker is None and not observation.present:
+        return "left_out_missing"
+    if key.kind in _PRESENTATION_KINDS:
+        return "left_out_presentation"
+    return "left_out_unverifiable"
 
 
 def _archived_content_evidence(
@@ -298,13 +365,11 @@ def _plan_preserved_artifact_target_state(project_dir: Path) -> ArtifactTargetSt
 def _rebase_preserved_artifact_entries(
     plan: ArtifactTargetStatePlan,
     preserved_entries: Mapping[ArtifactKey, ArtifactManifestEntry],
-    *,
-    keep_unselected_media_claims: bool = True,
 ) -> dict[ArtifactKey, ArtifactManifestEntry]:
-    """把保全的 claim 落到规划器证明的正式路径上，依据摘要不变；证明不了的 claim 一律拒绝。
+    """导入时把信封里的 claim 落到规划器证明的正式路径上，依据摘要不变；证明不了的 claim 一律拒绝。
 
-    依据的视频或音频已不是选中版本、对那个版本仍自证的字幕与呈现 claim 暂不适用：保留时照常落路径，
-    ``keep_unselected_media_claims`` 为假时略去。
+    依据的视频或音频已不是选中版本、对那个版本仍自证的字幕与呈现 claim 暂不适用，照常落路径。导出不走这里：
+    导出对证明不了的登记照常出包并逐条告知（:func:`snapshot_preserved_artifact_manifest`）。
     """
 
     rebased: dict[ArtifactKey, ArtifactManifestEntry] = {}
@@ -312,10 +377,8 @@ def _rebase_preserved_artifact_entries(
     for key, archived in preserved_entries.items():
         current = plan.entries.get(key)
         artifact_path = current.artifact_path if current is not None else plan.formal_paths.get(key)
-        if artifact_path is None and key in plan.unselected_media_formal_paths:
-            if not keep_unselected_media_claims:
-                continue
-            artifact_path = plan.unselected_media_formal_paths[key]
+        if artifact_path is None:
+            artifact_path = plan.unselected_media_formal_paths.get(key)
         if artifact_path is None:
             invalid.append(key.encode())
             continue
@@ -525,9 +588,12 @@ def _assert_project_unchanged(project_dir: Path, expected: bytes) -> None:
 
 
 __all__ = [
+    "ArchiveClaimNotice",
+    "ArchiveClaimOutcome",
     "ArtifactComparer",
     "ArtifactCurrencyResolver",
     "ArtifactInputClaim",
+    "ArtifactManifestArchiveExport",
     "ArtifactTargetStatePlan",
     "EpisodeScriptInput",
     "RegisteredArtifactResolver",

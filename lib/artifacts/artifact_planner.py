@@ -1116,6 +1116,33 @@ class TargetStatePlanner:
         if artifact_path != resource_relative_path(resource_type, resource_id):
             self._skip(key, artifact_path, "script points at a non-canonical media path")
             return
+        self._plan_canonical_typed_media(
+            versions,
+            episode=episode,
+            item=item,
+            resource_id=resource_id,
+            resource_type=resource_type,
+            artifact_path=artifact_path,
+            key=key,
+        )
+        if key not in self.entries and self.allow_stale_formal_targets:
+            # 保全时，证明不成立的视频与音频照常落在在场的正式文件上：登记不带内容事实随包，
+            # 导入后判 stale，与源项目一致（ADR 0062、ADR 0134）。正式文件不在或读不出时不落。
+            observed = self.adapter.inspect_artifact(artifact_path)
+            if observed.blocker is None and observed.present:
+                self._record_formal_path(key, observed.artifact_path)
+
+    def _plan_canonical_typed_media(
+        self,
+        versions: Mapping[str, Any],
+        *,
+        episode: _EpisodeState,
+        item: Mapping[str, Any],
+        resource_id: str,
+        resource_type: str,
+        artifact_path: str,
+        key: ArtifactKey,
+    ) -> None:
         resource_bucket = versions.get(resource_type)
         resource = resource_bucket.get(resource_id) if isinstance(resource_bucket, Mapping) else None
         if not isinstance(resource, Mapping):

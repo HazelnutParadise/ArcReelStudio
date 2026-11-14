@@ -114,6 +114,63 @@ describe("GlobalHeader", () => {
     expect(await screen.findByRole("dialog", { name: "导出诊断" })).toBeInTheDocument();
   });
 
+  it("lists the artifacts an export could not carry as-is, with where each one is", async () => {
+    vi.spyOn(API, "requestExportToken").mockResolvedValue({
+      download_token: "test-download-token",
+      expires_in: 300,
+      diagnostics: {
+        blocking: [],
+        auto_fixed: [
+          {
+            code: "version_snapshot_restored",
+            message: "versions/videos/E1S1_v1.mp4：所选版本 v1 的版本文件不见了，已在归档里按正式文件补回",
+            location: "versions/videos/E1S1_v1.mp4",
+          },
+        ],
+        warnings: [
+          {
+            code: "claim_carried_as_stale",
+            message: "videos/scene_E1S2.mp4：无法确认它仍是所选版本；导入后显示为已过期，仍可查看和使用",
+            location: "videos/scene_E1S2.mp4",
+          },
+          {
+            code: "claim_left_out_missing",
+            message: "storyboards/scene_E1S3.png：文件已不在项目里；导入后与现在一样显示为缺失",
+            location: "storyboards/scene_E1S3.png",
+          },
+        ],
+      },
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    useProjectsStore.setState({ currentProjectName: "demo", currentProjectData: PROJECT_WITH_EPISODES as never });
+
+    renderHeader();
+    await openExportScope("full");
+
+    const dialog = await screen.findByRole("dialog", { name: "导出诊断" });
+    expect(useAppStore.getState().toast?.text).toContain("包含 3 条诊断");
+    expect(within(dialog).getByText(/导入后显示为已过期，仍可查看和使用/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/导入后与现在一样显示为缺失/)).toBeInTheDocument();
+    expect(within(dialog).getByText("videos/scene_E1S2.mp4")).toBeInTheDocument();
+    expect(within(dialog).getByText(/已在归档里按正式文件补回/)).toBeInTheDocument();
+  });
+
+  it("shows why an export stopped instead of a generic failure", async () => {
+    vi.spyOn(API, "requestExportToken").mockRejectedValue(
+      new Error("项目数据读不出或结构不完整，无法导出。检查项目文件后重试"),
+    );
+    useProjectsStore.setState({ currentProjectName: "demo", currentProjectData: PROJECT_WITH_EPISODES as never });
+
+    renderHeader();
+    await openExportScope("current");
+
+    await waitFor(() => {
+      expect(useAppStore.getState().workspaceNotifications[0]?.text).toBe(
+        "导出失败：项目数据读不出或结构不完整，无法导出。检查项目文件后重试",
+      );
+    });
+  });
+
   it("「导出项目」只剩项目归档，并提示成片与剪映草稿在剪辑视图导出", async () => {
     useProjectsStore.setState({ currentProjectName: "demo", currentProjectData: PROJECT_WITH_EPISODES as never });
 

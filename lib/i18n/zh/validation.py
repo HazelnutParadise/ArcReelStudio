@@ -161,6 +161,13 @@ MESSAGES = {
     "arch_canonical_path_normalized": "{location}: 规范化为 {path}",
     "arch_current_asset_materialized": "{location}: 从 {source} 恢复当前文件 {target}",
     "arch_current_asset_restored_from_version": "{location}: 从 {source} 恢复当前文件 {target}",
+    "arch_version_snapshot_restored": "{target}：所选版本 v{version} 的版本文件不见了，{source} 与版本记录的内容指纹一致，已在归档里按它补回",
+    "arch_claim_carried_as_stale": "{path}：无法确认它仍是所选版本（版本文件不见了、与版本记录不符，或版本记录缺失），文件与登记照常带上；导入后显示为已过期，仍可查看和使用",
+    "arch_claim_left_out_missing": "{path}：文件已不在项目里，归档不带它的登记；导入后与现在一样显示为缺失",
+    "arch_presentation_claim_left_out": "{path}：与它依据的视频或配音版本对不上，归档不带它的登记；导入后预览、剪辑或导出剪映草稿时会在本地按当时选中的媒体重新生成，不产生费用",
+    "arch_old_version_presentation_claim_left_out": "{path}：依据的是旧版本的视频或配音，仅当前版本的归档不含旧版本，不带它的登记；导入后用到时会在本地按当时选中的媒体重新生成，不产生费用",
+    "arch_claim_left_out_unverifiable": "{path}：无法核实这件产物的登记，归档只带文件、不带登记；导入后显示为缺失",
+    "arch_manifest_unreadable_exported_without_claims": "产物清单读不出，归档不带产物登记；导入时会按文件重新登记，现有产物都显示为最新，原来的已过期标记不会保留",
     # ---- 归档导入异常 ----
     "arch_invalid_conflict_policy": "无效的冲突策略",
     "arch_conflict_policy_unsupported": "conflict_policy 仅支持 prompt、rename 或 overwrite，收到：{value}",

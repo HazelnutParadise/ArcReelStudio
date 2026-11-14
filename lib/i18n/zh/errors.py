@@ -895,6 +895,8 @@ MESSAGES = {
     "archive_import_remote_save_failed": "图片没能保存到对象存储，这次导入没有写入任何项目。检查对象存储连接后重试",
     "material_project_retiring": "项目正在删除或被导入的项目替换，这张图片没有保存。确认项目仍在后重试",
     "material_remote_fetch_failed": "没能从对象存储取回这张图片。检查对象存储连接与网络后重试",
+    "export_project_busy": "项目在导出过程中一直有改动，没能取到一致的快照。等生成或编辑结束后重试",
+    "export_project_unreadable": "项目数据读不出或结构不完整，无法导出。检查项目文件后重试",
     "material_object_connection_unavailable": "这张图片保存在原来的对象存储桶里，而当前连接已删除或指向另一个桶，暂时无法读取",
     "asset_library_region_unsupported": "素材库不支持区域 {region}",
     "asset_library_account_not_found": "素材库账号不存在，可能已被删除，刷新后再试",

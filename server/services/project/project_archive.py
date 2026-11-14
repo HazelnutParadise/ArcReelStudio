@@ -16,12 +16,14 @@ from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, NoReturn, Protocol
+from typing import Any, NoReturn, Protocol, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from arcreel_market_core.validation_messages import MessageRef, ValidationMessage
 from lib.artifacts.artifact_activation import (
+    ArchiveClaimNotice,
+    ArchiveClaimOutcome,
     ensure_imported_artifact_target_state,
     snapshot_preserved_artifact_manifest,
     stage_preserved_artifact_claims,
@@ -49,7 +51,7 @@ from lib.catalog import query as catalog
 from lib.catalog.builtin_models import disabled_builtin_models
 from lib.config.resolver import VideoGenerationType, project_video_backend_ids
 from lib.episode.episode_ledger import parse_positive_episode_num
-from lib.infra.api_errors import BadGatewayError
+from lib.infra.api_errors import BadGatewayError, ConflictError, UnprocessableError
 from lib.infra.async_thread import EventLoopBridge, run_noninterruptible_async
 from lib.infra.content_digest import digest_stream, sha256_file
 from lib.infra.json_io import load_json
@@ -183,6 +185,41 @@ ARCHIVE_SCRIPT_SCHEMA_VERSION = 2
 DEFAULT_IMPORT_FILENAME = "imported-project.zip"
 _ARTIFACT_ACTIVATION_ERRORS = (ArtifactManifestError, OSError, UnicodeError, ValueError)
 _EXPORT_SNAPSHOT_ATTEMPTS = 3
+
+
+class ExportProjectBusyError(ConflictError):
+    """导出取快照时项目一直在变，或快照期间依据被改动：稍后重试即可（HTTP 409）。"""
+
+    def __init__(self) -> None:
+        super().__init__("export_project_busy")
+
+
+class ExportProjectUnreadableError(UnprocessableError):
+    """项目数据读不出、结构损坏或路径不安全，导不出可用的归档（HTTP 422）。"""
+
+    def __init__(self) -> None:
+        super().__init__("export_project_unreadable")
+
+
+class _UnreadableManifest:
+    """源项目的产物清单读不出：导出不带清单信封，导入端按无信封归档自证补录（ADR 0134）。"""
+
+
+_UNREADABLE_MANIFEST = _UnreadableManifest()
+
+# 导出时没能原样随包的登记 -> (诊断码, 消息键)
+_ARCHIVE_CLAIM_NOTICES: Mapping[ArchiveClaimOutcome, tuple[str, str]] = MappingProxyType(
+    {
+        "carried_as_stale": ("claim_carried_as_stale", "arch_claim_carried_as_stale"),
+        "left_out_missing": ("claim_left_out_missing", "arch_claim_left_out_missing"),
+        "left_out_presentation": ("presentation_claim_left_out", "arch_presentation_claim_left_out"),
+        "left_out_old_version": (
+            "old_version_presentation_claim_left_out",
+            "arch_old_version_presentation_claim_left_out",
+        ),
+        "left_out_unverifiable": ("claim_left_out_unverifiable", "arch_claim_left_out_unverifiable"),
+    }
+)
 
 
 class CurrentExportVersionRetention(Enum):
@@ -958,6 +995,7 @@ class ProjectArchiveService:
                 self._write_json_file(snapshot_versions_path, snapshot_versions)
 
             diagnostics = self._repair_project_tree(snapshot_dir)
+            self._restore_missing_version_snapshots(snapshot_dir, scope=scope, diagnostics=diagnostics)
             # 源项目已在当前 schema 上，正文就位，与导入路径共用同一遍提及自愈。
             self._repair_unit_mentions_tree(snapshot_dir, diagnostics)
             diagnostics.extend_validation(self.validator.validate_project_tree(snapshot_dir))
@@ -976,15 +1014,18 @@ class ProjectArchiveService:
             artifact_manifest = None
             if isinstance(snapshot_project, dict) and project_schema_is_current(snapshot_project):
                 if source_manifest_entries is None:
-                    raise ArtifactManifestError("archive snapshot has no matching Artifact Manifest state")
-                artifact_manifest = encode_artifact_manifest_payload(
-                    snapshot_preserved_artifact_manifest(
-                        snapshot_dir,
-                        source_manifest_entries,
-                        # 仅当前版本的包只带选中版本的快照（CURRENT_EXPORT_VERSION_RETENTION）
-                        ships_unselected_versions=scope == "full",
+                    # 取快照的前后两次读到的 schema 不一致：项目在导出期间被升级或改写。
+                    raise ExportProjectBusyError()
+                if isinstance(source_manifest_entries, _UnreadableManifest):
+                    diagnostics.add(
+                        "warnings",
+                        "manifest_unreadable_exported_without_claims",
+                        ValidationMessage("arch_manifest_unreadable_exported_without_claims"),
                     )
-                )
+                else:
+                    artifact_manifest = self._export_artifact_manifest(
+                        snapshot_dir, source_manifest_entries, scope=scope, diagnostics=diagnostics
+                    )
             manifest = self._build_archive_manifest(
                 project_name,
                 snapshot_project,
@@ -999,6 +1040,105 @@ class ProjectArchiveService:
             temp_dir.cleanup()
             raise
         return temp_dir, snapshot_dir, manifest, diagnostics
+
+    @staticmethod
+    def _export_artifact_manifest(
+        snapshot_dir: Path,
+        source_manifest_entries: Mapping[ArtifactKey, ArtifactManifestEntry],
+        *,
+        scope: str,
+        diagnostics: ArchiveDiagnostics,
+    ) -> dict[str, object]:
+        """归档信封里的清单快照。证明不了的登记不让导出失败，逐条进警告；项目本身读不出或不安全才停。"""
+        try:
+            exported = snapshot_preserved_artifact_manifest(
+                snapshot_dir,
+                source_manifest_entries,
+                # 仅当前版本的包只带选中版本的快照（CURRENT_EXPORT_VERSION_RETENTION）
+                ships_unselected_versions=scope == "full",
+            )
+        except (ArtifactManifestError, ValueError) as exc:
+            # 规划器对项目文件、剧本、宫格记录读不出或路径不安全的拒绝（ProjectMigrationError 也在其中）。
+            logger.warning("导出时项目数据读不出：%s", exc)
+            error = ExportProjectUnreadableError()
+            location = _failure_location(exc)
+            raise (error.with_diagnostic(location) if location is not None else error) from exc
+        except RuntimeError as exc:
+            # 快照期间依据被改动（快照目录本是私有副本，正常不会发生）。
+            raise ExportProjectBusyError() from exc
+        for notice in exported.notices:
+            ProjectArchiveService._add_claim_notice(diagnostics, notice)
+        return encode_artifact_manifest_payload(exported.snapshot)
+
+    @staticmethod
+    def _add_claim_notice(diagnostics: ArchiveDiagnostics, notice: ArchiveClaimNotice) -> None:
+        code, message_key = _ARCHIVE_CLAIM_NOTICES[notice.outcome]
+        diagnostics.add(
+            "warnings",
+            code,
+            ValidationMessage(message_key, {"path": notice.artifact_path}),
+            location=notice.artifact_path,
+        )
+
+    def _restore_missing_version_snapshots(
+        self, snapshot_dir: Path, *, scope: str, diagnostics: ArchiveDiagnostics
+    ) -> None:
+        """在导出副本里补回不见了的选中版本快照：正式文件的内容指纹与该版本记录的一致时，按正式文件补。
+
+        指纹一致即字节一致，补回的就是那个版本本身；对不上记录、记录没有指纹，或这份快照本就不随包（仅当前
+        版本的包裁掉的历史）时不补。源项目不动（ADR 0134）。
+        """
+        versions = self._load_json_file(snapshot_dir / "versions" / "versions.json")
+        if not isinstance(versions, dict):
+            return
+        shipped: frozenset[str] | None = None
+        if scope == "current":
+            _, shipped = self._current_export_versions(versions)
+        for resource_type, resource_id, record in iter_version_records(versions):
+            snapshot_rel = record.get("file")
+            recorded = record.get(CONTENT_DIGEST)
+            if (
+                not isinstance(recorded, str)
+                or not VersionManager.is_managed_snapshot_path(resource_type, snapshot_rel)
+                or (shipped is not None and snapshot_rel not in shipped)
+                or not self._is_selected_version(versions, resource_type, resource_id, record)
+            ):
+                continue
+            snapshot = try_safe_join(snapshot_dir, cast(str, snapshot_rel))
+            try:
+                formal_rel = resource_relative_path(resource_type, resource_id)
+            except ValueError:
+                continue
+            formal = try_safe_join(snapshot_dir, formal_rel)
+            if snapshot is None or formal is None or snapshot.exists() or snapshot.is_symlink():
+                continue
+            if formal.is_symlink() or not formal.is_file() or sha256_file(formal) != recorded:
+                continue
+            snapshot.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(formal, snapshot)
+            if sha256_file(snapshot) != recorded:
+                snapshot.unlink()  # hard-delete: temp -- 导出副本里补到一半、字节对不上的快照
+                continue
+            diagnostics.add(
+                "auto_fixed",
+                "version_snapshot_restored",
+                ValidationMessage(
+                    "arch_version_snapshot_restored",
+                    {"source": formal_rel, "target": snapshot_rel, "version": record.get("version")},
+                ),
+                location=cast(str, snapshot_rel),
+            )
+
+    @staticmethod
+    def _is_selected_version(
+        versions: Mapping[str, Any], resource_type: str, resource_id: str, record: Mapping[str, Any]
+    ) -> bool:
+        bucket = versions.get(resource_type)
+        history = bucket.get(resource_id) if isinstance(bucket, Mapping) else None
+        if not isinstance(history, Mapping):
+            return False
+        selected = history.get("current_version")
+        return type(selected) is int and record.get("version") == selected
 
     def _build_archive_manifest(
         self,
@@ -1178,7 +1318,7 @@ class ProjectArchiveService:
         self,
         source_dir: Path,
         target_dir: Path,
-    ) -> dict[ArtifactKey, ArtifactManifestEntry] | None:
+    ) -> dict[ArtifactKey, ArtifactManifestEntry] | _UnreadableManifest | None:
         """Copy one visible tree whose bytes and Manifest stayed unchanged.
 
         Export cannot atomically snapshot a directory with ordinary filesystem
@@ -1205,13 +1345,13 @@ class ProjectArchiveService:
                 return manifest_before
         if target_dir.exists():
             shutil.rmtree(target_dir)  # hard-delete: temp -- 导出用的目录快照
-        raise ArtifactManifestError("project changed repeatedly while creating an archive snapshot") from last_missing
+        raise ExportProjectBusyError() from last_missing
 
     def _source_manifest_entries(
         self,
         source_dir: Path,
-    ) -> dict[ArtifactKey, ArtifactManifestEntry] | None:
-        """源项目的完整 claim 快照；尚未进入清单体系的项目返回 ``None``。
+    ) -> dict[ArtifactKey, ArtifactManifestEntry] | _UnreadableManifest | None:
+        """源项目的完整 claim 快照；尚未进入清单体系的项目返回 ``None``，清单读不出时返回 ``_UNREADABLE_MANIFEST``。
 
         这道闸判的是「该项目有没有清单可保全」，不是产物读取口径，与写信封那处同判据。
         未进入体系的项目清单必然为空，而空清单与「这个项目一件产物都没有」在信封里长得
@@ -1222,9 +1362,14 @@ class ProjectArchiveService:
         project = self._load_json_file(source_dir / self.project_manager.PROJECT_FILE)
         if not isinstance(project, dict) or not project_schema_is_current(project):
             return None
+        try:
+            entries = ProjectArtifactManifestAdapter(source_dir).snapshot_entries()
+        except ArtifactManifestError:
+            # 读不出的清单不拦导出：导出是只读的备份路径，包不带信封，导入端按文件自证补录（ADR 0134）。
+            return _UNREADABLE_MANIFEST
         return {
             key: entry
-            for key, entry in ProjectArtifactManifestAdapter(source_dir).snapshot_entries().items()
+            for key, entry in entries.items()
             if entry.artifact_path.split("/", 1)[0] not in self._ARCHIVE_EXCLUDED_ROOTS
         }
 

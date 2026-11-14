@@ -14,8 +14,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from lib.artifacts.artifact_manifest import MANIFEST_FILENAME
 from lib.project.project_manager import ProjectManager
 from server.auth import CurrentUserInfo, create_download_token, get_current_user
+from server.error_handlers import register_error_handlers
 from server.routers import projects
 from tests.auth_deps import AUTH_DEPENDENCIES, default_admin_token
 from tests.fakes import use_project_manager
@@ -88,6 +90,7 @@ def _create_demo_project(pm: ProjectManager) -> None:
 def _client(monkeypatch, pm: ProjectManager) -> TestClient:
     use_project_manager(monkeypatch, pm)
     app = FastAPI()
+    register_error_handlers(app)
     app.dependency_overrides[get_current_user] = lambda: CurrentUserInfo(id="default", sub="testuser", role="admin")
     app.include_router(projects.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
     app.include_router(projects.self_auth_router, prefix="/api/v1")
@@ -403,3 +406,49 @@ async def test_export_cancelled_while_packing_leaves_no_archive(tmp_path, monkey
     assert await asyncio.to_thread(packed.wait, 5)
 
     assert not archive_path.exists()
+
+
+_SECRET = {"AUTH_TOKEN_SECRET": "test-secret-key-that-is-at-least-32-bytes"}
+
+
+class TestExportKeepsGoing:
+    """导出只管导出：证明不了的产物状态只进诊断，项目读不出才以明确的原因停下（ADR 0134）。"""
+
+    def test_unreadable_manifest_still_issues_a_token_with_a_warning(self, tmp_path, monkeypatch):
+        pm = ProjectManager(tmp_path / "projects")
+        _create_demo_project(pm)
+        _write_text(pm.get_project_path("demo") / MANIFEST_FILENAME, "{ not json")
+        client = _client(monkeypatch, pm)
+
+        with patch.dict(os.environ, _SECRET), client:
+            token = client.post(
+                "/api/v1/projects/demo/export/token",
+                headers={"Authorization": f"Bearer {default_admin_token()}", "Accept-Language": "en"},
+            )
+            download = client.get(f"/api/v1/projects/demo/export?download_token={token.json()['download_token']}")
+
+        assert token.status_code == 200
+        [warning] = token.json()["diagnostics"]["warnings"]
+        assert warning["code"] == "manifest_unreadable_exported_without_claims"
+        assert warning["message"].startswith("The artifact manifest could not be read")
+        assert download.status_code == 200
+
+    def test_unreadable_script_stops_token_and_download_with_a_localised_422(self, tmp_path, monkeypatch):
+        pm = ProjectManager(tmp_path / "projects")
+        _create_demo_project(pm)
+        _write_text(pm.get_project_path("demo") / "scripts" / "episode_1.json", "{ not json")
+        client = _client(monkeypatch, pm)
+
+        with patch.dict(os.environ, _SECRET), client:
+            token = client.post(
+                "/api/v1/projects/demo/export/token",
+                headers={"Authorization": f"Bearer {default_admin_token()}", "Accept-Language": "en"},
+            )
+            download = client.get(
+                f"/api/v1/projects/demo/export?download_token={create_download_token('testuser', 'demo')}",
+                headers={"Accept-Language": "en"},
+            )
+
+        for response in (token, download):
+            assert response.status_code == 422
+            assert response.json()["detail"].startswith("The project data cannot be read")

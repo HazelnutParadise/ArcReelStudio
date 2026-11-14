@@ -189,6 +189,13 @@ MESSAGES = {
     "arch_canonical_path_normalized": "{location}: đã chuẩn hóa thành {path}",
     "arch_current_asset_materialized": "{location}: đã khôi phục tệp hiện hành {target} từ {source}",
     "arch_current_asset_restored_from_version": "{location}: đã khôi phục tệp hiện hành {target} từ {source}",
+    "arch_version_snapshot_restored": "{target}: tệp của phiên bản đang chọn v{version} bị thiếu; {source} khớp dấu vân tay nội dung trong bản ghi phiên bản nên bản xuất dùng nó để bù vào",
+    "arch_claim_carried_as_stale": "{path}: không còn xác nhận được đây là phiên bản đang chọn (tệp phiên bản bị thiếu, khác bản ghi, hoặc mất bản ghi phiên bản). Tệp và đăng ký vẫn được đưa vào; sau khi nhập sẽ hiển thị là đã cũ và vẫn dùng được",
+    "arch_claim_left_out_missing": "{path}: tệp không còn trong dự án nên bản xuất không mang đăng ký của nó; sau khi nhập sẽ hiển thị là thiếu như hiện tại",
+    "arch_presentation_claim_left_out": "{path}: không khớp phiên bản video hoặc lồng tiếng mà nó dựa vào nên bản xuất không mang đăng ký của nó; sau khi nhập, nó được tạo lại cục bộ theo nội dung đang chọn khi bạn xem trước, dựng hoặc xuất bản nháp Jianying, không tốn phí",
+    "arch_old_version_presentation_claim_left_out": "{path}: dựa trên phiên bản video hoặc lồng tiếng cũ mà bản xuất chỉ phiên bản hiện tại không chứa nên không mang đăng ký; sau khi nhập, nó được tạo lại cục bộ theo nội dung đang chọn khi cần, không tốn phí",
+    "arch_claim_left_out_unverifiable": "{path}: không xác minh được đăng ký nên bản xuất chỉ mang tệp; sau khi nhập sẽ hiển thị là thiếu",
+    "arch_manifest_unreadable_exported_without_claims": "Không đọc được danh mục sản phẩm nên bản xuất không mang đăng ký sản phẩm; khi nhập, các tệp sẽ được đăng ký lại, mọi sản phẩm hiển thị là mới nhất và các dấu đã cũ hiện có không được giữ",
     # ---- lỗi nhập gói lưu trữ ----
     "arch_invalid_conflict_policy": "Chính sách xử lý xung đột không hợp lệ",
     "arch_conflict_policy_unsupported": "conflict_policy chỉ hỗ trợ prompt, rename hoặc overwrite; nhận được: {value}",
