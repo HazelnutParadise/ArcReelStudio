@@ -12,6 +12,9 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Container, Iterable, Mapping
+from contextvars import ContextVar
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar
@@ -151,6 +154,36 @@ def _validate_source_kind(item: Mapping[str, Any], prefix: str, errors: list[Val
         errors.append(_m("val_source_kind_invalid", prefix=prefix, value=value, allowed=", ".join(SOURCE_KINDS)))
 
 
+@dataclass(frozen=True, slots=True)
+class MissingReference:
+    """一条引用的文件不在的本地引用：它所在的文档（项目内相对路径）、校验口径的字段名与引用的路径。"""
+
+    document: str
+    field: str
+    path: str
+    _root: dict[str, Any] = dataclass_field(repr=False, compare=False)
+    _holder: dict[str, Any] = dataclass_field(repr=False, compare=False)
+    _key: str = dataclass_field(repr=False, compare=False)
+
+    def clear(self) -> dict[str, Any]:
+        """清空这条引用，返回改过的整份文档，供调用方写回 ``document``。"""
+        self._holder[self._key] = None
+        return self._root
+
+
+@dataclass(slots=True)
+class _MissingReferenceSink:
+    found: list[MissingReference]
+    document: str = ""
+    root: dict[str, Any] = dataclass_field(default_factory=dict)
+
+    def record(self, holder: dict[str, Any], key: str, field_name: str, path: str) -> None:
+        self.found.append(MissingReference(self.document, field_name, path, self.root, holder, key))
+
+
+_MISSING_REFERENCE_SINK: ContextVar[_MissingReferenceSink | None] = ContextVar("missing_reference_sink", default=None)
+
+
 class DataValidator:
     """数据验证器"""
 
@@ -267,7 +300,8 @@ class DataValidator:
     def _validate_local_reference(
         self,
         project_dir: Path,
-        value: Any,
+        holder: Mapping[str, Any],
+        key: str,
         errors: list[ValidationMessage],
         field_name: str,
         *,
@@ -276,6 +310,12 @@ class DataValidator:
         missing_ok: bool = False,
         confine_to_default_dir: bool = False,
     ) -> str | None:
+        """校验 ``holder[key]`` 这条本地文件引用；引用的文件不在时报 ``val_path_missing``。
+
+        :meth:`validate_project_tree` 带着 ``missing_references`` 运行时，每一条报缺失的引用连同它所在的文档与
+        持有它的对象一并记下，归档导出据此清掉悬空引用：哪些引用必须在场只在这里定义一次。
+        """
+        value = holder.get(key)
         if value in (None, ""):
             return None
         if not isinstance(value, str):
@@ -300,8 +340,11 @@ class DataValidator:
             confine_to_default_dir=confine_to_default_dir,
         )
         if error:
-            key, params = error
-            errors.append(ValidationMessage(key, {**params, "field": field_name}))
+            message_key, params = error
+            errors.append(ValidationMessage(message_key, {**params, "field": field_name}))
+            sink = _MISSING_REFERENCE_SINK.get()
+            if sink is not None and message_key == "val_path_missing" and isinstance(holder, dict):
+                sink.record(holder, key, field_name, str(params["path"]))
         return resolved_path
 
     @staticmethod
@@ -810,7 +853,7 @@ class DataValidator:
 
         project_path = Path(project_dir) / "project.json"
         project = load_json_or_none(project_path)
-        if project is None:
+        if not isinstance(project, dict):
             return ValidationResult(
                 valid=False,
                 error_messages=[_m("val_cannot_load_project_json", path="project.json")],
@@ -834,28 +877,32 @@ class DataValidator:
 
         self._validate_local_reference(
             project_dir,
-            assets.get("storyboard_image"),
+            assets,
+            "storyboard_image",
             errors,
             f"{prefix}.generated_assets.storyboard_image",
             default_dir="storyboards",
         )
         self._validate_local_reference(
             project_dir,
-            assets.get("storyboard_last_image"),
+            assets,
+            "storyboard_last_image",
             errors,
             f"{prefix}.generated_assets.storyboard_last_image",
             default_dir="storyboards",
         )
         self._validate_local_reference(
             project_dir,
-            assets.get("video_clip"),
+            assets,
+            "video_clip",
             errors,
             f"{prefix}.generated_assets.video_clip",
             default_dir="videos",
         )
         self._validate_local_reference(
             project_dir,
-            assets.get("video_uri"),
+            assets,
+            "video_uri",
             errors,
             f"{prefix}.generated_assets.video_uri",
             default_dir="videos",
@@ -863,7 +910,8 @@ class DataValidator:
         )
         self._validate_local_reference(
             project_dir,
-            assets.get("narration_audio"),
+            assets,
+            "narration_audio",
             errors,
             f"{prefix}.generated_assets.narration_audio",
             default_dir="audio",
@@ -896,7 +944,8 @@ class DataValidator:
         """
         self._validate_local_reference(
             project_dir,
-            item.get("end_frame_image"),
+            item,
+            "end_frame_image",
             errors,
             f"{prefix}.end_frame_image",
             default_dir="end_frames",
@@ -1522,7 +1571,7 @@ class DataValidator:
         project_dir = Path(project_dir)
         project_path = project_dir / "project.json"
         project = load_json_or_none(project_path)
-        if project is None:
+        if not isinstance(project, dict):
             return ValidationResult(
                 valid=False,
                 error_messages=[_m("val_cannot_load_project_json", path="project.json")],
@@ -1536,38 +1585,50 @@ class DataValidator:
         if error or resolved_episode_path is None:
             return ValidationResult(
                 valid=False,
-                error_messages=[_m("val_cannot_load_script", path=project_dir / str(episode_file))],
+                error_messages=[_m("val_cannot_load_script", path=str(episode_file))],
             )
 
-        episode_path = project_dir / resolved_episode_path
-        episode = load_json_or_none(episode_path)
-        if episode is None:
+        episode = load_json_or_none(project_dir / resolved_episode_path)
+        if not isinstance(episode, dict):
             return ValidationResult(
                 valid=False,
-                error_messages=[_m("val_cannot_load_script", path=episode_path)],
+                error_messages=[_m("val_cannot_load_script", path=resolved_episode_path)],
             )
 
         return self.validate_episode_payload(project_dir, project, episode)
 
-    def validate_project_tree(self, project_dir: str | Path) -> ValidationResult:
+    def validate_project_tree(
+        self, project_dir: str | Path, *, missing_references: list[MissingReference] | None = None
+    ) -> ValidationResult:
         """
         验证完整项目目录。
 
-        除 project.json / episode 结构外，还会验证本地文件引用和顶层附加文件。
+        除 project.json / episode 结构外，还会验证本地文件引用和顶层附加文件。``missing_references`` 非空时，
+        每条引用的文件不在的引用都追加进去（见 :class:`MissingReference`）。
         """
-        project_dir = Path(project_dir)
+        sink = _MissingReferenceSink(missing_references) if missing_references is not None else None
+        token = _MISSING_REFERENCE_SINK.set(sink)
+        try:
+            return self._validate_project_tree(Path(project_dir), sink)
+        finally:
+            _MISSING_REFERENCE_SINK.reset(token)
+
+    def _validate_project_tree(self, project_dir: Path, sink: _MissingReferenceSink | None) -> ValidationResult:
         project_result = self.validate_project_dir(project_dir)
         errors = list(project_result.error_messages)
         warnings = list(project_result.warning_messages)
 
         project_path = project_dir / "project.json"
         project = load_json_or_none(project_path)
-        if project is None:
+        if not isinstance(project, dict):
             return ValidationResult(valid=False, error_messages=errors, warning_messages=warnings)
+        if sink is not None:
+            sink.document, sink.root = "project.json", project
 
         self._validate_local_reference(
             project_dir,
-            project.get("style_image"),
+            project,
+            "style_image",
             errors,
             "project.style_image",
         )
@@ -1579,21 +1640,24 @@ class DataValidator:
                     continue
                 self._validate_local_reference(
                     project_dir,
-                    char_data.get("character_sheet"),
+                    char_data,
+                    "character_sheet",
                     errors,
                     f"characters[{char_name}].character_sheet",
                     default_dir="characters",
                 )
                 self._validate_local_reference(
                     project_dir,
-                    char_data.get("reference_image"),
+                    char_data,
+                    "reference_image",
                     errors,
                     f"characters[{char_name}].reference_image",
                     default_dir="characters/refs",
                 )
                 self._validate_local_reference(
                     project_dir,
-                    char_data.get("reference_audio"),
+                    char_data,
+                    "reference_audio",
                     errors,
                     f"characters[{char_name}].reference_audio",
                     default_dir="characters/refs_audio",
@@ -1606,7 +1670,8 @@ class DataValidator:
                     continue
                 self._validate_local_reference(
                     project_dir,
-                    scene_data.get("scene_sheet"),
+                    scene_data,
+                    "scene_sheet",
                     errors,
                     f"scenes[{scene_name}].scene_sheet",
                     default_dir="scenes",
@@ -1619,7 +1684,8 @@ class DataValidator:
                     continue
                 self._validate_local_reference(
                     project_dir,
-                    prop_data.get("prop_sheet"),
+                    prop_data,
+                    "prop_sheet",
                     errors,
                     f"props[{prop_name}].prop_sheet",
                     default_dir="props",
@@ -1637,7 +1703,8 @@ class DataValidator:
 
                 resolved_path = self._validate_local_reference(
                     project_dir,
-                    script_file,
+                    episode_meta,
+                    "script_file",
                     errors,
                     f"episodes[{index}].script_file",
                     default_dir="scripts",
@@ -1656,6 +1723,8 @@ class DataValidator:
                     errors.append(_m("val_cannot_load_script", path=resolved_path))
                     continue
 
+                if sink is not None:
+                    sink.document, sink.root = resolved_path, episode
                 episode_errors: list[ValidationMessage] = []
                 episode_warnings: list[ValidationMessage] = []
                 self._validate_episode_payload(

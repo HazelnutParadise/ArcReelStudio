@@ -280,7 +280,7 @@ class TargetStatePlanner:
         shared_versions: SharedVersionMetadata | None = None,
         manifest_snapshot: ArtifactManifestSnapshot | None = None,
         shared_observations: dict[str, ArtifactObservation] | None = None,
-        preserved_content_facts: Mapping[ArtifactKey, ArtifactContentFacts] | None = None,
+        preserved_content_facts: Mapping[ArtifactKey, ArtifactContentFacts | None] | None = None,
     ) -> None:
         self.project_dir = project_dir.resolve(strict=True)
         self.adapter = ProjectArtifactManifestAdapter(self.project_dir)
@@ -293,8 +293,8 @@ class TargetStatePlanner:
         #: Request-scoped inspections shared with the currency resolver that owns this planner: the
         #: resolver's admission and the media proof open each formal file once.  ``None`` outside a resolver.
         self.shared_observations = shared_observations
-        #: 保全时源清单里视频与音频登记的内容事实：正式文件对不上它的，即使与快照一致也只按 stale 保全，
-        #: 已过期的媒体不经导出被洗成最新（ADR 0134）。
+        #: 保全时源清单里视频与音频登记的内容事实：正式文件对不上它的、登记本就没有事实的（为 ``None``），
+        #: 即使与快照一致也只按 stale 保全，已过期的媒体不经导出被洗成最新（ADR 0134）。
         self.preserved_content_facts = dict(preserved_content_facts or {})
         if episode_scope is not None and (type(episode_scope) is not int or episode_scope < 1):
             raise ValueError("episode scope must be a positive integer or null")
@@ -1217,10 +1217,11 @@ class TargetStatePlanner:
             )
             if artifact_digest is None:
                 return
-            preserved = self.preserved_content_facts.get(key)
-            if preserved is not None and preserved.digest != artifact_digest:
-                self._skip(key, artifact_path, "current media file is not the registered version")
-                return
+            if key in self.preserved_content_facts:
+                preserved = self.preserved_content_facts[key]
+                if preserved is None or preserved.digest != artifact_digest:
+                    self._skip(key, artifact_path, "current media file is not the registered version")
+                    return
         try:
             if resource_type == "audio":
                 current_basis = build_current_audio_artifact_basis(

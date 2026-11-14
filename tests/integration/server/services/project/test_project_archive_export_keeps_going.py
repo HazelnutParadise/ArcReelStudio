@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -10,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from lib.artifacts.artifact_activation import ArtifactCurrencyResolver
+from lib.artifacts.artifact_activation import ArtifactCurrencyResolver, ArtifactTargetStateChangedError
 from lib.artifacts.artifact_manifest import (
     MANIFEST_FILENAME,
     ArtifactKey,
@@ -20,8 +21,10 @@ from lib.artifacts.artifact_manifest import (
 from lib.artifacts.version_manager import VersionManager
 from lib.final_cut.basis import current_video
 from lib.infra.api_errors import ApiError
+from lib.project.data_validator import DataValidator
 from lib.project.project_manager import ProjectManager
 from lib.project.project_migrations.runner import migrate_project_with_verdict
+from server.services.project import project_archive as project_archive_module
 from server.services.project.project_archive import (
     ARCHIVE_MANIFEST_NAME,
     ProjectArchiveService,
@@ -338,3 +341,82 @@ def test_export_diagnostics_for_an_unparseable_project_name_no_server_paths(tmp_
     messages = [item["message"] for item in diagnostics["blocking"]]
     assert messages
     assert all("project.json" in message and "/" not in message.replace("project.json", "") for message in messages)
+
+
+class _DiskFullArchiveService(ProjectArchiveService):
+    """写导出副本时磁盘写满。"""
+
+    def _copy_visible_tree(self, source_dir: Path, target_dir: Path) -> tuple[tuple[str, str], ...]:
+        raise OSError(errno.ENOSPC, "No space left on device", str(target_dir / "videos" / "scene_E1S1.mp4"))
+
+
+class _DirectoryReplacedOnceArchiveService(ProjectArchiveService):
+    """第一次复制时一个目录正好被换成同名文件，之后项目恢复平静。"""
+
+    attempts = 0
+
+    def _copy_visible_tree(self, source_dir: Path, target_dir: Path) -> tuple[tuple[str, str], ...]:
+        type(self).attempts += 1
+        if type(self).attempts == 1:
+            raise NotADirectoryError(errno.ENOTDIR, "Not a directory", str(source_dir / "videos"))
+        return super()._copy_visible_tree(source_dir, target_dir)
+
+
+def test_a_full_disk_stops_the_export_with_its_own_reason(tmp_path: Path) -> None:
+    pm, _project_dir = _current_project(tmp_path)
+
+    with pytest.raises(ApiError) as exc:
+        _DiskFullArchiveService(pm).export_project("demo", scope="full")
+
+    assert (exc.value.status_code, exc.value.key) == (507, "export_disk_full")
+
+
+def test_a_directory_replaced_while_copying_is_retried_like_a_vanished_file(tmp_path: Path) -> None:
+    pm, _project_dir = _current_project(tmp_path)
+
+    archive_path, _ = _DirectoryReplacedOnceArchiveService(pm).export_project("demo", scope="full")
+
+    assert archive_path.is_file()
+    assert _DirectoryReplacedOnceArchiveService.attempts == 2
+
+
+def test_inputs_changing_while_the_archive_is_planned_stop_the_export_as_a_conflict(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pm, _project_dir = _current_project(tmp_path)
+
+    def _changed(*_args: object, **_kwargs: object) -> None:
+        raise ArtifactTargetStateChangedError("artifact activation dependency changed after preflight: videos")
+
+    monkeypatch.setattr(project_archive_module, "snapshot_preserved_artifact_manifest", _changed)
+
+    with pytest.raises(ApiError) as exc:
+        ProjectArchiveService(pm).export_project("demo", scope="full")
+
+    assert (exc.value.status_code, exc.value.key) == (409, "export_project_busy")
+
+
+@pytest.mark.parametrize("payload", ["[]", "3", '"x"', "null"])
+def test_a_project_file_that_is_not_an_object_is_reported_not_crashed(tmp_path: Path, payload: str) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    (project_dir / "project.json").write_text(payload, encoding="utf-8")
+
+    diagnostics = ProjectArchiveService(pm).get_export_diagnostics("demo", scope="full")
+
+    assert [item["code"] for item in diagnostics["blocking"]][:1] == ["invalid_project_json"]
+
+
+def test_validating_one_episode_file_names_it_relative_to_the_project(tmp_path: Path) -> None:
+    _pm, project_dir = _current_project(tmp_path)
+    (project_dir / "scripts" / "episode_1.json").write_text("[]", encoding="utf-8")
+    validator = DataValidator()
+
+    results = [
+        validator.validate_episode_file(project_dir, "scripts/episode_1.json"),
+        validator.validate_episode_file(project_dir, "scripts/episode_9.json"),
+    ]
+
+    assert [str(message.params["path"]) for result in results for message in result.error_messages] == [
+        "scripts/episode_1.json",
+        "scripts/episode_9.json",
+    ]

@@ -895,6 +895,7 @@ MESSAGES = {
     "material_project_retiring": "專案正在刪除或被匯入的專案替換，這張圖片沒有儲存。確認專案仍在後重試",
     "material_remote_fetch_failed": "沒能從物件儲存取回這張圖片。檢查物件儲存連線與網路後重試",
     "export_project_busy": "專案在匯出過程中一直有變動，沒能取得一致的快照。等產生或編輯結束後再試一次",
+    "export_disk_full": "磁碟空間不足，沒能寫完匯出檔案。清出空間後再試一次",
     "export_project_unreadable": "專案資料讀不出來或結構不完整，無法匯出。檢查專案檔案後再試一次",
     "material_object_connection_unavailable": "這張圖片儲存在原來的物件儲存桶裡，而當前連線已刪除或指向另一個桶，暫時無法讀取",
     "asset_library_region_unsupported": "素材庫不支援區域 {region}",

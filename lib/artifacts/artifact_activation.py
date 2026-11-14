@@ -266,6 +266,14 @@ ArchiveClaimOutcome = Literal[
 """
 
 _MEDIA_KINDS = frozenset({ArtifactKind.EPISODE_VIDEO, ArtifactKind.EPISODE_AUDIO})
+
+UNPROVEN_MEDIA_BASIS_DIGEST = ArtifactBasis.build("archive/unproven-media", kind_version=1, inputs={}).digest
+"""以 stale 随包的视频与音频登记的依据摘要：不等于任何能投影出的依据，导入后不论包里的文件能否自证都判 stale。
+
+证明不了是所选版本的媒体随包时既不带内容事实、也不带原来的依据：否则导入端若能用包里的快照与版本记录重新证明，
+这条登记就会被洗成最新（例如改写过版本记录指纹的包），再导出一次也一样。用户重新生成或切换版本时按真实依据重新登记
+（ADR 0134）。
+"""
 _PRESENTATION_KINDS = frozenset({ArtifactKind.EPISODE_SUBTITLE, ArtifactKind.EPISODE_PRESENTATION})
 
 
@@ -302,8 +310,9 @@ def snapshot_preserved_artifact_manifest(
     with project_metadata_lock(project_dir):
         plan = _plan_preserved_artifact_target_state(
             project_dir,
+            # 源清单里视频与音频登记的内容事实；没有事实的（导入时就判了 stale）照样列上，规划器不替它重新证明。
             preserved_content_facts={
-                key: entry.content for key, entry in preserved_entries.items() if entry.content is not None
+                key: entry.content for key, entry in preserved_entries.items() if key.kind in _MEDIA_KINDS
             },
         )
         adapter = ProjectArtifactManifestAdapter(project_dir)
@@ -322,8 +331,12 @@ def snapshot_preserved_artifact_manifest(
                     ArchiveClaimNotice(key, archived.artifact_path, _left_out_outcome(adapter, key, archived))
                 )
                 continue
-            rebased[key] = ArtifactManifestEntry(artifact_path=artifact_path, basis_digest=archived.basis_digest)
-            if current is None and key.kind in _MEDIA_KINDS:
+            carried_as_stale = current is None and key.kind in _MEDIA_KINDS
+            rebased[key] = ArtifactManifestEntry(
+                artifact_path=artifact_path,
+                basis_digest=UNPROVEN_MEDIA_BASIS_DIGEST if carried_as_stale else archived.basis_digest,
+            )
+            if carried_as_stale:
                 notices.append(ArchiveClaimNotice(key, artifact_path, "carried_as_stale"))
         assert_artifact_target_state_plan_unchanged(project_dir, plan)
         content_digests = {
@@ -344,8 +357,9 @@ def snapshot_self_proved_artifact_manifest(
     """源项目的清单读不出时，按导出规划器自己的证明组一份清单快照（ADR 0134）。
 
     视频与音频、依据旧媒体版本的字幕与呈现按各自记录的生成依据登记，导入后照生成时的依据判时效：已过期的仍是
-    stale，不会变成 missing 或最新。视频与音频的正式文件在、证明不成立时同样按记录的依据随包、不带内容事实。
-    其余产物没有别处记着生成依据，按当前内容投影登记，导入后判 current。
+    stale，不会变成 missing 或最新。视频与音频的正式文件在、证明不成立（含没有版本记录）时以
+    :data:`UNPROVEN_MEDIA_BASIS_DIGEST` 随包，导入后判 stale。其余产物没有别处记着生成依据，按当前内容投影登记，
+    导入后判 current。
     """
 
     with project_metadata_lock(project_dir):
@@ -362,13 +376,18 @@ def snapshot_self_proved_artifact_manifest(
         if ships_unselected_versions:
             unproven.update(plan.unselected_media_formal_paths)
         for key, artifact_path in sorted(unproven.items(), key=lambda item: item[0].encode()):
+            if key.kind in _MEDIA_KINDS:
+                # 正式文件在、证明不了是所选版本的视频与音频（含没有版本记录、记不出依据的）：以 stale 随包。
+                entries[key] = ArtifactManifestEntry(
+                    artifact_path=artifact_path, basis_digest=UNPROVEN_MEDIA_BASIS_DIGEST
+                )
+                notices.append(ArchiveClaimNotice(key, artifact_path, "carried_as_stale"))
+                continue
             recorded = plan.recorded_basis_digests.get(key)
             if recorded is None:
                 notices.append(ArchiveClaimNotice(key, artifact_path, "left_out_unverifiable"))
                 continue
             entries[key] = ArtifactManifestEntry(artifact_path=artifact_path, basis_digest=recorded)
-            if key.kind in _MEDIA_KINDS:
-                notices.append(ArchiveClaimNotice(key, artifact_path, "carried_as_stale"))
         assert_artifact_target_state_plan_unchanged(project_dir, plan)
         content_digests = {
             key: read_artifact_content_digest(adapter, entry.artifact_path) for key, entry in entries.items()
@@ -413,7 +432,7 @@ def _archived_content_evidence(
 def _plan_preserved_artifact_target_state(
     project_dir: Path,
     *,
-    preserved_content_facts: Mapping[ArtifactKey, ArtifactContentFacts] | None = None,
+    preserved_content_facts: Mapping[ArtifactKey, ArtifactContentFacts | None] | None = None,
 ) -> ArtifactTargetStatePlan:
     """Prove canonical paths while leaving preserved generation digests immutable."""
 
@@ -654,6 +673,7 @@ def _assert_project_unchanged(project_dir: Path, expected: bytes) -> None:
 
 
 __all__ = [
+    "UNPROVEN_MEDIA_BASIS_DIGEST",
     "ArchiveClaimNotice",
     "ArchiveClaimOutcome",
     "ArtifactComparer",

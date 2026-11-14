@@ -958,6 +958,7 @@ MESSAGES = {
     "material_project_retiring": "Dự án đang bị xóa hoặc bị thay thế bởi dự án nhập vào nên ảnh này chưa được lưu. Hãy kiểm tra dự án vẫn còn rồi thử lại",
     "material_remote_fetch_failed": "Không lấy được ảnh từ lưu trữ đối tượng. Hãy kiểm tra kết nối lưu trữ đối tượng và mạng rồi thử lại",
     "export_project_busy": "Dự án liên tục thay đổi trong lúc xuất nên không lấy được bản chụp nhất quán. Hãy thử lại sau khi tạo hoặc chỉnh sửa xong",
+    "export_disk_full": "Không đủ dung lượng đĩa để ghi xong bản xuất. Hãy giải phóng dung lượng rồi thử lại",
     "export_project_unreadable": "Không đọc được dữ liệu dự án hoặc dữ liệu không đầy đủ nên không xuất được. Hãy kiểm tra các tệp dự án rồi thử lại",
     "material_object_connection_unavailable": "Ảnh này được lưu trong bucket lưu trữ đối tượng ban đầu, nhưng kết nối hiện tại đã bị xóa hoặc trỏ tới bucket khác nên tạm thời không đọc được",
     "asset_library_region_unsupported": "Thư viện tư liệu không hỗ trợ khu vực {region}",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 import json
 import logging
 import os
@@ -16,7 +17,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, NoReturn, Protocol, cast
+from typing import Any, Literal, NoReturn, Protocol, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -56,7 +57,7 @@ from lib.catalog import query as catalog
 from lib.catalog.builtin_models import disabled_builtin_models
 from lib.config.resolver import VideoGenerationType, project_video_backend_ids
 from lib.episode.episode_ledger import parse_positive_episode_num
-from lib.infra.api_errors import BadGatewayError, ConflictError, UnprocessableError
+from lib.infra.api_errors import ApiError, BadGatewayError, ConflictError, UnprocessableError
 from lib.infra.async_thread import EventLoopBridge, run_noninterruptible_async
 from lib.infra.content_digest import digest_stream, sha256_file
 from lib.infra.json_io import load_json
@@ -78,7 +79,7 @@ from lib.material.work_files import (
 )
 from lib.project import deleted_projects
 from lib.project.asset_types import ASSET_SPECS, asset_name_comparison_key, build_asset_entry, normalize_asset_name
-from lib.project.data_validator import DataValidator
+from lib.project.data_validator import DataValidator, MissingReference
 from lib.project.project_change_hints import emit_project_change_hint
 from lib.project.project_manager import ProjectManager
 from lib.project.project_migration_failure import ProjectMigrationError, migration_failure_details
@@ -192,6 +193,42 @@ _ARTIFACT_ACTIVATION_ERRORS = (ArtifactManifestError, OSError, UnicodeError, Val
 _EXPORT_SNAPSHOT_ATTEMPTS = 3
 
 
+@dataclass(frozen=True, slots=True)
+class _VersionHistoryProblem:
+    """版本历史里导入会拒收的一项：``resource_id`` 为空表示整个类型桶。"""
+
+    resource_type: str
+    resource_id: str | None
+    kind: Literal["malformed", "unmanaged"]
+
+    @property
+    def location(self) -> str:
+        return self.resource_type if self.resource_id is None else f"{self.resource_type}/{self.resource_id}"
+
+
+def _version_history_problems(payload: Mapping[str, Any]) -> list[_VersionHistoryProblem]:
+    """已知类型桶里导入会拒收的版本历史：桶、资源或记录结构损坏，或记录的快照路径不在本类型历史目录里。
+
+    导入据此拒绝整包，导出据此在副本里去掉这几项；未知类型的桶两边都先行剔除，不在此列。
+    """
+    problems: list[_VersionHistoryProblem] = []
+    for resource_type, bucket in payload.items():
+        if resource_type not in VersionManager.RESOURCE_TYPES:
+            continue
+        if not isinstance(bucket, dict):
+            problems.append(_VersionHistoryProblem(resource_type, None, "malformed"))
+            continue
+        for resource_id, info in bucket.items():
+            history = info.get("versions", []) if isinstance(info, dict) else None
+            if not isinstance(history, list) or not all(isinstance(record, dict) for record in history):
+                problems.append(_VersionHistoryProblem(resource_type, resource_id, "malformed"))
+            elif not all(
+                VersionManager.is_managed_snapshot_path(resource_type, record.get("file")) for record in history
+            ):
+                problems.append(_VersionHistoryProblem(resource_type, resource_id, "unmanaged"))
+    return problems
+
+
 class ExportProjectBusyError(ConflictError):
     """导出取快照时项目一直在变，或快照期间依据被改动：稍后重试即可（HTTP 409）。"""
 
@@ -199,11 +236,33 @@ class ExportProjectBusyError(ConflictError):
         super().__init__("export_project_busy")
 
 
+class ExportDiskFullError(ApiError):
+    """写导出副本或归档文件时磁盘写满（HTTP 507）。"""
+
+    def __init__(self) -> None:
+        super().__init__("export_disk_full", status_code=507)
+
+
 class ExportProjectUnreadableError(UnprocessableError):
     """项目数据读不出、结构损坏或路径不安全，导不出可用的归档（HTTP 422）。"""
 
     def __init__(self) -> None:
         super().__init__("export_project_unreadable")
+
+
+@dataclass(frozen=True, slots=True)
+class _SourceSymlinks:
+    """源项目里是符号链接的文件与目录：导出副本里它们（连同链接目录下的一切）看起来就是不在，源项目判 blocked。"""
+
+    files: frozenset[str]
+    directories: frozenset[str]
+
+    def covers(self, relative_path: str) -> bool:
+        path = relative_path.strip().replace("\\", "/").removeprefix("./")
+        if path in self.files or any(path.startswith(f"{directory}/") for directory in self.directories):
+            return True
+        # 只写文件名、靠默认目录解析的引用：按文件名对照
+        return "/" not in path and any(link.rsplit("/", 1)[-1] == path for link in self.files)
 
 
 class _UnreadableManifest:
@@ -228,25 +287,6 @@ _ARCHIVE_CLAIM_NOTICES: Mapping[ArchiveClaimOutcome, tuple[str, str]] = MappingP
 )
 
 _MEDIA_ARTIFACT_KINDS = frozenset({ArtifactKind.EPISODE_VIDEO, ArtifactKind.EPISODE_AUDIO})
-
-# 导出副本里清掉的、指向不在包里的文件的引用：剧本条目 generated_assets 的字段与它们的默认目录
-_SCRIPT_REFERENCE_FIELDS: Mapping[str, str] = MappingProxyType(
-    {
-        "storyboard_image": "storyboards",
-        "storyboard_last_image": "storyboards",
-        "video_clip": "videos",
-        "narration_audio": "audio",
-    }
-)
-# project.json 里导入校验要求在场的引用：(资产表, 字段, 默认目录)；资产表为空表示项目顶层字段
-_PROJECT_REFERENCE_FIELDS: tuple[tuple[str | None, str, str | None], ...] = (
-    (None, "style_image", None),
-    ("characters", "character_sheet", "characters"),
-    ("characters", "reference_image", "characters/refs"),
-    ("characters", "reference_audio", "characters/refs_audio"),
-    ("scenes", "scene_sheet", "scenes"),
-    ("props", "prop_sheet", "props"),
-)
 
 
 class CurrentExportVersionRetention(Enum):
@@ -567,8 +607,11 @@ class ProjectArchiveService:
 
         版本快照位置按记录的摘要校验；正式文件只要求在场，内容以盘上为准，与本地内容版本的导出一致。
         """
-        versions = self._load_json_file(snapshot_dir / "versions" / "versions.json") or {}
-        project = self._load_json_file(snapshot_dir / self.project_manager.PROJECT_FILE) or {}
+        versions = self._load_json_file(snapshot_dir / "versions" / "versions.json")
+        project = self._load_json_file(snapshot_dir / self.project_manager.PROJECT_FILE)
+        # 结构不对的 project.json 与版本记录由修复与校验步骤报出，这里按空的处理
+        versions = versions if isinstance(versions, dict) else {}
+        project = project if isinstance(project, dict) else {}
         for work_file in self._exported_work_files(remote_work_files(versions, project), versions, scope):
             path = snapshot_dir / work_file.path
             if not path.is_file():
@@ -647,8 +690,10 @@ class ProjectArchiveService:
                     project_name=project_name,
                     scope=scope,
                 )
-        except Exception:
+        except Exception as exc:
             archive_path.unlink(missing_ok=True)  # hard-delete: temp -- 导出失败的半成品归档
+            if isinstance(exc, OSError) and exc.errno == errno.ENOSPC:
+                raise ExportDiskFullError() from exc
             raise
         finally:
             if temp_dir is not None:
@@ -913,6 +958,9 @@ class ProjectArchiveService:
                             diagnostics=diagnostics,
                         )
                     # 有无信封的两条路径均在 staging 一次性提交。
+                    if preserved_manifest is None:
+                        # 无信封的包按文件自证补录：先按版本记录补回快照，补录时视频与配音照常证明成立。
+                        self._restore_version_snapshots(staging_dir, diagnostics)
                     try:
                         import_skipped = ensure_imported_artifact_target_state(
                             staging_dir,
@@ -922,8 +970,9 @@ class ProjectArchiveService:
                         self._raise_artifact_activation_validation_error(diagnostics, exc)
                     if preserved_manifest is not None:
                         self._report_media_imported_as_stale(staging_dir, preserved_manifest, diagnostics)
-                    # 判完时效再补快照：补回的快照只让恢复版本与成片取材可用，不把这次判成 stale 的登记改回最新。
-                    self._restore_version_snapshots(staging_dir, diagnostics)
+                        # 带信封的包判完时效再补快照：补回的快照只让恢复版本与成片取材可用，不把这次判成 stale 的
+                        # 登记借包里的快照证明改回最新。
+                        self._restore_version_snapshots(staging_dir, diagnostics)
 
                     # 修复期补的占位、导入激活没能登记的产物与迁移链的结果一起进报告，不分归档的
                     # schema 版本：导入前请用户确认一次（ADR 0098）。占位从诊断移进报告，导入成功
@@ -1085,6 +1134,11 @@ class ProjectArchiveService:
                 pass_through_entries=excluded_entries,
                 artifact_manifest=artifact_manifest,
             )
+        except OSError as exc:
+            temp_dir.cleanup()
+            if exc.errno == errno.ENOSPC:
+                raise ExportDiskFullError() from exc
+            raise
         except BaseException:
             temp_dir.cleanup()
             raise
@@ -1097,7 +1151,7 @@ class ProjectArchiveService:
         *,
         scope: str,
         diagnostics: ArchiveDiagnostics,
-        unreadable_in_source: frozenset[str],
+        unreadable_in_source: _SourceSymlinks,
     ) -> dict[str, object]:
         """归档信封里的清单快照。证明不了的登记不让导出失败，逐条进警告；项目本身读不出或不安全才停。
 
@@ -1125,7 +1179,7 @@ class ProjectArchiveService:
             location = _failure_location(exc)
             raise (error.with_diagnostic(location) if location is not None else error) from exc
         for notice in exported.notices:
-            if notice.outcome == "left_out_missing" and notice.artifact_path in unreadable_in_source:
+            if notice.outcome == "left_out_missing" and unreadable_in_source.covers(notice.artifact_path):
                 notice = replace(notice, outcome="left_out_unreadable")
             ProjectArchiveService._add_claim_notice(diagnostics, notice)
         return encode_artifact_manifest_payload(exported.snapshot)
@@ -1172,12 +1226,18 @@ class ProjectArchiveService:
         snapshot_dir: Path,
         source_manifest_entries: Mapping[ArtifactKey, ArtifactManifestEntry] | _UnreadableManifest | None,
     ) -> frozenset[str]:
-        """正式文件对不上源清单登记的内容事实的路径：源项目里它已判 stale，不按它补快照（ADR 0134）。"""
+        """源项目里已判 stale 的视频与配音的正式文件：不按它们补快照（ADR 0134）。
+
+        登记没有内容事实，或正式文件对不上登记的内容事实。
+        """
         if not isinstance(source_manifest_entries, Mapping):
             return frozenset()
         refused: set[str] = set()
-        for entry in source_manifest_entries.values():
+        for key, entry in source_manifest_entries.items():
+            if key.kind not in _MEDIA_ARTIFACT_KINDS:
+                continue
             if entry.content is None:
+                refused.add(entry.artifact_path)
                 continue
             formal = try_safe_join(snapshot_dir, entry.artifact_path)
             if formal is None or not formal.is_file() or sha256_file(formal) != entry.content.digest:
@@ -1241,161 +1301,83 @@ class ProjectArchiveService:
             )
 
     def _drop_unmanaged_version_records(self, project_dir: Path, diagnostics: ArchiveDiagnostics) -> None:
-        """导出副本里去掉导入会拒收的版本记录：快照路径不在本类型历史目录里，或历史结构损坏。
+        """导出副本里去掉导入会拒收的版本历史：结构损坏的桶或资源，以及快照路径不在本类型历史目录里的记录。
 
-        与导入的 ``_confine_version_history`` 同一判据；导入整包拒绝，导出只去掉这几条并告知，其余照常带上。
+        判据与导入的 ``_confine_version_history`` 是同一个函数（:func:`_version_history_problems`）；导入整包拒绝，
+        导出只去掉这几项并告知，其余照常带上。
         """
         versions_path = project_dir / "versions" / "versions.json"
         payload = self._load_json_file(versions_path)
         if not isinstance(payload, dict):
             return
-        changed = False
-        for resource_type, bucket in payload.items():
-            if resource_type not in VersionManager.RESOURCE_TYPES or not isinstance(bucket, dict):
-                continue
-            for resource_id in list(bucket):
-                info = bucket[resource_id]
-                history = info.get("versions", []) if isinstance(info, dict) else None
-                if isinstance(history, list) and all(
-                    isinstance(record, dict)
-                    and VersionManager.is_managed_snapshot_path(resource_type, record.get("file"))
-                    for record in history
-                ):
-                    continue
-                if isinstance(history, list) and isinstance(info, dict):
-                    info["versions"] = [
-                        record
-                        for record in history
-                        if isinstance(record, dict)
-                        and VersionManager.is_managed_snapshot_path(resource_type, record.get("file"))
-                    ]
-                else:
-                    del bucket[resource_id]
-                changed = True
-                location = f"{resource_type}/{resource_id}"
-                diagnostics.add(
-                    "warnings",
-                    "version_record_dropped",
-                    ValidationMessage("arch_version_record_dropped", {"location": location}),
-                    location=location,
-                )
-        if changed:
+        problems = _version_history_problems(payload)
+        for problem in problems:
+            bucket = payload.get(problem.resource_type)
+            if problem.resource_id is None:
+                payload.pop(problem.resource_type, None)
+            elif problem.kind == "malformed" and isinstance(bucket, dict):
+                bucket.pop(problem.resource_id, None)
+            elif isinstance(bucket, dict) and isinstance(info := bucket.get(problem.resource_id), dict):
+                info["versions"] = [
+                    record
+                    for record in info.get("versions", [])
+                    if VersionManager.is_managed_snapshot_path(problem.resource_type, record.get("file"))
+                ]
+            code, message_key = (
+                ("version_history_malformed_dropped", "arch_version_history_malformed_dropped")
+                if problem.kind == "malformed"
+                else ("version_record_dropped", "arch_version_record_dropped")
+            )
+            diagnostics.add(
+                "warnings",
+                code,
+                ValidationMessage(message_key, {"location": problem.location}),
+                location=problem.location,
+            )
+        if problems:
             self._write_json_file(versions_path, payload)
 
     def _clear_dangling_references(
-        self, project_dir: Path, diagnostics: ArchiveDiagnostics, *, unreadable_in_source: frozenset[str]
+        self, project_dir: Path, diagnostics: ArchiveDiagnostics, *, unreadable_in_source: _SourceSymlinks
     ) -> None:
         """导出副本里清掉指向不在包里的文件、又没有版本可恢复的引用，让包能通过导入校验。
 
-        源项目里这些产物已读作 missing（文件不在）或 blocked（符号链接）；清掉引用后导入同样读作 missing，
-        不丢任何内容。修复步骤能从版本历史恢复的引用此前已恢复。
+        哪些引用必须在场由导入用的同一个校验器回答（``DataValidator.validate_project_tree`` 的
+        ``missing_references``），这里不另列字段。源项目里这些产物已读作 missing（文件不在）或 blocked（符号链接）；
+        清掉引用后导入同样读作 missing，不丢任何内容。修复步骤能从版本历史恢复的引用此前已恢复。
         """
-        project_path = project_dir / self.project_manager.PROJECT_FILE
-        project = self._load_json_file(project_path)
-        if not isinstance(project, dict):
-            return
-        project_changed = False
-        for bucket_key, field_name, default_dir in _PROJECT_REFERENCE_FIELDS:
-            holders = [(field_name, project)] if bucket_key is None else []
-            bucket = project.get(bucket_key) if bucket_key is not None else None
-            if isinstance(bucket, dict):
-                holders = [
-                    (f"{bucket_key}[{name}].{field_name}", entry)
-                    for name, entry in bucket.items()
-                    if isinstance(entry, dict)
-                ]
-            for location, holder in holders:
-                if self._clear_if_dangling(
-                    project_dir, holder, field_name, default_dir, location, diagnostics, unreadable_in_source
-                ):
-                    project_changed = True
-        if project_changed:
-            self._write_json_file(project_path, project)
-
-        episodes = project.get("episodes")
-        for episode in episodes if isinstance(episodes, list) else []:
-            script_rel = episode.get("script_file") if isinstance(episode, dict) else None
-            script_path = try_safe_join(project_dir, script_rel) if isinstance(script_rel, str) else None
-            script = self._load_json_file(script_path) if script_path is not None and script_path.is_file() else None
-            if not isinstance(script, dict):
-                continue
-            changed = False
-            for location, assets in self._generated_assets_of(script, ""):
-                for field_name, default_dir in _SCRIPT_REFERENCE_FIELDS.items():
-                    if self._clear_if_dangling(
-                        project_dir,
-                        assets,
-                        field_name,
-                        default_dir,
-                        f"{script_rel}:{location}.generated_assets.{field_name}",
-                        diagnostics,
-                        unreadable_in_source,
-                    ):
-                        changed = True
-            if changed and script_path is not None:
-                self._write_json_file(script_path, script)
-
-    @classmethod
-    def _generated_assets_of(cls, node: object, location: str) -> Iterator[tuple[str, dict[str, Any]]]:
-        """剧本里每个带 ``generated_assets`` 的条目，连同它在剧本里的位置（如 ``segments[0]``）。"""
-        if isinstance(node, dict):
-            assets = node.get("generated_assets")
-            if isinstance(assets, dict):
-                yield location, assets
-            for key, value in node.items():
-                if key != "generated_assets":
-                    yield from cls._generated_assets_of(value, f"{location}.{key}" if location else str(key))
-        elif isinstance(node, list):
-            for index, value in enumerate(node):
-                yield from cls._generated_assets_of(value, f"{location}[{index}]")
-
-    @staticmethod
-    def _clear_if_dangling(
-        project_dir: Path,
-        holder: dict[str, Any],
-        field_name: str,
-        default_dir: str | None,
-        location: str,
-        diagnostics: ArchiveDiagnostics,
-        unreadable_in_source: frozenset[str],
-    ) -> bool:
-        value = holder.get(field_name)
-        if not isinstance(value, str) or not value.strip() or "://" in value:
-            return False
-        normalized = value.strip().replace("\\", "/")
-        candidates = [normalized]
-        if default_dir and "/" not in normalized:
-            candidates.append(f"{default_dir}/{normalized}")
-        resolved = [try_safe_join(project_dir, candidate) for candidate in candidates]
-        if any(path is None for path in resolved) or any(path.is_file() for path in resolved if path is not None):
-            # 越出项目目录的路径交给导入校验照常报出；在场的文件不动。
-            return False
-        holder[field_name] = None
-        symlinked = next((candidate for candidate in candidates if candidate in unreadable_in_source), None)
-        code, message_key = (
-            ("symlink_reference_cleared", "arch_symlink_reference_cleared")
-            if symlinked is not None
-            else ("missing_reference_cleared", "arch_missing_reference_cleared")
-        )
-        diagnostics.add(
-            "auto_fixed",
-            code,
-            ValidationMessage(message_key, {"location": location, "path": symlinked or normalized}),
-            location=location,
-        )
-        return True
+        missing: list[MissingReference] = []
+        self.validator.validate_project_tree(project_dir, missing_references=missing)
+        documents: dict[str, dict[str, Any]] = {}
+        for reference in missing:
+            documents[reference.document] = reference.clear()
+            symlinked = unreadable_in_source.covers(reference.path)
+            code, message_key = (
+                ("symlink_reference_cleared", "arch_symlink_reference_cleared")
+                if symlinked
+                else ("missing_reference_cleared", "arch_missing_reference_cleared")
+            )
+            location = f"{reference.document}:{reference.field}"
+            diagnostics.add(
+                "auto_fixed",
+                code,
+                ValidationMessage(message_key, {"location": location, "path": reference.path}),
+                location=location,
+            )
+        for document, payload in documents.items():
+            self._write_json_file(project_dir / document, payload)
 
     def _build_archive_manifest(
         self,
         project_name: str,
-        project: dict[str, Any] | None,
+        project: object,
         *,
         scope: str,
         diagnostics: dict[str, Any],
         pass_through_entries: list[str],
         artifact_manifest: dict[str, object] | None,
     ) -> dict[str, Any]:
-        project_payload = project or {}
+        project_payload = project if isinstance(project, dict) else {}
         payload = {
             "format_version": ARCHIVE_FORMAT_VERSION,
             "script_schema_version": ARCHIVE_SCRIPT_SCHEMA_VERSION,
@@ -1573,7 +1555,7 @@ class ProjectArchiveService:
         that do not participate in the formal-write lock.
         """
 
-        last_missing: FileNotFoundError | None = None
+        last_missing: OSError | None = None
         for _attempt in range(_EXPORT_SNAPSHOT_ATTEMPTS):
             with project_metadata_lock(source_dir):
                 if target_dir.exists():
@@ -1583,12 +1565,17 @@ class ProjectArchiveService:
                     copied = self._copy_visible_tree(source_dir, target_dir)
                     source_after = self._visible_tree_signature(source_dir)
                     manifest_after = self._source_manifest_entries(source_dir)
-                except FileNotFoundError as exc:
+                except (FileNotFoundError, NotADirectoryError) as exc:
+                    # 复制途中文件被删、目录被换成同名文件：项目正在变，重试。
                     last_missing = exc
                     continue
                 except OSError as exc:
-                    # 读不出的文件或目录不悄悄略过：整份导出停下，点名它在项目里的位置。
-                    raise self._unreadable_error(source_dir, exc) from exc
+                    # 源项目里读不出的文件或目录不悄悄略过：整份导出停下，点名它在项目里的位置。
+                    # 错误不出在源项目里（如写导出副本时磁盘写满）照原样抛出，由外层按 errno 归类。
+                    location = self._source_location(source_dir, exc)
+                    if location is None:
+                        raise
+                    raise ExportProjectUnreadableError().with_diagnostic(location) from exc
             if manifest_before == manifest_after and source_after == copied:
                 return manifest_before
         if target_dir.exists():
@@ -1596,34 +1583,37 @@ class ProjectArchiveService:
         raise ExportProjectBusyError() from last_missing
 
     @staticmethod
-    def _unreadable_error(source_dir: Path, exc: OSError) -> ExportProjectUnreadableError:
-        error = ExportProjectUnreadableError()
+    def _source_location(source_dir: Path, exc: OSError) -> str | None:
+        """出错的文件在源项目里的相对位置；错误不出在源项目里（如写导出副本时）时返回 ``None``。"""
         filename = exc.filename
-        if isinstance(filename, (str, os.PathLike)):
-            try:
-                return error.with_diagnostic(Path(filename).relative_to(source_dir).as_posix())
-            except ValueError:
-                pass
-        return error
+        if not isinstance(filename, (str, os.PathLike)):
+            return None
+        try:
+            return Path(filename).relative_to(source_dir).as_posix()
+        except ValueError:
+            return None
 
-    def _visible_symlinks(self, source_dir: Path) -> frozenset[str]:
-        """源项目可见树里的符号链接文件（相对路径）：导出不带链接指向的内容。"""
-        links: set[str] = set()
+    def _visible_symlinks(self, source_dir: Path) -> _SourceSymlinks:
+        """源项目可见树里的符号链接（文件与目录，相对路径）：导出不带链接指向的内容。"""
+        files: set[str] = set()
+        directories: set[str] = set()
         for current_dir, dirnames, filenames in os.walk(source_dir):
             current_path = Path(current_dir)
             relative_dir = current_path.relative_to(source_dir)
             is_root = current_path == source_dir
-            dirnames[:] = [
-                name
-                for name in dirnames
-                if not name.startswith(".")
-                and not (current_path / name).is_symlink()
-                and not (is_root and name not in self._ROOT_VISIBLE_ENTRIES)
-            ]
+            kept: list[str] = []
+            for name in dirnames:
+                if name.startswith(".") or (is_root and name not in self._ROOT_VISIBLE_ENTRIES):
+                    continue
+                if (current_path / name).is_symlink():
+                    directories.add((relative_dir / name).as_posix())
+                else:
+                    kept.append(name)
+            dirnames[:] = kept
             for name in filenames:
                 if not name.startswith(".") and (current_path / name).is_symlink():
-                    links.add((relative_dir / name).as_posix())
-        return frozenset(links)
+                    files.add((relative_dir / name).as_posix())
+        return _SourceSymlinks(frozenset(files), frozenset(directories))
 
     def _source_manifest_entries(
         self,
@@ -1717,7 +1707,7 @@ class ProjectArchiveService:
         diagnostics = ArchiveDiagnostics()
         project_path = project_dir / self.project_manager.PROJECT_FILE
         project = self._load_json_file(project_path)
-        if project is None:
+        if not isinstance(project, dict):
             diagnostics.add(
                 "blocking",
                 "invalid_project_json",
@@ -2301,7 +2291,7 @@ class ProjectArchiveService:
         """
         project_path = project_dir / self.project_manager.PROJECT_FILE
         project = self._load_json_file(project_path)
-        if project is None:
+        if not isinstance(project, dict):
             return
         pools = {
             key: {name for name, payload in (project.get(key) or {}).items() if isinstance(payload, dict)}
@@ -2612,20 +2602,15 @@ class ProjectArchiveService:
             records = sum(len(history) for _, history in self._iter_version_histories(payload.pop(key)))
             logger.info("导入包的版本历史含未知资源类型桶 %r（%d 条版本记录），已剔除", key, records)
 
-        errors: list[ValidationMessage] = []
-        for resource_type, bucket in payload.items():
-            if not isinstance(bucket, dict):
-                errors.append(ValidationMessage("arch_version_history_malformed", {"location": resource_type}))
-                continue
-            for resource_id, info in bucket.items():
-                location = f"{resource_type}/{resource_id}"
-                history = info.get("versions", []) if isinstance(info, dict) else None
-                if not isinstance(history, list) or not all(isinstance(record, dict) for record in history):
-                    errors.append(ValidationMessage("arch_version_history_malformed", {"location": location}))
-                elif not all(
-                    VersionManager.is_managed_snapshot_path(resource_type, record.get("file")) for record in history
-                ):
-                    errors.append(ValidationMessage("arch_version_snapshot_path_unmanaged", {"location": location}))
+        errors = [
+            ValidationMessage(
+                "arch_version_history_malformed"
+                if problem.kind == "malformed"
+                else "arch_version_snapshot_path_unmanaged",
+                {"location": problem.location},
+            )
+            for problem in _version_history_problems(payload)
+        ]
         if errors:
             raise ProjectArchiveValidationError(ValidationMessage("arch_import_validation_failed"), errors=errors)
         # 包里的远端定位一律去掉：导入的图片只凭包里的真实内容，按目标实例的全局设置重新保存。
