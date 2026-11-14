@@ -12,6 +12,11 @@ current schema has no backfilled artifact claims to read either way, so
 :func:`load_migration_verdict` reports it blocked on the schema discriminator
 alone. Only an actual failed attempt writes a record, and that record wins
 because it names the exact inputs to repair.
+
+A project older than ``MINIMUM_PROJECT_SCHEMA_VERSION`` is a different verdict:
+nothing inside this project can be repaired to carry it forward, so its record
+carries :data:`SCHEMA_UNSUPPORTED_CODE` and points at upgrading it in upstream
+ArcReel instead of the retry.
 """
 
 from __future__ import annotations
@@ -22,12 +27,17 @@ import os
 import tempfile
 import time
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from lib.artifacts.artifact_manifest import ArtifactManifestError
 from lib.project.project_path_text import project_path_spellings, relativize_project_paths
-from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION, parse_project_schema_version
+from lib.project.project_schema import (
+    CURRENT_PROJECT_SCHEMA_VERSION,
+    MINIMUM_PROJECT_SCHEMA_VERSION,
+    read_project_schema_version,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +49,23 @@ MIGRATION_FAILURE_CODE = "project_migration_failed"
 RETRY_MIGRATION_ACTION = "retry_project_migration"
 """``next_action.type`` and the name of the MCP tool that reruns the chain."""
 
+SCHEMA_UNSUPPORTED_CODE = "project_schema_unsupported"
+"""The project is older than the oldest schema the chain accepts; no repair or retry here moves it."""
+
+UPGRADE_UPSTREAM_ACTION = "upgrade_project_upstream"
+"""``next_action.type`` for :data:`SCHEMA_UNSUPPORTED_CODE`: open it in upstream ArcReel, export, import here."""
+
+MigrationFailureCode = Literal["project_migration_failed", "project_schema_unsupported"]
+
+MIGRATION_BLOCKER_CODES: frozenset[str] = frozenset({MIGRATION_FAILURE_CODE, SCHEMA_UNSUPPORTED_CODE})
+"""Every code a migration verdict reports as the project's one blocker."""
+
+
+def migration_action(code: str) -> str:
+    """The one next action a verdict with ``code`` allows."""
+
+    return UPGRADE_UPSTREAM_ACTION if code == SCHEMA_UNSUPPORTED_CODE else RETRY_MIGRATION_ACTION
+
 
 class ProjectMigrationError(ArtifactManifestError, ValueError):
     """Migration preflight rejected a project at a location it can name.
@@ -49,11 +76,34 @@ class ProjectMigrationError(ArtifactManifestError, ValueError):
     rejection never changes which handler sees it.
     """
 
-    def __init__(self, violation: str, *, episode: int | None = None, file: str | None = None) -> None:
+    def __init__(
+        self,
+        violation: str,
+        *,
+        episode: int | None = None,
+        file: str | None = None,
+        code: MigrationFailureCode = "project_migration_failed",
+        params: dict[str, int] | None = None,
+    ) -> None:
         super().__init__(violation)
         self.violation = violation
         self.episode = episode
         self.file = file
+        self.code: MigrationFailureCode = code
+        self.params: dict[str, int] = dict(params or {})
+
+
+def schema_unsupported_error(version: int) -> ProjectMigrationError:
+    """The refusal for a project older than the oldest schema the chain accepts."""
+
+    return ProjectMigrationError(
+        f"schema version {version} is older than v{MINIMUM_PROJECT_SCHEMA_VERSION}, the oldest version this "
+        f"migration chain accepts; open the project in upstream ArcReel to upgrade it to "
+        f"v{MINIMUM_PROJECT_SCHEMA_VERSION} or later, then export it again",
+        file="project.json",
+        code="project_schema_unsupported",
+        params={"version": version, "minimum": MINIMUM_PROJECT_SCHEMA_VERSION},
+    )
 
 
 class MigrationFailureDetail(BaseModel):
@@ -82,6 +132,10 @@ class MigrationFailureRecord(BaseModel):
     must not carry the server's filesystem layout.
     """
     details: list[MigrationFailureDetail] = Field(default_factory=list)
+    code: MigrationFailureCode = "project_migration_failed"
+    """Which verdict this is; records written before the field existed read as a migration failure."""
+    params: dict[str, int] = Field(default_factory=dict)
+    """Message parameters for ``code``: ``version`` and ``minimum`` for :data:`SCHEMA_UNSUPPORTED_CODE`."""
 
 
 def migration_failure_path(project_dir: Path) -> Path:
@@ -114,28 +168,19 @@ def _project_relative(record: MigrationFailureRecord, project_dir: Path) -> Migr
     )
 
 
-def _readable_schema_version(project_dir: Path) -> int | None:
-    """Return the project's schema version, or ``None`` when it cannot be read.
-
-    A directory without a parseable ``project.json`` is not a project this guard
-    can rule on; whoever resolved the name owns that verdict.
-    """
-
-    try:
-        data = json.loads((project_dir / "project.json").read_text(encoding="utf-8"))
-    except OSError, UnicodeDecodeError, ValueError:
-        return None
-    if not isinstance(data, dict):
-        return None
-    try:
-        return parse_project_schema_version(data)
-    except ValueError:
-        return None
-
-
 def pending_migration_record(schema_version: int) -> MigrationFailureRecord:
-    """The verdict for a project the migration chain has not yet carried to v8."""
+    """The verdict for a project the migration chain has not yet carried to the current schema."""
 
+    if schema_version < MINIMUM_PROJECT_SCHEMA_VERSION:
+        refusal = schema_unsupported_error(schema_version)
+        return MigrationFailureRecord(
+            schema_version=schema_version,
+            failed_at="",
+            reason=refusal.violation,
+            details=migration_failure_details(refusal),
+            code=refusal.code,
+            params=refusal.params,
+        )
     reason = (
         f"project schema v{schema_version} has not been upgraded to "
         f"v{CURRENT_PROJECT_SCHEMA_VERSION}; produced artifacts cannot be read until it is"
@@ -162,7 +207,7 @@ def load_migration_verdict(project_dir: Path) -> MigrationFailureRecord | None:
     recorded = load_migration_failure(project_dir)
     if recorded is not None:
         return recorded
-    version = _readable_schema_version(project_dir)
+    version = read_project_schema_version(project_dir)
     if version is None or version >= CURRENT_PROJECT_SCHEMA_VERSION:
         return None
     return pending_migration_record(version)
@@ -193,12 +238,15 @@ def record_migration_failure(
     claim the project is blocked while no guard can see it on disk.
     """
 
+    refusal = exc if isinstance(exc, ProjectMigrationError) else None
     record = _project_relative(
         MigrationFailureRecord(
             schema_version=schema_version,
             failed_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
             reason=str(exc),
             details=migration_failure_details(exc),
+            code=refusal.code if refusal is not None else MIGRATION_FAILURE_CODE,
+            params=refusal.params if refusal is not None else {},
         ),
         project_dir,
     )
@@ -272,17 +320,23 @@ def _write_atomically(path: Path, record: MigrationFailureRecord) -> None:
 
 
 __all__ = [
+    "MIGRATION_BLOCKER_CODES",
     "MIGRATION_FAILURE_CODE",
     "MIGRATION_FAILURE_FILENAME",
     "RETRY_MIGRATION_ACTION",
+    "SCHEMA_UNSUPPORTED_CODE",
+    "UPGRADE_UPSTREAM_ACTION",
+    "MigrationFailureCode",
     "MigrationFailureDetail",
     "MigrationFailureRecord",
     "ProjectMigrationError",
     "clear_migration_failure",
     "load_migration_failure",
     "load_migration_verdict",
+    "migration_action",
     "migration_failure_details",
     "migration_failure_path",
     "pending_migration_record",
     "record_migration_failure",
+    "schema_unsupported_error",
 ]

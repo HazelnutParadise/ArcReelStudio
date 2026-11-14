@@ -25,7 +25,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from lib.episode.episode_paths import episode_drafts_dir, episode_script_relpath
 from lib.infra.path_safety import safe_exists
 from lib.infra.text_utils import normalize_newlines
-from lib.project.project_schema import parse_project_schema_version
 
 _STRICT_CONFIG = ConfigDict(extra="forbid")
 
@@ -105,12 +104,6 @@ class EpisodeOutline(BaseModel):
     next_episode_teaser: str | None = None
 
 
-#: 从这一 schema 起，下集大纲取播出顺序中紧接的那一集，且没有规划数据时退为只给标题。
-#: 更早的项目只在迁移链中出现：v15→v16 之前的激活沿用「集号 + 1、没有规划数据就不给」的
-#: 口径，由 v15→v16 按新旧口径各规划一次，改写只因下集大纲变了的脚本规划登记。
-NEXT_EPISODE_OUTLINE_BY_ORDER_SCHEMA_VERSION = 16
-
-
 def episode_outline_context(
     project: Mapping[str, Any], episode: int
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -145,9 +138,6 @@ def episode_outline_context(
         if not ctx["hook"] and not ctx["story_beats"] and not ctx["next_episode_teaser"]:
             return None
         return ctx
-
-    if parse_project_schema_version(project) < NEXT_EPISODE_OUTLINE_BY_ORDER_SCHEMA_VERSION:
-        return _context(_entry(episode)), _context(_entry(episode + 1))
 
     following: Mapping[str, Any] = {}
     entries = [e for e in (project.get("episodes") or []) if isinstance(e, Mapping)]

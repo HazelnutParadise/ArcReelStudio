@@ -295,6 +295,7 @@ export default {
   'action_patch_episode_script': 'sửa các trường kịch bản được liệt kê bên dưới',
   'action_create_edit_timeline': 'tạo dòng thời gian dựng và giao cho Agent dựng',
   'action_retry_project_migration': 'sửa các tệp dự án được báo cáo rồi thử lại việc nâng cấp dữ liệu',
+  'action_upgrade_project_upstream': 'mở dự án trong ArcReel bản gốc để nó được nâng cấp, xuất ra rồi nhập gói vào đây',
 
   // ---- Tóm tắt vấn đề ----
   'problem_generation_unit_not_found': 'Đơn vị này không còn trong kịch bản.',
@@ -330,6 +331,8 @@ export default {
   'problem_parse_failed': 'Không đọc được lời thoại của đơn vị này, hãy kiểm tra cách viết.',
   'problem_empty_speaker': 'Đơn vị này có lời thoại chưa chỉ định nhân vật nói.',
   'problem_project_migration_failed': 'Việc nâng cấp dữ liệu dự án chưa hoàn tất, tạm thời chưa thể tạo nội dung.',
+  'problem_project_schema_unsupported':
+    'Dữ liệu của dự án này đến từ phiên bản cũ, không thể nâng cấp tại đây. Hãy nâng cấp nó trong ArcReel bản gốc trước.',
   'problem_video_audio_switch_not_supported':
     'Mô hình video đã chọn luôn tạo video có âm thanh, không thể tắt âm thanh.',
   'problem_reference_capability_changed': 'Tư liệu tham chiếu không khớp với cách tạo đã khai báo.',
@@ -354,6 +357,7 @@ export default {
   'problem_fallback_repair_artifact_state': 'Không đọc được trạng thái của sản phẩm hiện có.',
   'problem_fallback_retry_artifact_download': 'Sản phẩm đã được tạo nhưng chưa được tải về.',
   'problem_fallback_retry_project_migration': 'Việc nâng cấp dữ liệu dự án chưa hoàn tất.',
+  'problem_fallback_upgrade_project_upstream': 'Dữ liệu của dự án này quá cũ, không thể nâng cấp tại đây.',
   'problem_fallback_none': 'Đơn vị này tạm thời chưa thể tạo.',
   'problem_fallback_unknown': 'Đơn vị này tạm thời chưa thể tạo.',
 } satisfies Record<keyof typeof enWorkflow, string>;

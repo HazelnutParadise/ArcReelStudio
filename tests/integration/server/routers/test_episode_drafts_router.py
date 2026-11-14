@@ -110,7 +110,7 @@ def test_web_save_blocked_by_a_formal_unit_names_it_by_position(
         {"title": "第一集", "episode": 1, "content_mode": "narration", "video_units": [{"unit_id": "E1U01", **unit}]},
         "episode_1.json",
     )
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
     write_quarantine(
         project_path,
         1,

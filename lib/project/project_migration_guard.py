@@ -12,7 +12,6 @@ from __future__ import annotations
 from lib.infra.api_errors import ConflictError
 from lib.project.project_manager import ProjectManager, get_project_manager
 from lib.project.project_migration_failure import (
-    MIGRATION_FAILURE_CODE,
     MigrationFailureRecord,
     load_migration_verdict,
 )
@@ -41,7 +40,7 @@ def assert_project_migration_ok(project_name: str, pm: ProjectManager | None = N
 
     failure = project_migration_failure(project_name, pm)
     if failure is not None:
-        raise ConflictError(MIGRATION_FAILURE_CODE, name=project_name, reason=failure.reason)
+        raise ConflictError(failure.code, name=project_name, reason=failure.reason, **failure.params)
 
 
 __all__ = [

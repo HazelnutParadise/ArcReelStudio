@@ -27,7 +27,7 @@ def test_recorded_verdict_names_the_offending_file_relative_to_the_project(tmp_p
     record = record_migration_failure(
         project_dir,
         ProjectMigrationError(f"cannot parse {script}", episode=1, file=str(script)),
-        schema_version=7,
+        schema_version=19,
     )
 
     persisted = json.loads(migration_failure_path(project_dir).read_text(encoding="utf-8"))
@@ -45,7 +45,7 @@ def test_legacy_verdict_with_absolute_paths_is_read_project_relative(tmp_path: P
     migration_failure_path(project_dir).write_text(
         json.dumps(
             {
-                "schema_version": 7,
+                "schema_version": 19,
                 "failed_at": "2026-01-01T00:00:00",
                 "reason": reason,
                 "details": [{"file": str(script), "violation": reason}],

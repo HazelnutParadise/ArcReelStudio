@@ -22,8 +22,8 @@ GAP_TOLERANT_BASIS_SCHEMA_VERSION = 18
 def project_basis_records_gaps(project: Mapping[str, object]) -> bool:
     """项目的期望依据是否把生成缺口记为缺席。
 
-    schema 低于 18 的项目只在迁移链中出现：v17→v18 之前各步的整份激活与来源补写沿用「有缺口即
-    投影不出、不登记」的口径，原先因缺口没登记的产物由 v17→v18 改前改后各规划一次后补录。
+    项目本身最早是 v19；低于 18 的版本只由缺口规则（``plan_artifact_target_state_by_gap_rule``）借来
+    表达「有缺口即投影不出、不登记」的口径，与记为缺席的口径各规划一次，差集就是可以补录的产物。
     """
 
     return parse_project_schema_version(project) >= GAP_TOLERANT_BASIS_SCHEMA_VERSION

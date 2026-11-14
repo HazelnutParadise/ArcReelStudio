@@ -48,7 +48,7 @@ def _write_ad_project(tmp_path: Path, generation_mode: str) -> Path:
         "episodes": [{"episode": 1, "title": "", "script_file": "scripts/episode_1.json"}],
     }
     (project_dir / "project.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-    activate_artifact_target_state(project_dir, bump_schema=False)
+    activate_artifact_target_state(project_dir)
     return project_dir
 
 

@@ -44,6 +44,7 @@ export const WORKFLOW_ACTION_TYPES = [
   "generate_videos",
   "create_edit_timeline",
   "retry_project_migration",
+  "upgrade_project_upstream",
   "patch_episode_script",
   "retry",
   "fix_input",

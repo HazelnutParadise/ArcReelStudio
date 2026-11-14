@@ -17,6 +17,7 @@ from lib.artifacts.artifact_manifest import (
 from lib.artifacts.artifact_provenance import build_ad_episode_script_basis, build_episode_script_basis
 from lib.artifacts.version_manager import VersionManager
 from lib.project.project_manager import ProjectManager
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from lib.script.grid.grid_manager import GridManager
 from lib.script.grid.models import GridGeneration
 from lib.script.script_batch_edit import (
@@ -271,9 +272,9 @@ def test_ad_batch_edit_registers_shared_canonical_script_basis(tmp_path: Path) -
 def test_unmigrated_project_batch_edit_refuses_instead_of_activating(
     editor: tuple[ProjectManager, ScriptBatchEditor, Path],
 ) -> None:
-    """产物清单是唯一读取口径：schema 未到 8 的项目既不隐性激活清单，也不放行写入。"""
+    """产物清单是唯一读取口径：还没升到当前 schema 的项目既不隐性激活清单，也不放行写入。"""
     pm, service, project_dir = editor
-    pm.update_project("demo", lambda project: project.update({"schema_version": 7}))
+    pm.update_project("demo", lambda project: project.update({"schema_version": CURRENT_PROJECT_SCHEMA_VERSION - 1}))
     (project_dir / ".arcreel_artifacts.json").unlink(missing_ok=True)
     before = (project_dir / "scripts" / "episode_1.json").read_bytes()
 
@@ -298,7 +299,7 @@ def test_unmigrated_project_refuses_a_script_that_prepares_no_manifest_commit(
     script["episode"] = 0
     # 文件名不含集号的剧本写盘入口会拒绝，直接落盘模拟外部写入的文件。
     (project_dir / "scripts" / "custom.json").write_text(json.dumps(script, ensure_ascii=False), encoding="utf-8")
-    pm.update_project("demo", lambda project: project.update({"schema_version": 7}))
+    pm.update_project("demo", lambda project: project.update({"schema_version": CURRENT_PROJECT_SCHEMA_VERSION - 1}))
     (project_dir / ".arcreel_artifacts.json").unlink(missing_ok=True)
     before = (project_dir / "scripts" / "custom.json").read_bytes()
 

@@ -34,7 +34,7 @@ pytestmark = pytest.mark.usefixtures("recommended_models")
 def _v19_archive(tmp_path: Path) -> bytes:
     """schema 19 项目的归档：模拟上一版发行版的导出器（它把 19 当作当前版本）。"""
     source = ProjectManager(tmp_path / "source")
-    project_dir = write_legacy_bare_provider_project(source.projects_dir, schema_version=19)
+    project_dir = write_legacy_bare_provider_project(source.projects_dir)
     with pytest.MonkeyPatch.context() as exporter:
         exporter.setattr(project_archive_module, "project_schema_is_current", lambda _project: True)
         archive_path, _ = ProjectArchiveService(source).export_project(project_dir.name)

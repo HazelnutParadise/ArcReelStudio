@@ -41,6 +41,8 @@ from lib.i18n import _ as translate_default
 from lib.project.project_migration_failure import (
     MIGRATION_FAILURE_CODE,
     RETRY_MIGRATION_ACTION,
+    SCHEMA_UNSUPPORTED_CODE,
+    UPGRADE_UPSTREAM_ACTION,
     MigrationFailureRecord,
 )
 
@@ -88,6 +90,9 @@ class GenerationProblemCode(StrEnum):
     PROJECT_MIGRATION_FAILED = MIGRATION_FAILURE_CODE
     """The project's schema migration (artifact backfill included) did not finish.
     Nothing on this project can be generated until it is repaired and retried."""
+    PROJECT_SCHEMA_UNSUPPORTED = SCHEMA_UNSUPPORTED_CODE
+    """The project is older than the oldest schema the migration chain accepts. No
+    repair or retry here moves it; it has to be upgraded in upstream ArcReel first."""
     UNIT_NOT_FOUND = "generation_unit_not_found"
     UNIT_INPUT_UNUSABLE = "generation_unit_input_unusable"
     UNIT_REQUEST_INVALID = "generation_unit_request_invalid"
@@ -129,6 +134,8 @@ class GenerationAction(StrEnum):
     """产物已在供应商侧生成、只是没取回来：接续原任务取件，不重新提交、不再计费。"""
     RETRY_PROJECT_MIGRATION = RETRY_MIGRATION_ACTION
     """Fix the reported inputs, then rerun the project's migration chain."""
+    UPGRADE_PROJECT_UPSTREAM = UPGRADE_UPSTREAM_ACTION
+    """Open the project in upstream ArcReel so it upgrades, export it, then import the archive here."""
     NONE = "none"
 
 
@@ -306,11 +313,15 @@ def migration_problem(record: MigrationFailureRecord) -> GenerationProblem:
     agent needs to navigate straight to the offending episode or file.
     """
 
+    unsupported = record.code == SCHEMA_UNSUPPORTED_CODE
     return GenerationProblem(
-        code=GenerationProblemCode.PROJECT_MIGRATION_FAILED,
+        code=GenerationProblemCode.PROJECT_SCHEMA_UNSUPPORTED
+        if unsupported
+        else GenerationProblemCode.PROJECT_MIGRATION_FAILED,
         detail=record.reason,
-        action=GenerationAction.RETRY_PROJECT_MIGRATION,
+        action=GenerationAction.UPGRADE_PROJECT_UPSTREAM if unsupported else GenerationAction.RETRY_PROJECT_MIGRATION,
         params={
+            **record.params,
             "schema_version": record.schema_version,
             "failed_at": record.failed_at,
             "details": [detail.model_dump(mode="json") for detail in record.details],
@@ -1085,6 +1096,7 @@ _ACTION_LABELS: dict[GenerationAction, str] = {
     GenerationAction.REPAIR_ARTIFACT_STATE: "需修复产物状态",
     GenerationAction.RETRY_ARTIFACT_DOWNLOAD: "需重试下载，不必重新生成",
     GenerationAction.RETRY_PROJECT_MIGRATION: "需重试项目迁移",
+    GenerationAction.UPGRADE_PROJECT_UPSTREAM: "需先在上游 ArcReel 升级项目",
     GenerationAction.NONE: "",
 }
 

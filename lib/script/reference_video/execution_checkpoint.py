@@ -32,8 +32,6 @@ ProviderMediaRole = Literal["reference_image", "reference_audio", "start_image",
 ReferenceGenerationType = Literal["i2v", "r2v"]
 
 _SCHEMA_VERSION = 6
-#: 版本记录 ``execution_checkpoint_schema_version`` 的当前值，供补写来源的迁移与写侧共用一个字面量。
-CHECKPOINT_SCHEMA_VERSION = _SCHEMA_VERSION
 #: 记录供应商素材引用、还没有记录连线（凭证）的检查点。
 _ASSET_REFERENCE_SCHEMA_VERSION = 5
 #: 记录供应商素材引用的检查点版本。
@@ -1073,7 +1071,6 @@ def classify_video_resume_state(
 
 
 __all__ = [
-    "CHECKPOINT_SCHEMA_VERSION",
     "CURRENCY_CHECKPOINT_SCHEMA_VERSIONS",
     "ProviderAssetReference",
     "ProviderMediaInput",

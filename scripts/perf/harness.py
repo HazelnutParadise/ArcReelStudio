@@ -232,7 +232,7 @@ def build(*, episodes: int, units: int, assets: int, video_kb: int, sheet_kb: in
             script_review.apply_confirmation(project, n, rev, "2026-10-01T00:00:00Z")
 
     pm.update_project(PROJECT, _confirm)
-    activate_artifact_target_state(path, bump_schema=False)
+    activate_artifact_target_state(path)
 
 
 CONTENT_FACT_FIELDS = ("content_digest", "content_size", "content_mtime_ns")

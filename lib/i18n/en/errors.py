@@ -26,6 +26,7 @@ MESSAGES = {
     "operation_draft_action": "Draft: {path}. {action}",
     "operation_episode_source_location": "Episode source location: {path}; plan_episodes creates source text for planned episodes.",
     "project_migration_failed": "Project '{name}' has not finished its data upgrade, so generation is unavailable. Reason: {reason}. Repair it in the agent conversation, then retry the upgrade",
+    "project_schema_unsupported": "Project '{name}' uses schema version {version}, but this version can only open projects at schema {minimum} or later, so generation is unavailable. Open the project in upstream ArcReel first, let it upgrade to schema {minimum} or later, then export it and import the archive here",
     "project_not_found": "Project '{name}' does not exist or is not initialized",
     "resource_not_found": "The requested resource does not exist",
     "prompt_template_not_found": "Prompt template '{id}' does not exist",

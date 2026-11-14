@@ -16,7 +16,6 @@ from lib.artifacts.artifact_manifest import ArtifactBasis
 from lib.artifacts.input_gap import InputGap, add_absent_inputs
 from lib.material.work_files import material_file_digest
 from lib.project.asset_types import ASSET_TYPES, asset_name_comparison_key, normalize_asset_name
-from lib.project.project_schema import parse_project_schema_version
 from lib.prompts.prompt_style import normalize_style_value
 from lib.prompts.prompt_utils import project_storyboard_image_prompt
 from lib.prompts.reference_image_numbering import reference_image_label
@@ -231,14 +230,11 @@ def build_storyboard_image_visual_basis(
     style_description: str = "",
     references: Sequence[VisualReference] = (),
     absent: Sequence[InputGap] = (),
-    asset_names: bool = False,
 ) -> ArtifactBasis:
     """Describe one ordinary storyboard image and its actual ordered image inputs.
 
     ``absent`` records the generation-input gaps (``docs/adr/0098``). A pending
     ``image_prompt`` (``None``) is accepted only together with recorded gaps.
-    ``asset_names`` keeps the pre-v19 shape that records asset names (see
-    :func:`project_basis_records_asset_names`).
     """
 
     identity = _require_non_empty("resource_id", resource_id)
@@ -261,7 +257,7 @@ def build_storyboard_image_visual_basis(
         inputs["style"] = style_input
     _add_style_description(inputs, style_description)
     add_absent_inputs(inputs, absent)
-    return _build_image_basis(_STORYBOARD_IMAGE_KIND, inputs, asset_names=asset_names)
+    return _build_image_basis(_STORYBOARD_IMAGE_KIND, inputs)
 
 
 def build_grid_composite_visual_basis(
@@ -275,12 +271,10 @@ def build_grid_composite_visual_basis(
     style_description: str = "",
     references: Sequence[VisualReference] = (),
     absent: Sequence[InputGap] = (),
-    asset_names: bool = False,
 ) -> ArtifactBasis:
     """Describe one grid composite without hashing its rendered provider prompt.
 
     ``absent`` records reference images that are no longer available (``docs/adr/0098``).
-    ``asset_names`` keeps the pre-v19 shape that records asset names.
     """
 
     member_tuple = _validate_grid_members(members, rows=rows, columns=columns)
@@ -298,7 +292,7 @@ def build_grid_composite_visual_basis(
     }
     _add_style_description(inputs, style_description)
     add_absent_inputs(inputs, absent)
-    return _build_image_basis(_GRID_COMPOSITE_KIND, inputs, asset_names=asset_names)
+    return _build_image_basis(_GRID_COMPOSITE_KIND, inputs)
 
 
 def build_grid_member_storyboard_visual_basis(
@@ -315,15 +309,13 @@ def build_grid_member_storyboard_visual_basis(
     references: Sequence[VisualReference] = (),
     source_composite_digest: str | None = None,
     absent: Sequence[InputGap] = (),
-    asset_names: bool = False,
 ) -> ArtifactBasis:
     """Describe one split cell while preserving grid dependency locality.
 
     The member does not embed the composite's target basis. It records only the
     selected cell's semantic inputs plus the actual composite bytes it was split
     from. Editing a different cell therefore leaves this member current until a
-    replacement composite is really produced. ``asset_names`` keeps the pre-v19
-    shape that records asset names.
+    replacement composite is really produced.
     """
 
     member_tuple = _validate_grid_members(members, rows=rows, columns=columns)
@@ -344,7 +336,7 @@ def build_grid_member_storyboard_visual_basis(
     }
     _add_style_description(inputs, style_description)
     add_absent_inputs(inputs, absent)
-    return _build_image_basis(_GRID_MEMBER_KIND, inputs, asset_names=asset_names)
+    return _build_image_basis(_GRID_MEMBER_KIND, inputs)
 
 
 def build_stale_grid_member_storyboard_visual_basis(
@@ -502,24 +494,11 @@ def build_reference_video_artifact_visual_basis(
     )
 
 
-#: 宫格联合图、切格分镜与参考视频的依据从这一 schema 起记风格描述。
-STYLE_DESCRIPTION_BASIS_SCHEMA_VERSION = 14
-
-
 def project_basis_style_description(project: Mapping[str, object]) -> str:
-    """宫格联合图、切格分镜与参考视频的依据所记的风格描述。
+    """宫格联合图、切格分镜与参考视频的依据所记的风格描述。"""
 
-    schema 低于 14 的项目只在迁移链中出现：v13→v14 之前各步的整份激活与来源补写沿用那时不记描述
-    的口径，描述由 v13→v14 连同选中版本记录一并补记。
-    """
-
-    if parse_project_schema_version(project) < STYLE_DESCRIPTION_BASIS_SCHEMA_VERSION:
-        return ""
     return normalize_style_value(project.get("style_description"))
 
-
-#: 分镜图与宫格（联合图、切格分镜）的依据从这一 schema 起不记资产名。
-ASSET_NAME_FREE_IMAGE_BASIS_SCHEMA_VERSION = 19
 
 _STORYBOARD_IMAGE_KIND = "artifact-visual/storyboard-image"
 _GRID_COMPOSITE_KIND = "artifact-visual/grid-composite"
@@ -529,22 +508,8 @@ _GRID_MEMBER_KIND = "artifact-visual/grid-member"
 ASSET_NAME_FREE_IMAGE_BASIS_KINDS = frozenset({_STORYBOARD_IMAGE_KIND, _GRID_COMPOSITE_KIND, _GRID_MEMBER_KIND})
 
 
-def project_basis_records_asset_names(project: Mapping[str, object]) -> bool:
-    """分镜图与宫格的依据是否仍按记资产名的口径投影。
-
-    schema 低于 19 的项目只在迁移链中出现：v18→v19 之前各步的整份激活与改前改后规划沿用当时
-    记资产名的口径，与清单里存量的登记同源；v18→v19 把改写前时新的登记连同版本记录一并平移。
-    """
-
-    return parse_project_schema_version(project) < ASSET_NAME_FREE_IMAGE_BASIS_SCHEMA_VERSION
-
-
-def _build_image_basis(kind: str, inputs: dict[str, object], *, asset_names: bool) -> ArtifactBasis:
-    return ArtifactBasis.build(
-        kind,
-        kind_version=1,
-        inputs=inputs if asset_names else without_asset_names(kind, inputs),
-    )
+def _build_image_basis(kind: str, inputs: dict[str, object]) -> ArtifactBasis:
+    return ArtifactBasis.build(kind, kind_version=1, inputs=without_asset_names(kind, inputs))
 
 
 def without_asset_names(kind: str, inputs: Mapping[str, object]) -> dict[str, object]:
@@ -556,8 +521,7 @@ def without_asset_names(kind: str, inputs: Mapping[str, object]) -> dict[str, ob
     资产参考图的 mention 换成「图N」，对不上参考图的 mention 原样保留（模型看到的就是名字）。
     上一分镜图等非资产参考图的身份不是资产名，原样保留。
 
-    构造器与 v18→v19 迁移共用这一函数：迁移按版本记录冻结的记名依据改写出的形态，与构造器
-    直接投影的形态逐字一致。已不含资产名的输入原样返回。
+    已不含资产名的输入原样返回。
     """
 
     if kind not in ASSET_NAME_FREE_IMAGE_BASIS_KINDS:
@@ -722,7 +686,6 @@ def _require_string(field: str, value: object) -> str:
 
 __all__ = [
     "ASSET_NAME_FREE_IMAGE_BASIS_KINDS",
-    "ASSET_NAME_FREE_IMAGE_BASIS_SCHEMA_VERSION",
     "UPLOADED_ASSET_SHEET_BASIS_KIND",
     "UPLOADED_STORYBOARD_BASIS_KIND",
     "UPLOADED_VIDEO_BASIS_KIND",
@@ -738,7 +701,6 @@ __all__ = [
     "build_uploaded_asset_sheet_basis",
     "build_uploaded_storyboard_basis",
     "build_uploaded_video_basis",
-    "project_basis_records_asset_names",
     "snapshot_visual_references",
     "visual_file_digest",
     "visual_references_match_snapshot",

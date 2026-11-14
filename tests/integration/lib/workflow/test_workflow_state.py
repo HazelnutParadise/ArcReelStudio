@@ -78,7 +78,7 @@ def _register_produced_artifacts(project_path: Path) -> None:
 
     产物清单是读取已生成产物的唯一口径，落盘本身不代表已登记；这里走的是生产的补录路径。
     """
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
 
 
 def _write_registered_script(
@@ -2471,18 +2471,18 @@ def test_workflow_status_does_not_persist_read_time_script_migrations(tmp_path: 
 
 
 def test_unmigrated_project_reports_only_the_migration_blocker(tmp_path: Path) -> None:
-    """产物清单是读取已生成产物的唯一口径：schema 未到 8 的项目没有可读的登记，
+    """产物清单是读取已生成产物的唯一口径：还没升到当前 schema 的项目没有可读的登记，
     get_status 只报「未迁移」这一条阻断，不按文件是否在磁盘上倒推任何产物状态。"""
     pm, project_path = _make_project(tmp_path, "narration")
     _write_source(pm, project_path)
     _write_artifact(project_path, resource_relative_path("storyboards", "E1S01"))
-    pm.update_project("demo", lambda project: project.update(schema_version=7))
+    pm.update_project("demo", lambda project: project.update(schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1))
 
     status = WorkflowStateService(pm).get_status("demo")
     assert [blocker.code for blocker in status.blockers] == [MIGRATION_FAILURE_CODE]
     assert status.blockers[0].path == MIGRATION_FAILURE_FILENAME
     assert status.blockers[0].reason == (
-        f"project schema v7 has not been upgraded to v{CURRENT_PROJECT_SCHEMA_VERSION}; "
+        f"project schema v{CURRENT_PROJECT_SCHEMA_VERSION - 1} has not been upgraded to v{CURRENT_PROJECT_SCHEMA_VERSION}; "
         "produced artifacts cannot be read until it is"
     )
     assert status.next_action.type == RETRY_MIGRATION_ACTION

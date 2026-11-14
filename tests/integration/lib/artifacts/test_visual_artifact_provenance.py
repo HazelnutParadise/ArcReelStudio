@@ -27,8 +27,6 @@ from lib.artifacts.visual_artifact_provenance import (
     build_reference_video_artifact_visual_basis,
     build_storyboard_image_visual_basis,
     build_storyboard_video_artifact_visual_basis,
-    project_basis_style_description,
-    without_asset_names,
 )
 from lib.project.asset_derivatives import build_derivative_sheet_basis
 from lib.script.reference_video.request_projection import ResolvedReferenceAsset
@@ -461,7 +459,6 @@ def _style_bound_bases(tmp_path: Path, *, style_description: str | None) -> tupl
         style="水墨",
         grid_aspect_ratio="1:1",
         references=references,
-        asset_names=True,
         **described,
     )
     member_basis = build_grid_member_storyboard_visual_basis(
@@ -474,7 +471,6 @@ def _style_bound_bases(tmp_path: Path, *, style_description: str | None) -> tupl
         style="水墨",
         member_aspect_ratio="16:9",
         references=references,
-        asset_names=True,
         **described,
     )
     video_basis = build_reference_video_artifact_visual_basis(
@@ -488,8 +484,8 @@ def _style_bound_bases(tmp_path: Path, *, style_description: str | None) -> tupl
 
 
 _EMPTY_DESCRIPTION_STYLE_BOUND_DIGESTS = (
-    "sha256-v1:fde8d88b4d4fd080b55ec7235d765758ffa3bd6c69da80addbd9d58f9ee10044",
-    "sha256-v1:f4a0eaf0e55365968ca3dc765bce0bea86e4d023920df9ef88765018bfae151e",
+    "sha256-v1:78073cb43fb10b2ea653a3a8b3a815a925df66c4bbf6b5d37db111a99c67430f",
+    "sha256-v1:1577bbc921c938e9ce22562763beead09aa6a09f9d53b3d11b409aa5fe198686",
     "sha256-v1:32958d73d0a053a82bc86176f62ea977e5f9c10d97498c09b5a99f683d62b575",
 )
 
@@ -509,30 +505,14 @@ def test_grid_and_reference_video_bases_track_style_description(tmp_path: Path) 
     padded = _style_bound_bases(tmp_path / "padded", style_description="  柔光水彩\n")
 
     assert soft == (
-        "sha256-v1:ce80159db288f150bccfaa7076d9723f71838110bfc186c3af3ca96b841989e9",
-        "sha256-v1:b8a3424fedf2e9d1372439a0729867a4a0d077d940db4cbe3ee5c3cc49c2d288",
+        "sha256-v1:c665d0abf7f392f69166f99c041b9064ce573889e869577921b4de52d77483cc",
+        "sha256-v1:1f6a7faf58e20a33cf455751cd07cee78b5c17d7c66ecd4041331df0c46c521d",
         "sha256-v1:b3af17f1d5d4169b815780967a5710fbffd272fa23dd465f1df257035f3d0402",
     )
     assert padded == soft
     for before, after, empty in zip(soft, hard, _EMPTY_DESCRIPTION_STYLE_BOUND_DIGESTS, strict=True):
         assert after != before
         assert before != empty
-
-
-@pytest.mark.parametrize(
-    ("project", "expected"),
-    [
-        ({"schema_version": 14, "style_description": "  柔光水彩\n"}, "柔光水彩"),
-        ({"schema_version": 14, "style_description": 7}, ""),
-        ({"schema_version": 13, "style_description": "柔光水彩"}, ""),
-        ({"style_description": "柔光水彩"}, ""),
-    ],
-)
-def test_project_basis_style_description_keeps_pre_v14_projects_on_the_undescribed_basis(
-    project: dict[str, object], expected: str
-) -> None:
-    """v13→v14 之前的迁移步沿用不记描述的口径，描述由 v13→v14 统一补记。"""
-    assert project_basis_style_description(project) == expected
 
 
 def test_storyboard_video_visual_basis_excludes_sound_execution_and_duration(tmp_path: Path) -> None:
@@ -937,18 +917,19 @@ def test_storyboard_video_basis_refuses_a_pending_prompt(tmp_path: Path) -> None
         )
 
 
-#: 缺口记为缺席之前各类依据的固定摘要：输入完整时依据逐字节不变，已登记条目不因口径变化翻过期。
+#: 各类依据在输入完整时的固定摘要（分镜图与宫格不记资产名）：输入完整时依据不写缺席键，
+#: 已登记条目不因缺口口径翻过期。
 _COMPLETE_INPUT_DIGESTS = {
     "asset": "sha256-v1:cef57d4f7802240b4d935f5bdeaf53bb2fc9f26d38f3b64f29895d17db3f8d8f",
-    "storyboard": "sha256-v1:4ada14699d5753069b4fb512ca31c1f1d862e3ace18d81b9835256552246f668",
+    "storyboard": "sha256-v1:108eea01d1b56b94dd14aebdb0a31e672d8df7e8945c780d39929f499bc883e4",
     "derivative": "sha256-v1:7ef038ef4a89c540b44daad246ec90c458c664ac950a818bb0a1815f5ee64e7d",
-    "grid": "sha256-v1:8711b1b53d6e2f22e4ec2e6da5c46fc796762bd00ea487af866ba5515b6cd13a",
+    "grid": "sha256-v1:9fb12ac4e071368bbfa166ed090b23381f795415784d69120121f2e79c520750",
     "video_visual": "sha256-v1:ea1d43fdc619a5f06dbb7bce4d18ff6fc6c5291dcb4ac93159428f6f74dd1c00",
 }
 
 
 def _complete_input_digests(tmp_path: Path, *, absent: tuple[InputGap, ...] = ()) -> dict[str, str]:
-    """固定样本是缺口记录之前登记的存量摘要；分镜图与宫格因此按 v19 之前记资产名的口径构造。"""
+    """各类依据在输入完整时的摘要，与固定样本逐字节比对。"""
     image = tmp_path / "a.png"
     end_frame = tmp_path / "b.png"
     image.write_bytes(b"image-a")
@@ -974,7 +955,6 @@ def _complete_input_digests(tmp_path: Path, *, absent: tuple[InputGap, ...] = ()
             aspect_ratio="9:16",
             references=(sheet,),
             absent=absent,
-            asset_names=True,
         ).digest,
         "derivative": build_derivative_sheet_basis(
             owner_name="张三",
@@ -994,7 +974,6 @@ def _complete_input_digests(tmp_path: Path, *, absent: tuple[InputGap, ...] = ()
             style_description="电影感",
             references=(sheet,),
             absent=absent,
-            asset_names=True,
         ).digest,
         "video_visual": build_storyboard_video_artifact_visual_basis(
             resource_id="E1S1",
@@ -1060,7 +1039,7 @@ def test_storyboard_video_basis_without_a_storyboard_records_the_gap(tmp_path: P
         )
 
 
-def _named_image_bases(tmp_path: Path, name: str, *, asset_names: bool = False, sheet: bytes = b"sheet") -> dict:
+def _named_image_bases(tmp_path: Path, name: str, *, sheet: bytes = b"sheet") -> dict:
     """引用同一张角色资产图的分镜图、宫格联合图与切格分镜；正文用 ``@[name]`` 指认它。"""
     tmp_path.mkdir(parents=True, exist_ok=True)
     image = tmp_path / "sheet.png"
@@ -1085,7 +1064,6 @@ def _named_image_bases(tmp_path: Path, name: str, *, asset_names: bool = False, 
             style="写实",
             aspect_ratio="9:16",
             references=references,
-            asset_names=asset_names,
         ),
         "grid": build_grid_composite_visual_basis(
             group_id="grid_1",
@@ -1095,7 +1073,6 @@ def _named_image_bases(tmp_path: Path, name: str, *, asset_names: bool = False, 
             style="写实",
             grid_aspect_ratio="18:16",
             references=grid_references,
-            asset_names=asset_names,
         ),
         "member": build_grid_member_storyboard_visual_basis(
             group_id="grid_1",
@@ -1107,7 +1084,6 @@ def _named_image_bases(tmp_path: Path, name: str, *, asset_names: bool = False, 
             style="写实",
             member_aspect_ratio="9:16",
             references=grid_references,
-            asset_names=asset_names,
         ),
     }
 
@@ -1126,21 +1102,3 @@ def test_storyboard_and_grid_bases_do_not_depend_on_asset_names(tmp_path: Path) 
     # 对不上参考图的 mention 发给模型时就是名字，依据照记；上一分镜图的身份不是资产名，照记。
     assert inputs["image_prompt"]["scene"] == "图1推门，@[路人]回头"
     assert inputs["references"][1]["logical_identity"] == {"type": "storyboard", "id": "E1S00"}
-
-
-def test_dropping_asset_names_from_a_frozen_basis_matches_the_builder(tmp_path: Path) -> None:
-    """v18→v19 按版本记录冻结的记名依据改写，结果与构造器直接投影的不记名依据逐字一致。"""
-    named = _named_image_bases(tmp_path / "named", "Alice", asset_names=True)
-    unnamed = _named_image_bases(tmp_path / "unnamed", "Alice")
-
-    for kind, basis in named.items():
-        evidence = basis.to_evidence_dict()
-        rewritten = ArtifactBasis.build(
-            basis.kind, kind_version=basis.kind_version, inputs=without_asset_names(basis.kind, evidence["inputs"])
-        )
-        assert rewritten.digest == unnamed[kind].digest, kind
-        assert rewritten.digest != basis.digest, kind
-        assert (
-            without_asset_names(basis.kind, unnamed[kind].to_evidence_dict()["inputs"])
-            == json.loads(unnamed[kind].normalized_bytes())["inputs"]
-        ), kind

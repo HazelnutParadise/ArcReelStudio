@@ -35,6 +35,7 @@ from lib.episode.episode_sources import discover_sources
 from lib.infra.content_digest import reset_file_digest_cache_for_tests
 from lib.infra.json_io import atomic_write_json
 from lib.project.project_manager import ProjectManager
+from lib.project.project_migration_failure import ProjectMigrationError
 from lib.project.project_migrations.runner import migrate_project_with_verdict
 from lib.project.resource_paths import resource_relative_path
 from lib.project.source_revision import SourceRevisionResult, compute_source_revision
@@ -468,14 +469,18 @@ def test_summary_never_reads_the_source_corpus(tmp_path: Path, monkeypatch: pyte
     assert source_reads == {}
 
 
-def test_migration_blocked_project_is_listed_as_needing_repair(tmp_path: Path) -> None:
-    from tests.integration.lib.project.project_migrations.test_project_migration_v7_v8 import _project
+def test_migration_blocked_project_is_listed_as_needing_repair(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from tests.factories import wrap_the_last_migration_step
+    from tests.legacy_project_shapes import write_v19_project
 
-    projects_root = tmp_path / "projects"
-    projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
-    script_path = project_dir / "scripts" / "episode_1.json"
-    script_path.write_text("{not json", encoding="utf-8")
+    project_dir = write_v19_project(tmp_path / "projects")
+
+    def fail(_step: object, _project_dir: Path, **_kwargs: object) -> object:
+        raise ProjectMigrationError(
+            "scripts/episode_1.json is not valid UTF-8 JSON", episode=1, file="scripts/episode_1.json"
+        )
+
+    wrap_the_last_migration_step(monkeypatch, fail)
     failure = migrate_project_with_verdict(project_dir)
     assert failure is not None
 

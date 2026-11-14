@@ -33,6 +33,10 @@ TRASH = "/api/v1/projects/demo/trash"
 def asset_pm(tmp_path: Path) -> ProjectManager:
     manager = ProjectManager(tmp_path / "data")
     manager.create_project("demo")
+    # 只建目录的 project.json 不带 schema_version，读作 v0；恢复要经迁移链，样本须是链能接的版本。
+    manager.update_project(
+        "demo", lambda project: project.__setitem__("schema_version", CURRENT_PROJECT_SCHEMA_VERSION)
+    )
     return manager
 
 

@@ -149,7 +149,6 @@ MESSAGES = {
     "arch_invalid_script_json": "无法解析脚本文件：{path}",
     "arch_deprecated_source_file_removed": "novel.source_file 字段已废弃，已移除",
     "arch_deprecated_field_removed": "{field} 字段已废弃（改为读时计算），已移除",
-    "arch_deprecated_clue_field_removed": "{items_key}[{index}]: 废弃字段 {field} 已移除（请改用 scenes/props）",
     "arch_missing_field_filled": "{items_key}[{index}]: 补全缺失字段 {field}",
     "arch_unit_unresolved_mentions": (
         "video_units[{index}]: 正文引用了不存在于 project.json 的资产名：{names}；这些引用不会生成参考图"
@@ -168,6 +167,9 @@ MESSAGES = {
     "arch_import_validation_failed": "导入包校验失败",
     "arch_artifact_activation_failed": "导入项目的产物状态不一致：{reason}",
     "arch_project_migration_failed": "导入包里的项目数据无法升级到当前版本：{reason}",
+    "arch_project_schema_unsupported": (
+        "导入包里的项目是 schema 版本 {version}，本版本只能导入 {minimum} 及以上的项目。请先在上游 ArcReel 中打开这个项目，让它升级到 schema {minimum} 或更高版本，再重新导出后导入"
+    ),
     "arch_import_confirmation_required": "导入包升级时调整了部分内容，请确认后再导入",
     "arch_not_a_zip": "上传文件不是有效的 ZIP 归档",
     "arch_zip_encrypted_entry": "ZIP 包含加密条目，无法导入：{name}",

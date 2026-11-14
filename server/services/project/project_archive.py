@@ -82,9 +82,6 @@ from lib.project.project_migration_report import (
     visible_migration_report,
 )
 from lib.project.project_migrations.runner import migrate_project_dir
-from lib.project.project_migrations.v1_to_v2_normalize_providers import (
-    migrate_project_dict as normalize_legacy_providers,
-)
 from lib.project.project_migrations.v19_to_v20_bare_provider_models import TARGET_SCHEMA_VERSION as V20
 from lib.project.project_migrations.v19_to_v20_bare_provider_models import (
     ExcludedRecommendations,
@@ -92,7 +89,11 @@ from lib.project.project_migrations.v19_to_v20_bare_provider_models import (
 from lib.project.project_migrations.v19_to_v20_bare_provider_models import (
     migrate_project_dict as rewrite_bare_provider_models,
 )
-from lib.project.project_schema import project_schema_is_current
+from lib.project.project_schema import (
+    MINIMUM_PROJECT_SCHEMA_VERSION,
+    parse_project_schema_version,
+    project_schema_is_current,
+)
 from lib.project.resource_paths import (
     CHARACTER_DERIVATIVE_RESOURCE_TYPE,
     END_FRAME_RESOURCE_TYPE,
@@ -722,6 +723,37 @@ class ProjectArchiveService:
             diagnostics=diagnostics,
         ) from cause
 
+    def _refuse_unsupported_schema(self, staging_dir: Path) -> None:
+        """导入包的项目早于迁移链能接的最早版本时拒绝导入，先于修复与任何迁移。
+
+        缺 ``schema_version`` 读作 v0，同样拒绝。``project.json`` 读不出或版本号不可解析时不在这里拒绝，
+        交给之后的修复与校验报出具体问题。
+        """
+        project = self._load_json_file(staging_dir / self.project_manager.PROJECT_FILE)
+        if not isinstance(project, dict):
+            return
+        try:
+            version = parse_project_schema_version(project)
+        except ValueError:
+            return
+        if version >= MINIMUM_PROJECT_SCHEMA_VERSION:
+            return
+        diagnostics = ArchiveDiagnostics()
+        diagnostics.add(
+            "blocking",
+            "project_schema_unsupported",
+            ValidationMessage(
+                "arch_project_schema_unsupported",
+                {"version": version, "minimum": MINIMUM_PROJECT_SCHEMA_VERSION},
+            ),
+            location=self.project_manager.PROJECT_FILE,
+        )
+        raise ProjectArchiveValidationError(
+            ValidationMessage("arch_import_validation_failed"),
+            errors=diagnostics.blocking_messages(),
+            diagnostics=diagnostics,
+        )
+
     def import_project_archive(
         self,
         archive_path: Path,
@@ -755,6 +787,8 @@ class ProjectArchiveService:
                         staging_dir,
                     )
 
+                    # 迁移链接不住的旧项目先于一切修复与迁移拒绝，不对它做任何改写。
+                    self._refuse_unsupported_schema(staging_dir)
                     # 版本历史先于修复与迁移收口：后续步骤读取 versions.json 时只见到已校验的快照路径。
                     self._confine_version_history(staging_dir)
                     diagnostics = self._repair_project_tree(staging_dir)
@@ -777,7 +811,7 @@ class ProjectArchiveService:
                     # Artifact Manifest 是 hidden sidecar，不进入归档成员。官方导出把完整
                     # claim snapshot 放进 visible archive envelope；旧的手工归档没有该字段，
                     # 仍走 self-proving reconstruction。迁移前先把信封里的 claim 落成暂存清单，
-                    # 迁移链像原地升级一样平移它们（如 v18→v19 改写分镜图与宫格的依据口径），
+                    # 迁移链像原地升级一样平移它们（如链首规整把重名资产的衍生登记迁到保留名下），
                     # 激活时再按内容证据恢复。
                     try:
                         preserved_manifest = (
@@ -1546,20 +1580,6 @@ class ProjectArchiveService:
             location_prefix = f"{script_path_rel}:{items_key}[{index}]"
             resource_id = str(item.get(id_field) or "").strip()
 
-            for legacy_field in ("clues_in_segment", "clues_in_scene", "clues"):
-                if legacy_field in item:
-                    item.pop(legacy_field)
-                    script_changed = True
-                    diagnostics.add(
-                        "auto_fixed",
-                        "deprecated_clue_field_removed",
-                        ValidationMessage(
-                            "arch_deprecated_clue_field_removed",
-                            {"items_key": items_key, "index": index, "field": legacy_field},
-                        ),
-                        location=f"{location_prefix}.{legacy_field}",
-                    )
-
             for asset_field in ("scenes", "props"):
                 if asset_field not in item:
                     item[asset_field] = []
@@ -1774,14 +1794,14 @@ class ProjectArchiveService:
         # to_thread 里，且此刻自定义供应商的凭证/能力可能尚未导入本机，无法求值视频请求事实）。
         # 查不到（未声明型号、或自定义供应商不在 registry）时为 None，退回结构区间 clamp；档位
         # 偏移由之后的预检 / 执行取档承担。
-        # provider 先在副本上归一化：本方法跑在 migrate_project_dir 之前，存量归档里可能还是
-        # legacy 别名（如 gemini/…），registry 查不到会让档位解析落空，而迁移幂等、归一化之后
-        # 再无机会取档。v20 之前的归档里只写了供应商的旧值同样先按导入这一刻的推荐补上模型（v19→v20 的同一改写），
-        # 否则查不到档位。两步都是纯函数且幂等，不影响随后的正式迁移。
-        normalized_project = normalize_legacy_providers(project_payload)
-        schema_version = normalized_project.get("schema_version")
-        if not isinstance(schema_version, int) or schema_version < V20:
-            normalized_project = rewrite_bare_provider_models(normalized_project, self._excluded_recommendations)
+        # 本方法跑在 migrate_project_dir 之前：v20 之前的归档里只写了供应商的旧值先在副本上按导入这一刻的
+        # 推荐补上模型（v19→v20 的同一改写），否则查不到档位。纯函数且幂等，不影响随后的正式迁移。
+        schema_version = project_payload.get("schema_version")
+        normalized_project = (
+            rewrite_bare_provider_models(project_payload, self._excluded_recommendations)
+            if not isinstance(schema_version, int) or schema_version < V20
+            else project_payload
+        )
         migrated, migration_warnings = migrate_unit_durations(
             raw_units, supported_durations=_registry_supported_durations(normalized_project)
         )
@@ -2145,7 +2165,7 @@ class ProjectArchiveService:
         """Keep only typed history buckets and require every record to name a managed snapshot.
 
         Buckets of resource types this version does not know (such as ``clues``
-        left behind by the v0→v1 migration) are dropped before installation.  In a
+        left behind by an old migration) are dropped before installation.  In a
         typed bucket, a malformed resource entry or history, or a single record
         that is not an object naming a managed snapshot path, rejects the whole
         package.

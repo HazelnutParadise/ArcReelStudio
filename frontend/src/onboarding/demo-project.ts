@@ -49,6 +49,7 @@ export function isDemoProject(name: string | null | undefined): boolean {
 const DEMO_STATUS: ProjectStatus = {
   needs_repair: false,
   repair_reason: null,
+  repair_code: null,
   assets: {
     character: { total: 4, available: 3, stale: 0 },
     scene: { total: 3, available: 3, stale: 1 },

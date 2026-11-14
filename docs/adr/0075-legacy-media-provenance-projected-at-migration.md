@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0131
 ---
 
 # 旧媒体版本记录的类型化来源由迁移按当时项目状态投影补写，之后与生成时冻结的记录同等对待

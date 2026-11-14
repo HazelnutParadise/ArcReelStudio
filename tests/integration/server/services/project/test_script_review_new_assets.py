@@ -42,7 +42,7 @@ def _write_plan(pm: ProjectManager, route: str, content: dict[str, Any]) -> None
     source = project_path / "source" / "episode_1.txt"
     source.parent.mkdir(parents=True, exist_ok=True)
     source.write_text("原文", encoding="utf-8")
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
 
 
 def _narration_plan(characters: list[str], new_assets: list[dict[str, Any]]) -> dict[str, Any]:

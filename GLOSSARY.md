@@ -792,7 +792,7 @@ _Avoid_: 用「已过期」表述 stale、与 ledger_status 的 stale 混为一�
 _Avoid_: 与成本归属的「回填」混淆、认领。
 
 **项目迁移（project migration）**：
-应用启动或归档导入时把一个项目目录从旧 schema 版本逐级改写到当前版本的过程，每级一步、幂等、单项目失败隔离（见 `docs/adr/0022`）。
+应用启动或归档导入时把一个项目目录从旧 schema 版本逐级改写到当前版本的过程，每级一步、幂等、单项目失败隔离（见 `docs/adr/0022`）；只接 schema 19 起的项目，更早的拒绝（见 `docs/adr/0131`）。
 _Avoid_: 与数据库的 alembic 迁移混称、把它当重对账入口。
 
 **迁移报告（migration report）**：

@@ -1,13 +1,16 @@
 import asyncio
 from pathlib import Path
 
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.app import _migrate_source_encoding_on_startup
+
+_PROJECT_JSON = f'{{"schema_version": {CURRENT_PROJECT_SCHEMA_VERSION}}}'
 
 
 def test_startup_migration_creates_marker_after_run(tmp_path: Path):
     project = tmp_path / "p1"
     (project / "source").mkdir(parents=True)
-    (project / "project.json").write_text("{}")
+    (project / "project.json").write_text(_PROJECT_JSON)
     (project / "source" / "n.txt").write_bytes(("第一章\n" * 30).encode("gbk"))
 
     summary = asyncio.run(_migrate_source_encoding_on_startup(tmp_path))
@@ -20,7 +23,7 @@ def test_startup_migration_creates_marker_after_run(tmp_path: Path):
 def test_startup_migration_skips_already_marked(tmp_path: Path):
     project = tmp_path / "p1"
     (project / "source").mkdir(parents=True)
-    (project / "project.json").write_text("{}")
+    (project / "project.json").write_text(_PROJECT_JSON)
     bad = project / "source" / "n.txt"
     bad.write_bytes(("第一章\n" * 30).encode("gbk"))
     marker_dir = project / ".arcreel"
@@ -37,12 +40,12 @@ def test_startup_migration_isolates_project_failures(tmp_path: Path, monkeypatch
 
     good = tmp_path / "good"
     (good / "source").mkdir(parents=True)
-    (good / "project.json").write_text("{}")
+    (good / "project.json").write_text(_PROJECT_JSON)
     (good / "source" / "ok.txt").write_text("已是 UTF-8", encoding="utf-8")
 
     bad = tmp_path / "bad"
     (bad / "source").mkdir(parents=True)
-    (bad / "project.json").write_text("{}")
+    (bad / "project.json").write_text(_PROJECT_JSON)
     (bad / "source" / "broken.txt").write_bytes(random.Random(42).randbytes(4000))
 
     # 即使 bad 项目内文件解码失败，迁移函数本身不应抛错（只记录到 errors.log）

@@ -1,12 +1,15 @@
-"""过去正常流程写出的旧形态与单件损坏不再拒绝整个项目：迁移链规整或跳过，原内容留在盘上，报告列出改动（ADR 0098）。
+"""schema 19 的项目带着过去正常流程写出的旧形态：链首规整后升到当前版本，原内容留在盘上，报告列出改动（ADR 0098）。
 
-样本取自 ``tests/legacy_project_shapes.py``，形态清单见 ``docs/agents/project-migrations.md``「已知旧形态」。
+单件损坏（读不出的宫格记录或草稿）不拒绝整个项目：导入激活原样留下并进报告。样本取自 ``tests/legacy_project_shapes.py``，
+形态清单见 ``docs/agents/project-migrations.md``「已知旧形态」。
 """
 
 from __future__ import annotations
 
 import json
 import os
+import random
+import zipfile
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -23,13 +26,14 @@ from lib.artifacts.artifact_manifest import (
 )
 from lib.project.asset_derivatives import derivative_artifact_key
 from lib.project.project_manager import ProjectManager
+from lib.project.project_migration_failure import ProjectMigrationError
 from lib.project.project_migration_report import (
     MigrationReport,
     acknowledge_migration_report,
     load_migration_report,
     visible_migration_report,
 )
-from lib.project.project_migrations import legacy_shapes, runner, v6_to_v7_ad_reference_video_units
+from lib.project.project_migrations import legacy_shapes, runner
 from lib.project.project_migrations.legacy_shapes import normalize_legacy_shapes
 from lib.project.project_migrations.runner import migrate_project_with_verdict
 from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
@@ -40,33 +44,26 @@ from lib.project.resource_paths import (
 )
 from lib.script.script_review import content_fingerprint
 from lib.workflow.workflow_state import WorkflowStateService
-from tests.integration.lib.project.project_migrations.test_project_migration_v7_v8 import _project
+from server.services.project.project_archive import ProjectArchiveService, ProjectArchiveValidationError
+from tests.factories import wrap_the_last_migration_step
 from tests.legacy_project_shapes import (
+    SCHEMA_V19,
+    activate_at_schema_19,
     add_asset_names_differing_only_in_case,
     add_colliding_asset_name,
-    add_duplicate_ledger_entry,
-    advance_project_schema,
-    bind_episode_script_to_filename,
-    blank_reference_unit_shots,
     break_script_item_ids,
-    cross_bind_episode_scripts,
-    duplicate_legacy_ad_ids,
     refer_to_asset_in_episode,
     repoint_registered_asset_sheet,
     reuse_item_id_across_episodes,
     set_script_episode,
     share_asset_sheets,
     share_derivative_sheet,
-    share_episode_script,
     share_reference_files,
-    write_legacy_ad_reference_video_project,
-    write_legacy_reference_video_project,
-    write_legacy_script_plan_project,
     write_legacy_shared_reference_project,
-    write_legacy_storyboard_project,
-    write_non_utf8_episode_source,
+    write_legacy_tts_narration_project,
     write_unreadable_grid_record,
     write_unreadable_script_plan_draft,
+    write_v19_project,
 )
 
 
@@ -74,12 +71,17 @@ def _read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _commits_a_rebind(path: Path, payload: Any) -> bool:
-    """这次写盘是在提交改绑：写的是 ``project.json``，且有一集的剧本绑定与盘上不同。"""
-    if path.name != "project.json":
-        return False
-    bound = {entry["episode"]: entry.get("script_file") for entry in _read_json(path)["episodes"]}
-    return any(bound.get(entry["episode"]) != entry.get("script_file") for entry in payload["episodes"])
+def _project(root: Path, *, activate: bool = True) -> Path:
+    """``root/projects/demo``：:func:`write_v19_project` 的解说分镜样本。"""
+    return write_v19_project(root / "projects", activate=activate)
+
+
+def _register_test_claim(project_dir: Path, key: ArtifactKey, artifact_path: str) -> None:
+    ArtifactManifest(ProjectArtifactManifestAdapter(project_dir)).register(
+        key,
+        artifact_path=artifact_path,
+        basis=ArtifactBasis.build("test/claim", kind_version=1, inputs={"path": artifact_path}),
+    )
 
 
 def _migrate(project_dir: Path) -> None:
@@ -94,57 +96,8 @@ def _adjusted(project_dir: Path) -> list[tuple[str, int | None, dict[str, str]]]
     return [(item.code, item.episode, item.params) for item in report.adjusted]
 
 
-def _skipped(project_dir: Path) -> list[tuple[str, str]]:
-    report = load_migration_report(project_dir)
-    assert report is not None
-    return [(item.kind, item.artifact_path) for item in report.skipped]
-
-
-def test_a_duplicate_ledger_entry_is_dropped_and_its_script_stays_on_disk(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    add_duplicate_ledger_entry(project_dir, 1, "episode_1_copy.json")
-    original = (project_dir / "project.json").read_bytes()
-
-    _migrate(project_dir)
-
-    episodes = _read_json(project_dir / "project.json")["episodes"]
-    assert [(entry["episode"], entry["script_file"]) for entry in episodes] == [(1, "scripts/episode_1.json")]
-    assert (project_dir / "scripts" / "episode_1_copy.json").is_file()
-    report = load_migration_report(project_dir)
-    assert report is not None
-    [adjustment] = report.adjusted
-    assert (adjustment.code, adjustment.episode, adjustment.file) == (
-        "duplicate_episode_entry_removed",
-        1,
-        "scripts/episode_1_copy.json",
-    )
-    assert adjustment.backup is not None
-    assert (project_dir / adjustment.backup).read_bytes() == original
-
-
-def test_a_script_shared_by_two_episodes_stays_with_the_episode_it_names(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    share_episode_script(project_dir, 1, with_episode=2)
-    set_script_episode(project_dir, 1, 2)
-    script_before = (project_dir / "scripts" / "episode_1.json").read_bytes()
-
-    _migrate(project_dir)
-
-    episodes = _read_json(project_dir / "project.json")["episodes"]
-    assert [(entry["episode"], entry["script_file"]) for entry in episodes] == [
-        (1, "scripts/episode_1.json"),
-        (2, "scripts/episode_2.json"),
-    ]
-    assert not (project_dir / "scripts" / "episode_1.json").exists()
-    assert _read_json(project_dir / "scripts" / "episode_2.json") == json.loads(script_before)
-    assert [(code, episode) for code, episode, _params in _adjusted(project_dir)] == [
-        ("shared_script_binding_split", 1),
-        ("script_binding_canonicalized", 2),
-    ]
-
-
 def test_a_script_without_its_episode_number_takes_the_one_it_is_bound_to(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     set_script_episode(project_dir, 1, None)
 
     _migrate(project_dir)
@@ -154,7 +107,7 @@ def test_a_script_without_its_episode_number_takes_the_one_it_is_bound_to(tmp_pa
 
 
 def test_asset_names_that_collide_after_normalization_keep_the_first(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     colliding = add_colliding_asset_name(project_dir, "characters", "阿离")
 
     _migrate(project_dir)
@@ -170,8 +123,10 @@ def test_asset_names_that_collide_after_normalization_keep_the_first(tmp_path: P
 
 
 def test_asset_names_that_differ_only_in_case_keep_the_first(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     variant = add_asset_names_differing_only_in_case(project_dir, "props", "prop_sheet", "Umbrella")
+    # 清单按不区分大小写的路径判重，两条只差大小写的资产图只能有一条登记。
+    _register_test_claim(project_dir, ArtifactKey.asset_sheet("prop", "Umbrella"), "props/Umbrella.png")
 
     _migrate(project_dir)
 
@@ -210,36 +165,6 @@ def _copied_reference_files(project_dir: Path) -> list[tuple[str | None, dict[st
     return [(item.file, item.params) for item in report.adjusted if item.code == "shared_reference_file_copied"]
 
 
-@pytest.mark.parametrize("padded_names", [False, True])
-def test_schema_five_shared_references_survive_namespace_renames(tmp_path: Path, padded_names: bool) -> None:
-    project_dir = write_legacy_shared_reference_project(
-        ProjectManager(tmp_path).projects_dir, padded_names=padded_names
-    )
-    original = (project_dir / "project.json").read_bytes()
-
-    _migrate(project_dir)
-
-    project = _read_json(project_dir / "project.json")
-    for name in ("Alice", "Bob"):
-        entry = project["characters"][name]
-        assert entry["reference_image"] == f"characters/refs/{name}.png"
-        assert entry["reference_audio"] == f"characters/refs_audio/{name}.wav"
-        assert (project_dir / entry["reference_image"]).read_bytes() == b"image"
-        assert (project_dir / entry["reference_audio"]).read_bytes() == b"audio"
-    product = project["products"]["Bob_product"]
-    assert product["reference_images"] == ["products/refs/Bob_product_1.png"]
-    assert (project_dir / product["reference_images"][0]).read_bytes() == b"image"
-    assert len(_copied_reference_files(project_dir)) == 3
-    for rel, params in _copied_reference_files(project_dir):
-        assert rel is not None
-        assert (project_dir / rel).is_file()
-        assert params["name"] == ("Bob_product" if params["asset_type"] == "product" else "Bob")
-    assert original in [path.read_bytes() for path in project_dir.glob("project.json.bak.v5-*")]
-    shown = WorkflowStateService(ProjectManager(str(tmp_path))).get_status("demo").migration_report
-    assert shown is not None
-    assert [item.code for item in shown.adjusted] == ["shared_reference_file_copied"] * 3
-
-
 @pytest.mark.parametrize("fail_commit", [False, True])
 def test_swapped_shared_references_keep_each_original_content(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fail_commit: bool
@@ -247,7 +172,6 @@ def test_swapped_shared_references_keep_each_original_content(
     project_dir = write_legacy_shared_reference_project(ProjectManager(tmp_path).projects_dir)
     project_path = project_dir / "project.json"
     project = _read_json(project_path)
-    project["schema_version"] = CURRENT_PROJECT_SCHEMA_VERSION - 1
     project["characters"]["Alice"]["reference_image"] = "characters/refs/Bob.png"
     project["products"] = {}
     project_path.write_text(json.dumps(project), encoding="utf-8")
@@ -277,10 +201,6 @@ def test_shared_reference_copy_failure_keeps_the_displaced_original_in_the_retry
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     project_dir = write_legacy_shared_reference_project(ProjectManager(tmp_path).projects_dir)
-    project_path = project_dir / "project.json"
-    project = _read_json(project_path)
-    project["schema_version"] = CURRENT_PROJECT_SCHEMA_VERSION - 1
-    project_path.write_text(json.dumps(project), encoding="utf-8")
     target = project_dir / "characters/refs/Bob.png"
     target.write_bytes(b"displaced-original")
     write = legacy_shapes.atomic_write_bytes
@@ -305,10 +225,8 @@ def test_shared_reference_copy_failure_keeps_the_displaced_original_in_the_retry
     assert len(list(target.parent.glob("Bob.png.kept.*"))) == 1
 
 
-@pytest.mark.parametrize("from_version", [7, CURRENT_PROJECT_SCHEMA_VERSION - 1])
-def test_reference_files_shared_with_another_asset_get_their_own_copy(tmp_path: Path, from_version: int) -> None:
-    project_dir, *_ = _project(tmp_path)
-    advance_project_schema(project_dir, to_version=from_version)
+def test_reference_files_shared_with_another_asset_get_their_own_copy(tmp_path: Path) -> None:
+    project_dir = _project(tmp_path)
     contents = share_reference_files(project_dir)
 
     _migrate(project_dir)
@@ -344,8 +262,7 @@ def test_reference_files_shared_with_another_asset_get_their_own_copy(tmp_path: 
 @pytest.mark.parametrize("resolved_project_dir", [False, True])
 def test_a_reference_spelled_differently_still_gets_its_own_copy(tmp_path: Path, resolved_project_dir: bool) -> None:
     # 旧版 PATCH 原样收下任意字符串：带 ``..`` / ``.`` 段、反斜杠或项目内绝对路径，运行时照样读到别的资产名下的文件。
-    project_dir, *_ = _project(tmp_path)
-    advance_project_schema(project_dir, to_version=CURRENT_PROJECT_SCHEMA_VERSION - 1)
+    project_dir = _project(tmp_path)
     contents = share_reference_files(project_dir)
     project = _read_json(project_dir / "project.json")
     base = Path(os.path.realpath(project_dir)) if resolved_project_dir else project_dir
@@ -375,17 +292,14 @@ def test_a_reference_spelled_differently_still_gets_its_own_copy(tmp_path: Path,
     ]
 
 
-@pytest.mark.parametrize("from_version", [5, CURRENT_PROJECT_SCHEMA_VERSION - 1])
-def test_an_asset_name_with_path_separators_gets_no_copy_outside_its_directory(
-    tmp_path: Path, from_version: int
-) -> None:
+@pytest.mark.parametrize("sample", ["shared-references", "shared-with-a-sibling"])
+def test_an_asset_name_with_path_separators_gets_no_copy_outside_its_directory(tmp_path: Path, sample: str) -> None:
     # 导入包在校验资产名之前跑迁移链：名字里的 ``..`` 段不能把共用参考文件的副本带出项目目录。
-    if from_version == 5:
+    if sample == "shared-references":
         project_dir = write_legacy_shared_reference_project(ProjectManager(tmp_path).projects_dir)
         image, audio = "characters/refs/Alice.png", "characters/refs_audio/Alice.wav"
     else:
-        project_dir, *_ = _project(tmp_path)
-        advance_project_schema(project_dir, to_version=from_version)
+        project_dir = _project(tmp_path)
         share_reference_files(project_dir)
         image, audio = "characters/refs/阿离.png", "characters/refs_audio/阿离.wav"
     project = _read_json(project_dir / "project.json")
@@ -403,8 +317,7 @@ def test_an_asset_name_with_path_separators_gets_no_copy_outside_its_directory(
 def test_copying_shared_reference_files_converges_after_a_failed_commit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    project_dir, *_ = _project(tmp_path)
-    advance_project_schema(project_dir, to_version=CURRENT_PROJECT_SCHEMA_VERSION - 1)
+    project_dir = _project(tmp_path)
     share_reference_files(project_dir)
     record: list[Any] = []
     write = legacy_shapes.atomic_write_json
@@ -418,8 +331,8 @@ def test_copying_shared_reference_files_converges_after_a_failed_commit(
     with monkeypatch.context() as patch:
         patch.setattr(legacy_shapes, "atomic_write_json", fail_on_project)
         with pytest.raises(OSError, match="disk full"):
-            normalize_legacy_shapes(project_dir, schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1, record=record)
-    normalize_legacy_shapes(project_dir, schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1, record=record)
+            normalize_legacy_shapes(project_dir, schema_version=SCHEMA_V19, record=record)
+    normalize_legacy_shapes(project_dir, schema_version=SCHEMA_V19, record=record)
 
     assert [(item.file, item.params) for item in record] == _SHARED_REFERENCE_COPIES
     assert record[0].backup is not None
@@ -442,13 +355,13 @@ def _sheet_status(project_dir: Path, asset_type: str, name: str, rel: str) -> st
 
 
 def _project_sharing_sheets(tmp_path: Path) -> tuple[Path, dict[str, bytes], str]:
-    """「阿青」在 v7 共用「阿离」的参考图作资产图，推进到上一版后「雨巷」又改指「伞」的资产图。
+    """「阿青」在清单激活前共用「阿离」的参考图作资产图，激活后「雨巷」又改指「伞」的资产图。
 
     返回样本、各图改指前的内容与「阿青」按共用路径登记的依据摘要。
     """
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path, activate=False)
     contents = share_asset_sheets(project_dir)
-    advance_project_schema(project_dir, to_version=CURRENT_PROJECT_SCHEMA_VERSION - 1)
+    activate_at_schema_19(project_dir)
     claim = _sheet_claim(project_dir, "character", "阿青")
     assert claim is not None
     assert claim[0] == "characters/refs/阿离.png"
@@ -535,8 +448,7 @@ def test_a_failed_sheet_copy_commit_rolls_the_claims_back_and_the_retry_converge
 
 
 def test_a_body_sheet_pointing_at_another_assets_derivative_gets_its_own_copy(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    advance_project_schema(project_dir, to_version=CURRENT_PROJECT_SCHEMA_VERSION - 1)
+    project_dir = _project(tmp_path)
     project_path = project_dir / "project.json"
     derivative = share_derivative_sheet(project_dir)
 
@@ -608,7 +520,7 @@ def test_a_sheet_copy_does_not_write_through_a_symlink_directory(tmp_path: Path)
     project_dir = manager.get_project_path("demo")
     project_path = project_dir / "project.json"
     project = _read_json(project_path)
-    project["schema_version"] = CURRENT_PROJECT_SCHEMA_VERSION - 1
+    project["schema_version"] = SCHEMA_V19
     project["characters"] = {"Bob": {"description": "Bob", "character_sheet": "props/Umbrella.png"}}
     project["props"] = {"Umbrella": {"description": "Umbrella", "prop_sheet": "props/Umbrella.png"}}
     project_path.write_text(json.dumps(project), encoding="utf-8")
@@ -643,8 +555,7 @@ def test_a_shared_sheet_with_a_noncanonical_spelling_gets_a_safe_copy(tmp_path: 
 
 
 def test_bidirectional_sheet_sharing_copies_the_original_bytes(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    advance_project_schema(project_dir, to_version=CURRENT_PROJECT_SCHEMA_VERSION - 1)
+    project_dir = _project(tmp_path)
     project_path = project_dir / "project.json"
     project = _read_json(project_path)
     project["characters"]["阿离"]["character_sheet"] = "characters/阿青.png"
@@ -664,8 +575,7 @@ def test_bidirectional_sheet_sharing_copies_the_original_bytes(tmp_path: Path) -
 
 
 def test_bidirectional_sheet_sharing_with_crossed_claims_carries_both_claims(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    advance_project_schema(project_dir, to_version=CURRENT_PROJECT_SCHEMA_VERSION - 1)
+    project_dir = _project(tmp_path)
     project_path = project_dir / "project.json"
     project = _read_json(project_path)
     project["characters"]["阿离"]["character_sheet"] = "characters/阿青.png"
@@ -710,39 +620,13 @@ def test_a_copied_sheet_keeps_its_stale_claim(tmp_path: Path) -> None:
     assert _sheet_status(project_dir, "character", "阿青", "characters/阿青.png") == "stale"
 
 
-def test_schema_five_shared_asset_sheets_get_their_own_copy(tmp_path: Path) -> None:
-    project_dir = write_legacy_shared_reference_project(ProjectManager(tmp_path).projects_dir)
-    project_path = project_dir / "project.json"
-    project = _read_json(project_path)
-    for name in ("Alice", "Bob"):
-        project["characters"][name]["character_sheet"] = "characters/Alice.png"
-    project_path.write_text(json.dumps(project), encoding="utf-8")
-    (project_dir / "characters/Alice.png").write_bytes(b"alice-sheet")
-
-    _migrate(project_dir)
-
-    characters = _read_json(project_path)["characters"]
-    for name in ("Alice", "Bob"):
-        assert characters[name]["character_sheet"] == f"characters/{name}.png"
-        assert (project_dir / f"characters/{name}.png").read_bytes() == b"alice-sheet"
-
-
 def _issue_codes(tmp_path: Path) -> set[str]:
     status = WorkflowStateService(ProjectManager(str(tmp_path))).get_status("demo")
     return {issue.code for issue in status.issues}
 
 
-def _complete_first_segment(project_dir: Path) -> None:
-    """补上样本分镜缺的原文，让剧本除引用之外本身合法：引用未登记是这一集唯一可能的结构问题。"""
-    script_path = project_dir / "scripts" / "episode_1.json"
-    script = _read_json(script_path)
-    script["segments"][0]["novel_text"] = "雨夜"
-    script_path.write_text(json.dumps(script, ensure_ascii=False), encoding="utf-8")
-
-
 def test_references_to_a_dropped_case_variant_follow_the_kept_name(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    _complete_first_segment(project_dir)
+    project_dir = _project(tmp_path)
     variant = add_asset_names_differing_only_in_case(project_dir, "characters", "character_sheet", "Alice")
     refer_to_asset_in_episode(project_dir, 1, "characters_in_segment", variant)
 
@@ -766,7 +650,7 @@ def test_dialogue_speakers_and_unit_text_mentions_follow_the_kept_name(tmp_path:
     (project_dir / "project.json").write_text(
         json.dumps(
             {
-                "schema_version": CURRENT_PROJECT_SCHEMA_VERSION - 1,
+                "schema_version": SCHEMA_V19,
                 "characters": {"Alice": {"description": "保留"}, "ALICE": {"description": "变体"}},
                 "episodes": [
                     {"episode": 1, "script_file": "scripts/episode_1.json"},
@@ -803,7 +687,7 @@ def test_dialogue_speakers_and_unit_text_mentions_follow_the_kept_name(tmp_path:
     )
     record: list = []
 
-    normalize_legacy_shapes(project_dir, schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1, record=record)
+    normalize_legacy_shapes(project_dir, schema_version=SCHEMA_V19, record=record)
 
     [unit] = _read_json(project_dir / "scripts" / "episode_1.json")["video_units"]
     assert unit["text"] == "@[Alice]：{你好}\n@[Alice]推门，@[Alice]回头"
@@ -826,7 +710,7 @@ def test_references_rewritten_before_a_failed_write_stay_in_the_report(
     (project_dir / "project.json").write_text(
         json.dumps(
             {
-                "schema_version": CURRENT_PROJECT_SCHEMA_VERSION - 1,
+                "schema_version": SCHEMA_V19,
                 "characters": {"Alice": {"description": "保留"}, "ALICE": {"description": "变体"}},
                 "episodes": [
                     {"episode": episode, "script_file": f"scripts/episode_{episode}.json"} for episode in (1, 2)
@@ -855,8 +739,8 @@ def test_references_rewritten_before_a_failed_write_stay_in_the_report(
     with monkeypatch.context() as patch:
         patch.setattr(legacy_shapes, "atomic_write_json", fail_on_second_episode)
         with pytest.raises(OSError, match="disk full"):
-            normalize_legacy_shapes(project_dir, schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1, record=record)
-    normalize_legacy_shapes(project_dir, schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1, record=record)
+            normalize_legacy_shapes(project_dir, schema_version=SCHEMA_V19, record=record)
+    normalize_legacy_shapes(project_dir, schema_version=SCHEMA_V19, record=record)
 
     assert sorted((item.code, item.episode or 0) for item in record) == [
         ("duplicate_asset_references_rewritten", 1),
@@ -872,9 +756,7 @@ def _add_character_derivatives(project_dir: Path, owner: str, derivatives: dict[
 
 
 def test_derivatives_of_a_dropped_case_variant_join_the_kept_name(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    _complete_first_segment(project_dir)
-    advance_project_schema(project_dir, to_version=CURRENT_PROJECT_SCHEMA_VERSION - 1)
+    project_dir = _project(tmp_path)
     variant = add_asset_names_differing_only_in_case(project_dir, "characters", "character_sheet", "Alice")
     hat_sheet, coat_sheet = "characters/derivatives/ALICE/Hat.png", "characters/derivatives/ALICE/Coat.png"
     (project_dir / hat_sheet).parent.mkdir(parents=True)
@@ -957,11 +839,11 @@ def test_a_moved_derivative_without_its_sheet_on_disk_still_points_under_the_kep
     hat = {"description": "帽子", "character_sheet": "characters/derivatives/ALICE/Hat.png"}
     characters = {"Alice": {"description": "保留"}, "ALICE": {"description": "变体", "derivatives": {"Hat": hat}}}
     (project_dir / "project.json").write_text(
-        json.dumps({"schema_version": CURRENT_PROJECT_SCHEMA_VERSION - 1, "characters": characters, "episodes": []}),
+        json.dumps({"schema_version": SCHEMA_V19, "characters": characters, "episodes": []}),
         encoding="utf-8",
     )
 
-    normalize_legacy_shapes(project_dir, schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1, record=[])
+    normalize_legacy_shapes(project_dir, schema_version=SCHEMA_V19, record=[])
 
     # 与改名衍生一致：路径跟着本体走，不看图在不在盘上。
     [kept] = _read_json(project_dir / "project.json")["characters"].values()
@@ -977,11 +859,11 @@ def test_derivatives_of_several_case_variants_fold_into_each_other(tmp_path: Pat
         "alice": {"description": "变体", "derivatives": {"hat": {"description": "另一顶帽子", "character_sheet": ""}}},
     }
     (project_dir / "project.json").write_text(
-        json.dumps({"schema_version": CURRENT_PROJECT_SCHEMA_VERSION - 1, "characters": characters, "episodes": []}),
+        json.dumps({"schema_version": SCHEMA_V19, "characters": characters, "episodes": []}),
         encoding="utf-8",
     )
 
-    normalize_legacy_shapes(project_dir, schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1, record=[])
+    normalize_legacy_shapes(project_dir, schema_version=SCHEMA_V19, record=[])
 
     # 后一条变体的 hat 与前一条迁入的 Hat 只差大小写，并入它。
     assert _read_json(project_dir / "project.json")["characters"] == {
@@ -990,7 +872,7 @@ def test_derivatives_of_several_case_variants_fold_into_each_other(tmp_path: Pat
 
 
 def _variant_project(root: Path) -> Path:
-    project_dir, *_ = _project(root)
+    project_dir = _project(root)
     variant = add_asset_names_differing_only_in_case(project_dir, "characters", "character_sheet", "Alice")
     refer_to_asset_in_episode(project_dir, 1, "characters_in_segment", variant)
     return project_dir
@@ -1042,8 +924,7 @@ def test_a_normalization_that_fails_after_rewriting_references_converges_on_retr
 def test_a_confirmed_script_plan_stays_confirmed_after_its_references_are_rewritten(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fails_once: bool
 ) -> None:
-    project_dir, *_ = _project(tmp_path)
-    advance_project_schema(project_dir, to_version=CURRENT_PROJECT_SCHEMA_VERSION - 1)
+    project_dir = _project(tmp_path)
     variant = add_asset_names_differing_only_in_case(project_dir, "characters", "character_sheet", "Alice")
     refer_to_asset_in_episode(project_dir, 1, "characters_in_segment", variant)
     plan_path = project_dir / "drafts" / "episode_1" / "script_plan_segments.json"
@@ -1068,33 +949,10 @@ def test_a_confirmed_script_plan_stays_confirmed_after_its_references_are_rewrit
     }
 
 
-def test_a_confirmed_script_plan_under_pre_v10_names_stays_confirmed_after_its_references_are_rewritten(
-    tmp_path: Path,
-) -> None:
-    project_dir = write_legacy_script_plan_project(tmp_path, variant="narration", schema_version=9)
-    project = _read_json(project_dir / "project.json")
-    project["characters"] = {"Alice": {"description": "保留"}, "ALICE": {"description": "变体"}}
-    # 第 2 集只有已确认的脚本规划，正式脚本要由 v14→v15 按这份确认转出。
-    legacy_plan = project_dir / "drafts" / "episode_2" / "step1_segments.json"
-    plan = _read_json(legacy_plan)
-    plan["segments"][0]["characters_in_segment"] = ["ALICE"]
-    legacy_plan.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
-    project["episodes"][1]["step1_review"]["fingerprint"] = content_fingerprint(legacy_plan)
-    (project_dir / "project.json").write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
-
-    _migrate(project_dir)
-
-    plan_path = project_dir / "drafts" / "episode_2" / "script_plan_segments.json"
-    assert _read_json(plan_path)["segments"][0]["characters_in_segment"] == ["Alice"]
-    entry = _read_json(project_dir / "project.json")["episodes"][1]
-    assert entry["script_plan_review"]["fingerprint"] == content_fingerprint(plan_path)
-    assert (project_dir / "scripts" / "episode_2.json").is_file()
-
-
 def test_missing_and_duplicate_item_ids_are_reassigned_and_the_original_media_stays_with_the_first(
     tmp_path: Path,
 ) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     break_script_item_ids(project_dir, 1)
 
     _migrate(project_dir)
@@ -1112,7 +970,7 @@ def test_missing_and_duplicate_item_ids_are_reassigned_and_the_original_media_st
 
 
 def test_a_renumbered_item_lets_go_of_the_end_frame_that_belongs_to_the_original_id(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     end_frame = resource_relative_path(END_FRAME_RESOURCE_TYPE, "E1S01")
     script_path = project_dir / "scripts" / "episode_1.json"
     script = _read_json(script_path)
@@ -1130,7 +988,7 @@ def test_a_renumbered_item_lets_go_of_the_end_frame_that_belongs_to_the_original
 
 def test_a_renumbered_item_reads_as_not_yet_generated(tmp_path: Path) -> None:
     """换号条目不带走原 id 那一条的缩略图、视频 URI、宫格归属与生成时刻，落盘的状态也复位。"""
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     script_path = project_dir / "scripts" / "episode_1.json"
     script = _read_json(script_path)
     generated = {
@@ -1170,8 +1028,12 @@ def test_a_renumbered_item_reads_as_not_yet_generated(tmp_path: Path) -> None:
 def test_an_item_id_two_episodes_share_stays_with_one_and_is_renumbered_in_the_other(
     tmp_path: Path, item_id: str, owner: int, renumbered_to: tuple[str, int]
 ) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     reuse_item_id_across_episodes(project_dir, item_id)
+    # 两集认领同一个文件时清单只容得下一条登记：生成它的是 id 前缀所指的那一集。
+    _register_test_claim(
+        project_dir, ArtifactKey.episode_storyboard(owner, item_id), f"storyboards/scene_{item_id}.png"
+    )
 
     _migrate(project_dir)
 
@@ -1190,243 +1052,133 @@ def test_an_item_id_two_episodes_share_stays_with_one_and_is_renumbered_in_the_o
     assert ArtifactKey.episode_storyboard(other, item_id) not in entries
 
 
-def test_duplicate_ids_in_a_legacy_ad_shot_index_are_renumbered(tmp_path: Path) -> None:
-    project_dir = write_legacy_ad_reference_video_project(tmp_path / "projects")
-    duplicate_legacy_ad_ids(project_dir)
-
-    _migrate(project_dir)
-
-    units = _read_json(project_dir / "scripts" / "episode_1.json")["video_units"]
-    assert units[0]["unit_id"] == "E1U01"
-    assert "needs_replan" not in units[0]
-    assert all(unit.get("needs_replan") is True for unit in units[1:])
-    renumbered = [params["from"] for code, _episode, params in _adjusted(project_dir) if code == "item_id_reassigned"]
-    assert sorted(renumbered) == ["E1S1", "E1U01"]
+def _manual_archive(project_dir: Path, archive_path: Path) -> Path:
+    """手工打包的归档：项目目录下的可见文件原样入包，不带信封与隐藏的产物清单。"""
+    with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for item in sorted(project_dir.rglob("*")):
+            relative = item.relative_to(project_dir)
+            if item.is_file() and not any(part.startswith(".") for part in relative.parts):
+                archive.write(item, arcname=relative.as_posix())
+    return archive_path
 
 
-def test_ad_renumbering_survives_a_v6_step_that_fails_after_writing_the_script(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def _import_report(tmp_path: Path, project_dir: Path) -> tuple[ProjectManager, Path, MigrationReport]:
+    """导入 ``project_dir`` 的手工归档：先拿到要求确认的报告（不留项目），再确认导入，返回装好的项目目录。"""
+    archive = _manual_archive(project_dir, tmp_path / "v19.zip")
+    target = ProjectManager(tmp_path / "target")
+    with pytest.raises(ProjectArchiveValidationError) as exc_info:
+        ProjectArchiveService(target).import_project_archive(archive, uploaded_filename="v19.zip")
+    assert exc_info.value.status_code == 409
+    assert target.list_projects() == []
+    report = MigrationReport.model_validate(exc_info.value.extra["migration_report"])
+    result = ProjectArchiveService(target).import_project_archive(
+        archive, uploaded_filename="v19.zip", confirm_report=True
+    )
+    return target, target.get_project_path(result.project_name), report
+
+
+def test_a_corrupt_grid_record_in_an_imported_v19_project_is_kept_as_is_and_reported(tmp_path: Path) -> None:
+    project_dir = _project(tmp_path)
+    write_unreadable_grid_record(project_dir)
+
+    _, imported, report = _import_report(tmp_path, project_dir)
+
+    assert (imported / "grids" / "grid_0123456789ab.json").read_bytes() == b"{not json"
+    assert ("episode-grid", "grids/grid_0123456789ab.json") in [
+        (item.kind, item.artifact_path) for item in report.skipped
+    ]
+
+
+def test_a_corrupt_script_plan_draft_in_an_imported_v19_project_is_kept_as_is_and_reported(tmp_path: Path) -> None:
+    project_dir = _project(tmp_path)
+    write_unreadable_script_plan_draft(project_dir, 1, "script_plan_segments.json")
+
+    _, imported, report = _import_report(tmp_path, project_dir)
+
+    assert (imported / "drafts" / "episode_1" / "script_plan_segments.json").read_bytes() == b"{not json"
+    assert ("episode-script-plan", "drafts/episode_1/script_plan_segments.json") in [
+        (item.kind, item.artifact_path) for item in report.skipped
+    ]
+    assert ArtifactKey.episode_script(1) in ProjectArtifactManifestAdapter(imported).snapshot_entries()
+
+
+def test_narration_audio_without_tts_settings_in_an_imported_v19_project_is_reported_as_legacy(
+    tmp_path: Path,
 ) -> None:
-    project_dir = write_legacy_ad_reference_video_project(tmp_path / "projects")
-    duplicate_legacy_ad_ids(project_dir)
-    write = v6_to_v7_ad_reference_video_units.atomic_write_json
+    """v19 仍带着没有 TTS 设置的旧旁白记录：导入激活不登记它们，报告「未能带入」并归为旧版配音。"""
+    project_dir = write_legacy_tts_narration_project(tmp_path / "projects", with_tts_settings=False)
 
-    def fail_on_project_json(path: Path, payload: Any) -> None:
-        if path.name == "project.json":
-            raise OSError("disk full")
-        write(path, payload)
+    _, imported, report = _import_report(tmp_path, project_dir)
 
-    # 剧本已改成新单元并换了号，提交 project.json 时失败：重跑时剧本里已没有可发现的换号。
-    with monkeypatch.context() as patch:
-        patch.setattr(v6_to_v7_ad_reference_video_units, "atomic_write_json", fail_on_project_json)
-        assert migrate_project_with_verdict(project_dir) is not None
-
-    _migrate(project_dir)
-
-    renumbered = [params["from"] for code, _episode, params in _adjusted(project_dir) if code == "item_id_reassigned"]
-    assert sorted(renumbered) == ["E1S1", "E1U01"]
+    legacy = {item.resource_id for item in report.skipped if item.category == "legacy_audio_basis"}
+    assert legacy == {"E1S1", "E1S2"}
+    entries = ProjectArtifactManifestAdapter(imported).snapshot_entries()
+    assert ArtifactKey.episode_audio(1, "E1S1") not in entries
+    assert (imported / "audio" / "segment_E1S1.wav").read_bytes() == b"tts-E1S1"
 
 
-def test_a_reference_unit_whose_text_comes_out_blank_is_marked_for_replanning(tmp_path: Path) -> None:
-    project_dir = write_legacy_reference_video_project(tmp_path / "projects", split_unit_text=True)
-    blank_reference_unit_shots(project_dir, "E1U01")
+def test_a_source_the_import_cannot_convert_to_utf8_leaves_the_script_plan_unregistered(tmp_path: Path) -> None:
+    """集原文解不出（既不是 UTF-8 也不是 GB18030）：原样留下，脚本规划的依据算不出，不登记，也不进「未能带入」。
 
-    _migrate(project_dir)
+    坏宫格记录让这次导入要求确认，报告因此可见。GBK 这类解得出的原文导入时会先转成 UTF-8，不落到这条路径。
+    """
+    project_dir = _project(tmp_path)
+    undecodable = random.Random(42).randbytes(4000)
+    (project_dir / "source" / "episode_1.txt").write_bytes(undecodable)
+    write_unreadable_grid_record(project_dir)
 
-    first, second = _read_json(project_dir / "scripts" / "episode_1.json")["video_units"]
-    assert (first["text"], first["duration_seconds"], first["needs_replan"]) == ("", 0, True)
-    assert second["text"] == "第2个单元的画面描述。"
-    report = load_migration_report(project_dir)
-    assert report is None or not [item for item in report.skipped if item.resource_id == "E1U01"]
+    _, imported, report = _import_report(tmp_path, project_dir)
 
-
-def test_a_corrupt_grid_record_is_kept_as_is_and_reported(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    record = write_unreadable_grid_record(project_dir)
-
-    _migrate(project_dir)
-
-    assert record.read_bytes() == b"{not json"
-    assert ("episode-grid", "grids/grid_0123456789ab.json") in _skipped(project_dir)
-
-
-def test_a_corrupt_script_plan_draft_is_kept_as_is_and_reported(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    draft = write_unreadable_script_plan_draft(project_dir, 1, "script_plan_segments.json")
-
-    _migrate(project_dir)
-
-    assert draft.read_bytes() == b"{not json"
-    assert ("episode-script-plan", "drafts/episode_1/script_plan_segments.json") in _skipped(project_dir)
-    entries = ProjectArtifactManifestAdapter(project_dir).snapshot_entries()
+    assert (imported / "source" / "episode_1.txt").read_bytes() == undecodable
+    assert [item for item in report.skipped if item.kind == "episode-script-plan"] == []
+    entries = ProjectArtifactManifestAdapter(imported).snapshot_entries()
+    assert ArtifactKey.episode_script_plan(1) not in entries
     assert ArtifactKey.episode_script(1) in entries
 
 
-def test_a_source_that_is_not_utf8_leaves_the_script_plan_unregistered(tmp_path: Path) -> None:
-    """草稿本身读得出、只是依据算不出：不登记、读时报 missing，不进「未能带入」。"""
-    project_dir, *_ = _project(tmp_path)
-    source = write_non_utf8_episode_source(project_dir, 1, "雨夜")
-
-    _migrate(project_dir)
-
-    assert source.read_bytes() == "雨夜".encode("gbk")
-    report = load_migration_report(project_dir)
-    assert report is None or not [item for item in report.skipped if item.kind == "episode-script-plan"]
-    assert ArtifactKey.episode_script_plan(1) not in ProjectArtifactManifestAdapter(project_dir).snapshot_entries()
-
-
-@pytest.mark.skipif(
-    os.name != "posix" or os.geteuid() == 0, reason="needs POSIX permissions that the current user cannot bypass"
-)
-def test_an_unreadable_image_stays_in_place_and_is_reported(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    image = project_dir / "storyboards" / "scene_E1S01.png"
-    image.chmod(0)
-    try:
-        if os.access(image, os.R_OK):
-            pytest.skip("running with privileges that ignore file permissions")
-        _migrate(project_dir)
-    finally:
-        image.chmod(0o644)
-
-    assert image.read_bytes() == b"storyboard"
-    assert ("episode-storyboard", "storyboards/scene_E1S01.png") in _skipped(project_dir)
-
-
-def _write_storyboard_project_with_a_video(tmp_path: Path) -> Path:
-    return write_legacy_storyboard_project(tmp_path / "projects")
-
-
-@pytest.mark.skipif(
-    os.name != "posix" or os.geteuid() == 0, reason="needs POSIX permissions that the current user cannot bypass"
-)
-@pytest.mark.parametrize(
-    ("make_project", "make_file", "kind"),
-    [
-        pytest.param(
-            _write_storyboard_project_with_a_video,
-            lambda project_dir: project_dir / "videos" / "scene_E1S1.mp4",
-            "episode-video",
-            id="current-video",
-        ),
-        pytest.param(
-            lambda tmp_path: _project(tmp_path)[0],
-            write_unreadable_grid_record,
-            "episode-grid",
-            id="grid-record",
-        ),
-        pytest.param(
-            lambda tmp_path: _project(tmp_path)[0],
-            lambda project_dir: write_unreadable_script_plan_draft(project_dir, 1, "script_plan_segments.json"),
-            "episode-script-plan",
-            id="script-plan-draft",
-        ),
-    ],
-)
-def test_a_file_the_process_cannot_open_stays_in_place_and_is_reported(
-    tmp_path: Path, make_project: Any, make_file: Any, kind: str
-) -> None:
-    project_dir = make_project(tmp_path)
-    locked = make_file(project_dir)
-    content = locked.read_bytes()
-    locked.chmod(0)
-    try:
-        if os.access(locked, os.R_OK):
-            pytest.skip("running with privileges that ignore file permissions")
-        _migrate(project_dir)
-    finally:
-        locked.chmod(0o644)
-
-    assert locked.read_bytes() == content
-    assert (kind, locked.relative_to(project_dir).as_posix()) in _skipped(project_dir)
-
-
-@pytest.mark.skipif(
-    os.name != "posix" or os.geteuid() == 0, reason="needs POSIX permissions that the current user cannot bypass"
-)
-def test_a_schema_8_reference_draft_the_process_cannot_open_is_left_as_is(tmp_path: Path) -> None:
-    """v8→v9 改写参考生视频的脚本规划草稿：打不开的草稿原样留下，不拒绝整个项目。
-
-    草稿已是新名，之后的 v9→v10 改名不碰它；旧名草稿打不开时改名前的备份同样读不出，那一步照旧失败。
-    """
-    project_dir = write_legacy_reference_video_project(tmp_path / "projects", schema_version=8)
-    draft = project_dir / "drafts" / "episode_1" / "script_plan_reference_units.json"
-    draft.write_text(json.dumps({"video_units": []}), encoding="utf-8")
-    content = draft.read_bytes()
-    draft.chmod(0)
-    try:
-        _migrate(project_dir)
-    finally:
-        draft.chmod(0o644)
-
-    assert draft.read_bytes() == content
-
-
-@pytest.mark.skipif(
-    os.name != "posix" or os.geteuid() == 0, reason="needs POSIX permissions that the current user cannot bypass"
-)
-def test_a_video_whose_selected_snapshot_cannot_be_opened_is_reported(tmp_path: Path) -> None:
-    project_dir = _write_storyboard_project_with_a_video(tmp_path)
-    versions = _read_json(project_dir / "versions" / "versions.json")
-    snapshot = project_dir / versions["videos"]["E1S1"]["versions"][0]["file"]
-    snapshot.chmod(0)
-    try:
-        if os.access(snapshot, os.R_OK):
-            pytest.skip("running with privileges that ignore file permissions")
-        _migrate(project_dir)
-    finally:
-        snapshot.chmod(0o644)
-
-    assert ("episode-video", "videos/scene_E1S1.mp4") in _skipped(project_dir)
-
-
-@pytest.mark.parametrize(
-    "unreadable",
-    [
-        pytest.param('{"episode": 1, "segments": [', id="not-json"),
-        pytest.param("[]", id="root-not-an-object"),
-    ],
-)
-def test_adjustments_survive_a_chain_that_fails_and_is_retried(tmp_path: Path, unreadable: str) -> None:
-    project_dir, *_ = _project(tmp_path)
-    add_duplicate_ledger_entry(project_dir, 1, "episode_1_copy.json")
+def test_a_storyboard_referencing_an_asset_without_a_sheet_is_still_registered_on_import(tmp_path: Path) -> None:
+    """分镜引用的角色没有资产图：缺口只拦生成，导入激活照常登记这张分镜图，报告里不列它。"""
+    project_dir = _project(tmp_path)
+    project = _read_json(project_dir / "project.json")
+    project["characters"]["李四"] = {"description": "配角"}
+    (project_dir / "project.json").write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
     script_path = project_dir / "scripts" / "episode_1.json"
-    script_bytes = script_path.read_bytes()
-    # 剧本读不出仍拒绝整个项目：链停在半路，已做的规整写进未完成的报告。
-    script_path.write_text(unreadable, encoding="utf-8")
+    script = _read_json(script_path)
+    script["segments"][0]["characters_in_segment"] = ["李四"]
+    script_path.write_text(json.dumps(script, ensure_ascii=False), encoding="utf-8")
+    write_unreadable_grid_record(project_dir)
 
-    assert migrate_project_with_verdict(project_dir) is not None
+    _, imported, report = _import_report(tmp_path, project_dir)
+
+    assert [item for item in report.skipped if item.kind == "episode-storyboard"] == []
+    assert ArtifactKey.episode_storyboard(1, "E1S01") in ProjectArtifactManifestAdapter(imported).snapshot_entries()
+
+
+def test_adjustments_survive_a_chain_that_fails_and_is_retried(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    project_dir = _project(tmp_path)
+    add_colliding_asset_name(project_dir, "characters", "阿离")
+
+    def fail(_step: Any, _project_dir: Path, **_kwargs: Any) -> object:
+        raise ProjectMigrationError("the step after the normalization failed", file="project.json")
+
+    # 规整之后那一步失败：链停在半路，已做的规整写进未完成的报告。
+    with monkeypatch.context() as patch:
+        wrap_the_last_migration_step(patch, fail)
+        assert migrate_project_with_verdict(project_dir) is not None
     unfinished = load_migration_report(project_dir)
     assert unfinished is not None
     assert not unfinished.complete
-    assert [item.code for item in unfinished.adjusted] == ["duplicate_episode_entry_removed"]
+    assert [item.code for item in unfinished.adjusted] == ["duplicate_asset_removed"]
 
-    script_path.write_bytes(script_bytes)
     _migrate(project_dir)
 
-    assert [code for code, *_ in _adjusted(project_dir)] == ["duplicate_episode_entry_removed"]
-
-
-def test_an_unreadable_script_under_a_noncanonical_binding_stays_where_it_is(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    bind_episode_script_to_filename(project_dir, 1, "custom.json")
-    bound = project_dir / "scripts" / "custom.json"
-    bound.write_text('{"episode": 1, "segments": [', encoding="utf-8")
-    unreadable = bound.read_bytes()
-
-    # 剧本读不出照旧拒绝整个项目；规整不挪它、也不改绑，拒绝点名的仍是盘上原来的文件。
-    assert migrate_project_with_verdict(project_dir) is not None
-
-    assert bound.read_bytes() == unreadable
-    assert not (project_dir / "scripts" / "episode_1.json").exists()
-    [entry] = _read_json(project_dir / "project.json")["episodes"]
-    assert entry["script_file"] == "scripts/custom.json"
+    assert [code for code, *_ in _adjusted(project_dir)] == ["duplicate_asset_removed"]
 
 
 def test_adjustments_already_on_disk_survive_a_normalization_that_fails_halfway(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     set_script_episode(project_dir, 1, None)
     break_script_item_ids(project_dir, 1)
     write = legacy_shapes.atomic_write_json
@@ -1462,16 +1214,15 @@ def test_adjustments_survive_a_last_step_that_fails_after_committing_the_current
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """最后一步写下当前版本后才失败：重跑不再进链，未完成的报告补写成完成的报告，照常显示。"""
-    project_dir, *_ = _project(tmp_path)
-    add_duplicate_ledger_entry(project_dir, 1, "episode_1_copy.json")
-    last_step = runner.MIGRATORS[CURRENT_PROJECT_SCHEMA_VERSION - 1]
+    project_dir = _project(tmp_path)
+    add_colliding_asset_name(project_dir, "characters", "阿离")
 
-    def commit_then_fail(path: Path) -> object:
-        last_step(path)
+    def commit_then_fail(step: Any, path: Path, **kwargs: Any) -> object:
+        step(path, **kwargs)
         raise OSError("disk full")
 
     with monkeypatch.context() as patch:
-        patch.setitem(runner.MIGRATORS, CURRENT_PROJECT_SCHEMA_VERSION - 1, commit_then_fail)
+        wrap_the_last_migration_step(patch, commit_then_fail)
         assert migrate_project_with_verdict(project_dir) is not None
     assert _read_json(project_dir / "project.json")["schema_version"] == CURRENT_PROJECT_SCHEMA_VERSION
     assert visible_migration_report(project_dir) is None
@@ -1481,16 +1232,15 @@ def test_adjustments_survive_a_last_step_that_fails_after_committing_the_current
     report = visible_migration_report(project_dir)
     assert report is not None
     assert report.to_schema_version == CURRENT_PROJECT_SCHEMA_VERSION
-    assert [code for code, *_ in _adjusted(project_dir)] == ["duplicate_episode_entry_removed"]
+    assert [code for code, *_ in _adjusted(project_dir)] == ["duplicate_asset_removed"]
 
 
 def test_adjustments_survive_a_failed_final_report_write_and_show_after_the_next_startup(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """链走完、收尾那次写报告失败：调整与跳过留在未完成的报告里，下次启动扫描时补写成完成的报告。"""
-    project_dir, *_ = _project(tmp_path)
-    add_duplicate_ledger_entry(project_dir, 1, "episode_1_copy.json")
-    write_unreadable_grid_record(project_dir)
+    """链走完、收尾那次写报告失败：调整留在未完成的报告里，下次启动扫描时补写成完成的报告。"""
+    project_dir = _project(tmp_path)
+    add_colliding_asset_name(project_dir, "characters", "阿离")
     write = runner.write_migration_report
 
     def fail_complete_report(path: Path, report: MigrationReport) -> None:
@@ -1509,167 +1259,11 @@ def test_adjustments_survive_a_failed_final_report_write_and_show_after_the_next
 
     assert summary.skipped == [project_dir.name]
     assert visible_migration_report(project_dir) is not None
-    assert [code for code, *_ in _adjusted(project_dir)] == ["duplicate_episode_entry_removed"]
-    assert ("episode-grid", "grids/grid_0123456789ab.json") in _skipped(project_dir)
-
-
-def test_an_unreadable_script_two_episodes_share_keeps_both_bindings(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    share_episode_script(project_dir, 1, with_episode=2)
-    (project_dir / "scripts" / "episode_1.json").write_text('{"episode": 1, "segments": [', encoding="utf-8")
-    ledger = _read_json(project_dir / "project.json")["episodes"]
-
-    # 剧本读不出照旧拒绝整个项目；规整不拆绑定，账本原样留下。
-    assert migrate_project_with_verdict(project_dir) is not None
-
-    assert _read_json(project_dir / "project.json")["episodes"] == ledger
-
-
-_CROSSED = {1: "episode_2.json", 2: "custom.json"}
-_SWAPPED = {1: "episode_2.json", 2: "episode_1.json"}
-
-
-@pytest.mark.parametrize(
-    ("filenames", "ledger_order"),
-    [
-        pytest.param(_CROSSED, [2, 1], id="crossed-later-episode-first"),
-        pytest.param(_CROSSED, [1, 2], id="crossed-earlier-episode-first"),
-        pytest.param(_SWAPPED, [1, 2], id="swapped"),
-    ],
-)
-def test_crossed_bindings_each_land_on_their_own_canonical_script(
-    tmp_path: Path, filenames: dict[int, str], ledger_order: list[int]
-) -> None:
-    project_dir, *_ = _project(tmp_path)
-    cross_bind_episode_scripts(project_dir, filenames, ledger_order=ledger_order)
-
-    _migrate(project_dir)
-
-    for episode, title in ((1, "第一集"), (2, "第2集")):
-        script = _read_json(project_dir / "scripts" / f"episode_{episode}.json")
-        assert (script["episode"], script["title"]) == (episode, title)
-    # 没有剧本被挪成保留副本，交叉挪动的临时名也没留下。
-    leftovers = [path.name for path in (project_dir / "scripts").iterdir() if ".bak." not in path.name]
-    assert sorted(leftovers) == ["episode_1.json", "episode_2.json"]
-    report = load_migration_report(project_dir)
-    assert report is not None
-    # 改绑按挪动的先后提交，报告也按这个顺序记。
-    assert sorted((item.code, item.episode, item.backup) for item in report.adjusted) == [
-        ("script_binding_canonicalized", 1, None),
-        ("script_binding_canonicalized", 2, None),
-    ]
-
-
-def test_records_pointing_at_swapped_bindings_follow_their_own_episode(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
-    cross_bind_episode_scripts(project_dir, _SWAPPED, ledger_order=[1, 2])
-    versions_path = project_dir / "versions" / "versions.json"
-    versions_path.parent.mkdir(exist_ok=True)
-    versions_path.write_text(
-        json.dumps(
-            {
-                "videos": {
-                    resource_id: {"versions": [{"version": 1, "execution_script_file": bound}]}
-                    for resource_id, bound in (("E1S01", "episode_2.json"), ("E2S01", "scripts/episode_1.json"))
-                }
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    normalize_legacy_shapes(project_dir, schema_version=7, record=[])
-
-    videos = _read_json(versions_path)["videos"]
-    # 写回不带目录的文件名，与生成任务、宫格请求写下的形态一致。
-    assert {
-        resource_id: resource["versions"][0]["execution_script_file"] for resource_id, resource in videos.items()
-    } == {
-        "E1S01": "episode_1.json",
-        "E2S01": "episode_2.json",
-    }
-
-
-@pytest.mark.parametrize(
-    ("filenames", "interrupted_at"),
-    [
-        pytest.param(_CROSSED, 1, id="crossed-after-first-move"),
-        pytest.param(_CROSSED, 2, id="crossed-after-second-move"),
-        pytest.param(_SWAPPED, 1, id="swapped-after-staging"),
-        pytest.param(_SWAPPED, 2, id="swapped-after-first-move"),
-        pytest.param(_SWAPPED, 3, id="swapped-after-second-move"),
-    ],
-)
-def test_a_rebind_interrupted_between_a_move_and_its_commit_finishes_on_retry(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, filenames: dict[int, str], interrupted_at: int
-) -> None:
-    project_dir, *_ = _project(tmp_path)
-    cross_bind_episode_scripts(project_dir, filenames, ledger_order=[2, 1])
-    write = legacy_shapes.atomic_write_json
-    commits = 0
-
-    def interrupt(path: Path, payload: Any) -> None:
-        nonlocal commits
-        # 数改绑提交而不是 project.json 的写盘次数：别的步骤多写一次，中断点也不会错位。
-        if _commits_a_rebind(path, payload):
-            commits += 1
-            if commits == interrupted_at:
-                # 每挪一次剧本就提交一次账本：剧本已挪到位、账本还没改，进程在这里停下。
-                raise KeyboardInterrupt
-        write(path, payload)
-
-    with monkeypatch.context() as patch:
-        patch.setattr(legacy_shapes, "atomic_write_json", interrupt)
-        with pytest.raises(KeyboardInterrupt):
-            normalize_legacy_shapes(project_dir, schema_version=7, record=[])
-
-    _migrate(project_dir)
-
-    for episode, title in ((1, "第一集"), (2, "第2集")):
-        script = _read_json(project_dir / "scripts" / f"episode_{episode}.json")
-        assert (script["episode"], script["title"]) == (episode, title)
-    leftovers = [path.name for path in (project_dir / "scripts").iterdir() if ".bak." not in path.name]
-    assert sorted(leftovers) == ["episode_1.json", "episode_2.json"]
-    # 中断前已改绑到临时名的集，报告仍写原来的绑定。
-    report = load_migration_report(project_dir)
-    assert report is not None
-    for item in report.adjusted:
-        if item.code == "script_binding_canonicalized":
-            assert item.episode is not None
-            assert item.params["from"] == f"scripts/{filenames[item.episode]}"
-
-
-def test_a_kept_copy_made_before_a_failed_rebind_commit_stays_in_the_report(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    project_dir, *_ = _project(tmp_path)
-    bind_episode_script_to_filename(project_dir, 1, "custom.json")
-    stray = project_dir / "scripts" / "episode_1.json"
-    stray.write_text('{"episode": 1, "title": "游离的旧稿", "segments": []}', encoding="utf-8")
-    stray_bytes = stray.read_bytes()
-
-    write = legacy_shapes.atomic_write_json
-
-    def fail_on_rebind_commit(path: Path, payload: Any) -> None:
-        if _commits_a_rebind(path, payload):
-            raise OSError("disk full")
-        write(path, payload)
-
-    # 规范路径上的旧稿已挪成保留副本、剧本也挪到位，提交账本时失败。
-    with monkeypatch.context() as patch:
-        patch.setattr(legacy_shapes, "atomic_write_json", fail_on_rebind_commit)
-        assert migrate_project_with_verdict(project_dir) is not None
-
-    _migrate(project_dir)
-
-    report = load_migration_report(project_dir)
-    assert report is not None
-    [adjustment] = [item for item in report.adjusted if item.code == "script_binding_canonicalized"]
-    assert adjustment.backup is not None
-    assert (project_dir / adjustment.backup).read_bytes() == stray_bytes
+    assert [code for code, *_ in _adjusted(project_dir)] == ["duplicate_asset_removed"]
 
 
 def test_the_status_shows_the_report_until_it_is_acknowledged(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = _project(tmp_path)
     add_colliding_asset_name(project_dir, "characters", "阿离")
     _migrate(project_dir)
     service = WorkflowStateService(ProjectManager(str(tmp_path)))

@@ -170,9 +170,6 @@ MESSAGES = {
     "arch_invalid_script_json": "Не удалось разобрать файл сценария: {path}",
     "arch_deprecated_source_file_removed": "Поле novel.source_file устарело и было удалено",
     "arch_deprecated_field_removed": "Поле {field} устарело (теперь вычисляется при чтении) и было удалено",
-    "arch_deprecated_clue_field_removed": (
-        "{items_key}[{index}]: устаревшее поле {field} удалено (используйте scenes/props)"
-    ),
     "arch_missing_field_filled": "{items_key}[{index}]: добавлено отсутствующее поле {field}",
     "arch_unit_unresolved_mentions": (
         "video_units[{index}]: в тексте упоминаются названия материалов, отсутствующие в project.json: {names}; "
@@ -194,6 +191,9 @@ MESSAGES = {
     "arch_import_validation_failed": "Проверка пакета для импорта не пройдена",
     "arch_artifact_activation_failed": "Состояние материалов импортированного проекта несогласовано: {reason}",
     "arch_project_migration_failed": "Данные проекта в архиве нельзя обновить до текущей версии: {reason}",
+    "arch_project_schema_unsupported": (
+        "Проект в архиве использует версию схемы {version}. Эта версия импортирует только проекты со схемой {minimum} и новее. Сначала откройте проект в исходной версии ArcReel, дайте ему обновиться до схемы {minimum} или новее, затем экспортируйте его заново и импортируйте новый архив"
+    ),
     "arch_import_confirmation_required": "При обновлении архива изменилась часть содержимого. Подтвердите импорт",
     "arch_not_a_zip": "Загруженный файл не является допустимым ZIP-архивом",
     "arch_zip_encrypted_entry": "ZIP содержит зашифрованную запись, импорт невозможен: {name}",

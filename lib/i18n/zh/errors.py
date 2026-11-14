@@ -26,6 +26,7 @@ MESSAGES = {
     "operation_draft_action": "草稿：{path}。{action}",
     "operation_episode_source_location": "集原文位置：{path}；由分集规划切出的集经 plan_episodes 生成。",
     "project_migration_failed": "项目 '{name}' 的数据升级未完成，暂时无法生成内容。原因：{reason}。请在 Agent 对话中修复后重试升级",
+    "project_schema_unsupported": "项目 '{name}' 的 schema 版本是 {version}，本版本只能打开 {minimum} 及以上的项目，暂时无法生成内容。请先在上游 ArcReel 中打开这个项目，让它升级到 schema {minimum} 或更高版本，导出后再导入这里",
     "project_not_found": "项目 '{name}' 不存在或未初始化",
     "resource_not_found": "请求的资源不存在",
     "prompt_template_not_found": "提示词模版 '{id}' 不存在",

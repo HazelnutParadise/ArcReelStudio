@@ -11,6 +11,7 @@ import pytest
 import server.app as app_module
 from lib.infra.data_root_layout import DataRootLayout
 from lib.project.project_manager import ProjectManager
+from lib.project.project_migration_failure import MIGRATION_FAILURE_FILENAME, SCHEMA_UNSUPPORTED_CODE
 from lib.project.project_migrations.runner import CURRENT_SCHEMA_VERSION
 from tests.unit.server.app_lifespan_support import stub_lifespan_dependencies
 
@@ -24,10 +25,12 @@ def _seed_stale_project(projects_root: Path) -> tuple[Path, Path]:
     project_dir = projects_root / "p1"
     project_dir.mkdir(parents=True)
     (project_dir / "project.json").write_text(
-        json.dumps({"schema_version": 1, "name": "p1", "video_backend": "seedance/x", "image_backend": "vertex/y"}),
+        json.dumps(
+            {"schema_version": 19, "name": "p1", "video_backend": "ark", "image_provider_t2i": "openai/gpt-image-2"}
+        ),
         encoding="utf-8",
     )
-    stale_backup = project_dir / "project.json.bak.v1-100000000"
+    stale_backup = project_dir / "project.json.bak.v19-100000000"
     stale_backup.write_text("recovery", encoding="utf-8")
     expired = time.time() - 8 * 86400
     os.utime(stale_backup, (expired, expired))
@@ -138,3 +141,34 @@ async def test_catalog_layers_load_before_project_migrations(tmp_path, monkeypat
 
     # 三层按叠加顺序装入（官方数据 → 用户修改的条目 → 用户添加的模型），迁移最后跑
     assert events == ["synced-data", "user-entries", "user-added-models", "project-migrations"]
+
+
+@pytest.mark.asyncio
+async def test_startup_leaves_a_project_older_than_the_minimum_schema_untouched(tmp_path, monkeypatch):
+    """早于最低版本的项目：源文件编码迁移与 schema 迁移都不碰它，只在项目旁写下「版本过旧」的裁决。"""
+    data_root = tmp_path / "data"
+    project_dir = DataRootLayout(data_root).projects_dir / "old"
+    (project_dir / "source").mkdir(parents=True)
+    (project_dir / "project.json").write_text(json.dumps({"schema_version": 18, "name": "old"}), encoding="utf-8")
+    (project_dir / "source" / "novel.txt").write_bytes("春天来了".encode("gbk"))
+    before = {
+        path.relative_to(project_dir).as_posix(): path.read_bytes() for path in project_dir.rglob("*") if path.is_file()
+    }
+
+    monkeypatch.setenv("ARCREEL_DATA_DIR", str(data_root))
+    monkeypatch.setattr("lib.project.project_manager.get_project_manager", lambda: ProjectManager(data_root))
+    stub_lifespan_dependencies(monkeypatch)
+    monkeypatch.setattr(app_module, "migrate_local_transcripts_to_store", _noop_async)
+
+    app = app_module.app
+    app.state = SimpleNamespace()
+
+    async with app_module.lifespan(app):
+        pass
+
+    after = {path: project_dir.joinpath(path).read_bytes() for path in before}
+    assert after == before
+    assert not (project_dir / ".arcreel").exists()
+    assert not (project_dir / "source" / "raw").exists()
+    verdict = json.loads((project_dir / MIGRATION_FAILURE_FILENAME).read_text(encoding="utf-8"))
+    assert verdict["code"] == SCHEMA_UNSUPPORTED_CODE

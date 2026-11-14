@@ -298,6 +298,8 @@ export default {
   'action_patch_episode_script': 'correct the script fields listed below',
   'action_create_edit_timeline': 'create an edit timeline and let the Agent edit it',
   'action_retry_project_migration': 'fix the reported project files, then retry the data upgrade',
+  'action_upgrade_project_upstream':
+    'open the project in upstream ArcReel so it upgrades, export it, then import the archive here',
 
   // ---- Problem summaries ----
   'problem_generation_unit_not_found': 'This unit is no longer in the script.',
@@ -333,6 +335,8 @@ export default {
   'problem_parse_failed': "This unit's dialogue can't be read; check how it is written.",
   'problem_empty_speaker': 'This unit has a line with no speaking character.',
   'problem_project_migration_failed': "The project's data upgrade didn't finish, so nothing can be generated yet.",
+  'problem_project_schema_unsupported':
+    "This project's data comes from an older version that can't be upgraded here. Upgrade it in upstream ArcReel first.",
   'problem_video_audio_switch_not_supported': 'The selected video model always produces audio and cannot mute it.',
   'problem_reference_capability_changed': "The reference assets don't match the declared generation method.",
   'problem_reference_duration_confirmation_required':
@@ -356,6 +360,7 @@ export default {
   'problem_fallback_repair_artifact_state': "The state of the existing output can't be read.",
   'problem_fallback_retry_artifact_download': "The output was generated but hasn't been retrieved.",
   'problem_fallback_retry_project_migration': "The project's data upgrade didn't finish.",
+  'problem_fallback_upgrade_project_upstream': "This project's data is too old to upgrade here.",
   'problem_fallback_none': "This unit can't be generated right now.",
   'problem_fallback_unknown': "This unit can't be generated right now.",
 };

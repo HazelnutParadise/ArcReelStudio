@@ -238,7 +238,7 @@ class _EpisodePM:
         (scripts_dir / "episode_1.json").write_text(
             json.dumps(self.script_payload, ensure_ascii=False), encoding="utf-8"
         )
-        activate_artifact_target_state(self._project_dir, bump_schema=False)
+        activate_artifact_target_state(self._project_dir)
 
     def load_project(self, _name: str) -> dict[str, Any]:
         return self.project_payload

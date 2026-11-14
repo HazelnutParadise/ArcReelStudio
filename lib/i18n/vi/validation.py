@@ -174,9 +174,6 @@ MESSAGES = {
     "arch_invalid_script_json": "Không phân tích được tệp kịch bản: {path}",
     "arch_deprecated_source_file_removed": "Trường novel.source_file đã ngừng dùng và đã được xóa",
     "arch_deprecated_field_removed": "{field} đã ngừng dùng (nay được tính khi đọc) và đã được xóa",
-    "arch_deprecated_clue_field_removed": (
-        "{items_key}[{index}]: đã xóa trường ngừng dùng {field} (hãy dùng scenes/props)"
-    ),
     "arch_missing_field_filled": "{items_key}[{index}]: đã bổ sung trường còn thiếu {field}",
     "arch_unit_unresolved_mentions": (
         "video_units[{index}]: nội dung tham chiếu tên tài sản không có trong project.json: {names}; "
@@ -198,6 +195,9 @@ MESSAGES = {
     "arch_import_validation_failed": "Kiểm tra gói nhập thất bại",
     "arch_artifact_activation_failed": "Trạng thái sản phẩm của dự án nhập không nhất quán: {reason}",
     "arch_project_migration_failed": "Không thể nâng cấp dữ liệu dự án trong gói lên phiên bản hiện tại: {reason}",
+    "arch_project_schema_unsupported": (
+        "Dự án trong gói dùng phiên bản schema {version}. Phiên bản này chỉ nhập được dự án có schema {minimum} trở lên. Hãy mở dự án trong ArcReel bản gốc trước, để nó nâng cấp lên schema {minimum} hoặc mới hơn, rồi xuất lại và nhập gói mới"
+    ),
     "arch_import_confirmation_required": "Khi nâng cấp gói, một số nội dung đã được điều chỉnh. Hãy xác nhận trước khi nhập",
     "arch_not_a_zip": "Tệp tải lên không phải gói ZIP hợp lệ",
     "arch_zip_encrypted_entry": "ZIP chứa mục đã mã hóa nên không thể nhập: {name}",

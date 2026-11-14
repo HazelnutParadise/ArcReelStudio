@@ -158,7 +158,7 @@ class DataValidator:
     # 合法集真相源在 lib.agent.profile_manifest，避免两处枚举漂移。
     VALID_CONTENT_MODES: ClassVar[set[str]] = set(_VALID_CONTENT_MODES)
     # 生成模式合法集（storyboard / reference_video），真相源在 lib.project.project_manager（创建写入方），
-    # 避免两处枚举漂移。必填：存量项目由 v4→v5 迁移补写显式值，缺失即非法。
+    # 避免两处枚举漂移。必填：缺失即非法。
     VALID_GENERATION_MODES: ClassVar[set[str]] = set(_VALID_GENERATION_MODES)
     # 参考生视频 unit 时长的结构合理性区间，真相源同上（档位成员校验依赖运行时模型能力，
     # 不在归档层做）。
@@ -418,7 +418,7 @@ class DataValidator:
                 _m("val_content_mode_invalid", value=content_mode, allowed=_allowed(self.VALID_CONTENT_MODES))
             )
 
-        # 生成模式必填二值：存量项目由 v4→v5 迁移补写显式值（含 grid 重编码），无缺省语义
+        # 生成模式必填二值，无缺省语义；宫格项目落盘为 storyboard + grid_storyboard
         generation_mode = project.get("generation_mode")
         if not generation_mode:
             errors.append(_m("val_missing_field", field="generation_mode"))
@@ -467,7 +467,7 @@ class DataValidator:
         self._validate_ad_project_fields(project, content_mode, errors)
 
         # 风格不是必填：缺失与空串都是合法状态（未选风格、自定义风格图）。出现即须为字符串，
-        # 显式 null 也不行：v13→v14 迁移把非字符串值原样保留，等这里报告，产物规划遇到会直接抛错。
+        # 显式 null 也不行：非字符串值由这里报告，产物规划遇到会直接抛错。
         # 选定了风格模版时 style 必须是展开快照（ADR 0023），空快照会让生成端丢掉已选的风格；
         # 模版 id 为空串与 null 同义（创建接口按真值判定是否展开模版）。
         style = project.get("style")
@@ -1643,8 +1643,8 @@ class DataValidator:
                     default_dir="scripts",
                     # 账本条目的 script_file 是前瞻性契约（剧本生成时回填真实值），
                     # 拆分先于剧本存在是设计内状态；路径越界仍照常报错。ledger_status 不
-                    # 参与判定——v2→v3 迁移不再回填该字段，老项目升级后的条目可能永远
-                    # 没有 ledger_status，形状合法（集号可解析为正整数）即视为正常账本条目
+                    # 参与判定——条目可能没有 ledger_status，形状合法（集号可解析为正整数）
+                    # 即视为正常账本条目
                     missing_ok=parse_positive_episode_num(episode_meta.get("episode")) is not None,
                 )
                 if not resolved_path:

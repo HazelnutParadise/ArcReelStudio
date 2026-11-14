@@ -19,6 +19,7 @@ import { ProjectStatusBar } from "./ProjectStatusBar";
 const SUMMARY: ProjectStatus = {
   needs_repair: false,
   repair_reason: null,
+  repair_code: null,
   assets: {},
   episodes_summary: { total: 3, scripted: 2, in_production: 1, completed: 1 },
   source_remaining: false,
@@ -305,6 +306,29 @@ describe("ProjectStatusBar", () => {
     expect(await screen.findByText("1/3 集")).toBeInTheDocument();
     expect(screen.queryByText("数据升级没有完成")).not.toBeInTheDocument();
     expect(useAppStore.getState().toast?.text).toBe("数据升级已完成，生成功能已恢复。");
+  });
+
+  it("tells the user to upgrade a too-old project upstream instead of offering a retry", async () => {
+    setProject({
+      ...SUMMARY,
+      needs_repair: true,
+      repair_reason: "schema version 18 is older than v19",
+      repair_code: "project_schema_unsupported",
+    });
+    const getStatus = vi.spyOn(API, "getWorkflowStatus").mockReturnValue(new Promise(() => {}));
+    const retry = vi.spyOn(API, "retryProjectMigration");
+    renderBar();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "项目版本过旧" }));
+
+    expect(screen.getByText("这个项目需要先在上游升级")).toBeInTheDocument();
+    expect(screen.getByText(/在上游 ArcReel 中打开这个项目/)).toBeInTheDocument();
+    expect(screen.getByText("schema version 18 is older than v19")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "重试" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "交给 Agent 排查" })).not.toBeInTheDocument();
+    expect(retry).not.toHaveBeenCalled();
+    expect(getStatus).not.toHaveBeenCalled();
   });
 
   it("warns instead of reporting success when the refresh after a successful retry fails", async () => {

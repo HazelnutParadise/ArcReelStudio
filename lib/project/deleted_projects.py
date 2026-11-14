@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -22,8 +23,7 @@ from typing import Any
 from lib.db.repositories.project_records import parse_deleted_project_name
 from lib.infra.api_errors import NotFoundError
 from lib.infra.data_root_layout import PROJECT_FILENAME, DataRootLayout
-from lib.project.project_migrations.runner import RecordedEpisodeIds, migrate_project_with_verdict
-from lib.project.project_migrations.staged_swap import tree_size
+from lib.project.project_migrations.runner import migrate_project_with_verdict
 from lib.project.project_trash import RETENTION
 from lib.script.source_loader.migration import migrate_project_source_encoding_once
 
@@ -109,6 +109,27 @@ def list_entries(layout: DataRootLayout) -> list[DeletedProject]:
     return sorted(entries, key=lambda entry: (entry.deleted_at, entry.id), reverse=True)
 
 
+def tree_size(root: Path) -> int:
+    """目录树里文件占用的字节数，不跟随符号链接；读不到的条目跳过。"""
+    total = 0
+    stack = [root]
+    while stack:
+        current = stack.pop()
+        try:
+            entries = list(os.scandir(current))
+        except OSError:
+            continue
+        for entry in entries:
+            try:
+                if entry.is_dir(follow_symlinks=False):
+                    stack.append(Path(entry.path))
+                    continue
+                total += entry.stat(follow_symlinks=False).st_size
+            except OSError:
+                continue
+    return total
+
+
 def move_out(layout: DataRootLayout, entry_id: str) -> Path:
     """把已删除项目整体移回项目目录，返回恢复后的项目目录：原名空闲则沿用，被占用则加 ``-2``、``-3`` 后缀。"""
     source, name = _require(layout, entry_id)
@@ -125,13 +146,13 @@ def move_out(layout: DataRootLayout, entry_id: str) -> Path:
     return target
 
 
-def migrate_restored(project_dir: Path, *, recorded_episode_ids: RecordedEpisodeIds | None = None) -> None:
+def migrate_restored(project_dir: Path) -> None:
     """对恢复回来的项目走一遍启动时的迁移链：源文编码迁移，再升级到当前 schema。
 
     与启动时一样，迁移失败不抛出：裁决落在项目旁，生成入口据此拒绝工作，界面提示迁移失败。
     """
     migrate_project_source_encoding_once(project_dir)
-    migrate_project_with_verdict(project_dir, recorded_episode_ids=recorded_episode_ids)
+    migrate_project_with_verdict(project_dir)
 
 
 def purge(layout: DataRootLayout, entry_id: str) -> None:

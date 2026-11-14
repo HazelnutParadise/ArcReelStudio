@@ -1,7 +1,6 @@
 """Tests for formal_image_commit."""
 
 import asyncio
-import json
 import threading
 from typing import cast
 
@@ -14,7 +13,6 @@ from lib.artifacts.artifact_manifest import (
 )
 from lib.artifacts.generation_input import FrozenGenerationInput
 from lib.infra.api_errors import BadRequestError
-from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.services.tasks import formal_image_commit, generation_tasks
 from tests.fakes import hook_claim_recheck, stage_and_commit, use_generation_context, use_project_manager
 from tests.integration.server.services.tasks.generation_tasks_support import (
@@ -157,120 +155,6 @@ class TestGenerationTasks:
             )
 
         assert fake_generator.video_calls == []
-
-    def test_grid_completion_serializes_manifest_registration_with_schema_activation(self, tmp_path):
-        from lib.artifacts.artifact_activation import activate_artifact_target_state
-        from lib.artifacts.formal_write import project_metadata_lock
-        from lib.artifacts.version_manager import VersionManager
-        from lib.project.project_migrations.runner import migrate_project_dir
-        from lib.script.grid.grid_manager import GridManager
-        from lib.script.grid.models import GridGeneration
-
-        project_path = prepare_files(tmp_path)
-        fake_pm = _FakePM(project_path)
-        fake_pm.project.update(
-            {
-                "schema_version": 7,
-                "generation_mode": "storyboard",
-                "aspect_ratio": "9:16",
-                "episodes": [{"episode": 1, "script_file": "scripts/episode_1.json"}],
-            }
-        )
-        fake_pm.script["episode"] = 1
-        (project_path / "scripts").mkdir(exist_ok=True)
-        (project_path / "project.json").write_text(
-            json.dumps(fake_pm.project, ensure_ascii=False),
-            encoding="utf-8",
-        )
-        (project_path / "scripts" / "episode_1.json").write_text(
-            json.dumps(fake_pm.script, ensure_ascii=False),
-            encoding="utf-8",
-        )
-        grid = GridGeneration.create(
-            episode=1,
-            script_file="episode_1.json",
-            scene_ids=["E1S01"],
-            rows=1,
-            cols=1,
-            grid_size="grid_1",
-            provider="test",
-            model="test",
-            video_aspect_ratio="9:16",
-        )
-        grid.status = "generating"
-        manager = GridManager(project_path)
-        manager.save(grid)
-        staged = project_path / "grids" / f".{grid.id}.staged.png"
-        staged.write_bytes(b"paid-grid")
-        current = manager.image_path(grid.id)
-        basis = ArtifactBasis.build("test/grid", kind_version=1, inputs={"grid": grid.id})
-        outcomes = []
-        commit = formal_image_commit.grid_formal_image_callback(
-            project_path=project_path,
-            grid_manager=manager,
-            grid=grid,
-            resource_id=grid.id,
-            prompt="grid",
-            versions=VersionManager(project_path),
-            task_id=None,
-            basis=basis,
-            outcome_box=outcomes,
-        )
-
-        activation_started = threading.Event()
-        activation_done = threading.Event()
-        writer_started = threading.Event()
-        writer_done = threading.Event()
-        failures: list[BaseException] = []
-
-        def _activate() -> None:
-            activation_started.set()
-            try:
-                activate_artifact_target_state(project_path, bump_schema=True)
-            except Exception as exc:
-                failures.append(exc)
-            finally:
-                activation_done.set()
-
-        def _complete_grid() -> None:
-            writer_started.set()
-            try:
-                commit(staged, current, {})
-            except Exception as exc:
-                failures.append(exc)
-            finally:
-                writer_done.set()
-
-        # 互斥判据由「主线程持锁时对方进不来」双向给出：清单激活与形式产物提交各自在项目
-        # 元数据锁上排队，因而彼此也不可能交错。两段等待窗口都是单向否证——互斥若被破坏，
-        # 慢机上也可能因窗口内尚未跑完而漏报，但绝不会把守规矩的实现判成失败。
-        activation_thread = threading.Thread(target=_activate)
-        with project_metadata_lock(project_path):
-            activation_thread.start()
-            assert activation_started.wait(timeout=5)
-            assert not activation_done.wait(timeout=0.2), "清单激活没有在项目元数据锁上排队"
-        activation_thread.join(timeout=5)
-
-        # 清单激活只把项目送到 v8；形式产物注册要求当前 schema，剩余迁移由启动扫描跑完。
-        migrate_project_dir(project_path)
-
-        writer_thread = threading.Thread(target=_complete_grid)
-        with project_metadata_lock(project_path):
-            writer_thread.start()
-            assert writer_started.wait(timeout=5)
-            assert not writer_done.wait(timeout=0.2), "形式产物提交没有在项目元数据锁上排队"
-        writer_thread.join(timeout=5)
-
-        assert not activation_thread.is_alive()
-        assert not writer_thread.is_alive()
-        assert failures == []
-        assert (
-            json.loads((project_path / "project.json").read_text(encoding="utf-8"))["schema_version"]
-            == CURRENT_PROJECT_SCHEMA_VERSION
-        )
-        entry = ProjectArtifactManifestAdapter(project_path).get_entry(ArtifactKey.episode_grid(1, grid.id))
-        assert entry is not None
-        assert entry.basis_digest == basis.digest
 
     async def test_storyboard_rechecks_selected_manifest_claims_before_provider(self, tmp_path, monkeypatch):
         project_path = prepare_files(tmp_path)

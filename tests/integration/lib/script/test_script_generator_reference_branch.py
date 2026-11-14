@@ -77,7 +77,7 @@ def _activate_project_artifacts(project_dir: Path, episode: int = 1) -> None:
     source = project_dir / "source" / f"episode_{episode}.txt"
     source.parent.mkdir(parents=True, exist_ok=True)
     source.write_text("原文", encoding="utf-8")
-    activate_artifact_target_state(project_dir, bump_schema=False)
+    activate_artifact_target_state(project_dir)
 
 
 def _claim_character_sheet(project_dir: Path, name: str) -> None:

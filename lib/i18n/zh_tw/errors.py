@@ -26,6 +26,7 @@ MESSAGES = {
     "operation_draft_action": "草稿：{path}。{action}",
     "operation_episode_source_location": "集原文位置：{path}；由分集規劃切出的集經 plan_episodes 生成。",
     "project_migration_failed": "專案 '{name}' 的資料升級未完成，暫時無法生成內容。原因：{reason}。請在 Agent 對話中修復後重試升級",
+    "project_schema_unsupported": "專案 '{name}' 的 schema 版本是 {version}，這個版本只能開啟 {minimum} 以上的專案，暫時無法生成內容。請先在上游 ArcReel 開啟這個專案，讓它升級到 schema {minimum} 或更新的版本，匯出後再匯入這裡",
     "project_not_found": "專案 '{name}' 不存在或未初始化",
     "resource_not_found": "請求的資源不存在",
     "prompt_template_not_found": "提示詞範本 '{id}' 不存在",

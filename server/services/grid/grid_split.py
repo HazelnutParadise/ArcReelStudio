@@ -30,7 +30,6 @@ from lib.artifacts.visual_artifact_provenance import (
     VisualReference,
     build_grid_member_storyboard_visual_basis,
     build_stale_grid_member_storyboard_visual_basis,
-    project_basis_records_asset_names,
     project_basis_style_description,
     snapshot_visual_references,
     visual_file_digest,
@@ -336,7 +335,6 @@ async def _apply_grid_split(
                                 member_aspect_ratio=member_ratio,
                                 references=references,
                                 source_composite_digest=composite_digest,
-                                asset_names=project_basis_records_asset_names(current_project),
                             )
                         except OSError, TypeError, ValueError:
                             continue

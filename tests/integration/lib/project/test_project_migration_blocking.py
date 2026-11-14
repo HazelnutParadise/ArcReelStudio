@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -15,11 +16,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.routing import iter_route_contexts
 from fastapi.testclient import TestClient
 
-from lib.artifacts.artifact_activation import (
-    ARTIFACT_MANIFEST_SCHEMA_VERSION,
-    register_current_artifact,
-    register_current_artifact_if_provable,
-)
+from lib.artifacts.artifact_activation import register_current_artifact, register_current_artifact_if_provable
 from lib.artifacts.artifact_manifest import ArtifactKey
 from lib.generation.generation_queue import GenerationQueue
 from lib.generation.generation_result import GenerationAction, GenerationProblemCode
@@ -30,6 +27,7 @@ from lib.project.project_migration_failure import (
     MIGRATION_FAILURE_CODE,
     MIGRATION_FAILURE_FILENAME,
     RETRY_MIGRATION_ACTION,
+    ProjectMigrationError,
     load_migration_failure,
     record_migration_failure,
 )
@@ -54,10 +52,34 @@ from server.tool_runtime import (
     get_prompt_preview,
     retry_project_migration,
 )
+from tests.factories import wrap_the_last_migration_step
 from tests.fakes import use_project_manager
-from tests.integration.lib.project.project_migrations.test_project_migration_v7_v8 import _project
+from tests.legacy_project_shapes import write_v19_project
 
 _ORIGINAL_SCRIPTS: dict[Path, bytes] = {}
+_SCRIPT = "scripts/episode_1.json"
+
+
+@pytest.fixture(autouse=True)
+def _chain_refuses_an_unreadable_episode_script(monkeypatch: pytest.MonkeyPatch) -> None:
+    """让迁移链在第 1 集剧本读不出时带集号与文件拒绝项目。
+
+    v19→v20 只改 ``project.json``，盘上数据让它失败不了；这里在它之前补一道剧本检查，模拟一次说得出
+    原因与位置的迁移失败，用例断言的是失败之后阻断、重试与解除阻断的外部表现。
+    """
+
+    def around(step: Any, project_dir: Path, **kwargs: Any) -> object:
+        script = project_dir / _SCRIPT
+        if script.is_file():
+            try:
+                json.loads(script.read_bytes().decode("utf-8"))
+            except (UnicodeDecodeError, ValueError) as exc:
+                raise ProjectMigrationError(
+                    f"{_SCRIPT} is not valid UTF-8 JSON: {exc}", episode=1, file=_SCRIPT
+                ) from exc
+        return step(project_dir, **kwargs)
+
+    wrap_the_last_migration_step(monkeypatch, around)
 
 
 def _break_episode_script(project_dir: Path) -> None:
@@ -74,14 +96,14 @@ def _repair_episode_script(project_dir: Path) -> None:
 
 
 def test_failed_migration_records_the_offending_episode_and_file(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
 
     failure = migrate_project_with_verdict(project_dir)
 
     assert failure is not None
-    # 项目卡在清单激活这一步的起点版本上，不是迁移链的末端。
-    assert failure.schema_version == ARTIFACT_MANIFEST_SCHEMA_VERSION - 1
+    # 项目停在失败那一步的起点版本上，不是迁移链的末端。
+    assert failure.schema_version == CURRENT_PROJECT_SCHEMA_VERSION - 1
     assert failure.reason
     assert [(d.episode, d.file) for d in failure.details] == [(1, "scripts/episode_1.json")]
     assert "not valid UTF-8 JSON" in failure.details[0].violation
@@ -91,7 +113,7 @@ def test_failed_migration_records_the_offending_episode_and_file(tmp_path: Path)
 def test_startup_run_records_the_verdict_and_clears_it_once_repaired(tmp_path: Path) -> None:
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
 
     summary = run_project_migrations(projects_root)
@@ -109,7 +131,7 @@ def test_startup_run_records_the_verdict_and_clears_it_once_repaired(tmp_path: P
 def test_workflow_status_reports_exactly_one_blocker_with_the_raw_reason(tmp_path: Path) -> None:
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     failure = migrate_project_with_verdict(project_dir)
     assert failure is not None
@@ -124,7 +146,7 @@ def test_workflow_status_reports_exactly_one_blocker_with_the_raw_reason(tmp_pat
 async def test_workflow_plan_reports_exactly_one_problem_pointing_at_the_retry(tmp_path: Path) -> None:
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     failure = migrate_project_with_verdict(project_dir)
     assert failure is not None
@@ -144,7 +166,7 @@ async def test_workflow_plan_reports_exactly_one_problem_pointing_at_the_retry(t
 def test_project_status_marks_the_project_for_repair(tmp_path: Path) -> None:
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     failure = migrate_project_with_verdict(project_dir)
     assert failure is not None
@@ -160,7 +182,7 @@ def test_generation_entries_refuse_while_the_project_is_blocked(tmp_path: Path, 
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     assert migrate_project_with_verdict(project_dir) is not None
 
@@ -182,7 +204,7 @@ async def test_retry_tool_returns_details_then_unblocks_once_repaired(tmp_path: 
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     assert migrate_project_with_verdict(project_dir) is not None
 
@@ -212,7 +234,7 @@ def test_web_retry_reports_the_reason_then_unblocks_once_repaired(tmp_path: Path
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     assert migrate_project_with_verdict(project_dir) is not None
     pm = ProjectManager(str(tmp_path))
@@ -325,7 +347,7 @@ async def test_pending_asset_listing_reports_the_migration_problem_until_repaire
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     failure = migrate_project_with_verdict(project_dir)
     assert failure is not None
@@ -357,7 +379,7 @@ async def test_episode_script_reader_withholds_the_revision_until_the_migration_
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     failure = migrate_project_with_verdict(project_dir)
     assert failure is not None
@@ -391,7 +413,7 @@ async def test_prompt_preview_reports_the_full_migration_problem(tmp_path: Path)
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     failure = migrate_project_with_verdict(project_dir)
     assert failure is not None
@@ -425,12 +447,12 @@ async def test_mcp_guard_reads_the_session_projects_root_not_the_global_one(tmp_
 
     session_root = tmp_path / "session"
     session_root.mkdir()
-    session_dir, *_ = _project(session_root)
+    session_dir = write_v19_project(session_root / "projects")
     assert migrate_project_with_verdict(session_dir) is None
 
     global_root = tmp_path / "global"
     global_root.mkdir()
-    global_dir, *_ = _project(global_root)
+    global_dir = write_v19_project(global_root / "projects")
     _break_episode_script(global_dir)
     assert migrate_project_with_verdict(global_dir) is not None
 
@@ -456,7 +478,7 @@ def test_retry_keeps_the_project_blocked_when_the_chain_cannot_place_it(tmp_path
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     assert migrate_project_with_verdict(project_dir) is not None
 
@@ -474,7 +496,7 @@ def test_a_verdict_that_cannot_be_persisted_fails_loud(tmp_path: Path) -> None:
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     # 记录位置被一个目录占住：落盘那一步必然失败，且不依赖平台的权限语义。
     (project_dir / MIGRATION_FAILURE_FILENAME).mkdir()
@@ -486,7 +508,7 @@ def test_a_verdict_that_cannot_be_persisted_fails_loud(tmp_path: Path) -> None:
     # 只有循环真的继续了它才会被迁移。
     seed_root = tmp_path / "seed"
     seed_root.mkdir()
-    healthy_dir, *_ = _project(seed_root)
+    healthy_dir = write_v19_project(seed_root / "projects")
     healthy_dir.rename(projects_root / "healthy")
     summary = run_project_migrations(projects_root)
 
@@ -521,7 +543,7 @@ def test_rest_guard_refuses_writes_but_keeps_reads_open(tmp_path: Path, monkeypa
 
     projects_root = tmp_path / "projects"
     projects_root.mkdir()
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
     _break_episode_script(project_dir)
     assert migrate_project_with_verdict(project_dir) is not None
     use_project_manager(monkeypatch, ProjectManager(str(tmp_path)))
@@ -566,7 +588,7 @@ def test_every_guarded_router_route_can_name_its_project() -> None:
 
 
 def test_a_repaired_project_is_idempotent_to_retry(tmp_path: Path) -> None:
-    project_dir, *_ = _project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
 
     assert migrate_project_with_verdict(project_dir) is None
     # Already at the current schema: rerunning is a no-op success, not a second migration.

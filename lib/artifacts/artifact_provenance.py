@@ -81,14 +81,12 @@ def build_script_plan_request(
     return prompt_inputs, basis
 
 
-#: 脚本规划 basis 的 kind，以及它作为剧本 basis v2 输入时的键名。两个值都参与 digest 计算，而落盘
-#: 的 ``.arcreel_artifacts.json`` 只留 digest、不留输入，改值便无从重算：存量脚本规划产物会整体判成
-#: stale 并阻断下游生成。**值是持久化格式，与 manifest digest 兼容，不得随术语改名。** 剧本 basis
-#: v3 不以脚本规划为输入，输入键只供 v14→v15 迁移重算存量登记。
+#: 脚本规划 basis 的 kind。它参与 digest 计算，而落盘的 ``.arcreel_artifacts.json`` 只留 digest、不留
+#: 输入，改值便无从重算：存量脚本规划产物会整体判成 stale 并阻断下游生成。**值是持久化格式，与
+#: manifest digest 兼容，不得随术语改名。**
 SCRIPT_PLAN_BASIS_KIND = "structured-content/step1"
-SCRIPT_PLAN_BASIS_INPUT_KEY = "step1_content"
 
-#: 非 ad 剧本 basis 的 kind。同为持久化格式：v14→v15 迁移按它的历史版本识别存量登记。
+#: 非 ad 剧本 basis 的 kind。同为持久化格式。
 EPISODE_SCRIPT_BASIS_KIND = "structured-content/episode-script"
 
 

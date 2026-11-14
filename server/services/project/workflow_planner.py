@@ -20,9 +20,11 @@ from lib.generation.generation_result import (
 from lib.project.asset_types import ASSET_SPECS
 from lib.project.project_manager import ProjectManager, get_project_manager
 from lib.project.project_migration_failure import (
+    MIGRATION_BLOCKER_CODES,
     MIGRATION_FAILURE_CODE,
+    SCHEMA_UNSUPPORTED_CODE,
     MigrationFailureRecord,
-    load_migration_failure,
+    load_migration_verdict,
 )
 from lib.script.grid.grid_manager import GridManager
 from lib.script.reference_video.request_projection import ReferenceRequestOptions
@@ -87,7 +89,7 @@ class WorkflowPlanner:
             project_name,
             request.episode_id,
         )
-        blocked = next((b for b in status.blockers if b.code == MIGRATION_FAILURE_CODE), None)
+        blocked = next((b for b in status.blockers if b.code in MIGRATION_BLOCKER_CODES), None)
         if blocked is not None:
             # The migration verdict is the whole plan: nothing downstream can be
             # planned off inputs the migration itself refused.
@@ -124,15 +126,20 @@ class WorkflowPlanner:
     async def _migration_problem(self, project_name: str, blocker: WorkflowBlocker) -> GenerationProblem:
         """Re-read the verdict for the structured locations the blocker cannot carry.
 
-        The blocker already holds the code and the reason; only the record names
-        the offending episode and file. A verdict cleared between the two reads
+        The blocker already holds the code and the reason; only the verdict names
+        the offending episode and file, and the versions of a project too old to migrate. A verdict cleared between the two reads
         means a concurrent retry succeeded — the plan still reports the blocker
         it was built from, just without the per-location detail.
         """
 
-        failure = await asyncio.to_thread(lambda: load_migration_failure(self._pm.get_project_path(project_name)))
+        failure = await asyncio.to_thread(lambda: load_migration_verdict(self._pm.get_project_path(project_name)))
         if failure is None:
-            failure = MigrationFailureRecord(schema_version=-1, failed_at="", reason=blocker.reason)
+            failure = MigrationFailureRecord(
+                schema_version=-1,
+                failed_at="",
+                reason=blocker.reason,
+                code=SCHEMA_UNSUPPORTED_CODE if blocker.code == SCHEMA_UNSUPPORTED_CODE else MIGRATION_FAILURE_CODE,
+            )
         return migration_problem(failure)
 
     async def _script_facts(self, project_name: str, status: WorkflowStatus) -> _ScriptFacts | None:

@@ -215,7 +215,6 @@ from server.draft_workflow import (
 )
 from server.services.admission.prompt_preview import ItemPromptPreview, ScriptItemNotFound, preview_item_prompts
 from server.services.admission.video_batch_admission import generation_action_for
-from server.services.project.episode_id_records import recorded_episode_ids_on
 from server.services.project.narration_settings import NarrationSettingsInput, new_project_narration_fields
 from server.services.project.workflow_planner import WorkflowPlanner
 from server.services.tasks.episode_activity import episode_has_active_tasks
@@ -3793,11 +3792,7 @@ async def retry_project_migration(
 ) -> ToolOutcome[RetryProjectMigrationResult]:
     project_dir = await asyncio.to_thread(services.projects.get_project_path, scope.project_name)
     try:
-        failure = await _run_sync_transaction(
-            migrate_project_with_verdict,
-            project_dir,
-            recorded_episode_ids=recorded_episode_ids_on(asyncio.get_running_loop()),
-        )
+        failure = await _run_sync_transaction(migrate_project_with_verdict, project_dir)
         if failure is not None:
             return ToolOutcome(problem=_migration_tool_problem(failure))
         plan = await services.workflow_planner.get_plan(

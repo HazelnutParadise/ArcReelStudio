@@ -597,7 +597,7 @@ class TestGenerationTasks:
             encoding="utf-8",
         )
         fake_pm.load_script("demo", "episode_1.json")
-        assert activate_artifact_target_state(project_path, bump_schema=False) is True
+        assert activate_artifact_target_state(project_path) is True
         provider_submissions: list[str] = []
 
         class _SubmittingGenerator(FakeGenerator):

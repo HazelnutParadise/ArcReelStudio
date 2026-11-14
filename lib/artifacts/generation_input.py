@@ -40,7 +40,6 @@ from lib.artifacts.visual_artifact_provenance import (
     VisualReference,
     build_asset_sheet_visual_basis,
     build_storyboard_image_visual_basis,
-    project_basis_records_asset_names,
 )
 from lib.project.asset_derivatives import (
     DERIVATIVE_ASSET_TYPE,
@@ -180,8 +179,6 @@ class StoryboardImageSemantics:
     image_prompt: object
     style: str
     style_description: str
-    #: schema < 19 的项目沿用记资产名的依据口径（``project_basis_records_asset_names``）。
-    asset_names: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -387,7 +384,6 @@ def storyboard_image_input(
             image_prompt=image_prompt,
             style=style,
             style_description=style_description,
-            asset_names=project_basis_records_asset_names(project),
         ),
         canvas_ratio=canvas_ratio,
         references=tuple(assembly.references),
@@ -781,7 +777,6 @@ def _visual_basis(
                 aspect_ratio=canvas_ratio,
                 references=references,
                 absent=absent,
-                asset_names=semantics.asset_names,
             )
         case AssetSheetSemantics():
             return build_asset_sheet_visual_basis(

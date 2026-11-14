@@ -25,7 +25,7 @@ from lib.artifacts.version_manager import VersionManager
 from lib.artifacts.video_artifact_facts import VideoArtifactCurrencyFacts
 from lib.artifacts.visual_artifact_provenance import build_storyboard_video_artifact_visual_basis
 from lib.project.project_manager import ProjectManager
-from lib.project.project_migrations.v12_to_v13_legacy_media_provenance import migrate_v12_to_v13
+from lib.project.project_migrations.runner import migrate_project_dir
 from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from lib.speech.narration_delivery import TtsSynthesisSettings, build_narration_audio_basis, canonical_narration_text
 from lib.speech.speech_artifact_provenance import (
@@ -42,7 +42,7 @@ from server.services.presentation.presentation_read_model import (
 )
 from tests.factories import make_test_video, make_test_video_with_audio_tail, run_bundled_ffmpeg, wav_bytes
 from tests.fakes import private_tempdir
-from tests.legacy_project_shapes import advance_project_schema, write_legacy_storyboard_project
+from tests.legacy_project_shapes import write_legacy_storyboard_project
 
 
 class _SettingsResolver:
@@ -961,26 +961,40 @@ async def test_current_presentation_reselects_when_version_changes_during_media_
     assert persisted["video"]["version"] == 2
 
 
-async def test_legacy_video_materializes_after_the_provenance_backfill_migration(tmp_path: Path) -> None:
-    projects_root = tmp_path / "projects"
-    project_path = write_legacy_storyboard_project(projects_root, "legacy", unit_ids=("E1S1",))
-    advance_project_schema(project_path, to_version=12)
+def _legacy_read_model(tmp_path: Path) -> PresentationReadModelService:
     settings = TtsSynthesisSettings("openai", "tts-1", "alloy", 1.0)
 
     async def probe(_path: Path) -> float | None:
         return 4.0
 
-    read_model = PresentationReadModelService(
+    return PresentationReadModelService(
         ProjectManager(tmp_path),
         settings_resolver_factory=lambda _project_name, _project_path: _SettingsResolver(settings),
         duration_probe=probe,
     )
+
+
+async def test_a_video_version_without_typed_provenance_is_not_materialized(tmp_path: Path) -> None:
+    """选中的视频版本记录没有类型化来源字段（只有 version/file/prompt/created_at）时不物化呈现模型。"""
+    project_path = write_legacy_storyboard_project(tmp_path / "projects", "legacy", unit_ids=("E1S1",))
+    migrate_project_dir(project_path)
+    versions_path = project_path / "versions" / "versions.json"
+    versions = json.loads(versions_path.read_text(encoding="utf-8"))
+    for record in versions["videos"]["E1S1"]["versions"]:
+        for key in [key for key in record if key not in ("version", "file", "prompt", "created_at")]:
+            record.pop(key)
+    versions_path.write_text(json.dumps(versions, ensure_ascii=False), encoding="utf-8")
+
     with pytest.raises(PresentationUnavailableError, match="typed presentation provenance"):
-        await read_model.materialize_unit(
+        await _legacy_read_model(tmp_path).materialize_unit(
             project_name="legacy", resource_type="videos", resource_id="E1S1", variant="post_production"
         )
 
-    migrate_v12_to_v13(project_path)
+
+async def test_a_video_upgraded_from_schema_19_materializes(tmp_path: Path) -> None:
+    project_path = write_legacy_storyboard_project(tmp_path / "projects", "legacy", unit_ids=("E1S1",))
+    assert migrate_project_dir(project_path) is True
+    read_model = _legacy_read_model(tmp_path)
 
     presentation = await read_model.materialize_unit(
         project_name="legacy", resource_type="videos", resource_id="E1S1", variant="post_production"

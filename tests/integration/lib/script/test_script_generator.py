@@ -63,7 +63,7 @@ def _activate_project_artifacts(project_path: Path, episode: int = 1) -> None:
     source = project_path / "source" / f"episode_{episode}.txt"
     source.parent.mkdir(parents=True, exist_ok=True)
     source.write_text("原文", encoding="utf-8")
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
 
 
 def _valid_narration_response() -> dict:

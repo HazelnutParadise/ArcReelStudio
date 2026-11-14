@@ -2693,6 +2693,10 @@ export default {
     '问题出在项目文件本身，再次重试多半得到同样的结果。可以交给 Agent 排查修复，或者手动修好文件后再重试。',
   'migration_hand_to_agent': '交给 Agent 排查',
   'migration_retry_succeeded': '数据升级已完成，生成功能已恢复。',
+  'migration_unsupported_bar_title': '项目版本过旧',
+  'migration_unsupported_title': '这个项目需要先在上游升级',
+  'migration_unsupported_body':
+    '这个项目的数据来自较早的版本，这里无法升级它，生成功能暂时关闭。已有的脚本与画面照常可以查看。请先在上游 ArcReel 中打开这个项目，让它升级到新版本后导出，再把归档导入这里。',
   'lobby_card_progress': '已完成 {{completed}} / {{total}} 集',
   'lobby_filter_in_progress': '进行中',
   'lobby_filter_completed': '已完成',

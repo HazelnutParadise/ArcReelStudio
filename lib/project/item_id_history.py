@@ -92,12 +92,6 @@ def used_item_numbers(project_dir: Path) -> dict[int, set[int]]:
     return found
 
 
-def max_used_item_numbers(project_dir: Path) -> dict[int, int]:
-    """``{集 ID: 用过的最大主序号}``。"""
-
-    return {episode: max(numbers) for episode, numbers in used_item_numbers(project_dir).items() if numbers}
-
-
 def issue_landing_item_ids(project_dir: Path, project: Mapping[str, Any], script: dict[str, Any]) -> dict[str, str]:
     """生成产出落盘前给整份剧本的条目发号，就地改写并返回 ``{原 ID: 新 ID}``。
 
@@ -115,4 +109,4 @@ def issue_landing_item_ids(project_dir: Path, project: Mapping[str, Any], script
     return reissue_item_ids(entries, id_field, issuer)
 
 
-__all__ = ["issue_landing_item_ids", "max_used_item_numbers", "used_item_numbers"]
+__all__ = ["issue_landing_item_ids", "used_item_numbers"]

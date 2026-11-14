@@ -41,8 +41,9 @@ from lib.project.data_validator import DataValidator
 from lib.project.episode_asset_references import episode_referenced_assets
 from lib.project.project_manager import ProjectManager, is_reference_video_project
 from lib.project.project_migration_failure import (
-    MIGRATION_FAILURE_CODE,
     MIGRATION_FAILURE_FILENAME,
+    SCHEMA_UNSUPPORTED_CODE,
+    MigrationFailureCode,
     MigrationFailureRecord,
     load_migration_verdict,
 )
@@ -145,8 +146,9 @@ class WorkflowActionType(StrEnum):
     GENERATE_VIDEOS = "generate_videos"
     CREATE_EDIT_TIMELINE = "create_edit_timeline"
 
-    # 数据升级失败的项目在任何阶段都只报这一个动作
+    # 数据升级失败的项目在任何阶段都只报这一个动作；版本早于迁移链最低版本的项目只报后一个
     RETRY_PROJECT_MIGRATION = "retry_project_migration"
+    UPGRADE_PROJECT_UPSTREAM = "upgrade_project_upstream"
 
     # ``build_workflow_plan`` 投影时注入的动作
     PATCH_EPISODE_SCRIPT = "patch_episode_script"
@@ -368,6 +370,8 @@ class ProjectSummary(BaseModel):
     schema_version: Literal[2] = 2
     needs_repair: bool
     repair_reason: str | None
+    #: 阻断的裁决码：``project_migration_failed`` 可修复后重试，``project_schema_unsupported`` 须先在上游升级。
+    repair_code: MigrationFailureCode | None
     #: 按 ``ASSET_SPECS`` 的资产类型键给出资产图计数，新增资产类型自动进入投影。
     assets: dict[str, ArtifactCount]
     episodes_summary: EpisodesSummary
@@ -908,6 +912,7 @@ class WorkflowStateService:
         return ProjectSummary(
             needs_repair=False,
             repair_reason=None,
+            repair_code=None,
             assets=assets,
             episodes_summary=_episodes_summary(episode_summaries),
             episodes=episode_summaries,
@@ -1080,6 +1085,7 @@ class WorkflowStateService:
         return ProjectSummary(
             needs_repair=True,
             repair_reason=failure.reason,
+            repair_code=failure.code,
             assets={
                 asset_type: ArtifactCount(
                     total=_asset_bucket_total(project, spec.bucket_key),
@@ -1942,12 +1948,18 @@ class WorkflowStateService:
 def migration_blocker(failure: MigrationFailureRecord) -> WorkflowBlocker:
     """The one blocker a project whose migration failed reports everywhere."""
 
-    return WorkflowBlocker(code=MIGRATION_FAILURE_CODE, path=MIGRATION_FAILURE_FILENAME, reason=failure.reason)
+    return WorkflowBlocker(code=failure.code, path=MIGRATION_FAILURE_FILENAME, reason=failure.reason)
 
 
 def migration_next_action(failure: MigrationFailureRecord) -> WorkflowNextAction:
-    """Repair the reported inputs, then rerun the chain — the only way forward."""
+    """Repair the reported inputs, then rerun the chain — the only way forward.
 
+    A project older than the oldest schema the chain accepts has no repair here: the one step
+    is upgrading it in upstream ArcReel, so the action names that and carries the two versions.
+    """
+
+    if failure.code == SCHEMA_UNSUPPORTED_CODE:
+        return _action(WorkflowActionType.UPGRADE_PROJECT_UPSTREAM, failure.reason, args=dict(failure.params))
     return _action(
         WorkflowActionType.RETRY_PROJECT_MIGRATION,
         failure.reason,

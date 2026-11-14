@@ -114,7 +114,7 @@ def remote_projects(tmp_path: Path) -> ProjectManager:
         '"scene_description":"山门前。","utterances":[],"source_text":"第一集原文"}]}',
         encoding="utf-8",
     )
-    activate_artifact_target_state(project_dir, bump_schema=False)
+    activate_artifact_target_state(project_dir)
     (projects_root / "empty").mkdir()
     outside = tmp_path / "outside"
     outside.mkdir()

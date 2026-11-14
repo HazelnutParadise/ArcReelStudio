@@ -174,9 +174,6 @@ MESSAGES = {
     "arch_invalid_script_json": "Cannot parse script file: {path}",
     "arch_deprecated_source_file_removed": "The novel.source_file field is deprecated and was removed",
     "arch_deprecated_field_removed": "{field} is deprecated (now computed on read) and was removed",
-    "arch_deprecated_clue_field_removed": (
-        "{items_key}[{index}]: deprecated field {field} was removed (use scenes/props instead)"
-    ),
     "arch_missing_field_filled": "{items_key}[{index}]: filled in the missing field {field}",
     "arch_unit_unresolved_mentions": (
         "video_units[{index}]: the body mentions asset names missing from project.json: {names}; "
@@ -198,6 +195,9 @@ MESSAGES = {
     "arch_import_validation_failed": "Import package validation failed",
     "arch_artifact_activation_failed": "The imported project's artifact state is inconsistent: {reason}",
     "arch_project_migration_failed": "The project data in the archive cannot be upgraded to the current version: {reason}",
+    "arch_project_schema_unsupported": (
+        "The project in the archive uses schema version {version}. This version can only import projects at schema {minimum} or later. Open the project in upstream ArcReel first, let it upgrade to schema {minimum} or later, then export it again and import the new archive"
+    ),
     "arch_import_confirmation_required": "Upgrading the archive changed some content. Confirm before importing",
     "arch_not_a_zip": "The uploaded file is not a valid ZIP archive",
     "arch_zip_encrypted_entry": "The ZIP contains an encrypted entry and cannot be imported: {name}",

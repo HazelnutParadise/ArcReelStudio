@@ -111,6 +111,11 @@ export interface ProjectStatus {
   needs_repair: boolean;
   /** The migration failure message exactly as raised, or null when not blocked */
   repair_reason: string | null;
+  /**
+   * Which verdict blocks the project: `project_migration_failed` is repaired and retried here,
+   * `project_schema_unsupported` has to be upgraded in upstream ArcReel first. Null when not blocked.
+   */
+  repair_code: "project_migration_failed" | "project_schema_unsupported" | null;
   /** Asset sheet counts keyed by asset type (character / scene / prop / product) */
   assets: Record<string, ArtifactCount>;
   episodes_summary: EpisodesSummary;

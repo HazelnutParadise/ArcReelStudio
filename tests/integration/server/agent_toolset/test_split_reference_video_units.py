@@ -39,7 +39,7 @@ def rv_character_sheet(fake_ctx: ToolHarness, name: str, *, claimed: bool) -> No
         json.dumps(fake_ctx.pm.project_payload, ensure_ascii=False), encoding="utf-8"
     )
     if claimed:
-        activate_artifact_target_state(fake_ctx.project_path, bump_schema=False)
+        activate_artifact_target_state(fake_ctx.project_path)
 
 
 def _reference_facts(generation_type: str, **overrides: Any):

@@ -3055,6 +3055,10 @@ export default {
     'Vấn đề nằm ở chính các tệp dự án, nên thử lại nhiều khả năng vẫn cho cùng kết quả. Có thể giao cho Agent kiểm tra và sửa, hoặc tự sửa tệp rồi thử lại.',
   'migration_hand_to_agent': 'Giao cho Agent kiểm tra',
   'migration_retry_succeeded': 'Nâng cấp dữ liệu đã hoàn tất, chức năng tạo nội dung đã hoạt động trở lại.',
+  'migration_unsupported_bar_title': 'Phiên bản dự án quá cũ',
+  'migration_unsupported_title': 'Cần nâng cấp dự án này ở bản gốc trước',
+  'migration_unsupported_body':
+    'Dữ liệu của dự án này đến từ phiên bản cũ, không thể nâng cấp tại đây nên chức năng tạo nội dung tạm thời bị tắt. Kịch bản và hình ảnh hiện có vẫn xem được như thường. Hãy mở dự án trong ArcReel bản gốc trước để nó được nâng cấp, xuất ra rồi nhập gói vào đây.',
   'lobby_card_progress': 'Đã hoàn thành {{completed}} / {{total}} tập',
   'lobby_filter_in_progress': 'Đang thực hiện',
   'lobby_filter_completed': 'Đã hoàn thành',

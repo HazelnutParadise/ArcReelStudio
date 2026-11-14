@@ -153,7 +153,10 @@ class UnscopedToolDeclaration[RequestT: BaseModel, ResultT]:
 
 type AgentToolDeclaration = ToolDeclaration[Any, Any] | UnscopedToolDeclaration[Any, Any]
 
-MIGRATION_REFUSAL_NOTE = "项目数据升级失败时拒绝执行，返回 project_migration_failed problem。"
+MIGRATION_REFUSAL_NOTE = (
+    "项目数据升级失败时拒绝执行，返回 project_migration_failed problem；"
+    "项目版本早于可升级的最低版本时返回 project_schema_unsupported problem。"
+)
 
 #: 调用文本模型的工具共用：输出被截断时的问题码与出路。
 TEXT_OUTPUT_TRUNCATED_NOTE = (

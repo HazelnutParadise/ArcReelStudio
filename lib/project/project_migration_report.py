@@ -21,8 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections import Counter
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -161,28 +160,6 @@ class ArtifactBackfillOutcome:
 
     registered: Mapping[str, int]
     skipped: tuple[MigrationSkippedArtifact, ...]
-    preserve_previous_skips: bool = False
-    """Rewriting existing claims alone cannot resolve skips from earlier steps."""
-    resolved: frozenset[SkippedArtifactIdentity] = frozenset()
-    """Artifacts this step newly registered; earlier skips naming them no longer hold."""
-
-    @classmethod
-    def from_entries(
-        cls,
-        entries: Mapping[ArtifactKey, object],
-        *skipped_groups: Sequence[MigrationSkippedArtifact],
-        preserve_previous_skips: bool = False,
-        resolved: Iterable[ArtifactKey] = (),
-    ) -> ArtifactBackfillOutcome:
-        """Count registered entries per kind; skip groups merge with the first reason winning."""
-
-        registered = Counter(key.kind.value for key in entries)
-        return cls(
-            registered=dict(registered),
-            skipped=merge_skipped(*skipped_groups),
-            preserve_previous_skips=preserve_previous_skips,
-            resolved=frozenset(skipped_artifact_identity(key) for key in resolved),
-        )
 
 
 def merge_skipped(

@@ -360,6 +360,36 @@ function MigrationBar({ projectName, reason }: { projectName: string; reason: st
 }
 
 /**
+ * 项目版本早于本版本能升级的最低版本：这里没有能让它前进的操作，不给「重试」与「交给 Agent」，
+ * 只说明要先在上游 ArcReel 升级、导出，再导入这里。
+ */
+function SchemaUnsupportedBar({ reason }: { reason: string | null }) {
+  const { t } = useTranslation("dashboard");
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const title = t("migration_unsupported_bar_title");
+  return (
+    <div ref={anchorRef} className={SHELL_WARM}>
+      <Popover>
+        <PopoverTrigger render={<button type="button" className={SEGMENT} aria-label={title} />}>
+          <AlertTriangle aria-hidden className="size-3.5 text-warn" />
+          <span aria-hidden className="hidden text-foreground @3xl/header:inline">
+            {title}
+          </span>
+          <ChevronDown aria-hidden className="size-3 text-muted-foreground" />
+        </PopoverTrigger>
+        <PopoverContent anchor={anchorRef} className="w-110">
+          <div className="flex flex-col gap-2" role="alert">
+            <p className="text-xs font-semibold text-foreground">{t("migration_unsupported_title")}</p>
+            <p className="text-xs text-subtle-foreground">{t("migration_unsupported_body")}</p>
+            {reason ? <p className="font-mono text-xs break-words text-subtle-foreground">{reason}</p> : null}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+/**
  * 顶栏中间的状态条：左段是集进度（点开是逐集清单），右段是项目层的下一步（点开是说明与按钮）。
  * 数据升级失败时整条换成迁移形态；升级有报告且尚未确认过时，旁边多一枚可关闭的升级提示。
  * 只投影后端给出的项目摘要与制作状态，不自行推断下一步。
@@ -384,6 +414,9 @@ export function ProjectStatusBar({ projectName }: { projectName: string }) {
   );
 
   if (!project || !summary) return null;
+  if (needsRepair && summary.repair_code === "project_schema_unsupported") {
+    return <SchemaUnsupportedBar reason={summary.repair_reason} />;
+  }
   if (needsRepair) return <MigrationBar projectName={projectName} reason={summary.repair_reason} />;
 
   const openChange = (key: Exclude<Open, null>) => (next: boolean) =>

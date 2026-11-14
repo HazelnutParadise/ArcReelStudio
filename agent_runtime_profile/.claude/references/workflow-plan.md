@@ -88,6 +88,14 @@ mcp__arcreel__get_workflow_plan({
 用户在 Web 项目页点「重试迁移」时，请求文本会被填进对话输入框由用户自己发送——收到它就走上面
 这条路径。
 
+### 版本过旧：不修复、不重试
+
+项目的数据版本早于本版本能升级的最低版本时，阻断换成另一个码：`blockers[]` 与 `problems[]` 里是
+`project_schema_unsupported`，`next_action.type == "upgrade_project_upstream"`，`args` 与 `params` 带
+`version`（项目当前版本）和 `minimum`（最低版本）。这种项目在这里修不了，重试也只会得到同一个结果：
+不要调用修复工具，也不要调用 `mcp__arcreel__retry_project_migration`。直接告诉用户：先在上游 ArcReel
+中打开这个项目，让它升级到 `minimum` 或更高版本，导出后再把归档导入这里。
+
 ## 受控动作表
 
 按 `next_action.type` 路由，把 `target.episode`、`next_action.args` 与 `requested_ids` 带入对应动作。
@@ -123,6 +131,7 @@ ID 参数时，前者传入，后者必须**省略该参数**，不得把 `[]` �
 | `wait_for_task` | 计划注入：有活动任务，不入队新任务；等待并复查计划 |
 | `create_edit_timeline` | 本集视频已齐、还没有剪辑时间线：`mcp__arcreel__create_timeline`（`episode` 取 `next_action.args.episode_id`，`from: "script"`）按脚本机械新建一条，至少有一条剪辑时间线，「剪辑」一步即完成；之后按 `edit-video` skill 剪辑 |
 | `retry_project_migration` | 项目数据升级未完成：按明细修复后 `mcp__arcreel__retry_project_migration`（见「数据升级失败」） |
+| `upgrade_project_upstream` | 项目数据版本过旧：不修复、不重试，告诉用户先在上游 ArcReel 升级、导出，再导入这里（见「版本过旧：不修复、不重试」） |
 | `none` | `blockers` 非空时展示并停止变更；`steps` 中 `edit` 为 `completed` 时工作流已走完；其余情况讲 `status.issues` 与 `status.content` |
 
 `next_action.args.preprocessor` 是权威的脚本规划子智能体名，**不要自己按创作类型×

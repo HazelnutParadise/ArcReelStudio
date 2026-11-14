@@ -35,10 +35,9 @@ from lib.infra.validation_messages import default_translate
 from lib.project.data_validator import DataValidator
 from lib.project.project_manager import EpisodeScriptReboundError, ProjectManager
 from lib.project.project_migration_failure import (
-    MIGRATION_FAILURE_CODE,
-    RETRY_MIGRATION_ACTION,
     ProjectMigrationError,
     load_migration_verdict,
+    migration_action,
 )
 from lib.project.script_entry_cleanup import trash_entries
 from lib.script.item_ids import item_id_number
@@ -235,9 +234,9 @@ class ScriptBatchEditor:
                 script=self._pm.normalize_script_filename(command.script) if command.script is not None else "",
                 episode=command.episode,
                 revision=command.expected_revision,
-                code=MIGRATION_FAILURE_CODE,
+                code=verdict.code,
                 reason=verdict.reason,
-                next_action=RETRY_MIGRATION_ACTION,
+                next_action=migration_action(verdict.code),
             )
         expected_script_file = (
             self._pm.normalize_script_filename(command.expected_script_file)
@@ -558,9 +557,9 @@ class ScriptBatchEditor:
                 script=resolved_script,
                 episode=episode_number,
                 revision=before_revision,
-                code=MIGRATION_FAILURE_CODE,
+                code=exc.code,
                 reason=exc.violation,
-                next_action=RETRY_MIGRATION_ACTION,
+                next_action=migration_action(exc.code),
             )
         except Exception:
             logger.exception("script batch edit commit failed")

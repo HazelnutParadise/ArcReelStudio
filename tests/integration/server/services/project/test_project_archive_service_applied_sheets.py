@@ -1,4 +1,4 @@
-"""从资产库应用的资产图与衍生资产图：迁移补录与各种归档导入得出与源项目相同的时效结论。
+"""从资产库应用的资产图与衍生资产图：清单激活补录与各种归档导入得出与源项目相同的时效结论。
 
 归档导入的校验要求资产描述非空，描述为空的本体只出现在补录用例里。
 """
@@ -16,9 +16,9 @@ from lib.artifacts.version_manager import MANUAL_UPLOAD_VERSION_SOURCE, VersionM
 from lib.project.asset_derivatives import derivative_sheet_relative_path
 from lib.project.asset_types import DERIVATIVES_FIELD
 from lib.project.project_manager import ProjectManager
-from lib.project.project_migrations.runner import migrate_project_dir
 from lib.project.resource_paths import CHARACTER_DERIVATIVE_RESOURCE_TYPE
 from server.services.project.project_archive import ARCHIVE_MANIFEST_NAME, ProjectArchiveService
+from tests.factories import activate_current_project
 from tests.integration.server.asset_library_support import (
     LIBRARY_SHEETS_ALL_CURRENT,
     character_sheet_statuses,
@@ -70,10 +70,9 @@ def _edit_descriptions_and_style(pm: ProjectManager) -> None:
 def test_backfill_claims_applied_sheets_by_the_image(library_client, owner_description):
     client, pm = library_client
     project_dir = _applied_project(client, pm, owner_description=owner_description)
-    pm.update_project("demo", lambda project: project.__setitem__("schema_version", 7))
     (project_dir / MANIFEST_FILENAME).unlink()
 
-    assert migrate_project_dir(project_dir) is True
+    activate_current_project(project_dir)
 
     assert _statuses(pm) == _ALL_CURRENT
     _edit_descriptions_and_style(pm)
