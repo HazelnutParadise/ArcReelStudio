@@ -17,7 +17,9 @@
   条目上指向原 id 规范媒体路径的产物引用清空——那些文件属于保留原 id 的条目；只描述这些媒体的
   生成状态一并清空，换号条目读作尚未生成。
 - **两集里有同号条目**：媒体与登记归 id 前缀所指的那一集，对不上时归账本里靠前的那一集；另一集的
-  条目在本集换新 id，不带走媒体，本集名下原 id 的登记撤掉。
+  条目在本集换新 id，不带走媒体，本集名下原 id 的登记撤掉；本集宫格记录的成员名单列着原 id 时，那张宫格与它切出
+  的分镜图的登记一并撤掉，记录与图文件不动。剪辑时间线的片段按 id 引用的是原 id 那条的视频（截取点绑在它的视频
+  版本上），不改写，读作单元已删除；版本历史按 id 记在项目级，原 id 仍归保留它的那一集，不动。
 
 读不出的 ``project.json`` 或剧本不在这里处理：之后的迁移步照旧拒绝整个项目。
 """
@@ -416,13 +418,14 @@ def _retire_claims(work: _Work, keys: Iterable[ArtifactKey], what: str) -> None:
         raise RuntimeError(f"artifact manifest changed while retiring {what}")
 
 
-def _declared_artifact_path(value: object) -> str | None:
-    """资产图字段值的清单路径写法；空值或不是合法的产物路径时为 ``None``。"""
+def _declared_artifact_path(project_dir: Path, value: object) -> str | None:
+    """资产图字段值的清单路径写法：先按运行时的解析归到项目相对写法（``./``、反斜杠、``..``、指向项目内的绝对路径），
+    再规范成清单路径；空值、落在项目之外或不是合法的产物路径时为 ``None``。"""
 
     if not isinstance(value, str) or not value:
         return None
     try:
-        return normalize_artifact_path(value)
+        return normalize_artifact_path(_canonical_reference(project_dir, value))
     except ValueError:
         return None
 
@@ -453,9 +456,11 @@ def _retire_dropped_sheet_claims(work: _Work, drops: list[_AssetDrop]) -> None:
         stored = ProjectArtifactManifestAdapter(work.project_dir).get_entry(dropped_key)
         source_entry, kept_entry = bucket.get(drop.name), bucket.get(drop.kept)
         dropped_path = _declared_artifact_path(
-            source_entry.get(spec.sheet_field) if isinstance(source_entry, dict) else None
+            work.project_dir, source_entry.get(spec.sheet_field) if isinstance(source_entry, dict) else None
         )
-        kept_path = _declared_artifact_path(kept_entry.get(spec.sheet_field) if isinstance(kept_entry, dict) else None)
+        kept_path = _declared_artifact_path(
+            work.project_dir, kept_entry.get(spec.sheet_field) if isinstance(kept_entry, dict) else None
+        )
         if stored is not None and dropped_path is not None and stored.artifact_path == dropped_path != kept_path:
             retired.append(dropped_key)
     _retire_claims(work, retired, "the sheet claim of a dropped asset")
@@ -826,14 +831,19 @@ def _repair_item_ids(work: _Work) -> None:
             continue
         # 换号后本集已没有条目持有的原 id，它的登记没有主人，还占着另一集的规范路径：先于剧本落盘撤掉，
         # 剧本写盘前失败时重跑仍能发现同号条目，登记已撤，无事可做。本集仍有条目持有的原 id 不动。
+        # 原 id 的其他持有方：本集的宫格记录按 id 列成员，列着它的宫格投影不出来，宫格与同宫格切出的分镜图
+        # 登记一并撤掉（记录与图文件不动）。剪辑时间线的片段与版本历史也按 id 引用，不在这里改，见模块说明。
         held = {item.get(id_field) for item in items if isinstance(item, dict)}
+        vanished = {old_id for old_id, _new_id in changes if old_id and old_id not in held}
         _retire_claims(
             work,
             (
-                key
-                for old_id, _new_id in changes
-                if old_id and old_id not in held
-                for key in ArtifactKey.episode_resource_artifacts(episode, old_id)
+                *(
+                    key
+                    for old_id in sorted(vanished)
+                    for key in ArtifactKey.episode_resource_artifacts(episode, old_id)
+                ),
+                *_grid_claims_listing(work, episode, path, items, id_field, vanished),
             ),
             "the claims of a renumbered item",
         )
@@ -848,6 +858,54 @@ def _repair_item_ids(work: _Work) -> None:
                     params={"from": old_id, "to": new_id},
                 )
             )
+
+
+#: 宫格记录的文件名（与规划器读宫格记录的口径一致）。
+_GRID_RECORD = re.compile(r"grid_[0-9a-f]{12}\.json\Z")
+
+
+def _grid_claims_listing(
+    work: _Work, episode: int, script_path: Path, items: list[Any], id_field: str, vanished: set[str]
+) -> list[ArtifactKey]:
+    """本集宫格里成员名单列着 *vanished* 中某个 id 的那些：宫格登记与同宫格切出的分镜图登记。
+
+    规划器按条目 id 找宫格成员，找不到就不投影这张宫格，也不投影它切出的分镜图，它们的登记于是证明不了。
+    读不出或不是本集的记录跳过，交给规划器按原口径处理。
+    """
+
+    grids_dir = work.project_dir / "grids"
+    if not vanished or grids_dir.is_symlink() or not grids_dir.is_dir():
+        return []
+    keys: list[ArtifactKey] = []
+    for record_path in sorted(grids_dir.iterdir()):
+        if not _GRID_RECORD.fullmatch(record_path.name) or record_path.is_symlink() or not record_path.is_file():
+            continue
+        record = _load_object(record_path)
+        if record is None:
+            continue
+        grid_id, script_file, scene_ids = record.get("id"), record.get("script_file"), record.get("scene_ids")
+        if (
+            not isinstance(grid_id, str)
+            or not grid_id
+            or record.get("episode") != episode
+            or not isinstance(script_file, str)
+            or PurePosixPath(script_file.replace("\\", "/")).name != script_path.name
+            or not isinstance(scene_ids, list)
+            or vanished.isdisjoint(item for item in scene_ids if isinstance(item, str))
+        ):
+            continue
+        keys.append(ArtifactKey.episode_grid(episode, grid_id))
+        for item in items:
+            assets = item.get("generated_assets") if isinstance(item, dict) else None
+            resource_id = item.get(id_field) if isinstance(item, dict) else None
+            if (
+                isinstance(assets, dict)
+                and assets.get("grid_id") == grid_id
+                and isinstance(resource_id, str)
+                and resource_id
+            ):
+                keys.append(ArtifactKey.episode_storyboard(episode, resource_id))
+    return keys
 
 
 def _release_media_of(item: dict[str, Any], old_id: str, kind: str) -> None:

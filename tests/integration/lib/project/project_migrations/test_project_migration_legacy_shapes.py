@@ -51,8 +51,11 @@ from tests.legacy_project_shapes import (
     SCHEMA_V19,
     activate_at_schema_19,
     add_asset_names_differing_only_in_case,
+    add_asset_names_differing_only_in_whitespace,
     add_colliding_asset_name,
+    add_grid_over_reused_item_id,
     break_script_item_ids,
+    claim_reused_item_id_in_the_copying_episode,
     drop_selected_version_snapshot,
     refer_to_asset_in_episode,
     repoint_registered_asset_sheet,
@@ -151,16 +154,6 @@ def _export(root: Path) -> None:
     ProjectArchiveService(ProjectManager(str(root))).export_project("demo", scope="full")
 
 
-def _add_whitespace_variant(project_dir: Path) -> None:
-    """角色「Alice」与只差尾随空格的「Alice 」各带一张资产图；两者的清单键相同。"""
-    project = _read_json(project_dir / "project.json")
-    for name, content in (("Alice", b"kept-alice"), ("Alice ", b"dropped-alice")):
-        sheet = f"characters/{name}.png"
-        project["characters"][name] = {"description": f"{name} 的描述", "character_sheet": sheet}
-        (project_dir / sheet).write_bytes(content)
-    (project_dir / "project.json").write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
-
-
 @pytest.mark.parametrize(
     ("claimed", "survives"),
     [
@@ -172,7 +165,7 @@ def test_a_shared_key_sheet_claim_is_retired_only_when_it_describes_the_dropped_
     tmp_path: Path, claimed: str, survives: bool
 ) -> None:
     project_dir = _project(tmp_path)
-    _add_whitespace_variant(project_dir)
+    add_asset_names_differing_only_in_whitespace(project_dir, "characters", "character_sheet", "Alice")
     key = ArtifactKey.asset_sheet("character", "Alice")
     _register_test_claim(project_dir, key, claimed)
     before = ProjectArtifactManifestAdapter(project_dir).get_entry(key)
@@ -182,10 +175,37 @@ def test_a_shared_key_sheet_claim_is_retired_only_when_it_describes_the_dropped_
     assert list(_read_json(project_dir / "project.json")["characters"]) == ["阿离", "Alice"]
     # 被去掉那条的图描述不了保留条目：撤掉登记，保留条目读作缺失，不借它的依据伪造时效；图文件留在盘上。
     assert ProjectArtifactManifestAdapter(project_dir).get_entry(key) == (before if survives else None)
-    assert (project_dir / "characters" / "Alice .png").read_bytes() == b"dropped-alice"
+    assert (project_dir / "characters" / "Alice .png").read_bytes() == b"variant"
     status = _sheet_status(project_dir, "character", "Alice", "characters/Alice.png")
     assert (status == "missing") is not survives
     _export(tmp_path)
+
+
+@pytest.mark.parametrize(
+    ("spelling", "recognised"),
+    [
+        pytest.param("./characters/Alice .png", True, id="dot-prefix"),
+        pytest.param("characters\\Alice .png", True, id="backslashes"),
+        pytest.param("../elsewhere/Alice .png", False, id="outside-the-project"),
+    ],
+)
+def test_a_dropped_variants_sheet_spelled_non_canonically_is_still_recognised(
+    tmp_path: Path, spelling: str, recognised: bool
+) -> None:
+    """旧版 PATCH 原样收下的写法按运行时的解析归到规范路径再比对；落在项目之外认不出的，登记不动。"""
+    project_dir = _project(tmp_path)
+    add_asset_names_differing_only_in_whitespace(
+        project_dir, "characters", "character_sheet", "Alice", variant_sheet=spelling
+    )
+    key = ArtifactKey.asset_sheet("character", "Alice")
+    _register_test_claim(project_dir, key, "characters/Alice .png")
+    before = ProjectArtifactManifestAdapter(project_dir).get_entry(key)
+
+    _migrate(project_dir)
+
+    assert ProjectArtifactManifestAdapter(project_dir).get_entry(key) == (None if recognised else before)
+    if recognised:
+        _export(tmp_path)
 
 
 def test_the_sheet_claim_of_a_dropped_case_variant_is_retired(tmp_path: Path) -> None:
@@ -1142,12 +1162,8 @@ def test_an_item_id_two_episodes_share_stays_with_one_and_is_renumbered_in_the_o
 
 
 def _claimed_by_the_copying_episode(root: Path) -> Path:
-    """两集同号 ``E1S01``，共用的分镜图最后由复制来的第 2 集重生：清单里那一条登记在第 2 集名下。"""
     project_dir = _project(root)
-    reuse_item_id_across_episodes(project_dir, "E1S01")
-    adapter = ProjectArtifactManifestAdapter(project_dir)
-    adapter.delete_entry(ArtifactKey.episode_storyboard(1, "E1S01"))
-    _register_test_claim(project_dir, ArtifactKey.episode_storyboard(2, "E1S01"), "storyboards/scene_E1S01.png")
+    claim_reused_item_id_in_the_copying_episode(project_dir, "E1S01")
     return project_dir
 
 
@@ -1186,6 +1202,58 @@ def test_retiring_the_renumbered_episodes_claim_converges_on_retry(
         patch.setattr(legacy_shapes, "atomic_write_json", fail_writing_episode_2)
         assert migrate_project_with_verdict(retried) is not None
     assert _read_json(retried / "scripts" / "episode_2.json")["segments"][0]["segment_id"] == "E1S01"
+    _migrate(retried)
+
+    assert _read_json(retried / "scripts" / "episode_2.json") == _read_json(once / "scripts" / "episode_2.json")
+    assert set(ProjectArtifactManifestAdapter(retried).snapshot_entries()) == set(
+        ProjectArtifactManifestAdapter(once).snapshot_entries()
+    )
+
+
+def _grid_in_the_copying_episode(root: Path) -> Path:
+    project_dir = _claimed_by_the_copying_episode(root)
+    add_grid_over_reused_item_id(project_dir, "E1S01")
+    return project_dir
+
+
+def test_a_grid_of_the_renumbered_episode_that_lists_the_original_id_has_its_claims_retired(tmp_path: Path) -> None:
+    project_dir = _grid_in_the_copying_episode(tmp_path)
+    grid_id = "grid_0123456789ab"
+    record = (project_dir / "grids" / f"{grid_id}.json").read_bytes()
+
+    _migrate(project_dir)
+
+    entries = ProjectArtifactManifestAdapter(project_dir).snapshot_entries()
+    # 宫格按 id 列成员：第 2 集已没有 E1S01，宫格投影不出来，它与同宫格切出的分镜图的登记一并撤掉，读作缺失；
+    # 宫格记录与图文件原样留在盘上，不改成员名单。
+    assert ArtifactKey.episode_grid(2, grid_id) not in entries
+    assert ArtifactKey.episode_storyboard(2, "E2S02") not in entries
+    assert (project_dir / "grids" / f"{grid_id}.json").read_bytes() == record
+    assert (project_dir / "storyboards" / "scene_E2S02.png").read_bytes() == b"grid cell 2"
+    _export(tmp_path)
+
+
+def test_retiring_the_grid_claims_of_the_renumbered_episode_converges_on_retry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    once = _grid_in_the_copying_episode(tmp_path / "once")
+    _migrate(once)
+    retried = _grid_in_the_copying_episode(tmp_path / "retried")
+
+    write = legacy_shapes.atomic_write_json
+
+    def fail_writing_episode_2(path: Path, payload: Any) -> None:
+        if path.name == "episode_2.json":
+            raise OSError("disk full")
+        write(path, payload)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(legacy_shapes, "atomic_write_json", fail_writing_episode_2)
+        assert migrate_project_with_verdict(retried) is not None
+    assert (
+        ArtifactKey.episode_grid(2, "grid_0123456789ab")
+        not in ProjectArtifactManifestAdapter(retried).snapshot_entries()
+    )
     _migrate(retried)
 
     assert _read_json(retried / "scripts" / "episode_2.json") == _read_json(once / "scripts" / "episode_2.json")
@@ -1313,14 +1381,20 @@ def test_a_video_whose_selected_snapshot_is_missing_from_the_archive_is_reported
 
 
 def _without_selected_video_snapshot(root: Path, shape: str) -> Path:
-    """选中版本的快照不在的视频；``shape`` 再叠一层：正式文件也不在，或快照位置换成指向正式文件的符号链接。"""
+    """选中版本的快照不在的视频；``shape`` 再叠一层：正式文件也不在，快照位置换成指向正式文件的符号链接，
+    或快照留在原处但读不出、正式文件不在。"""
     project_dir = write_legacy_storyboard_project(root / "projects")
-    snapshot = project_dir / drop_selected_version_snapshot(project_dir, "videos", "E1S1")
+    snapshot_rel = drop_selected_version_snapshot(project_dir, "videos", "E1S1")
+    snapshot = project_dir / snapshot_rel
     video = project_dir / "videos" / "scene_E1S1.mp4"
     if shape == "formal-file-missing":
         video.unlink()
     elif shape == "snapshot-symlink":
         snapshot.symlink_to(video)
+    elif shape == "unreadable-snapshot-formal-file-missing":
+        snapshot.write_bytes(video.read_bytes())
+        snapshot.chmod(0)
+        video.unlink()
     project = _read_json(project_dir / "project.json")
     project["schema_version"] = CURRENT_PROJECT_SCHEMA_VERSION
     (project_dir / "project.json").write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
@@ -1340,6 +1414,15 @@ def _without_selected_video_snapshot(root: Path, shape: str) -> Path:
             None,
             id="snapshot-symlink",
             marks=pytest.mark.skipif(os.name == "nt", reason="符号链接需要额外权限"),
+        ),
+        # 视频本身不在时，快照读不读得出都无关紧要：先看正式文件。
+        pytest.param(
+            "unreadable-snapshot-formal-file-missing",
+            None,
+            id="unreadable-snapshot-formal-file-missing",
+            marks=pytest.mark.skipif(
+                os.name == "nt" or (hasattr(os, "geteuid") and os.geteuid() == 0), reason="需要 POSIX 权限位"
+            ),
         ),
     ],
 )
