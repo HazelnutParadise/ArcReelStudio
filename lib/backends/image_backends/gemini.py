@@ -30,7 +30,6 @@ from lib.backends.providers import PROVIDER_GEMINI
 from lib.backends.transport_layer import TransportLayer
 from lib.billing.metering import Usage
 from lib.config.url_utils import normalize_base_url
-from lib.config.vertex_credentials import resolve_vertex_credentials_path
 from lib.infra.async_thread import run_noninterruptible_sync
 from lib.infra.logging_utils import format_kwargs_for_log
 
@@ -69,11 +68,9 @@ class GeminiImageBackend:
         if self._backend_type == "vertex":
             from google.oauth2 import service_account
 
-            credentials_file: Path | None = None
-            credentials_file = Path(credentials_path) if credentials_path else resolve_vertex_credentials_path()
-
-            if credentials_file is None:
-                raise ValueError("未找到 Vertex AI 凭证文件")
+            if not credentials_path:
+                raise ValueError("Vertex AI 后端需要连线的凭证文件路径（credentials_path）")
+            credentials_file = Path(credentials_path)
 
             with open(credentials_file, encoding="utf-8") as f:
                 creds_data = json_module.load(f)

@@ -24,10 +24,10 @@ def test_anthropic_official_present() -> None:
     assert p.is_recommended is False
 
 
-def test_arcreel_is_only_recommended() -> None:
-    """ArcReel 是用户表格中唯一标推荐的预设;其他全部不推荐."""
-    recommended = [p for p in list_presets() if p.is_recommended]
-    assert [p.id for p in recommended] == ["arcreel"]
+def test_no_preset_is_recommended() -> None:
+    """预设都不标推荐：ArcReel API 属于上游运营方，本项目不替用户推荐任何一家。"""
+    assert [p.id for p in list_presets() if p.is_recommended] == []
+    assert get_preset("arcreel") is not None
 
 
 def test_get_preset_unknown_returns_none() -> None:

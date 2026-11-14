@@ -682,6 +682,48 @@ describe("MediaModelSection – 推荐变化提示", () => {
     expect(sent.default_image_backend ?? "openai/gpt-image-edit").toBe("openai/gpt-image-edit");
   });
 
+  describe("其余字段有未保存修改时处理推荐", () => {
+    const EXTERNAL = "此内容已被其他成员或 Agent 更新";
+
+    async function editTimeout(user: ReturnType<typeof userEvent.setup>) {
+      const timeout = await screen.findByRole("textbox", { name: "视频轮询超时（秒）" });
+      await user.clear(timeout);
+      await user.type(timeout, "7200");
+      return timeout;
+    }
+
+    it.each([
+      ["switching", "切换到 gpt-image-edit"],
+      ["keeping", "保留当前"],
+    ])("does not report an external update after %s, since the re-read is the page's own", async (_, button) => {
+      const user = userEvent.setup();
+      pending = [imageChange];
+      render(<MediaModelSection />);
+      const timeout = await editTimeout(user);
+
+      await user.click(await screen.findByRole("button", { name: button }));
+      await waitFor(() => expect(API.getRecommendationChanges).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(screen.queryByRole("button", { name: button })).not.toBeInTheDocument());
+
+      expect(timeout).toHaveValue("7200");
+      expect(screen.getByText("有未保存的修改")).toBeInTheDocument();
+      expect(screen.queryByText(EXTERNAL)).not.toBeInTheDocument();
+    });
+
+    it("still reports an external update when the re-read also brings another member's save", async () => {
+      const user = userEvent.setup();
+      pending = [imageChange];
+      render(<MediaModelSection />);
+      await editTimeout(user);
+      // 另一位成员在此期间保存了默认配音模型
+      server.default_audio_backend = "gemini/tts-b";
+
+      await user.click(await screen.findByRole("button", { name: "切换到 gpt-image-edit" }));
+
+      expect(await screen.findByText(EXTERNAL)).toBeInTheDocument();
+    });
+  });
+
   it("resets the connection to the provider's default when the switch changes provider", async () => {
     const user = userEvent.setup();
     pending = [videoChange];

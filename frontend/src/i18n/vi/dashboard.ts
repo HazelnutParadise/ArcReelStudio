@@ -2731,6 +2731,7 @@ export default {
   'import_failure_diagnostics': 'Chẩn đoán nhập thất bại',
   'import_failure_with_diagnostics': 'Việc nhập chưa hoàn tất. Các mục chặn và cảnh báo được liệt kê bên dưới.',
   'lobby_card_needs_repair': 'CẦN SỬA',
+  'lobby_card_schema_unsupported': 'PHIÊN BẢN QUÁ CŨ',
   'lobby_new_project': 'Dự án mới',
   'lobby_more_create_options': 'Cách tạo khác',
   'lobby_import_zip_ellipsis': 'Nhập ZIP…',

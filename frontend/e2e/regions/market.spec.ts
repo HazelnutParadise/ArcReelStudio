@@ -106,6 +106,12 @@ const OFFLINE: ApiOverrides = {
   "GET /api/v1/market/entries/aggregates?type=endpoint": { status: 200, body: { items: [] } },
 };
 
+// 官方服务默认关闭：说明只在用户打开开关后的首次进入出现，录制的默认状态里没有它。
+const OFFICIAL_FIRST_VISIT: ApiOverrides = {
+  ...OFFLINE,
+  "GET /api/v1/official-service": { status: 200, body: { ...OFFICIAL_SEEN, notice_seen: false, instance_id: null } },
+};
+
 const MANY: ApiOverrides = {
   ...OFFLINE,
   "GET /api/v1/official-service": { status: 200, body: OFFICIAL_SEEN },
@@ -213,9 +219,9 @@ async function settingsReady(page: Page) {
 
 defineRegionScenarios("市场", [
   {
-    name: "首次进入：官方服务说明在 Tab 之上，没有条目时说明原因",
+    name: "开启官方服务后首次进入：说明在 Tab 之上，没有条目时说明原因",
     path: MARKET_PATH,
-    api: OFFLINE,
+    api: OFFICIAL_FIRST_VISIT,
     ready: async (page) => {
       await browseReady(page);
       await page.getByRole("region", { name: "安装量与评分来自 ArcReel 官方服务" }).waitFor();

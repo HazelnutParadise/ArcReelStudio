@@ -3308,6 +3308,7 @@ export default {
   'lobby_hero_summary': 'Завершено серий: {{completed}}, в работе: {{inProduction}}.',
   'lobby_filter_all': 'Все',
   'lobby_card_needs_repair': 'ТРЕБУЕТ ИСПРАВЛЕНИЯ',
+  'lobby_card_schema_unsupported': 'СЛИШКОМ СТАРАЯ ВЕРСИЯ',
   'lobby_new_project': 'Новый проект',
   'lobby_more_create_options': 'Другие способы создания',
   'lobby_import_zip_ellipsis': 'Импорт ZIP…',

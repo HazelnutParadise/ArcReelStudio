@@ -315,19 +315,22 @@ export function MediaModelSection() {
   const fields = unit.value;
   const setFields = unit.setValue;
   const savedFields = unit.savedValue;
+  const expectSource = unit.expectSource;
   // 推荐变化处理后，服务端可能已改了全局默认模型：与保存后一样重取配置、候选与配置问题。
   // 切换写进的默认模型同时并入表单：其余字段有未保存修改时，表单保留修改而不采用重取的配置，
   // 不并入的话这一字段仍是旧模型，下次保存会把它写回去。协作房间每隔几秒重读存储才会收到服务端的写入，
   // 这里并入后房间里立刻是新值，写回的也是同一个值。
+  // 重读是这次切换自己引起的：告诉编辑单元预期读到什么，读到的正是它时不标出「已被其他成员更新」。
   const onRecommendationResolved = useCallback(
     async (change: RecommendationChange, applied: boolean) => {
       if (applied) setFields((prev) => withAppliedRecommendation(prev, savedFields, change));
+      expectSource(applied ? withAppliedRecommendation(savedFields, savedFields, change) : savedFields);
       useCapabilitiesStore.getState().invalidate();
       await fetchConfig();
       void reloadCandidates();
       void useConfigStatusStore.getState().refresh();
     },
-    [fetchConfig, reloadCandidates, setFields, savedFields],
+    [fetchConfig, reloadCandidates, setFields, savedFields, expectSource],
   );
   // 默认音频模型留空（自动选择）时不列音色：实际模型由运行时推断，列出某一家的音色会误导
   const audioVoices = useTtsModelCapabilities(fields.default_audio_backend ?? "")?.voices ?? [];

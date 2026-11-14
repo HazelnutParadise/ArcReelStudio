@@ -59,22 +59,6 @@ class ProviderConfigValueError(ValueError):
         self.params: dict[str, str] = {"field": key, "value": value}
 
 
-# DB setting key → environment variable name
-_ANTHROPIC_ENV_MAP: dict[str, str] = {
-    "anthropic_api_key": "ANTHROPIC_API_KEY",
-    "anthropic_base_url": "ANTHROPIC_BASE_URL",
-    "anthropic_model": "ANTHROPIC_MODEL",
-    "anthropic_default_haiku_model": "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-    "anthropic_default_opus_model": "ANTHROPIC_DEFAULT_OPUS_MODEL",
-    "anthropic_default_sonnet_model": "ANTHROPIC_DEFAULT_SONNET_MODEL",
-    "claude_code_subagent_model": "CLAUDE_CODE_SUBAGENT_MODEL",
-}
-# 一致性守护：env 名单与 ANTHROPIC_ENV_KEYS 必须对齐。
-assert set(_ANTHROPIC_ENV_MAP.values()) == set(ANTHROPIC_ENV_KEYS), (
-    "_ANTHROPIC_ENV_MAP 与 lib.config.env_keys.ANTHROPIC_ENV_KEYS 漂移"
-)
-
-
 # 档位 → 环境变量名。
 _TIER_ENV_KEYS: dict[Tier, str] = {
     "model": "ANTHROPIC_MODEL",
@@ -125,7 +109,7 @@ async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
     返回值由 OptionsAssembler 的凭证注入（load_provider_env_overrides）注入到 ClaudeAgentOptions.env。凭证只读一次，
     环境变量与计价依据（凭证 id、倍率、档位绑定）取自同一行：会话按连接时注入的凭证计价（docs/adr/0102）。
 
-    双轨期 fallback：active credential 字段为空时从 system_settings 兜底。档位模型名的规则见
+    密钥与地址只来自生效的 Agent 供应商凭证；没有生效凭证时每个 Anthropic 环境变量都置空。档位模型名的规则见
     :func:`lib.agent.credential_tiers.tier_models`。
     """
     # 局部 import 避免循环依赖（agent_credential_repo → agent_credential model → base）
@@ -135,8 +119,7 @@ async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
     settings = await SystemSettingRepository(session).get_all()
     subscription = await agent_claude_subscription(session, settings)
 
-    legacy_env = {env_key: settings.get(db_key, "").strip() for db_key, env_key in _ANTHROPIC_ENV_MAP.items()}
-    has_api_key = bool(cred.api_key if cred is not None else legacy_env["ANTHROPIC_API_KEY"])
+    has_api_key = bool(cred is not None and cred.api_key)
     source = choose_auth_source(
         parse_auth_mode(settings.get(AUTH_MODE_SETTING_KEY)),
         has_api_key=has_api_key,
@@ -165,8 +148,7 @@ async def build_anthropic_env(session: AsyncSession) -> AnthropicEnv:
         }
         return AnthropicEnv(env=env, pricing=agent_pricing(cred, settings))
 
-    # 无 active credential — 回退 system_settings（双轨期兼容）
-    return AnthropicEnv(env={**legacy_env, OAUTH_TOKEN_ENV_KEY: ""}, pricing=AgentPricing())
+    return AnthropicEnv(env={**dict.fromkeys(ANTHROPIC_ENV_KEYS, ""), OAUTH_TOKEN_ENV_KEY: ""}, pricing=AgentPricing())
 
 
 async def auth_fallback_for(session: AsyncSession, current: AuthSource) -> AuthSource | None:
@@ -176,7 +158,7 @@ async def auth_fallback_for(session: AsyncSession, current: AuthSource) -> AuthS
     cred = await AgentCredentialRepository(session).get_active()
     settings = await SystemSettingRepository(session).get_all()
     subscription = await agent_claude_subscription(session, settings)
-    has_api_key = bool(cred.api_key if cred is not None else settings.get("anthropic_api_key", "").strip())
+    has_api_key = bool(cred is not None and cred.api_key)
     return fallback_source(
         parse_auth_mode(settings.get(AUTH_MODE_SETTING_KEY)),
         current,

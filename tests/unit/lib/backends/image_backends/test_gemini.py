@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -59,18 +58,17 @@ def backend_vertex(fake_rate_limiter, patch_genai):
     mock_sa.Credentials.from_service_account_file.return_value = MagicMock()
     mock_open = MagicMock()
     with (
-        patch("lib.backends.image_backends.gemini.resolve_vertex_credentials_path") as mock_resolve,
         patch("lib.backends.image_backends.gemini.json_module") as mock_json,
         patch("builtins.open", mock_open),
         patch.dict("sys.modules", {"google.oauth2": MagicMock(), "google.oauth2.service_account": mock_sa}),
     ):
-        mock_resolve.return_value = Path("/fake/creds.json")
         mock_json.load.return_value = {"project_id": "test-project"}
         from lib.backends.image_backends.gemini import GeminiImageBackend
 
         return GeminiImageBackend(
             backend_type="vertex",
             rate_limiter=fake_rate_limiter,
+            credentials_path="/fake/creds.json",
         )
 
 

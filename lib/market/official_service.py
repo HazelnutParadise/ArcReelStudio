@@ -1,7 +1,7 @@
 """官方服务：地址与开关、实例标识，以及经共享 HTTP 客户端的出站调用。
 
 官方服务是市场之上的覆盖层（``docs/adr/0093``）。地址随版内置，可由环境变量
-``ARCREEL_OFFICIAL_SERVICE_URL`` 覆盖，覆盖为空即关闭；用户可见的总开关、首次告知标记与实例标识存系统设置。
+``ARCREEL_OFFICIAL_SERVICE_URL`` 覆盖，覆盖为空即关闭；用户可见的总开关（缺省为关，用户开启前不出站）、首次告知标记与实例标识存系统设置。
 地址为空或开关关闭时 :meth:`OfficialServiceGateway.open` 返回 None，调用方据此对官方服务零出站。
 
 出站复用共享 httpx2 客户端，单请求使用独立短超时、不重试。官方服务的非 2xx 响应体 ``{code, params}`` 转为
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_OFFICIAL_SERVICE_URL = "https://arc-reel.com"
 OFFICIAL_SERVICE_URL_ENV = "ARCREEL_OFFICIAL_SERVICE_URL"
-#: 系统设置：用户可见的总开关，``"false"`` 为关闭，缺省为开。
+#: 系统设置：用户可见的总开关，只有 ``"true"`` 为开，缺省为关。
 ENABLED_SETTING = "official_service_enabled"
 #: 系统设置：首次进入市场页的说明已确认。
 NOTICE_SEEN_SETTING = "official_service_notice_seen"
@@ -240,7 +240,7 @@ def _parse_aggregates(response: httpx2.Response, refs: Sequence[EntryRef]) -> li
 
 
 def _is_enabled(raw: str) -> bool:
-    return raw.strip().lower() != "false"
+    return raw.strip().lower() == "true"
 
 
 class OfficialServiceGateway:

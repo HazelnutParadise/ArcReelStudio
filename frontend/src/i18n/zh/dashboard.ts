@@ -3023,6 +3023,7 @@ export default {
   'lobby_hero_summary': '已完成 {{completed}} 集，{{inProduction}} 集还在制作。',
   'lobby_filter_all': '全部',
   'lobby_card_needs_repair': '待修复',
+  'lobby_card_schema_unsupported': '版本过旧',
   'lobby_new_project': '新建项目',
   'lobby_more_create_options': '更多新建方式',
   'lobby_import_zip_ellipsis': '导入 ZIP…',

@@ -9,6 +9,7 @@ import pytest
 
 from lib.agent.agent_auth import AuthAvailability
 from lib.agent.credential_tiers import AgentPricing
+from lib.config.env_keys import ANTHROPIC_ENV_KEYS
 from lib.config.service import build_anthropic_env
 
 
@@ -83,8 +84,8 @@ async def test_no_active_credential_returns_empty_strings(monkeypatch: pytest.Mo
 
 
 @pytest.mark.asyncio
-async def test_no_active_credential_falls_back_to_system_settings(monkeypatch: pytest.MonkeyPatch) -> None:
-    """双轨期兼容：无 active credential 时从 system_settings legacy key 读取。"""
+async def test_no_active_credential_ignores_keys_left_in_system_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Agent 的密钥与地址只来自 Agent 供应商凭证：系统设置里残留的旧键不注入会话。"""
     session = AsyncMock()
     repo_mock = AsyncMock()
     repo_mock.get_active = AsyncMock(return_value=None)
@@ -103,12 +104,10 @@ async def test_no_active_credential_falls_back_to_system_settings(monkeypatch: p
     )
     monkeypatch.setattr("lib.config.service.SystemSettingRepository", lambda _s: setting_repo)
 
-    result = (await build_anthropic_env(session)).env
-    assert result["ANTHROPIC_API_KEY"] == "legacy-sk"
-    assert result["ANTHROPIC_BASE_URL"] == "https://legacy.anthropic.com"
-    assert result["ANTHROPIC_MODEL"] == "claude-legacy-model"
-    # 未在 settings 中的 key 仍返回空串
-    assert result["CLAUDE_CODE_SUBAGENT_MODEL"] == ""
+    built = await build_anthropic_env(session)
+    assert built.pricing == AgentPricing()
+    # 每个 Anthropic 环境变量都显式置空，进程环境里的同名变量也不会漏进会话
+    assert built.env == {**dict.fromkeys(ANTHROPIC_ENV_KEYS, ""), "CLAUDE_CODE_OAUTH_TOKEN": ""}
 
 
 @pytest.mark.asyncio
