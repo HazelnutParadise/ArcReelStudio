@@ -45,7 +45,7 @@ from lib.artifacts.generation_input import (
 )
 from lib.artifacts.input_gap import GAP_TOLERANT_BASIS_SCHEMA_VERSION, InputGap, project_basis_records_gaps
 from lib.artifacts.media_artifact_currency import build_current_audio_artifact_basis, build_current_video_artifact_basis
-from lib.artifacts.version_manager import VersionManager, selected_manual_upload_snapshot
+from lib.artifacts.version_manager import VERSION_CONTENT_DIGEST, VersionManager, selected_manual_upload_snapshot
 from lib.artifacts.video_visual_provenance import resolve_video_aspect_ratio
 from lib.artifacts.visual_artifact_provenance import (
     GridStoryboardVisual,
@@ -137,6 +137,10 @@ _FORMAL_IMAGE_KINDS = frozenset(
 )
 
 
+class ArtifactTargetStateChangedError(RuntimeError):
+    """规划用到的项目输入在规划期间或规划之后被改动：结论已不可信，稍后重试即可。"""
+
+
 @dataclass(frozen=True, slots=True)
 class ArtifactTargetStatePlan:
     """Immutable preflight result consumed by the activation commit."""
@@ -154,6 +158,11 @@ class ArtifactTargetStatePlan:
     """依据的视频或音频版本已不是单元当前选中版本、对那个版本仍完整自证的字幕与呈现产物的正式路径。
 
     只在 ``allow_stale_formal_targets`` 下收集：这类登记暂不适用于当前媒体，切回它依据的版本即重新成立。
+    """
+    recorded_basis_digests: Mapping[ArtifactKey, str] = field(default_factory=dict)
+    """视频与音频选中版本记录里的生成依据摘要，以及上一项字幕与呈现自带的冻结依据摘要。
+
+    清单读不出时，导出按这些摘要登记它们，导入后照生成时的依据判时效（ADR 0134）。
     """
 
 
@@ -271,6 +280,7 @@ class TargetStatePlanner:
         shared_versions: SharedVersionMetadata | None = None,
         manifest_snapshot: ArtifactManifestSnapshot | None = None,
         shared_observations: dict[str, ArtifactObservation] | None = None,
+        preserved_content_facts: Mapping[ArtifactKey, ArtifactContentFacts | None] | None = None,
     ) -> None:
         self.project_dir = project_dir.resolve(strict=True)
         self.adapter = ProjectArtifactManifestAdapter(self.project_dir)
@@ -283,6 +293,9 @@ class TargetStatePlanner:
         #: Request-scoped inspections shared with the currency resolver that owns this planner: the
         #: resolver's admission and the media proof open each formal file once.  ``None`` outside a resolver.
         self.shared_observations = shared_observations
+        #: 保全时源清单里视频与音频登记的内容事实：正式文件对不上它的、登记本就没有事实的（为 ``None``），
+        #: 即使与快照一致也只按 stale 保全，已过期的媒体不经导出被洗成最新（ADR 0134）。
+        self.preserved_content_facts = dict(preserved_content_facts or {})
         if episode_scope is not None and (type(episode_scope) is not int or episode_scope < 1):
             raise ValueError("episode scope must be a positive integer or null")
         self.episode_scope = episode_scope
@@ -308,6 +321,7 @@ class TargetStatePlanner:
         self.current_presentation_bases: dict[ArtifactKey, ArtifactBasis] = {}
         self.formal_paths: dict[ArtifactKey, str] = {}
         self.unselected_media_formal_paths: dict[ArtifactKey, str] = {}
+        self.recorded_basis_digests: dict[ArtifactKey, str] = {}
         self._path_owners: dict[str, ArtifactKey] = {}
         self.skipped: list[MigrationSkippedArtifact] = []
         self._versions: Mapping[str, Any] | None = None
@@ -351,6 +365,7 @@ class TargetStatePlanner:
             entries=dict(self.entries),
             formal_paths=dict(self.formal_paths),
             unselected_media_formal_paths=dict(self.unselected_media_formal_paths),
+            recorded_basis_digests=dict(self.recorded_basis_digests),
             project=dict(self.project),
             project_bytes=self.project_bytes,
             dependency_bytes=dict(self.dependencies),
@@ -1116,6 +1131,33 @@ class TargetStatePlanner:
         if artifact_path != resource_relative_path(resource_type, resource_id):
             self._skip(key, artifact_path, "script points at a non-canonical media path")
             return
+        self._plan_canonical_typed_media(
+            versions,
+            episode=episode,
+            item=item,
+            resource_id=resource_id,
+            resource_type=resource_type,
+            artifact_path=artifact_path,
+            key=key,
+        )
+        if key not in self.entries and self.allow_stale_formal_targets:
+            # 保全时，证明不成立的视频与音频照常落在在场的正式文件上：登记不带内容事实随包，
+            # 导入后判 stale，与源项目一致（ADR 0062、ADR 0134）。正式文件不在或读不出时不落。
+            observed = self.adapter.inspect_artifact(artifact_path)
+            if observed.blocker is None and observed.present:
+                self._record_formal_path(key, observed.artifact_path)
+
+    def _plan_canonical_typed_media(
+        self,
+        versions: Mapping[str, Any],
+        *,
+        episode: _EpisodeState,
+        item: Mapping[str, Any],
+        resource_id: str,
+        resource_type: str,
+        artifact_path: str,
+        key: ArtifactKey,
+    ) -> None:
         resource_bucket = versions.get(resource_type)
         resource = resource_bucket.get(resource_id) if isinstance(resource_bucket, Mapping) else None
         if not isinstance(resource, Mapping):
@@ -1159,6 +1201,7 @@ class TargetStatePlanner:
         if target.episode != episode.episode or normalize_script_binding(target.script_file) != episode.script_file:
             self._skip(key, artifact_path, "selected version was generated for another episode or script")
             return
+        self.recorded_basis_digests[key] = target.basis.digest
         snapshot_rel = record.get("file")
         if not VersionManager.is_managed_snapshot_path(resource_type, snapshot_rel):
             self._skip(key, artifact_path, "selected version snapshot is not a managed history path")
@@ -1169,9 +1212,16 @@ class TargetStatePlanner:
                 self._skip(key, artifact_path, "current media file is not the registered version")
                 return
         else:
-            artifact_digest = self._prove_media_snapshot(key, artifact_path, cast(str, snapshot_rel))
+            artifact_digest = self._prove_media_snapshot(
+                key, artifact_path, cast(str, snapshot_rel), recorded_digest=record.get(VERSION_CONTENT_DIGEST)
+            )
             if artifact_digest is None:
                 return
+            if key in self.preserved_content_facts:
+                preserved = self.preserved_content_facts[key]
+                if preserved is None or preserved.digest != artifact_digest:
+                    self._skip(key, artifact_path, "current media file is not the registered version")
+                    return
         try:
             if resource_type == "audio":
                 current_basis = build_current_audio_artifact_basis(
@@ -1200,8 +1250,14 @@ class TargetStatePlanner:
             return
         self.entries[key] = self._media_entry(artifact_path, current_basis.digest, artifact_digest)
 
-    def _prove_media_snapshot(self, key: ArtifactKey, artifact_path: str, snapshot_rel: str) -> str | None:
-        """激活与登记前的证明：正式文件与选中版本快照字节一致时返回其内容指纹；不成立时记账并返回 ``None``。"""
+    def _prove_media_snapshot(
+        self, key: ArtifactKey, artifact_path: str, snapshot_rel: str, *, recorded_digest: object = None
+    ) -> str | None:
+        """激活与登记前的证明：正式文件与选中版本快照字节一致时返回其内容指纹；不成立时记账并返回 ``None``。
+
+        保全（导出与归档导入）时快照还须与版本记录的指纹一致：正式文件与快照被一起换掉时，两者相同证明不了
+        它就是那个版本（ADR 0134）。
+        """
 
         observation = self.adapter.inspect_artifact(artifact_path)
         if observation.blocker is not None:
@@ -1242,6 +1298,9 @@ class TargetStatePlanner:
             return None
         if artifact_digest != snapshot_digest:
             self._skip(key, artifact_path, "current media file differs from the selected version snapshot")
+            return None
+        if self.allow_stale_formal_targets and isinstance(recorded_digest, str) and recorded_digest != snapshot_digest:
+            self._skip(key, artifact_path, "selected version snapshot differs from its version record")
             return None
         self._remember_dependency_digest(artifact, artifact_digest)
         self._remember_dependency_digest(snapshot, snapshot_digest)
@@ -1397,12 +1456,12 @@ class TargetStatePlanner:
         )
         if proof is None:
             return
-        self.unselected_media_formal_paths[ArtifactKey.episode_subtitle(episode.episode, resource_id, variant)] = (
-            subtitle_path
-        )
-        self.unselected_media_formal_paths[ArtifactKey.episode_presentation(episode.episode, resource_id, variant)] = (
-            presentation_path
-        )
+        subtitle_key = ArtifactKey.episode_subtitle(episode.episode, resource_id, variant)
+        presentation_key = ArtifactKey.episode_presentation(episode.episode, resource_id, variant)
+        self.unselected_media_formal_paths[subtitle_key] = subtitle_path
+        self.unselected_media_formal_paths[presentation_key] = presentation_path
+        self.recorded_basis_digests[subtitle_key] = proof.frozen_subtitle_basis.digest
+        self.recorded_basis_digests[presentation_key] = proof.frozen_presentation_basis.digest
 
     def _plan_final_cut(self, key: ArtifactKey) -> None:
         """Rebuild one final cut basis from its edit timeline's latest revision.
@@ -1884,8 +1943,13 @@ class TargetStatePlanner:
         if not observation.present:
             self._versions = {}
             return self._versions
-        raw = self._read_dependency(relative, "version metadata")
-        self._versions = self._shared_versions.parse(raw, self._parse_versions)
+        try:
+            raw = self._read_dependency(relative, "version metadata")
+            self._versions = self._shared_versions.parse(raw, self._parse_versions)
+        except ValueError as exc:
+            if not self._activation_mode or isinstance(exc, ProjectMigrationError):
+                raise
+            raise ProjectMigrationError(str(exc), file=relative) from exc
         return self._versions
 
     @classmethod
@@ -1969,7 +2033,7 @@ class TargetStatePlanner:
 
         previous = self.dependency_digests.setdefault(path, digest)
         if previous != digest:
-            raise RuntimeError(f"artifact activation dependency changed during preflight: {path}")
+            raise ArtifactTargetStateChangedError(f"artifact activation dependency changed during preflight: {path}")
 
     def _safe_present_path(self, relative_path: str) -> Path | None:
         observation = self.adapter.inspect_artifact(relative_path)

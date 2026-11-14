@@ -1364,19 +1364,21 @@ def test_a_storyboard_referencing_an_asset_without_a_sheet_is_still_registered_o
     assert ArtifactKey.episode_storyboard(1, "E1S01") in ProjectArtifactManifestAdapter(imported).snapshot_entries()
 
 
-def test_a_video_whose_selected_snapshot_is_missing_from_the_archive_is_reported(tmp_path: Path) -> None:
-    """视频文件在、选中版本的快照不在：当前视频无从对证，原样留下不登记，进「未能带入」（与快照读不出同类）。"""
+def test_a_video_whose_selected_snapshot_is_missing_from_the_archive_is_restored_and_registered(
+    tmp_path: Path,
+) -> None:
+    """视频文件在、选中版本的快照不在，正式文件与版本记录指纹一致：无信封的包导入前按正式文件补回快照，视频照常登记。"""
     project_dir = write_legacy_storyboard_project(tmp_path / "projects")
-    drop_selected_version_snapshot(project_dir, "videos", "E1S1")
+    snapshot_rel = drop_selected_version_snapshot(project_dir, "videos", "E1S1")
+    archive = _manual_archive(project_dir, tmp_path / "v19.zip")
+    target = ProjectManager(tmp_path / "target")
 
-    _, imported, report = _import_report(tmp_path, project_dir)
+    result = ProjectArchiveService(target).import_project_archive(archive, uploaded_filename="v19.zip")
 
-    assert ("episode-video", "E1S1", "unreadable") in [
-        (item.kind, item.resource_id, item.category) for item in report.skipped
-    ]
-    assert (imported / "videos" / "scene_E1S1.mp4").read_bytes() == b"provider-video-E1S1"
+    imported = target.get_project_path(result.project_name)
+    assert (imported / snapshot_rel).read_bytes() == b"provider-video-E1S1"
     entries = ProjectArtifactManifestAdapter(imported).snapshot_entries()
-    assert ArtifactKey.episode_video(1, "E1S1") not in entries
+    assert ArtifactKey.episode_video(1, "E1S1") in entries
     assert ArtifactKey.episode_video(1, "E1S2") in entries
 
 

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal, cast
 
@@ -44,6 +44,7 @@ from lib.artifacts.artifact_manifest import (
     MANIFEST_FILENAME,
     ArtifactBasis,
     ArtifactBasisDescriptor,
+    ArtifactContentFacts,
     ArtifactInputClaim,
     ArtifactKey,
     ArtifactKind,
@@ -54,6 +55,7 @@ from lib.artifacts.artifact_manifest import (
     ProjectArtifactManifestAdapter,
 )
 from lib.artifacts.artifact_planner import (
+    ArtifactTargetStateChangedError,
     ArtifactTargetStatePlan,
     SharedVersionMetadata,
     TargetStatePlanner,
@@ -244,30 +246,179 @@ def take_migrated_artifact_claims(
     )
 
 
+ArchiveClaimOutcome = Literal[
+    "carried_as_stale",
+    "left_out_missing",
+    "left_out_presentation",
+    "left_out_old_version",
+    "left_out_unreadable",
+    "left_out_unverifiable",
+    "kept_stale_inputs_changed",
+]
+"""导出时一条登记没能原样随包的去向。
+
+- ``carried_as_stale``：视频或音频的正式文件在，但证明不了它就是选中版本；登记不带内容事实随包，导入后判 stale。
+- ``left_out_missing``：正式文件已不在；登记不随包，导入后与源项目一样读作 missing。
+- ``left_out_presentation``：字幕或呈现对不上它依据的媒体版本；登记不随包。
+- ``left_out_old_version``：字幕或呈现依据的是旧媒体版本，仅当前版本的包不带那个版本；登记不随包。
+- ``left_out_unreadable``：源项目里正式文件是符号链接或读不出（判 blocked），包里没有它；登记不随包，导入后读作
+  missing。规划器只看得见导出副本，这一种由调用方对照源项目从 ``left_out_missing`` 改判。
+- ``left_out_unverifiable``：其他证明不了的登记；不随包，文件照常在包里，导入时按文件重新判定。
+- ``kept_stale_inputs_changed``：导出副本清掉悬空引用之前不是 current、清掉之后依据对上了（``source_stale_keys``）；
+  按 :data:`UNPROVEN_MEDIA_BASIS_DIGEST` 随包，导入后仍判 stale，不经导出变成最新。
+"""
+
+_MEDIA_KINDS = frozenset({ArtifactKind.EPISODE_VIDEO, ArtifactKind.EPISODE_AUDIO})
+
+UNPROVEN_MEDIA_BASIS_DIGEST = ArtifactBasis.build("archive/unproven-media", kind_version=1, inputs={}).digest
+"""以 stale 随包的登记的依据摘要：不等于任何能投影出的依据，导入后不论包里的文件能否自证都判 stale。
+
+主要用于证明不了是所选版本的视频与音频；源项目判 stale、却因导出副本的修复依据又对上的其他产物同样用它。
+
+证明不了是所选版本的媒体随包时既不带内容事实、也不带原来的依据：否则导入端若能用包里的快照与版本记录重新证明，
+这条登记就会被洗成最新（例如改写过版本记录指纹的包），再导出一次也一样。用户重新生成或切换版本时按真实依据重新登记
+（ADR 0134）。
+"""
+_PRESENTATION_KINDS = frozenset({ArtifactKind.EPISODE_SUBTITLE, ArtifactKind.EPISODE_PRESENTATION})
+
+
+@dataclass(frozen=True, slots=True)
+class ArchiveClaimNotice:
+    """一条没能原样随包的登记：导出不因它失败，但要让用户知道导入后它是什么状态。"""
+
+    key: ArtifactKey
+    artifact_path: str
+    outcome: ArchiveClaimOutcome
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactManifestArchiveExport:
+    """导出信封里的清单快照，连同没能原样随包的登记。"""
+
+    snapshot: ArtifactManifestArchiveSnapshot
+    notices: tuple[ArchiveClaimNotice, ...]
+
+
 def snapshot_preserved_artifact_manifest(
     project_dir: Path,
     preserved_entries: Mapping[ArtifactKey, ArtifactManifestEntry],
     *,
     ships_unselected_versions: bool,
-) -> ArtifactManifestArchiveSnapshot:
+    source_stale_keys: frozenset[ArtifactKey] = frozenset(),
+) -> ArtifactManifestArchiveExport:
     """Rebase preserved claims and bind them to one stable formal-byte snapshot.
 
-    依据的视频或音频已不是选中版本的字幕与呈现登记暂不适用、不让导出失败。``ships_unselected_versions`` 为假时
-    包里没有它们依据的旧版本快照，导入方核验不了，这些登记不随包。
+    导出只管导出（ADR 0134）：证明不了的登记不让导出失败。视频与音频的正式文件在场时登记照常随包、不带内容
+    事实；正式文件已不在、字幕与呈现对不上依据，或依据的旧版本快照不在包里（``ships_unselected_versions``
+    为假）的登记不随包。每一条都记进 ``notices``，由调用方告诉用户。
     """
 
     with project_metadata_lock(project_dir):
-        plan = _plan_preserved_artifact_target_state(project_dir)
-        rebased = _rebase_preserved_artifact_entries(
-            plan, preserved_entries, keep_unselected_media_claims=ships_unselected_versions
+        plan = _plan_preserved_artifact_target_state(
+            project_dir,
+            # 源清单里视频与音频登记的内容事实；没有事实的（导入时就判了 stale）照样列上，规划器不替它重新证明。
+            preserved_content_facts={
+                key: entry.content for key, entry in preserved_entries.items() if key.kind in _MEDIA_KINDS
+            },
         )
-        assert_artifact_target_state_plan_unchanged(project_dir, plan)
         adapter = ProjectArtifactManifestAdapter(project_dir)
+        rebased: dict[ArtifactKey, ArtifactManifestEntry] = {}
+        notices: list[ArchiveClaimNotice] = []
+        for key, archived in sorted(preserved_entries.items(), key=lambda item: item[0].encode()):
+            current = plan.entries.get(key)
+            artifact_path = current.artifact_path if current is not None else plan.formal_paths.get(key)
+            if artifact_path is None and key in plan.unselected_media_formal_paths:
+                if not ships_unselected_versions:
+                    notices.append(ArchiveClaimNotice(key, archived.artifact_path, "left_out_old_version"))
+                    continue
+                artifact_path = plan.unselected_media_formal_paths[key]
+            if artifact_path is None:
+                notices.append(
+                    ArchiveClaimNotice(key, archived.artifact_path, _left_out_outcome(adapter, key, archived))
+                )
+                continue
+            already_unproven = archived.basis_digest == UNPROVEN_MEDIA_BASIS_DIGEST
+            carried_as_stale = key.kind in _MEDIA_KINDS and (current is None or already_unproven)
+            # 导出副本清掉了它的某个生成输入的引用才显得对上了依据（``source_stale_keys``）：不是它变新了。
+            kept_stale = not carried_as_stale and (already_unproven or key in source_stale_keys)
+            rebased[key] = ArtifactManifestEntry(
+                artifact_path=artifact_path,
+                basis_digest=UNPROVEN_MEDIA_BASIS_DIGEST if carried_as_stale or kept_stale else archived.basis_digest,
+            )
+            if carried_as_stale:
+                notices.append(ArchiveClaimNotice(key, artifact_path, "carried_as_stale"))
+            elif kept_stale:
+                notices.append(ArchiveClaimNotice(key, artifact_path, "kept_stale_inputs_changed"))
+        assert_artifact_target_state_plan_unchanged(project_dir, plan)
         content_digests = {
             key: read_artifact_content_digest(adapter, entry.artifact_path) for key, entry in rebased.items()
         }
         assert_artifact_target_state_plan_unchanged(project_dir, plan)
-    return ArtifactManifestArchiveSnapshot(entries=rebased, content_digests=content_digests)
+    return ArtifactManifestArchiveExport(
+        snapshot=ArtifactManifestArchiveSnapshot(entries=rebased, content_digests=content_digests),
+        notices=tuple(notices),
+    )
+
+
+def snapshot_self_proved_artifact_manifest(
+    project_dir: Path,
+    *,
+    ships_unselected_versions: bool,
+) -> ArtifactManifestArchiveExport:
+    """源项目的清单读不出时，按导出规划器自己的证明组一份清单快照（ADR 0134）。
+
+    视频与音频、依据旧媒体版本的字幕与呈现按各自记录的生成依据登记，导入后照生成时的依据判时效：已过期的仍是
+    stale，不会变成 missing 或最新。视频与音频的正式文件在、证明不成立（含没有版本记录）时以
+    :data:`UNPROVEN_MEDIA_BASIS_DIGEST` 随包，导入后判 stale。其余产物没有别处记着生成依据，按当前内容投影登记，
+    导入后判 current。
+    """
+
+    with project_metadata_lock(project_dir):
+        plan = _plan_preserved_artifact_target_state(project_dir)
+        adapter = ProjectArtifactManifestAdapter(project_dir)
+        entries: dict[ArtifactKey, ArtifactManifestEntry] = {}
+        notices: list[ArchiveClaimNotice] = []
+        for key, planned in plan.entries.items():
+            recorded = plan.recorded_basis_digests.get(key) if key.kind in _MEDIA_KINDS else None
+            entries[key] = ArtifactManifestEntry(
+                artifact_path=planned.artifact_path, basis_digest=recorded or planned.basis_digest
+            )
+        unproven = {key: path for key, path in plan.formal_paths.items() if key not in entries}
+        if ships_unselected_versions:
+            unproven.update(plan.unselected_media_formal_paths)
+        for key, artifact_path in sorted(unproven.items(), key=lambda item: item[0].encode()):
+            if key.kind in _MEDIA_KINDS:
+                # 正式文件在、证明不了是所选版本的视频与音频（含没有版本记录、记不出依据的）：以 stale 随包。
+                entries[key] = ArtifactManifestEntry(
+                    artifact_path=artifact_path, basis_digest=UNPROVEN_MEDIA_BASIS_DIGEST
+                )
+                notices.append(ArchiveClaimNotice(key, artifact_path, "carried_as_stale"))
+                continue
+            recorded = plan.recorded_basis_digests.get(key)
+            if recorded is None:
+                notices.append(ArchiveClaimNotice(key, artifact_path, "left_out_unverifiable"))
+                continue
+            entries[key] = ArtifactManifestEntry(artifact_path=artifact_path, basis_digest=recorded)
+        assert_artifact_target_state_plan_unchanged(project_dir, plan)
+        content_digests = {
+            key: read_artifact_content_digest(adapter, entry.artifact_path) for key, entry in entries.items()
+        }
+        assert_artifact_target_state_plan_unchanged(project_dir, plan)
+    return ArtifactManifestArchiveExport(
+        snapshot=ArtifactManifestArchiveSnapshot(entries=entries, content_digests=content_digests),
+        notices=tuple(notices),
+    )
+
+
+def _left_out_outcome(
+    adapter: ProjectArtifactManifestAdapter, key: ArtifactKey, archived: ArtifactManifestEntry
+) -> ArchiveClaimOutcome:
+    observation = adapter.inspect_artifact(archived.artifact_path)
+    if observation.blocker is None and not observation.present:
+        return "left_out_missing"
+    if key.kind in _PRESENTATION_KINDS:
+        return "left_out_presentation"
+    return "left_out_unverifiable"
 
 
 def _archived_content_evidence(
@@ -289,22 +440,26 @@ def _archived_content_evidence(
     return "text_mode" if text_mode.hexdigest() == archived_digest else "mismatch"
 
 
-def _plan_preserved_artifact_target_state(project_dir: Path) -> ArtifactTargetStatePlan:
+def _plan_preserved_artifact_target_state(
+    project_dir: Path,
+    *,
+    preserved_content_facts: Mapping[ArtifactKey, ArtifactContentFacts | None] | None = None,
+) -> ArtifactTargetStatePlan:
     """Prove canonical paths while leaving preserved generation digests immutable."""
 
-    return TargetStatePlanner(project_dir, allow_stale_formal_targets=True).plan()
+    return TargetStatePlanner(
+        project_dir, allow_stale_formal_targets=True, preserved_content_facts=preserved_content_facts
+    ).plan()
 
 
 def _rebase_preserved_artifact_entries(
     plan: ArtifactTargetStatePlan,
     preserved_entries: Mapping[ArtifactKey, ArtifactManifestEntry],
-    *,
-    keep_unselected_media_claims: bool = True,
 ) -> dict[ArtifactKey, ArtifactManifestEntry]:
-    """把保全的 claim 落到规划器证明的正式路径上，依据摘要不变；证明不了的 claim 一律拒绝。
+    """导入时把信封里的 claim 落到规划器证明的正式路径上，依据摘要不变；证明不了的 claim 一律拒绝。
 
-    依据的视频或音频已不是选中版本、对那个版本仍自证的字幕与呈现 claim 暂不适用：保留时照常落路径，
-    ``keep_unselected_media_claims`` 为假时略去。
+    依据的视频或音频已不是选中版本、对那个版本仍自证的字幕与呈现 claim 暂不适用，照常落路径。导出不走这里：
+    导出对证明不了的登记照常出包并逐条告知（:func:`snapshot_preserved_artifact_manifest`）。
     """
 
     rebased: dict[ArtifactKey, ArtifactManifestEntry] = {}
@@ -312,10 +467,8 @@ def _rebase_preserved_artifact_entries(
     for key, archived in preserved_entries.items():
         current = plan.entries.get(key)
         artifact_path = current.artifact_path if current is not None else plan.formal_paths.get(key)
-        if artifact_path is None and key in plan.unselected_media_formal_paths:
-            if not keep_unselected_media_claims:
-                continue
-            artifact_path = plan.unselected_media_formal_paths[key]
+        if artifact_path is None:
+            artifact_path = plan.unselected_media_formal_paths.get(key)
         if artifact_path is None:
             invalid.append(key.encode())
             continue
@@ -382,7 +535,9 @@ def _plan_artifact_claim_reconciliation(
         for path, value in source.items():
             previous = destination.setdefault(path, value)
             if previous != value:
-                raise RuntimeError(f"artifact target dependency changed during reconciliation: {path}")
+                raise ArtifactTargetStateChangedError(
+                    f"artifact target dependency changed during reconciliation: {path}"
+                )
 
     for key, frozen_entry in claimed.items():
         scope = episode_scope_for_key(key)
@@ -503,31 +658,40 @@ def assert_artifact_target_state_plan_unchanged(
         try:
             current = path.read_bytes()
         except OSError as exc:
-            raise RuntimeError(f"artifact activation dependency changed after preflight: {path}") from exc
+            raise ArtifactTargetStateChangedError(
+                f"artifact activation dependency changed after preflight: {path}"
+            ) from exc
         if current != expected:
-            raise RuntimeError(f"artifact activation dependency changed after preflight: {path}")
+            raise ArtifactTargetStateChangedError(f"artifact activation dependency changed after preflight: {path}")
     for path, expected in plan.dependency_digests.items():
         try:
             current = visual_file_digest(path)
         except OSError as exc:
-            raise RuntimeError(f"artifact activation dependency changed after preflight: {path}") from exc
+            raise ArtifactTargetStateChangedError(
+                f"artifact activation dependency changed after preflight: {path}"
+            ) from exc
         if current != expected:
-            raise RuntimeError(f"artifact activation dependency changed after preflight: {path}")
+            raise ArtifactTargetStateChangedError(f"artifact activation dependency changed after preflight: {path}")
 
 
 def _assert_project_unchanged(project_dir: Path, expected: bytes) -> None:
     try:
         current = (project_dir / "project.json").read_bytes()
     except OSError as exc:
-        raise RuntimeError("project.json changed after artifact activation preflight") from exc
+        raise ArtifactTargetStateChangedError("project.json changed after artifact activation preflight") from exc
     if current != expected:
-        raise RuntimeError("project.json changed after artifact activation preflight")
+        raise ArtifactTargetStateChangedError("project.json changed after artifact activation preflight")
 
 
 __all__ = [
+    "UNPROVEN_MEDIA_BASIS_DIGEST",
+    "ArchiveClaimNotice",
+    "ArchiveClaimOutcome",
     "ArtifactComparer",
     "ArtifactCurrencyResolver",
     "ArtifactInputClaim",
+    "ArtifactManifestArchiveExport",
+    "ArtifactTargetStateChangedError",
     "ArtifactTargetStatePlan",
     "EpisodeScriptInput",
     "RegisteredArtifactResolver",
@@ -561,6 +725,7 @@ __all__ = [
     "resolve_usable_episode_script_input",
     "resolve_usable_storyboard_video_inputs",
     "snapshot_preserved_artifact_manifest",
+    "snapshot_self_proved_artifact_manifest",
     "snapshot_usable_artifact_input_claim",
     "stage_preserved_artifact_claims",
     "take_migrated_artifact_claims",
