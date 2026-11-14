@@ -8,7 +8,7 @@
 - **同一资产表里名字归一后相同**（去两端空白、Unicode NFC、不区分大小写），或名字归一后为空：
   留第一条，其余从资产表去掉；资产图文件不动，改前的 ``project.json`` 留作保留副本。去掉的条目
   名下的衍生按资产合并的规则并进保留条目（迁走的衍生图搬到保留名下），各集剧本与草稿里指向只差
-  大小写那条的引用改写为保留名。
+  大小写那条的引用改写为保留名。被去掉条目的资产图登记撤掉（共用清单键时只撤登记在它的图上的那条）。
 - **资产图、参考图或参考音频指向别的资产名下的文件**（旧版资产 PATCH 接受任意路径）：复制一份到本资产名下
   并改指过去，原文件留给它的主人。本资产名下的落点已被另一份内容占着时，那一份先挪成保留副本。资产图的清单
   登记随之改写：登记在旧路径上的换到副本（同字节，依据摘要不变），登记在落点上的描述的是被挪走的那份，撤掉。
@@ -17,7 +17,7 @@
   条目上指向原 id 规范媒体路径的产物引用清空——那些文件属于保留原 id 的条目；只描述这些媒体的
   生成状态一并清空，换号条目读作尚未生成。
 - **两集里有同号条目**：媒体与登记归 id 前缀所指的那一集，对不上时归账本里靠前的那一集；另一集的
-  条目在本集换新 id，不带走媒体。
+  条目在本集换新 id，不带走媒体，本集名下原 id 的登记撤掉。
 
 读不出的 ``project.json`` 或剧本不在这里处理：之后的迁移步照旧拒绝整个项目。
 """
@@ -29,7 +29,7 @@ import json
 import logging
 import os
 import re
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterable, Iterator
 from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePath, PurePosixPath
 from typing import Any, cast
@@ -236,6 +236,7 @@ def _drop_duplicate_assets(work: _Work) -> None:
         return
     _rewrite_dropped_asset_references(work, drops)
     _carry_merged_derivative_records(work, drops)
+    _retire_dropped_sheet_claims(work, drops)
     for drop in drops:
         bucket = work.project[ASSET_SPECS[drop.asset_type].bucket_key]
         source_entry = bucket.pop(drop.name)
@@ -399,6 +400,65 @@ def _carry_merged_derivative_records(work: _Work, drops: list[_AssetDrop]) -> No
     if changed:
         ensure_versioned_backup(versions_path, work.schema_version)
         atomic_write_json(versions_path, versions)
+
+
+def _retire_claims(work: _Work, keys: Iterable[ArtifactKey], what: str) -> None:
+    """撤掉 *keys* 在清单里的登记（文件不动）；先留版本化备份，清单在规整期间被别处改动时报错。"""
+
+    if not (work.project_dir / MANIFEST_FILENAME).is_file():
+        return
+    adapter = ProjectArtifactManifestAdapter(work.project_dir)
+    stored = {key: entry for key in dict.fromkeys(keys) if (entry := adapter.get_entry(key)) is not None}
+    if not stored:
+        return
+    ensure_versioned_backup(work.project_dir / MANIFEST_FILENAME, work.schema_version)
+    if not adapter.replace_entries_if_matches_atomically(expected=stored, replacements=dict.fromkeys(stored)):
+        raise RuntimeError(f"artifact manifest changed while retiring {what}")
+
+
+def _declared_artifact_path(value: object) -> str | None:
+    """资产图字段值的清单路径写法；空值或不是合法的产物路径时为 ``None``。"""
+
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return normalize_artifact_path(value)
+    except ValueError:
+        return None
+
+
+def _retire_dropped_sheet_claims(work: _Work, drops: list[_AssetDrop]) -> None:
+    """被去掉条目的资产图登记撤掉，与 :func:`_carry_sheet_claims` 撤掉落点上的登记同一口径：不换键，图留在盘上。
+
+    - 只差大小写的变体有自己的清单键，条目去掉后那条登记没有主人，留着会按不区分大小写的路径占住保留条目的登记位。
+    - 只差空白或 Unicode 形态的变体与保留条目共用一个键：登记在被去掉那条的图上时撤掉，保留条目读作缺失，
+      不借它的依据伪造时效；登记在保留条目的图上、或两边路径写法认不出时不动。
+
+    版本历史不动：它不是时效登记，按名字的原写法记在被去掉的名下，没有资产会解析到它。
+    先于删资产的 ``project.json`` 提交；重跑时仍能发现这些重名资产，登记已撤，无事可做。
+    """
+
+    retired: list[ArtifactKey] = []
+    for drop in drops:
+        if not drop.kept:
+            continue
+        spec = ASSET_SPECS[drop.asset_type]
+        bucket = work.project[spec.bucket_key]
+        dropped_key = ArtifactKey.asset_sheet(drop.asset_type, drop.name)
+        if dropped_key != ArtifactKey.asset_sheet(drop.asset_type, drop.kept):
+            retired.append(dropped_key)
+            continue
+        if not (work.project_dir / MANIFEST_FILENAME).is_file():
+            continue
+        stored = ProjectArtifactManifestAdapter(work.project_dir).get_entry(dropped_key)
+        source_entry, kept_entry = bucket.get(drop.name), bucket.get(drop.kept)
+        dropped_path = _declared_artifact_path(
+            source_entry.get(spec.sheet_field) if isinstance(source_entry, dict) else None
+        )
+        kept_path = _declared_artifact_path(kept_entry.get(spec.sheet_field) if isinstance(kept_entry, dict) else None)
+        if stored is not None and dropped_path is not None and stored.artifact_path == dropped_path != kept_path:
+            retired.append(dropped_key)
+    _retire_claims(work, retired, "the sheet claim of a dropped asset")
 
 
 def _relocate_derivative_sheet(work: _Work, derivative: object, owner: str, kept: str, name: str) -> dict[str, str]:
@@ -711,7 +771,7 @@ def _repair_item_ids(work: _Work) -> None:
 
     产物路径只由条目 id 决定，两集同号的条目会认领同一个媒体文件。媒体与登记归 id 前缀 ``E<n>``
     所指的那一集，前缀对不上任何一个同号集时归账本里靠前的那一集；另一集的条目在本集换新 id、
-    不带走媒体。
+    不带走媒体，本集名下原 id 的登记一并撤掉，不换到新 id 或别的集名下。
     """
 
     scripts: list[tuple[int, Path, dict[str, Any], list[Any], str, str]] = []
@@ -764,6 +824,19 @@ def _repair_item_ids(work: _Work) -> None:
             changes.append((old_id, new_id))
         if not changes:
             continue
+        # 换号后本集已没有条目持有的原 id，它的登记没有主人，还占着另一集的规范路径：先于剧本落盘撤掉，
+        # 剧本写盘前失败时重跑仍能发现同号条目，登记已撤，无事可做。本集仍有条目持有的原 id 不动。
+        held = {item.get(id_field) for item in items if isinstance(item, dict)}
+        _retire_claims(
+            work,
+            (
+                key
+                for old_id, _new_id in changes
+                if old_id and old_id not in held
+                for key in ArtifactKey.episode_resource_artifacts(episode, old_id)
+            ),
+            "the claims of a renumbered item",
+        )
         ensure_versioned_backup(path, work.schema_version)
         atomic_write_json(path, script)
         for old_id, new_id in changes:

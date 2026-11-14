@@ -718,6 +718,16 @@ def reuse_item_id_across_episodes(project_dir: Path, item_id: str) -> None:
     _write_json(project_path, project)
 
 
+def drop_selected_version_snapshot(project_dir: Path, resource_type: str, resource_id: str) -> str:
+    """手工打包或清理过版本目录的项目里，选中版本记录还在、它的快照文件已不在；返回被删掉的快照路径。"""
+
+    versions = _load_json_object(project_dir / "versions" / "versions.json")
+    history = versions[resource_type][resource_id]
+    [record] = [item for item in history["versions"] if item["version"] == history["current_version"]]
+    (project_dir / record["file"]).unlink()
+    return record["file"]
+
+
 def write_unreadable_grid_record(project_dir: Path, grid_id: str = "grid_0123456789ab") -> Path:
     """单个宫格记录损坏（不是合法 JSON）。"""
 
@@ -742,6 +752,7 @@ __all__ = [
     "add_asset_names_differing_only_in_case",
     "add_colliding_asset_name",
     "break_script_item_ids",
+    "drop_selected_version_snapshot",
     "refer_to_asset_in_episode",
     "repoint_registered_asset_sheet",
     "reuse_item_id_across_episodes",
