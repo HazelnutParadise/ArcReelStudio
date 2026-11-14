@@ -19,8 +19,8 @@ export interface SystemConfigSettings extends GlobalCredentialSettings {
   video_poll_timeout_seconds: number;
   /** 成片在 GPU 可用时是否用 GPU 编码；未设置时为 true。 */
   gpu_encoding_enabled: boolean;
+  /** 生效的 Agent 供应商凭证里有没有 API Key；密钥与地址只在 Agent 供应商凭证里管理。 */
   anthropic_api_key: { is_set: boolean; masked: string | null };
-  anthropic_base_url: string;
   anthropic_model: string;
   anthropic_default_haiku_model: string;
   anthropic_default_opus_model: string;
@@ -209,8 +209,6 @@ export interface SystemConfigPatch extends GlobalCredentialSettings {
   video_generate_audio?: boolean;
   video_poll_timeout_seconds?: number;
   gpu_encoding_enabled?: boolean;
-  anthropic_api_key?: string;
-  anthropic_base_url?: string;
   anthropic_model?: string;
   anthropic_default_haiku_model?: string;
   anthropic_default_opus_model?: string;

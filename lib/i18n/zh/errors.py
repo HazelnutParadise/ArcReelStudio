@@ -80,6 +80,8 @@ MESSAGES = {
     "task_fail_provider_unsupported_media": "供应商 {provider_id} 不支持 {media_type} 生成",
     "task_fail_provider_rejected": "供应商拒绝了这次生成请求（HTTP {status}）",
     "task_fail_credential_not_found": "设置里为「{provider}」指定的连线已被删除，请在设置中重新选择连线。",
+    "vertex_credential_file_missing": "Vertex AI 连线「{connection}」的凭证文件不见了，无法调用；请在连线中心重新上传这个服务账号的凭证文件",
+    "vertex_connection_missing": "Vertex AI 还没有连线，无法调用；请在连线中心上传服务账号的凭证文件",
     # 生成时这一媒体类型没有默认模型（NoAvailableProviderError），按落库的 media_type 选文案，未知媒体类型用通用的一句。
     "task_fail_default_model_not_set": "没有设置默认模型：请在「全局设置 → 默认模型」中选择；还没有配置供应商时，先在「全局设置 → 供应商」配置",
     "task_fail_default_model_not_set_text": "没有设置文本默认模型：请在「全局设置 → 默认模型」中选择；还没有配置供应商时，先在「全局设置 → 供应商」配置",

@@ -11,7 +11,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS, credential_key, parse_credential_id
+from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS, credential_key, parse_credential_id, provider_of
 from lib.config.service import DEFAULT_VIDEO_POLL_TIMEOUT_SECONDS, ConfigService
 from lib.infra.api_errors import UnprocessableError
 from server.services.backend_values import validate_backend_credential, validate_backend_value
@@ -62,7 +62,7 @@ async def apply_default_model_settings(session: AsyncSession, svc: ConfigService
         if cred_key in patch:
             stored = await validate_backend_credential(session, effective, parse_credential_id(patch[cred_key]))
             await svc.set_setting(cred_key, str(stored) if stored else "")
-        elif backend_key in patch and _provider_of(effective) != _provider_of(current):
+        elif backend_key in patch and provider_of(effective) != provider_of(current):
             await svc.set_setting(cred_key, "")
 
     # 旁白音色：可配置字符串 id（照供应商文档填），空串 = 清除回落服务默认
@@ -88,7 +88,3 @@ async def apply_default_model_settings(session: AsyncSession, svc: ConfigService
             await svc.set_video_poll_timeout_seconds(int(patch["video_poll_timeout_seconds"]))
         except (TypeError, ValueError) as exc:
             raise UnprocessableError("video_poll_timeout_minimum") from exc
-
-
-def _provider_of(backend_value: str) -> str:
-    return backend_value.split("/", 1)[0] if backend_value else ""

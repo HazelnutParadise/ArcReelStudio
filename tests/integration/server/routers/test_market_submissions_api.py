@@ -33,7 +33,7 @@ ClientFactory = Callable[..., AbstractAsyncContextManager[httpx2.AsyncClient]]
 
 
 def _client_factory(session_factory: async_sessionmaker[AsyncSession]) -> ClientFactory:
-    """``base_url`` 为官方服务地址，空串即关闭。"""
+    """``base_url`` 为官方服务地址，空串即关闭；总开关已由用户打开。"""
 
     async def session_override():
         async with session_factory() as session:
@@ -43,10 +43,11 @@ def _client_factory(session_factory: async_sessionmaker[AsyncSession]) -> Client
     async def factory(base_url: str = OFFICIAL_SERVICE) -> AsyncGenerator[httpx2.AsyncClient]:
         app = FastAPI()
         async with httpx2.AsyncClient() as network:
+            gateway = OfficialServiceGateway(session_factory, base_url=base_url, http_client=lambda: network)
+            # 用户已打开官方服务的总开关（缺省为关）。
+            await gateway.update(enabled=True)
             app.dependency_overrides[get_async_session] = session_override
-            app.dependency_overrides[get_official_service_gateway] = lambda: OfficialServiceGateway(
-                session_factory, base_url=base_url, http_client=lambda: network
-            )
+            app.dependency_overrides[get_official_service_gateway] = lambda: gateway
             app.include_router(market_submissions.router)
             app.include_router(custom_endpoints.router)
             register_error_handlers(app)

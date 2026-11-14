@@ -1,8 +1,8 @@
 {
   "method": "GET",
   "path": "/api/v1/market/submissions",
-  "status": 200,
+  "status": 409,
   "body": {
-    "submissions": []
+    "detail": "官方服务已关闭"
   }
 }

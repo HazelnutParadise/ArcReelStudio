@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from lib.catalog import builtin_models
 from lib.catalog import query as catalog
-from lib.config.model_setting_keys import MODEL_SETTING_CAPABILITIES, credential_key
+from lib.config.model_setting_keys import MODEL_SETTING_CAPABILITIES, credential_key, provider_of
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.config.repository import SystemSettingRepository
 from lib.config.service import ConfigService
@@ -161,7 +161,7 @@ async def acknowledge_recommendation(
     repo = SystemSettingRepository(session)
     if apply:
         key = GLOBAL_DEFAULT_KEYS[media_type]
-        current_provider = (await repo.get(key, "")).split("/", 1)[0]
+        current_provider = provider_of(await repo.get(key, ""))
         await repo.upsert(key, f"{provider_id}/{model_id}")
         if current_provider != provider_id:
             await repo.upsert(credential_key(key), "")

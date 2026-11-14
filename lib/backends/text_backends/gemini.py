@@ -123,11 +123,9 @@ class GeminiTextBackend:
 
             from google.oauth2 import service_account
 
-            from lib.config.vertex_credentials import resolve_vertex_credentials_path
-
-            credentials_file = Path(credentials_path) if credentials_path else resolve_vertex_credentials_path()
-            if credentials_file is None:
-                raise ValueError("未找到 Vertex AI 凭证文件\n请将服务账号 JSON 文件放入 vertex_keys/ 目录")
+            if not credentials_path:
+                raise ValueError("Vertex AI 后端需要连线的凭证文件路径（credentials_path）")
+            credentials_file = Path(credentials_path)
 
             with open(credentials_file, encoding="utf-8") as f:
                 creds_data = json_module.load(f)

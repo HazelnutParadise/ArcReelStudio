@@ -17,7 +17,9 @@ from lib.backends.backend_assembly.specs import PROVIDER_ENDPOINT_SPECS, builtin
 from lib.catalog import query as catalog
 from lib.catalog.errors import ModelNotInCatalogError
 from lib.config.registry import PROVIDER_REGISTRY
+from lib.config.vertex_credentials import VERTEX_PROVIDER_ID, VertexCredentialMissingError, has_vertex_credentials_file
 from lib.custom_provider import is_custom_provider
+from lib.db.repositories.credential_repository import CredentialRepository
 
 if TYPE_CHECKING:
     from lib.config.resolver import ConfigResolver
@@ -33,12 +35,28 @@ async def _load_builtin_config(
     之后 sync 构造闭包只读信封。
     """
     db_config, credential_id = await resolver.provider_config_with_credential(provider_id, credential_id)
+    if provider_id == VERTEX_PROVIDER_ID:
+        await _require_vertex_credentials_file(resolver, db_config.get("credentials_path"), credential_id)
     return LoadedConfig(
         credentials=dict(db_config),
         provider_meta=PROVIDER_REGISTRY.get(provider_id),
         rate_limiter=rate_limiter,
         credential_id=credential_id,
     )
+
+
+async def _require_vertex_credentials_file(
+    resolver: ConfigResolver, credentials_path: str | None, credential_id: int | None
+) -> None:
+    """Vertex 只用生效连线（或供应商配置）给出的凭证文件；没有就报出是哪条连线，不挑别的文件顶替。"""
+    if await asyncio.to_thread(has_vertex_credentials_file, credentials_path):
+        return
+    connection: str | None = None
+    if credential_id is not None:
+        async with resolver._open_session() as (session, _):
+            credential = await CredentialRepository(session).get_by_id(credential_id)
+        connection = credential.name if credential is not None else None
+    raise VertexCredentialMissingError(connection=connection)
 
 
 async def assemble_backend(

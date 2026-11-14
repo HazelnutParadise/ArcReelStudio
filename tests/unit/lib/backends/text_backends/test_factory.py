@@ -7,6 +7,7 @@
 """
 
 import contextlib
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -15,6 +16,13 @@ from lib.backends.text_backends.base import TextTaskType
 from lib.backends.text_backends.factory import create_text_backend_for_task
 from lib.config.resolver import ProviderModel
 from tests.fakes import captured_backend_construction
+
+
+@pytest.fixture
+def service_account_file(tmp_path: Path) -> str:
+    path = tmp_path / "sa.json"
+    path.write_text('{"project_id": "p"}', encoding="utf-8")
+    return str(path)
 
 
 def _make_mock_resolver(**async_methods):
@@ -62,13 +70,16 @@ async def test_resolved_provider_model_and_credentials_reach_the_spec():
         # 解析层 id 与 backend 注册名不同的两族：gemini 双 id 共用 "gemini" 注册名；
         # ark-agent-plan 复用 ArkTextBackend（name 报 "ark"）。记账须取解析层 id。
         ("gemini-aistudio", "gemini-3-flash-preview", {"api_key": "test-key", "base_url": ""}, "gemini"),
-        ("gemini-vertex", "gemini-3-flash-preview", {"gcs_bucket": "my-bucket"}, "gemini"),
+        # Vertex 只用连线自己的服务账号文件：用例里的路径换成 service_account_file。
+        ("gemini-vertex", "gemini-3-flash-preview", {"gcs_bucket": "my-bucket", "credentials_path": ""}, "gemini"),
         ("ark-agent-plan", "doubao-seed-2.1-lite", {"api_key": "ark-plan-key"}, "ark-agent-plan"),
     ],
 )
 async def test_returns_resolver_provider_id_not_registry_backend_name(
-    provider_id: str, model: str, credentials: dict, registry_backend: str
+    service_account_file: str, provider_id: str, model: str, credentials: dict, registry_backend: str
 ):
+    if "credentials_path" in credentials:
+        credentials = {**credentials, "credentials_path": service_account_file}
     mock_resolver = _make_mock_resolver(
         text_backend_for_task=ProviderModel(provider_id, model),
         provider_config_with_credential=(credentials, None),

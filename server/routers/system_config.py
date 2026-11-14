@@ -527,8 +527,7 @@ class SystemConfigPatchRequest(BaseModel):
     video_poll_timeout_seconds: int | None = None
     # 成片在 GPU 可用时是否用 GPU 编码；关闭后始终用 CPU 编码
     gpu_encoding_enabled: bool | None = None
-    anthropic_api_key: str | None = None
-    anthropic_base_url: str | None = None
+    # Agent 的密钥与地址只在 Agent 供应商凭证里（/api/v1/agent/credentials）；这里只有档位模型名
     anthropic_model: str | None = None
     anthropic_default_haiku_model: str | None = None
     anthropic_default_opus_model: str | None = None
@@ -543,13 +542,7 @@ class SystemConfigPatchRequest(BaseModel):
 
 
 # Setting keys that map directly to string DB settings
-#
-# DEPRECATED: anthropic_api_key / anthropic_base_url 已迁移至 agent_anthropic_credentials 表
-# (spec 2026-05-11-agent-url-config-optimization)。这里保留 anthropic_base_url 读写仅作旧客户端
-# 兼容；新 UI 走 /api/v1/agent/credentials/* 接口。计划在 0.14.0 删除 anthropic_api_key /
-# anthropic_base_url 字段，anthropic_*_model 系列保留（仍由 Section 2 Model Routing 管理）。
 _STRING_SETTINGS = (
-    "anthropic_base_url",
     "anthropic_model",
     "anthropic_default_haiku_model",
     "anthropic_default_opus_model",
@@ -578,15 +571,11 @@ async def get_system_config(
         else ConfigResolver._DEFAULT_VIDEO_GENERATE_AUDIO
     )
     gpu_encoding_raw = all_s.get(GPU_ENCODING_SETTING, "")
-    anthropic_key = all_s.get("anthropic_api_key", "")
-    # 兼容新凭证目录：旧 system_settings 没填但 agent_anthropic_credentials 有 active 时
-    # 也算 is_set，避免 dashboard "未配置" 红点误报
-    if not anthropic_key:
-        from lib.db.repositories.agent_credential_repo import AgentCredentialRepository
+    # 内嵌 Agent 是否配了 API Key：只看生效的 Agent 供应商凭证
+    from lib.db.repositories.agent_credential_repo import AgentCredentialRepository
 
-        active_cred = await AgentCredentialRepository(session).get_active()
-        if active_cred is not None:
-            anthropic_key = active_cred.api_key
+    active_cred = await AgentCredentialRepository(session).get_active()
+    anthropic_key = active_cred.api_key if active_cred is not None else ""
 
     # 语速 setting 为字符串存储，损坏值（手工改库等）按未设置处理
     narration_speed = ConfigService.parse_narration_speed(all_s.get("narration_speed", ""))
@@ -617,7 +606,6 @@ async def get_system_config(
             "is_set": bool(anthropic_key),
             "masked": mask_secret(anthropic_key) if anthropic_key else None,
         },
-        "anthropic_base_url": all_s.get("anthropic_base_url") or None,
         "anthropic_model": all_s.get("anthropic_model") or None,
         "anthropic_default_haiku_model": all_s.get("anthropic_default_haiku_model") or None,
         "anthropic_default_opus_model": all_s.get("anthropic_default_opus_model") or None,
@@ -899,14 +887,6 @@ async def patch_system_config(
 
     if "gpu_encoding_enabled" in patch and patch["gpu_encoding_enabled"] is not None:
         await svc.set_setting(GPU_ENCODING_SETTING, "true" if patch["gpu_encoding_enabled"] else "false")
-
-    # Anthropic API key (secret)
-    if "anthropic_api_key" in patch:
-        value = patch["anthropic_api_key"]
-        if value:
-            await svc.set_setting("anthropic_api_key", str(value).strip())
-        else:
-            await svc.set_setting("anthropic_api_key", "")
 
     # Integer settings with range validation
     _INT_SETTINGS_RANGES = {
