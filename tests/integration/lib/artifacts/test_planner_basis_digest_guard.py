@@ -47,7 +47,8 @@ def _ad_storyboard_project_with_fixed_images(root: Path) -> Path:
     """The shared ad fixture encodes its PNGs with Pillow, whose output differs by platform; pin the bytes."""
 
     project_dir = _ad_storyboard_project(root, target_generated=True)
-    for image in sorted(project_dir.rglob("*.png")):
+    images = (path for pattern in ("*.png", "*.jpg") for path in project_dir.rglob(pattern))
+    for image in sorted(images):
         image.write_bytes(f"image:{image.relative_to(project_dir).as_posix()}".encode())
     return project_dir
 
@@ -217,7 +218,7 @@ _AD_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
     ),
     ("asset-sheet", "product", "保温杯"): (
         "products/保温杯.png",
-        "sha256-v1:c711a0553511cb630ffbffb65c965e60cb1ec186027aa6f741248951535d4541",
+        "sha256-v1:d3016e1d190e25587d4b8deb8e732250bc58f44852b483d1756d44be4d353da9",
     ),
     ("asset-sheet", "prop", "玉佩"): (
         "props/玉佩.png",
@@ -233,7 +234,7 @@ _AD_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
     ),
     ("episode-storyboard", "1", "E1S02"): (
         "storyboards/scene_E1S02.png",
-        "sha256-v1:d2456e70826b81ea26d503475413d3f3791e5556a3b9943a43d5ab9907449d88",
+        "sha256-v1:fa8b02d9ce53f77a4a6bac7271713c54ecba9469b75d8ebb84894b834dcfc9e4",
     ),
 }
 _GRID_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
