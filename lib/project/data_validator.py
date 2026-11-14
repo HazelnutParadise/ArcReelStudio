@@ -813,7 +813,7 @@ class DataValidator:
         if project is None:
             return ValidationResult(
                 valid=False,
-                error_messages=[_m("val_cannot_load_project_json", path=project_path)],
+                error_messages=[_m("val_cannot_load_project_json", path="project.json")],
             )
 
         self._validate_project_payload(project, errors, warnings)
@@ -1525,7 +1525,7 @@ class DataValidator:
         if project is None:
             return ValidationResult(
                 valid=False,
-                error_messages=[_m("val_cannot_load_project_json", path=project_path)],
+                error_messages=[_m("val_cannot_load_project_json", path="project.json")],
             )
 
         resolved_episode_path, error = self._resolve_existing_path(
@@ -1651,8 +1651,9 @@ class DataValidator:
                     continue
 
                 episode = load_json_or_none(project_dir / resolved_path)
-                if episode is None:
-                    errors.append(_m("val_cannot_load_script", path=project_dir / resolved_path))
+                if not isinstance(episode, dict):
+                    # 只给项目内的相对位置：归档的暂存目录是临时目录，绝对路径对用户没有意义。
+                    errors.append(_m("val_cannot_load_script", path=resolved_path))
                     continue
 
                 episode_errors: list[ValidationMessage] = []

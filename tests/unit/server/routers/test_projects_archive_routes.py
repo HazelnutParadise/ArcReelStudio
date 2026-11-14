@@ -428,8 +428,8 @@ class TestExportKeepsGoing:
             download = client.get(f"/api/v1/projects/demo/export?download_token={token.json()['download_token']}")
 
         assert token.status_code == 200
-        [warning] = token.json()["diagnostics"]["warnings"]
-        assert warning["code"] == "manifest_unreadable_exported_without_claims"
+        warnings = token.json()["diagnostics"]["warnings"]
+        [warning] = [item for item in warnings if item["code"] == "manifest_unreadable_exported_from_files"]
         assert warning["message"].startswith("The artifact manifest could not be read")
         assert download.status_code == 200
 

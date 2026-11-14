@@ -2339,9 +2339,24 @@ class TestExportScope:
                 "E1S01": {
                     "current_version": 3,
                     "versions": [
-                        {"version": 1, "prompt": "p1", "created_at": "2024-01-01"},
-                        {"version": 2, "prompt": "p2", "created_at": "2024-01-02"},
-                        {"version": 3, "prompt": "p3", "created_at": "2024-01-03"},
+                        {
+                            "version": 1,
+                            "file": "versions/storyboards/E1S01_v1.png",
+                            "prompt": "p1",
+                            "created_at": "2024-01-01",
+                        },
+                        {
+                            "version": 2,
+                            "file": "versions/storyboards/E1S01_v2.png",
+                            "prompt": "p2",
+                            "created_at": "2024-01-02",
+                        },
+                        {
+                            "version": 3,
+                            "file": "versions/storyboards/E1S01_v3.png",
+                            "prompt": "p3",
+                            "created_at": "2024-01-03",
+                        },
                     ],
                 }
             },
@@ -2349,8 +2364,18 @@ class TestExportScope:
                 "E1S01": {
                     "current_version": 2,
                     "versions": [
-                        {"version": 1, "prompt": "vp1", "created_at": "2024-01-01"},
-                        {"version": 2, "prompt": "vp2", "created_at": "2024-01-02"},
+                        {
+                            "version": 1,
+                            "file": "versions/videos/E1S01_v1.mp4",
+                            "prompt": "vp1",
+                            "created_at": "2024-01-01",
+                        },
+                        {
+                            "version": 2,
+                            "file": "versions/videos/E1S01_v2.mp4",
+                            "prompt": "vp2",
+                            "created_at": "2024-01-02",
+                        },
                     ],
                 }
             },

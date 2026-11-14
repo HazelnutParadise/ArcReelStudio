@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import zipfile
 from pathlib import Path
 
@@ -232,7 +233,7 @@ def test_a_claim_whose_formal_file_is_gone_is_left_out_with_a_warning(tmp_path: 
     assert _VIDEO.encode() in entries
 
 
-def test_an_unreadable_manifest_exports_without_claims_and_imports_by_self_proof(tmp_path: Path) -> None:
+def test_an_unreadable_manifest_exports_from_the_files_and_imports(tmp_path: Path) -> None:
     pm, project_dir = _current_project(tmp_path)
     (project_dir / MANIFEST_FILENAME).write_text("{ not json", encoding="utf-8")
     service = ProjectArchiveService(pm)
@@ -241,8 +242,8 @@ def test_an_unreadable_manifest_exports_without_claims_and_imports_by_self_proof
     archive_path, _ = service.export_project("demo", scope="full")
     _, imported = _import(archive_path, tmp_path / "target")
 
-    assert _warned(diagnostics) == [("manifest_unreadable_exported_without_claims", None)]
-    assert "artifact_manifest" not in _envelope(archive_path)
+    assert _warned(diagnostics) == [("manifest_unreadable_exported_from_files", None)]
+    assert _VIDEO.encode() in _envelope(archive_path)["artifact_manifest"]["entries"]
     assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.CURRENT
 
 
@@ -290,3 +291,50 @@ def test_a_project_that_keeps_changing_stops_the_export_as_a_conflict(tmp_path: 
         _ChurningArchiveService(pm).export_project("demo", scope="full")
 
     assert (exc.value.status_code, exc.value.key) == (409, "export_project_busy")
+
+
+def _unreadable(project_dir: Path) -> tuple[int, str, object]:
+    with pytest.raises(ApiError) as exc:
+        ProjectArchiveService(ProjectManager(project_dir.parent.parent)).export_project("demo", scope="full")
+    return exc.value.status_code, exc.value.key, exc.value.diagnostic
+
+
+_RUNS_AS_ROOT = hasattr(os, "geteuid") and os.geteuid() == 0
+
+
+@pytest.mark.skipif(_RUNS_AS_ROOT, reason="root 不受文件权限限制，读不出的文件做不出来")
+@pytest.mark.parametrize("relative", ["videos/scene_E1S1.mp4", "scripts"])
+def test_a_file_or_directory_the_export_cannot_read_stops_with_its_location(tmp_path: Path, relative: str) -> None:
+    _pm, project_dir = _current_project(tmp_path)
+    target = project_dir / relative
+    target.chmod(0)
+    try:
+        assert _unreadable(project_dir) == (422, "export_project_unreadable", relative)
+    finally:
+        target.chmod(0o755)
+
+
+def test_a_script_that_is_not_an_object_stops_the_export_with_its_location(tmp_path: Path) -> None:
+    _pm, project_dir = _current_project(tmp_path)
+    (project_dir / "scripts" / "episode_1.json").write_text("[]", encoding="utf-8")
+
+    assert _unreadable(project_dir) == (422, "export_project_unreadable", "scripts/episode_1.json (episode 1)")
+
+
+@pytest.mark.parametrize("payload", ["{ not json", "[]"])
+def test_unreadable_version_history_names_its_own_file(tmp_path: Path, payload: str) -> None:
+    _pm, project_dir = _current_project(tmp_path)
+    (project_dir / "versions" / "versions.json").write_text(payload, encoding="utf-8")
+
+    assert _unreadable(project_dir) == (422, "export_project_unreadable", "versions/versions.json")
+
+
+def test_export_diagnostics_for_an_unparseable_project_name_no_server_paths(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    (project_dir / "project.json").write_text("{ not json", encoding="utf-8")
+
+    diagnostics = ProjectArchiveService(pm).get_export_diagnostics("demo", scope="full")
+
+    messages = [item["message"] for item in diagnostics["blocking"]]
+    assert messages
+    assert all("project.json" in message and "/" not in message.replace("project.json", "") for message in messages)
