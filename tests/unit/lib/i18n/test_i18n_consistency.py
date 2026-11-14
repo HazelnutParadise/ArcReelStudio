@@ -343,3 +343,14 @@ def test_schema_unsupported_archive_message_points_to_upgrading_in_upstream_arcr
     assert "ArcReel" in message
     assert "升级" in message
     assert "导出" in message
+
+
+@pytest.mark.parametrize("locale", SUPPORTED_LOCALES)
+def test_schema_unsupported_project_message_names_the_project_version_and_minimum(locale):
+    """项目本身版本过旧时生成入口的拒绝：说出项目、版本与最低版本，指向上游升级而不是修复重试。"""
+    message = MESSAGES[locale]["project_schema_unsupported"]
+    for placeholder in ("{name}", "{version}", "{minimum}"):
+        assert placeholder in message, (locale, placeholder)
+    assert "ArcReel" in message
+    if locale in ("en", "ru", "vi"):
+        assert not any("一" <= ch <= "鿿" for ch in message), locale

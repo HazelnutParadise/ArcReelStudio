@@ -53,7 +53,7 @@ function alternativeButton(t: TFunction, action: WorkflowNextAction): GuideButto
 }
 
 /**
- * 项目层的下一步。没有下一步（`none`）或项目数据升级失败（由状态条的迁移形态接管）时返回 null。
+ * 项目层的下一步。没有下一步（`none`）、项目数据升级失败或版本过旧（由状态条的迁移形态接管）时返回 null。
  * 有分集规划在排队或执行时（`planningActive`），下一步让位给「分集规划进行中」。
  */
 export function projectNextGuide(
@@ -63,7 +63,7 @@ export function projectNextGuide(
   { planningActive = false }: { planningActive?: boolean } = {},
 ): ProjectNextGuide | null {
   const action = status.next_action;
-  if (action.type === "retry_project_migration") return null;
+  if (action.type === "retry_project_migration" || action.type === "upgrade_project_upstream") return null;
   if (planningActive && status.project.content_mode !== "ad") {
     return {
       title: t("dashboard:guide_planning_running_title"),

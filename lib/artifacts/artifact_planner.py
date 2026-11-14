@@ -118,8 +118,8 @@ from lib.speech.speech_presentation import (
     presentation_artifact_paths,
 )
 
-#: 允许规划目标态的版本：迁移链接得住的 v19 起到当前版本（导出 v19 项目时也要规划），以及缺口规则
-#: （:func:`plan_artifact_target_state_by_gap_rule`）借来表达「缺口即不登记」与「缺口记为缺席」两种口径的 v17、v18。
+#: 允许规划目标态的版本：迁移链接得住的 v19 到当前版本，以及缺口规则
+#: （:func:`plan_artifact_target_state_by_gap_rule`）用来选口径的 v17（缺口即不登记）与 v18（缺口记为缺席）。
 _ACTIVATION_SCHEMA_VERSIONS = frozenset(
     range(GAP_TOLERANT_BASIS_SCHEMA_VERSION - 1, CURRENT_PROJECT_SCHEMA_VERSION + 1)
 )
@@ -198,12 +198,12 @@ class _PlannerInputObservation:
 
     def observe(self, artifact_path: str) -> ObservedFile | None:
         planner = self._planner
-        observation = planner.adapter.inspect_artifact(planner._pending_source(artifact_path))
+        observation = planner.adapter.inspect_artifact(artifact_path)
         if observation.blocker is not None or not observation.present:
             return None
         path = planner.project_dir.joinpath(*Path(observation.artifact_path).parts)
         return ObservedFile(
-            artifact_path=planner._canonical_target(artifact_path, observation.artifact_path),
+            artifact_path=observation.artifact_path,
             path=path,
             content_digest=planner._track_dependency_digest(path),
         )
@@ -267,7 +267,6 @@ class TargetStatePlanner:
         episode_scope: int | None = None,
         project_bytes: bytes | None = None,
         allow_stale_formal_targets: bool = False,
-        pending_renames: Mapping[str, str] | None = None,
         pending_entries: Mapping[ArtifactKey, ArtifactManifestEntry | None] | None = None,
         shared_versions: SharedVersionMetadata | None = None,
         manifest_snapshot: ArtifactManifestSnapshot | None = None,
@@ -276,7 +275,6 @@ class TargetStatePlanner:
         self.project_dir = project_dir.resolve(strict=True)
         self.adapter = ProjectArtifactManifestAdapter(self.project_dir)
         self.project_path = self.project_dir / "project.json"
-        self.pending_renames = dict(pending_renames or {})
         self.pending_entries = dict(pending_entries or {})
         #: Request-scoped Manifest read that answers committed claims instead of storage reads.  A planner
         #: given one judges currency: video and audio prove their formal file against the claim's recorded
@@ -591,7 +589,7 @@ class TargetStatePlanner:
         snapshot_rel = selected_manual_upload_snapshot(history, resource_type)
         if snapshot_rel is None:
             return None
-        artifact = self._safe_present_path(self._pending_source(artifact_path))
+        artifact = self._safe_present_path(artifact_path)
         snapshot = self._safe_present_path(snapshot_rel)
         if artifact is None or snapshot is None:
             return None
@@ -670,9 +668,9 @@ class TargetStatePlanner:
             if refusal is not None and not self._records_gaps:
                 self._skip(key, artifact_path, _refusal_reason(refusal))
                 if self.allow_stale_formal_targets:
-                    observed = self.adapter.inspect_artifact(self._pending_source(artifact_path))
+                    observed = self.adapter.inspect_artifact(artifact_path)
                     if observed.blocker is None and observed.present:
-                        self._record_formal_path(key, self._canonical_target(artifact_path, observed.artifact_path))
+                        self._record_formal_path(key, observed.artifact_path)
                 return
             basis = assembled.expected_basis()
         except (OSError, TypeError, ValueError) as exc:
@@ -724,7 +722,7 @@ class TargetStatePlanner:
         if script_plan_path is None:
             return
         script_plan_rel = script_plan_path.relative_to(self.project_dir).as_posix()
-        observation = self.adapter.inspect_artifact(self._pending_source(script_plan_rel))
+        observation = self.adapter.inspect_artifact(script_plan_rel)
         script_plan_key = ArtifactKey.episode_script_plan(binding.episode)
         if observation.blocker is not None and self._activation_mode:
             # 读不出的草稿原样保留、不登记，进迁移报告（ADR 0098）。
@@ -1893,14 +1891,14 @@ class TargetStatePlanner:
         if existing_basis is not None and existing_basis != basis:
             raise ValueError(f"multiple canonical bases claim artifact key {key.encode()}")
         self.bases[key] = basis
-        observation = self.adapter.inspect_artifact(self._pending_source(artifact_path))
+        observation = self.adapter.inspect_artifact(artifact_path)
         if observation.blocker is not None and self._activation_mode:
             # 读不出的文件原地保留、不登记，进迁移报告（ADR 0098）。
             self._skip_blocked(key, artifact_path, observation.blocker)
             return
         if observation.blocker is not None or not observation.present:
             return
-        canonical = self._canonical_target(artifact_path, observation.artifact_path)
+        canonical = observation.artifact_path
         self._record_formal_path(key, canonical)
         if key.kind in _FORMAL_IMAGE_KINDS:
             self._track_dependency_digest(
@@ -1992,24 +1990,8 @@ class TargetStatePlanner:
         except OSError as exc:
             raise ValueError(f"cannot read {label}") from exc
 
-    def _pending_source(self, relative_path: str) -> str:
-        """该规范路径当前的落盘位置：待改名输入仍在旧名下，其余原样返回。"""
-
-        return self.pending_renames.get(relative_path, relative_path)
-
-    def _canonical_target(self, relative_path: str, observed: str) -> str:
-        """规划记下的落点：待改名输入按提交后的规范路径记，其余按实际观察到的路径记。"""
-
-        return relative_path if relative_path in self.pending_renames else observed
-
-    def _canonical_path(self, relative_path: str, observed: str) -> Path:
-        """:meth:`_canonical_target` 的绝对路径形态。"""
-
-        return self.project_dir.joinpath(*Path(self._canonical_target(relative_path, observed)).parts)
-
     def _read_dependency(self, relative_path: str, label: str) -> bytes:
-        source = self._pending_source(relative_path)
-        observation = self.adapter.inspect_artifact(source)
+        observation = self.adapter.inspect_artifact(relative_path)
         if observation.blocker is not None:
             raise ArtifactManifestError(observation.blocker.detail)
         if not observation.present:
@@ -2019,7 +2001,7 @@ class TargetStatePlanner:
             raw = path.read_bytes()
         except OSError as exc:
             raise ValueError(f"cannot read {label}: {relative_path}") from exc
-        self.dependencies[self._canonical_path(relative_path, observation.artifact_path)] = raw
+        self.dependencies[path] = raw
         return raw
 
     @staticmethod
@@ -2030,19 +2012,13 @@ class TargetStatePlanner:
             raise ValueError(f"{label} is not valid UTF-8 JSON") from exc
 
 
-def plan_artifact_target_state(
-    project_dir: Path,
-    *,
-    pending_renames: Mapping[str, str] | None = None,
-) -> ArtifactTargetStatePlan:
+def plan_artifact_target_state(project_dir: Path) -> ArtifactTargetStatePlan:
     """Perform the complete read-only activation preflight.
 
-    ``pending_renames``（规范相对路径 → 当前落盘相对路径）供 schema 迁移使用：迁移在同一步里
-    把输入改名到规范路径，预检必须在改名落盘之前完成，因而按旧名读取、按规范路径记录。计划
-    里的依赖路径与产物路径因此都是提交时刻的事实，激活的稳定性闸门可直接复用。
+    计划里的依赖路径与产物路径都是规划时刻盘上的事实，激活的稳定性闸门可直接复用。
     """
 
-    return TargetStatePlanner(project_dir, pending_renames=pending_renames).plan()
+    return TargetStatePlanner(project_dir).plan()
 
 
 def plan_artifact_target_state_by_gap_rule(

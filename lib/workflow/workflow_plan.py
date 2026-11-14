@@ -214,6 +214,7 @@ def _task_step(observation: WorkflowTaskObservation) -> str | None:
 _ACTION_STEP: dict[WorkflowActionType, str] = {
     WorkflowActionType.COLLECT_PROJECT_INPUT: "project_input",
     WorkflowActionType.RETRY_PROJECT_MIGRATION: "project_input",
+    WorkflowActionType.UPGRADE_PROJECT_UPSTREAM: "project_input",
     WorkflowActionType.DRAFT_SELLING_POINTS: "selling_points",
     WorkflowActionType.CREATE_EPISODE: "episode_plan",
     WorkflowActionType.PLAN_EPISODES: "episode_plan",

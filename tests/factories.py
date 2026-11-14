@@ -435,7 +435,7 @@ def activate_current_project(project_dir: Path) -> None:
     if project.get("schema_version") != CURRENT_PROJECT_SCHEMA_VERSION:
         project["schema_version"] = CURRENT_PROJECT_SCHEMA_VERSION
         project_path.write_text(json.dumps(project, ensure_ascii=False, indent=2), encoding="utf-8")
-    activate_artifact_target_state(project_dir, bump_schema=False)
+    activate_artifact_target_state(project_dir)
 
 
 def wrap_the_last_migration_step(monkeypatch: Any, around: Callable[..., object]) -> None:

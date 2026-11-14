@@ -92,7 +92,7 @@ def _install_available_video(pm: ProjectManager, unit_id: str) -> None:
         if unit["unit_id"] == unit_id:
             unit["generated_assets"] = {"video_clip": f"reference_videos/{unit_id}.mp4"}
     pm.save_script("demo", script, "episode_1.json")
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
 
 
 def test_create_answers_201_with_the_first_revision(timeline_project: ProjectManager) -> None:

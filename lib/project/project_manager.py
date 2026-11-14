@@ -104,7 +104,7 @@ from lib.project.asset_types import (
     validate_asset_name,
 )
 from lib.project.project_change_hints import emit_project_change_hint
-from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION, parse_project_schema_version
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from lib.project.script_entry_cleanup import trash_entries
 from lib.project.task_project_claim import ensure_task_project_claim
 from lib.references.reference_catalog import derivative_reference
@@ -136,7 +136,7 @@ PROJECT_SLUG_SANITIZER = re.compile(r"[^a-zA-Z0-9]+")
 
 # 生成模式（generation_mode）：二值必填，创建即定、之后不可变（可变性由 PATCH 模型结构保证）。
 # 宫格不是生成模式：它由独立的 grid_storyboard 布尔表达，仅 `storyboard` 生成模式有意义。
-# 存量三值 "grid" 已由 v4→v5 迁移重编码为 storyboard + grid_storyboard=true。
+# 宫格项目落盘为 generation_mode="storyboard" + grid_storyboard=true。
 VALID_GENERATION_MODES: frozenset[str] = frozenset({"storyboard", "reference_video"})
 _DEFAULT_GENERATION_MODE = "storyboard"
 
@@ -918,15 +918,13 @@ class ProjectManager:
                     )
                     if sync_project:
                         project = self._read_project_raw_unlocked(project_name)
-                        if self._requires_unique_asset_namespace(project):
-                            ensure_project_asset_namespace(project)
+                        ensure_project_asset_namespace(project)
                         self._apply_episode_sync(project, script, filename)
                         if project_update is not None:
                             project_update(project)
                         self._migrate_legacy_resolution_on_save(project)
                         self._touch_metadata(project)
-                        if self._requires_unique_asset_namespace(project):
-                            ensure_project_asset_namespace(project)
+                        ensure_project_asset_namespace(project)
                         atomic_write_json(project_file, project)
                     if prepared_on_commit is not None:
                         prepared_on_commit(output)
@@ -1159,8 +1157,7 @@ class ProjectManager:
         norm = self.normalize_script_filename(candidate)
         with self._script_lock(project_name, norm), self._project_lock(project_name):
             project = self._read_project_raw_unlocked(project_name)
-            if self._requires_unique_asset_namespace(project):
-                ensure_project_asset_namespace(project)
+            ensure_project_asset_namespace(project)
             current = resolve_script_file(project)
             cur_norm = self.normalize_script_filename(current)
             if cur_norm != norm:
@@ -1185,8 +1182,7 @@ class ProjectManager:
                     self._apply_episode_sync(project, script, norm)
                 self._migrate_legacy_resolution_on_save(project)
                 self._touch_metadata(project)
-                if self._requires_unique_asset_namespace(project):
-                    ensure_project_asset_namespace(project)
+                ensure_project_asset_namespace(project)
                 atomic_write_json(project_path, project)
                 if on_commit is not None:
                     on_commit(script_path)
@@ -1791,8 +1787,7 @@ class ProjectManager:
                 if changed:
                     self._migrate_legacy_resolution_on_save(project)
                     self._touch_metadata(project)
-                    if self._requires_unique_asset_namespace(project):
-                        ensure_project_asset_namespace(project)
+                    ensure_project_asset_namespace(project)
                     atomic_write_json(project_file, project)
                 if changed and on_commit is not None:
                     on_commit()
@@ -2126,8 +2121,7 @@ class ProjectManager:
         self._touch_metadata(project)
 
         with self._project_lock(project_name):
-            if self._requires_unique_asset_namespace(project):
-                ensure_project_asset_namespace(project)
+            ensure_project_asset_namespace(project)
             atomic_write_json(project_file, project)
 
         emit_project_change_hint(
@@ -2313,8 +2307,7 @@ class ProjectManager:
         lock without re-entering :meth:`update_project`.
         """
 
-        if self._requires_unique_asset_namespace(project):
-            ensure_project_asset_namespace(project)
+        ensure_project_asset_namespace(project)
         # 变更可能把条目移出账本：先让历史最高号记下变更前的集 ID
         raise_episode_id_high_water(project)
         planning_inputs = source_planning_inputs(project)
@@ -2323,8 +2316,7 @@ class ProjectManager:
         # 就按盘上源文重记源文是否还有未规划的原文，项目列表读它而不读源文
         if source_planning_inputs(project) != planning_inputs:
             record_source_remaining(self.get_project_path(project_name), project)
-        if self._requires_unique_asset_namespace(project):
-            ensure_project_asset_namespace(project)
+        ensure_project_asset_namespace(project)
         self._migrate_legacy_resolution_on_save(project)
         self._touch_metadata(project)
 
@@ -2375,11 +2367,9 @@ class ProjectManager:
             try:
                 with open(project_file, encoding="utf-8") as f:
                     project = json.load(f)
-                if self._requires_unique_asset_namespace(project):
-                    ensure_project_asset_namespace(project)
+                ensure_project_asset_namespace(project)
                 mutate_fn(project)
-                if self._requires_unique_asset_namespace(project):
-                    ensure_project_asset_namespace(project)
+                ensure_project_asset_namespace(project)
                 self._migrate_legacy_resolution_on_save(project)
                 self._touch_metadata(project)
 
@@ -2453,11 +2443,6 @@ class ProjectManager:
             project["metadata"] = {"created_at": now, "updated_at": now}
         else:
             project["metadata"]["updated_at"] = now
-
-    @staticmethod
-    def _requires_unique_asset_namespace(project: dict) -> bool:
-        """schema v6 起禁止普通业务写继续操作已损坏的资产名称空间。"""
-        return parse_project_schema_version(project) >= 6
 
     @staticmethod
     def _migrate_legacy_resolution_on_save(project: dict) -> None:
@@ -2548,8 +2533,7 @@ class ProjectManager:
             if brief is not None:
                 raise ValueError("brief 仅广告/短片项目（content_mode=ad）可用")
 
-        # schema_version 与 CURRENT_SCHEMA_VERSION 对齐：新项目即最新形态，
-        # 避免被启动迁移误处理（如 v0→v1 在"未含 clues 字段"时误清空 scenes/props）。
+        # schema_version 与 CURRENT_SCHEMA_VERSION 对齐：新项目即最新形态，启动迁移把它当作已是最新、不再处理。
         from lib.project.project_migrations import CURRENT_SCHEMA_VERSION
 
         project = {
@@ -3249,8 +3233,7 @@ class ProjectManager:
                 rewrite_derivative_sheet_paths(
                     entry, old_owner=old_key, new_owner=new_clean, renames=derivative_renames
                 )
-            if self._requires_unique_asset_namespace(mutated):
-                ensure_project_asset_namespace(mutated)
+            ensure_project_asset_namespace(mutated)
             after_errors = _rename_agnostic_errors(validator.validate_project_payload(mutated), old_key, new_clean)
             new_errors = {after_errors[fingerprint] for fingerprint in after_errors.keys() - before_errors.keys()}
             if new_errors:
@@ -3655,8 +3638,7 @@ class ProjectManager:
                 for name in derivative_plan.moved:
                     derivatives[name] = copy.deepcopy(source_derivatives[name])
                 rewrite_derivative_sheet_paths(kept, old_owner=source, new_owner=target, renames=moved_pairs)
-            if self._requires_unique_asset_namespace(mutated):
-                ensure_project_asset_namespace(mutated)
+            ensure_project_asset_namespace(mutated)
             after_errors = _rename_agnostic_errors(validator.validate_project_payload(mutated), target, target)
             new_errors = {after_errors[fingerprint] for fingerprint in after_errors.keys() - before_errors.keys()}
             if new_errors:

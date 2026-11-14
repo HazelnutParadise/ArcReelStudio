@@ -170,7 +170,7 @@ def test_executor_registration_basis_equals_the_planner_expected_basis(tmp_path:
     """提交后模式：规划器按磁盘清单判定资产图与上一分镜图可用。"""
 
     project_dir = _project_dir(tmp_path, target_generated=True)
-    activate_artifact_target_state(project_dir, bump_schema=False)
+    activate_artifact_target_state(project_dir)
 
     expected = resolve_current_artifact_basis(project_dir, TARGET_KEY)
 
@@ -184,7 +184,7 @@ def test_activation_sees_the_sheets_and_previous_storyboard_planned_in_the_same_
     project_dir = _project_dir(tmp_path, target_generated=True)
 
     plan = plan_artifact_target_state(project_dir)
-    activate_artifact_target_state(project_dir, bump_schema=False, plan=plan)
+    activate_artifact_target_state(project_dir, plan=plan)
 
     assert plan.entries[TARGET_KEY].basis_digest == _registration_basis(project_dir).digest
 
@@ -206,7 +206,7 @@ def test_activation_registers_a_sheet_and_its_storyboard_despite_an_empty_descri
     sheet_key = ArtifactKey.asset_sheet("scene", "祠堂")
 
     plan = plan_artifact_target_state(project_dir)
-    activate_artifact_target_state(project_dir, bump_schema=False, plan=plan)
+    activate_artifact_target_state(project_dir, plan=plan)
 
     assert {sheet_key, TARGET_KEY} <= set(plan.entries)
     assert not [item for item in plan.skipped if item.resource_id in {"祠堂", "E1S02"}]
@@ -242,7 +242,7 @@ def test_activation_registers_a_storyboard_with_a_pending_prompt_and_an_unregist
     _write_json(script_path, script)
 
     plan = plan_artifact_target_state(project_dir)
-    activate_artifact_target_state(project_dir, bump_schema=False, plan=plan)
+    activate_artifact_target_state(project_dir, plan=plan)
 
     assert TARGET_KEY in plan.entries
     assert _absent(resolve_current_artifact_basis(project_dir, TARGET_KEY)) == [
@@ -319,7 +319,7 @@ def test_sheet_registration_basis_equals_the_planner_expected_basis(tmp_path: Pa
     """提交后模式：资产图四类与衍生资产图，执行器登记依据等于规划器期望依据。"""
 
     project_dir = _project_dir(tmp_path)
-    activate_artifact_target_state(project_dir, bump_schema=False)
+    activate_artifact_target_state(project_dir)
 
     expected = resolve_current_artifact_basis(project_dir, key)
 
@@ -336,7 +336,7 @@ def test_activation_registers_sheets_and_derivatives_planned_after_their_owner(
     project_dir = _project_dir(tmp_path)
 
     plan = plan_artifact_target_state(project_dir)
-    activate_artifact_target_state(project_dir, bump_schema=False, plan=plan)
+    activate_artifact_target_state(project_dir, plan=plan)
 
     assert plan.entries[key].basis_digest == _sheet_registration_basis(project_dir, key, reference_count).digest
 
@@ -346,7 +346,7 @@ def test_activation_registers_a_derivative_whose_owner_sheet_lost_its_original(t
     (project_dir / "characters" / "refs" / "张三.png").unlink()
 
     plan = plan_artifact_target_state(project_dir)
-    activate_artifact_target_state(project_dir, bump_schema=False, plan=plan)
+    activate_artifact_target_state(project_dir, plan=plan)
 
     owner, derivative = ArtifactKey.asset_sheet("character", "张三"), ArtifactKey.asset_sheet("character", "张三/劲装")
     assert {owner, derivative} <= set(plan.entries)
@@ -370,7 +370,7 @@ def test_moving_a_shot_stales_the_storyboards_whose_previous_storyboard_changed(
     for shot in script["shots"]:
         shot["video_prompt"] = {"action": "端详", "camera_motion": "Static", "ambiance_audio": "风声"}
     _write_json(script_path, script)
-    activate_artifact_target_state(project_dir, bump_schema=False)
+    activate_artifact_target_state(project_dir)
 
     pm = ProjectManager(str(tmp_path))
     result = ScriptBatchEditor(pm).execute(

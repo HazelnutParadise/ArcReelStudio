@@ -57,6 +57,7 @@ function summary(name: string, options: SummaryOptions = {}): ProjectSummary {
     status: {
       needs_repair: options.needsRepair ?? false,
       repair_reason: options.repairReason ?? null,
+      repair_code: options.needsRepair ? "project_migration_failed" : null,
       assets: {
         character: { total: 0, available: 0, stale: 0 },
         scene: { total: 0, available: 0, stale: 0 },

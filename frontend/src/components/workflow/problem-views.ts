@@ -93,6 +93,14 @@ export function problemViews(t: Translate, problems: WorkflowProblem[], keyPrefi
 }
 
 /**
+ * blocker 的下一步按问题码取，默认是请 Agent 修复数据。版本过旧的项目在这里修不了，
+ * 下一步只能是去上游升级；与计划里同码问题交回的动作是同一句。
+ */
+const BLOCKER_ACTIONS: Partial<Record<string, WorkflowActionType>> = {
+  project_schema_unsupported: "upgrade_project_upstream",
+};
+
+/**
  * 数据损坏的 blocker。`path` 是用户要去修的具体字段，进摘要行；`reason` 是
  * 服务端原文，进折叠区——先给能读懂的一句，排障细节在展开后才出现。
  */
@@ -101,7 +109,7 @@ export function blockerViews(t: Translate, blockers: WorkflowBlocker[]): Problem
     key: `blocker-${blocker.code}-${index}`,
     field: blocker.path,
     summary: t(`problem_${blocker.code}`, { defaultValue: t("blocker_generic") }),
-    nextStep: nextStepFor(t, "repair_project_data"),
+    nextStep: nextStepFor(t, BLOCKER_ACTIONS[blocker.code] ?? "repair_project_data"),
     detail: blocker.reason,
   }));
 }

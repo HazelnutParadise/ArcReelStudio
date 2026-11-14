@@ -1796,10 +1796,12 @@ class ProjectArchiveService:
         # 偏移由之后的预检 / 执行取档承担。
         # 本方法跑在 migrate_project_dir 之前：v20 之前的归档里只写了供应商的旧值先在副本上按导入这一刻的
         # 推荐补上模型（v19→v20 的同一改写），否则查不到档位。纯函数且幂等，不影响随后的正式迁移。
-        normalized_project = project_payload
-        schema_version = normalized_project.get("schema_version")
-        if not isinstance(schema_version, int) or schema_version < V20:
-            normalized_project = rewrite_bare_provider_models(normalized_project, self._excluded_recommendations)
+        schema_version = project_payload.get("schema_version")
+        normalized_project = (
+            rewrite_bare_provider_models(project_payload, self._excluded_recommendations)
+            if not isinstance(schema_version, int) or schema_version < V20
+            else project_payload
+        )
         migrated, migration_warnings = migrate_unit_durations(
             raw_units, supported_durations=_registry_supported_durations(normalized_project)
         )

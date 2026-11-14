@@ -26,6 +26,7 @@ MESSAGES = {
     "operation_draft_action": "Bản nháp: {path}. {action}",
     "operation_episode_source_location": "Vị trí nguồn của tập: {path}; plan_episodes tạo nguồn cho các tập đã lập kế hoạch.",
     "project_migration_failed": "Dự án '{name}' chưa hoàn tất nâng cấp dữ liệu nên không thể tạo nội dung. Lý do: {reason}. Hãy sửa trong cuộc trò chuyện với tác nhân AI rồi thử nâng cấp lại",
+    "project_schema_unsupported": "Dự án '{name}' dùng phiên bản schema {version}, nhưng phiên bản này chỉ mở được dự án có schema {minimum} trở lên nên không thể tạo nội dung. Hãy mở dự án trong ArcReel bản gốc trước, để nó nâng cấp lên schema {minimum} hoặc mới hơn, rồi xuất ra và nhập gói vào đây",
     "project_not_found": "Dự án '{name}' không tồn tại hoặc chưa được khởi tạo",
     "resource_not_found": "Tài nguyên được yêu cầu không tồn tại",
     "prompt_template_not_found": "Mẫu prompt '{id}' không tồn tại",

@@ -288,6 +288,31 @@ def test_cleanup_reclaims_the_script_plan_draft_backups_the_normalization_leaves
     assert [backup for backup in backups if backup.exists()] == []
 
 
+def test_cleanup_reclaims_the_edit_timeline_backups_the_old_chain_left_behind(tmp_projects: Path) -> None:
+    """旧版迁移链改写剪辑时间线前逐个备份；时间线本身已删、只剩备份的也照样回收。"""
+    project_dir = _write_project(tmp_projects, "p1", {"schema_version": CURRENT_SCHEMA_VERSION})
+    episode_dir = project_dir / "edit_timelines" / "episode_1"
+    episode_dir.mkdir(parents=True)
+    (episode_dir / "timeline_a.json").write_text("{}", encoding="utf-8")
+    stale = [
+        episode_dir / "timeline_a.json.bak.v17-100000000",
+        episode_dir / "timeline_gone.json.bak.v17-100000000",
+    ]
+    fresh = episode_dir / "timeline_a.json.bak.v17-9999999999"
+    user_file = episode_dir / "notes.json.bak.v17-final"
+    for path in (*stale, fresh, user_file):
+        path.write_text("backup", encoding="utf-8")
+    for path in (*stale, user_file):
+        _age(path)
+
+    cleanup_stale_backups(tmp_projects, max_age_days=7)
+
+    assert [path for path in stale if path.exists()] == []
+    assert fresh.exists()
+    assert user_file.exists()
+    assert (episode_dir / "timeline_a.json").exists()
+
+
 def test_failed_retry_does_not_duplicate_an_identical_project_backup(tmp_projects: Path, monkeypatch):
     """同一起点版本、内容相同的 project.json 只留一份备份；内容变了才新增。"""
     p = _write_project(tmp_projects, "p1", {"schema_version": SCHEMA_V19, "name": "p1"})

@@ -650,10 +650,9 @@ def formal_script_filename(project_path: Path, project: Mapping[str, Any], episo
     project.json 绑定的 ``script_file`` 指向盘上文件时取绑定；绑定缺失、越界或文件不存在时回落规范
     文件名 ``episode_N.json``。内容确认读覆盖清单与写正式脚本都经这里，两者始终是同一份文件。
 
-    回落只在规范路径空着、或那上面确是本集剧本时成立：迁移跳过的集绑着已消失的旧路径，而规范路径
-    上放着别集剧本，无条件回落会让读拿到别集内容、让写整份重建别集的在世剧本并把本集绑上去。这一
-    形态抛 ``ForeignFormalScriptError``；归属判据（读不成对象或内部集号不符）与 v14→v15 改名前的
-    那次校验一致。
+    回落只在规范路径空着、或那上面确是本集剧本时成立：绑定指向已消失的路径、而规范路径上放着
+    别集剧本时，无条件回落会让读拿到别集内容、让写整份重建别集的在世剧本并把本集绑上去。这一
+    形态抛 ``ForeignFormalScriptError``；归属判据是读不成对象或内部集号不符。
     """
     filename = _bound_script_filename(project, episode)
     if filename is not None:
@@ -759,8 +758,8 @@ def _formal_script_plan_confirmed(project_path: Path, project: dict[str, Any], e
     stored_fingerprint = stored_review(project, episode).get("fingerprint")
     if stored_fingerprint is not None:
         return stored_fingerprint == live
-    # 没有确认指纹：不知道正式脚本出自哪一份规划，眼前这份就没有被确认过。存量集的确认基线由
-    # v14→v15 迁移补记；从空白开始时确认记录被删去，同样落在这里。
+    # 没有确认指纹：不知道正式脚本出自哪一份规划，眼前这份就没有被确认过。从空白开始时确认记录
+    # 被删去，同样落在这里。
     return False
 
 

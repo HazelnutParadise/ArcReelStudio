@@ -123,6 +123,7 @@ describe("OverviewCanvas", () => {
         status: {
           needs_repair: false,
           repair_reason: null,
+          repair_code: null,
           source_remaining: false,
           episodes_summary: {} as never,
           assets: {
@@ -279,6 +280,7 @@ describe("OverviewCanvas", () => {
         status: {
           needs_repair: false,
           repair_reason: null,
+          repair_code: null,
           source_remaining: false,
           episodes_summary: {} as never,
           assets: { character: { total: 1, available: 1, stale: 0 } },
@@ -651,6 +653,7 @@ describe("OverviewCanvas", () => {
           status: {
             needs_repair: false,
             repair_reason: null,
+            repair_code: null,
             source_remaining: false,
             episodes_summary: {} as never,
             assets: { product: { total: 1, available: 0, stale: 0 } },

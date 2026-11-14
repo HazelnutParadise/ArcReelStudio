@@ -230,14 +230,11 @@ def build_storyboard_image_visual_basis(
     style_description: str = "",
     references: Sequence[VisualReference] = (),
     absent: Sequence[InputGap] = (),
-    asset_names: bool = False,
 ) -> ArtifactBasis:
     """Describe one ordinary storyboard image and its actual ordered image inputs.
 
     ``absent`` records the generation-input gaps (``docs/adr/0098``). A pending
     ``image_prompt`` (``None``) is accepted only together with recorded gaps.
-    ``asset_names`` keeps the pre-v19 shape that records asset names; no current
-    caller projects it, it only reproduces digests registered before v19.
     """
 
     identity = _require_non_empty("resource_id", resource_id)
@@ -260,7 +257,7 @@ def build_storyboard_image_visual_basis(
         inputs["style"] = style_input
     _add_style_description(inputs, style_description)
     add_absent_inputs(inputs, absent)
-    return _build_image_basis(_STORYBOARD_IMAGE_KIND, inputs, asset_names=asset_names)
+    return _build_image_basis(_STORYBOARD_IMAGE_KIND, inputs)
 
 
 def build_grid_composite_visual_basis(
@@ -274,12 +271,10 @@ def build_grid_composite_visual_basis(
     style_description: str = "",
     references: Sequence[VisualReference] = (),
     absent: Sequence[InputGap] = (),
-    asset_names: bool = False,
 ) -> ArtifactBasis:
     """Describe one grid composite without hashing its rendered provider prompt.
 
     ``absent`` records reference images that are no longer available (``docs/adr/0098``).
-    ``asset_names`` keeps the pre-v19 shape that records asset names.
     """
 
     member_tuple = _validate_grid_members(members, rows=rows, columns=columns)
@@ -297,7 +292,7 @@ def build_grid_composite_visual_basis(
     }
     _add_style_description(inputs, style_description)
     add_absent_inputs(inputs, absent)
-    return _build_image_basis(_GRID_COMPOSITE_KIND, inputs, asset_names=asset_names)
+    return _build_image_basis(_GRID_COMPOSITE_KIND, inputs)
 
 
 def build_grid_member_storyboard_visual_basis(
@@ -314,15 +309,13 @@ def build_grid_member_storyboard_visual_basis(
     references: Sequence[VisualReference] = (),
     source_composite_digest: str | None = None,
     absent: Sequence[InputGap] = (),
-    asset_names: bool = False,
 ) -> ArtifactBasis:
     """Describe one split cell while preserving grid dependency locality.
 
     The member does not embed the composite's target basis. It records only the
     selected cell's semantic inputs plus the actual composite bytes it was split
     from. Editing a different cell therefore leaves this member current until a
-    replacement composite is really produced. ``asset_names`` keeps the pre-v19
-    shape that records asset names.
+    replacement composite is really produced.
     """
 
     member_tuple = _validate_grid_members(members, rows=rows, columns=columns)
@@ -343,7 +336,7 @@ def build_grid_member_storyboard_visual_basis(
     }
     _add_style_description(inputs, style_description)
     add_absent_inputs(inputs, absent)
-    return _build_image_basis(_GRID_MEMBER_KIND, inputs, asset_names=asset_names)
+    return _build_image_basis(_GRID_MEMBER_KIND, inputs)
 
 
 def build_stale_grid_member_storyboard_visual_basis(
@@ -515,12 +508,8 @@ _GRID_MEMBER_KIND = "artifact-visual/grid-member"
 ASSET_NAME_FREE_IMAGE_BASIS_KINDS = frozenset({_STORYBOARD_IMAGE_KIND, _GRID_COMPOSITE_KIND, _GRID_MEMBER_KIND})
 
 
-def _build_image_basis(kind: str, inputs: dict[str, object], *, asset_names: bool) -> ArtifactBasis:
-    return ArtifactBasis.build(
-        kind,
-        kind_version=1,
-        inputs=inputs if asset_names else without_asset_names(kind, inputs),
-    )
+def _build_image_basis(kind: str, inputs: dict[str, object]) -> ArtifactBasis:
+    return ArtifactBasis.build(kind, kind_version=1, inputs=without_asset_names(kind, inputs))
 
 
 def without_asset_names(kind: str, inputs: Mapping[str, object]) -> dict[str, object]:

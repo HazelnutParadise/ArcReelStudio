@@ -237,7 +237,7 @@ async def test_prompt_authoring_off_tier_fails_as_fix_input_through_the_worker(
         },
         "episode_1.json",
     )
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
     model = FakeTextGenerator(AssertionError("时长越档不应调用文本模型"))
     use_text_generator(monkeypatch, model.create)
     queue = GenerationQueue(session_factory=file_db_factory, project_manager=projects)
@@ -513,7 +513,7 @@ async def test_draft_repair_blocked_by_a_formal_unit_fails_with_the_unit_positio
     projects.save_script(
         "demo", {"title": "第一集", "episode": 1, "content_mode": "narration", "video_units": [unit]}, "episode_1.json"
     )
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
     write_quarantine(
         project_path,
         1,
@@ -983,7 +983,7 @@ async def test_cancel_during_started_episode_script_commit_leaves_member_running
             episodes=[{"episode": 1, "title": "第一集", "script_file": "scripts/episode_1.json"}]
         ),
     )
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
     started = threading.Event()
     release = threading.Event()
 

@@ -446,6 +446,7 @@ class _FakeSummaries:
         return ProjectSummary(
             needs_repair=False,
             repair_reason=None,
+            repair_code=None,
             assets={"character": ArtifactCount(total=1, available=0, stale=0)},
             episodes_summary=EpisodesSummary(total=1, scripted=1, in_production=1, completed=0),
             episodes=[

@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from lib.episode.episode_ledger import SOURCE_TEXT_SUFFIXES
+from lib.project.project_schema import project_schema_below_minimum
 
 from .errors import SourceDecodeError
 from .txt import decode_txt
@@ -83,7 +84,11 @@ def migrate_project_source_encoding_once(
     """对一个项目执行一次编码迁移，以 ``.arcreel/source_encoding_migrated`` 标记只做一次。
 
     启动时逐项目调用，恢复已删除项目时也调用。失败被捕获并写日志与 ``.arcreel/migration_errors.log``，不抛出。
+    schema 版本早于迁移链最低版本的项目整个跳过、不留标记：它被 schema 迁移拒绝，源文件与
+    ``.arcreel/`` 保持原样，在上游升级后重新导入时由导入流程处理。
     """
+    if project_schema_below_minimum(project_dir):
+        return {"skipped": True, "schema_unsupported": True}
     marker_dir = project_dir / ".arcreel"
     marker = marker_dir / "source_encoding_migrated"
     if marker.exists():

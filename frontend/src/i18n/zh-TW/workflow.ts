@@ -282,6 +282,7 @@ export default {
   'action_patch_episode_script': '修正下面列出的腳本欄位',
   'action_create_edit_timeline': '新增剪輯時間軸並交給 Agent 剪輯',
   'action_retry_project_migration': '修復報告的專案檔案後重試資料升級',
+  'action_upgrade_project_upstream': '在上游 ArcReel 開啟這個專案，讓它升級後匯出，再把匯出的檔案匯入這裡',
 
   // ---- 問題摘要 ----
   'problem_generation_unit_not_found': '腳本里已經沒有這個單元了。',
@@ -311,6 +312,7 @@ export default {
   'problem_parse_failed': '這個單元的台詞讀不出來，請檢查寫法。',
   'problem_empty_speaker': '這個單元有台詞沒有指定說話的角色。',
   'problem_project_migration_failed': '專案資料升級沒有完成，暫時不能生成。',
+  'problem_project_schema_unsupported': '這個專案的資料來自較早的版本，這裡無法升級它，需要先在上游 ArcReel 中升級。',
   'problem_video_audio_switch_not_supported': '所選影片模型總是生成帶聲音的影片，不能關閉音訊。',
   'problem_reference_capability_changed': '參考素材與宣告的生成方式不一致。',
   'problem_reference_duration_confirmation_required': '這個單元會按另一檔時長生成，需要確認。',
@@ -331,6 +333,7 @@ export default {
   'problem_fallback_repair_artifact_state': '已有產物的狀態讀不出來。',
   'problem_fallback_retry_artifact_download': '產物已經生成，但沒有取回。',
   'problem_fallback_retry_project_migration': '專案資料升級沒有完成。',
+  'problem_fallback_upgrade_project_upstream': '這個專案的資料版本太舊，這裡無法升級。',
   'problem_fallback_none': '這個單元暫時不能生成。',
   'problem_fallback_unknown': '這個單元暫時不能生成。',
 } satisfies Record<keyof typeof enWorkflow, string>;

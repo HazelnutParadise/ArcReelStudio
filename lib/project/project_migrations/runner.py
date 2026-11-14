@@ -19,6 +19,7 @@ from lib.project.project_migration_failure import (
     ProjectMigrationError,
     clear_migration_failure,
     record_migration_failure,
+    schema_unsupported_error,
 )
 from lib.project.project_migration_report import (
     ArtifactBackfillOutcome,
@@ -92,6 +93,31 @@ def _bound_script_sources(project_dir: Path) -> tuple[Path, ...]:
     return tuple(sources)
 
 
+def _timeline_backup_sources(project_dir: Path) -> tuple[Path, ...]:
+    """旧版迁移链为剪辑时间线落的备份对应的源路径：只按备份文件名找，时间线本身删掉后备份照样回收。
+
+    只看 ``edit_timelines/episode_*/`` 一层的真实目录，符号链接与 junction 不跟随。
+    """
+
+    root = project_dir / "edit_timelines"
+    if not _is_real_dir(root):
+        return ()
+    sources: set[Path] = set()
+    for directory in root.glob("episode_*"):
+        if not _is_real_dir(directory):
+            continue
+        sources.update(
+            directory / path.name.partition(".bak.v")[0]
+            for path in directory.glob("*.json.bak.v*")
+            if not path.is_symlink()
+        )
+    return tuple(sorted(sources))
+
+
+def _is_real_dir(path: Path) -> bool:
+    return not path.is_symlink() and not path.is_junction() and path.is_dir()
+
+
 @dataclass
 class MigrationSummary:
     migrated: list[str] = field(default_factory=list)
@@ -120,15 +146,10 @@ def _backup_project_json(project_dir: Path, from_version: int) -> None:
 
 
 def _refuse_unsupported_version(version: int) -> None:
-    """早于迁移链最早版本的项目在规整与任何备份之前就拒绝，项目目录一个字节都不动。"""
+    """早于迁移链最早版本的项目在规整与任何备份之前就拒绝，这一步不改动项目目录。"""
 
     if version < MINIMUM_PROJECT_SCHEMA_VERSION:
-        raise ProjectMigrationError(
-            f"schema version {version} is older than v{MINIMUM_PROJECT_SCHEMA_VERSION}, the oldest version this "
-            f"migration chain accepts; open the project in upstream ArcReel to upgrade it to "
-            f"v{MINIMUM_PROJECT_SCHEMA_VERSION} or later, then export it again",
-            file="project.json",
-        )
+        raise schema_unsupported_error(version)
 
 
 def migrate_project_dir(
@@ -141,7 +162,7 @@ def migrate_project_dir(
     供启动期 ``run_project_migrations`` 与项目导入路径共用：启动期 runner 只覆盖启动时已存在的
     项目，启动后导入的旧归档需在导入入口补跑此函数走完整迁移链，否则解析链（不再读 legacy
     字段）会让该项目静默回退到全局默认。非项目目录 / 已是最新版本返回 False；早于
-    ``MINIMUM_PROJECT_SCHEMA_VERSION`` 的项目抛 :class:`ProjectMigrationError`，目录不动。
+    ``MINIMUM_PROJECT_SCHEMA_VERSION`` 的项目抛 :class:`ProjectMigrationError`，本函数不写项目目录。
 
     ``excluded_recommendations`` 转交 v19→v20：这些推荐模型不写进项目
     （归档导入传入用户停用的模型），缺省时直接用目录的推荐。"""
@@ -324,7 +345,8 @@ def cleanup_stale_backups(projects_dir: Path, max_age_days: int = 7) -> None:
     for project_dir in list_project_dirs(projects_dir):
         # 每一步的输入备份留到那一步的版本提升坐实为止：项目仍停在 v<N> 时，``*.bak.v<N>-*``
         # 是那一步失败后唯一的恢复线索，只回收起点版本已低于当前 schema 的备份。起点早于
-        # ``MINIMUM_PROJECT_SCHEMA_VERSION`` 的备份是旧版迁移链留下的，一并按期回收。
+        # ``MINIMUM_PROJECT_SCHEMA_VERSION`` 的备份是旧版迁移链留下的，同一批源路径上的一并按期回收；
+        # 旧版链在别处留下的（草稿改名前的旧文件名、``clues.bak.v0-*`` 目录、目录交换的 ``.v6-*`` 目录）不回收。
         schema_version = _load_schema_version(project_dir)
         project_backup_versions = tuple(
             version for version in range(CURRENT_SCHEMA_VERSION) if version < schema_version
@@ -335,6 +357,7 @@ def cleanup_stale_backups(projects_dir: Path, max_age_days: int = 7) -> None:
             # 链首规整改写资产图登记、衍生登记与剧本登记时备份清单。
             (project_dir / ".arcreel_artifacts.json", project_backup_versions),
             *((source, project_backup_versions) for source in _bound_script_sources(project_dir)),
+            *((source, project_backup_versions) for source in _timeline_backup_sources(project_dir)),
         )
         for source, versions in sources:
             for bak in versioned_backup_candidates(source, versions):

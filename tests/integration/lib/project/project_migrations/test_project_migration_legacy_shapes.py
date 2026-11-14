@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import zipfile
 from dataclasses import replace
 from pathlib import Path
@@ -1114,6 +1115,43 @@ def test_narration_audio_without_tts_settings_in_an_imported_v19_project_is_repo
     entries = ProjectArtifactManifestAdapter(imported).snapshot_entries()
     assert ArtifactKey.episode_audio(1, "E1S1") not in entries
     assert (imported / "audio" / "segment_E1S1.wav").read_bytes() == b"tts-E1S1"
+
+
+def test_a_source_the_import_cannot_convert_to_utf8_leaves_the_script_plan_unregistered(tmp_path: Path) -> None:
+    """集原文解不出（既不是 UTF-8 也不是 GB18030）：原样留下，脚本规划的依据算不出，不登记，也不进「未能带入」。
+
+    坏宫格记录让这次导入要求确认，报告因此可见。GBK 这类解得出的原文导入时会先转成 UTF-8，不落到这条路径。
+    """
+    project_dir = _project(tmp_path)
+    undecodable = random.Random(42).randbytes(4000)
+    (project_dir / "source" / "episode_1.txt").write_bytes(undecodable)
+    write_unreadable_grid_record(project_dir)
+
+    _, imported, report = _import_report(tmp_path, project_dir)
+
+    assert (imported / "source" / "episode_1.txt").read_bytes() == undecodable
+    assert [item for item in report.skipped if item.kind == "episode-script-plan"] == []
+    entries = ProjectArtifactManifestAdapter(imported).snapshot_entries()
+    assert ArtifactKey.episode_script_plan(1) not in entries
+    assert ArtifactKey.episode_script(1) in entries
+
+
+def test_a_storyboard_referencing_an_asset_without_a_sheet_is_still_registered_on_import(tmp_path: Path) -> None:
+    """分镜引用的角色没有资产图：缺口只拦生成，导入激活照常登记这张分镜图，报告里不列它。"""
+    project_dir = _project(tmp_path)
+    project = _read_json(project_dir / "project.json")
+    project["characters"]["李四"] = {"description": "配角"}
+    (project_dir / "project.json").write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
+    script_path = project_dir / "scripts" / "episode_1.json"
+    script = _read_json(script_path)
+    script["segments"][0]["characters_in_segment"] = ["李四"]
+    script_path.write_text(json.dumps(script, ensure_ascii=False), encoding="utf-8")
+    write_unreadable_grid_record(project_dir)
+
+    _, imported, report = _import_report(tmp_path, project_dir)
+
+    assert [item for item in report.skipped if item.kind == "episode-storyboard"] == []
+    assert ArtifactKey.episode_storyboard(1, "E1S01") in ProjectArtifactManifestAdapter(imported).snapshot_entries()
 
 
 def test_adjustments_survive_a_chain_that_fails_and_is_retried(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

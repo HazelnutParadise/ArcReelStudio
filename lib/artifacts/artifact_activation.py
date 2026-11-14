@@ -96,18 +96,14 @@ _EPISODE_RESOURCE_KINDS = frozenset(
 def activate_artifact_target_state(
     project_dir: Path,
     *,
-    bump_schema: bool = False,
     plan: ArtifactTargetStatePlan | None = None,
 ) -> bool:
-    """Commit one complete target state for a current-schema project.
+    """Commit one complete target state for a current-schema project; the schema version is left as it is.
 
     ``plan`` 供调用方把只读预检提到自身写盘段之前完成；缺省即在此就地预检。传入的计划仍要
     过 ``assert_artifact_target_state_plan_unchanged``，它对着盘上事实自证，晚于预检的改动一律拒绝。
-    激活不再提升 schema（那是已移除的 v7→v8 迁移步的事，ADR 0131）：``bump_schema`` 只接受 ``False``。
     """
 
-    if bump_schema:
-        raise ValueError("artifact activation no longer advances the project schema")
     if plan is None:
         plan = plan_artifact_target_state(project_dir)
     if not project_schema_is_current(plan.project):
@@ -122,7 +118,7 @@ def ensure_imported_artifact_target_state(
     *,
     preserved_manifest: ArtifactManifestArchiveSnapshot | None = None,
 ) -> tuple[MigrationSkippedArtifact, ...]:
-    """Eagerly materialize the v8 sidecar at the archive staging boundary.
+    """Eagerly materialize the Artifact Manifest sidecar at the archive staging boundary.
 
     Official exports carry the complete source Manifest in their visible archive
     envelope.  Its basis digests are immutable generation evidence and its content
@@ -134,7 +130,8 @@ def ensure_imported_artifact_target_state(
     from the current self-proving projection instead; any other digest rejects the
     import.  Formal artifacts the envelope carries no claim for because generation-input
     gaps once blocked their projection are backfilled from the self-proving projection
-    (``docs/adr/0098``, the same rule as the v17→v18 backfill); other unclaimed
+    (``docs/adr/0098``: planned once refusing gaps and once recording them, only the keys the
+    second plan adds are taken); other unclaimed
     artifacts stay unregistered.  Legacy archives without the envelope retain the
     self-proving path.
 
@@ -197,7 +194,7 @@ def ensure_imported_artifact_target_state(
             registered = {skipped_artifact_identity(key) for key in restored}
             return tuple(item for item in plan.skipped if item.identity not in registered)
     plan = plan_artifact_target_state(project_dir)
-    activate_artifact_target_state(project_dir, bump_schema=False, plan=plan)
+    activate_artifact_target_state(project_dir, plan=plan)
     return plan.skipped
 
 

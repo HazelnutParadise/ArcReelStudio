@@ -2820,6 +2820,10 @@ export default {
     'The problem is in the project files themselves, so retrying again will most likely give the same result. Hand it to the Agent to investigate and repair, or fix the files by hand and retry.',
   'migration_hand_to_agent': 'Hand to Agent to investigate',
   'migration_retry_succeeded': 'Data upgrade finished. Generation is available again.',
+  'migration_unsupported_bar_title': 'Project version too old',
+  'migration_unsupported_title': 'Upgrade this project upstream first',
+  'migration_unsupported_body':
+    "This project's data comes from an older version that can't be upgraded here, so generation is turned off for now. Existing scripts and visuals can still be viewed. Open the project in upstream ArcReel first so it upgrades, export it, then import the archive here.",
   'lobby_card_progress': '{{completed}} / {{total}} episodes completed',
   'lobby_filter_in_progress': 'In progress',
   'lobby_filter_completed': 'Completed',

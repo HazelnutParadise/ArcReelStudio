@@ -280,7 +280,7 @@ def tts_env(monkeypatch, tmp_path):
         json.dumps({"episode": 1, "segments": []}, ensure_ascii=False),
         encoding="utf-8",
     )
-    assert activate_artifact_target_state(pm.project_path, bump_schema=False) is True
+    assert activate_artifact_target_state(pm.project_path) is True
     gen = _FakeAudioGenerator(pm.project_path)
     use_project_manager(monkeypatch, pm)
     use_generation_context(monkeypatch, _audio_ctx(gen))

@@ -382,6 +382,8 @@ export default {
   'action_patch_episode_script': 'исправьте поля сценария, перечисленные ниже',
   'action_create_edit_timeline': 'создайте таймлайн монтажа и передайте его агенту',
   'action_retry_project_migration': 'исправьте указанные файлы проекта и повторите обновление данных',
+  'action_upgrade_project_upstream':
+    'откройте проект в исходной версии ArcReel, чтобы он обновился, экспортируйте его и импортируйте архив сюда',
 
   // ---- Problem summaries ----
   'problem_generation_unit_not_found': 'Этого фрагмента больше нет в сценарии.',
@@ -419,6 +421,8 @@ export default {
   'problem_parse_failed': 'Реплики этого фрагмента не читаются; проверьте, как они записаны.',
   'problem_empty_speaker': 'В этом фрагменте есть реплика без указанного говорящего.',
   'problem_project_migration_failed': 'Обновление данных проекта не завершилось, поэтому генерация пока недоступна.',
+  'problem_project_schema_unsupported':
+    'Данные этого проекта созданы в более старой версии, и здесь их обновить нельзя. Сначала обновите проект в исходной версии ArcReel.',
   'problem_video_audio_switch_not_supported': 'Выбранная модель видео всегда создаёт звук, отключить его нельзя.',
   'problem_reference_capability_changed': 'Референсы не соответствуют заявленному способу генерации.',
   'problem_reference_duration_confirmation_required':
@@ -442,6 +446,7 @@ export default {
   'problem_fallback_repair_artifact_state': 'Не удаётся прочитать состояние готового результата.',
   'problem_fallback_retry_artifact_download': 'Результат сгенерирован, но не скачан.',
   'problem_fallback_retry_project_migration': 'Обновление данных проекта не завершилось.',
+  'problem_fallback_upgrade_project_upstream': 'Данные этого проекта слишком старые, здесь их обновить нельзя.',
   'problem_fallback_none': 'Этот фрагмент сейчас сгенерировать нельзя.',
   'problem_fallback_unknown': 'Этот фрагмент сейчас сгенерировать нельзя.',
 } satisfies Record<keyof typeof enWorkflow, string> & Record<string, string>;

@@ -13,7 +13,7 @@ import json
 from dataclasses import asdict, dataclass, is_dataclass
 from typing import Any
 
-from lib.project.project_migration_failure import MIGRATION_FAILURE_CODE
+from lib.project.project_migration_failure import MIGRATION_FAILURE_CODE, SCHEMA_UNSUPPORTED_CODE
 from server.agent_toolset.declaration import AgentToolDeclaration, ToolDeclaration, ToolImage
 from server.tool_runtime import ToolOutcome, ToolProblem
 
@@ -21,6 +21,11 @@ _PROBLEM_SUMMARIES: dict[str, str] = {
     MIGRATION_FAILURE_CODE: (
         "❌ 项目数据升级未完成，生成、正式写入与剧本 revision 签发均已关闭。"
         "请按 problem 明细修复后调用 retry_project_migration。"
+    ),
+    SCHEMA_UNSUPPORTED_CODE: (
+        "❌ 项目的数据版本早于本版本能升级的最低版本，生成、正式写入与剧本 revision 签发均已关闭。"
+        "不要修复或重试；请用户先在上游 ArcReel 打开项目，升级到 problem.params.minimum 或更高版本后导出，"
+        "再把归档导入这里。"
     ),
 }
 

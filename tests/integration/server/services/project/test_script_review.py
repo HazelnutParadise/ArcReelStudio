@@ -169,7 +169,7 @@ def _register_script_plan(pm: ProjectManager) -> None:
     if not source.exists():
         source.parent.mkdir(parents=True, exist_ok=True)
         source.write_text("三年后，阿离立于屋檐下：你终于回来了。", encoding="utf-8")
-    activate_artifact_target_state(project_path, bump_schema=False)
+    activate_artifact_target_state(project_path)
 
 
 def _write_script_plan(pm: ProjectManager, content_mode: str, content: dict) -> Path:

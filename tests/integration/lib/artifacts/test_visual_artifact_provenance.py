@@ -917,18 +917,19 @@ def test_storyboard_video_basis_refuses_a_pending_prompt(tmp_path: Path) -> None
         )
 
 
-#: 缺口记为缺席之前各类依据的固定摘要：输入完整时依据逐字节不变，已登记条目不因口径变化翻过期。
+#: 各类依据在输入完整时的固定摘要（分镜图与宫格不记资产名）：输入完整时依据不写缺席键，
+#: 已登记条目不因缺口口径翻过期。
 _COMPLETE_INPUT_DIGESTS = {
     "asset": "sha256-v1:cef57d4f7802240b4d935f5bdeaf53bb2fc9f26d38f3b64f29895d17db3f8d8f",
-    "storyboard": "sha256-v1:4ada14699d5753069b4fb512ca31c1f1d862e3ace18d81b9835256552246f668",
+    "storyboard": "sha256-v1:108eea01d1b56b94dd14aebdb0a31e672d8df7e8945c780d39929f499bc883e4",
     "derivative": "sha256-v1:7ef038ef4a89c540b44daad246ec90c458c664ac950a818bb0a1815f5ee64e7d",
-    "grid": "sha256-v1:8711b1b53d6e2f22e4ec2e6da5c46fc796762bd00ea487af866ba5515b6cd13a",
+    "grid": "sha256-v1:9fb12ac4e071368bbfa166ed090b23381f795415784d69120121f2e79c520750",
     "video_visual": "sha256-v1:ea1d43fdc619a5f06dbb7bce4d18ff6fc6c5291dcb4ac93159428f6f74dd1c00",
 }
 
 
 def _complete_input_digests(tmp_path: Path, *, absent: tuple[InputGap, ...] = ()) -> dict[str, str]:
-    """固定样本是缺口记录之前登记的存量摘要；分镜图与宫格因此按 v19 之前记资产名的口径构造。"""
+    """各类依据在输入完整时的摘要，与固定样本逐字节比对。"""
     image = tmp_path / "a.png"
     end_frame = tmp_path / "b.png"
     image.write_bytes(b"image-a")
@@ -954,7 +955,6 @@ def _complete_input_digests(tmp_path: Path, *, absent: tuple[InputGap, ...] = ()
             aspect_ratio="9:16",
             references=(sheet,),
             absent=absent,
-            asset_names=True,
         ).digest,
         "derivative": build_derivative_sheet_basis(
             owner_name="张三",
@@ -974,7 +974,6 @@ def _complete_input_digests(tmp_path: Path, *, absent: tuple[InputGap, ...] = ()
             style_description="电影感",
             references=(sheet,),
             absent=absent,
-            asset_names=True,
         ).digest,
         "video_visual": build_storyboard_video_artifact_visual_basis(
             resource_id="E1S1",
@@ -1040,7 +1039,7 @@ def test_storyboard_video_basis_without_a_storyboard_records_the_gap(tmp_path: P
         )
 
 
-def _named_image_bases(tmp_path: Path, name: str, *, asset_names: bool = False, sheet: bytes = b"sheet") -> dict:
+def _named_image_bases(tmp_path: Path, name: str, *, sheet: bytes = b"sheet") -> dict:
     """引用同一张角色资产图的分镜图、宫格联合图与切格分镜；正文用 ``@[name]`` 指认它。"""
     tmp_path.mkdir(parents=True, exist_ok=True)
     image = tmp_path / "sheet.png"
@@ -1065,7 +1064,6 @@ def _named_image_bases(tmp_path: Path, name: str, *, asset_names: bool = False, 
             style="写实",
             aspect_ratio="9:16",
             references=references,
-            asset_names=asset_names,
         ),
         "grid": build_grid_composite_visual_basis(
             group_id="grid_1",
@@ -1075,7 +1073,6 @@ def _named_image_bases(tmp_path: Path, name: str, *, asset_names: bool = False, 
             style="写实",
             grid_aspect_ratio="18:16",
             references=grid_references,
-            asset_names=asset_names,
         ),
         "member": build_grid_member_storyboard_visual_basis(
             group_id="grid_1",
@@ -1087,7 +1084,6 @@ def _named_image_bases(tmp_path: Path, name: str, *, asset_names: bool = False, 
             style="写实",
             member_aspect_ratio="9:16",
             references=grid_references,
-            asset_names=asset_names,
         ),
     }
 

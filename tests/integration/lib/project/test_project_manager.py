@@ -9,6 +9,8 @@ from lib.artifacts.artifact_manifest import ArtifactKey, ArtifactManifestEntry, 
 from lib.backends.providers import CallPurpose
 from lib.project import project_trash
 from lib.project.project_manager import EmptySourceError, ProjectManager
+from lib.project.project_migrations.runner import run_project_migrations
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from tests.fakes import use_text_generator
 
 
@@ -1147,3 +1149,16 @@ def test_read_source_files_raises_on_non_utf8(tmp_path):
     with pytest.raises(SourceDecodeError) as exc_info:
         pm._read_source_files("demo")
     assert exc_info.value.filename == "broken.txt"
+
+
+def test_create_project_alone_writes_the_current_schema_version(tmp_path: Path) -> None:
+    """只建了目录、还没补元数据的项目也带当前版本：启动迁移把它当作已是最新，不会读作 v0 拒绝。"""
+    manager = ProjectManager(tmp_path)
+
+    project_dir = manager.create_project("fresh")
+
+    project = json.loads((project_dir / "project.json").read_text(encoding="utf-8"))
+    assert project["schema_version"] == CURRENT_PROJECT_SCHEMA_VERSION
+    summary = run_project_migrations(manager.projects_dir)
+    assert summary.skipped == ["fresh"]
+    assert summary.failed == []
