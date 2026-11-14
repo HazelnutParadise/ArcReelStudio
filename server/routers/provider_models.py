@@ -50,6 +50,7 @@ from lib.catalog.user_entries import (
 from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.config.service import ConfigService
+from lib.config.vertex_credentials import VERTEX_PROVIDER_ID, has_vertex_credentials_file
 from lib.custom_provider import is_custom_provider, make_provider_id, parse_provider_id
 from lib.custom_provider.capability_view import (
     CapabilityView,
@@ -64,6 +65,7 @@ from lib.custom_provider.endpoint_resolution import resolve_endpoint_spec
 from lib.custom_provider.endpoints import get_endpoint_spec
 from lib.custom_provider.model_facts import entry_summary, model_entry
 from lib.db import get_async_session
+from lib.db.models.credential import ProviderCredential
 from lib.db.models.custom_provider import CustomProviderModel
 from lib.db.repositories.builtin_provider_model_repo import BuiltinProviderModelRepository
 from lib.db.repositories.credential_repository import CredentialRepository
@@ -653,9 +655,15 @@ async def discover_provider_models(
     _require_builtin(provider_id, _t)
     if not builtin_discovery.is_discoverable(provider_id):
         return DiscoverProviderModelsResponse(not_applicable=True, reason=_t("discovery_not_applicable_builtin"))
-    config = await _builtin_discovery_config(session, provider_id)
-    if config is None:
+    cred = await CredentialRepository(session).get_active(provider_id)
+    if cred is None:
         raise HTTPException(status_code=422, detail=_t("missing_credentials"))
+    config = await _builtin_discovery_config(session, provider_id, cred)
+    if provider_id == VERTEX_PROVIDER_ID and not await asyncio.to_thread(
+        has_vertex_credentials_file, config.get("credentials_path")
+    ):
+        # 报出连线名，不报服务端上的文件路径
+        raise HTTPException(status_code=422, detail=_t("vertex_credential_file_missing", connection=cred.name))
     try:
         model_ids = await asyncio.wait_for(
             asyncio.to_thread(builtin_discovery.list_model_ids, provider_id, config),
@@ -674,11 +682,10 @@ async def discover_provider_models(
     )
 
 
-async def _builtin_discovery_config(session: AsyncSession, provider_id: str) -> dict[str, str] | None:
-    """叠加了激活凭证的供应商配置；没有凭证时为 ``None``。"""
-    cred = await CredentialRepository(session).get_active(provider_id)
-    if cred is None:
-        return None
+async def _builtin_discovery_config(
+    session: AsyncSession, provider_id: str, cred: ProviderCredential
+) -> dict[str, str]:
+    """叠加了激活凭证 ``cred`` 的供应商配置。"""
     config = await ConfigService(session).get_provider_config(provider_id)
     # 叠加凭证时会探测 Vertex 凭证文件是否存在，放进线程
     await asyncio.to_thread(cred.overlay_config, config)

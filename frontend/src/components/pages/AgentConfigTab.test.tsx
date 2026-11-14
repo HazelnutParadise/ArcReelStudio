@@ -26,7 +26,6 @@ function makeConfigResponse(): GetSystemConfigResponse {
       text_backend_complex: "",
       video_generate_audio: true,
       anthropic_api_key: { is_set: false, masked: null },
-      anthropic_base_url: "",
       anthropic_model: "",
       anthropic_default_haiku_model: "",
       anthropic_default_opus_model: "",

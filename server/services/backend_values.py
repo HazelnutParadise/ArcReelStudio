@@ -5,7 +5,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lib.catalog import query as catalog
-from lib.config.model_setting_keys import MODEL_SETTING_CAPABILITIES, MODEL_SETTING_MEDIA_TYPES
+from lib.config.model_setting_keys import MODEL_SETTING_CAPABILITIES, MODEL_SETTING_MEDIA_TYPES, provider_of
 from lib.config.registry import PROVIDER_REGISTRY
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.infra.api_errors import BadRequestError
@@ -70,7 +70,7 @@ async def validate_backend_credential(
     """
     if credential_id is None:
         return None
-    provider_id = backend_value.split("/", 1)[0].strip() if backend_value else ""
+    provider_id = provider_of(backend_value)
     credential = await CredentialRepository(session).get_by_id(credential_id)
     if (
         not provider_id

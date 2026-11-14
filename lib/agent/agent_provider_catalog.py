@@ -60,7 +60,7 @@ PRESET_PROVIDERS: dict[str, PresetProvider] = {
         api_key_url="https://api.arc-reel.com/",
         notes_i18n_key=None,
         api_key_pattern=None,
-        is_recommended=True,
+        is_recommended=False,
     ),
     "glm-cn": PresetProvider(
         id="glm-cn",

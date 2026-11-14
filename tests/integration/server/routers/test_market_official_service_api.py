@@ -96,16 +96,18 @@ async def market_client_factory(session_factory: async_sessionmaker[AsyncSession
             yield session
 
     @asynccontextmanager
-    async def factory(base_url: str = OFFICIAL_SERVICE) -> AsyncGenerator[httpx2.AsyncClient]:
+    async def factory(base_url: str = OFFICIAL_SERVICE, *, enabled: bool = True) -> AsyncGenerator[httpx2.AsyncClient]:
+        """``enabled`` 为用户已打开官方服务的总开关；缺省为关的情形由各用例显式传 False。"""
         app = FastAPI()
         async with httpx2.AsyncClient() as network:
+            gateway = OfficialServiceGateway(session_factory, base_url=base_url, http_client=lambda: network)
+            if enabled:
+                await gateway.update(enabled=True)
             app.dependency_overrides[get_async_session] = session_override
             app.dependency_overrides[get_market_entry_service] = lambda: MarketEntryService(
                 session_factory, http_client=lambda: network
             )
-            app.dependency_overrides[get_official_service_gateway] = lambda: OfficialServiceGateway(
-                session_factory, base_url=base_url, http_client=lambda: network
-            )
+            app.dependency_overrides[get_official_service_gateway] = lambda: gateway
             app.dependency_overrides[system_config.get_app_version_reader] = lambda: lambda: "0.30.0"
             app.include_router(market.router)
             app.include_router(custom_endpoints.router)
@@ -212,7 +214,9 @@ async def test_no_outbound_to_official_service(
             await SystemSettingRepository(session).set(ENABLED_SETTING, "false")
             await session.commit()
     source_id, definition_url = (2, CUSTOM_DEFINITION) if case == "third_party_source" else (1, OFFICIAL_DEFINITION)
-    async with market_client_factory("" if case == "empty_url" else OFFICIAL_SERVICE) as client:
+    async with market_client_factory(
+        "" if case == "empty_url" else OFFICIAL_SERVICE, enabled=case != "toggle_off"
+    ) as client:
         with respx.mock() as remote:
             remote.get(definition_url).respond(json=custom_endpoint_definition())
             response = await _install(client, source_id)

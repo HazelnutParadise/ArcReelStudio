@@ -67,7 +67,7 @@ async def _status(session: AsyncSession) -> SubscriptionStatus:
     settings = await SystemSettingRepository(session).get_all()
     subscription = await agent_claude_subscription(session, settings)
     cred = await AgentCredentialRepository(session).get_active()
-    has_api_key = bool(cred.api_key if cred is not None else settings.get("anthropic_api_key", "").strip())
+    has_api_key = bool(cred is not None and cred.api_key)
     chosen = (settings.get(AGENT_SUBSCRIPTION_CREDENTIAL_KEY) or "").strip()
     return SubscriptionStatus(
         credential_id=subscription.id if subscription is not None else None,

@@ -69,7 +69,7 @@ async def test_list_preset_providers_returns_catalog(agent_config_client) -> Non
     assert deepseek["default_model"] == "deepseek-v4-pro"
     assert deepseek["icon_key"] == "DeepSeek"
     arcreel = next(p for p in data["providers"] if p["id"] == "arcreel")
-    assert arcreel["is_recommended"] is True
+    assert arcreel["is_recommended"] is False
     assert arcreel["api_key_url"] == "https://api.arc-reel.com/"
 
 

@@ -21,6 +21,7 @@ from lib.config.service import ConfigService
 from lib.db import get_async_session
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.db.repositories.custom_provider_repo import CustomProviderRepository
+from lib.infra.app_data_dir import reset_for_tests
 from server.routers import catalog as catalog_router
 from server.routers import provider_models
 from tests.auth_deps import AUTH_DEPENDENCIES, override_auth
@@ -816,6 +817,29 @@ async def test_builtin_discovery_unlisted_model_returns_the_entry_its_name_maps_
         "acme-x": (False, None, None),
     }
     assert rows["gpt-5.5"]["display_name"] == rows["gpt-5.5"]["matched_entry"]["display_name"]
+
+
+async def test_vertex_discovery_without_the_connection_file_names_the_connection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    models_client: TestClient,
+    db_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    monkeypatch.setenv("ARCREEL_DATA_DIR", str(tmp_path / "data"))
+    reset_for_tests()
+    async with db_factory() as session:
+        await CredentialRepository(session).create(provider="gemini-vertex", name="Studio account")
+        await session.commit()
+
+    try:
+        resp = models_client.post("/api/v1/providers/gemini-vertex/models/discover", headers={"Accept-Language": "en"})
+    finally:
+        reset_for_tests()
+
+    assert resp.status_code == 422
+    detail = resp.json()["detail"]
+    assert "“Studio account”" in detail
+    assert str(tmp_path) not in detail
 
 
 def test_builtin_discovery_without_list_api_or_credentials(models_client: TestClient) -> None:

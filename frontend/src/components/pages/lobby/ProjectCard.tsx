@@ -65,7 +65,11 @@ export function ProjectCard({ project, seriesName, readOnly, actions }: ProjectC
               {t(`dashboard:lobby_card_status_${progress}`)}
             </span>
             {status?.needs_repair && (
-              <span className="rounded-full bg-warn/15 px-1.5 text-warn">{t("dashboard:lobby_card_needs_repair")}</span>
+              <span className="rounded-full bg-warn/15 px-1.5 text-warn">
+                {status.repair_code === "project_schema_unsupported"
+                  ? t("dashboard:lobby_card_schema_unsupported")
+                  : t("dashboard:lobby_card_needs_repair")}
+              </span>
             )}
           </div>
           {seriesName && (

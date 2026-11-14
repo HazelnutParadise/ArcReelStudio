@@ -97,15 +97,27 @@ async def _query_aggregates(client: httpx2.AsyncClient) -> str:
     ("base_url", "available"),
     [(OFFICIAL_SERVICE, True), ("", False)],
 )
-async def test_default_state(settings_client_factory: ClientFactory, base_url: str, available: bool):
+async def test_default_state_is_off(settings_client_factory: ClientFactory, base_url: str, available: bool):
     async with settings_client_factory(base_url) as client:
         response = await client.get("/official-service")
     assert response.status_code == 200
-    assert response.json() == {"available": available, "enabled": available, "notice_seen": False, "instance_id": None}
+    assert response.json() == {"available": available, "enabled": False, "notice_seen": False, "instance_id": None}
+
+
+async def test_untouched_switch_makes_no_outbound_and_creates_no_instance_id(settings_client_factory: ClientFactory):
+    async with settings_client_factory() as client:
+        with respx.mock() as remote:
+            aggregates = await client.get("/market/entries/aggregates")
+            rating = await client.put("/market/sources/1/entries/example/rating", json={"stars": 5})
+            assert remote.calls.call_count == 0
+        assert aggregates.status_code == 409
+        assert rating.status_code == 409
+        assert (await client.get("/official-service")).json()["instance_id"] is None
 
 
 async def test_turning_off_from_notice_disables_outbound(settings_client_factory: ClientFactory):
     async with settings_client_factory() as client:
+        assert (await client.patch("/official-service", json={"enabled": True})).json()["enabled"] is True
         response = await client.patch("/official-service", json={"enabled": False, "notice_seen": True})
         assert response.json() == {"available": True, "enabled": False, "notice_seen": True, "instance_id": None}
         assert (await client.get("/official-service")).json() == response.json()
@@ -120,6 +132,7 @@ async def test_turning_off_from_notice_disables_outbound(settings_client_factory
 
 async def test_reset_instance_id_starts_a_new_instance(settings_client_factory: ClientFactory):
     async with settings_client_factory() as client:
+        assert (await client.patch("/official-service", json={"enabled": True})).json()["enabled"] is True
         first = await _query_aggregates(client)
         assert (await client.get("/official-service")).json()["instance_id"] == first
         reset = await client.post("/official-service/instance-id/reset")

@@ -4,6 +4,8 @@ status: accepted
 
 # 不迁移上游 ArcReel 的安装布局与旧配置，数据根与数据库只按当前形态读写
 
+> 「查找规则不变」一句已失效：`lib/config/vertex_credentials.py` 不再按 `vertex_credentials.json` 与 `vertex_keys/` 里的第一个 JSON 查找，Vertex 只用生效连线（或供应商配置）给出的凭证文件，找不到时报出是哪条连线（`vertex_credential_file_missing` / `vertex_connection_missing`）。
+
 启动时原先有一组只为上游 ArcReel 旧安装准备的兼容步骤：把平铺的数据根整理进 `projects/` 等分层目录（连同会话键、全局资产、Vertex 凭据、费用记录与排队任务的改写），把旧默认库 `.arcreel.db`（连同 `-wal` / `-shm`）改名为 `arcreel.db`，把代码目录下的 `logs/` 并入数据根（仍设置旧变量 `ARCREEL_LOG_DIR` 时还提示一次，数据根的 `logs/` 恰是旧布局里的项目时不挂文件日志），把旧版 `.system_config.json` 导入数据库，把旧任务级文本键改写成档位键；文本任务判同时还忽略旧载荷里的 `projects_root`，费用统计把旧的 `clues/` 输出路径归到道具；`scripts/` 下还留着三个手动运行的旧数据迁移脚本（`migrate_to_project_json.py`、`migrate_sqlite_to_orm.py`、`migrate_clean_redundant_fields.py`）。本项目从未部署过，数据库只有一份基线迁移（`alembic/versions/0001baseline_baseline.py`），上游的数据库接不上来；项目又只从 schema 19 接起（ADR 0131）。这些步骤要处理的数据在任何一份本项目的安装里都不会出现，却让每次启动多跑一遍检查，也让数据根布局、日志与配置相关的改动都得顺带照顾旧形态。
 
 ## 规则

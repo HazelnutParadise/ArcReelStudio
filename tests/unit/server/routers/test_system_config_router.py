@@ -22,6 +22,7 @@ from lib.config.model_setting_keys import GLOBAL_MODEL_SETTING_KEYS
 from lib.config.service import ConfigService, ProviderStatus
 from lib.db import get_async_session
 from lib.db.base import Base
+from lib.db.repositories.agent_credential_repo import AgentCredentialRepository
 from lib.i18n.zh import errors as zh_errors
 from lib.infra.video_encoder import GpuEncoderStatus
 from server.auth import CurrentUserInfo, get_current_user
@@ -36,8 +37,11 @@ from tests.fakes import use_system_config_sessions
 # ---------------------------------------------------------------------------
 
 
-def _make_app_with_mock(mock_svc: ConfigService) -> FastAPI:
-    """App with a fully mocked ConfigService + in-memory DB (no real DB)."""
+def _make_app_with_mock(mock_svc: ConfigService, *, agent_api_key: str | None = None) -> FastAPI:
+    """App with a fully mocked ConfigService + in-memory DB (no real DB).
+
+    ``agent_api_key`` 给出时内存库里有一条生效的 Agent 供应商凭证。
+    """
     from contextlib import asynccontextmanager
 
     mem_engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -47,6 +51,14 @@ def _make_app_with_mock(mock_svc: ConfigService) -> FastAPI:
     async def _lifespan(_app: FastAPI):
         async with mem_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        if agent_api_key is not None:
+            async with mem_factory() as db_session:
+                repo = AgentCredentialRepository(db_session)
+                cred = await repo.create(
+                    preset_id="__custom__", display_name="网关", base_url="https://gw.test", api_key=agent_api_key
+                )
+                await repo.set_active(cred.id)
+                await db_session.commit()
         yield
 
     app = FastAPI(lifespan=_lifespan)
@@ -166,7 +178,6 @@ class TestGetSystemConfig:
             "video_poll_timeout_seconds",
             "gpu_encoding_enabled",
             "anthropic_api_key",
-            "anthropic_base_url",
             "anthropic_model",
             "anthropic_default_haiku_model",
             "anthropic_default_opus_model",
@@ -236,15 +247,21 @@ class TestGetSystemConfig:
         assert "gemini-vertex/veo-3.1-generate-001" in options["video_backends"]
         assert "ark/doubao-seedance-2-0-260128" in options["video_backends"]
 
-    def test_anthropic_key_masked(self):
-        mock_svc = _make_mock_svc(settings={"anthropic_api_key": "sk-ant-test-secret-123456"})
-        with TestClient(_make_app_with_mock(mock_svc)) as client:
+    def test_anthropic_key_reports_the_active_agent_credential_masked(self):
+        mock_svc = _make_mock_svc()
+        with TestClient(_make_app_with_mock(mock_svc, agent_api_key="sk-ant-test-secret-123456")) as client:
             res = client.get("/api/v1/system/config")
         ak = res.json()["settings"]["anthropic_api_key"]
         assert ak["is_set"] is True
         assert ak["masked"] is not None
         assert "sk-a" in ak["masked"]
         assert "test-secret-123456" not in ak["masked"]
+
+    def test_a_key_left_in_system_settings_does_not_count_as_set(self):
+        mock_svc = _make_mock_svc(settings={"anthropic_api_key": "sk-ant-left-over-123456"})
+        with TestClient(_make_app_with_mock(mock_svc)) as client:
+            res = client.get("/api/v1/system/config")
+        assert res.json()["settings"]["anthropic_api_key"] == {"is_set": False, "masked": None}
 
     def test_anthropic_key_unset(self):
         mock_svc = _make_mock_svc()
@@ -259,7 +276,6 @@ class TestGetSystemConfig:
             settings={
                 "default_video_backend": "gemini-vertex/veo-3.1-fast-generate-001",
                 "video_generate_audio": "true",
-                "anthropic_base_url": "https://proxy.example.com",
             }
         )
         with TestClient(_make_app_with_mock(mock_svc)) as client:
@@ -267,7 +283,6 @@ class TestGetSystemConfig:
         settings = res.json()["settings"]
         assert settings["default_video_backend"] == "gemini-vertex/veo-3.1-fast-generate-001"
         assert settings["video_generate_audio"] is True
-        assert settings["anthropic_base_url"] == "https://proxy.example.com"
 
     def test_options_include_audio_backends(self):
         mock_svc = _make_mock_svc(ready_providers=["dashscope"])
@@ -511,38 +526,21 @@ class TestPatchSystemConfig:
             )
         assert res.status_code == 400
 
-    def test_patch_sets_anthropic_key(self):
+    def test_patch_ignores_the_removed_anthropic_credential_keys(self):
+        """Agent 的密钥与地址只在 Agent 供应商凭证里：这两个键与其他未知键一样被忽略，不写进系统设置。"""
         mock_svc = _make_mock_svc()
         with TestClient(self._make_patch_app(mock_svc)) as client:
             res = client.patch(
                 "/api/v1/system/config",
-                json={"anthropic_api_key": "sk-ant-new-key-12345678"},
+                json={
+                    "anthropic_api_key": "sk-ant-new-key-12345678",
+                    "anthropic_base_url": "https://proxy.example.com",
+                },
             )
         assert res.status_code == 200
-        ak = res.json()["settings"]["anthropic_api_key"]
-        assert ak["is_set"] is True
-
-    def test_patch_clears_anthropic_key(self):
-        mock_svc = _make_mock_svc(settings={"anthropic_api_key": "sk-ant-old"})
-        with TestClient(self._make_patch_app(mock_svc)) as client:
-            res = client.patch(
-                "/api/v1/system/config",
-                json={"anthropic_api_key": ""},
-            )
-        assert res.status_code == 200
-        ak = res.json()["settings"]["anthropic_api_key"]
-        assert ak["is_set"] is False
-
-    def test_patch_sets_anthropic_base_url(self):
-        mock_svc = _make_mock_svc()
-        with TestClient(self._make_patch_app(mock_svc)) as client:
-            res = client.patch(
-                "/api/v1/system/config",
-                json={"anthropic_base_url": "https://proxy.example.com/v1"},
-            )
-        assert res.status_code == 200
-        settings = res.json()["settings"]
-        assert settings["anthropic_base_url"] == "https://proxy.example.com/v1"
+        written = {call.args[0] for call in mock_svc.set_setting.await_args_list}
+        assert written.isdisjoint({"anthropic_api_key", "anthropic_base_url"})
+        assert res.json()["settings"]["anthropic_api_key"] == {"is_set": False, "masked": None}
 
     def test_patch_sets_audio_toggle(self):
         mock_svc = _make_mock_svc()
