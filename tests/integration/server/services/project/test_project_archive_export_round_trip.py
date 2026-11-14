@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import zipfile
@@ -9,15 +10,20 @@ from pathlib import Path
 
 import pytest
 
-from lib.artifacts.artifact_activation import ArtifactCurrencyResolver
+from lib.artifacts.artifact_activation import UNPROVEN_MEDIA_BASIS_DIGEST, ArtifactCurrencyResolver
 from lib.artifacts.artifact_manifest import (
     MANIFEST_FILENAME,
     ArtifactKey,
     ArtifactStatus,
+    ProjectArtifactManifestAdapter,
 )
 from lib.artifacts.version_manager import VersionManager
+from lib.artifacts.video_artifact_commit import commit_paid_video_artifact
+from lib.artifacts.video_artifact_facts import VideoArtifactCurrencyFacts
+from lib.material.storage import VersionSnapshotCorruptedError
 from lib.project.project_manager import ProjectManager
 from lib.project.project_migrations.runner import migrate_project_with_verdict
+from server.services.currency.typed_media_restore import restore_typed_media_resource
 from server.services.project.project_archive import (
     ARCHIVE_MANIFEST_NAME,
     ProjectArchiveService,
@@ -523,3 +529,169 @@ def test_an_archive_whose_file_and_snapshot_were_replaced_together_imports_as_st
     target, result = _import_archive(tampered, tmp_path / "target")
 
     assert _status(target.get_project_path(result.project_name), _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+
+
+# ---- 第三轮：导入从不覆盖包里带来的快照 ----
+
+
+def test_import_keeps_an_archived_snapshot_that_does_not_match_a_forged_record(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    snapshot_rel = _selected_record(project_dir)["file"]
+    original_snapshot = (project_dir / snapshot_rel).read_bytes()
+
+    target, result = _import_archive(_forged_archive(pm, tmp_path, project_dir), tmp_path / "target")
+    imported = target.get_project_path(result.project_name)
+
+    assert (imported / snapshot_rel).read_bytes() == original_snapshot
+    assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+    warned = _noticed(result.diagnostics, "warnings")
+    assert ("claim_imported_as_stale", _VIDEO_PATH) in warned
+    assert ("version_snapshot_mismatch_kept", snapshot_rel) in warned
+    assert not [code for code, _ in _noticed(result.diagnostics, "auto_fixed") if code == "version_snapshot_restored"]
+    # 切回这个版本时按版本记录校验快照：对不上就拒绝，登记仍是 stale
+    record = _selected_record(imported)
+    with pytest.raises(VersionSnapshotCorruptedError):
+        VersionManager(imported).restore_version("videos", "E1S1", record["version"], imported / _VIDEO_PATH)
+    assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+
+
+# ---- 第三轮：版本记录没有指纹时，按源清单登记的内容事实补快照（只在导出） ----
+
+
+def test_export_rebuilds_a_snapshot_from_the_claims_content_facts_when_the_record_has_no_digest(
+    tmp_path: Path,
+) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    snapshot_rel = drop_selected_version_snapshot(project_dir, "videos", "E1S1")
+    versions = json.loads(_versions_path(project_dir).read_text(encoding="utf-8"))
+    history = versions["videos"]["E1S1"]
+    [record] = [item for item in history["versions"] if item["version"] == history["current_version"]]
+    record.pop("content_digest")
+    _versions_path(project_dir).write_text(json.dumps(versions), encoding="utf-8")
+    assert _status(project_dir, _VIDEO, _VIDEO_PATH) is ArtifactStatus.CURRENT
+
+    diagnostics, _, imported = _round_trip(pm, tmp_path / "target")
+
+    assert ("version_snapshot_restored", snapshot_rel) in _noticed(diagnostics, "auto_fixed")
+    assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.CURRENT
+
+
+def test_claim_facts_that_do_not_match_the_formal_file_never_rebuild_a_snapshot(tmp_path: Path) -> None:
+    pm, project_dir = _current_project(tmp_path)
+    drop_selected_version_snapshot(project_dir, "videos", "E1S1")
+    versions = json.loads(_versions_path(project_dir).read_text(encoding="utf-8"))
+    history = versions["videos"]["E1S1"]
+    [record] = [item for item in history["versions"] if item["version"] == history["current_version"]]
+    record.pop("content_digest")
+    _versions_path(project_dir).write_text(json.dumps(versions), encoding="utf-8")
+    (project_dir / _VIDEO_PATH).write_bytes(b"replaced outside the app")
+
+    diagnostics, _, imported = _round_trip(pm, tmp_path / "target")
+
+    assert not [code for code, _ in _noticed(diagnostics, "auto_fixed") if code == "version_snapshot_restored"]
+    assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+
+
+def test_import_never_rebuilds_a_snapshot_for_a_record_without_a_digest(tmp_path: Path) -> None:
+    """导入端没有源清单的内容事实可用：版本记录没有指纹、包里又缺快照时不补，登记按 stale 导入。"""
+    pm, project_dir = _current_project(tmp_path)
+    snapshot_rel = _selected_record(project_dir)["file"]
+    archive_path, _ = ProjectArchiveService(pm).export_project("demo", scope="full")
+    with zipfile.ZipFile(archive_path) as archive:
+        versions = json.loads(archive.read("demo/versions/versions.json"))
+    history = versions["videos"]["E1S1"]
+    [record] = [item for item in history["versions"] if item["version"] == history["current_version"]]
+    record.pop("content_digest")
+    stripped = _rezip_with(
+        archive_path,
+        tmp_path / "no-digest.zip",
+        {f"demo/{snapshot_rel}": None, "demo/versions/versions.json": json.dumps(versions).encode()},
+    )
+
+    target, result = _import_archive(stripped, tmp_path / "target")
+    imported = target.get_project_path(result.project_name)
+
+    assert not (imported / snapshot_rel).exists()
+    assert _status(imported, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+
+
+# ---- 第三轮：以 stale 导入的视频能重新生成、能切回版本，各自按真实依据重新登记 ----
+
+
+def _stale_imported_video(tmp_path: Path) -> tuple[ProjectManager, str, Path]:
+    pm, project_dir = _current_project(tmp_path)
+    archive_path, _ = ProjectArchiveService(pm).export_project("demo", scope="full")
+    first = _rezip_with(archive_path, tmp_path / "first.zip", {f"demo/{_selected_record(project_dir)['file']}": None})
+    target, result = _import_archive(first, tmp_path / "hop1")
+    imported = target.get_project_path(result.project_name)
+    # 再经一次导出导入，登记带上占位依据
+    _, again, twice = _round_trip(target, tmp_path / "hop2")
+    entry = ProjectArtifactManifestAdapter(twice).snapshot_entries()[_VIDEO]
+    assert entry.basis_digest == UNPROVEN_MEDIA_BASIS_DIGEST
+    assert _status(twice, _VIDEO, _VIDEO_PATH) is ArtifactStatus.STALE
+    del imported
+    return ProjectManager(tmp_path / "hop2"), again.project_name, twice
+
+
+def test_a_carried_as_stale_video_registers_a_real_basis_when_regenerated(tmp_path: Path) -> None:
+    _pm, _name, project = _stale_imported_video(tmp_path)
+    record = _selected_record(project)
+    staged = project / "videos" / ".scene_E1S1.new.mp4"
+    staged.write_bytes(b"regenerated video")
+    keys = (
+        "execution_checkpoint_schema_version",
+        "execution_duration_seconds",
+        "execution_request_digest",
+        "execution_script_file",
+        "execution_provider_media",
+        "execution_generate_audio",
+        "artifact_video_currency",
+    )
+
+    outcome = commit_paid_video_artifact(
+        project_path=project,
+        versions=VersionManager(project),
+        resource_type="videos",
+        resource_id="E1S1",
+        prompt="regenerated",
+        staged_file=staged,
+        current_file=project / _VIDEO_PATH,
+        duration_seconds=record["execution_duration_seconds"],
+        # 新生成的版本以当前选中的版本为父版本：生成任务就是这样记的，否则不会被选中
+        version_metadata={
+            **{key: record[key] for key in keys},
+            "artifact_video_currency": dataclasses.replace(
+                VideoArtifactCurrencyFacts.from_dict(record["artifact_video_currency"]),
+                parent_version=record["version"],
+            ).to_dict(),
+        },
+        resolve_current_basis=lambda metadata: (
+            VideoArtifactCurrencyFacts.from_dict(metadata["artifact_video_currency"]).video_descriptor
+        ),
+    )
+
+    assert outcome.selected is True
+    entry = ProjectArtifactManifestAdapter(project).snapshot_entries()[_VIDEO]
+    assert entry.basis_digest != UNPROVEN_MEDIA_BASIS_DIGEST
+    assert _status(project, _VIDEO, _VIDEO_PATH) is ArtifactStatus.CURRENT
+
+
+async def test_a_carried_as_stale_video_registers_a_real_basis_when_switched_back_to_its_version(
+    tmp_path: Path,
+) -> None:
+    pm, name, project = _stale_imported_video(tmp_path)
+    version = _selected_record(project)["version"]
+
+    await restore_typed_media_resource(
+        project_manager=pm,
+        versions=VersionManager(project),
+        project_name=name,
+        resource_type="videos",
+        resource_id="E1S1",
+        version=version,
+    )
+
+    entry = ProjectArtifactManifestAdapter(project).snapshot_entries()[_VIDEO]
+    assert entry.basis_digest != UNPROVEN_MEDIA_BASIS_DIGEST
+    assert entry.content is not None
+    assert _status(project, _VIDEO, _VIDEO_PATH) is ArtifactStatus.CURRENT

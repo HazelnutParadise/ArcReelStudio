@@ -162,6 +162,7 @@ MESSAGES = {
     "arch_current_asset_materialized": "{location}: 从 {source} 恢复当前文件 {target}",
     "arch_current_asset_restored_from_version": "{location}: 从 {source} 恢复当前文件 {target}",
     "arch_version_snapshot_restored": "{target}：版本 v{version} 的版本文件不见了或与版本记录不符，{source} 与版本记录的内容指纹一致，已按它补回",
+    "arch_version_snapshot_mismatch_kept": "{target}：版本 v{version} 的版本文件与版本记录不符，原样保留；这个版本无法切回，需要时重新生成或改选其他版本",
     "arch_manifest_unreadable_exported_from_files": "产物清单读不出，归档按项目里的文件重新整理产物登记：视频与配音照版本记录里的生成依据判定，已过期的导入后仍显示为已过期；其他产物没有别处记着生成依据，导入后显示为最新，原来的已过期标记不会保留",
     "arch_claim_left_out_unreadable": "{path}：文件是符号链接或无法安全读取（源项目里显示为无法读取），归档不带它和它的登记；导入后显示为缺失",
     "arch_missing_reference_cleared": "{location}：引用的文件 {path} 已不在项目里，也没有可恢复的版本，归档里清空这条引用；导入后与现在一样显示为缺失",

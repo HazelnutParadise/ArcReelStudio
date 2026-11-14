@@ -960,7 +960,7 @@ class ProjectArchiveService:
                     # 有无信封的两条路径均在 staging 一次性提交。
                     if preserved_manifest is None:
                         # 无信封的包按文件自证补录：先按版本记录补回快照，补录时视频与配音照常证明成立。
-                        self._restore_version_snapshots(staging_dir, diagnostics)
+                        self._restore_version_snapshots(staging_dir, diagnostics, side="import")
                     try:
                         import_skipped = ensure_imported_artifact_target_state(
                             staging_dir,
@@ -972,7 +972,7 @@ class ProjectArchiveService:
                         self._report_media_imported_as_stale(staging_dir, preserved_manifest, diagnostics)
                         # 带信封的包判完时效再补快照：补回的快照只让恢复版本与成片取材可用，不把这次判成 stale 的
                         # 登记借包里的快照证明改回最新。
-                        self._restore_version_snapshots(staging_dir, diagnostics)
+                        self._restore_version_snapshots(staging_dir, diagnostics, side="import")
 
                     # 修复期补的占位、导入激活没能登记的产物与迁移链的结果一起进报告，不分归档的
                     # schema 版本：导入前请用户确认一次（ADR 0098）。占位从诊断移进报告，导入成功
@@ -1084,11 +1084,14 @@ class ProjectArchiveService:
             diagnostics = ArchiveDiagnostics()
             self._drop_unmanaged_version_records(snapshot_dir, diagnostics)
             diagnostics.merge(self._repair_project_tree(snapshot_dir))
+            refused, claim_digests = self._formal_paths_against_their_claims(snapshot_dir, source_manifest_entries)
             self._restore_version_snapshots(
                 snapshot_dir,
                 diagnostics,
+                side="export",
                 shipped=self._shipped_version_files(snapshot_dir, scope),
-                refused_formal_paths=self._formal_paths_off_their_claims(snapshot_dir, source_manifest_entries),
+                refused_formal_paths=refused,
+                claim_digests=claim_digests,
             )
             self._clear_dangling_references(snapshot_dir, diagnostics, unreadable_in_source=unreadable_in_source)
             # 源项目已在当前 schema 上，正文就位，与导入路径共用同一遍提及自愈。
@@ -1222,17 +1225,19 @@ class ProjectArchiveService:
         return self._current_export_versions(versions if isinstance(versions, dict) else {})[1]
 
     @staticmethod
-    def _formal_paths_off_their_claims(
+    def _formal_paths_against_their_claims(
         snapshot_dir: Path,
         source_manifest_entries: Mapping[ArtifactKey, ArtifactManifestEntry] | _UnreadableManifest | None,
-    ) -> frozenset[str]:
-        """源项目里已判 stale 的视频与配音的正式文件：不按它们补快照（ADR 0134）。
+    ) -> tuple[frozenset[str], dict[str, str]]:
+        """按源清单里视频与配音的登记，把导出副本里的正式文件分成两类（ADR 0134）。
 
-        登记没有内容事实，或正式文件对不上登记的内容事实。
+        第一项是源项目里已判 stale 的正式文件，不按它们补快照：登记没有内容事实，或正式文件对不上登记的内容事实。
+        第二项是与登记的内容事实一致的正式文件及其指纹，供版本记录没有指纹时补快照用。
         """
         if not isinstance(source_manifest_entries, Mapping):
-            return frozenset()
+            return frozenset(), {}
         refused: set[str] = set()
+        proven: dict[str, str] = {}
         for key, entry in source_manifest_entries.items():
             if key.kind not in _MEDIA_ARTIFACT_KINDS:
                 continue
@@ -1242,21 +1247,31 @@ class ProjectArchiveService:
             formal = try_safe_join(snapshot_dir, entry.artifact_path)
             if formal is None or not formal.is_file() or sha256_file(formal) != entry.content.digest:
                 refused.add(entry.artifact_path)
-        return frozenset(refused)
+            else:
+                proven[entry.artifact_path] = entry.content.digest
+        return frozenset(refused), proven
 
     def _restore_version_snapshots(
         self,
         project_dir: Path,
         diagnostics: ArchiveDiagnostics,
         *,
+        side: Literal["export", "import"],
         shipped: frozenset[str] | None = None,
         refused_formal_paths: frozenset[str] = frozenset(),
+        claim_digests: Mapping[str, str] | None = None,
     ) -> None:
-        """按正式文件补回不见了、或与版本记录不符的版本快照：正式文件的内容指纹与该版本记录的一致时才补。
+        """按正式文件补回版本快照：正式文件的内容指纹与该版本的指纹一致时才补，指纹一致即字节一致。
 
-        指纹一致即字节一致，补回的就是那个版本本身。对不上记录、记录没有指纹、正式文件对不上源清单登记的内容事实
-        （``refused_formal_paths``），或这份快照本就不随包（``shipped`` 之外）时不补。导出只改导出副本，源项目不动；
-        导入改的是暂存目录（ADR 0134）。
+        版本的指纹取版本记录的 ``content_digest``。导出时，选中版本的记录没有指纹，而源清单里这条视频或配音的登记带着
+        内容事实、正式文件又与它一致（``claim_digests``，正式路径 → 指纹）时，改用登记的指纹：那是项目自己的清单
+        证明过的选中版本字节。对不上、没有指纹、正式文件对不上源清单的登记（``refused_formal_paths``），或这份快照
+        本就不随包（``shipped`` 之外）时不补。
+
+        两边对在场快照的处理不同（ADR 0134）：
+        - 导出（``side="export"``）也替换在场、但与记录不符的快照：记录是项目自己的，快照坏了就是坏了；改的只是导出副本。
+        - 导入（``side="import"``）只补缺失的快照，从不覆盖包里带来的：包里的版本记录可能被改写过，按它把一份正确的快照
+          换成正式文件的字节，等于亲手毁掉那个版本。不符的快照原样保留并告知，切回那个版本会按记录校验失败。
 
         补回的是普通文件而不是硬链接：规划器把与正式文件同一个文件的快照当作证明不成立（``samefile``），
         硬链接会让补回的版本反而判 stale。
@@ -1264,21 +1279,32 @@ class ProjectArchiveService:
         versions = self._load_json_file(project_dir / "versions" / "versions.json")
         if not isinstance(versions, dict):
             return
+        selected = {
+            (resource_type, resource_id): history.get("current_version")
+            for resource_type, bucket in versions.items()
+            if isinstance(bucket, dict)
+            for resource_id, history in bucket.items()
+            if isinstance(history, dict)
+        }
         formal_digests: dict[str, str | None] = {}
         for resource_type, resource_id, record in iter_version_records(versions):
             snapshot_rel = record.get("file")
-            recorded = record.get(CONTENT_DIGEST)
-            if (
-                not isinstance(recorded, str)
-                or not VersionManager.is_managed_snapshot_path(resource_type, snapshot_rel)
-                or (shipped is not None and snapshot_rel not in shipped)
+            if not VersionManager.is_managed_snapshot_path(resource_type, snapshot_rel) or (
+                shipped is not None and snapshot_rel not in shipped
             ):
                 continue
             try:
                 formal_rel = resource_relative_path(resource_type, resource_id)
             except ValueError:
                 continue
-            if formal_rel in refused_formal_paths:
+            recorded = record.get(CONTENT_DIGEST)
+            if (
+                not isinstance(recorded, str)
+                and claim_digests is not None
+                and record.get("version") == selected.get((resource_type, resource_id))
+            ):
+                recorded = claim_digests.get(formal_rel)
+            if not isinstance(recorded, str) or formal_rel in refused_formal_paths:
                 continue
             if formal_rel not in formal_digests:
                 formal = try_safe_join(project_dir, formal_rel)
@@ -1286,8 +1312,20 @@ class ProjectArchiveService:
             snapshot = try_safe_join(project_dir, cast(str, snapshot_rel))
             if formal_digests[formal_rel] != recorded or snapshot is None:
                 continue
-            if snapshot.is_file() and sha256_file(snapshot) == recorded:
-                continue
+            if snapshot.is_file():
+                if sha256_file(snapshot) == recorded:
+                    continue
+                if side == "import":
+                    diagnostics.add(
+                        "warnings",
+                        "version_snapshot_mismatch_kept",
+                        ValidationMessage(
+                            "arch_version_snapshot_mismatch_kept",
+                            {"target": snapshot_rel, "version": record.get("version")},
+                        ),
+                        location=cast(str, snapshot_rel),
+                    )
+                    continue
             snapshot.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(project_dir / formal_rel, snapshot)
             diagnostics.add(

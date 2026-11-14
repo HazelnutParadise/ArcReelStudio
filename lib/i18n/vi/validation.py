@@ -190,6 +190,7 @@ MESSAGES = {
     "arch_current_asset_materialized": "{location}: đã khôi phục tệp hiện hành {target} từ {source}",
     "arch_current_asset_restored_from_version": "{location}: đã khôi phục tệp hiện hành {target} từ {source}",
     "arch_version_snapshot_restored": "{target}: tệp của phiên bản v{version} bị thiếu hoặc khác bản ghi phiên bản; {source} khớp dấu vân tay nội dung trong bản ghi nên đã được bù lại từ tệp đó",
+    "arch_version_snapshot_mismatch_kept": "{target}: tệp của phiên bản v{version} khác bản ghi phiên bản và được giữ nguyên; không thể chọn lại phiên bản này, khi cần hãy tạo lại hoặc chọn phiên bản khác",
     "arch_manifest_unreadable_exported_from_files": "Không đọc được danh mục sản phẩm nên bản xuất dựng lại đăng ký từ các tệp trong dự án: video và lồng tiếng được đánh giá theo căn cứ tạo trong bản ghi phiên bản và vẫn hiển thị là đã cũ sau khi nhập nếu hiện đã cũ; các sản phẩm khác không có căn cứ ghi ở nơi khác nên sau khi nhập hiển thị là mới nhất và các dấu đã cũ hiện có không được giữ",
     "arch_claim_left_out_unreadable": "{path}: tệp là liên kết tượng trưng hoặc không đọc an toàn được (dự án nguồn hiển thị là không đọc được) nên bản xuất không mang tệp lẫn đăng ký; sau khi nhập sẽ hiển thị là thiếu",
     "arch_missing_reference_cleared": "{location}: tệp được tham chiếu {path} không còn trong dự án và không có phiên bản để khôi phục nên bản xuất xóa tham chiếu này; sau khi nhập sẽ hiển thị là thiếu như hiện tại",

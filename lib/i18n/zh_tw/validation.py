@@ -162,6 +162,7 @@ MESSAGES = {
     "arch_current_asset_materialized": "{location}: 從 {source} 恢復當前檔案 {target}",
     "arch_current_asset_restored_from_version": "{location}: 從 {source} 恢復當前檔案 {target}",
     "arch_version_snapshot_restored": "{target}：版本 v{version} 的版本檔案不見了或與版本紀錄不符，{source} 與版本紀錄的內容指紋一致，已依它補回",
+    "arch_version_snapshot_mismatch_kept": "{target}：版本 v{version} 的版本檔案與版本紀錄不符，原樣保留；這個版本無法切回，需要時重新產生或改選其他版本",
     "arch_manifest_unreadable_exported_from_files": "產物清單讀不出來，歸檔依專案裡的檔案重新整理產物登記：影片與配音依版本紀錄裡的產生依據判定，已過期的匯入後仍顯示為已過期；其他產物沒有別處記著產生依據，匯入後顯示為最新，原本的已過期標記不會保留",
     "arch_claim_left_out_unreadable": "{path}：檔案是符號連結或無法安全讀取（來源專案裡顯示為無法讀取），歸檔不帶它和它的登記；匯入後顯示為缺少",
     "arch_missing_reference_cleared": "{location}：引用的檔案 {path} 已不在專案裡，也沒有可還原的版本，歸檔裡清空這條引用；匯入後與現在一樣顯示為缺少",
