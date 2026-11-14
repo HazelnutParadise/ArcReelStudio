@@ -4,6 +4,8 @@
   收到某个连接的更新就套进文档并转发给房间里的其他连接。
 - **写回**：文档有改动后，安静 ``debounce`` 秒（最长 ``max_wait`` 秒）就把改过的顶层字段写回项目文件，
   变更来源记为 ``collab``、改动者记为最近一位改动的成员。写回失败（内容不合规）时把原因告诉房间里的每个人。
+  写之前在同一次读写里核对要写的字段：存储里的值与房间上次见到的不同（别处刚改过、中枢还没重读），就不写，
+  先把那次改动像外部改动一样合并进文档、转发给成员，再按合并后的内容重写，最多试 ``_MAX_WRITE_ATTEMPTS`` 次。
 - **外部改动**：Agent、后台任务或其他接口改了同一个单元时，从「上次与存储一致时的文档状态」出发套上新内容算出
   差异，再合并进当前文档。正在打、还没写回的字因此不会被覆盖，由 CRDT 与外部改动合并。
 - **收尾**：最后一个人离开后等 ``close_grace`` 秒（给刷新页面、断线重连留时间），写回并关闭房间。
@@ -34,7 +36,7 @@ from pycrdt import (
 )
 
 from lib.collab.ydoc_json import apply_json, new_unit_doc, unit_json
-from lib.infra.async_thread import run_sync_transaction
+from lib.infra.async_thread import run_noninterruptible_async, run_sync_transaction
 from lib.project.project_change_hints import ProjectChangeActor, project_change_actor, project_change_source
 from lib.project.project_manager import ProjectManager
 from server.services.collab.units import (
@@ -62,6 +64,23 @@ class WriteFailure:
     code: str
     detail: str = ""
     params: dict[str, object] = field(default_factory=dict)
+
+
+#: 一次写回最多尝试几次：每次核对到存储已被别处改过，就并进文档再试；都对不上时报写回失败
+_MAX_WRITE_ATTEMPTS = 3
+
+
+@dataclass(frozen=True)
+class _WriteOutcome:
+    #: False：要写的字段在存储里已被别处改过，这次没有写
+    written: bool
+    #: 写回后读回的内容；没有写时是核对时读到的内容
+    stored: dict[str, Any]
+
+
+def _is_stale(latest: dict[str, Any], changes: dict[str, Any], expected: dict[str, Any]) -> bool:
+    """要写的字段里，存储现在的值与房间上次见到的不同：写下去会盖掉别处的改动。"""
+    return any(latest.get(key) != expected.get(key) for key in changes)
 
 
 class Connection(Protocol):
@@ -324,34 +343,66 @@ class CollabHub:
             await self._persist(room)
 
     async def _persist(self, room: Room) -> None:
+        """写回一旦开始就做完，再把取消传给调用方。
+
+        中途取消会留下「文件已写、房间还记着旧的存储内容」：下次写回核对时把自己刚写的内容当成别处的改动，
+        再合并一遍，同一段字就重复了。房间关闭、有人重新加入、关停都会取消正在等待写回的任务。
+        """
+        task = asyncio.create_task(self._persist_now(room), name=f"collab-write-{room.ref.kind}")
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            with contextlib.suppress(Exception):
+                await run_noninterruptible_async(task)
+            raise
+
+    async def _persist_now(self, room: Room) -> None:
         async with room.lock:
             room.dirty = False
             current = unit_json(room.doc)
-            snapshot = room.doc.get_update()
             changes = {key: value for key, value in current.items() if room.sent.get(key) != value}
             if not changes:
                 return
             actor = room.last_actor
             await self._broadcast(room, {"type": "status", "room": _room_id(room.ref), "state": "saving"})
-            try:
-                stored = await self._write_and_read(room.ref, changes, actor)
-            except UnitNotFoundError:
-                await self._remove(room, "not_found")
-                return
-            except UnitWriteError as exc:
-                room.error = WriteFailure(exc.code, exc.detail, exc.params)
-                logger.info("协作内容写回被拒绝 kind=%s code=%s", room.ref.kind, exc.code)
-                await self._broadcast_status(room)
-                return
-            except Exception:
+            for _attempt in range(_MAX_WRITE_ATTEMPTS):
+                current = unit_json(room.doc)
+                snapshot = room.doc.get_update()
+                changes = {key: value for key, value in current.items() if room.sent.get(key) != value}
+                if not changes:
+                    # 外部改动并进来后与存储已经一致，不必再写
+                    room.error = None
+                    break
+                try:
+                    outcome = await self._write_and_read(room.ref, changes, room.stored, actor)
+                except UnitNotFoundError:
+                    await self._remove(room, "not_found")
+                    return
+                except UnitWriteError as exc:
+                    room.error = WriteFailure(exc.code, exc.detail, exc.params)
+                    logger.info("协作内容写回被拒绝 kind=%s code=%s", room.ref.kind, exc.code)
+                    await self._broadcast_status(room)
+                    return
+                except Exception:
+                    room.error = WriteFailure("save_failed")
+                    logger.exception("协作内容写回失败 kind=%s project=%s", room.ref.kind, room.ref.project)
+                    await self._broadcast_status(room)
+                    return
+                if not outcome.written:
+                    # 要写的字段在存储里已被别处改过：先把那次改动并进文档，再按合并后的内容重写
+                    await self._merge_stored(room, outcome.stored)
+                    continue
+                room.error = None
+                room.sent = current
+                room.base_update = snapshot
+                # 只认这次写过的字段：其余字段若在这次写回前后被别处改了，由随后的重读照常并进文档
+                room.stored = {**room.stored, **{key: outcome.stored.get(key) for key in changes}}
+                break
+            else:
                 room.error = WriteFailure("save_failed")
-                logger.exception("协作内容写回失败 kind=%s project=%s", room.ref.kind, room.ref.project)
-                await self._broadcast_status(room)
-                return
-            room.error = None
-            room.sent = current
-            room.base_update = snapshot
-            room.stored = stored
+                logger.warning(
+                    "协作内容写回时存储一直被别处改动，放弃本次写回 kind=%s project=%s", room.ref.kind, room.ref.project
+                )
             await self._broadcast_status(room)
 
     async def _read(self, ref: UnitRef) -> dict[str, Any]:
@@ -361,20 +412,31 @@ class CollabHub:
         return await run_sync_transaction(spec.read, self._pm, ref.project, ref.key)
 
     async def _write_and_read(
-        self, ref: UnitRef, changes: dict[str, Any], actor: ProjectChangeActor | None
-    ) -> dict[str, Any]:
+        self, ref: UnitRef, changes: dict[str, Any], expected: dict[str, Any], actor: ProjectChangeActor | None
+    ) -> _WriteOutcome:
         spec = self._specs[ref.kind]
         if is_global(spec):
+            latest = await spec.read(ref.key)
+            if _is_stale(latest, changes, expected):
+                return _WriteOutcome(written=False, stored=latest)
             await spec.write(ref.key, changes)
-            return await spec.read(ref.key)
-        return await run_sync_transaction(self._write_and_read_project, spec, ref, changes, actor)
+            return _WriteOutcome(written=True, stored=await spec.read(ref.key))
+        return await run_sync_transaction(self._write_and_read_project, spec, ref, changes, expected, actor)
 
     def _write_and_read_project(
-        self, spec: UnitSpec, ref: UnitRef, changes: dict[str, Any], actor: ProjectChangeActor | None
-    ) -> dict[str, Any]:
+        self,
+        spec: UnitSpec,
+        ref: UnitRef,
+        changes: dict[str, Any],
+        expected: dict[str, Any],
+        actor: ProjectChangeActor | None,
+    ) -> _WriteOutcome:
+        latest = spec.read(self._pm, ref.project, ref.key)
+        if _is_stale(latest, changes, expected):
+            return _WriteOutcome(written=False, stored=latest)
         with project_change_source("collab"), project_change_actor(actor):
             spec.write(self._pm, ref.project, ref.key, changes)
-        return spec.read(self._pm, ref.project, ref.key)
+        return _WriteOutcome(written=True, stored=spec.read(self._pm, ref.project, ref.key))
 
     # ── 外部改动 ─────────────────────────────────────────────────
 
@@ -420,32 +482,38 @@ class CollabHub:
             except UnitNotFoundError:
                 await self._remove(room, "not_found")
                 return
-            changed = [key for key, value in latest.items() if room.stored.get(key) != value]
-            if not changed:
+            if not await self._merge_stored(room, latest):
                 return
-            # 从上次与存储一致的状态出发套上外部的新内容，得到「外部改了什么」的增量，再合并进当前文档
-            base = Doc()
-            base.apply_update(room.base_update)
-            base_state = base.get_state()
-            target = {**unit_json(base), **{key: latest[key] for key in changed}}
-            apply_json(base, target)
-            delta = base.get_update(base_state)
-            before = room.doc.get_state()
-            room.doc.apply_update(delta)
-            update = room.doc.get_update(before)
-            room.stored = latest
-            room.base_update = base.get_update()
-            room.sent = {**room.sent, **{key: latest[key] for key in changed}}
-            if update != _EMPTY_UPDATE:
-                await self._broadcast(
-                    room, {"type": "sync", "room": _room_id(room.ref), "data": _b64(create_update_message(update))}
-                )
             # 合并后文档里还有没写回的字（别人正在打的）时照常写回
             if unit_json(room.doc) != {**room.sent}:
                 room.dirty = True
                 room.first_dirty_at = room.last_change_at = time.monotonic()
                 if room.persist_task is None or room.persist_task.done():
                     room.persist_task = asyncio.create_task(self._persist_when_quiet(room))
+
+    async def _merge_stored(self, room: Room, latest: dict[str, Any]) -> bool:
+        """把存储里的新内容合并进文档并转发给成员；调用方持有 ``room.lock``。存储没变时返回 False。"""
+        changed = [key for key, value in latest.items() if room.stored.get(key) != value]
+        if not changed:
+            return False
+        # 从上次与存储一致的状态出发套上外部的新内容，得到「外部改了什么」的增量，再合并进当前文档
+        base = Doc()
+        base.apply_update(room.base_update)
+        base_state = base.get_state()
+        target = {**unit_json(base), **{key: latest[key] for key in changed}}
+        apply_json(base, target)
+        delta = base.get_update(base_state)
+        before = room.doc.get_state()
+        room.doc.apply_update(delta)
+        update = room.doc.get_update(before)
+        room.stored = latest
+        room.base_update = base.get_update()
+        room.sent = {**room.sent, **{key: latest[key] for key in changed}}
+        if update != _EMPTY_UPDATE:
+            await self._broadcast(
+                room, {"type": "sync", "room": _room_id(room.ref), "data": _b64(create_update_message(update))}
+            )
+        return True
 
     async def _remove(self, room: Room, reason: str) -> None:
         room.closed = True

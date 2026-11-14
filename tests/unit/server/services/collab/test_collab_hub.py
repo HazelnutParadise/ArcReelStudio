@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import contextlib
+import threading
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -337,3 +338,157 @@ async def test_a_global_unit_picks_up_changes_made_elsewhere(global_hub) -> None
     await _settle()
 
     assert alice.text("body") == "别处改的"
+
+
+# ── 写回与同一时刻的外部改动 ─────────────────────────────────────
+#
+# 外部改动已经落到存储、中枢还没重读（事件没到、轮询没轮到）时就写回：用不推送事件的变更流、很长的防抖与
+# 轮询间隔，让重读只在测试点名时发生，写回只经 ``flush`` 触发。
+
+
+class SilentChanges:
+    """订阅一直不出任何事件的变更流：中枢不会自己重读。"""
+
+    @contextlib.asynccontextmanager
+    async def __call__(self, project: str):
+        async def _iter() -> AsyncIterator[Any]:
+            await asyncio.Event().wait()
+            yield ("changes", {})
+
+        yield _iter()
+
+
+def _quiet_hub(pm: ProjectManager, specs: dict[str, Any]) -> CollabHub:
+    return CollabHub(
+        pm,
+        specs,
+        SilentChanges(),
+        error_text=lambda code, _detail, locale, _params: f"[{locale}] {code}",
+        debounce=3600,
+        max_wait=3600,
+        close_grace=3600,
+        poll_interval=3600,
+    )
+
+
+@pytest.fixture
+async def quiet_hub(hub_project_files):
+    instance = _quiet_hub(hub_project_files, UNIT_SPECS)
+    yield instance
+    await instance.shutdown()
+
+
+async def test_an_outside_change_to_the_typed_field_is_merged_not_overwritten(quiet_hub, hub_project_files) -> None:
+    alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
+    await _join(quiet_hub, alice)
+    await _join(quiet_hub, bob)
+
+    # Alice 在开头打了字；写回之前 Agent 在结尾加了字，中枢还没重读
+    await quiet_hub.on_sync(alice, REF, alice.type_into("synopsis", 0, "深夜，"))
+    hub_project_files.update_project(PROJECT, lambda data: data["overview"].update({"synopsis": "雨夜。"}))
+    await quiet_hub.flush(alice, REF, 1)
+
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "深夜，雨夜。"
+    assert alice.text("synopsis") == bob.text("synopsis") == "深夜，雨夜。"
+    assert alice.messages[-1]["ok"] is True
+    assert [s["state"] for s in bob.statuses()][-2:] == ["saving", "saved"]
+
+
+async def test_an_outside_change_to_another_field_reaches_every_member(quiet_hub, hub_project_files) -> None:
+    alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
+    await _join(quiet_hub, alice)
+    await _join(quiet_hub, bob)
+
+    await quiet_hub.on_sync(alice, REF, alice.type_into("synopsis", 0, "深夜，"))
+    hub_project_files.update_project(PROJECT, lambda data: data["overview"].update({"genre": "爱情"}))
+    await quiet_hub.flush(alice, REF, 1)
+    # 外部改动的事件随后到达
+    await quiet_hub.refresh_project(PROJECT)
+
+    overview = hub_project_files.load_project(PROJECT)["overview"]
+    assert (overview["synopsis"], overview["genre"]) == ("深夜，雨夜", "爱情")
+    for conn in (alice, bob):
+        assert (conn.text("synopsis"), conn.text("genre")) == ("深夜，雨夜", "爱情")
+
+
+async def test_an_outside_change_to_a_global_unit_is_merged_not_overwritten(hub_project_files) -> None:
+    unit = InMemoryGlobalUnit()
+    hub = _quiet_hub(hub_project_files, {**UNIT_SPECS, "note": unit})
+    alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
+    for conn in (alice, bob):
+        await hub.join(conn, GLOBAL_REF)
+        await hub.on_sync(conn, GLOBAL_REF, create_sync_message(conn.doc))
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
+    unit.store["k"]["body"] = "初稿。"
+    await hub.flush(alice, GLOBAL_REF, 1)
+
+    assert unit.store["k"]["body"] == "新初稿。"
+    assert alice.text("body") == bob.text("body") == "新初稿。"
+    await hub.shutdown()
+
+
+class EverChangingGlobalUnit(InMemoryGlobalUnit):
+    """每次被读都先被别处改一次：写回前的核对永远对不上。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.armed = False
+        self.writes = 0
+
+    async def read(self, key: str) -> dict[str, Any]:
+        if self.armed:
+            self.store[key]["body"] += "。"
+        return await super().read(key)
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        self.writes += 1
+        await super().write(key, changes)
+
+
+async def test_an_outside_writer_that_never_stops_ends_in_an_error_instead_of_looping(hub_project_files) -> None:
+    unit = EverChangingGlobalUnit()
+    hub = _quiet_hub(hub_project_files, {**UNIT_SPECS, "note": unit})
+    alice = FakeConn("c1", "alice")
+    await hub.join(alice, GLOBAL_REF)
+    await hub.on_sync(alice, GLOBAL_REF, create_sync_message(alice.doc))
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
+    unit.armed = True
+    await hub.flush(alice, GLOBAL_REF, 1)
+    unit.armed = False
+
+    assert unit.writes == 0
+    assert alice.messages[-1]["ok"] is False
+    assert alice.statuses()[-1]["state"] == "error"
+    # 别处的改动已并进文档，Alice 打的字也还在
+    assert alice.text("body").startswith("新初稿。")
+    await hub.shutdown()
+
+
+async def test_a_write_back_cancelled_midway_is_not_merged_in_again(quiet_hub, hub_project_files, monkeypatch) -> None:
+    alice = FakeConn("c1", "alice")
+    await _join(quiet_hub, alice)
+    spec = UNIT_SPECS["overview"]
+    original = spec.write
+    loop = asyncio.get_running_loop()
+    entered, release = asyncio.Event(), threading.Event()
+
+    def _held_write(*args: Any, **kwargs: Any) -> None:
+        loop.call_soon_threadsafe(entered.set)
+        release.wait()
+        original(*args, **kwargs)
+
+    monkeypatch.setattr(spec, "write", _held_write)
+    await quiet_hub.on_sync(alice, REF, alice.type_into("synopsis", 0, "深夜，"))
+    # 写回进行到一半时被取消（房间关闭、有人重新加入都会这样），文件照样写完
+    pending = asyncio.create_task(quiet_hub.flush(alice, REF, 1))
+    await entered.wait()
+    pending.cancel()
+    release.set()
+    with contextlib.suppress(asyncio.CancelledError):
+        await pending
+    await quiet_hub.flush(alice, REF, 2)
+
+    assert hub_project_files.load_project(PROJECT)["overview"]["synopsis"] == "深夜，雨夜"
+    assert alice.text("synopsis") == "深夜，雨夜"
