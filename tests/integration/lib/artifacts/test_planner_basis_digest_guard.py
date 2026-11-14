@@ -43,6 +43,15 @@ def _readable(key: ArtifactKey) -> tuple[str, ...]:
     return (key.kind.value, *(str(component) for component in key.components))
 
 
+def _ad_storyboard_project_with_fixed_images(root: Path) -> Path:
+    """The shared ad fixture encodes its PNGs with Pillow, whose output differs by platform; pin the bytes."""
+
+    project_dir = _ad_storyboard_project(root, target_generated=True)
+    for image in sorted(project_dir.rglob("*.png")):
+        image.write_bytes(f"image:{image.relative_to(project_dir).as_posix()}".encode())
+    return project_dir
+
+
 def _grid_storyboard_project(root: Path) -> Path:
     """解说宫格项目，自定义风格带描述：宫格联合图、两张切格分镜图、一张单张分镜图与资产图，分镜图用 ``@`` 指认角色。"""
 
@@ -200,11 +209,11 @@ def _raised_tts_project(root: Path) -> Path:
 _AD_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
     ("asset-sheet", "character", "张三"): (
         "characters/张三.png",
-        "sha256-v1:c60aa57fad63d4d977b471be4a7aa226f2dd79a45422f6aee7ab280d6e254412",
+        "sha256-v1:5e684101fc4a0522c241887e03449086d1315c8ce3d59244fd38fd7784f6e83a",
     ),
     ("asset-sheet", "character", "张三/劲装"): (
         "characters/derivatives/张三/劲装.png",
-        "sha256-v1:1455f4d62cfe318d355378c9b68437ca331b72ebab496540bac472db9dd5b89f",
+        "sha256-v1:4409c407c0a609998df75953ec66650b2493ea1c6548e9c83bcbd4a6158809c3",
     ),
     ("asset-sheet", "product", "保温杯"): (
         "products/保温杯.png",
@@ -224,7 +233,7 @@ _AD_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
     ),
     ("episode-storyboard", "1", "E1S02"): (
         "storyboards/scene_E1S02.png",
-        "sha256-v1:c998b3aa43b66edaa0ee39d8636128f00f613cbb8d94d6f5e7e383698427b021",
+        "sha256-v1:d2456e70826b81ea26d503475413d3f3791e5556a3b9943a43d5ab9907449d88",
     ),
 }
 _GRID_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
@@ -307,7 +316,7 @@ _RAISED_TTS_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
     ("make_project", "expected"),
     [
         pytest.param(
-            lambda root: _ad_storyboard_project(root, target_generated=True),
+            _ad_storyboard_project_with_fixed_images,
             _AD_STORYBOARD_DIGESTS,
             id="ad-storyboards",
         ),
