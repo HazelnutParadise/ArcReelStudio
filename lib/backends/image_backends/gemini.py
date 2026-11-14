@@ -29,8 +29,8 @@ from lib.backends.image_backends.base import (
 from lib.backends.providers import PROVIDER_GEMINI
 from lib.backends.transport_layer import TransportLayer
 from lib.billing.metering import Usage
-from lib.config.system_config import resolve_vertex_credentials_path
 from lib.config.url_utils import normalize_base_url
+from lib.config.vertex_credentials import resolve_vertex_credentials_path
 from lib.infra.async_thread import run_noninterruptible_sync
 from lib.infra.logging_utils import format_kwargs_for_log
 

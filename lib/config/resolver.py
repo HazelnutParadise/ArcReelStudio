@@ -1183,10 +1183,6 @@ class ConfigResolver:
         async with self._open_session() as (session, svc):
             return await self._resolve_default_image_backend(svc, session, "i2i")
 
-    async def default_image_backend(self) -> tuple[str, str]:
-        """兼容 shim：旧调用方仍可调；返回 T2I 变体。"""
-        return await self.default_image_backend_t2i()
-
     async def auto_resolved_backends(self) -> dict[AutoResolvePurpose, tuple[str, str] | None]:
         """各用途在项目与全局各层都留空时自动推断选中的 (provider_id, model_id)，选不出即 None。
 
@@ -1905,11 +1901,6 @@ class ConfigResolver:
         # 凭证叠加会探测 Vertex 凭证文件是否存在，整批放进工作线程。
         await asyncio.to_thread(overlay_all)
         return configs
-
-    async def default_text_backend(self) -> tuple[str, str]:
-        """返回 (provider_id, model_id)。"""
-        async with self._open_session() as (_session, svc):
-            return await svc.get_default_text_backend()
 
     async def text_backend_for_task(
         self,

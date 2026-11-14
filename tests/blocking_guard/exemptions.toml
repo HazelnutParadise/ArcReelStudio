@@ -16,23 +16,3 @@ reason = "只由 lifespan 启动步骤调用：扫描项目目录、迁移旧源
 [[exemption]]
 key = "lib/agent/agent_session_store/import_local.py::migrate_local_transcripts_to_store"
 reason = "只由 lifespan 启动步骤调用：一次性把本地会话转录导入存储，靠标记文件只执行一次。"
-
-[[exemption]]
-key = "lib/config/migration.py::migrate_json_to_db"
-reason = "只由 lifespan 启动步骤调用：一次性把旧 JSON 配置迁入数据库并改名源文件。"
-
-[[exemption]]
-key = "lib/infra/data_root_layout_migration.py::_move_projects_into_projects_dir"
-reason = "数据根布局迁移步骤，只经 lifespan 调用的 migrate_data_root_layout 在启动时执行一次。"
-
-[[exemption]]
-key = "lib/infra/data_root_layout_migration.py::_rename_global_assets_dir"
-reason = "数据根布局迁移步骤，只经 lifespan 调用的 migrate_data_root_layout 在启动时执行一次。"
-
-[[exemption]]
-key = "lib/infra/data_root_layout_migration.py::_move_user_data_to_users_dir"
-reason = "数据根布局迁移步骤，只经 lifespan 调用的 migrate_data_root_layout 在启动时执行一次。"
-
-[[exemption]]
-key = "lib/infra/data_root_layout_migration.py::_move_runtime_state_to_runtime_dir"
-reason = "数据根布局迁移步骤，只经 lifespan 调用的 migrate_data_root_layout 在启动时执行一次。"

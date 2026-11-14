@@ -507,13 +507,13 @@ def test_sensitive_glob_pattern_does_not_overmatch(policy: AgentAccessPolicy) ->
 @pytest.mark.parametrize("tool", ["Read", "Glob", "Grep"])
 def test_read_of_data_root_outside_current_project_and_memory_denied(policy: AgentAccessPolicy, tool: str) -> None:
     """数据根位于仓库根内（开发默认布局）时，数据根里的条目不因「仓库根内参考资料」被放行：
-    布局登记的系统条目、旧布局残留、布局未登记的条目、根下与项目目录下的直放文件一律拒。"""
+    布局登记的系统条目、布局未登记的条目（含隐藏条目）、根下与项目目录下的直放文件一律拒。"""
     layout = DataRootLayout(policy.data_root)
     assert policy.data_root.is_relative_to(policy.project_root)
     entries = [entry for entry in layout.top_level_entries if entry != layout.projects_dir]
     entries += [
         policy.data_root / name
-        for name in (".arcreel.db", ".arcreel", ".system_config.json", "stray.txt", "future_dir")
+        for name in ("arcreel.db-wal", ".hidden.db", ".hidden_dir", ".hidden.json", "stray.txt", "future_dir")
     ]
     entries += [layout.projects_dir, layout.projects_dir / "stray.txt"]
     for entry in entries:
@@ -630,18 +630,29 @@ def test_sandbox_denies_read_of_existing_sensitive_files_outside_data_root(tmp_p
 
 
 def test_sandbox_denies_read_of_every_data_root_entry_but_projects(policy: AgentAccessPolicy) -> None:
-    """Bash 不经读 hook：数据根里项目目录以外的顶层条目——含旧布局残留与布局未登记的条目——
+    """Bash 不经读 hook：数据根里项目目录以外的顶层条目——含隐藏条目与布局未登记的条目——
     都在 denyRead 里；项目目录不在，Bash 照常读写当前项目。"""
     root = policy.data_root
     (root / "arcreel.db").write_bytes(b"db")
-    (root / ".arcreel.db-wal").write_bytes(b"wal")
-    (root / ".arcreel" / "users").mkdir(parents=True)
-    (root / ".system_config.json").write_text("{}", encoding="utf-8")
+    # 默认库的 -wal / -shm 不在布局登记里，靠「实际存在的顶层条目」进清单
+    (root / "arcreel.db-wal").write_bytes(b"wal")
+    (root / "arcreel.db-shm").write_bytes(b"shm")
+    (root / ".hidden.db-wal").write_bytes(b"wal")
+    (root / ".hidden_dir" / "users").mkdir(parents=True)
+    (root / ".hidden.json").write_text("{}", encoding="utf-8")
     (root / "future_dir").mkdir()
 
     deny_read = policy.build_sandbox_settings(_cwd(policy))["filesystem"]["denyRead"]
 
-    for name in ("arcreel.db", ".arcreel.db-wal", ".arcreel", ".system_config.json", "future_dir"):
+    for name in (
+        "arcreel.db",
+        "arcreel.db-wal",
+        "arcreel.db-shm",
+        ".hidden.db-wal",
+        ".hidden_dir",
+        ".hidden.json",
+        "future_dir",
+    ):
         assert str(root / name) in deny_read
     for system_dir in DataRootLayout(root).system_dirs:
         assert str(system_dir) in deny_read

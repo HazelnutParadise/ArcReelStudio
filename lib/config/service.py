@@ -26,8 +26,6 @@ from lib.db.models.credential import ProviderCredential
 from lib.db.repositories.credential_repository import CredentialRepository
 from lib.infra.schema_guards import is_int
 
-DEFAULT_TEXT_BACKEND = "gemini-aistudio/gemini-3-flash-preview"
-DEFAULT_AUDIO_BACKEND = "dashscope/qwen3-tts-flash"
 # 旁白默认音色（DashScope 预设）；全局 setting 未配置时的兜底。全局音色与语速只作为新建 TTS 项目
 # 的预填值，项目创建后以 project.json 顶层的快照为准（docs/adr/0089）。
 _DEFAULT_NARRATION_VOICE = "Cherry"
@@ -304,14 +302,6 @@ class ConfigService:
             )
         await self._setting_repo.set("video_poll_timeout_seconds", str(value))
 
-    async def get_default_text_backend(self) -> tuple[str, str]:
-        raw = await self._setting_repo.get("default_text_backend", DEFAULT_TEXT_BACKEND)
-        return self._parse_backend(raw, DEFAULT_TEXT_BACKEND)
-
-    async def get_default_audio_backend(self) -> tuple[str, str]:
-        raw = await self._setting_repo.get("default_audio_backend", DEFAULT_AUDIO_BACKEND)
-        return self._parse_backend(raw, DEFAULT_AUDIO_BACKEND)
-
     async def get_narration_voice(self) -> str:
         # 空白 setting 视为未配置，与项目级覆盖的 strip 语义一致，避免空音色进 TTS 请求
         raw = await self._setting_repo.get("narration_voice", "")
@@ -358,14 +348,6 @@ class ConfigService:
             raise ProviderConfigValueError(provider, key, value, code=_MAX_WORKERS_CODE) from None
         if parsed < 1:
             raise ProviderConfigValueError(provider, key, value, code=_MAX_WORKERS_CODE)
-
-    @staticmethod
-    def _parse_backend(raw: str, fallback: str) -> tuple[str, str]:
-        if "/" in raw:
-            provider_id, model_id = raw.split("/", 1)
-            return provider_id, model_id
-        parts = fallback.split("/", 1)
-        return parts[0], parts[1]
 
 
 async def read_video_poll_timeout_seconds() -> int:

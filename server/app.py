@@ -49,15 +49,12 @@ from lib.config.env_keys import PROVIDER_SECRET_KEYS
 from lib.db import async_session_factory, close_db, init_db
 from lib.generation.generation_worker import GenerationWorker
 from lib.infra.data_root_layout import DataRootLayout, list_project_dirs
-from lib.infra.data_root_layout_migration import migrate_data_root_layout
 from lib.infra.env_init import warn_if_env_diverges_from_file
 from lib.infra.ffmpeg import log_ffmpeg_status
 from lib.infra.httpx_shared import shutdown_http_client, startup_http_client
 from lib.infra.logging_config import (
     attach_file_handler,
-    migrate_legacy_log_dir,
     setup_logging,
-    warn_if_log_dir_env_set,
 )
 from lib.infra.loop_stall_probe import start_loop_stall_probe, stop_loop_stall_probe
 from lib.infra.path_safety import try_safe_join
@@ -327,9 +324,7 @@ def detect_docker_environment(
 
 
 # 初始化日志：模块导入期只挂 stream handler。
-# file handler 推迟到 lifespan，前面要先跑 migrate_legacy_log_dir()
-# 把代码目录下的旧 logs 迁入数据根，否则 handler 先在新位置开出同名日志文件，
-# 旧文件就迁不过去；同时也避免 pytest 收集阶段 import server.app 时
+# file handler 推迟到 lifespan，避免 pytest 收集阶段 import server.app 时
 # 对真实文件系统产生副作用。
 setup_logging(file=False)
 logger = logging.getLogger(__name__)
@@ -400,11 +395,8 @@ async def lifespan(app: FastAPI):
     # GPU 编码自检一次，结论缓存在进程内；不可用时成片用 CPU 编码。
     await asyncio.to_thread(log_gpu_encoder_status)
 
-    # 日志文件持久化：先把代码目录下的旧日志迁入数据根，再挂 file handler。
-    # 顺序很重要——handler 会在新位置创建 arcreel.log，提前挂会让旧的同名文件因冲突留在原处。
-    await asyncio.to_thread(migrate_legacy_log_dir)
+    # 日志文件持久化：挂上写到数据根日志目录的 file handler，之后的启动步骤都会写进日志文件。
     attach_file_handler()
-    warn_if_log_dir_env_set()
     warn_if_env_diverges_from_file()
 
     warn_if_auth_disabled()
@@ -412,19 +404,12 @@ async def lifespan(app: FastAPI):
     # Run Alembic migrations (auto-creates tables on first start)
     await init_db()
 
-    # 数据根布局迁移：排在挂文件日志 handler（迁移过程写进日志）与 Alembic（步骤会改写库）之后、
-    # 所有遍历项目的步骤之前——那些步骤按当前布局找项目，不能跑在半迁移的数据根上。失败即中止启动。
+    # 数据根只按当前布局读写；上游 ArcReel 安装的旧布局不迁移（docs/adr/0132）。
     layout = DataRootLayout.current()
-    await migrate_data_root_layout(
-        layout.root,
-        session_factory=async_session_factory,
-        sdk_config_dir=default_sdk_config_dir(),
-    )
-    # 签名密钥可能落在数据根的 runtime/ 下，须在布局迁移之后解析：旧布局里名为 runtime 的项目
-    # 会被搬进 projects/，提前写入的密钥文件会随它进入项目目录。
+    # 签名密钥可能落在数据根的 runtime/ 下，未配置时首次启动在这里生成。
     await asyncio.to_thread(ensure_token_secret)
     # 库里还没有可登录账号时按 AUTH_USERNAME / AUTH_PASSWORD 初始化默认管理员；须在 Alembic 之后
-    # （依赖 users 表的凭据列）、布局迁移之后（初始密码文件写在数据根的 runtime/ 下）。
+    # （依赖 users 表的凭据列），初始密码文件写在数据根的 runtime/ 下。
     await bootstrap_admin(async_session_factory, initial_password_path=layout.initial_admin_password_path)
 
     # 源文件编码迁移（幂等；失败不阻塞启动）。先于 schema 迁移跑：源文一律先归到 UTF-8，
@@ -483,7 +468,6 @@ async def lifespan(app: FastAPI):
     await asyncio.to_thread(cleanup_stale_backups, layout.projects_dir, 7)
 
     # 会话存储键对齐（幂等；失败不阻塞启动）：数据根换了绝对路径后，会话的 Agent 上下文改到当前项目目录派生的键下。
-    # 排在数据根布局迁移之后：布局迁移把旧布局的键改到 projects/ 下的目录，这里才按当前布局重算。
     # 排在本地 transcript 导入之前：导入按当前键列本地会话、按当前键判断是否已导入，键没对齐时会在新键下
     # 再导入一份，同一会话两个键下都有记录，对齐就不再改它。
     try:
@@ -504,25 +488,6 @@ async def lifespan(app: FastAPI):
             await migrate_local_transcripts_to_store(store, data_root=layout.root)
         except Exception:
             logger.exception("session-store transcript migration failed (non-fatal)")
-
-    # Migrate legacy .system_config.json → DB (no-op if file doesn't exist or already migrated)
-    try:
-        from lib.config.migration import migrate_json_to_db
-
-        async with async_session_factory() as session:
-            await migrate_json_to_db(session, layout.root)
-    except Exception as exc:
-        logger.warning("JSON→DB config migration failed (non-fatal): %s", exc)
-
-    # 旧任务级文本 backend 键 → 档位键（docs/adr/0051）。放在 JSON→DB 迁移之后：
-    # 旧 JSON 里的同名键经 catch-all 落库后也能被本迁移收编
-    try:
-        from lib.config.migration import migrate_text_tier_settings
-
-        async with async_session_factory() as session:
-            await migrate_text_tier_settings(session)
-    except Exception as exc:
-        logger.warning("text tier settings migration failed (non-fatal): %s", exc)
 
     # 官方市场源 seed：不存在则插入，地址常量变了就同步；不抓取
     try:

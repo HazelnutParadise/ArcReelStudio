@@ -186,15 +186,6 @@ class TestPublicAudioResolverApi:
         assert result == ProviderModel("dashscope", "qwen3-tts-flash")
 
 
-class TestServiceDefaultAudioBackend:
-    async def test_falls_back_to_builtin_default(self, db_factory):
-        from lib.config.service import ConfigService
-
-        async with db_factory() as session:
-            svc = ConfigService(session)
-            assert await svc.get_default_audio_backend() == ("dashscope", "qwen3-tts-flash")
-
-
 class TestServiceNarrationVoice:
     async def test_blank_setting_falls_back_to_default(self, db_factory):
         # 全局 setting 被保存成空白时回退默认值，与项目级覆盖的 strip 语义一致

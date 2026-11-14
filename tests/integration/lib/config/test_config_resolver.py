@@ -361,7 +361,7 @@ class TestSessionReuse:
             patch.object(resolver, "_resolve_default_image_backend", return_value=fake_backend),
         ):
             await resolver.default_video_backend()
-            await resolver.default_image_backend()
+            await resolver.default_image_backend_t2i()
         assert call_count == 2, f"不使用 session() 应创建 2 个 session，实际 {call_count}"
 
         # 使用 session()：只创建 1 个 session
@@ -374,7 +374,7 @@ class TestSessionReuse:
                     patch.object(r, "_resolve_video_generate_audio", return_value=False),
                 ):
                     await r.default_video_backend()
-                    await r.default_image_backend()
+                    await r.default_image_backend_t2i()
                     await r.video_generate_audio()
         # session() 自身创建 1 个，内部调用复用 bound session 不再创建
         assert call_count == 1, f"使用 session() 应只创建 1 个 session，实际 {call_count}"

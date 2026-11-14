@@ -16,7 +16,6 @@ from lib.agent.agent_session_store.import_local import migrate_local_transcripts
 from lib.agent.agent_session_store.key_alignment import align_session_keys
 from lib.agent.agent_session_store.store import DbSessionStore
 from lib.db.repositories.session_repo import SessionRepository
-from lib.infra.data_root_layout_migration import migrate_data_root_layout
 from lib.project.project_manager import ProjectManager
 from server.agent_runtime.event_log import EventLogService, EventLogStore
 from server.agent_runtime.sdk_transcript_adapter import SdkTranscriptAdapter
@@ -220,8 +219,7 @@ async def test_moved_data_root_then_renamed_restore_keeps_both_projects_sessions
     async with session_factory() as session:
         await SessionRepository(session).create("demo", NEW_DEMO_SID)
 
-    # 启动迁移链使用真实实现：布局迁移 → 会话键对齐 → 本地 transcript 导入。
-    await migrate_data_root_layout(new_root, session_factory=session_factory, sdk_config_dir=sdk_config_dir)
+    # 启动步骤使用真实实现：会话键对齐 → 本地 transcript 导入。
     await align_session_keys(
         session_factory,
         projects_dir=manager.layout.projects_dir,
