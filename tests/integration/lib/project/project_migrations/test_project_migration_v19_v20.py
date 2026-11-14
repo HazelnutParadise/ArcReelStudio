@@ -54,12 +54,9 @@ def _storyboard_counts(project_dir: Path) -> tuple[int, int]:
     return storyboards.available, storyboards.stale
 
 
-@pytest.mark.parametrize("schema_version", [7, 19])
-async def test_bare_providers_become_the_recommended_models_and_stay_that_way(
-    schema_version: int, session_factory
-) -> None:
-    """从更早的版本或上一版升级：裸供应商固化为目录此刻的推荐，之后不随目录变化；其余字段原样保留。"""
-    project_dir = write_legacy_bare_provider_project(app_data_dir() / "projects", schema_version=schema_version)
+async def test_bare_providers_become_the_recommended_models_and_stay_that_way(session_factory) -> None:
+    """从上一版升级：裸供应商固化为目录此刻的推荐，之后不随目录变化；其余字段原样保留。"""
+    project_dir = write_legacy_bare_provider_project(app_data_dir() / "projects")
     legacy = _read_json(project_dir / "project.json")
 
     assert migrate_project_dir(project_dir) is True
@@ -94,7 +91,7 @@ async def test_a_bare_provider_without_a_recommendation_still_asks_for_a_model(
 ) -> None:
     """目录没有 ark 的视频推荐：视频字段的裸值迁移后原样保留，用户看到「没有选定具体模型」并重新选择。"""
     install_catalog(monkeypatch, with_recommendation(catalog.factory_snapshot(), "ark", "video", None))
-    project_dir = write_legacy_bare_provider_project(app_data_dir() / "projects", schema_version=19)
+    project_dir = write_legacy_bare_provider_project(app_data_dir() / "projects")
 
     assert migrate_project_dir(project_dir) is True
 
@@ -109,7 +106,7 @@ async def test_a_bare_provider_without_a_recommendation_still_asks_for_a_model(
 
 
 def test_the_step_keeps_the_last_activity_time(tmp_path: Path) -> None:
-    project_dir = write_legacy_bare_provider_project(tmp_path / "projects", schema_version=19)
+    project_dir = write_legacy_bare_provider_project(tmp_path / "projects")
     legacy = _read_json(project_dir / "project.json")
 
     assert migrate_project_dir(project_dir) is True
@@ -119,7 +116,7 @@ def test_the_step_keeps_the_last_activity_time(tmp_path: Path) -> None:
 
 def test_narration_with_only_a_music_recommendation_keeps_the_bare_provider(tmp_path: Path) -> None:
     """elevenlabs 的音频推荐是音乐模型，不能当旁白配音：留给用户重新选。"""
-    project_dir = write_legacy_bare_provider_project(tmp_path / "projects", schema_version=19)
+    project_dir = write_legacy_bare_provider_project(tmp_path / "projects")
     project = _read_json(project_dir / "project.json")
     project["audio_backend"] = "elevenlabs"
     (project_dir / "project.json").write_text(json.dumps(project), encoding="utf-8")
@@ -134,7 +131,7 @@ async def test_startup_migration_uses_the_recommendation_even_when_the_user_disa
 ) -> None:
     """启动期迁移直接用目录的推荐，不查用户的启用状态；只有归档导入跳过停用的推荐。"""
     projects_dir = tmp_path / "projects"
-    project_dir = write_legacy_bare_provider_project(projects_dir, schema_version=19)
+    project_dir = write_legacy_bare_provider_project(projects_dir)
     async with session_factory() as session:
         session.add(BuiltinProviderModelState(provider_id="ark", model_id=ARK_VIDEO, enabled=False))
         await session.commit()
@@ -149,7 +146,7 @@ async def test_startup_migration_uses_the_recommendation_even_when_the_user_disa
 
 
 def test_a_v20_project_keeps_its_bare_values_through_the_chain(tmp_path: Path) -> None:
-    project_dir = write_legacy_bare_provider_project(tmp_path / "projects", schema_version=19)
+    project_dir = write_legacy_bare_provider_project(tmp_path / "projects")
     project = _read_json(project_dir / "project.json")
     project["schema_version"] = CURRENT_SCHEMA_VERSION
     (project_dir / "project.json").write_text(json.dumps(project), encoding="utf-8")

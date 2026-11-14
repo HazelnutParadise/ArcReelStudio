@@ -155,14 +155,14 @@ class TestProjectArchiveReferenceVideo:
         assert (project_dir / "reference_videos" / "thumbnails" / "E1U1.jpg").exists()
 
     def test_import_migrates_legacy_per_shot_duration_before_validation(self, tmp_path):
-        """存量归档的 unit 仍是收编前形状（时长挂在 shots 上、无 unit 级 duration_seconds）：
-        结构校验要求 duration_seconds 落在合理区间内，早于迁移执行的话会把这类归档直接拒绝，
-        永远走不到能修复它的迁移器。修复须先于校验跑一次迁移，镜头正文随后由 schema 迁移
-        链拼回单元正文。
+        """归档里的 unit 时长仍挂在 shots 上、没有 unit 级 duration_seconds：
+        结构校验要求 duration_seconds 落在合理区间内，早于收编执行的话会把这类归档直接拒绝，
+        永远走不到能修复它的收编。修复须先于校验跑一次。
         """
         pm = ProjectManager(tmp_path / "projects")
         legacy_unit = {
             "unit_id": "E1U1",
+            "text": "镜头一",
             "shots": [{"duration": 4, "text": "镜头一"}],
             "references": [],
             "generated_assets": {
@@ -177,10 +177,10 @@ class TestProjectArchiveReferenceVideo:
             },
         }
         project_dir = _create_reference_video_project(pm, unit=legacy_unit)
-        # 缺 schema_version 的归档按最早版本处理：导入时补跑完整迁移链，时长收编在链上完成。
+        # 迁移链能接的最早版本：导入时补跑迁移链，时长收编先于校验完成。
         project_file = project_dir / "project.json"
         payload = json.loads(project_file.read_text(encoding="utf-8"))
-        payload.pop("schema_version", None)
+        payload["schema_version"] = 19
         project_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
         service = ProjectArchiveService(pm)
 
@@ -195,8 +195,7 @@ class TestProjectArchiveReferenceVideo:
         )
         unit = imported["video_units"][0]
         assert unit["duration_seconds"] == 4
-        assert "shots" not in unit
-        assert unit["text"] == "镜头一"
+        assert all("duration" not in shot for shot in unit.get("shots", []))
 
     @pytest.mark.parametrize(("legacy_seconds", "expected"), [(4, 4), (9, 10)])
     def test_import_migration_takes_the_union_of_both_bucket_tiers(self, tmp_path, legacy_seconds, expected):
@@ -208,6 +207,7 @@ class TestProjectArchiveReferenceVideo:
         pm = ProjectManager(tmp_path / "projects")
         legacy_unit = {
             "unit_id": "E1U1",
+            "text": "镜头一",
             "shots": [{"duration": legacy_seconds, "text": "镜头一"}],
             "references": [],
             "generated_assets": {
@@ -226,7 +226,7 @@ class TestProjectArchiveReferenceVideo:
         payload = json.loads(project_file.read_text(encoding="utf-8"))
         payload["video_provider_r2v"] = "minimax/MiniMax-Hailuo-2.3"
         payload["video_provider_i2v"] = "gemini-vertex/veo-3.1-generate-001"
-        payload.pop("schema_version", None)
+        payload["schema_version"] = 19
         project_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
         assert _durations("minimax", "MiniMax-Hailuo-2.3") == [6, 10]
         assert _durations("gemini-vertex", "veo-3.1-generate-001") == [4, 6, 8]
@@ -242,50 +242,6 @@ class TestProjectArchiveReferenceVideo:
             (pm.get_project_path(result.project_name) / "scripts" / "episode_1.json").read_text(encoding="utf-8")
         )
         assert imported["video_units"][0]["duration_seconds"] == expected
-
-    def test_import_resolves_tiers_for_legacy_provider_alias(self, tmp_path):
-        """归档修复跑在 provider 归一化之前：video_backend 仍是 legacy 别名时也要解析出档位。
-
-        解析落空会退回结构 clamp 把非档位秒数固化，而迁移幂等——等 migrate_project_dir 把
-        provider 归一化之后，已经没有第二次取档的机会。
-        """
-        pm = ProjectManager(tmp_path / "projects")
-        legacy_unit = {
-            "unit_id": "E1U1",
-            "shots": [{"duration": 6, "text": "镜头一"}, {"duration": 4, "text": "镜头二"}],
-            "references": [],
-            "generated_assets": {
-                "storyboard_image": None,
-                "storyboard_last_image": None,
-                "video_clip": "reference_videos/E1U1.mp4",
-                "video_thumbnail": "reference_videos/thumbnails/E1U1.jpg",
-                "video_uri": REMOTE_VIDEO_URI,
-                "grid_id": None,
-                "grid_cell_index": None,
-                "status": "completed",
-            },
-        }
-        project_dir = _create_reference_video_project(pm, unit=legacy_unit)
-        # legacy 别名：档位只能靠归一化后查 registry 得到。
-        project_file = project_dir / "project.json"
-        payload = json.loads(project_file.read_text(encoding="utf-8"))
-        payload["video_backend"] = "vertex/veo-3.1-generate-001"
-        payload.pop("schema_version", None)
-        project_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-
-        service = ProjectArchiveService(pm)
-        archive_path = tmp_path / "legacy-alias.zip"
-        _make_manual_zip(project_dir, archive_path)
-        shutil.rmtree(project_dir)
-
-        result = service.import_project_archive(archive_path, uploaded_filename="legacy-alias.zip")
-
-        imported = json.loads(
-            (pm.get_project_path(result.project_name) / "scripts" / "episode_1.json").read_text(encoding="utf-8")
-        )
-        # 求和 10s 不是该型号档位成员，取档后落盘的秒数必是成员。
-        veo_tiers = _durations("gemini-vertex", "veo-3.1-generate-001")
-        assert imported["video_units"][0]["duration_seconds"] in veo_tiers
 
     def test_import_restores_video_clip_from_version(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")

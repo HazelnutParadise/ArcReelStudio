@@ -11,12 +11,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from lib.project.project_migrations.runner import migrate_project_dir
-from lib.project.project_migrations.v7_to_v8_artifact_manifest import migrate_v7_to_v8
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.auth import CurrentUserInfo, get_current_user
 from server.error_handlers import register_error_handlers
 from tests.auth_deps import AUTH_DEPENDENCIES
-from tests.factories import make_display_names, make_video_request_facts
+from tests.factories import activate_current_project, make_display_names, make_video_request_facts
 from tests.fakes import (
     fake_reference_request_facts,
     fake_reference_request_projector,
@@ -44,7 +43,7 @@ def reference_videos_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     (proj_dir / "project.json").write_text(
         json.dumps(
             {
-                "schema_version": 7,
+                "schema_version": CURRENT_PROJECT_SCHEMA_VERSION,
                 "title": "T",
                 "content_mode": "narration",
                 "generation_mode": "reference_video",
@@ -79,8 +78,7 @@ def reference_videos_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
         encoding="utf-8",
     )
 
-    migrate_v7_to_v8(proj_dir)
-    migrate_project_dir(proj_dir)
+    activate_current_project(proj_dir)
 
     # Patch project_manager 的根目录
     from lib.project.project_manager import ProjectManager

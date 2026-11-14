@@ -24,10 +24,12 @@ def _seed_stale_project(projects_root: Path) -> tuple[Path, Path]:
     project_dir = projects_root / "p1"
     project_dir.mkdir(parents=True)
     (project_dir / "project.json").write_text(
-        json.dumps({"schema_version": 1, "name": "p1", "video_backend": "seedance/x", "image_backend": "vertex/y"}),
+        json.dumps(
+            {"schema_version": 19, "name": "p1", "video_backend": "ark", "image_provider_t2i": "openai/gpt-image-2"}
+        ),
         encoding="utf-8",
     )
-    stale_backup = project_dir / "project.json.bak.v1-100000000"
+    stale_backup = project_dir / "project.json.bak.v19-100000000"
     stale_backup.write_text("recovery", encoding="utf-8")
     expired = time.time() - 8 * 86400
     os.utime(stale_backup, (expired, expired))

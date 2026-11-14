@@ -40,6 +40,7 @@ from lib.project.project_migration_report import (
     visible_migration_report,
     write_migration_report,
 )
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from lib.project.project_trash import list_records
 from lib.script.draft_quarantine import QUARANTINE_KIND_NARRATION_SCRIPT_PLAN, quarantine_path, write_quarantine
 from lib.workflow.workflow_state import WorkflowStateService
@@ -51,7 +52,7 @@ from server.services.project.project_events import ProjectEventService, read_pro
 from tests.auth_deps import override_auth
 from tests.factories import install_current_video, make_test_clip
 from tests.fakes import fake_reference_request_projector, use_project_manager, use_reference_projection
-from tests.integration.lib.project.project_migrations.test_project_migration_v7_v8 import _project as _old_project
+from tests.legacy_project_shapes import set_script_episode, write_v19_project
 
 pytestmark = pytest.mark.usefixtures("video_request_facts")
 
@@ -530,7 +531,8 @@ async def test_managing_an_edit_timeline_broadcasts_as_webui(
 
 async def test_retrying_a_migration_broadcasts_its_changes_as_webui(tmp_path: Path, open_env) -> None:
     """升级链改写 project.json 与剧本时不发 hint；重试入口补发，这些变更按 webui 广播。"""
-    _old_project(tmp_path)
+    project_dir = write_v19_project(tmp_path / "projects")
+    set_script_episode(project_dir, 1, None)
 
     async with open_env(ProjectManager(tmp_path)) as env:
         with env.reads_held():
@@ -548,8 +550,8 @@ async def test_acknowledging_a_migration_report_broadcasts_nothing_as_an_outside
         env.project_path,
         build_migration_report(
             None,
-            from_schema_version=14,
-            to_schema_version=18,
+            from_schema_version=CURRENT_PROJECT_SCHEMA_VERSION - 1,
+            to_schema_version=CURRENT_PROJECT_SCHEMA_VERSION,
             adjusted=[MigrationAdjustment(code="placeholder_asset_added", params={"asset_type": "prop", "name": "伞"})],
         ),
     )

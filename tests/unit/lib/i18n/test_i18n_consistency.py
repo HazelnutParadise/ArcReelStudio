@@ -327,3 +327,19 @@ def test_model_not_selected_message_names_the_provider_placeholder(locale):
 def test_recommendation_changed_again_message_exists(locale):
     """推荐在提示之后又变了：确认接口返回 409 时界面显示的文案，每种语言都要有。"""
     assert MESSAGES[locale]["recommendation_changed_again"].strip()
+
+
+@pytest.mark.parametrize("locale", SUPPORTED_LOCALES)
+def test_schema_unsupported_archive_message_names_the_version_and_the_minimum(locale):
+    """导入包的项目早于迁移链能接的最早版本：每种语言都说出包里的版本与最低版本。"""
+    message = MESSAGES[locale]["arch_project_schema_unsupported"]
+    assert "{version}" in message
+    assert "{minimum}" in message
+
+
+def test_schema_unsupported_archive_message_points_to_upgrading_in_upstream_arcreel():
+    """先在上游 ArcReel 打开项目、升级到最低版本或更高，再重新导出。"""
+    message = MESSAGES["zh"]["arch_project_schema_unsupported"]
+    assert "ArcReel" in message
+    assert "升级" in message
+    assert "导出" in message

@@ -10,11 +10,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from lib.project.project_migrations.runner import migrate_project_dir
-from lib.project.project_migrations.v7_to_v8_artifact_manifest import migrate_v7_to_v8
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.auth import CurrentUserInfo, get_current_user
 from server.error_handlers import register_error_handlers
 from tests.auth_deps import AUTH_DEPENDENCIES
+from tests.factories import activate_current_project
 from tests.fakes import use_generation_queue, use_project_manager, use_reference_projection
 
 
@@ -26,7 +26,7 @@ def ad_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     (project_dir / "project.json").write_text(
         json.dumps(
             {
-                "schema_version": 7,
+                "schema_version": CURRENT_PROJECT_SCHEMA_VERSION,
                 "title": "带货短片",
                 "content_mode": "ad",
                 "generation_mode": "reference_video",
@@ -62,8 +62,7 @@ def ad_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
         encoding="utf-8",
     )
 
-    migrate_v7_to_v8(project_dir)
-    migrate_project_dir(project_dir)
+    activate_current_project(project_dir)
 
     from lib.project.project_manager import ProjectManager
     from server.routers import reference_videos as router_mod

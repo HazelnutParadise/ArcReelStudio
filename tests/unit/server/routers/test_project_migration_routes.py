@@ -37,8 +37,8 @@ def test_acknowledging_the_report_hides_it(tmp_path: Path, monkeypatch) -> None:
         project_dir,
         build_migration_report(
             None,
-            from_schema_version=14,
-            to_schema_version=18,
+            from_schema_version=19,
+            to_schema_version=20,
             adjusted=[MigrationAdjustment(code="placeholder_asset_added", params={"asset_type": "prop", "name": "伞"})],
         ),
     )
@@ -64,8 +64,8 @@ def test_a_report_other_than_the_one_shown_stays_unacknowledged(tmp_path: Path, 
         project_dir,
         build_migration_report(
             None,
-            from_schema_version=14,
-            to_schema_version=18,
+            from_schema_version=19,
+            to_schema_version=20,
             adjusted=[MigrationAdjustment(code="placeholder_asset_added", params={"asset_type": "prop", "name": "伞"})],
         ),
     )

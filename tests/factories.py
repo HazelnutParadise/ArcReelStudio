@@ -420,19 +420,72 @@ def make_video_request_facts(**overrides: Any):
     return VideoRequestFacts(**fields)
 
 
-def activate_reference_project(project_dir: Path, project: dict[str, Any]) -> dict[str, Any]:
-    """把 v7 形态的参考生视频项目写盘并迁到当前 schema，返回迁移后的项目字典。
+def activate_current_project(project_dir: Path) -> None:
+    """把盘上项目标成当前 schema，再按当前规划器一次登记全部在场、依据算得出的产物（与归档导入的自证激活同一口径）。
 
-    迁移时已登记路径、带 ``description`` 且文件在盘上的资产图由补录认领进产物清单；此后再登记的
+    此后再写进盘的产物不会被认领，要靠各自的登记出口。
+    """
+    import json
+
+    from lib.artifacts.artifact_activation import activate_artifact_target_state
+    from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
+
+    project_path = project_dir / "project.json"
+    project = json.loads(project_path.read_text(encoding="utf-8"))
+    if project.get("schema_version") != CURRENT_PROJECT_SCHEMA_VERSION:
+        project["schema_version"] = CURRENT_PROJECT_SCHEMA_VERSION
+        project_path.write_text(json.dumps(project, ensure_ascii=False, indent=2), encoding="utf-8")
+    activate_artifact_target_state(project_dir, bump_schema=False)
+
+
+def wrap_the_last_migration_step(monkeypatch: Any, around: Callable[..., object]) -> None:
+    """把迁移链的最后一步（v19→v20）换成 ``around(step, project_dir, **kwargs)``，``step`` 是原来那一步。
+
+    这一步只改 ``project.json`` 的模型字段，盘上数据几乎让它失败不了；需要「链在这个项目上失败」时由
+    ``around`` 抛错，需要照常迁移时调 ``step``。runner 无论按 ``MIGRATORS`` 还是按名字调这一步都换得到。
+    """
+    from lib.project.project_migrations import runner
+    from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
+
+    step = runner.MIGRATORS[CURRENT_PROJECT_SCHEMA_VERSION - 1]
+
+    def wrapped(project_dir: Path, **kwargs: Any) -> object:
+        return around(step, project_dir, **kwargs)
+
+    monkeypatch.setitem(runner.MIGRATORS, CURRENT_PROJECT_SCHEMA_VERSION - 1, wrapped)
+    monkeypatch.setattr(runner, "migrate_v19_to_v20", wrapped)
+
+
+def wrap_the_last_migration_step(monkeypatch: Any, around: Callable[..., object]) -> None:
+    """把迁移链的最后一步（v19→v20）换成 ``around(step, project_dir, **kwargs)``，``step`` 是原来那一步。
+
+    这一步只改 ``project.json`` 的模型字段，盘上数据几乎让它失败不了；需要「链在这个项目上失败」时由
+    ``around`` 抛错，需要照常迁移时调 ``step``。runner 无论按 ``MIGRATORS`` 还是按名字调这一步都换得到。
+    """
+    from lib.project.project_migrations import runner
+    from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
+
+    step = runner.MIGRATORS[CURRENT_PROJECT_SCHEMA_VERSION - 1]
+
+    def wrapped(project_dir: Path, **kwargs: Any) -> object:
+        return around(step, project_dir, **kwargs)
+
+    monkeypatch.setitem(runner.MIGRATORS, CURRENT_PROJECT_SCHEMA_VERSION - 1, wrapped)
+    monkeypatch.setattr(runner, "migrate_v19_to_v20", wrapped)
+
+
+def activate_reference_project(project_dir: Path, project: dict[str, Any]) -> dict[str, Any]:
+    """把当前形态的参考生视频项目写盘并激活产物清单，返回落盘的项目字典。
+
+    激活时已登记路径、带 ``description`` 且文件在盘上的资产图被认领进产物清单；此后再登记的
     资产图即使文件在盘上，清单也不认领它。``project`` 的键覆盖缺省骨架；``scripts/episode_1.json`` 不存在时写一份空单元剧本。
     """
     import json
 
-    from lib.project.project_migrations.runner import migrate_project_dir
-    from lib.project.project_migrations.v7_to_v8_artifact_manifest import migrate_v7_to_v8
+    from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 
     payload: dict[str, Any] = {
-        "schema_version": 7,
+        "schema_version": CURRENT_PROJECT_SCHEMA_VERSION,
         "title": "T",
         "content_mode": "narration",
         "generation_mode": "reference_video",
@@ -450,8 +503,7 @@ def activate_reference_project(project_dir: Path, project: dict[str, Any]) -> di
             json.dumps({"episode": 1, "generation_mode": "reference_video", "video_units": []}, ensure_ascii=False),
             encoding="utf-8",
         )
-    migrate_v7_to_v8(project_dir)
-    migrate_project_dir(project_dir)
+    activate_current_project(project_dir)
     return json.loads((project_dir / "project.json").read_text(encoding="utf-8"))
 
 

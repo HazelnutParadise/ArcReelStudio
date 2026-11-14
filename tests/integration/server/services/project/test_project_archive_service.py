@@ -42,12 +42,12 @@ from lib.jianying_draft.basis import jianying_draft_artifact_path, jianying_draf
 from lib.project import deleted_projects, project_trash
 from lib.project.asset_derivatives import derivative_artifact_key
 from lib.project.project_manager import ProjectManager
+from lib.project.project_migration_failure import ProjectMigrationError
 from lib.project.project_migration_report import load_migration_report
-from lib.project.project_migrations.runner import migrate_project_dir
-from lib.project.project_migrations.v7_to_v8_artifact_manifest import migrate_v7_to_v8
 from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from lib.script import script_review
 from lib.script.grid.models import GridGeneration
+from lib.speech.narration_config import tts_snapshot_fields
 from lib.speech.narration_delivery import TtsSynthesisSettings, build_narration_audio_basis_from_canonical_text
 from server.services.project import project_archive as project_archive_module
 from server.services.project.project_archive import (
@@ -55,8 +55,8 @@ from server.services.project.project_archive import (
     ProjectArchiveService,
     ProjectArchiveValidationError,
 )
-from tests.factories import wav_bytes
-from tests.legacy_project_shapes import write_legacy_named_reference_bases_project
+from tests.factories import activate_current_project, wav_bytes, wrap_the_last_migration_step
+from tests.legacy_project_shapes import SCHEMA_V19, write_v19_project
 
 
 class _RetireRecorder:
@@ -75,13 +75,8 @@ class _RetireRecorder:
 
 
 def _activate_artifact_manifest(project_dir: Path) -> None:
-    """跑 Artifact Manifest 引入那一步的迁移，再把项目补到当前 schema。
-
-    manifest 由 v7→v8 生成，而按 manifest 判定产物新旧的入口要求项目已在当前 schema 上，
-    故两步必须成对——只跑前者会让项目停在中途版本、解析器直接拒绝服务。
-    """
-    migrate_v7_to_v8(project_dir)
-    migrate_project_dir(project_dir)
+    """按当前规划器把盘上产物整份登记进清单，模拟一个生成过产物、清单齐全的项目。"""
+    activate_current_project(project_dir)
 
 
 def _write_text(path: Path, content: str) -> None:
@@ -130,6 +125,11 @@ def _build_episode_payload(*, video_uri: str | None = None) -> dict:
             }
         ],
     }
+
+
+def _tts_project_fields(settings: TtsSynthesisSettings) -> dict:
+    """TTS 配音项目在 ``project.json`` 里记的交付方式与配音快照。"""
+    return {"narration_delivery": "use_tts", **tts_snapshot_fields(settings)}
 
 
 def _create_project(
@@ -487,9 +487,6 @@ class TestProjectArchiveService:
     def test_import_official_export_round_trip(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         (project_dir / MANIFEST_FILENAME).unlink(missing_ok=True)
         _activate_artifact_manifest(project_dir)
         startup_manifest = json.loads((project_dir / MANIFEST_FILENAME).read_text(encoding="utf-8"))
@@ -543,9 +540,6 @@ class TestProjectArchiveService:
     def test_import_rejects_official_manifest_claim_when_formal_bytes_were_replaced(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
 
         service = ProjectArchiveService(pm)
@@ -586,9 +580,6 @@ class TestProjectArchiveService:
         """信封 content_digest 若来自文本模式读取（CRLF 折叠为 LF），折叠不可逆，绑不住冻结 claim，改按当前投影补录。"""
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
         key = ArtifactKey.episode_script(1)
         before = ProjectArtifactManifestAdapter(project_dir).get_entry(key)
@@ -639,9 +630,6 @@ class TestProjectArchiveService:
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
         _write_bytes(project_dir / "characters" / "Hero.png", b"\x89PNG\r\n\x1a\nIHDR\r\n")
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
         key = ArtifactKey.asset_sheet("character", "Hero")
         before = ProjectArtifactManifestAdapter(project_dir).get_entry(key)
@@ -687,9 +675,6 @@ class TestProjectArchiveService:
     def test_official_round_trip_preserves_a_stale_asset_claim(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
 
         key = ArtifactKey.asset_sheet("character", "Hero")
@@ -722,9 +707,6 @@ class TestProjectArchiveService:
     def test_official_round_trip_preserves_a_stale_script_claim(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _write_text(project_dir / "source" / "episode_1.txt", "原文")
         script_plan_path = project_dir / "drafts" / "episode_1" / "script_plan_segments.json"
         _write_json(script_plan_path, {"segments": [{"segment_id": "E1S01", "text": "原文"}]})
@@ -773,7 +755,6 @@ class TestProjectArchiveService:
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
         project = pm.load_project("demo")
-        project["schema_version"] = 7
         project["grid_storyboard"] = True
         _write_json(project_dir / "project.json", project)
         grid = GridGeneration.create(
@@ -814,9 +795,6 @@ class TestProjectArchiveService:
     def test_export_retries_when_formal_bytes_and_manifest_change_during_snapshot(self, tmp_path, monkeypatch):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
 
         key = ArtifactKey.asset_sheet("character", "Hero")
@@ -858,9 +836,6 @@ class TestProjectArchiveService:
     def test_export_waits_for_a_formal_commit_before_snapshotting(self, tmp_path, monkeypatch):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
 
         key = ArtifactKey.asset_sheet("character", "Hero")
@@ -995,9 +970,6 @@ class TestProjectArchiveService:
     def test_official_round_trip_rekeys_claims_to_repaired_formal_paths(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
 
         key = ArtifactKey.asset_sheet("character", "Hero")
@@ -1046,7 +1018,6 @@ class TestProjectArchiveService:
         project_dir = _create_project(pm)
         project = pm.load_project("demo")
         project["characters"][" Hero "] = project["characters"].pop("Hero")
-        project["schema_version"] = 7
         _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
         key = ArtifactKey.asset_sheet("character", "Hero")
@@ -1067,9 +1038,6 @@ class TestProjectArchiveService:
     def test_asset_delete_manifest_failure_restores_exact_project_and_claim(self, tmp_path, monkeypatch):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
         project_file = project_dir / "project.json"
         key = ArtifactKey.asset_sheet("character", "Hero")
@@ -1095,9 +1063,6 @@ class TestProjectArchiveService:
     def test_official_round_trip_preserves_an_empty_manifest_snapshot(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
         _activate_artifact_manifest(project_dir)
 
         adapter = ProjectArtifactManifestAdapter(project_dir)
@@ -1122,7 +1087,7 @@ class TestProjectArchiveService:
         )
 
     def test_unmigrated_export_omits_the_envelope_so_import_backfills(self, tmp_path):
-        """未进入清单体系的项目导出成不带信封的归档，导入侧照常迁移并自证补录。
+        """还没升到当前版本的项目导出成不带信封的归档，导入侧照常迁移并自证补录。
 
         它的清单必然为空，而空信封在导入端与「这个项目一件产物都没有」不可区分：
         照保真路径落一份空清单，全部已生成产物会一次判 missing。
@@ -1131,7 +1096,7 @@ class TestProjectArchiveService:
         pm = ProjectManager(tmp_path / "projects")
         project_dir = _create_project(pm)
         project = pm.load_project("demo")
-        project["schema_version"] = 7
+        project["schema_version"] = SCHEMA_V19
         _write_json(project_dir / "project.json", project)
         (project_dir / MANIFEST_FILENAME).unlink(missing_ok=True)
 
@@ -1186,9 +1151,7 @@ class TestProjectArchiveService:
         )
         selected_snapshot = record["file"]
 
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
+        pm.update_project("demo", lambda project: project.update(_tts_project_fields(settings)))
         _activate_artifact_manifest(project_dir)
         key = ArtifactKey.episode_audio(1, "E1S01").encode()
         startup_manifest = json.loads((project_dir / MANIFEST_FILENAME).read_text(encoding="utf-8"))
@@ -1247,9 +1210,7 @@ class TestProjectArchiveService:
             tts_speed=settings.speed,
             tts_basis_digest=descriptor.digest,
         )
-        project = pm.load_project("demo")
-        project["schema_version"] = 7
-        _write_json(project_dir / "project.json", project)
+        pm.update_project("demo", lambda project: project.update(_tts_project_fields(settings)))
         _activate_artifact_manifest(project_dir)
         key = ArtifactKey.episode_audio(1, "E1S01")
         frozen = ProjectArtifactManifestAdapter(project_dir).get_entry(key)
@@ -1292,19 +1253,27 @@ class TestProjectArchiveService:
 
         assert any(item.code == "artifact_activation_failed" for item in exc_info.value.diagnostics.blocking)
 
-    def test_import_reports_migration_failure_with_its_reason(self, tmp_path):
-        pm = ProjectManager(tmp_path / "projects")
+    @staticmethod
+    def _v19_archive(pm: ProjectManager, tmp_path: Path) -> Path:
         project_dir = _create_project(pm)
         project = pm.load_project("demo")
-        project["schema_version"] = 7
+        project["schema_version"] = SCHEMA_V19
         _write_json(project_dir / "project.json", project)
-        (project_dir / "scripts" / "episode_1.json").write_text("{", encoding="utf-8")
-        archive_path = tmp_path / "broken-v7.zip"
+        archive_path = tmp_path / "v19.zip"
         _make_manual_zip(project_dir, archive_path)
         shutil.rmtree(project_dir)
+        return archive_path
 
+    def test_import_reports_migration_failure_with_its_reason(self, tmp_path, monkeypatch):
+        pm = ProjectManager(tmp_path / "projects")
+        archive_path = self._v19_archive(pm, tmp_path)
+
+        def reject(_step, _project_dir, **_kwargs):
+            raise ProjectMigrationError("剧本结构损坏", episode=1, file="scripts/episode_1.json")
+
+        wrap_the_last_migration_step(monkeypatch, reject)
         with pytest.raises(ProjectArchiveValidationError) as exc_info:
-            ProjectArchiveService(pm).import_project_archive(archive_path, uploaded_filename="broken-v7.zip")
+            ProjectArchiveService(pm).import_project_archive(archive_path, uploaded_filename="v19.zip")
 
         assert exc_info.value.status_code == 400
         [failure] = [item for item in exc_info.value.diagnostics.blocking if item.code == "project_migration_failed"]
@@ -1313,24 +1282,46 @@ class TestProjectArchiveService:
         assert "scripts/episode_1.json" in failure.location
         assert pm.list_projects() == []
 
-    def test_import_reports_migration_failure_outside_activation_with_its_reason(self, tmp_path):
+    def test_import_reports_migration_failure_outside_activation_with_its_reason(self, tmp_path, monkeypatch):
         """链上任一步出错都带原因拒绝导入，不再是没有原因的服务端错误。"""
         pm = ProjectManager(tmp_path / "projects")
-        project_dir = _create_project(pm)
-        project = pm.load_project("demo")
-        project["schema_version"] = 9
-        _write_json(project_dir / "project.json", project)
-        (project_dir / "scripts" / "episode_1.json").write_text("{", encoding="utf-8")
-        archive_path = tmp_path / "broken-v9.zip"
-        _make_manual_zip(project_dir, archive_path)
-        shutil.rmtree(project_dir)
+        archive_path = self._v19_archive(pm, tmp_path)
 
+        def reject(_step, _project_dir, **_kwargs):
+            raise ValueError("project.json 必须是对象")
+
+        wrap_the_last_migration_step(monkeypatch, reject)
         with pytest.raises(ProjectArchiveValidationError) as exc_info:
-            ProjectArchiveService(pm).import_project_archive(archive_path, uploaded_filename="broken-v9.zip")
+            ProjectArchiveService(pm).import_project_archive(archive_path, uploaded_filename="v19.zip")
 
         assert exc_info.value.status_code == 400
         rendered = exc_info.value.render_errors()
         assert any("无法升级到当前版本" in error for error in rendered)
+
+    @pytest.mark.parametrize("schema_version", [18, None], ids=["v18", "without-schema-version"])
+    def test_import_refuses_an_archive_older_than_schema_19(self, tmp_path, schema_version):
+        """迁移链只接 v19 起的项目：更早的归档带着版本与最低版本拒绝导入，提示先在上游 ArcReel 升级再导出。"""
+        pm = ProjectManager(tmp_path / "projects")
+        project_dir = _create_project(pm)
+        project = pm.load_project("demo")
+        if schema_version is None:
+            project.pop("schema_version")
+        else:
+            project["schema_version"] = schema_version
+        _write_json(project_dir / "project.json", project)
+        archive_path = tmp_path / "old.zip"
+        _make_manual_zip(project_dir, archive_path)
+        shutil.rmtree(project_dir)
+
+        with pytest.raises(ProjectArchiveValidationError) as exc_info:
+            ProjectArchiveService(pm).import_project_archive(archive_path, uploaded_filename="old.zip")
+
+        assert exc_info.value.status_code == 400
+        refused = [message for message in exc_info.value.errors if message.key == "arch_project_schema_unsupported"]
+        assert [dict(message.params) for message in refused] == [
+            {"version": schema_version or 0, "minimum": SCHEMA_V19}
+        ]
+        assert pm.list_projects() == []
 
     def test_import_manual_zip_without_manifest(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
@@ -1350,14 +1341,20 @@ class TestProjectArchiveService:
         assert result.project_name != "demo"
         assert (pm.get_project_path(result.project_name) / "project.json").exists()
 
-    @pytest.mark.parametrize("schema_version", [0, 1])
-    def test_import_minimal_legacy_archive_has_no_backup_warnings(self, tmp_path, schema_version):
+    def test_import_minimal_legacy_archive_has_no_backup_warnings(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
         archive_path = tmp_path / "legacy.zip"
         with zipfile.ZipFile(archive_path, "w") as archive:
             archive.writestr(
                 "project.json",
-                json.dumps({"schema_version": schema_version, "title": "Demo", "content_mode": "narration"}),
+                json.dumps(
+                    {
+                        "schema_version": SCHEMA_V19,
+                        "title": "Demo",
+                        "content_mode": "narration",
+                        "generation_mode": "storyboard",
+                    }
+                ),
             )
 
         result = ProjectArchiveService(pm).import_project_archive(archive_path, uploaded_filename="legacy.zip")
@@ -1365,68 +1362,6 @@ class TestProjectArchiveService:
         assert result.project["schema_version"] == CURRENT_PROJECT_SCHEMA_VERSION
         assert list(pm.get_project_path(result.project_name).glob("project.json.bak.v*"))
         assert not any(warning.key == "val_unrecognized_entry" for warning in result.warnings)
-
-    def test_import_legacy_v1_archive_runs_migration(self, tmp_path):
-        """启动后导入的旧归档（schema_version=1 + legacy image_backend）在导入入口走完整迁移链。"""
-        import json as _json
-
-        pm = ProjectManager(tmp_path / "projects")
-        project_dir = _create_project(pm)
-        service = ProjectArchiveService(pm)
-
-        # 改回 v1 形态 + legacy image_backend，模拟旧版本导出的归档
-        pj = project_dir / "project.json"
-        data = _json.loads(pj.read_text(encoding="utf-8"))
-        data["schema_version"] = 1
-        data["image_backend"] = "vertex/imagen-3"
-        data.pop("image_provider_t2i", None)
-        data.pop("image_provider_i2i", None)
-        pj.write_text(_json.dumps(data, ensure_ascii=False), encoding="utf-8")
-
-        archive_path = tmp_path / "legacy.zip"
-        _make_manual_zip(project_dir, archive_path)
-        shutil.rmtree(project_dir)
-
-        result = service.import_project_archive(archive_path, uploaded_filename="legacy.zip")
-
-        from lib.project.project_migrations import CURRENT_SCHEMA_VERSION
-
-        installed = _json.loads((pm.get_project_path(result.project_name) / "project.json").read_text(encoding="utf-8"))
-        assert installed["schema_version"] == CURRENT_SCHEMA_VERSION
-        assert installed["image_provider_t2i"] == "gemini-vertex/imagen-3"
-        assert installed["image_provider_i2i"] == "gemini-vertex/imagen-3"  # image_backend 拆分到两槽
-        assert "image_backend" not in installed
-
-    def test_import_v5_archive_migrates_conflicting_asset_namespace(self, tmp_path):
-        pm = ProjectManager(tmp_path / "projects")
-        project_dir = _create_project(pm)
-        service = ProjectArchiveService(pm)
-
-        project_file = project_dir / "project.json"
-        project = json.loads(project_file.read_text(encoding="utf-8"))
-        project["schema_version"] = 5
-        project["scenes"] = {"Hero": {"description": "same-named scene", "scene_sheet": "scenes/Hero.png"}}
-        project_file.write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
-        _write_bytes(project_dir / "scenes" / "Hero.png", b"scene")
-        script_file = project_dir / "scripts" / "episode_1.json"
-        script = json.loads(script_file.read_text(encoding="utf-8"))
-        script["segments"][0]["scenes"] = ["Hero"]
-        script_file.write_text(json.dumps(script, ensure_ascii=False), encoding="utf-8")
-
-        archive_path = tmp_path / "v5-conflict.zip"
-        _make_manual_zip(project_dir, archive_path)
-        shutil.rmtree(project_dir)
-
-        result = service.import_project_archive(archive_path, uploaded_filename="v5-conflict.zip")
-
-        installed_dir = pm.get_project_path(result.project_name)
-        installed = json.loads((installed_dir / "project.json").read_text(encoding="utf-8"))
-        migrated_script = json.loads((installed_dir / "scripts" / "episode_1.json").read_text(encoding="utf-8"))
-        assert installed["schema_version"] == CURRENT_PROJECT_SCHEMA_VERSION
-        assert list(installed["characters"]) == ["Hero"]
-        assert list(installed["scenes"]) == ["Hero_scene"]
-        assert migrated_script["segments"][0]["scenes"] == ["Hero_scene"]
-        assert (installed_dir / "scenes" / "Hero_scene.png").is_file()
 
     def test_import_rejects_missing_project_json(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")
@@ -2543,11 +2478,11 @@ class TestArchiveDiagnosticsLocalization:
         assert any("notes.txt" in message and re.search(r"[一-鿿]", message) for message in messages)
 
 
-def test_an_archive_exported_at_schema_18_keeps_storyboards_and_grids_current_after_import(tmp_path, monkeypatch):
-    """信封里的 claim 与原地升级一样经迁移链平移：v18→v19 改了分镜图与宫格的依据口径，导入后它们仍是 current。"""
+def test_an_archive_exported_at_schema_19_keeps_its_claims_current_after_import(tmp_path, monkeypatch):
+    """信封里的 claim 与原地升级一样经迁移链带到当前版本：导入后资产图、剧本与分镜图仍是 current。"""
     source = ProjectManager(tmp_path / "source")
-    write_legacy_named_reference_bases_project(source.projects_dir, name="demo")
-    # 模拟 schema 18 发行版的导出器：它把 18 当作当前版本，把清单放进信封。
+    write_v19_project(source.projects_dir, name="demo")
+    # 模拟 schema 19 发行版的导出器：它把 19 当作当前版本，把清单放进信封。
     monkeypatch.setattr(project_archive_module, "project_schema_is_current", lambda _project: True)
     archive_path, _ = ProjectArchiveService(source).export_project("demo")
     monkeypatch.undo()
@@ -2562,12 +2497,16 @@ def test_an_archive_exported_at_schema_18_keeps_storyboards_and_grids_current_af
     project_dir = target.get_project_path("demo")
     entries = ProjectArtifactManifestAdapter(project_dir).snapshot_entries()
     resolver = ArtifactCurrencyResolver(project_dir)
-    for key in (
-        ArtifactKey.episode_grid(1, "grid_123456789abc"),
+    assert set(entries) == {
+        ArtifactKey.asset_sheet("character", "阿离"),
+        ArtifactKey.asset_sheet("scene", "雨巷"),
+        ArtifactKey.asset_sheet("prop", "伞"),
+        ArtifactKey.asset_sheet("product", "咖啡"),
+        ArtifactKey.episode_script_plan(1),
+        ArtifactKey.episode_script(1),
         ArtifactKey.episode_storyboard(1, "E1S01"),
-        ArtifactKey.episode_storyboard(1, "E1S02"),
-        ArtifactKey.episode_storyboard(1, "E1S03"),
-    ):
+    }
+    for key in entries:
         assert resolver.compare(key, artifact_path=entries[key].artifact_path).status is ArtifactStatus.CURRENT
 
 

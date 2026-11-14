@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from PIL import Image
 
-from lib.artifacts.artifact_activation import activate_artifact_target_state
 from lib.config.resolver import ProviderModel
-from lib.project.project_migrations.runner import migrate_project_dir
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.services.tasks.generation_context import GenerationContext, ImageLaneResult
+from tests.factories import activate_current_project
 
 
 def _image_ctx(
@@ -99,7 +99,7 @@ def project_with_script(tmp_path):
             {
                 "name": "test-project",
                 "title": "Test",
-                "schema_version": 7,
+                "schema_version": CURRENT_PROJECT_SCHEMA_VERSION,
                 "content_mode": "narration",
                 "style": "realistic",
                 "style_description": "胶片颗粒，低饱和",
@@ -148,9 +148,7 @@ def project_with_script(tmp_path):
     (p / "drafts" / "episode_1" / "script_plan_segments.json").write_text(
         json.dumps({"episode": 1, "segments": []}), encoding="utf-8"
     )
-    activate_artifact_target_state(p, bump_schema=True)
-    # 清单激活只落到清单版本，后续迁移把项目补到当前 schema，产物读路径才准入
-    migrate_project_dir(p)
+    activate_current_project(p)
     return p
 
 

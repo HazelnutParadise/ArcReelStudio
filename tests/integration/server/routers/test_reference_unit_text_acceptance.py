@@ -1,8 +1,7 @@
-"""参考生视频单元正文的贯穿验收：v8 项目 → v9 迁移 → 两条写路径 → 真实生成请求投影。
+"""参考生视频单元正文的贯穿验收：正文形态的剧本 → 两条写路径 → 真实生成请求投影。
 
-覆盖一条完整的缝：磁盘上的旧形状（``shots[]`` + ``references[]``）迁到正文形态后，REST 与
-Agent 剧本工具读写的是同一份正文，而参考图集合按正文里 ``@[名称]`` 的首次提及顺序在投影时
-派生——落盘里没有任何一份可以与正文分叉的引用列表。
+覆盖一条完整的缝：REST 与 Agent 剧本工具读写的是同一份正文，而参考图集合按正文里 ``@[名称]``
+的首次提及顺序在投影时派生——落盘里没有任何一份可以与正文分叉的引用列表。
 """
 
 from __future__ import annotations
@@ -17,14 +16,13 @@ from fastapi.testclient import TestClient
 
 from lib.episode.episode_paths import REFERENCE_VIDEO_SCRIPT_PLAN_FILENAME, episode_drafts_dir
 from lib.project.project_manager import ProjectManager
-from lib.project.project_migrations.runner import migrate_project_dir
-from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from lib.script.reference_video.script_preview import WARN_UNREGISTERED_MENTION
 from lib.script.script_batch_edit import script_revision
 from server.agent_toolset.script_editing import PATCH_EPISODE_SCRIPT
 from server.auth import CurrentUserInfo, get_current_user
 from server.tool_runtime import ScriptPatchResult
 from tests.auth_deps import AUTH_DEPENDENCIES
+from tests.factories import activate_current_project
 from tests.fakes import fake_reference_request_projector, use_project_manager, use_reference_projection
 from tests.integration.server.agent_tool_support import ToolHarness, run_declared_tool
 
@@ -51,7 +49,7 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 
 class _Acceptance:
-    """一个已迁到 v9 的参考生视频项目，连同它的 REST 客户端与 Agent 工具上下文。"""
+    """一个产物清单已激活的参考生视频项目，连同它的 REST 客户端与 Agent 工具上下文。"""
 
     def __init__(
         self,
@@ -119,12 +117,11 @@ class _Acceptance:
         return resp.json()["warnings"]
 
 
-def _v8_unit(unit_id: str, *, texts: list[str], references: list[dict[str, str]]) -> dict[str, Any]:
+def _unit(unit_id: str, *, text: str) -> dict[str, Any]:
     return {
         "unit_id": unit_id,
         "duration_seconds": _UNIT_DURATION,
-        "shots": [{"shot_id": f"{unit_id}S{i + 1}", "text": text} for i, text in enumerate(texts)],
-        "references": references,
+        "text": text,
         "generated_assets": {"status": "pending", "video_clip": None},
     }
 
@@ -161,8 +158,6 @@ def acceptance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> _Acceptance:
             },
         }
         project["episodes"] = [{"episode": 1, "title": "雨夜", "script_file": f"scripts/{_SCRIPT_FILE}"}]
-        # 迁移入口按落盘版本决定是否改写，故把项目退回旧形态再跑整条链。
-        project["schema_version"] = 8
 
     pm.update_project("demo", _seed)
 
@@ -175,32 +170,14 @@ def acceptance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> _Acceptance:
             "generation_mode": "reference_video",
             "summary": "雨夜相遇",
             "novel": {"title": "N", "chapter": "1"},
-            "video_units": [
-                _v8_unit(
-                    _UNIT_ID,
-                    texts=["镜头1：@[阿离] 推开门", "镜头2：雨落在石板上"],
-                    references=[{"type": "character", "name": "阿离"}],
-                ),
-            ],
+            "video_units": [_unit(_UNIT_ID, text="镜头1：@[阿离] 推开门\n镜头2：雨落在石板上")],
         },
     )
     _write_json(
-        # v8 项目的草稿仍是 v9→v10 改名前的名字。
-        episode_drafts_dir(project_dir, 1) / "step1_reference_units.json",
-        {
-            "episode": 1,
-            "units": [
-                {
-                    "unit_id": _UNIT_ID,
-                    "duration_seconds": _UNIT_DURATION,
-                    "shots": [{"text": "草稿上半"}, {"text": "草稿下半"}],
-                    "references": [{"type": "character", "name": "阿离"}],
-                }
-            ],
-        },
+        episode_drafts_dir(project_dir, 1) / REFERENCE_VIDEO_SCRIPT_PLAN_FILENAME,
+        {"episode": 1, "units": [{"unit_id": _UNIT_ID, "duration_seconds": _UNIT_DURATION, "text": "草稿正文"}]},
     )
-
-    assert migrate_project_dir(project_dir) is True
+    activate_current_project(project_dir)
 
     from server.routers import reference_videos as router_mod
 
@@ -224,19 +201,10 @@ def acceptance(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> _Acceptance:
     )
 
 
-def test_migrated_body_is_the_only_shape_rest_serves(acceptance: _Acceptance) -> None:
-    """迁移后剧本与草稿都只剩正文，REST 读到的正是磁盘上那一段。"""
-    project = _read_json(acceptance.project_dir / "project.json")
-    assert project["schema_version"] == CURRENT_PROJECT_SCHEMA_VERSION
-
+def test_the_body_is_the_only_shape_rest_serves(acceptance: _Acceptance) -> None:
+    """REST 读到的正是磁盘上那一段正文，不带镜头列表或引用列表。"""
     unit = acceptance.unit_on_disk()
     assert unit["text"] == "镜头1：@[阿离] 推开门\n镜头2：雨落在石板上"
-    assert "shots" not in unit
-    assert "references" not in unit
-
-    draft = _read_json(episode_drafts_dir(acceptance.project_dir, 1) / REFERENCE_VIDEO_SCRIPT_PLAN_FILENAME)
-    assert draft["units"][0]["text"] == "草稿上半\n草稿下半"
-    assert "shots" not in draft["units"][0]
 
     served = acceptance.rest_units()
     assert [u["text"] for u in served] == [unit["text"]]

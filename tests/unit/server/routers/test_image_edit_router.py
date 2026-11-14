@@ -7,15 +7,15 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from lib.artifacts.artifact_activation import activate_artifact_target_state
 from lib.catalog.errors import ModelNotInCatalogError
 from lib.config.resolver import ConfigResolver, ProviderModel
 from lib.i18n import _ as i18n_message
-from lib.project.project_migrations.runner import migrate_project_dir
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.auth import CurrentUserInfo, get_current_user
 from server.error_handlers import register_error_handlers
 from server.routers import generate
 from tests.auth_deps import AUTH_DEPENDENCIES
+from tests.factories import activate_current_project
 from tests.fakes import use_generation_queue, use_project_manager
 
 
@@ -32,7 +32,7 @@ def _project_dict() -> dict:
     return {
         "name": "demo",
         "title": "Demo",
-        "schema_version": 8,
+        "schema_version": CURRENT_PROJECT_SCHEMA_VERSION,
         "content_mode": "narration",
         "generation_mode": "storyboard",
         "style": "anime",
@@ -105,16 +105,13 @@ def _prepare_files(tmp_path: Path) -> Path:
     ):
         Image.new("RGB", (4, 4)).save(project_path / relative)
     project = _project_dict()
-    project["schema_version"] = 7
     (project_path / "project.json").write_text(json.dumps(project), encoding="utf-8")
     (project_path / "scripts" / "episode_1.json").write_text(json.dumps(_script_dict()), encoding="utf-8")
     (project_path / "source" / "episode_1.txt").write_text("原文", encoding="utf-8")
     (project_path / "drafts" / "episode_1" / "script_plan_segments.json").write_text(
         json.dumps({"episode": 1, "segments": []}), encoding="utf-8"
     )
-    activate_artifact_target_state(project_path, bump_schema=True)
-    # 清单激活只落到清单版本，后续迁移把项目补到当前 schema，产物读路径才准入
-    migrate_project_dir(project_path)
+    activate_current_project(project_path)
     return project_path
 
 

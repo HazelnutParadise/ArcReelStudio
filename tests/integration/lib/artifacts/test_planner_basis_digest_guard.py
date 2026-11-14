@@ -1,0 +1,223 @@
+"""当前 schema 的目标态依据摘要钉住不变。
+
+规划器里有只服务 schema < 19 项目的口径分支（不记风格描述、记资产名、带转场的呈现依据、旧配音下限等），
+迁移链不再接这些项目之后它们会被删掉或折成常量。下面的摘要由删分支之前的代码对当前 schema 项目规划一次
+记下：删分支不得改动任何一条目标登记的产物路径或依据摘要，否则存量项目升级后会成片读作过期。
+摘要只在规划口径确实有意改变时更新，并同时说明存量登记如何迁过去。
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from lib.artifacts.artifact_activation import plan_artifact_target_state
+from lib.artifacts.artifact_manifest import ArtifactKey
+from lib.project.project_manager import ProjectManager
+from lib.project.project_migrations.runner import migrate_project_dir
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
+from lib.script.grid.models import GridGeneration, build_frame_chain
+from lib.speech.narration_config import TtsSynthesisSettings
+from server.services.presentation.presentation_read_model import PresentationReadModelService
+from tests.integration.lib.artifacts.test_generation_input_parity import _project_dir as _ad_storyboard_project
+from tests.legacy_project_shapes import write_legacy_storyboard_project, write_legacy_tts_narration_project
+
+_GRID_ID = "grid_123456789abc"
+
+
+def _write_json(path: Path, payload: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _planned(project_dir: Path) -> dict[tuple[str, ...], tuple[str, str]]:
+    project = json.loads((project_dir / "project.json").read_text(encoding="utf-8"))
+    assert project["schema_version"] == CURRENT_PROJECT_SCHEMA_VERSION
+    plan = plan_artifact_target_state(project_dir)
+    return {_readable(key): (entry.artifact_path, entry.basis_digest) for key, entry in plan.entries.items()}
+
+
+def _readable(key: ArtifactKey) -> tuple[str, ...]:
+    return (key.kind.value, *(str(component) for component in key.components))
+
+
+def _grid_storyboard_project(root: Path) -> Path:
+    """解说宫格项目，自定义风格带描述：宫格联合图、两张切格分镜图、一张单张分镜图与资产图，分镜图用 ``@`` 指认角色。"""
+
+    project_dir = root / "grid"
+    _write_json(
+        project_dir / "project.json",
+        {
+            "schema_version": CURRENT_PROJECT_SCHEMA_VERSION,
+            "title": "宫格项目",
+            "content_mode": "narration",
+            "generation_mode": "storyboard",
+            "source_language": "中文",
+            "style": "写实电影感",
+            "style_description": "淡彩",
+            "aspect_ratio": "9:16",
+            "grid_storyboard": True,
+            "characters": {"阿离": {"description": "银发旅人", "character_sheet": "characters/阿离.png"}},
+            "scenes": {"雨巷": {"description": "湿漉石板路", "scene_sheet": "scenes/雨巷.png"}},
+            "props": {},
+            "products": {},
+            "episodes": [
+                {
+                    "episode": 1,
+                    "title": "第一集",
+                    "script_file": "scripts/episode_1.json",
+                    "source_origin": "own",
+                    "item_id_high_water": 3,
+                }
+            ],
+            "narration_delivery": "post_production",
+            "whole_source_files": [],
+            "episode_id_high_water": 1,
+            "source_remaining": False,
+        },
+    )
+    members = ("E1S01", "E1S02")
+    segments = [
+        {
+            "segment_id": resource_id,
+            "episode": 1,
+            "duration_seconds": 4,
+            "novel_text": f"{resource_id} 的旁白。",
+            "characters_in_segment": ["阿离"],
+            "scenes": ["雨巷"],
+            "props": [],
+            "image_prompt": {"scene": f"@[阿离]站在{resource_id}的雨巷里", "composition": {"shot_type": "Medium Shot"}},
+            "video_prompt": {"action": f"{resource_id} 的动作"},
+            "generated_assets": {
+                "storyboard_image": f"storyboards/scene_{resource_id}.png",
+                "grid_id": _GRID_ID,
+                "grid_cell_index": index,
+            },
+        }
+        for index, resource_id in enumerate(members)
+    ]
+    segments.append(
+        {
+            "segment_id": "E1S03",
+            "episode": 1,
+            "duration_seconds": 4,
+            "novel_text": "第三段旁白。",
+            "segment_break": True,
+            "characters_in_segment": ["阿离"],
+            "scenes": [],
+            "props": [],
+            "image_prompt": {"scene": "@[阿离]在巷口回望", "composition": {"shot_type": "Wide Shot"}},
+            "video_prompt": {"action": "回望"},
+            "generated_assets": {"storyboard_image": "storyboards/scene_E1S03.png", "status": "completed"},
+        }
+    )
+    _write_json(
+        project_dir / "scripts" / "episode_1.json",
+        {"episode": 1, "title": "第一集", "content_mode": "narration", "segments": segments},
+    )
+    _write_json(
+        project_dir / "drafts" / "episode_1" / "script_plan_segments.json", {"segments": [{"novel_text": "雨夜"}]}
+    )
+    (project_dir / "source").mkdir()
+    (project_dir / "source" / "episode_1.txt").write_text("雨夜", encoding="utf-8")
+    grid = GridGeneration(
+        id=_GRID_ID,
+        episode=1,
+        script_file="episode_1.json",
+        scene_ids=list(members),
+        grid_image_path=f"grids/{_GRID_ID}.png",
+        rows=2,
+        cols=2,
+        cell_count=4,
+        frame_chain=build_frame_chain(list(members), 2, 2),
+        status="completed",
+        prompt="grid",
+        provider="provider",
+        model="model",
+        grid_size="grid_4",
+        created_at="2026-01-01T00:00:00Z",
+        split_at="2026-01-01T00:01:00Z",
+        video_aspect_ratio="9:16",
+    )
+    grid_record = grid.to_dict()
+    grid_record["reference_images"] = [{"path": "characters/阿离.png", "name": "阿离", "ref_type": "character"}]
+    _write_json(project_dir / "grids" / f"{_GRID_ID}.json", grid_record)
+    for rel, content in (
+        (f"grids/{_GRID_ID}.png", b"composite"),
+        *((f"storyboards/scene_{resource_id}.png", resource_id.encode()) for resource_id in (*members, "E1S03")),
+        ("characters/阿离.png", b"character-sheet"),
+        ("scenes/雨巷.png", b"scene-sheet"),
+    ):
+        (project_dir / rel).parent.mkdir(parents=True, exist_ok=True)
+        (project_dir / rel).write_bytes(content)
+    return project_dir
+
+
+class _SettingsResolver:
+    def __init__(self, settings: TtsSynthesisSettings) -> None:
+        self.settings = settings
+
+    async def resolve_tts_synthesis_settings(self, _project: dict) -> TtsSynthesisSettings:
+        return self.settings
+
+
+async def _presentation_project(root: Path) -> Path:
+    """解说分镜项目从 v19 升级后物化一份后期配音的呈现模型与字幕草稿（分镜图、视频与剧本都已登记）。"""
+
+    project_dir = write_legacy_storyboard_project(root / "projects", "presentation", unit_ids=("E1S1",))
+    assert migrate_project_dir(project_dir) is True
+
+    async def probe(_path: Path) -> float | None:
+        return 4.0
+
+    read_model = PresentationReadModelService(
+        ProjectManager(root),
+        settings_resolver_factory=lambda _name, _path: _SettingsResolver(
+            TtsSynthesisSettings("openai", "tts-1", "alloy", 1.0)
+        ),
+        duration_probe=probe,
+    )
+    await read_model.materialize_unit(
+        project_name="presentation", resource_type="videos", resource_id="E1S1", variant="post_production"
+    )
+    return project_dir
+
+
+def _raised_tts_project(root: Path) -> Path:
+    """TTS 配音项目从 v19 升级：旁白配音已登记，视频按旁白下限升档付费、时效时长仍是编排时长。"""
+
+    project_dir = write_legacy_tts_narration_project(
+        root / "projects",
+        settings=(TtsSynthesisSettings("dashscope", "qwen3-tts-flash", "Cherry", None),),
+        raised_video_duration_seconds=8,
+    )
+    assert migrate_project_dir(project_dir) is True
+    return project_dir
+
+
+_AD_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {}
+_GRID_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {}
+_PRESENTATION_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {}
+_RAISED_TTS_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {}
+
+
+@pytest.mark.parametrize(
+    ("make_project", "expected"),
+    [
+        pytest.param(
+            lambda root: _ad_storyboard_project(root, target_generated=True),
+            _AD_STORYBOARD_DIGESTS,
+            id="ad-storyboards",
+        ),
+        pytest.param(_grid_storyboard_project, _GRID_STORYBOARD_DIGESTS, id="grid-and-split-storyboards"),
+        pytest.param(_raised_tts_project, _RAISED_TTS_DIGESTS, id="tts-audio-and-raised-video"),
+    ],
+)
+def test_the_target_state_of_a_current_project_keeps_its_basis_digests(tmp_path: Path, make_project, expected) -> None:
+    assert _planned(make_project(tmp_path)) == expected
+
+
+async def test_the_target_state_with_a_materialized_presentation_keeps_its_basis_digests(tmp_path: Path) -> None:
+    assert _planned(await _presentation_project(tmp_path)) == _PRESENTATION_DIGESTS

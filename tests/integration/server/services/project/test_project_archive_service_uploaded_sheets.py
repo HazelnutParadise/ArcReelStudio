@@ -1,4 +1,4 @@
-"""带上传版本记录的资产图与衍生资产图：迁移补录与各种归档导入得出同一时效结论，无上传记录的存量结论不变。"""
+"""带上传版本记录的资产图与衍生资产图：清单激活补录与各种归档导入得出同一时效结论，无上传记录的存量结论不变。"""
 
 import asyncio
 import json
@@ -18,7 +18,6 @@ from lib.project.asset_derivatives import (
 )
 from lib.project.asset_types import ASSET_SPECS
 from lib.project.project_manager import ProjectManager
-from lib.project.project_migrations.runner import migrate_project_dir
 from lib.workflow.workflow_state import WorkflowStateService
 from server.services.currency.upload_finalize import (
     commit_manual_derivative_upload,
@@ -26,6 +25,7 @@ from server.services.currency.upload_finalize import (
     stage_uploaded_bytes,
 )
 from server.services.project.project_archive import ARCHIVE_MANIFEST_NAME, ProjectArchiveService
+from tests.factories import activate_current_project
 from tests.fakes import use_project_manager
 from tests.integration.server.derivative_sheet_support import (
     run_derivative_generation,
@@ -57,7 +57,7 @@ def _statuses(project_dir: Path, names) -> dict[str, str]:
 
 
 def _backfilled_project(pm: ProjectManager) -> Path:
-    """建项目、上传资产图、放无记录的资产图，再退回 v7 走整条迁移链补录。"""
+    """建项目、上传资产图、放无记录的资产图，再删掉产物清单、按当前规划器整份激活补录。"""
 
     pm.create_project("demo")
     pm.create_project_metadata("demo", "Demo", "Anime", "narration")
@@ -86,11 +86,10 @@ def _backfilled_project(pm: ProjectManager) -> Path:
         for name, _color in unrecorded:
             project["characters"][name]["character_sheet"] = f"characters/{name}.png"
         project["characters"]["Bob"]["description"] = "黑发少年"
-        project["schema_version"] = 7
 
     pm.update_project("demo", _legacy)
     (project_dir / MANIFEST_FILENAME).unlink()
-    assert migrate_project_dir(project_dir) is True
+    activate_current_project(project_dir)
     return project_dir
 
 

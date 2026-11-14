@@ -1423,7 +1423,7 @@ async def test_execute_reference_video_task_blocks_an_unmigrated_project_before_
     proj_dir = write_project(tmp_path)
     project_path = proj_dir / "project.json"
     project = json.loads(project_path.read_text(encoding="utf-8"))
-    project["schema_version"] = 7
+    project["schema_version"] = CURRENT_PROJECT_SCHEMA_VERSION - 1
     project_path.write_text(json.dumps(project, ensure_ascii=False), encoding="utf-8")
 
     fake_pm = MagicMock()

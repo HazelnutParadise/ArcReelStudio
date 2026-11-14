@@ -18,11 +18,10 @@ from lib.artifacts.artifact_manifest import (
     ArtifactKey,
     ProjectArtifactManifestAdapter,
 )
-from lib.project.project_migrations.runner import migrate_project_dir
-from lib.project.project_migrations.v7_to_v8_artifact_manifest import migrate_v7_to_v8
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.auth import CurrentUserInfo, get_current_user
 from tests.auth_deps import AUTH_DEPENDENCIES
-from tests.factories import make_video_request_facts
+from tests.factories import activate_current_project, make_video_request_facts
 from tests.fakes import (
     fake_reference_request_projector,
     use_generation_context,
@@ -55,7 +54,7 @@ def seeded_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Test
     (proj_dir / "project.json").write_text(
         json.dumps(
             {
-                "schema_version": 7,
+                "schema_version": CURRENT_PROJECT_SCHEMA_VERSION,
                 "title": "T",
                 "content_mode": "narration",
                 "generation_mode": "reference_video",
@@ -94,8 +93,7 @@ def seeded_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Test
         json.dumps({"episode": 1, "units": []}, ensure_ascii=False),
         encoding="utf-8",
     )
-    migrate_v7_to_v8(proj_dir)
-    migrate_project_dir(proj_dir)
+    activate_current_project(proj_dir)
     assert ProjectArtifactManifestAdapter(proj_dir).get_entry(ArtifactKey.episode_script(1)) is not None
 
     from lib.project.project_manager import ProjectManager

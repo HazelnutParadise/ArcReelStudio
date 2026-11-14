@@ -1,4 +1,4 @@
-"""剧情演绎项目缺 ``aspect_ratio``：分镜图依据按项目比例规则取 16:9，经整条迁移链升级后的制作状态。"""
+"""剧情演绎项目缺 ``aspect_ratio``：分镜图依据按项目比例规则取 16:9，从 schema 19 升级后的制作状态。"""
 
 from __future__ import annotations
 

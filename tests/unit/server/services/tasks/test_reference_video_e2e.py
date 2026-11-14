@@ -20,11 +20,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from lib.artifacts.artifact_activation import activate_artifact_target_state
 from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
 from server.auth import CurrentUserInfo, get_current_user
 from tests.auth_deps import AUTH_DEPENDENCIES
-from tests.factories import make_video_request_facts
+from tests.factories import activate_current_project, make_video_request_facts
 from tests.fakes import (
     fake_reference_request_projector,
     use_generation_context,
@@ -72,7 +71,7 @@ def three_bucket_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
                     "长剑": {"description": "铁铸长剑", "prop_sheet": "props/长剑.png"},
                 },
                 "episodes": [{"episode": 1, "title": "江湖夜话", "script_file": "scripts/episode_1.json"}],
-                "schema_version": 7,
+                "schema_version": CURRENT_PROJECT_SCHEMA_VERSION,
             },
             ensure_ascii=False,
         ),
@@ -101,10 +100,7 @@ def three_bucket_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         json.dumps({"episode": 1, "video_units": []}, ensure_ascii=False),
         encoding="utf-8",
     )
-    assert activate_artifact_target_state(proj_dir, bump_schema=True) is True
-    activated = json.loads((proj_dir / "project.json").read_text(encoding="utf-8"))
-    activated["schema_version"] = CURRENT_PROJECT_SCHEMA_VERSION
-    (proj_dir / "project.json").write_text(json.dumps(activated, ensure_ascii=False), encoding="utf-8")
+    activate_current_project(proj_dir)
 
     from lib.project.project_manager import ProjectManager
     from server.routers import reference_videos as router_mod
