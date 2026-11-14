@@ -258,10 +258,8 @@ class NarrationSegment(BaseModel):
     model_config = _STRICT_CONFIG
 
     # 已废弃但存量 JSON 里可能残留的字段:在 extra="forbid" 拒绝之前显式 pop 掉。
-    # clues_in_segment 是 v0→v1 migration 删除的字段(lib/project/project_migrations/
-    # v0_to_v1_clues_to_scenes_props.py),archive 流程通过 project_archive.py 已 pop,
-    # 但若直接 NarrationSegment.model_validate(legacy_dict) 调用(_guard_no_worse lenient
-    # 包装外)需要这里兜底,与 DramaScene.LEGACY_DROPPED_FIELDS 同模式。
+    # clues_in_segment 是旧版 v0→v1 迁移删除的线索字段;直接 NarrationSegment.model_validate(legacy_dict)
+    # 调用(_guard_no_worse lenient 包装外)由这里兜底,与 DramaScene.LEGACY_DROPPED_FIELDS 同模式。
     LEGACY_DROPPED_FIELDS: ClassVar[frozenset[str]] = frozenset({"clues_in_segment"})
 
     @model_validator(mode="before")

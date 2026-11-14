@@ -112,13 +112,6 @@ def parse_typed_media_version_target(
     )
 
 
-def parse_typed_audio_settings(record: Mapping[str, Any]) -> TtsSynthesisSettings:
-    """Return execution-frozen settings after validating complete audio facts."""
-
-    parse_typed_media_version_target("audio", record)
-    return _audio_settings(record)
-
-
 def parse_image_version_basis(
     resource_type: str,
     resource_id: str,
@@ -258,6 +251,5 @@ __all__ = [
     "TypedMediaVersionTarget",
     "is_typed_media_resource",
     "parse_image_version_basis",
-    "parse_typed_audio_settings",
     "parse_typed_media_version_target",
 ]

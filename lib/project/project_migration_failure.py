@@ -134,7 +134,7 @@ def _readable_schema_version(project_dir: Path) -> int | None:
 
 
 def pending_migration_record(schema_version: int) -> MigrationFailureRecord:
-    """The verdict for a project the migration chain has not yet carried to v8."""
+    """The verdict for a project the migration chain has not yet carried to the current schema."""
 
     reason = (
         f"project schema v{schema_version} has not been upgraded to "

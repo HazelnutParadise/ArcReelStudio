@@ -108,7 +108,6 @@ from server.services.admission.prompt_preview import ScriptItemNotFound, preview
 from server.services.backend_values import validate_backend_value
 from server.services.project import workflow_planner as workflow_plan_service
 from server.services.project.episode_display import present_episode_diagnostics
-from server.services.project.episode_id_records import recorded_episode_ids_on
 from server.services.project.narration_settings import (
     NarrationSettingsInput,
     new_project_narration_fields,
@@ -1047,12 +1046,7 @@ async def _restore_deleted_project(layout: DataRootLayout, deleted_id: str) -> P
     except BaseException:
         await run_sync_transaction(project_dir.rename, layout.deleted_projects_dir / deleted_id)
         raise
-    # 记录先改回：迁移链按项目名查历史集 ID。
-    await run_sync_transaction(
-        deleted_projects.migrate_restored,
-        project_dir,
-        recorded_episode_ids=recorded_episode_ids_on(asyncio.get_running_loop()),
-    )
+    await run_sync_transaction(deleted_projects.migrate_restored, project_dir)
     return project_dir
 
 

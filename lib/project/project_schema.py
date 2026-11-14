@@ -5,6 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 
 CURRENT_PROJECT_SCHEMA_VERSION = 20
+#: 迁移链能接的最早版本（ADR 0131）：更早的项目（含缺 ``schema_version`` 读作的 v0）被拒，
+#: 需先在上游 ArcReel 里打开、升级到此版本或更高再导出。
+MINIMUM_PROJECT_SCHEMA_VERSION = 19
 
 
 def parse_project_schema_version(project: Mapping[str, object]) -> int:
@@ -29,6 +32,7 @@ def project_schema_is_current(project: Mapping[str, object]) -> bool:
 
 __all__ = [
     "CURRENT_PROJECT_SCHEMA_VERSION",
+    "MINIMUM_PROJECT_SCHEMA_VERSION",
     "parse_project_schema_version",
     "project_schema_is_current",
 ]

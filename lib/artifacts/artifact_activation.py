@@ -12,12 +12,10 @@ state; ordinary readers never repair or infer entries on first access.
 from __future__ import annotations
 
 import json
-import os
-import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 from lib.artifacts.artifact_currency import (
     ArtifactComparer,
@@ -56,7 +54,6 @@ from lib.artifacts.artifact_manifest import (
     ProjectArtifactManifestAdapter,
 )
 from lib.artifacts.artifact_planner import (
-    ARTIFACT_MANIFEST_SCHEMA_VERSION,
     ArtifactTargetStatePlan,
     SharedVersionMetadata,
     TargetStatePlanner,
@@ -82,9 +79,8 @@ from lib.artifacts.visual_artifact_provenance import (
     visual_file_digest,
 )
 from lib.infra.content_digest import TextModeDigest
-from lib.infra.json_io import atomic_write_bytes, atomic_write_json
 from lib.project.project_migration_report import MigrationSkippedArtifact, skipped_artifact_identity
-from lib.project.project_schema import parse_project_schema_version, project_schema_is_current
+from lib.project.project_schema import project_schema_is_current
 
 _EPISODE_RESOURCE_KINDS = frozenset(
     {
@@ -100,63 +96,25 @@ _EPISODE_RESOURCE_KINDS = frozenset(
 def activate_artifact_target_state(
     project_dir: Path,
     *,
-    bump_schema: bool,
-    backup_file: Callable[[Path, int], None] | None = None,
-    commit_schema: Callable[[Path, Mapping[str, Any]], None] | None = None,
+    bump_schema: bool = False,
     plan: ArtifactTargetStatePlan | None = None,
-    target_schema_version: int = ARTIFACT_MANIFEST_SCHEMA_VERSION,
 ) -> bool:
-    """Commit one complete target state, optionally advancing schema last.
+    """Commit one complete target state for a current-schema project.
 
-    ``backup_file`` 与 ``commit_schema`` 是临界区内两个落盘步骤的注入点，缺省即生产实现。
     ``plan`` 供调用方把只读预检提到自身写盘段之前完成；缺省即在此就地预检。传入的计划仍要
     过 ``assert_artifact_target_state_plan_unchanged``，它对着盘上事实自证，晚于预检的改动一律拒绝。
-    ``target_schema_version`` 是 ``bump_schema`` 时提交的版本：项目必须正停在它的前一版，
-    备份按那一版命名（``*.bak.v<前一版>-*``）。
+    激活不再提升 schema（那是已移除的 v7→v8 迁移步的事，ADR 0131）：``bump_schema`` 只接受 ``False``。
     """
 
+    if bump_schema:
+        raise ValueError("artifact activation no longer advances the project schema")
     if plan is None:
         plan = plan_artifact_target_state(project_dir)
-    current_schema = plan.project.get("schema_version")
-    from_version = target_schema_version - 1
-    if bump_schema and current_schema != from_version:
-        raise ValueError(f"schema bump requires a v{from_version} project")
-    if not bump_schema and not project_schema_is_current(plan.project):
+    if not project_schema_is_current(plan.project):
         raise ValueError("schema-preserving activation requires a current-schema project")
 
     assert_artifact_target_state_plan_unchanged(project_dir, plan)
-    adapter = ProjectArtifactManifestAdapter(project_dir)
-    if bump_schema:
-        with project_metadata_lock(project_dir):
-            assert_artifact_target_state_plan_unchanged(project_dir, plan)
-            _backup_activation_inputs(project_dir, plan, backup_file=backup_file, from_version=from_version)
-            previous_entries = adapter.snapshot_entries()
-            changed = adapter.replace_entries_atomically(plan.entries)
-            try:
-                assert_artifact_target_state_plan_unchanged(project_dir, plan)
-            except BaseException as original_error:
-                if changed:
-                    try:
-                        restored = adapter.replace_snapshot_if_matches_atomically(
-                            expected=plan.entries,
-                            replacement=previous_entries,
-                        )
-                        if not restored and adapter.snapshot_entries() != previous_entries:
-                            raise ArtifactManifestError(
-                                "artifact manifest changed concurrently after activation commit"
-                            )
-                    except BaseException as rollback_error:
-                        rollback_error.__cause__ = original_error
-                        raise RuntimeError(
-                            "artifact activation dependency drifted and Manifest rollback was incomplete"
-                        ) from rollback_error
-                raise
-            if commit_schema is None:
-                _commit_schema_version(project_dir, plan.project, target_schema_version)
-            else:
-                commit_schema(project_dir, plan.project)
-            return True
-    return adapter.replace_entries_atomically(plan.entries)
+    return ProjectArtifactManifestAdapter(project_dir).replace_entries_atomically(plan.entries)
 
 
 def ensure_imported_artifact_target_state(
@@ -246,13 +204,12 @@ def ensure_imported_artifact_target_state(
 def stage_preserved_artifact_claims(project_dir: Path, preserved: ArtifactManifestArchiveSnapshot) -> bool:
     """把归档信封里的 claim 落成暂存项目的清单，迁移链随后像原地升级一样平移它们。
 
-    归档 schema 早于清单引入（v8）时不落，返回 ``False``：那一步迁移自己从项目状态建清单。``project.json``
-    读不出时同样不落，由迁移链报告它。
+    ``project.json`` 读不出时不落，返回 ``False``，由迁移链报告它。
     """
 
     try:
         project = json.loads((project_dir / "project.json").read_bytes().decode("utf-8"))
-        if not isinstance(project, Mapping) or parse_project_schema_version(project) < ARTIFACT_MANIFEST_SCHEMA_VERSION:
+        if not isinstance(project, Mapping):
             return False
     except OSError, UnicodeError, ValueError:
         return False
@@ -570,52 +527,7 @@ def _assert_project_unchanged(project_dir: Path, expected: bytes) -> None:
         raise RuntimeError("project.json changed after artifact activation preflight")
 
 
-def _backup_activation_inputs(
-    project_dir: Path,
-    plan: ArtifactTargetStatePlan,
-    *,
-    backup_file: Callable[[Path, int], None] | None = None,
-    from_version: int = ARTIFACT_MANIFEST_SCHEMA_VERSION - 1,
-) -> None:
-    candidates = [project_dir / "project.json", *plan.script_paths]
-    manifest = project_dir / MANIFEST_FILENAME
-    if manifest.exists():
-        candidates.append(manifest)
-    stamp = time.time_ns()
-    for source in candidates:
-        if backup_file is None:
-            _ensure_activation_backup(source, stamp=stamp, from_version=from_version)
-        else:
-            backup_file(source, stamp)
-
-
-def _ensure_activation_backup(source: Path, *, stamp: int, from_version: int) -> None:
-    content = source.read_bytes()
-    pattern = f"{source.name}.bak.v{from_version}-*"
-    for candidate in source.parent.glob(pattern):
-        if candidate.is_symlink() or not candidate.is_file():
-            continue
-        try:
-            if candidate.read_bytes() == content:
-                try:
-                    os.utime(candidate, None, follow_symlinks=False)
-                except NotImplementedError, OSError:
-                    continue
-                return
-        except OSError:
-            continue
-    backup = source.with_name(f"{source.name}.bak.v{from_version}-{stamp}")
-    atomic_write_bytes(backup, content)
-
-
-def _commit_schema_version(project_dir: Path, project: Mapping[str, Any], target_schema_version: int) -> None:
-    updated = dict(project)
-    updated["schema_version"] = target_schema_version
-    atomic_write_json(project_dir / "project.json", updated)
-
-
 __all__ = [
-    "ARTIFACT_MANIFEST_SCHEMA_VERSION",
     "ArtifactComparer",
     "ArtifactCurrencyResolver",
     "ArtifactInputClaim",

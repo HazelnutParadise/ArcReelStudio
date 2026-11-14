@@ -104,7 +104,7 @@ from lib.project.asset_types import (
     validate_asset_name,
 )
 from lib.project.project_change_hints import emit_project_change_hint
-from lib.project.project_schema import parse_project_schema_version
+from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION, parse_project_schema_version
 from lib.project.script_entry_cleanup import trash_entries
 from lib.project.task_project_claim import ensure_task_project_claim
 from lib.references.reference_catalog import derivative_reference
@@ -465,11 +465,15 @@ class ProjectManager:
             raise FileExistsError(f"项目 '{name}' 已存在") from exc
 
         # 单步调用默认持久化 content_mode；组合创建流程可延迟到完整 metadata 一次发布。
+        # 最小 project.json 同样带当前 schema_version：补完元数据之前进程退出时，留下的项目不会被读作 v0 而被迁移链拒绝。
         try:
             for subdir in self.SUBDIRS:
                 (project_dir / subdir).mkdir(exist_ok=True)
             if publish:
-                atomic_write_json(project_dir / self.PROJECT_FILE, {"content_mode": content_mode})
+                atomic_write_json(
+                    project_dir / self.PROJECT_FILE,
+                    {"schema_version": CURRENT_PROJECT_SCHEMA_VERSION, "content_mode": content_mode},
+                )
             self.sync_agent_profile(project_dir, content_mode=content_mode)
         except Exception:
             # sync 失败时回滚 project_dir，避免残缺目录阻塞重试（同名 create 撞 FileExistsError）
@@ -1209,9 +1213,8 @@ class ProjectManager:
     def canonical_script_episode(script_filename: str) -> int | None:
         """这份剧本归属哪一集：文件名正是规范名 `episode_N.json` 时为第 N 集，其余一律认不出。
 
-        归属只看文件名，与账本绑定无关：`script_file` 自 v15 起只能是该集的规范路径
-        （见 `lib.project.project_migrations.v14_to_v15_formal_script_truth`），`episode_1_old.json`、
-        `custom.json` 这类文件不属于任何一集。
+        归属只看文件名，与账本绑定无关：`script_file` 自 v15 起只能是该集的规范路径，
+        `episode_1_old.json`、`custom.json` 这类文件不属于任何一集。
         """
         base_name = ProjectManager.normalize_script_filename(script_filename)
         episode = ProjectManager.filename_episode(base_name)

@@ -149,7 +149,6 @@ MESSAGES = {
     "arch_invalid_script_json": "無法解析腳本檔案：{path}",
     "arch_deprecated_source_file_removed": "novel.source_file 欄位已廢棄，已移除",
     "arch_deprecated_field_removed": "{field} 欄位已廢棄（改為讀時計算），已移除",
-    "arch_deprecated_clue_field_removed": "{items_key}[{index}]: 廢棄欄位 {field} 已移除（請改用 scenes/props）",
     "arch_missing_field_filled": "{items_key}[{index}]: 補全缺失欄位 {field}",
     "arch_unit_unresolved_mentions": (
         "video_units[{index}]: 正文引用了不存在於 project.json 的資產名：{names}；這些引用不會生成參考圖"
@@ -168,6 +167,9 @@ MESSAGES = {
     "arch_import_validation_failed": "匯入包校驗失敗",
     "arch_artifact_activation_failed": "匯入專案的產物狀態不一致：{reason}",
     "arch_project_migration_failed": "匯入包裡的專案資料無法升級到當前版本：{reason}",
+    "arch_project_schema_unsupported": (
+        "匯入包裡的專案是 schema 版本 {version}，這個版本只能匯入 {minimum} 以上的專案。請先在上游 ArcReel 開啟這個專案，讓它升級到 schema {minimum} 或更新的版本，再重新匯出後匯入"
+    ),
     "arch_import_confirmation_required": "匯入包升級時調整了部分內容，請確認後再匯入",
     "arch_not_a_zip": "上傳檔案不是有效的 ZIP 歸檔",
     "arch_zip_encrypted_entry": "ZIP 包含加密條目，無法匯入：{name}",

@@ -55,7 +55,6 @@ from lib.artifacts.visual_artifact_provenance import (
     build_uploaded_asset_sheet_basis,
     build_uploaded_storyboard_basis,
     build_uploaded_video_basis,
-    project_basis_records_asset_names,
     project_basis_style_description,
     visual_file_digest,
 )
@@ -98,11 +97,9 @@ from lib.script.storyboard_sequence import get_storyboard_items
 from lib.sfx.library import SfxSource, read_sfx_library, resolve_sfx_sources, sfx_basis, sfx_key
 from lib.speech.narration_delivery import POST_PRODUCTION, USE_TTS
 from lib.speech.speech_artifact_provenance import (
-    PRESENTATION_WITHOUT_TRANSITION_SCHEMA_VERSION,
     RenditionVariant,
     SelectedMediaEvidence,
     build_blocked_subtitle_basis,
-    build_legacy_transition_presentation_basis,
     build_presentation_basis,
     media_content_digest,
 )
@@ -121,15 +118,10 @@ from lib.speech.speech_presentation import (
     presentation_artifact_paths,
 )
 
-#: 清单激活把项目提升到的版本。它是 v7→v8 这一步的落点，与「项目是否为当前版本」是两件事：
-#: 后者随 ``CURRENT_PROJECT_SCHEMA_VERSION`` 走，把两者绑成一个常量会让每次 schema 升版都
-#: 悄悄改掉迁移链中间那一步的前置条件，存量 v7 项目从此迁不动。
-ARTIFACT_MANIFEST_SCHEMA_VERSION = 8
-
-#: 允许跑清单激活的版本：迁移途中的 v7（此后由激活提升到 v8），以及已经走完迁移链的当前版本
-#: 区间（归档导入在 ``migrate_project_dir`` 之后才激活，看到的是当前版本）。
+#: 允许规划目标态的版本：迁移链接得住的 v19 起到当前版本（导出 v19 项目时也要规划），以及缺口规则
+#: （:func:`plan_artifact_target_state_by_gap_rule`）借来表达「缺口即不登记」与「缺口记为缺席」两种口径的 v17、v18。
 _ACTIVATION_SCHEMA_VERSIONS = frozenset(
-    {ARTIFACT_MANIFEST_SCHEMA_VERSION - 1, *range(ARTIFACT_MANIFEST_SCHEMA_VERSION, CURRENT_PROJECT_SCHEMA_VERSION + 1)}
+    range(GAP_TOLERANT_BASIS_SCHEMA_VERSION - 1, CURRENT_PROJECT_SCHEMA_VERSION + 1)
 )
 
 
@@ -277,7 +269,6 @@ class TargetStatePlanner:
         allow_stale_formal_targets: bool = False,
         pending_renames: Mapping[str, str] | None = None,
         pending_entries: Mapping[ArtifactKey, ArtifactManifestEntry | None] | None = None,
-        legacy_audio_entries: Mapping[ArtifactKey, ArtifactManifestEntry] | None = None,
         shared_versions: SharedVersionMetadata | None = None,
         manifest_snapshot: ArtifactManifestSnapshot | None = None,
         shared_observations: dict[str, ArtifactObservation] | None = None,
@@ -287,7 +278,6 @@ class TargetStatePlanner:
         self.project_path = self.project_dir / "project.json"
         self.pending_renames = dict(pending_renames or {})
         self.pending_entries = dict(pending_entries or {})
-        self.legacy_audio_entries = legacy_audio_entries
         #: Request-scoped Manifest read that answers committed claims instead of storage reads.  A planner
         #: given one judges currency: video and audio prove their formal file against the claim's recorded
         #: content facts and never read the version snapshot.
@@ -329,15 +319,6 @@ class TargetStatePlanner:
         #: 生成缺口记为缺席、照常投影（ADR 0098）；schema < 18 沿用缺口即投影不出的口径。
         self._records_gaps = project_basis_records_gaps(self.project)
         self._unreadable_grid_ids: set[str] = set()
-
-    def _legacy_audio_entries(self) -> Mapping[ArtifactKey, ArtifactManifestEntry] | None:
-        """Audio claims for legacy narrated durations; ``None`` reads them from storage."""
-
-        if self.legacy_audio_entries is not None:
-            return self.legacy_audio_entries
-        if self._activation_mode:
-            return self.entries
-        return None if self.manifest_snapshot is None else self.manifest_snapshot.entries
 
     def plan(self) -> ArtifactTargetStatePlan:
         schema = parse_project_schema_version(self.project)
@@ -880,7 +861,6 @@ class TargetStatePlanner:
                     grid_aspect_ratio=grid_aspect_ratio_for(grid.rows, grid.cols, member_ratio),
                     references=references,
                     absent=gaps,
-                    asset_names=project_basis_records_asset_names(self.project),
                 )
             except OSError, TypeError, ValueError:
                 continue
@@ -946,7 +926,6 @@ class TargetStatePlanner:
                         references=references,
                         source_composite_digest=composite_digest,
                         absent=gaps,
-                        asset_names=project_basis_records_asset_names(self.project),
                     )
                 except OSError, TypeError, ValueError:
                     continue
@@ -1211,7 +1190,6 @@ class TargetStatePlanner:
                     resource_type=resource_type,
                     resource_id=resource_id,
                     version_metadata=record,
-                    legacy_audio_entries=self._legacy_audio_entries(),
                 )
         except KeyError, OSError, TypeError, ValueError:
             self._skip(key, artifact_path, "current basis cannot be projected from the script")
@@ -1688,19 +1666,6 @@ class TargetStatePlanner:
             "persisted": True,
             **frozen.to_dict(),
         }
-        legacy_transition = presentation.get("transition_to_next")
-        if (
-            isinstance(legacy_transition, str)
-            and parse_project_schema_version(self.project) < PRESENTATION_WITHOUT_TRANSITION_SCHEMA_VERSION
-        ):
-            # 迁移链中 v15→v16 之前的激活：存量文件带转场，依据按那时的口径核对与登记。
-            frozen_presentation_basis = build_legacy_transition_presentation_basis(
-                frozen.presentation_basis, legacy_transition
-            )
-            expected_presentation["transition_to_next"] = legacy_transition
-            expected_presentation["presentation_basis"] = ArtifactBasisDescriptor.from_basis(
-                frozen_presentation_basis
-            ).to_dict()
         if dict(subtitle) != frozen.subtitle_artifact_dict() or dict(presentation) != expected_presentation:
             return None
 
