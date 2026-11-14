@@ -52,7 +52,7 @@ MODULES = [
     "lib.script.script_models",
     "lib.script.storyboard_sequence",
     "lib.prompts.style_templates",
-    "lib.config.system_config",
+    "lib.config.vertex_credentials",
     "lib.backends.text_generator",
     "lib.infra.thumbnail",
     "lib.artifacts.version_manager",

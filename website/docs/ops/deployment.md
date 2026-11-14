@@ -176,8 +176,6 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 
 数据库结构从同一个起点迁移脚本建起。上游 ArcReel 或本项目早期开发版建出的数据库没有对应的迁移起点，启动时会报 `Can't locate revision identified by '…'`，不能直接沿用，请用新的数据库。
 
-启动时还会将可确认归属项目的历史调用记录产物路径改为项目内相对路径，以便移动数据目录后费用明细仍能显示缩略图；无法确认项目根的旧路径会保留并写入启动日志。排队中的旧文本任务按启动时的当前数据目录执行，载荷里的旧目录不再生效。
-
 升级前仍然必须备份。自动迁移解决的是结构升级，不代替可回滚的数据备份。
 
 ### 2.4 连接已有的 PostgreSQL {#external-postgresql}
@@ -241,7 +239,7 @@ ArcReel 在应用启动时运行 Alembic 迁移，将数据库结构升级到当
 - `AUTH_ENABLED=false` 仅适用于受独立网络边界保护的本机环境。Compose 默认把 `1241` 端口发布到宿主机所有网卡，远程部署不得关闭认证。认证关闭时，启动日志会输出 WARNING。
 - `.env` 中可能包含密钥，不要提交到版本库。
 - Vertex 凭据文件应只授予运行 ArcReel 的用户读取权限。
-- 文件日志固定写入数据根下的 `logs/`。旧变量 `ARCREEL_LOG_DIR` 已不再生效，仍设置时启动日志会提示一次；只需要 stdout 日志时设置 `ARCREEL_LOG_FILE_DISABLED=true`。
+- 文件日志固定写入数据根下的 `logs/`；只需要 stdout 日志时设置 `ARCREEL_LOG_FILE_DISABLED=true`。
 - 第三方模型 API Key 通常在 ArcReel 设置页中管理，不要写入公开文档。
 
 远程 MCP 端点为 `/mcp`，始终要求 `arc-` 前缀 API Key；即使 `AUTH_ENABLED=false` 也不会匿名放行。外部接入不需要额外的 `MCP_*` 配置：把设置页「外部 Agent 接入」给出的端点地址，与在「访问令牌」创建的 API Key 填进客户端即可，通过保留 SSE 长连接的 HTTPS 反向代理、VPN 或安全隧道访问。

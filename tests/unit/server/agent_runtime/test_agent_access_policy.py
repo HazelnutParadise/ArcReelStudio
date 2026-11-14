@@ -512,7 +512,8 @@ def test_read_of_data_root_outside_current_project_and_memory_denied(policy: Age
     assert policy.data_root.is_relative_to(policy.project_root)
     entries = [entry for entry in layout.top_level_entries if entry != layout.projects_dir]
     entries += [
-        policy.data_root / name for name in (".hidden.db", ".hidden_dir", ".hidden.json", "stray.txt", "future_dir")
+        policy.data_root / name
+        for name in ("arcreel.db-wal", ".hidden.db", ".hidden_dir", ".hidden.json", "stray.txt", "future_dir")
     ]
     entries += [layout.projects_dir, layout.projects_dir / "stray.txt"]
     for entry in entries:
@@ -633,6 +634,9 @@ def test_sandbox_denies_read_of_every_data_root_entry_but_projects(policy: Agent
     都在 denyRead 里；项目目录不在，Bash 照常读写当前项目。"""
     root = policy.data_root
     (root / "arcreel.db").write_bytes(b"db")
+    # 默认库的 -wal / -shm 不在布局登记里，靠「实际存在的顶层条目」进清单
+    (root / "arcreel.db-wal").write_bytes(b"wal")
+    (root / "arcreel.db-shm").write_bytes(b"shm")
     (root / ".hidden.db-wal").write_bytes(b"wal")
     (root / ".hidden_dir" / "users").mkdir(parents=True)
     (root / ".hidden.json").write_text("{}", encoding="utf-8")
@@ -640,7 +644,15 @@ def test_sandbox_denies_read_of_every_data_root_entry_but_projects(policy: Agent
 
     deny_read = policy.build_sandbox_settings(_cwd(policy))["filesystem"]["denyRead"]
 
-    for name in ("arcreel.db", ".hidden.db-wal", ".hidden_dir", ".hidden.json", "future_dir"):
+    for name in (
+        "arcreel.db",
+        "arcreel.db-wal",
+        "arcreel.db-shm",
+        ".hidden.db-wal",
+        ".hidden_dir",
+        ".hidden.json",
+        "future_dir",
+    ):
         assert str(root / name) in deny_read
     for system_dir in DataRootLayout(root).system_dirs:
         assert str(system_dir) in deny_read

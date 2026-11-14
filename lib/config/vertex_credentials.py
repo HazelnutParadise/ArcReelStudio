@@ -1,6 +1,4 @@
-"""Vertex 凭证文件的定位。
-
-系统配置存放在数据库里（``lib.config`` 的 ConfigService 与 repositories）；本模块只剩凭证文件的查找。
+"""Vertex 凭证文件的定位：后端没有拿到凭证记录给出的文件时，按数据根布局查找。
 
 This module intentionally avoids importing lib/__init__.py to prevent circular
 imports during early environment initialization.
@@ -16,13 +14,12 @@ def resolve_vertex_credentials_path(data_root: Path | None = None) -> Path | Non
     Resolve the Vertex credentials JSON file to use.
 
     Searches ``<credentials_dir>/vertex_credentials.json`` first, then falls
-    back to the first ``*.json`` file in ``<credentials_dir>/`` for legacy
-    layouts.
+    back to the first ``*.json`` file (by name) in ``<credentials_dir>/``.
 
     ``credentials_dir`` is the Vertex credentials directory given by the data
     root layout (the configured data root unless ``data_root`` is passed),
-    matching where :func:`server.routers.providers.upload_vertex_credential`
-    writes uploads.
+    where :func:`server.routers.providers.upload_vertex_credential` writes
+    uploads as ``vertex_cred_<credential id>.json``.
     """
     from lib.infra.data_root_layout import DataRootLayout
 

@@ -23,8 +23,8 @@ from lib.backends.audio_backends.base import (
 )
 from lib.backends.gemini_shared import VERTEX_SCOPES, gemini_http_options, resolve_gemini_api_key, with_retry_async
 from lib.backends.transport_layer import TransportLayer
-from lib.config.system_config import resolve_vertex_credentials_path
 from lib.config.url_utils import normalize_base_url
+from lib.config.vertex_credentials import resolve_vertex_credentials_path
 from lib.infra.async_thread import run_noninterruptible_sync
 
 if TYPE_CHECKING:

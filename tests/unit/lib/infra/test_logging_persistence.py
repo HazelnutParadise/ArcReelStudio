@@ -52,7 +52,6 @@ def reset_root_logger():
 def isolated_log_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
     """数据根钉到 tmp_path/data，文件日志应落在 ``<数据根>/logs``。"""
     monkeypatch.setenv("ARCREEL_DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.delenv("ARCREEL_LOG_DIR", raising=False)
     monkeypatch.delenv("ARCREEL_LOG_FILE_DISABLED", raising=False)
     app_data_dir_mod.reset_for_tests()
     yield tmp_path / "data" / "logs"
@@ -110,68 +109,6 @@ def test_disabled_env_accepts_aliases(isolated_log_dir: Path, monkeypatch: pytes
     logging_config.setup_logging()
     root = logging.getLogger()
     assert not any(isinstance(h, TimedRotatingFileHandler) for h in root.handlers)
-
-
-# --- 日志位置 -----------------------------------------------------------------
-
-
-@pytest.fixture
-def isolated_data_dir(tmp_path: Path, isolated_log_dir: Path) -> Path:
-    """数据根为 tmp_path/data。"""
-    (tmp_path / "data").mkdir()
-    return tmp_path
-
-
-def _emit_and_read_log(log_dir: Path) -> str:
-    logging.getLogger("test.persistence").info("hello-arcreel")
-    for h in logging.getLogger().handlers:
-        h.flush()
-    return (log_dir / "arcreel.log").read_text(encoding="utf-8")
-
-
-def test_log_dir_env_is_ignored(isolated_data_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    custom = isolated_data_dir / "custom-logs"
-    monkeypatch.setenv("ARCREEL_LOG_DIR", str(custom))
-
-    logging_config.setup_logging()
-
-    assert "hello-arcreel" in _emit_and_read_log(isolated_data_dir / "data" / "logs")
-    assert not custom.exists()
-
-
-def test_log_dir_env_set_warns_once(
-    isolated_data_dir: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
-) -> None:
-    monkeypatch.setenv("ARCREEL_LOG_DIR", str(isolated_data_dir / "custom-logs"))
-
-    with caplog.at_level(logging.WARNING, logger="lib.infra.logging_config"):
-        logging_config.warn_if_log_dir_env_set()
-
-    assert [rec.levelno for rec in caplog.records] == [logging.WARNING]
-
-
-def test_log_dir_env_unset_no_warning(isolated_data_dir: Path, caplog: pytest.LogCaptureFixture) -> None:
-    with caplog.at_level(logging.WARNING, logger="lib.infra.logging_config"):
-        logging_config.warn_if_log_dir_env_set()
-
-    assert caplog.records == []
-
-
-def test_log_dir_occupied_by_project_is_left_untouched(
-    isolated_data_dir: Path, caplog: pytest.LogCaptureFixture
-) -> None:
-    """``<数据根>/logs`` 是一个项目目录时不挂文件日志，项目目录原样不动，并告警一次。"""
-    project = isolated_data_dir / "data" / "logs"
-    project.mkdir()
-    (project / "project.json").write_text("{}", encoding="utf-8")
-
-    with caplog.at_level(logging.WARNING, logger="lib.infra.logging_config"):
-        logging_config.setup_logging()
-        logging.getLogger("test.persistence").info("hello-arcreel")
-
-    assert sorted(p.name for p in project.iterdir()) == ["project.json"]
-    assert not any(isinstance(h, TimedRotatingFileHandler) for h in logging.getLogger().handlers)
-    assert [rec.levelno for rec in caplog.records if rec.name == "lib.infra.logging_config"] == [logging.WARNING]
 
 
 def test_setup_logging_file_false_skips_file_handler(isolated_log_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:

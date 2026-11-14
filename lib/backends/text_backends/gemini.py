@@ -123,7 +123,7 @@ class GeminiTextBackend:
 
             from google.oauth2 import service_account
 
-            from lib.config.system_config import resolve_vertex_credentials_path
+            from lib.config.vertex_credentials import resolve_vertex_credentials_path
 
             credentials_file = Path(credentials_path) if credentials_path else resolve_vertex_credentials_path()
             if credentials_file is None:

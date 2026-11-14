@@ -349,14 +349,6 @@ class ConfigService:
         if parsed < 1:
             raise ProviderConfigValueError(provider, key, value, code=_MAX_WORKERS_CODE)
 
-    @staticmethod
-    def _parse_backend(raw: str, fallback: str) -> tuple[str, str]:
-        if "/" in raw:
-            provider_id, model_id = raw.split("/", 1)
-            return provider_id, model_id
-        parts = fallback.split("/", 1)
-        return parts[0], parts[1]
-
 
 async def read_video_poll_timeout_seconds() -> int:
     """自开一个 session 读一次全局视频轮询超时。

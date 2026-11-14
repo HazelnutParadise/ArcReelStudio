@@ -55,7 +55,6 @@ from lib.infra.httpx_shared import shutdown_http_client, startup_http_client
 from lib.infra.logging_config import (
     attach_file_handler,
     setup_logging,
-    warn_if_log_dir_env_set,
 )
 from lib.infra.loop_stall_probe import start_loop_stall_probe, stop_loop_stall_probe
 from lib.infra.path_safety import try_safe_join
@@ -398,7 +397,6 @@ async def lifespan(app: FastAPI):
 
     # 日志文件持久化：挂上写到数据根日志目录的 file handler，之后的启动步骤都会写进日志文件。
     attach_file_handler()
-    warn_if_log_dir_env_set()
     warn_if_env_diverges_from_file()
 
     warn_if_auth_disabled()

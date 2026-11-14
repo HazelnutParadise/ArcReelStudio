@@ -65,19 +65,16 @@ async def test_build_options_includes_sandbox_settings(
 def test_session_manager_wires_env_resolved_roots_into_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """SessionManager 负责 env 解析（ARCREEL_PROFILE_DIR / data_root 参数），把 resolve
     后的根路径喂给 AgentAccessPolicy——用户把数据/profile 目录搬到任意位置（含 repo 外）
-    时，deny 必须跟着指过去；日志在 ``<数据根>/logs``，ARCREEL_LOG_DIR 不影响 deny 范围。"""
+    时，deny 必须跟着指过去；日志在 ``<数据根>/logs``，代码目录下的 ``logs`` 不在 deny 范围。"""
     repo = tmp_path / "repo"
     repo.mkdir()
     external_data = tmp_path / "external_data" / "projects"
     data_logs = external_data / "logs"
     data_logs.mkdir(parents=True)
     (data_logs / "arcreel.log").write_text("secret\n", encoding="utf-8")
-    stale_logs = tmp_path / "stale_logs"
-    stale_logs.mkdir()
     external_profile = tmp_path / "external_profile"
     (external_profile / ".claude").mkdir(parents=True)
 
-    monkeypatch.setenv("ARCREEL_LOG_DIR", str(stale_logs))
     monkeypatch.setenv("ARCREEL_PROFILE_DIR", str(external_profile))
 
     sm = SessionManager(repo, SessionMetaStore(), data_root=external_data, sandbox_enabled=True)
@@ -93,8 +90,7 @@ def test_session_manager_wires_env_resolved_roots_into_policy(tmp_path: Path, mo
     deny_read = policy.build_sandbox_settings(cwd)["filesystem"]["denyRead"]
     assert str(data_logs.resolve()) in deny_read
     assert policy.is_sensitive_path((external_profile / ".claude" / "settings.json").resolve())
-    # ARCREEL_LOG_DIR 指向的目录与 repo/logs 都不是日志位置，不进 denyRead
-    assert str(stale_logs.resolve()) not in deny_read
+    # repo/logs 不是日志位置，不进 denyRead
     assert str((repo / "logs").resolve()) not in deny_read
 
 

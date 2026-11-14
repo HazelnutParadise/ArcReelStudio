@@ -176,8 +176,6 @@ ArcReel runs Alembic migrations at application startup to upgrade the database s
 
 The schema is built from a single baseline migration. A database created by upstream ArcReel or by an early development build of this project has no matching starting point; startup stops with `Can't locate revision identified by '…'`, so start with a new database instead.
 
-At startup, ArcReel also converts historical call output paths to project-relative paths when it can identify the project root, so usage detail thumbnails can survive a data directory move. Ambiguous old paths remain unchanged and are logged. Queued legacy text tasks use the current data directory; any old directory in their payload is ignored.
-
 You must still create a backup before upgrading. Automatic migration handles schema upgrades; it does not replace a rollback-capable data backup.
 
 ### 2.4 Connect to an Existing PostgreSQL {#external-postgresql}
@@ -241,7 +239,7 @@ Notes:
 - `AUTH_ENABLED=false` is only for a local machine protected by its own network boundary. Compose publishes port `1241` on all host interfaces by default, so never disable authentication for remote deployments. While authentication is off, startup logs a WARNING.
 - `.env` may contain secrets. Do not commit it to version control.
 - Vertex credential files should be readable only by the user who runs ArcReel.
-- File logs are always written to `logs/` under the data root. The old `ARCREEL_LOG_DIR` variable no longer takes effect; if it is still set, startup logs a one-time notice. Set `ARCREEL_LOG_FILE_DISABLED=true` if you only want logs on stdout.
+- File logs are always written to `logs/` under the data root. Set `ARCREEL_LOG_FILE_DISABLED=true` if you only want logs on stdout.
 - Third-party model API keys are normally managed on the ArcReel Settings page. Do not include them in public documentation.
 
 The remote MCP endpoint is `/mcp` and always requires an API Key with an `arc-` prefix; it never permits anonymous access, even when `AUTH_ENABLED=false`. Remote access needs no extra `MCP_*` configuration: paste the endpoint URL shown under "External agent access" in Settings, together with an API Key created under "Access tokens", into your client, and connect through an HTTPS reverse proxy, VPN, or secure tunnel that preserves long-lived SSE connections.

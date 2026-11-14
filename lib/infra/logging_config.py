@@ -9,7 +9,7 @@ from pathlib import Path
 
 import httpx2
 
-from lib.infra.data_root_layout import PROJECT_FILENAME, DataRootLayout, is_project_dir
+from lib.infra.data_root_layout import DataRootLayout
 
 _HANDLER_ATTR = "_arcreel_logging"
 _FILE_HANDLER_ATTR = "_arcreel_file_logging"
@@ -41,24 +41,6 @@ def _file_logging_disabled() -> bool:
 def resolve_log_dir() -> Path:
     """文件日志目录：``<数据根>/logs``（``DataRootLayout.log_dir``）。"""
     return DataRootLayout.current().log_dir
-
-
-def warn_if_log_dir_env_set() -> None:
-    """日志位置不读取 ``ARCREEL_LOG_DIR``；它仍被设置时提示一次日志的实际去向。"""
-    raw = os.environ.get("ARCREEL_LOG_DIR", "").strip()
-    if not raw:
-        return
-    destination = (
-        "file logging is disabled by ARCREEL_LOG_FILE_DISABLED"
-        if _file_logging_disabled()
-        else f"file logs are written to {resolve_log_dir()}"
-    )
-    logging.getLogger(__name__).warning(
-        "ARCREEL_LOG_DIR=%s no longer takes effect; %s. Existing files under %s are not moved.",
-        raw,
-        destination,
-        raw,
-    )
 
 
 def setup_logging(level: str | None = None, *, file: bool = True) -> None:
@@ -135,15 +117,6 @@ def attach_file_handler(formatter: logging.Formatter | None = None) -> None:
 
     try:
         log_dir = resolve_log_dir()
-        # 日志目录位置上是一个项目时不往里写任何东西。
-        if is_project_dir(log_dir):
-            logging.getLogger(__name__).warning(
-                "file logging disabled for this run: %s contains %s; "
-                "file logging resumes once that directory no longer holds a project",
-                log_dir,
-                PROJECT_FILENAME,
-            )
-            return
         log_dir.mkdir(parents=True, exist_ok=True)
         file_handler = TimedRotatingFileHandler(
             filename=str(log_dir / "arcreel.log"),
