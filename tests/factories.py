@@ -456,24 +456,6 @@ def wrap_the_last_migration_step(monkeypatch: Any, around: Callable[..., object]
     monkeypatch.setattr(runner, "migrate_v19_to_v20", wrapped)
 
 
-def wrap_the_last_migration_step(monkeypatch: Any, around: Callable[..., object]) -> None:
-    """把迁移链的最后一步（v19→v20）换成 ``around(step, project_dir, **kwargs)``，``step`` 是原来那一步。
-
-    这一步只改 ``project.json`` 的模型字段，盘上数据几乎让它失败不了；需要「链在这个项目上失败」时由
-    ``around`` 抛错，需要照常迁移时调 ``step``。runner 无论按 ``MIGRATORS`` 还是按名字调这一步都换得到。
-    """
-    from lib.project.project_migrations import runner
-    from lib.project.project_schema import CURRENT_PROJECT_SCHEMA_VERSION
-
-    step = runner.MIGRATORS[CURRENT_PROJECT_SCHEMA_VERSION - 1]
-
-    def wrapped(project_dir: Path, **kwargs: Any) -> object:
-        return around(step, project_dir, **kwargs)
-
-    monkeypatch.setitem(runner.MIGRATORS, CURRENT_PROJECT_SCHEMA_VERSION - 1, wrapped)
-    monkeypatch.setattr(runner, "migrate_v19_to_v20", wrapped)
-
-
 def activate_reference_project(project_dir: Path, project: dict[str, Any]) -> dict[str, Any]:
     """把当前形态的参考生视频项目写盘并激活产物清单，返回落盘的项目字典。
 

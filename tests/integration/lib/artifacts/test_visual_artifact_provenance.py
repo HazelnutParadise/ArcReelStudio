@@ -27,8 +27,6 @@ from lib.artifacts.visual_artifact_provenance import (
     build_reference_video_artifact_visual_basis,
     build_storyboard_image_visual_basis,
     build_storyboard_video_artifact_visual_basis,
-    project_basis_style_description,
-    without_asset_names,
 )
 from lib.project.asset_derivatives import build_derivative_sheet_basis
 from lib.script.reference_video.request_projection import ResolvedReferenceAsset
@@ -461,7 +459,6 @@ def _style_bound_bases(tmp_path: Path, *, style_description: str | None) -> tupl
         style="水墨",
         grid_aspect_ratio="1:1",
         references=references,
-        asset_names=True,
         **described,
     )
     member_basis = build_grid_member_storyboard_visual_basis(
@@ -474,7 +471,6 @@ def _style_bound_bases(tmp_path: Path, *, style_description: str | None) -> tupl
         style="水墨",
         member_aspect_ratio="16:9",
         references=references,
-        asset_names=True,
         **described,
     )
     video_basis = build_reference_video_artifact_visual_basis(
@@ -488,8 +484,8 @@ def _style_bound_bases(tmp_path: Path, *, style_description: str | None) -> tupl
 
 
 _EMPTY_DESCRIPTION_STYLE_BOUND_DIGESTS = (
-    "sha256-v1:fde8d88b4d4fd080b55ec7235d765758ffa3bd6c69da80addbd9d58f9ee10044",
-    "sha256-v1:f4a0eaf0e55365968ca3dc765bce0bea86e4d023920df9ef88765018bfae151e",
+    "sha256-v1:78073cb43fb10b2ea653a3a8b3a815a925df66c4bbf6b5d37db111a99c67430f",
+    "sha256-v1:1577bbc921c938e9ce22562763beead09aa6a09f9d53b3d11b409aa5fe198686",
     "sha256-v1:32958d73d0a053a82bc86176f62ea977e5f9c10d97498c09b5a99f683d62b575",
 )
 
@@ -509,30 +505,14 @@ def test_grid_and_reference_video_bases_track_style_description(tmp_path: Path) 
     padded = _style_bound_bases(tmp_path / "padded", style_description="  柔光水彩\n")
 
     assert soft == (
-        "sha256-v1:ce80159db288f150bccfaa7076d9723f71838110bfc186c3af3ca96b841989e9",
-        "sha256-v1:b8a3424fedf2e9d1372439a0729867a4a0d077d940db4cbe3ee5c3cc49c2d288",
+        "sha256-v1:c665d0abf7f392f69166f99c041b9064ce573889e869577921b4de52d77483cc",
+        "sha256-v1:1f6a7faf58e20a33cf455751cd07cee78b5c17d7c66ecd4041331df0c46c521d",
         "sha256-v1:b3af17f1d5d4169b815780967a5710fbffd272fa23dd465f1df257035f3d0402",
     )
     assert padded == soft
     for before, after, empty in zip(soft, hard, _EMPTY_DESCRIPTION_STYLE_BOUND_DIGESTS, strict=True):
         assert after != before
         assert before != empty
-
-
-@pytest.mark.parametrize(
-    ("project", "expected"),
-    [
-        ({"schema_version": 14, "style_description": "  柔光水彩\n"}, "柔光水彩"),
-        ({"schema_version": 14, "style_description": 7}, ""),
-        ({"schema_version": 13, "style_description": "柔光水彩"}, ""),
-        ({"style_description": "柔光水彩"}, ""),
-    ],
-)
-def test_project_basis_style_description_keeps_pre_v14_projects_on_the_undescribed_basis(
-    project: dict[str, object], expected: str
-) -> None:
-    """v13→v14 之前的迁移步沿用不记描述的口径，描述由 v13→v14 统一补记。"""
-    assert project_basis_style_description(project) == expected
 
 
 def test_storyboard_video_visual_basis_excludes_sound_execution_and_duration(tmp_path: Path) -> None:
@@ -1126,21 +1106,3 @@ def test_storyboard_and_grid_bases_do_not_depend_on_asset_names(tmp_path: Path) 
     # 对不上参考图的 mention 发给模型时就是名字，依据照记；上一分镜图的身份不是资产名，照记。
     assert inputs["image_prompt"]["scene"] == "图1推门，@[路人]回头"
     assert inputs["references"][1]["logical_identity"] == {"type": "storyboard", "id": "E1S00"}
-
-
-def test_dropping_asset_names_from_a_frozen_basis_matches_the_builder(tmp_path: Path) -> None:
-    """v18→v19 按版本记录冻结的记名依据改写，结果与构造器直接投影的不记名依据逐字一致。"""
-    named = _named_image_bases(tmp_path / "named", "Alice", asset_names=True)
-    unnamed = _named_image_bases(tmp_path / "unnamed", "Alice")
-
-    for kind, basis in named.items():
-        evidence = basis.to_evidence_dict()
-        rewritten = ArtifactBasis.build(
-            basis.kind, kind_version=basis.kind_version, inputs=without_asset_names(basis.kind, evidence["inputs"])
-        )
-        assert rewritten.digest == unnamed[kind].digest, kind
-        assert rewritten.digest != basis.digest, kind
-        assert (
-            without_asset_names(basis.kind, unnamed[kind].to_evidence_dict()["inputs"])
-            == json.loads(unnamed[kind].normalized_bytes())["inputs"]
-        ), kind

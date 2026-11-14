@@ -197,10 +197,110 @@ def _raised_tts_project(root: Path) -> Path:
     return project_dir
 
 
-_AD_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {}
-_GRID_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {}
-_PRESENTATION_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {}
-_RAISED_TTS_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {}
+_AD_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
+    ("asset-sheet", "character", "张三"): (
+        "characters/张三.png",
+        "sha256-v1:c60aa57fad63d4d977b471be4a7aa226f2dd79a45422f6aee7ab280d6e254412",
+    ),
+    ("asset-sheet", "character", "张三/劲装"): (
+        "characters/derivatives/张三/劲装.png",
+        "sha256-v1:1455f4d62cfe318d355378c9b68437ca331b72ebab496540bac472db9dd5b89f",
+    ),
+    ("asset-sheet", "product", "保温杯"): (
+        "products/保温杯.png",
+        "sha256-v1:c711a0553511cb630ffbffb65c965e60cb1ec186027aa6f741248951535d4541",
+    ),
+    ("asset-sheet", "prop", "玉佩"): (
+        "props/玉佩.png",
+        "sha256-v1:43380f2f9ef9e695d2efbfd7f840bd6ac69222045ed253e55c7457db6c28876c",
+    ),
+    ("asset-sheet", "scene", "祠堂"): (
+        "scenes/祠堂.png",
+        "sha256-v1:6fd38a857e8291123b0d566b2135fc29437935797dfaa9fb38eec673fca4bad5",
+    ),
+    ("episode-storyboard", "1", "E1S01"): (
+        "storyboards/scene_E1S01.png",
+        "sha256-v1:a90ec015d21b4847d45d13f4e0287ae8995ca967bb5f45acac4b0b18700a7d61",
+    ),
+    ("episode-storyboard", "1", "E1S02"): (
+        "storyboards/scene_E1S02.png",
+        "sha256-v1:c998b3aa43b66edaa0ee39d8636128f00f613cbb8d94d6f5e7e383698427b021",
+    ),
+}
+_GRID_STORYBOARD_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
+    ("asset-sheet", "character", "阿离"): (
+        "characters/阿离.png",
+        "sha256-v1:c965f752221fb36ba4b7d90378de3fbc0e073248cf0459a0dbeb95e3d5e28ee2",
+    ),
+    ("asset-sheet", "scene", "雨巷"): (
+        "scenes/雨巷.png",
+        "sha256-v1:5be0221e4906d075eb5710e65d5809f5ae4ee98045f1c587c5fd209f4ee5b704",
+    ),
+    ("episode-grid", "1", "grid_123456789abc"): (
+        "grids/grid_123456789abc.png",
+        "sha256-v1:6934fe6cfd566013274c9ba2f1ca7600393a7791e99d47afe2b24f268c460aca",
+    ),
+    ("episode-script", "1"): (
+        "scripts/episode_1.json",
+        "sha256-v1:491358f65d54863cc9473ffcbebc137bc5b1a8d930a431d21371c8ad2cc01f62",
+    ),
+    ("episode-script-plan", "1"): (
+        "drafts/episode_1/script_plan_segments.json",
+        "sha256-v1:dcf49f23b3c9527bdcc2713eccfd3bb0a499868ba8ea708204a36c62065e0ae4",
+    ),
+    ("episode-storyboard", "1", "E1S01"): (
+        "storyboards/scene_E1S01.png",
+        "sha256-v1:acb2a1918e0d6e4fff2cac2318d6fbebe7b7d2521ecb5c647abd388c57e61ab2",
+    ),
+    ("episode-storyboard", "1", "E1S02"): (
+        "storyboards/scene_E1S02.png",
+        "sha256-v1:7716a82d38075149f9a57d97b34e856e28b20650579d8b42ce48df6a8ed06684",
+    ),
+    ("episode-storyboard", "1", "E1S03"): (
+        "storyboards/scene_E1S03.png",
+        "sha256-v1:6bfc1d635fa63f16a371a19aef718174210a14181ebb870e6557f515ef8a956e",
+    ),
+}
+_PRESENTATION_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
+    ("episode-presentation", "1", "E1S1", "post_production"): (
+        "presentations/episode_1/RTFTMQ.post_production.json",
+        "sha256-v1:5653d46b7723cb81758652cb1d01836bb45b0e17a72966212ac01e4ff73d5948",
+    ),
+    ("episode-script", "1"): (
+        "scripts/episode_1.json",
+        "sha256-v1:64a4c6c527fb0a9e643634ec73269a05ba8a4ee89b07910fb9bbc2b8d84ef12e",
+    ),
+    ("episode-storyboard", "1", "E1S1"): (
+        "storyboards/scene_E1S1.png",
+        "sha256-v1:0ddc19ee7cd130527f37e7ee2086bdfb8405945e73ffe8695e76716beca7ceb3",
+    ),
+    ("episode-subtitle", "1", "E1S1", "post_production"): (
+        "subtitles/episode_1/RTFTMQ.post_production.json",
+        "sha256-v1:b00e1399d1cea9b12075dd9ca4f4e2b72318796c320f0f60729f545a8da55931",
+    ),
+    ("episode-video", "1", "E1S1"): (
+        "videos/scene_E1S1.mp4",
+        "sha256-v1:5fb83c20911d2f7bd091d0aef46a2ae5ce2685216923a3e80d5f95fa9fa5ad79",
+    ),
+}
+_RAISED_TTS_DIGESTS: dict[tuple[str, ...], tuple[str, str]] = {
+    ("episode-audio", "1", "E1S1"): (
+        "audio/segment_E1S1.wav",
+        "sha256-v1:1145ed2273878afefbdfb4863f79bc15bfe5166b14d85733d50ba60065edaf46",
+    ),
+    ("episode-script", "1"): (
+        "scripts/episode_1.json",
+        "sha256-v1:64a4c6c527fb0a9e643634ec73269a05ba8a4ee89b07910fb9bbc2b8d84ef12e",
+    ),
+    ("episode-storyboard", "1", "E1S1"): (
+        "storyboards/scene_E1S1.png",
+        "sha256-v1:0ddc19ee7cd130527f37e7ee2086bdfb8405945e73ffe8695e76716beca7ceb3",
+    ),
+    ("episode-video", "1", "E1S1"): (
+        "videos/scene_E1S1.mp4",
+        "sha256-v1:5fb83c20911d2f7bd091d0aef46a2ae5ce2685216923a3e80d5f95fa9fa5ad79",
+    ),
+}
 
 
 @pytest.mark.parametrize(
