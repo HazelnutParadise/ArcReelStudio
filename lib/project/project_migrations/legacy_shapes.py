@@ -8,7 +8,7 @@
 - **同一资产表里名字归一后相同**（去两端空白、Unicode NFC、不区分大小写），或名字归一后为空：
   留第一条，其余从资产表去掉；资产图文件不动，改前的 ``project.json`` 留作保留副本。去掉的条目
   名下的衍生按资产合并的规则并进保留条目（迁走的衍生图搬到保留名下），各集剧本与草稿里指向只差
-  大小写那条的引用改写为保留名。
+  大小写那条的引用改写为保留名。被去掉条目的资产图登记撤掉（共用清单键时只撤登记在它的图上的那条）。
 - **资产图、参考图或参考音频指向别的资产名下的文件**（旧版资产 PATCH 接受任意路径）：复制一份到本资产名下
   并改指过去，原文件留给它的主人。本资产名下的落点已被另一份内容占着时，那一份先挪成保留副本。资产图的清单
   登记随之改写：登记在旧路径上的换到副本（同字节，依据摘要不变），登记在落点上的描述的是被挪走的那份，撤掉。
@@ -17,7 +17,9 @@
   条目上指向原 id 规范媒体路径的产物引用清空——那些文件属于保留原 id 的条目；只描述这些媒体的
   生成状态一并清空，换号条目读作尚未生成。
 - **两集里有同号条目**：媒体与登记归 id 前缀所指的那一集，对不上时归账本里靠前的那一集；另一集的
-  条目在本集换新 id，不带走媒体。
+  条目在本集换新 id，不带走媒体，本集名下原 id 的登记撤掉；本集宫格记录的成员名单列着原 id 时，那张宫格与它切出
+  的分镜图的登记一并撤掉，记录与图文件不动。剪辑时间线的片段按 id 引用的是原 id 那条的视频（截取点绑在它的视频
+  版本上），不改写，读作单元已删除；版本历史按 id 记在项目级，原 id 仍归保留它的那一集，不动。
 
 读不出的 ``project.json`` 或剧本不在这里处理：之后的迁移步照旧拒绝整个项目。
 """
@@ -29,7 +31,7 @@ import json
 import logging
 import os
 import re
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterable, Iterator
 from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePath, PurePosixPath
 from typing import Any, cast
@@ -236,6 +238,7 @@ def _drop_duplicate_assets(work: _Work) -> None:
         return
     _rewrite_dropped_asset_references(work, drops)
     _carry_merged_derivative_records(work, drops)
+    _retire_dropped_sheet_claims(work, drops)
     for drop in drops:
         bucket = work.project[ASSET_SPECS[drop.asset_type].bucket_key]
         source_entry = bucket.pop(drop.name)
@@ -399,6 +402,68 @@ def _carry_merged_derivative_records(work: _Work, drops: list[_AssetDrop]) -> No
     if changed:
         ensure_versioned_backup(versions_path, work.schema_version)
         atomic_write_json(versions_path, versions)
+
+
+def _retire_claims(work: _Work, keys: Iterable[ArtifactKey], what: str) -> None:
+    """撤掉 *keys* 在清单里的登记（文件不动）；先留版本化备份，清单在规整期间被别处改动时报错。"""
+
+    if not (work.project_dir / MANIFEST_FILENAME).is_file():
+        return
+    adapter = ProjectArtifactManifestAdapter(work.project_dir)
+    stored = {key: entry for key in dict.fromkeys(keys) if (entry := adapter.get_entry(key)) is not None}
+    if not stored:
+        return
+    ensure_versioned_backup(work.project_dir / MANIFEST_FILENAME, work.schema_version)
+    if not adapter.replace_entries_if_matches_atomically(expected=stored, replacements=dict.fromkeys(stored)):
+        raise RuntimeError(f"artifact manifest changed while retiring {what}")
+
+
+def _declared_artifact_path(project_dir: Path, value: object) -> str | None:
+    """资产图字段值的清单路径写法：先按运行时的解析归到项目相对写法（``./``、反斜杠、``..``、指向项目内的绝对路径），
+    再规范成清单路径；空值、落在项目之外或不是合法的产物路径时为 ``None``。"""
+
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return normalize_artifact_path(_canonical_reference(project_dir, value))
+    except ValueError:
+        return None
+
+
+def _retire_dropped_sheet_claims(work: _Work, drops: list[_AssetDrop]) -> None:
+    """被去掉条目的资产图登记撤掉，与 :func:`_carry_sheet_claims` 撤掉落点上的登记同一口径：不换键，图留在盘上。
+
+    - 只差大小写的变体有自己的清单键，条目去掉后那条登记没有主人，留着会按不区分大小写的路径占住保留条目的登记位。
+    - 只差空白或 Unicode 形态的变体与保留条目共用一个键：登记在被去掉那条的图上时撤掉，保留条目读作缺失，
+      不借它的依据伪造时效；登记在保留条目的图上、或两边路径写法认不出时不动。
+
+    版本历史不动：它不是时效登记，按名字的原写法记在被去掉的名下，没有资产会解析到它。
+    先于删资产的 ``project.json`` 提交；重跑时仍能发现这些重名资产，登记已撤，无事可做。
+    """
+
+    retired: list[ArtifactKey] = []
+    for drop in drops:
+        if not drop.kept:
+            continue
+        spec = ASSET_SPECS[drop.asset_type]
+        bucket = work.project[spec.bucket_key]
+        dropped_key = ArtifactKey.asset_sheet(drop.asset_type, drop.name)
+        if dropped_key != ArtifactKey.asset_sheet(drop.asset_type, drop.kept):
+            retired.append(dropped_key)
+            continue
+        if not (work.project_dir / MANIFEST_FILENAME).is_file():
+            continue
+        stored = ProjectArtifactManifestAdapter(work.project_dir).get_entry(dropped_key)
+        source_entry, kept_entry = bucket.get(drop.name), bucket.get(drop.kept)
+        dropped_path = _declared_artifact_path(
+            work.project_dir, source_entry.get(spec.sheet_field) if isinstance(source_entry, dict) else None
+        )
+        kept_path = _declared_artifact_path(
+            work.project_dir, kept_entry.get(spec.sheet_field) if isinstance(kept_entry, dict) else None
+        )
+        if stored is not None and dropped_path is not None and stored.artifact_path == dropped_path != kept_path:
+            retired.append(dropped_key)
+    _retire_claims(work, retired, "the sheet claim of a dropped asset")
 
 
 def _relocate_derivative_sheet(work: _Work, derivative: object, owner: str, kept: str, name: str) -> dict[str, str]:
@@ -711,7 +776,7 @@ def _repair_item_ids(work: _Work) -> None:
 
     产物路径只由条目 id 决定，两集同号的条目会认领同一个媒体文件。媒体与登记归 id 前缀 ``E<n>``
     所指的那一集，前缀对不上任何一个同号集时归账本里靠前的那一集；另一集的条目在本集换新 id、
-    不带走媒体。
+    不带走媒体，本集名下原 id 的登记一并撤掉，不换到新 id 或别的集名下。
     """
 
     scripts: list[tuple[int, Path, dict[str, Any], list[Any], str, str]] = []
@@ -764,6 +829,24 @@ def _repair_item_ids(work: _Work) -> None:
             changes.append((old_id, new_id))
         if not changes:
             continue
+        # 换号后本集已没有条目持有的原 id，它的登记没有主人，还占着另一集的规范路径：先于剧本落盘撤掉，
+        # 剧本写盘前失败时重跑仍能发现同号条目，登记已撤，无事可做。本集仍有条目持有的原 id 不动。
+        # 原 id 的其他持有方：本集的宫格记录按 id 列成员，列着它的宫格投影不出来，宫格与同宫格切出的分镜图
+        # 登记一并撤掉（记录与图文件不动）。剪辑时间线的片段与版本历史也按 id 引用，不在这里改，见模块说明。
+        held = {item.get(id_field) for item in items if isinstance(item, dict)}
+        vanished = {old_id for old_id, _new_id in changes if old_id and old_id not in held}
+        _retire_claims(
+            work,
+            (
+                *(
+                    key
+                    for old_id in sorted(vanished)
+                    for key in ArtifactKey.episode_resource_artifacts(episode, old_id)
+                ),
+                *_grid_claims_listing(work, episode, path, items, id_field, vanished),
+            ),
+            "the claims of a renumbered item",
+        )
         ensure_versioned_backup(path, work.schema_version)
         atomic_write_json(path, script)
         for old_id, new_id in changes:
@@ -775,6 +858,54 @@ def _repair_item_ids(work: _Work) -> None:
                     params={"from": old_id, "to": new_id},
                 )
             )
+
+
+#: 宫格记录的文件名（与规划器读宫格记录的口径一致）。
+_GRID_RECORD = re.compile(r"grid_[0-9a-f]{12}\.json\Z")
+
+
+def _grid_claims_listing(
+    work: _Work, episode: int, script_path: Path, items: list[Any], id_field: str, vanished: set[str]
+) -> list[ArtifactKey]:
+    """本集宫格里成员名单列着 *vanished* 中某个 id 的那些：宫格登记与同宫格切出的分镜图登记。
+
+    规划器按条目 id 找宫格成员，找不到就不投影这张宫格，也不投影它切出的分镜图，它们的登记于是证明不了。
+    读不出或不是本集的记录跳过，交给规划器按原口径处理。
+    """
+
+    grids_dir = work.project_dir / "grids"
+    if not vanished or grids_dir.is_symlink() or not grids_dir.is_dir():
+        return []
+    keys: list[ArtifactKey] = []
+    for record_path in sorted(grids_dir.iterdir()):
+        if not _GRID_RECORD.fullmatch(record_path.name) or record_path.is_symlink() or not record_path.is_file():
+            continue
+        record = _load_object(record_path)
+        if record is None:
+            continue
+        grid_id, script_file, scene_ids = record.get("id"), record.get("script_file"), record.get("scene_ids")
+        if (
+            not isinstance(grid_id, str)
+            or not grid_id
+            or record.get("episode") != episode
+            or not isinstance(script_file, str)
+            or PurePosixPath(script_file.replace("\\", "/")).name != script_path.name
+            or not isinstance(scene_ids, list)
+            or vanished.isdisjoint(item for item in scene_ids if isinstance(item, str))
+        ):
+            continue
+        keys.append(ArtifactKey.episode_grid(episode, grid_id))
+        for item in items:
+            assets = item.get("generated_assets") if isinstance(item, dict) else None
+            resource_id = item.get(id_field) if isinstance(item, dict) else None
+            if (
+                isinstance(assets, dict)
+                and assets.get("grid_id") == grid_id
+                and isinstance(resource_id, str)
+                and resource_id
+            ):
+                keys.append(ArtifactKey.episode_storyboard(episode, resource_id))
+    return keys
 
 
 def _release_media_of(item: dict[str, Any], old_id: str, kind: str) -> None:

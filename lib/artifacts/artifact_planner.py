@@ -1208,15 +1208,24 @@ class TargetStatePlanner:
             # 当前媒体文件打不开：只有读不出才进「未能带入」，符号链接、非普通文件只记账。
             self._skip_blocked(key, artifact_path, observation.blocker)
             return None
+        artifact = self._safe_present_path(artifact_path)
+        if artifact is None:
+            # 正式文件不在：没有可带入的产物，读作缺失；快照读不读得出都无关紧要。
+            self._skip(key, artifact_path, "current media file is missing")
+            return None
         snapshot_observation = self.adapter.inspect_artifact(snapshot_rel)
         if snapshot_observation.blocker is not None and snapshot_observation.blocker.code == "artifact_unreadable":
             # 选中版本的快照打不开，当前媒体无从对证：同样算读不出。
             self._skip(key, artifact_path, "selected version snapshot cannot be read", category="unreadable")
             return None
-        artifact = self._safe_present_path(artifact_path)
+        if snapshot_observation.blocker is not None:
+            # 快照是符号链接、非普通文件或路径不合法：与正式文件同一口径，只记账。
+            self._skip(key, artifact_path, snapshot_observation.blocker.detail)
+            return None
         snapshot = self._safe_present_path(snapshot_rel)
-        if artifact is None or snapshot is None:
-            self._skip(key, artifact_path, "current media file or its version snapshot is missing")
+        if snapshot is None:
+            # 正式文件在、选中版本的快照不在：当前媒体无从对证，与快照读不出同样算读不出，用户该知道它没被带入。
+            self._skip(key, artifact_path, "selected version snapshot is missing", category="unreadable")
             return None
         try:
             if artifact.samefile(snapshot):

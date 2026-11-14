@@ -11,7 +11,14 @@ import json
 from pathlib import Path
 from typing import Any
 
-from lib.artifacts.artifact_manifest import ArtifactBasisDescriptor, compose_video_artifact_basis
+from lib.artifacts.artifact_manifest import (
+    ArtifactBasis,
+    ArtifactBasisDescriptor,
+    ArtifactKey,
+    ArtifactManifest,
+    ProjectArtifactManifestAdapter,
+    compose_video_artifact_basis,
+)
 from lib.artifacts.artifact_version_provenance import VIDEO_CURRENCY_DURATION_FIELD
 from lib.artifacts.version_manager import VERSION_CONTENT_DIGEST, VersionManager
 from lib.artifacts.video_artifact_facts import VideoArtifactCurrencyFacts
@@ -572,6 +579,28 @@ def add_asset_names_differing_only_in_case(project_dir: Path, bucket: str, sheet
     return variant
 
 
+def add_asset_names_differing_only_in_whitespace(
+    project_dir: Path, bucket: str, sheet_field: str, name: str, *, variant_sheet: str | None = None
+) -> str:
+    """同一资产表可登记出只差尾随空格的两条资产，两者共用一个产物清单键。
+
+    在 ``bucket`` 末尾加 ``name`` 与它带尾随空格的变体，各带一张资产图（变体的图落在规范路径上）；变体的资产图字段
+    写 ``variant_sheet``（旧版 PATCH 原样收下的写法，如 ``./`` 前缀或反斜杠），缺省为规范写法。返回变体名。
+    """
+
+    project_path = project_dir / "project.json"
+    project = _load_json_object(project_path)
+    variant = f"{name} "
+    for asset_name, content in ((name, b"kept"), (variant, b"variant")):
+        sheet = f"{bucket}/{asset_name}.png"
+        declared = variant_sheet if asset_name == variant and variant_sheet is not None else sheet
+        project[bucket][asset_name] = {"description": f"{asset_name} 的描述", sheet_field: declared}
+        (project_dir / sheet).parent.mkdir(parents=True, exist_ok=True)
+        (project_dir / sheet).write_bytes(content)
+    _write_json(project_path, project)
+    return variant
+
+
 def share_reference_files(project_dir: Path) -> dict[str, bytes]:
     """旧版资产 PATCH 接受任意路径，参考图与参考音频可以指向别的资产名下的文件。
 
@@ -718,6 +747,88 @@ def reuse_item_id_across_episodes(project_dir: Path, item_id: str) -> None:
     _write_json(project_path, project)
 
 
+def drop_selected_version_snapshot(project_dir: Path, resource_type: str, resource_id: str) -> str:
+    """手工打包或清理过版本目录的项目里，选中版本记录还在、它的快照文件已不在；返回被删掉的快照路径。"""
+
+    versions = _load_json_object(project_dir / "versions" / "versions.json")
+    history = versions[resource_type][resource_id]
+    [record] = [item for item in history["versions"] if item["version"] == history["current_version"]]
+    (project_dir / record["file"]).unlink()
+    return record["file"]
+
+
+def _register_sample_claim(project_dir: Path, key: ArtifactKey, artifact_path: str) -> None:
+    ArtifactManifest(ProjectArtifactManifestAdapter(project_dir)).register(
+        key,
+        artifact_path=artifact_path,
+        basis=ArtifactBasis.build("test/claim", kind_version=1, inputs={"path": artifact_path}),
+    )
+
+
+def claim_reused_item_id_in_the_copying_episode(project_dir: Path, item_id: str) -> None:
+    """两集同号 ``item_id``（:func:`reuse_item_id_across_episodes`），共用的分镜图最后由复制来的第 2 集重生。
+
+    清单按路径判重，只容得下一条登记：第 1 集的登记让位，那条登记在第 2 集名下（样本取已激活的
+    :func:`write_v19_project`）。
+    """
+
+    reuse_item_id_across_episodes(project_dir, item_id)
+    ProjectArtifactManifestAdapter(project_dir).delete_entry(ArtifactKey.episode_storyboard(1, item_id))
+    _register_sample_claim(project_dir, ArtifactKey.episode_storyboard(2, item_id), f"storyboards/scene_{item_id}.png")
+
+
+def add_grid_over_reused_item_id(project_dir: Path, item_id: str, grid_id: str = "grid_0123456789ab") -> str:
+    """复制来的第 2 集有一张宫格，成员是同号条目 ``item_id`` 与本集另一条 ``E2S02``，切出的分镜图都已登记。
+
+    宫格记录按条目 id 列成员；``E2S02`` 的分镜图是宫格第 2 格。返回宫格 id（样本先经
+    :func:`reuse_item_id_across_episodes` 造出同号条目）。
+    """
+
+    project = _load_json_object(project_dir / "project.json")
+    script_path = project_dir / _ledger_entry(project, 2)["script_file"]
+    script = _load_json_object(script_path)
+    sibling = {
+        **json.loads(json.dumps(script["segments"][0])),
+        "segment_id": "E2S02",
+        "image_prompt": "宫格第二格",
+        "generated_assets": {
+            "storyboard_image": "storyboards/scene_E2S02.png",
+            "grid_id": grid_id,
+            "grid_cell_index": 1,
+        },
+    }
+    script["segments"].append(sibling)
+    _write_json(script_path, script)
+    (project_dir / "storyboards" / "scene_E2S02.png").write_bytes(b"grid cell 2")
+    grid_image = f"grids/{grid_id}.png"
+    (project_dir / "grids").mkdir(exist_ok=True)
+    (project_dir / grid_image).write_bytes(b"grid composite")
+    _write_json(
+        project_dir / "grids" / f"{grid_id}.json",
+        {
+            "id": grid_id,
+            "episode": 2,
+            "script_file": "scripts/episode_2.json",
+            "scene_ids": [item_id, "E2S02"],
+            "grid_image_path": grid_image,
+            "rows": 1,
+            "cols": 2,
+            "cell_count": 2,
+            "frame_chain": [],
+            "status": "completed",
+            "prompt": "宫格",
+            "provider": "test",
+            "model": "test",
+            "grid_size": "1K",
+            "created_at": "2026-01-01T00:00:00Z",
+            "split_at": "2026-01-01T00:00:01Z",
+        },
+    )
+    _register_sample_claim(project_dir, ArtifactKey.episode_grid(2, grid_id), grid_image)
+    _register_sample_claim(project_dir, ArtifactKey.episode_storyboard(2, "E2S02"), "storyboards/scene_E2S02.png")
+    return grid_id
+
+
 def write_unreadable_grid_record(project_dir: Path, grid_id: str = "grid_0123456789ab") -> Path:
     """单个宫格记录损坏（不是合法 JSON）。"""
 
@@ -740,8 +851,12 @@ __all__ = [
     "SCHEMA_V19",
     "activate_at_schema_19",
     "add_asset_names_differing_only_in_case",
+    "add_asset_names_differing_only_in_whitespace",
     "add_colliding_asset_name",
+    "add_grid_over_reused_item_id",
     "break_script_item_ids",
+    "claim_reused_item_id_in_the_copying_episode",
+    "drop_selected_version_snapshot",
     "refer_to_asset_in_episode",
     "repoint_registered_asset_sheet",
     "reuse_item_id_across_episodes",
