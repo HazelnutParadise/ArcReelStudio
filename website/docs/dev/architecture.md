@@ -373,14 +373,14 @@ ArcReel 的项目不仅是一条数据库记录，还包括文件系统中的媒
 ├── logs/                      文件日志
 ├── vertex_keys/               Vertex 凭据
 ├── trial_runs/                端点「测试连接」的产物
-└── runtime/                   生成准入锁、迁移完成标记、迁移错误日志、图片缩略图缓存
+└── runtime/                   生成准入锁、会话导入完成标记、迁移错误日志、图片缩略图缓存
 ```
 
 - 各条目的位置只由 `lib/infra/data_root_layout.py` 的 `DataRootLayout` 给出，其它代码不自行拼接，也不从项目目录反推数据根。
 - 「什么是项目」只由 `is_project_dir` 回答：`projects/` 下名字符合项目名规则、并且带 `project.json` 的目录。数据根里的其它条目一概不是项目，新增系统目录不需要前缀或登记清单。
 - Agent 读访问对数据根默认拒绝，只放行当前项目和当前用户的记忆。
 - 代码目录只放代码与配置，运行时不向其中写数据。
-- 从旧布局升级时，启动阶段的数据根布局迁移（`lib/infra/data_root_layout_migration.py`）把条目搬到上述位置，完成后写入 `runtime/` 下的完成标记。
+- 只认上述布局，不迁移上游 ArcReel 安装的旧布局（`docs/adr/0132`）。
 
 ## 10. 数据库 {#database}
 

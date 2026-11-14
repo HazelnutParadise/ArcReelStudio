@@ -685,7 +685,7 @@ async def test_text_submission_cancellation_only_cleans_a_fresh_batch(
         resource_id="episode-1" if cancel_state == "membership" else "old",
         # payload 取请求对象自己的投影：本用例的 membership 变体要让新提交与这条在跑任务
         # 判成同一件事，两边的事实必须逐字段相同，写死字面量会随请求字段增删而失效。
-        payload=TextGenerationRequest(episode=1).to_payload() | {"projects_root": str(projects.data_root)},
+        payload=TextGenerationRequest(episode=1).to_payload(),
         batch_id=historical_batch_id,
         batch_unit_id="episode-1" if cancel_state == "membership" else "old",
     )
@@ -732,18 +732,14 @@ async def test_text_submission_cancellation_only_cleans_a_fresh_batch(
     ]
 
 
-@pytest.mark.parametrize("legacy_data_root", [False, True])
 async def test_queued_plan_resolves_data_root_from_current_config_and_preserves_typed_failure(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, legacy_data_root: bool
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     projects = ProjectManager(tmp_path / "projects")
     projects.create_project("planning", content_mode="narration")
     projects.create_project_metadata("planning", "Planning", "", "narration")
     monkeypatch.setenv("ARCREEL_DATA_DIR", str(projects.data_root))
     payload: dict[str, Any] = {"instructions": "按章节"}
-    if legacy_data_root:
-        # 旧版本排入的任务在载荷里带着入队时的数据根；数据根此后已挪走。
-        payload["projects_root"] = str(tmp_path / "moved-away")
     task = {
         "task_id": "task-plan",
         "project_name": "planning",

@@ -55,13 +55,9 @@ _VIDEO_EXECUTION_IDENTITY_KEYS = frozenset({"video_provider_i2v", "video_provide
 _REFERENCE_VIDEO_ENQUEUE_PAYLOAD_KEYS = frozenset({"script_file", "reference_request_options"})
 
 
-#: 旧版本入队的文本任务在载荷里带着入队时的数据根；执行按当前配置解析，判同也不计它。
-_LEGACY_TEXT_PAYLOAD_KEYS = frozenset({"projects_root"})
-
-
 def text_task_request_facts(payload: dict[str, Any] | None) -> dict[str, Any]:
-    """文本任务载荷里描述「这次请求做什么」的部分，用于判断两次提交是否为同一请求。"""
-    return {key: value for key, value in (payload or {}).items() if key not in _LEGACY_TEXT_PAYLOAD_KEYS}
+    """文本任务载荷里描述「这次请求做什么」的部分（即整个载荷），用于判断两次提交是否为同一请求。"""
+    return dict(payload or {})
 
 
 def _text_request_facts(task_type: str, payload: dict[str, Any] | None) -> dict[str, Any] | None:

@@ -23,7 +23,7 @@ The commands below consistently use the shell variable `source_projects` for the
 
 - Docker and Docker Compose are installed
 - The `sqlite3` command-line tool is installed; run `sqlite3 --version` to confirm
-- ArcReel currently uses the default SQLite deployment, with the database at `deploy/projects/arcreel.db`. If the file there still has the old name `.arcreel.db`, the new version has not been started yet; complete the upgrade first as described in [Data Root Layout Migration](./deployment.md#data-root-layout-migration)
+- ArcReel currently uses the default SQLite deployment, with the database at `deploy/projects/arcreel.db`
 - `deploy/production/pgdata/` and `deploy/production/projects/` do not contain production data that must be preserved
 
 ## Migration Steps {#migration-steps}

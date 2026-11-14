@@ -93,11 +93,6 @@ class DataRootLayout:
         return self.root / "arcreel.db"
 
     @property
-    def system_config_json_path(self) -> Path:
-        """旧版系统配置文件，只作一次性导入源。"""
-        return self.root / ".system_config.json"
-
-    @property
     def log_dir(self) -> Path:
         """文件日志目录。"""
         return self.root / "logs"
@@ -161,11 +156,6 @@ class DataRootLayout:
     def session_import_marker_path(self) -> Path:
         """本地 SDK 会话导入完成标记。"""
         return self.runtime_dir / "session-store-import.done"
-
-    @property
-    def layout_migration_marker_path(self) -> Path:
-        """数据根布局迁移完成标记；存在时启动不再执行迁移步骤。"""
-        return self.runtime_dir / "data-root-layout-migrated.done"
 
     @property
     def project_migration_error_log_path(self) -> Path:

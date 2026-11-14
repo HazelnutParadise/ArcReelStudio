@@ -88,7 +88,7 @@ docker compose pull
 docker compose up -d
 ```
 
-ArcReel automatically runs database and project-structure migrations at startup. A normal update does not intentionally delete mounted data directories, but you should still back up the data root and the database before updating. ArcReel does not support downgrades; going back to an older version requires restoring the backup taken before the update. When upgrading from a version that predates the data root layout change, see [Data Root Layout Migration](../ops/deployment.md#data-root-layout-migration) for the Compose volume changes. Do not substitute cleanup commands that delete data volumes for a normal update.
+ArcReel automatically runs database and project-structure migrations at startup. A normal update does not intentionally delete mounted data directories, but you should still back up the data root and the database before updating. ArcReel does not support downgrades; going back to an older version requires restoring the backup taken before the update. To bring projects over from upstream ArcReel, see [Moving In from Upstream ArcReel](../ops/deployment.md#from-upstream-arcreel). Do not substitute cleanup commands that delete data volumes for a normal update.
 
 The About section of the Settings page can check for a new version and open its release page, but it does not upgrade the server from the Web UI.
 

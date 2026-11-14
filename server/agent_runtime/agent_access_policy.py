@@ -324,8 +324,7 @@ class AgentAccessPolicy:
         ``projects/`` 不在清单里，Bash 在项目之间的读取不受这里约束。
 
         清单由两部分合成：布局登记的系统目录，加上数据根里实际存在的顶层条目——后者覆盖
-        默认库文件、旧布局残留（``.arcreel.db*``、``.arcreel/``、``.system_config.json`` 等）
-        和布局未登记的条目，不必逐项登记。
+        默认库文件和布局未登记的条目，不必逐项登记。
 
         编译前先把布局登记的系统目录建出来：CLI 对不存在的 deny 路径「Skipping non-existent
         read deny path」、不装 deny mount，而围栏只在会话启动时编译一次——全新安装上会话
