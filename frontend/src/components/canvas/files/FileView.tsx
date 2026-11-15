@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { ChevronRight, Download, File, Folder, FolderOpen, Loader2, RefreshCw, Trash2 } from "lucide-react";
 
 import { API } from "@/api";
@@ -117,9 +117,12 @@ type FileViewSection = "files" | "trash";
  */
 export function FileView({ projectName }: { projectName: string }) {
   const { t } = useTranslation("dashboard");
-  const [section, setSection] = useState<FileViewSection>("files");
+  // 地址带 `section=trash`（如资产页的「项目回收站」入口）时直接打开回收站分区
+  const initialSection: FileViewSection =
+    new URLSearchParams(useSearch()).get("section") === "trash" ? "trash" : "files";
+  const [section, setSection] = useState<FileViewSection>(initialSection);
   // 回收站分区首次打开时才挂载；之后两个分区常驻，切换只隐藏，在途写操作的占用不随卸载丢失。
-  const [trashMounted, setTrashMounted] = useState(false);
+  const [trashMounted, setTrashMounted] = useState(initialSection === "trash");
   // 「刷新」重拉已挂载的分区：两个分区都把它和回收站失效信号一起作为重拉条件。
   const [refreshKey, setRefreshKey] = useState(0);
 

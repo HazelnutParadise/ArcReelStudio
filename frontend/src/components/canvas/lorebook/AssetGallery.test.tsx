@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { API } from "@/api";
+import { API, ApiRequestError } from "@/api";
 import { LeaveGuardProvider, useLeaveGuard } from "@/components/shared/edit-unit/LeaveGuard";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -395,6 +395,66 @@ describe("AssetGallery", () => {
 
       expect(remove).toHaveBeenCalledWith("demo", "scene", "书房");
       await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    });
+
+    it("offers undo after deleting and restores the asset from the project trash", async () => {
+      const user = userEvent.setup();
+      vi.spyOn(API, "previewProjectAssetDeletion").mockResolvedValue({
+        success: true,
+        dry_run: true,
+        name: "书房",
+        references: 0,
+        episodes: [],
+      });
+      vi.spyOn(API, "deleteProjectAsset").mockResolvedValue({ success: true, trash_record_id: "rec-1" } as never);
+      const restore = vi
+        .spyOn(API, "restoreTrashRecord")
+        .mockResolvedValue({ object: { name: "书房" } } as unknown as Awaited<
+          ReturnType<typeof API.restoreTrashRecord>
+        >);
+      renderGallery();
+
+      await user.click(within(await openMenu(user, "书房")).getByRole("menuitem", { name: "删除" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "删除场景「书房」？" });
+      await user.click(within(dialog).getByRole("button", { name: "删除" }));
+
+      await waitFor(() => expect(useAppStore.getState().toast?.text).toBe("已删除「书房」，可在项目回收站找回"));
+      act(() => useAppStore.getState().toast?.action?.onClick());
+
+      await waitFor(() => expect(restore).toHaveBeenCalledWith("demo", "rec-1"));
+      await waitFor(() => expect(useAppStore.getState().toast?.text).toBe("已恢复「书房」"));
+    });
+
+    it("says why undoing an asset delete failed when the record is no longer in the trash", async () => {
+      const user = userEvent.setup();
+      vi.spyOn(API, "previewProjectAssetDeletion").mockResolvedValue({
+        success: true,
+        dry_run: true,
+        name: "书房",
+        references: 0,
+        episodes: [],
+      });
+      vi.spyOn(API, "deleteProjectAsset").mockResolvedValue({ success: true, trash_record_id: "rec-1" } as never);
+      vi.spyOn(API, "restoreTrashRecord").mockRejectedValue(new ApiRequestError("gone", undefined, 404));
+      renderGallery();
+
+      await user.click(within(await openMenu(user, "书房")).getByRole("menuitem", { name: "删除" }));
+      const dialog = await screen.findByRole("alertdialog", { name: "删除场景「书房」？" });
+      await user.click(within(dialog).getByRole("button", { name: "删除" }));
+      await waitFor(() => expect(useAppStore.getState().toast?.action).toBeDefined());
+      act(() => useAppStore.getState().toast?.action?.onClick());
+
+      await waitFor(() =>
+        expect(useAppStore.getState().toast?.text).toBe(
+          "无法撤销：「书房」已不在项目回收站里，可能已经恢复或被彻底删除",
+        ),
+      );
+    });
+
+    it("links to the project trash from the toolbar", () => {
+      renderGallery();
+
+      expect(screen.getByRole("link", { name: "项目回收站" })).toHaveAttribute("href", "/files?section=trash");
     });
 
     describe("确认删除并放弃其他未保存修改后", () => {

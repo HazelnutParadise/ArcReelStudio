@@ -120,6 +120,15 @@ export interface EditTimelineIssue {
   params: Record<string, unknown>;
 }
 
+/** 一批剪辑写入的结果（与 lib/edit_timeline/service.py 的 EditTimelineWriteResult 同形，只列用到的字段）。 */
+export interface EditTimelineWriteResult {
+  revision: number;
+  base_revision: number;
+  bgm: EditBgmClip[];
+  sfx: EditSfxClip[];
+  deleted_clip_ids: string[];
+}
+
 export interface EditTimelineReadout {
   timeline: EditTimelineRef & { episode: number };
   revision: number;

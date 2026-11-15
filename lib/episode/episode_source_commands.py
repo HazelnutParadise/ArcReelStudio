@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import re
 from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -128,6 +129,20 @@ def _require_text(text: str) -> str:
     if not normalized.strip():
         raise EpisodeSourceError("episode_source_empty", "集原文不能为空")
     return normalized
+
+
+#: Markdown 的 ATX 标题行：1～6 个 ``#``、空白、标题文字，行尾可带收尾的 ``#``。
+_MARKDOWN_HEADING = re.compile(r"^#{1,6}[ \t\u3000]+(?P<title>.*?)(?:[ \t\u3000]+#+)?[ \t\u3000]*$")
+
+
+def markdown_heading_title(text: str) -> str:
+    """Markdown 原文开头的标题：第一个非空行是 ATX 标题时取它的文字，否则为空串。逐集原文据此给新集起名。"""
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        match = _MARKDOWN_HEADING.match(line.strip())
+        return match.group("title").strip() if match else ""
+    return ""
 
 
 def add_own_source_episode(
@@ -363,6 +378,7 @@ __all__ = [
     "add_own_source_episode",
     "adopt_source_file_as_episode",
     "adopt_source_file_as_whole_source",
+    "markdown_heading_title",
     "register_whole_source_file",
     "set_episode_source_text",
     "set_whole_source_file_kind",

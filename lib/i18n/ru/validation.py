@@ -229,6 +229,7 @@ MESSAGES = {
     "arch_multiple_project_json": "ZIP содержит несколько файлов project.json; не удаётся определить корень проекта",
     "arch_extract_path_traversal": "Путь распаковки выходит за пределы целевого каталога: {path}",
     "arch_conflict_detected": "Обнаружен конфликт ID проекта",
+    "arch_import_copy_title": "{title} (копия)",
     "arch_project_name_conflict": (
         "ID проекта «{name}» уже существует. Выберите: перезаписать существующий проект или импортировать под новым именем."
     ),

@@ -609,3 +609,16 @@ def test_a_missing_file_during_migration_still_degrades_to_restoring_the_files(
     assert restored.status_code == 200, restored.text
     assert restored.json()["degraded"] is True
     assert (asset_dir / "characters/阿岚.png").read_bytes() == b"sheet"
+
+
+def test_deleting_an_asset_returns_its_trash_record_so_the_delete_can_be_undone(asset_client, asset_pm, asset_dir):
+    _create(asset_client, "阿岚")
+    _with_sheet(asset_pm, asset_dir, "阿岚", b"old")
+
+    deleted = asset_client.delete(f"{CHARACTERS}/阿岚")
+
+    assert deleted.status_code == 200, deleted.text
+    record_id = deleted.json()["trash_record_id"]
+    assert record_id == _only_record(asset_client)["id"]
+    assert asset_client.post(f"{TRASH}/{record_id}/restore").status_code == 200
+    assert "阿岚" in _project(asset_dir)["characters"]

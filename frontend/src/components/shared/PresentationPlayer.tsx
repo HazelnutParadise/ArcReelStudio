@@ -26,6 +26,8 @@ interface PresentationPlayerProps {
   startAt?: { seconds: number; requestId: string };
   /** `startAt` 生效后回调，参数为该请求的 `requestId`。 */
   onStartApplied?: (requestId: string) => void;
+  /** 读到视频的实际长度（秒）时回调；调用方据此与计划时长比对。 */
+  onVideoDuration?: (seconds: number) => void;
   className?: string;
 }
 
@@ -50,6 +52,7 @@ export function PresentationPlayer({
   initialVariant = "post_production",
   startAt,
   onStartApplied,
+  onVideoDuration,
   className = "",
 }: PresentationPlayerProps) {
   const { t } = useTranslation("dashboard");
@@ -92,6 +95,10 @@ export function PresentationPlayer({
   ]);
   const requestMatches = loadState.requestKey === requestKey;
   const presentation = requestMatches ? loadState.presentation : null;
+  const actualVideoSeconds = presentation?.video.actual_duration_seconds;
+  useEffect(() => {
+    if (actualVideoSeconds !== undefined) onVideoDuration?.(actualVideoSeconds);
+  }, [actualVideoSeconds, onVideoDuration]);
   const error = requestMatches ? loadState.error : null;
   const loading = !requestMatches;
 

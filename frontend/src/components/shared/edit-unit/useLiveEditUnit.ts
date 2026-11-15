@@ -103,6 +103,7 @@ export function useLiveEditUnit<T>({
       // 写回在背景持续进行，不当作「保存中」：编辑区不会因此锁住输入框
       status: error !== null ? "error" : "idle",
       error,
+      errorCode: error !== null ? (snapshot.error?.code ?? null) : null,
       externallyUpdated: false,
       save,
       discard: noop,

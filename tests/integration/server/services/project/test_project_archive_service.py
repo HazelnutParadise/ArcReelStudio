@@ -306,7 +306,7 @@ class TestProjectArchiveService:
         service = ProjectArchiveService(pm)
 
         archive_path, download_name = service.export_project("demo")
-        assert download_name.startswith("demo-")
+        assert download_name.startswith("Demo-")
         assert download_name.endswith(".zip")
 
         with zipfile.ZipFile(archive_path) as archive:
@@ -1681,6 +1681,36 @@ class TestProjectArchiveService:
         assert result.conflict_resolution == "renamed"
         assert pm.get_project_path("demo").exists()
         assert pm.get_project_path(result.project_name).exists()
+
+    def test_import_rename_conflict_marks_the_copy_in_its_title(self, tmp_path):
+        pm = ProjectManager(tmp_path / "projects")
+        _create_project(pm, title="雾港灯塔")
+        service = ProjectArchiveService(pm)
+        archive_path, _ = service.export_project("demo")
+
+        result = service.import_project_archive(archive_path, uploaded_filename="demo.zip", conflict_policy="rename")
+
+        assert result.project["title"] == "雾港灯塔（副本）"
+        assert pm.load_project(result.project_name)["title"] == "雾港灯塔（副本）"
+        assert pm.load_project("demo")["title"] == "雾港灯塔"
+
+    def test_export_names_the_download_after_the_project_title(self, tmp_path):
+        pm = ProjectManager(tmp_path / "projects")
+        _create_project(pm, title='  雾港/灯塔: "第一部"  ')
+        service = ProjectArchiveService(pm)
+
+        _, download_name = service.export_project("demo")
+
+        assert re.fullmatch(r"雾港_灯塔_ _第一部_-\d{8}-\d{6}\.zip", download_name)
+
+    def test_export_falls_back_to_the_project_id_when_the_title_has_no_usable_characters(self, tmp_path):
+        pm = ProjectManager(tmp_path / "projects")
+        _create_project(pm, title=" ./ ")
+        service = ProjectArchiveService(pm)
+
+        _, download_name = service.export_project("demo")
+
+        assert download_name.startswith("demo-")
 
     def test_import_prompt_conflict_requires_user_confirmation(self, tmp_path):
         pm = ProjectManager(tmp_path / "projects")

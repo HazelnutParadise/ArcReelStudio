@@ -3,11 +3,11 @@ import { AlertTriangle, Loader2, Upload } from "lucide-react";
 import { memo, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { API } from "@/api";
+import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { errMsg } from "@/utils/async";
-import type { EditClip, EditTimelineReadout } from "@/types/edit-timeline";
+import type { EditBgmClip, EditClip, EditTimelineReadout } from "@/types/edit-timeline";
 
 import type { AudioPlacement, NarrationSpan, PlacedSubtitle } from "./preview-tracks";
 import { ItemPositionBadge } from "@/components/shared/episode-item/ItemPositionBadge";
@@ -43,11 +43,13 @@ interface EditTimelineTracksProps {
   sfx: readonly AudioPlacement[];
   onSelectClip: (clipId: string) => void;
   onSeek: (t: number) => void;
+  /** 上传的 BGM 与音效放入时间线后重新读取。 */
+  onTimelineChanged: () => void;
 }
 
 /**
  * 横向时间线：标尺，视频、旁白、字幕、BGM 与音效五条轨道，以及未使用的视频单元。每条轨道是一个 TrackRow；
- * BGM 轨与音效轨带生成与上传入口。
+ * BGM 轨与音效轨带生成与上传入口；上传的音频直接放在播放头处。
  * 高度固定、不随条目增多而变高：长时间线与很多未使用的视频单元都在各自一行里横向滚动。
  */
 export function EditTimelineTracks({
@@ -66,8 +68,18 @@ export function EditTimelineTracks({
   sfx,
   onSelectClip,
   onSeek,
+  onTimelineChanged,
 }: EditTimelineTracksProps) {
   const { t: translate } = useTranslation("dashboard");
+  const placement: AudioPlacementTarget = {
+    timelineId: readout.timeline.id,
+    baseRevision: readout.latest_revision,
+    // 起点须落在时间线内（不含末尾）：播放头停在末尾（如刚播完）时放回开头
+    start: t > 0 && t < readout.duration ? t : 0,
+    duration: readout.duration,
+    bgm: readout.bgm,
+    onPlaced: onTimelineChanged,
+  };
   const trackRef = useRef<HTMLDivElement>(null);
   const duration = readout.duration;
   const percent = (seconds: number) => percentOf(seconds, duration);
@@ -118,7 +130,7 @@ export function EditTimelineTracks({
                 <>
                   <GenerateAudioButton projectName={projectName} kind="bgm" />
                   <StockAudioButton projectName={projectName} kind="bgm" />
-                  <AudioUploadButton projectName={projectName} kind="bgm" />
+                  <AudioUploadButton projectName={projectName} kind="bgm" target={placement} />
                 </>
               }
             >
@@ -137,7 +149,7 @@ export function EditTimelineTracks({
                 <>
                   <GenerateAudioButton projectName={projectName} kind="sfx" />
                   <StockAudioButton projectName={projectName} kind="sfx" />
-                  <AudioUploadButton projectName={projectName} kind="sfx" />
+                  <AudioUploadButton projectName={projectName} kind="sfx" target={placement} />
                 </>
               }
             >
@@ -245,12 +257,34 @@ function TrackRow({ label, height, action, children }: TrackRowProps) {
 
 const AUDIO_ACCEPT = ".mp3,.wav,.m4a,audio/mpeg,audio/wav,audio/mp4";
 
+/** 上传按钮把音频放进哪条剪辑时间线、放在哪里：当前时间线的最新修订与播放头位置。 */
+interface AudioPlacementTarget {
+  timelineId: string;
+  baseRevision: number;
+  start: number;
+  /** 时间线总长，秒：BGM 超出末尾的部分会截掉，判断重叠时只算到这里。 */
+  duration: number;
+  /** 时间线上已有的 BGM 片段：同一时刻只能有一首，放入前先查重叠。 */
+  bgm: readonly EditBgmClip[];
+  /** 放入或撤销写入后重新读取时间线。 */
+  onPlaced: () => void;
+}
+
 /**
- * 上传一首 BGM 或一个音效到项目。按下按钮不触发轨道的跳转；上传后由 Agent 把它摆进剪辑时间线。
- * 上传成功后界面上没有别的变化，所以仍用提示告诉创作者下一步。
+ * 上传一首 BGM 或一个音效到项目，并直接放进当前剪辑时间线的播放头处（音量与淡入淡出取默认值）。
+ * 按下按钮不触发轨道的跳转；放不进去时音频仍留在项目里，提示说明原因，交给 Agent 摆放。
+ * 放入成功的提示带「撤销」，把刚放进去的片段拿出来。
  */
-function AudioUploadButton({ projectName, kind }: { projectName: string; kind: "bgm" | "sfx" }) {
-  const { t } = useTranslation("dashboard");
+function AudioUploadButton({
+  projectName,
+  kind,
+  target,
+}: {
+  projectName: string;
+  kind: "bgm" | "sfx";
+  target: AudioPlacementTarget;
+}) {
+  const { t } = useTranslation(["dashboard", "common"]);
   const input = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -259,14 +293,60 @@ function AudioUploadButton({ projectName, kind }: { projectName: string; kind: "
     if (!file) return;
     setUploading(true);
     const { pushToast } = useAppStore.getState();
+    // 上传时的位置与修订：上传期间播放头可能移动，放入按按下时的意图
+    const { timelineId, baseRevision, start, duration, bgm, onPlaced } = target;
+    let uploaded: { id: string; name: string; duration: number };
     try {
-      const uploadedName =
-        kind === "bgm"
-          ? (await API.uploadBgm(projectName, file)).bgm.name
-          : (await API.uploadSfx(projectName, file)).sfx.name;
-      pushToast(t(`edit_view_${kind}_uploaded`, { name: uploadedName }), "success");
+      uploaded =
+        kind === "bgm" ? (await API.uploadBgm(projectName, file)).bgm : (await API.uploadSfx(projectName, file)).sfx;
     } catch (cause) {
       pushToast(t(`edit_view_${kind}_upload_failed`, { message: errMsg(cause) }), "error");
+      setUploading(false);
+      return;
+    }
+    if (kind === "bgm") {
+      // 同一时刻只能有一首 BGM：与已有片段重叠时不去碰服务端，直接说清楚哪里已经有音乐
+      const end = Math.min(start + uploaded.duration, duration);
+      const occupied = bgm.find((clip) => clip.start < end && start < clip.end);
+      if (occupied) {
+        pushToast(
+          t("edit_view_bgm_occupied", { name: uploaded.name, other: occupied.name ?? occupied.bgm_id }),
+          "warning",
+        );
+        setUploading(false);
+        return;
+      }
+    }
+    try {
+      const placed = await API.placeEditTimelineAudio(projectName, timelineId, {
+        kind,
+        audio_id: uploaded.id,
+        start,
+        base_revision: baseRevision,
+      });
+      onPlaced();
+      const clipId = (kind === "bgm" ? placed.bgm : placed.sfx)[0]?.id;
+      const undo = () => {
+        if (!clipId) return;
+        API.removeEditTimelineAudio(projectName, timelineId, clipId, kind, placed.revision).then(
+          onPlaced,
+          (cause: unknown) =>
+            // 409：片段在放入之后已被改动或移除，服务端的说明已经讲清原因
+            pushToast(
+              cause instanceof ApiRequestError && cause.status === 409
+                ? errMsg(cause)
+                : t(`edit_view_${kind}_unplace_failed`, { message: errMsg(cause) }),
+              "error",
+            ),
+        );
+      };
+      pushToast(
+        t(`edit_view_${kind}_placed`, { name: uploaded.name, start: formatSeconds(start) }),
+        "success",
+        clipId ? { action: { label: t("common:undo"), onClick: undo } } : undefined,
+      );
+    } catch (cause) {
+      pushToast(t(`edit_view_${kind}_place_failed`, { name: uploaded.name, message: errMsg(cause) }), "warning");
     } finally {
       setUploading(false);
     }

@@ -29,6 +29,7 @@ from lib.edit_timeline import (
     TimelineSummary,
 )
 from lib.edit_timeline.errors import edit_timeline_message
+from lib.edit_timeline.operations import DeleteBgm, DeleteSfx, InsertBgm, InsertSfx
 from lib.final_cut.basis import SubtitleMode
 from lib.final_cut.errors import FinalCutError
 from lib.final_cut.overview import EpisodeEditOverview, episode_edit_overview
@@ -177,6 +178,15 @@ class RestoreEditTimelineRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     revision: int = Field(ge=1, description="要回滚到的修订号")
+
+
+class PlaceAudioClipRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    kind: Literal["bgm", "sfx"]
+    audio_id: str = Field(min_length=1, description="BGM ID 或音效 ID")
+    start: float = Field(ge=0, description="在剪辑时间线上的绝对起点，秒")
+    base_revision: int = Field(ge=1, description="编辑所基于的修订号")
 
 
 class RenderFinalCutBody(BaseModel):
@@ -344,6 +354,73 @@ async def restore_edit_timeline_revision(
             )
     except EditTimelineError as exc:
         raise edit_timeline_api_error(exc) from exc
+
+
+def _audio_clip_error(exc: EditTimelineError, *, removing: bool) -> ApiError:
+    """放入与撤销音频片段的拒绝换成给创作者看的话：位置放不下、时间线已被改过、片段已经不在了。"""
+    if exc.code == "revision_conflict":
+        return ApiError("edit_timeline_audio_changed", status_code=409)
+    if exc.code == "operation_invalid":
+        if removing:
+            return ApiError("edit_timeline_audio_gone", status_code=409)
+        return ApiError("edit_timeline_audio_not_placeable", status_code=422)
+    return edit_timeline_api_error(exc)
+
+
+@router.post("/projects/{project_name}/edit-timelines/{timeline_id}/audio-clips")
+async def place_audio_clip(
+    project_name: str,
+    timeline_id: str,
+    body: PlaceAudioClipRequest,
+    service: EditTimelineServiceDep,
+    user: CurrentUser,
+    _t: Translator,
+) -> EditTimelineWriteResult:
+    """创作者把一首 BGM 或一个音效放进剪辑时间线，音量与淡入淡出取默认值；其余调整仍交给 Agent。"""
+    operation = (
+        InsertBgm(op="insert_bgm", bgm_id=body.audio_id, start=body.start)
+        if body.kind == "bgm"
+        else InsertSfx(op="insert_sfx", sfx_id=body.audio_id, start=body.start)
+    )
+    try:
+        with project_change_source("webui"):
+            return await service.edit(
+                project_name,
+                timeline_id,
+                base_revision=body.base_revision,
+                summary=_t(f"edit_timeline_placed_{body.kind}"),
+                operations=[operation],
+                author=RevisionAuthor(kind="creator", user_id=user.id),
+            )
+    except EditTimelineError as exc:
+        raise _audio_clip_error(exc, removing=False) from exc
+
+
+@router.delete("/projects/{project_name}/edit-timelines/{timeline_id}/audio-clips/{clip_id}")
+async def remove_audio_clip(
+    project_name: str,
+    timeline_id: str,
+    clip_id: str,
+    service: EditTimelineServiceDep,
+    user: CurrentUser,
+    _t: Translator,
+    kind: Annotated[Literal["bgm", "sfx"], Query()],
+    base_revision: Annotated[int, Query(ge=1)],
+) -> EditTimelineWriteResult:
+    """把创作者放进去的 BGM 或音效片段拿出来（放入后的「撤销」）。"""
+    operation = DeleteBgm(op="delete_bgm", clip=clip_id) if kind == "bgm" else DeleteSfx(op="delete_sfx", clip=clip_id)
+    try:
+        with project_change_source("webui"):
+            return await service.edit(
+                project_name,
+                timeline_id,
+                base_revision=base_revision,
+                summary=_t(f"edit_timeline_removed_{kind}"),
+                operations=[operation],
+                author=RevisionAuthor(kind="creator", user_id=user.id),
+            )
+    except EditTimelineError as exc:
+        raise _audio_clip_error(exc, removing=True) from exc
 
 
 @router.delete("/projects/{project_name}/edit-timelines/{timeline_id}", status_code=204)

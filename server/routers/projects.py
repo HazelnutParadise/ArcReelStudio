@@ -1009,7 +1009,8 @@ async def delete_project(name: str, _t: Translator):
             if tombstone is not None:
                 await run_sync_transaction(deleted_projects.move_back, manager.layout, project_dir, tombstone)
             raise
-        return {"success": True, "message": _t("project_deleted", name=name)}
+        # 已删除项目的 ID 即墓碑名：随响应返回，前端在提示里给「撤销」，直接按它恢复
+        return {"success": True, "message": _t("project_deleted", name=name), "deleted_id": tombstone}
     except FileNotFoundError as exc:
         raise NotFoundError("project_not_found", name=name) from exc
     except HTTPException, ApiError:

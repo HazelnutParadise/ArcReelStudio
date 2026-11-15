@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { isResourceBusy } from "@/stores/tasks-store";
 import { Sparkles, ImageIcon, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,12 @@ interface MediaCardProps {
   uploadDisabled?: boolean;
   /** 分镜编辑所需的剧集文件；提供时（且 kind=storyboard、已有图）显示编辑入口 */
   editScriptFile?: string | null;
+  /** 分镜计划的时长（秒，仅 kind=video 用）：视频实际长度与它不同时在卡片下方说明。 */
+  plannedDurationSeconds?: number;
 }
+
+/** 实际长度与计划时长相差不到这么多秒时视为一致，避免编码误差也提示。 */
+const DURATION_MISMATCH_TOLERANCE_SECONDS = 0.5;
 
 const UPLOAD_ACCEPT: Record<MediaKind, string> = {
   storyboard: UPLOAD_IMAGE_ACCEPT,
@@ -86,8 +91,24 @@ export function MediaCard({
   restoring: externalRestoring,
   onRestoringChange,
   checkBusy,
+  plannedDurationSeconds,
 }: MediaCardProps) {
   const { t } = useTranslation("dashboard");
+  // 视频的实际长度按资产路径记：换了视频，旧长度不再作数
+  const [videoLength, setVideoLength] = useState<{ path: string; seconds: number } | null>(null);
+  const actualSeconds = videoLength && videoLength.path === assetPath ? videoLength.seconds : null;
+  const handleVideoDuration = useCallback(
+    (seconds: number) => {
+      if (assetPath) setVideoLength({ path: assetPath, seconds });
+    },
+    [assetPath],
+  );
+  const lengthMismatch =
+    kind === "video" &&
+    actualSeconds !== null &&
+    plannedDurationSeconds !== undefined &&
+    plannedDurationSeconds > 0 &&
+    Math.abs(actualSeconds - plannedDurationSeconds) >= DURATION_MISMATCH_TOLERANCE_SECONDS;
   const itemLabel = useItemPositionLabel(segmentId);
   const [restoring, setRestoring] = useState(false);
   const restoringRef = useRef(false);
@@ -191,6 +212,7 @@ export function MediaCard({
                 resourceType="videos"
                 resourceId={segmentId}
                 posterPath={posterPath}
+                onVideoDuration={handleVideoDuration}
                 {...playbackStart}
               />
             </AspectFrame>
@@ -204,6 +226,16 @@ export function MediaCard({
           </div>
         </AspectFrame>
       )}
+
+      {lengthMismatch && actualSeconds !== null ? (
+        // 剪辑时间轴按视频实际长度排，这里把与分镜时长的差别说出来，免得两处时长对不上让人困惑
+        <p role="status" className="mt-2 text-xs text-warn">
+          {t("media_video_length_mismatch", {
+            actual: Math.round(actualSeconds * 10) / 10,
+            planned: plannedDurationSeconds,
+          })}
+        </p>
+      ) : null}
 
       {onGenerate && !demoReadOnly && (
         <Button

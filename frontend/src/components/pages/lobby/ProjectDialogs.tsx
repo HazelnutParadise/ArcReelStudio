@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { API } from "@/api";
+import { API, ApiRequestError } from "@/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAppStore } from "@/stores/app-store";
 import { errMsg } from "@/utils/async";
 import { getProjectDisplayName } from "@/utils/project-display";
 import type { ProjectSummary } from "@/types";
@@ -139,9 +140,38 @@ export function DeleteProjectDialog({ project, onClose, onDone }: ProjectDialogP
     setSubmitting(true);
     setError(null);
     try {
-      await API.deleteProject(shown.name);
+      const { deleted_id: deletedId } = await API.deleteProject(shown.name);
       onDone();
       onClose();
+      // 删除可以撤销：提示里直接给「撤销」，从已删除项目里整体恢复
+      const { pushToast } = useAppStore.getState();
+      pushToast(
+        t("dashboard:lobby_deleted", { title }),
+        "success",
+        deletedId
+          ? {
+              action: {
+                label: t("common:undo"),
+                onClick: () => {
+                  API.restoreDeletedProject(deletedId).then(
+                    () => {
+                      onDone();
+                      pushToast(t("dashboard:lobby_delete_undone", { title }), "success");
+                    },
+                    (err: unknown) =>
+                      // 404：已删除项目已经被恢复或彻底删除
+                      pushToast(
+                        err instanceof ApiRequestError && err.status === 404
+                          ? t("dashboard:lobby_delete_undo_gone", { title })
+                          : t("dashboard:lobby_delete_undo_failed", { message: errMsg(err) }),
+                        "error",
+                      ),
+                  );
+                },
+              },
+            }
+          : undefined,
+      );
     } catch (err) {
       setError(errMsg(err));
     } finally {

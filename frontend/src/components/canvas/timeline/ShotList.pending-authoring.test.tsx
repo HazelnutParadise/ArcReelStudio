@@ -32,4 +32,14 @@ describe("ShotList 待编写徽标", () => {
     renderList([makeNarrationSegment({ image_prompt: null, video_prompt: null })]);
     expect(screen.queryByText("待编写")).not.toBeInTheDocument();
   });
+
+  it("names the prompt still missing once the other one is filled", () => {
+    renderList([
+      makeNarrationSegment({ segment_id: "E1S01", image_prompt: "港口", video_prompt: null, pending_authoring: true }),
+      makeNarrationSegment({ segment_id: "E1S02", image_prompt: null, video_prompt: "推近", pending_authoring: true }),
+    ]);
+    expect(screen.queryByText("待编写")).not.toBeInTheDocument();
+    expect(screen.getByText("待写视频提示词")).toBeInTheDocument();
+    expect(screen.getByText("待写分镜图提示词")).toBeInTheDocument();
+  });
 });

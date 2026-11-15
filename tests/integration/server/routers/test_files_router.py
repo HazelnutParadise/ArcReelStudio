@@ -162,6 +162,26 @@ class TestFilesRouter:
         summary = WorkflowStateService(pm).get_project_summary("demo")
         assert [episode.episode for episode in summary.episodes] == [4, 5]
 
+    def test_episode_upload_takes_the_title_from_the_markdown_heading(self, tmp_path, monkeypatch):
+        client, pm = _client(monkeypatch, tmp_path)
+
+        with client:
+            md = client.post(
+                "/api/v1/projects/demo/upload/source?role=episode",
+                files={
+                    "file": ("script.md", "\n# 第一集　便利商店 #\n\n场景：深夜的便利商店。".encode(), "text/markdown")
+                },
+            )
+            txt = client.post(
+                "/api/v1/projects/demo/upload/source?role=episode",
+                files={"file": ("notes.txt", "# 不是标题\n正文".encode(), "text/plain")},
+            )
+
+        assert (md.status_code, txt.status_code) == (200, 200)
+        titles = {e["episode"]: e["title"] for e in pm.load_project("demo")["episodes"]}
+        assert titles[md.json()["episode"]] == "第一集　便利商店"
+        assert titles[txt.json()["episode"]] == ""
+
     def test_drama_upload_records_the_chosen_source_kind_on_each_source(self, tmp_path, monkeypatch):
         """剧情演绎上传时逐个记源文件类型，缺省为小说；其他创作类型不记。"""
         client, pm = _client(monkeypatch, tmp_path)

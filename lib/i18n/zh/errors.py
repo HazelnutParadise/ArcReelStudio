@@ -482,6 +482,13 @@ MESSAGES = {
     "grid_storyboard_not_enabled": "项目未启用多宫格分镜，无法生成多宫格分镜",
     "ad_target_duration_required": "广告/短片项目必须设置目标总时长（正整数秒）",
     "project_deleted": "项目 '{name}' 已移入已删除项目，30 天内可以恢复",
+    "edit_timeline_placed_bgm": "放入 BGM",
+    "edit_timeline_placed_sfx": "放入音效",
+    "edit_timeline_removed_bgm": "移除 BGM",
+    "edit_timeline_removed_sfx": "移除音效",
+    "edit_timeline_audio_not_placeable": "这个位置放不下：可能已经有一首 BGM，或超出了时间线",
+    "edit_timeline_audio_changed": "时间线刚被改过，这一段已经不是放入时的样子，无法撤销",
+    "edit_timeline_audio_gone": "这一段已经不在时间线上，无法撤销",
     "scene_updated": "分镜 '{scene_id}' 已更新",
     "segment_updated": "分镜 '{segment_id}' 已更新",
     # Characters / Scenes / Props

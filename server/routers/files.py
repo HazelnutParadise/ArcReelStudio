@@ -41,6 +41,7 @@ from lib.episode.episode_paths import (
 from lib.episode.episode_source_commands import (
     EpisodeSourceError,
     add_own_source_episode,
+    markdown_heading_title,
     register_whole_source_file,
     unregister_source_file,
 )
@@ -1023,7 +1024,11 @@ async def _handle_episode_source_upload(
         finally:
             tmp_path.unlink(missing_ok=True)  # hard-delete: temp -- 上传临时文件
         with project_change_source("webui"), manager.locked_source_registration(project_name) as (_dir, project, undo):
-            return add_own_source_episode(project_dir, project, extracted.text, undo=undo, source_kind=source_kind)
+            # Markdown 原文开头的标题（如「# 第一集　便利商店」）就是这一集的集名
+            title = markdown_heading_title(extracted.text) if Path(original_filename).suffix.lower() == ".md" else ""
+            return add_own_source_episode(
+                project_dir, project, extracted.text, undo=undo, title=title, source_kind=source_kind
+            )
 
     try:
         episode = await run_sync_transaction(_sync)
