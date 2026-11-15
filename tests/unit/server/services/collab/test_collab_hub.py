@@ -781,17 +781,20 @@ async def test_a_global_write_cancelled_after_it_landed_still_reports_saved(quie
 
 
 class RaisesAfterLandingUnit(InMemoryGlobalUnit):
-    """第一次写入已经落到存储，却向调用方报错（例如提交之后连线中断）。"""
+    """第一次写入向调用方报错、结果不明：``lands`` 为真时其实已落到存储（例如提交之后连线中断），否则没写进去。"""
 
-    def __init__(self) -> None:
+    def __init__(self, *, lands: bool = True) -> None:
         super().__init__()
         self.failures = 1
+        self.lands = lands
 
     async def write(self, key: str, changes: dict[str, Any]) -> None:
-        await super().write(key, changes)
         if self.failures:
             self.failures -= 1
-            raise ConnectionError("lost after commit")
+            if self.lands:
+                await super().write(key, changes)
+            raise ConnectionError("connection lost")
+        await super().write(key, changes)
 
 
 async def test_a_write_that_landed_but_reported_an_error_is_not_merged_in_again(quiet_global_hub) -> None:
@@ -906,3 +909,108 @@ async def test_a_field_stored_as_none_and_then_removed_leaves_the_document(quiet
     await hub.refresh_project("")
 
     assert unit_json(alice.doc) == {"body": "初稿"}
+
+
+async def test_a_landed_write_recognised_by_a_refresh_lets_a_later_outside_edit_merge_once(quiet_global_hub) -> None:
+    unit = RaisesAfterLandingUnit()
+    hub = quiet_global_hub(unit)
+    alice = FakeConn("c1", "alice")
+    await _join_global(hub, alice)
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "深夜，"))
+    await hub.flush(alice, GLOBAL_REF, 1)
+    # 报错之后 Alice 接着打字，重读才认出那次写入已落地
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", len("深夜，初稿".encode()), "。"))
+    await hub.refresh_project("")
+    unit.store["k"]["body"] = "冷，深夜，初稿"
+    await hub.refresh_project("")
+    await hub.flush(alice, GLOBAL_REF, 2)
+
+    assert unit.store["k"]["body"] == alice.text("body") == "冷，深夜，初稿。"
+
+
+async def test_an_old_write_record_does_not_swallow_an_outside_change_back_to_its_value(quiet_global_hub) -> None:
+    unit = RaisesAfterLandingUnit(lands=False)
+    hub = quiet_global_hub(unit)
+    alice = FakeConn("c1", "alice")
+    await _join_global(hub, alice)
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
+    await hub.flush(alice, GLOBAL_REF, 1)
+    await hub.flush(alice, GLOBAL_REF, 2)
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", len("新初稿".encode()), "。"))
+    await hub.flush(alice, GLOBAL_REF, 3)
+    # 别处把内容改回第一次写回想写的值：那条记录早已被之后写成的写回取代，这是别处的改动
+    unit.store["k"]["body"] = "新初稿"
+    await hub.refresh_project("")
+
+    assert alice.text("body") == "新初稿"
+
+
+class TwoFieldUnit(RaisesAfterLandingUnit):
+    def __init__(self) -> None:
+        super().__init__(lands=False)
+        self.store = {"k": {"a": "", "b": "b0"}}
+
+
+async def test_a_record_only_partly_matching_storage_does_not_pull_unsaved_text_into_the_base(
+    quiet_global_hub,
+) -> None:
+    unit = TwoFieldUnit()
+    hub = quiet_global_hub(unit)
+    alice = FakeConn("c1", "alice")
+    await _join_global(hub, alice)
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("a", 0, "x"))
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("b", 2, " typed"))
+    # 写回报错且没写进去；别处正好把 a 写成同样的值，随后又改了 b
+    await hub.flush(alice, GLOBAL_REF, 1)
+    unit.store["k"]["a"] = "x"
+    await hub.refresh_project("")
+    unit.store["k"]["b"] = "Z b0"
+    await hub.refresh_project("")
+    await hub.flush(alice, GLOBAL_REF, 2)
+
+    assert unit.store["k"] == unit_json(alice.doc) == {"a": "x", "b": "Z b0 typed"}
+
+
+class EnteringGlobalUnit(InMemoryGlobalUnit):
+    """记下同时有几次写入正在进行，等测试放行。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.store = {"k": {"body": "初稿"}, "k2": {"body": "初稿"}}
+        self.in_progress = 0
+        self.both_entered = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def write(self, key: str, changes: dict[str, Any]) -> None:
+        self.in_progress += 1
+        if self.in_progress == 2:
+            self.both_entered.set()
+        await self.release.wait()
+        await super().write(key, changes)
+
+
+async def test_shutdown_writes_every_room_back_at_the_same_time(hub_project_files) -> None:
+    unit = EnteringGlobalUnit()
+    hub = _quiet_hub(hub_project_files, {**UNIT_SPECS, "note": unit})
+    other = UnitRef(project="", kind="note", key="k2")
+    alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
+    await _join_global(hub, alice)
+    await hub.join(bob, other)
+    await hub.on_sync(bob, other, create_sync_message(bob.doc))
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "甲"))
+    await hub.on_sync(bob, other, bob.type_into("body", 0, "乙"))
+
+    stopping = asyncio.create_task(hub.shutdown())
+    try:
+        # 两个房间的写回同时进行：卡住的房间不会让其余房间排队等
+        async with asyncio.timeout(5):
+            await unit.both_entered.wait()
+    finally:
+        unit.release.set()
+        async with asyncio.timeout(5):
+            await stopping
+
+    assert (unit.store["k"]["body"], unit.store["k2"]["body"]) == ("甲初稿", "乙初稿")

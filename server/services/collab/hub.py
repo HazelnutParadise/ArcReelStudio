@@ -7,7 +7,8 @@
   写之前在同一次读写里核对要写的字段：存储里的值与房间上次见到的不同（别处刚改过、中枢还没重读），就不写，
   先把那次改动像外部改动一样合并进文档、转发给成员，再按合并后的内容重写，最多试 ``_MAX_WRITE_ATTEMPTS`` 次；
   都对不上就报写回失败，等下一个安静期再试。每次写回之前记下要写的值（``_PendingWrite``），之后在存储里读到
-  这些值就认定是自己的写入，不当成外部改动再合并一遍。写回一旦开始不可取消，关停与关闭房间会等它写完；
+  这些值就认定是自己的写入，不当成外部改动再合并一遍。写回一旦开始不可取消，关停与关闭房间会等它写完
+  （关停时各房间同时写回，只等最慢的那个）；
   中枢不给读写加时限，放进线程的读写停不下来，时限只会把已写成的写入报成失败。
 - **外部改动**：Agent、后台任务或其他接口改了同一个单元时，从「上次与存储一致时的文档状态」出发套上新内容算出
   差异，再合并进当前文档。正在打、还没写回的字因此不会被覆盖，由 CRDT 与外部改动合并。别处删掉的字段，
@@ -274,14 +275,19 @@ class CollabHub:
         await conn.send({"type": "flushed", "room": _room_id(ref), "id": request_id, "ok": room.error is None})
 
     async def shutdown(self) -> None:
-        for room in list(self._rooms.values()):
+        """写回所有房间再关闭。各房间同时写回：一个房间的写入卡住，只让关停等它这一个，不会让其余房间排队。"""
+        rooms = list(self._rooms.values())
+        for room in rooms:
             if room.persist_task is not None:
                 room.persist_task.cancel()
             if room.close_task is not None:
                 room.close_task.cancel()
             if room.poll_task is not None:
                 room.poll_task.cancel()
-            await self._persist(room)
+        results = await asyncio.gather(*(self._persist(room) for room in rooms), return_exceptions=True)
+        for room, result in zip(rooms, results, strict=True):
+            if isinstance(result, BaseException):
+                logger.error("关停时协作内容写回失败 kind=%s", room.ref.kind, exc_info=result)
             room.closed = True
         self._rooms.clear()
         for task in self._watchers.values():
@@ -427,6 +433,7 @@ class CollabHub:
                 if isinstance(outcome, _Stale):
                     # 要写的字段在存储里已被别处改过：先把那次改动并进文档，再按合并后的内容重写。
                     # 存储里若正是要写的值（之前结果不明的写回落了地，或别处写了同样的内容），合并时按自己的写入处理
+                    # 这次什么也没写；它的记录只在这次合并里用来认出「存储已是要写的值」，合并会把涉及变动字段的记录作废
                     await self._merge_stored(room, outcome.latest)
                     continue
                 # 写成的这次涵盖了之前所有结果未定的写回：没写成的字段都还在这次的改动里
@@ -581,14 +588,12 @@ class CollabHub:
         base = Doc()
         base.apply_update(room.base_update)
         sent = dict(room.sent)
-        outside: list[str] = []
-        for key in changed:
-            landed = self._take_landed_write(room, key, latest.get(key, _ABSENT))
-            if landed is not None:
-                base.apply_update(landed.snapshot)
-                sent[key] = landed.values[key]
-            else:
-                outside.append(key)
+        outside = changed
+        landed = self._take_landed_write(room, latest, changed)
+        if landed is not None:
+            base.apply_update(landed.snapshot)
+            sent.update(landed.values)
+            outside = [key for key in changed if key not in landed.values]
         already = {key for key in outside if latest.get(key, _ABSENT) == current.get(key, _ABSENT)}
         unsaved = {
             key for key in current.keys() | sent.keys() if current.get(key, _ABSENT) != sent.get(key, _ABSENT)
@@ -629,21 +634,24 @@ class CollabHub:
         return True
 
     @staticmethod
-    def _take_landed_write(room: Room, key: str, value: Any) -> _PendingWrite | None:
-        """存储里 ``key`` 的值若是某次结果未定的写回要写的值，取出最新的那次；其余记录里的这个字段一并作废。"""
+    def _take_landed_write(room: Room, latest: dict[str, Any], changed: list[str]) -> _PendingWrite | None:
+        """存储里正是某次结果未定的写回要写的全部值时，取出最新的那次。
+
+        只有整条记录都对得上才算落了地：只对上一部分时，那次写回没有整条写进去，其快照里别的字段还是没写回的字，
+        并进合并基准会让之后别处的改动把这些字删掉。涉及这次变动字段的记录一律作废：落了地的已经用上，
+        对不上的说明存储已是别的内容。
+        """
+        touched = set(changed)
         landed = next(
-            (item for item in reversed(room.pending_writes) if key in item.values and item.values[key] == value),
+            (
+                item
+                for item in reversed(room.pending_writes)
+                if touched & item.values.keys()
+                and all(latest.get(key, _ABSENT) == value for key, value in item.values.items())
+            ),
             None,
         )
-        remaining: list[_PendingWrite] = []
-        for item in room.pending_writes:
-            if key in item.values:
-                values = {k: v for k, v in item.values.items() if k != key}
-                if values:
-                    remaining.append(_PendingWrite(values=values, snapshot=item.snapshot))
-            else:
-                remaining.append(item)
-        room.pending_writes = remaining
+        room.pending_writes = [item for item in room.pending_writes if not touched & item.values.keys()]
         return landed
 
     async def _remove(self, room: Room, reason: str) -> None:
