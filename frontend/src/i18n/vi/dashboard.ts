@@ -2773,6 +2773,9 @@ export default {
   'lobby_rename_label': 'Tiêu đề dự án',
   'lobby_delete_title': 'Xóa “{{title}}”?',
   'lobby_deleted': 'Đã xóa "{{title}}"',
+  'lobby_delete_undone': 'Đã khôi phục "{{title}}"',
+  'lobby_delete_undo_gone':
+    'Không thể hoàn tác: "{{title}}" không còn trong mục dự án đã xóa, có thể đã được khôi phục hoặc xóa vĩnh viễn',
   'lobby_delete_undo_failed': 'Không thể hoàn tác: {{message}}',
   'lobby_delete_desc':
     'Dự án sẽ được chuyển vào Dự án đã xóa và giữ trong 30 ngày. Trong thời gian đó bạn có thể khôi phục toàn bộ từ danh sách dự án. Các tác vụ đang xếp hàng sẽ bị hủy.',
@@ -4326,6 +4329,8 @@ export default {
   'edit_view_bgm_uploaded':
     'Đã tải lên BGM "{{name}}". Mọi dòng thời gian dựng của các tập đều dùng được; hãy nhờ Agent đặt vào dòng thời gian',
   'edit_view_bgm_placed': 'Đã tải lên BGM "{{name}}" và đặt ở giây {{start}}',
+  'edit_view_bgm_occupied':
+    'Đã tải lên BGM "{{name}}", nhưng ở đây đã có BGM "{{other}}" và mỗi lúc chỉ phát được một bài. Hãy nhờ Agent đặt ở chỗ khác hoặc dời đoạn cũ',
   'edit_view_bgm_place_failed':
     'Đã tải lên BGM "{{name}}" nhưng chưa đặt được vào dòng thời gian: {{message}}. Hãy nhờ Agent đặt',
   'edit_view_bgm_unplace_failed': 'Không thể hoàn tác: {{message}}',

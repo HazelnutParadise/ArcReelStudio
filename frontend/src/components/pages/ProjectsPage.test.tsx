@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
-import { API } from "@/api";
+import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useConfigStatusStore } from "@/stores/config-status-store";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -425,6 +425,27 @@ describe("ProjectsPage", () => {
 
     await waitFor(() => expect(restore).toHaveBeenCalledWith("second#deleted-20261115T000000Z"));
     expect(await screen.findByRole("link", { name: /Second/ })).toBeInTheDocument();
+    await waitFor(() => expect(useAppStore.getState().toast?.text).toBe("已恢复「Second」"));
+  });
+
+  it("says why undoing a project delete failed when it was already restored or purged", async () => {
+    vi.spyOn(API, "listProjects").mockResolvedValue({ projects: [summary("second", { title: "Second" })] });
+    vi.spyOn(API, "deleteProject").mockResolvedValue({ success: true, deleted_id: "second#d" } as never);
+    vi.spyOn(API, "restoreDeletedProject").mockRejectedValue(new ApiRequestError("not found", undefined, 404));
+
+    renderPage();
+    const user = await openCardMenu("Second");
+    await user.click(await screen.findByRole("menuitem", { name: "删除" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "删除「Second」？" });
+    await user.click(within(dialog).getByRole("button", { name: "删除项目" }));
+    await waitFor(() => expect(useAppStore.getState().toast?.action).toBeDefined());
+    act(() => useAppStore.getState().toast?.action?.onClick());
+
+    await waitFor(() =>
+      expect(useAppStore.getState().toast?.text).toBe(
+        "无法撤销：「Second」已不在已删除项目里，可能已经恢复或被彻底删除",
+      ),
+    );
   });
 
   it("keeps the delete confirmation open and shows the backend's reason when deleting fails", async () => {

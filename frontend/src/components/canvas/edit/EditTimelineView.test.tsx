@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 
 import { Route } from "wouter";
 
-import { API } from "@/api";
+import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import type {
@@ -817,6 +817,109 @@ describe("EditTimelineView", () => {
       expect.objectContaining({ kind: "sfx", audio_id: "sfx-0002" }),
     );
     expect(useAppStore.getState().toast?.text).toContain("关门");
+  });
+
+  const uploadedBgm = {
+    success: true,
+    bgm: {
+      id: "bgm-0001",
+      name: "雨夜",
+      duration: 30,
+      gain: 1,
+      path: "bgm/bgm-0001.mp3",
+      url: "/x",
+      source: "upload" as const,
+      license: null,
+      source_url: null,
+    },
+  };
+
+  it("places the upload at the start when the playhead sits at the end of the timeline", async () => {
+    useAppStore.setState({ toast: null });
+    vi.spyOn(API, "listEditTimelines").mockResolvedValue({
+      timelines: [summary("tl-00000002", "初剪", "2026-09-30T10:00:00Z", 3)],
+    });
+    vi.spyOn(API, "getEditTimeline").mockResolvedValue(INITIAL_CUT);
+    vi.spyOn(API, "uploadBgm").mockResolvedValue(uploadedBgm);
+    const place = vi
+      .spyOn(API, "placeEditTimelineAudio")
+      .mockResolvedValue({ revision: 4, bgm: [{ id: "b1" }], sfx: [] } as never);
+
+    renderView();
+    await screen.findByTestId("edit-clip-c1");
+    const tracks = screen.getByRole("group", { name: "时间线轨道，点击跳到对应时间" });
+    vi.spyOn(tracks, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 780, 100));
+    fireEvent.pointerDown(tracks, { button: 0, clientX: 780 });
+    expect(playheadSeconds()).toBeCloseTo(INITIAL_CUT.duration);
+
+    fireEvent.change(screen.getByTestId("edit-bgm-upload-input"), {
+      target: { files: [new File(["mp3"], "雨夜.mp3", { type: "audio/mpeg" })] },
+    });
+
+    await waitFor(() =>
+      expect(place).toHaveBeenCalledWith("demo", "tl-00000002", expect.objectContaining({ start: 0 })),
+    );
+  });
+
+  it("says plainly that music is already there instead of trying to place a BGM over another one", async () => {
+    useAppStore.setState({ toast: null });
+    vi.spyOn(API, "listEditTimelines").mockResolvedValue({
+      timelines: [summary("tl-00000002", "初剪", "2026-09-30T10:00:00Z", 3)],
+    });
+    vi.spyOn(API, "getEditTimeline").mockResolvedValue({
+      ...INITIAL_CUT,
+      bgm: [
+        {
+          id: "b1",
+          bgm_id: "bgm-0000",
+          name: "晨雾",
+          start: 0,
+          end: 5,
+          source_in: 0,
+          source_out: 5,
+          volume: 0.25,
+          fade_in: 1,
+          fade_out: 1,
+        },
+      ],
+    });
+    vi.spyOn(API, "uploadBgm").mockResolvedValue(uploadedBgm);
+    const place = vi.spyOn(API, "placeEditTimelineAudio");
+
+    renderView();
+    await screen.findByTestId("edit-clip-c1");
+    fireEvent.change(screen.getByTestId("edit-bgm-upload-input"), {
+      target: { files: [new File(["mp3"], "雨夜.mp3", { type: "audio/mpeg" })] },
+    });
+
+    await waitFor(() => expect(useAppStore.getState().toast?.tone).toBe("warning"));
+    expect(useAppStore.getState().toast?.text).toBe(
+      "已上传 BGM「雨夜」，但这里已经有 BGM「晨雾」，同一时刻只能放一首。可以让 Agent 换个位置摆放，或移开原来那段",
+    );
+    expect(place).not.toHaveBeenCalled();
+  });
+
+  it("says why undoing the placement failed when the clip already changed", async () => {
+    useAppStore.setState({ toast: null });
+    vi.spyOn(API, "listEditTimelines").mockResolvedValue({
+      timelines: [summary("tl-00000002", "初剪", "2026-09-30T10:00:00Z", 3)],
+    });
+    vi.spyOn(API, "getEditTimeline").mockResolvedValue(INITIAL_CUT);
+    vi.spyOn(API, "uploadBgm").mockResolvedValue(uploadedBgm);
+    vi.spyOn(API, "placeEditTimelineAudio").mockResolvedValue({ revision: 4, bgm: [{ id: "b1" }], sfx: [] } as never);
+    vi.spyOn(API, "removeEditTimelineAudio").mockRejectedValue(
+      new ApiRequestError("这一段已经不在时间线上，无法撤销", undefined, 409),
+    );
+
+    renderView();
+    await screen.findByTestId("edit-clip-c1");
+    fireEvent.change(screen.getByTestId("edit-bgm-upload-input"), {
+      target: { files: [new File(["mp3"], "雨夜.mp3", { type: "audio/mpeg" })] },
+    });
+    await waitFor(() => expect(useAppStore.getState().toast?.tone).toBe("success"));
+    act(() => useAppStore.getState().toast?.action?.onClick());
+
+    await waitFor(() => expect(useAppStore.getState().toast?.text).toBe("这一段已经不在时间线上，无法撤销"));
   });
 
   it("keeps the uploaded BGM and says why when it cannot be placed on the timeline", async () => {

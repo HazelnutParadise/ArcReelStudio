@@ -3069,6 +3069,8 @@ export default {
   'lobby_delete_title': '刪除「{{title}}」？',
   'lobby_delete_desc': '專案會移入「已刪除專案」並保留 30 天，期間可以在專案清單頁整體恢復。排隊中的任務隨之取消。',
   'lobby_deleted': '已刪除「{{title}}」',
+  'lobby_delete_undone': '已復原「{{title}}」',
+  'lobby_delete_undo_gone': '無法復原：「{{title}}」已不在已刪除專案裡，可能已經復原或被永久刪除',
   'lobby_delete_undo_failed': '復原失敗：{{message}}',
   'lobby_deleted_projects': '已刪除專案',
   'deleted_projects_description': '刪除的專案連同它的專案垃圾桶在這裡保留 {{days}} 天，可以整體恢復，到期後自動清除。',
@@ -4102,6 +4104,8 @@ export default {
   'edit_view_bgm_uploading': '正在上傳 BGM…',
   'edit_view_bgm_uploaded': '已上傳 BGM「{{name}}」。各集的剪輯時間軸都能用，可以讓 Agent 擺進時間軸',
   'edit_view_bgm_placed': '已上傳 BGM「{{name}}」，放在時間軸第 {{start}} 秒',
+  'edit_view_bgm_occupied':
+    '已上傳 BGM「{{name}}」，但這裡已經有 BGM「{{other}}」，同一時間只能放一首。可以讓 Agent 換個位置擺放，或移開原本那段',
   'edit_view_bgm_place_failed': '已上傳 BGM「{{name}}」，但沒能放進時間軸：{{message}}。可以讓 Agent 擺放',
   'edit_view_bgm_unplace_failed': '無法復原：{{message}}',
   'edit_view_bgm_upload_failed': 'BGM 上傳失敗：{{message}}',

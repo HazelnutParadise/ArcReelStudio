@@ -3215,6 +3215,9 @@ export default {
   'lobby_rename_label': 'Project title',
   'lobby_delete_title': 'Delete “{{title}}”?',
   'lobby_deleted': 'Deleted "{{title}}"',
+  'lobby_delete_undone': 'Restored "{{title}}"',
+  'lobby_delete_undo_gone':
+    'Couldn\'t undo: "{{title}}" is no longer among deleted projects. It may have been restored or permanently deleted',
   'lobby_delete_undo_failed': "Couldn't undo: {{message}}",
   'lobby_delete_desc':
     'The project moves to Deleted projects and is kept for 30 days. You can restore it from the project list during that time. Its queued tasks will be cancelled.',
@@ -4335,6 +4338,8 @@ export default {
   'edit_view_bgm_uploaded':
     'Uploaded BGM "{{name}}". Edit timelines in every episode can use it; ask the Agent to place it on the timeline',
   'edit_view_bgm_placed': 'Uploaded BGM "{{name}}" and placed it at {{start}} s',
+  'edit_view_bgm_occupied':
+    'Uploaded BGM "{{name}}", but BGM "{{other}}" already plays here and only one can play at a time. Ask the Agent to place it elsewhere or move the existing one',
   'edit_view_bgm_place_failed':
     'Uploaded BGM "{{name}}", but couldn\'t place it on the timeline: {{message}}. Ask the Agent to place it',
   'edit_view_bgm_unplace_failed': "Couldn't undo: {{message}}",

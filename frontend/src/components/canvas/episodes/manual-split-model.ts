@@ -72,15 +72,22 @@ export function pointInRun(file: number, runStart: number, runText: string, inde
   return { file, offset: runStart + codePointsBefore(runText, Math.min(index, runText.length)) };
 }
 
+/** 句末标点（含紧跟其后的引号、括号收尾）：没有换行的整段原文按句子之间对齐。 */
+const SENTENCE_END = /[。！？!?…]+[」』”’）)]*/gu;
+
 /**
- * 点击的落点对齐到行的边界：点在一行（段落）前半段落到行首，后半段落到行尾。
- * 分集几乎总是切在段落之间，点在标题或句子中间不该把它切成两半；需要更细的位置时再用 ←/→ 微调。
- * 下标与 `pointInRun` 同为行文字的 UTF-16 下标。
+ * 点击的落点对齐到行（段落）或句子之间：候选是行首、行尾与每个句末标点之后，取离点击处最近的一个，
+ * 距离相同时取靠前的。分集几乎总是切在段落或句子之间，点在标题或句子中间不该把它切成两半；
+ * 需要更细的位置时再用 ←/→ 微调。下标与 `pointInRun` 同为行文字的 UTF-16 下标。
  */
 export function snapPointToLine(file: number, runStart: number, runText: string, index: number): ManuscriptPoint {
-  const end = pointInRun(file, runStart, runText, runText.length);
-  const at = pointInRun(file, runStart, runText, index);
-  return at.offset - runStart <= (end.offset - runStart) / 2 ? { file, offset: runStart } : end;
+  const clicked = Math.min(Math.max(index, 0), runText.length);
+  const candidates = [0, runText.length];
+  for (const match of runText.matchAll(SENTENCE_END)) candidates.push(match.index + match[0].length);
+  const nearest = candidates
+    .sort((a, b) => a - b)
+    .reduce((best, candidate) => (Math.abs(candidate - clicked) < Math.abs(best - clicked) ? candidate : best));
+  return pointInRun(file, runStart, runText, nearest);
 }
 
 function lengths(view: EpisodesView): number[] {

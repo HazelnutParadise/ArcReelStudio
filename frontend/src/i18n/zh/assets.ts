@@ -280,6 +280,7 @@ export default {
   "gallery_delete_episode_count_other": "{{count}} 处",
   "gallery_delete_merge_instead": "改为并入…",
   "gallery_deleted": "已删除「{{name}}」，可在项目回收站找回",
+  "gallery_delete_undo_gone": "无法撤销：「{{name}}」已不在项目回收站里，可能已经恢复或被彻底删除",
   "gallery_delete_undone": "已恢复「{{name}}」",
   "gallery_delete_refresh_failed": "删除已完成，但页面数据刷新失败，请手动刷新查看最新状态",
   "aliases_add": "添加别名",

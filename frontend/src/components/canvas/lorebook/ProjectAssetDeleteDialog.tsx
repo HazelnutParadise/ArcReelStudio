@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
-import { API, type AssetDeletionPreview } from "@/api";
+import { API, ApiRequestError, type AssetDeletionPreview } from "@/api";
 import { useConfirmLeave } from "@/components/shared/edit-unit/LeaveGuard";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import {
@@ -104,7 +104,13 @@ export function ProjectAssetDeleteDialog({
         pushToast(t("assets:gallery_delete_undone", { name: result.object.name }), "success");
       }
     } catch (err) {
-      pushToast(t("assets:create_trash_restore_failed", { message: errMsg(err) }), "error");
+      // 404/409：删除记录已被恢复、清理，或已改为只能下载
+      pushToast(
+        err instanceof ApiRequestError && (err.status === 404 || err.status === 409)
+          ? t("assets:gallery_delete_undo_gone", { name })
+          : t("assets:create_trash_restore_failed", { message: errMsg(err) }),
+        "error",
+      );
     }
   };
 

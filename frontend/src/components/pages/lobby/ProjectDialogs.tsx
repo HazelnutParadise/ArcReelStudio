@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { API } from "@/api";
+import { API, ApiRequestError } from "@/api";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -153,8 +153,19 @@ export function DeleteProjectDialog({ project, onClose, onDone }: ProjectDialogP
               action: {
                 label: t("common:undo"),
                 onClick: () => {
-                  API.restoreDeletedProject(deletedId).then(onDone, (err: unknown) =>
-                    pushToast(t("dashboard:lobby_delete_undo_failed", { message: errMsg(err) }), "error"),
+                  API.restoreDeletedProject(deletedId).then(
+                    () => {
+                      onDone();
+                      pushToast(t("dashboard:lobby_delete_undone", { title }), "success");
+                    },
+                    (err: unknown) =>
+                      // 404：已删除项目已经被恢复或彻底删除
+                      pushToast(
+                        err instanceof ApiRequestError && err.status === 404
+                          ? t("dashboard:lobby_delete_undo_gone", { title })
+                          : t("dashboard:lobby_delete_undo_failed", { message: errMsg(err) }),
+                        "error",
+                      ),
                   );
                 },
               },

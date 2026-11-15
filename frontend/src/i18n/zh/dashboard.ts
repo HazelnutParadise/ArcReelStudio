@@ -3070,6 +3070,8 @@ export default {
   'lobby_delete_title': '删除「{{title}}」？',
   'lobby_delete_desc': '项目会移入「已删除项目」并保留 30 天，期间可以在项目列表页整体恢复。排队中的任务随之取消。',
   'lobby_deleted': '已删除「{{title}}」',
+  'lobby_delete_undone': '已恢复「{{title}}」',
+  'lobby_delete_undo_gone': '无法撤销：「{{title}}」已不在已删除项目里，可能已经恢复或被彻底删除',
   'lobby_delete_undo_failed': '撤销失败：{{message}}',
   'lobby_deleted_projects': '已删除项目',
   'deleted_projects_description': '删除的项目连同它的项目回收站在这里保留 {{days}} 天，可以整体恢复，到期后自动清除。',
@@ -4103,6 +4105,8 @@ export default {
   'edit_view_bgm_uploading': '正在上传 BGM…',
   'edit_view_bgm_uploaded': '已上传 BGM「{{name}}」。各集的剪辑时间线都能用，可以让 Agent 摆进时间线',
   'edit_view_bgm_placed': '已上传 BGM「{{name}}」，放在时间线第 {{start}} 秒',
+  'edit_view_bgm_occupied':
+    '已上传 BGM「{{name}}」，但这里已经有 BGM「{{other}}」，同一时刻只能放一首。可以让 Agent 换个位置摆放，或移开原来那段',
   'edit_view_bgm_place_failed': '已上传 BGM「{{name}}」，但没能放进时间线：{{message}}。可以让 Agent 摆放',
   'edit_view_bgm_unplace_failed': '无法撤销：{{message}}',
   'edit_view_bgm_upload_failed': 'BGM 上传失败：{{message}}',

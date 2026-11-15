@@ -516,6 +516,9 @@ MESSAGES = {
     "edit_timeline_placed_sfx": "Добавлен звуковой эффект",
     "edit_timeline_removed_bgm": "Удалена фоновая музыка",
     "edit_timeline_removed_sfx": "Удалён звуковой эффект",
+    "edit_timeline_audio_not_placeable": "Сюда не помещается: возможно, здесь уже есть BGM или позиция за концом таймлайна",
+    "edit_timeline_audio_changed": "После размещения таймлайн изменился, отменить нельзя",
+    "edit_timeline_audio_gone": "Этого фрагмента уже нет на таймлайне, отменить нельзя",
     "scene_updated": "Сцена «{scene_id}» обновлена",
     "segment_updated": "Сегмент «{segment_id}» обновлён",
     # Characters / Scenes / Props

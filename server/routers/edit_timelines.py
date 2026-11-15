@@ -356,6 +356,17 @@ async def restore_edit_timeline_revision(
         raise edit_timeline_api_error(exc) from exc
 
 
+def _audio_clip_error(exc: EditTimelineError, *, removing: bool) -> ApiError:
+    """放入与撤销音频片段的拒绝换成给创作者看的话：位置放不下、时间线已被改过、片段已经不在了。"""
+    if exc.code == "revision_conflict":
+        return ApiError("edit_timeline_audio_changed", status_code=409)
+    if exc.code == "operation_invalid":
+        if removing:
+            return ApiError("edit_timeline_audio_gone", status_code=409)
+        return ApiError("edit_timeline_audio_not_placeable", status_code=422)
+    return edit_timeline_api_error(exc)
+
+
 @router.post("/projects/{project_name}/edit-timelines/{timeline_id}/audio-clips")
 async def place_audio_clip(
     project_name: str,
@@ -382,7 +393,7 @@ async def place_audio_clip(
                 author=RevisionAuthor(kind="creator", user_id=user.id),
             )
     except EditTimelineError as exc:
-        raise edit_timeline_api_error(exc) from exc
+        raise _audio_clip_error(exc, removing=False) from exc
 
 
 @router.delete("/projects/{project_name}/edit-timelines/{timeline_id}/audio-clips/{clip_id}")
@@ -409,7 +420,7 @@ async def remove_audio_clip(
                 author=RevisionAuthor(kind="creator", user_id=user.id),
             )
     except EditTimelineError as exc:
-        raise edit_timeline_api_error(exc) from exc
+        raise _audio_clip_error(exc, removing=True) from exc
 
 
 @router.delete("/projects/{project_name}/edit-timelines/{timeline_id}", status_code=204)

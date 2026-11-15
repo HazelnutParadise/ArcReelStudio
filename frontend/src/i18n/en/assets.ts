@@ -293,6 +293,8 @@ export default {
   "gallery_delete_episode_count_other": "{{count}} references",
   "gallery_delete_merge_instead": "Merge instead…",
   "gallery_deleted": 'Deleted "{{name}}". You can restore it from the project trash',
+  "gallery_delete_undo_gone":
+    'Couldn\'t undo: "{{name}}" is no longer in the project trash. It may have been restored or permanently deleted',
   "gallery_delete_undone": 'Restored "{{name}}"',
   "gallery_delete_refresh_failed":
     "The asset is deleted, but the page data failed to refresh. Refresh manually to see the latest state",

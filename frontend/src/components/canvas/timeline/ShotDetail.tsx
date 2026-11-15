@@ -8,7 +8,7 @@ import { ImagePromptEditor } from "./ImagePromptEditor";
 import { VideoPromptEditor } from "./VideoPromptEditor";
 import { DialogueListEditor } from "./DialogueListEditor";
 import { UtteranceListEditor } from "./UtteranceListEditor";
-import { isUtteranceIncomplete } from "./utterance-completeness";
+import { isIncompleteSpeechRejection, isUtteranceIncomplete } from "./utterance-completeness";
 import { SourceTextReadonly } from "@/components/shared/SourceTextReadonly";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { ShotDetailLayout, ShotGroup, ShotMediaGrid, ShotSection, ShotSourceCollapsible } from "./ShotDetailLayout";
@@ -1216,8 +1216,12 @@ export function ShotDetail({
         header={header}
         footer={
           <UnsavedChangesBar
-            // 有发声条目没填完时，服务端拒收的「无法解析台词」不当保存失败报：编辑区已提示先填角色与台词
-            unit={utterancesIncomplete && unit.status === "error" ? { ...unit, status: "idle", error: null } : unit}
+            // 有发声条目没填完、服务端正因此拒收（无法解析台词或没写说话人）时不当保存失败报：编辑区已提示先填角色与台词；其他失败照常显示
+            unit={
+              utterancesIncomplete && unit.status === "error" && isIncompleteSpeechRejection(unit.errorCode)
+                ? { ...unit, status: "idle", error: null }
+                : unit
+            }
             busy={formSwitching !== null}
             className="mx-5 my-3 shrink-0"
           />

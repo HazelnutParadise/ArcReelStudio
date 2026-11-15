@@ -292,6 +292,8 @@ export default {
   "gallery_delete_episode_count_other": "{{count}} lần",
   "gallery_delete_merge_instead": "Gộp thay vì xóa…",
   "gallery_deleted": 'Đã xóa "{{name}}". Có thể khôi phục từ thùng rác dự án',
+  "gallery_delete_undo_gone":
+    'Không thể hoàn tác: "{{name}}" không còn trong thùng rác dự án, có thể đã được khôi phục hoặc xóa vĩnh viễn',
   "gallery_delete_undone": 'Đã khôi phục "{{name}}"',
   "gallery_delete_refresh_failed":
     "Đã xóa xong nhưng không làm mới được dữ liệu trang. Hãy làm mới thủ công để xem trạng thái mới nhất",

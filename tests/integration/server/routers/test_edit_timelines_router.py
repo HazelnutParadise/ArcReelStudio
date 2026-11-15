@@ -206,3 +206,41 @@ def test_creator_places_an_uploaded_bgm_and_sfx_and_can_take_them_out(timeline_p
 
     assert removed.status_code == 200, removed.text
     assert client.get(f"{base}/{timeline_id}").json()["bgm"] == []
+
+
+def test_placing_audio_where_it_does_not_fit_and_undoing_a_changed_clip_say_why(
+    timeline_project: ProjectManager,
+) -> None:
+    import asyncio
+
+    from lib.bgm.service import BgmLibraryService
+    from tests.factories import wav_bytes
+
+    _install_available_video(timeline_project, "E1U1")
+    track = asyncio.run(
+        BgmLibraryService(timeline_project).upload("demo", filename="雨夜.wav", content=wav_bytes(2.0, tone_hz=330))
+    )
+    client = _client(EditTimelineService(timeline_project), WorkflowStateService(timeline_project))
+    created = client.post("/api/v1/projects/demo/episodes/1/edit-timelines", json={"from": "script", "name": "完整版"})
+    path = f"/api/v1/projects/demo/edit-timelines/{created.json()['timeline']['id']}/audio-clips"
+    duration = created.json()["duration"]
+
+    def place(start: float, base: int):
+        return client.post(path, json={"kind": "bgm", "audio_id": track.id, "start": start, "base_revision": base})
+
+    first = place(0, 1)
+    overlapping = place(0, 2)
+    past_end = place(duration, 2)
+    removed = client.request(
+        "DELETE", f"{path}/{first.json()['bgm'][0]['id']}", params={"kind": "bgm", "base_revision": 2}
+    )
+    removed_again = client.request(
+        "DELETE", f"{path}/{first.json()['bgm'][0]['id']}", params={"kind": "bgm", "base_revision": 3}
+    )
+
+    assert first.status_code == 200
+    assert (overlapping.status_code, past_end.status_code) == (422, 422)
+    assert "放不下" in overlapping.json()["detail"]
+    assert removed.status_code == 200
+    assert removed_again.status_code == 409
+    assert "不在时间线上" in removed_again.json()["detail"]

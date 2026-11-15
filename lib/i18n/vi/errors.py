@@ -513,6 +513,9 @@ MESSAGES = {
     "edit_timeline_placed_sfx": "Đã thêm hiệu ứng âm thanh",
     "edit_timeline_removed_bgm": "Đã gỡ nhạc nền",
     "edit_timeline_removed_sfx": "Đã gỡ hiệu ứng âm thanh",
+    "edit_timeline_audio_not_placeable": "Không đặt được ở đây: có thể đã có BGM tại vị trí này, hoặc vượt quá cuối dòng thời gian",
+    "edit_timeline_audio_changed": "Dòng thời gian đã thay đổi sau khi đặt nên không thể hoàn tác",
+    "edit_timeline_audio_gone": "Đoạn này không còn trên dòng thời gian nên không thể hoàn tác",
     "scene_updated": "Đã cập nhật cảnh '{scene_id}'",
     "segment_updated": "Đã cập nhật đoạn '{segment_id}'",
     # Characters / Scenes / Props

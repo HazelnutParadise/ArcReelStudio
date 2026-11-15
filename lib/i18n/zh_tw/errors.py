@@ -485,6 +485,9 @@ MESSAGES = {
     "edit_timeline_placed_sfx": "放入音效",
     "edit_timeline_removed_bgm": "移除 BGM",
     "edit_timeline_removed_sfx": "移除音效",
+    "edit_timeline_audio_not_placeable": "這個位置放不下：可能已經有一首 BGM，或超出了時間軸",
+    "edit_timeline_audio_changed": "時間軸剛被改過，這一段已經不是放入時的樣子，無法復原",
+    "edit_timeline_audio_gone": "這一段已經不在時間軸上，無法復原",
     "scene_updated": "分鏡 '{scene_id}' 已更新",
     "segment_updated": "分鏡 '{segment_id}' 已更新",
     # Characters / Scenes / Props

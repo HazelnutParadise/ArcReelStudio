@@ -3,11 +3,11 @@ import { AlertTriangle, Loader2, Upload } from "lucide-react";
 import { memo, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { API } from "@/api";
+import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { errMsg } from "@/utils/async";
-import type { EditClip, EditTimelineReadout } from "@/types/edit-timeline";
+import type { EditBgmClip, EditClip, EditTimelineReadout } from "@/types/edit-timeline";
 
 import type { AudioPlacement, NarrationSpan, PlacedSubtitle } from "./preview-tracks";
 import { ItemPositionBadge } from "@/components/shared/episode-item/ItemPositionBadge";
@@ -74,7 +74,10 @@ export function EditTimelineTracks({
   const placement: AudioPlacementTarget = {
     timelineId: readout.timeline.id,
     baseRevision: readout.latest_revision,
-    start: Math.min(Math.max(t, 0), readout.duration),
+    // 起点须落在时间线内（不含末尾）：播放头停在末尾（如刚播完）时放回开头
+    start: t > 0 && t < readout.duration ? t : 0,
+    duration: readout.duration,
+    bgm: readout.bgm,
     onPlaced: onTimelineChanged,
   };
   const trackRef = useRef<HTMLDivElement>(null);
@@ -259,6 +262,10 @@ interface AudioPlacementTarget {
   timelineId: string;
   baseRevision: number;
   start: number;
+  /** 时间线总长，秒：BGM 超出末尾的部分会截掉，判断重叠时只算到这里。 */
+  duration: number;
+  /** 时间线上已有的 BGM 片段：同一时刻只能有一首，放入前先查重叠。 */
+  bgm: readonly EditBgmClip[];
   /** 放入或撤销写入后重新读取时间线。 */
   onPlaced: () => void;
 }
@@ -287,8 +294,8 @@ function AudioUploadButton({
     setUploading(true);
     const { pushToast } = useAppStore.getState();
     // 上传时的位置与修订：上传期间播放头可能移动，放入按按下时的意图
-    const { timelineId, baseRevision, start, onPlaced } = target;
-    let uploaded: { id: string; name: string };
+    const { timelineId, baseRevision, start, duration, bgm, onPlaced } = target;
+    let uploaded: { id: string; name: string; duration: number };
     try {
       uploaded =
         kind === "bgm" ? (await API.uploadBgm(projectName, file)).bgm : (await API.uploadSfx(projectName, file)).sfx;
@@ -296,6 +303,19 @@ function AudioUploadButton({
       pushToast(t(`edit_view_${kind}_upload_failed`, { message: errMsg(cause) }), "error");
       setUploading(false);
       return;
+    }
+    if (kind === "bgm") {
+      // 同一时刻只能有一首 BGM：与已有片段重叠时不去碰服务端，直接说清楚哪里已经有音乐
+      const end = Math.min(start + uploaded.duration, duration);
+      const occupied = bgm.find((clip) => clip.start < end && start < clip.end);
+      if (occupied) {
+        pushToast(
+          t("edit_view_bgm_occupied", { name: uploaded.name, other: occupied.name ?? occupied.bgm_id }),
+          "warning",
+        );
+        setUploading(false);
+        return;
+      }
     }
     try {
       const placed = await API.placeEditTimelineAudio(projectName, timelineId, {
@@ -310,7 +330,14 @@ function AudioUploadButton({
         if (!clipId) return;
         API.removeEditTimelineAudio(projectName, timelineId, clipId, kind, placed.revision).then(
           onPlaced,
-          (cause: unknown) => pushToast(t(`edit_view_${kind}_unplace_failed`, { message: errMsg(cause) }), "error"),
+          (cause: unknown) =>
+            // 409：片段在放入之后已被改动或移除，服务端的说明已经讲清原因
+            pushToast(
+              cause instanceof ApiRequestError && cause.status === 409
+                ? errMsg(cause)
+                : t(`edit_view_${kind}_unplace_failed`, { message: errMsg(cause) }),
+              "error",
+            ),
         );
       };
       pushToast(

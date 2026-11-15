@@ -329,6 +329,8 @@ export default {
   "gallery_delete_episode_count_other": "{{count}} ссылки",
   "gallery_delete_merge_instead": "Объединить вместо удаления…",
   "gallery_deleted": "«{{name}}» удалён. Его можно вернуть из корзины проекта",
+  "gallery_delete_undo_gone":
+    "Не удалось отменить: «{{name}}» уже нет в корзине проекта — возможно, его восстановили или удалили навсегда",
   "gallery_delete_undone": "«{{name}}» восстановлен",
   "gallery_delete_refresh_failed":
     "Материал удалён, но данные страницы не удалось обновить. Обновите страницу вручную, чтобы увидеть актуальное состояние",
