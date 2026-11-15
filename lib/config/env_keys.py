@@ -22,6 +22,9 @@ OTHER_PROVIDER_ENV_KEYS: tuple[str, ...] = (
     # provider 凭证模型，但必须在 Agent 会话中显式置空，避免继承宿主环境。
     "ANTHROPIC_AUTH_TOKEN",
     "CLAUDE_CODE_OAUTH_TOKEN",
+    # 让 CLI 改走宿主云账号（Bedrock / Vertex）的开关，同样不能从宿主环境继承
+    "CLAUDE_CODE_USE_BEDROCK",
+    "CLAUDE_CODE_USE_VERTEX",
     "ARK_API_KEY",
     "XAI_API_KEY",
     "GEMINI_API_KEY",

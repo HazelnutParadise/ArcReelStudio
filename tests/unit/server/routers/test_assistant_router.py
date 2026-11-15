@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from server.agent_runtime.models import AgentConnectionMissing
 from server.agent_runtime.service import SessionSupersededError
 from server.agent_runtime.session_manager import SessionCapacityError, UnrecordedMessageError
 from server.auth import CurrentUserInfo, get_current_user
@@ -215,6 +216,23 @@ class TestAssistantRouter:
         with TestClient(app) as client:
             resp = client.post(f"{PREFIX}/sessions/send", json={"content": "hello"})
             assert resp.status_code == 504
+
+    def test_send_without_an_agent_connection_points_to_settings(self, monkeypatch):
+        """没有可用的 Agent 连线：409，带 ``agent_connection_missing`` 代码与可读说明，前端据此给出设置入口。"""
+        fake = _FakeService()
+
+        async def _missing(project_name, content, session_id=None, images=None, locale=None, client_key=None):
+            raise AgentConnectionMissing("no connection")
+
+        fake.send_or_create = _missing
+        with _client(monkeypatch) as client:
+            monkeypatch.setattr(assistant, "get_assistant_service", lambda: fake)
+            resp = client.post(f"{PREFIX}/sessions/send", json={"content": "hello"})
+        assert resp.status_code == 409
+        body = resp.json()
+        assert body["diagnostic"] == {"code": "agent_connection_missing"}
+        assert body["detail"]
+        assert body["detail"] != "agent_connection_missing"
 
     def test_ownership_validation_wrong_project(self, monkeypatch):
         """Accessing a session through the wrong project should return 404."""

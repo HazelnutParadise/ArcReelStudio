@@ -273,6 +273,7 @@ export {
   ReferenceProjectionError,
   ScriptEditCommandError,
   SpeechAdmissionError,
+  isAgentConnectionMissing,
   type ErrorResponse,
 } from "./api/errors";
 export type {

@@ -70,6 +70,10 @@ async def run_claude_turn(
     # 只带订阅令牌：API Key 凭证的地址、密钥与档位模型都清空，免得 CLI 读到容器里别的 Anthropic 设置
     env = dict.fromkeys(ANTHROPIC_ENV_KEYS, "")
     env[OAUTH_TOKEN_ENV_KEY] = oauth_token
+    # 配置目录也用这一轮自己的：CLI 读不到宿主用户的 ~/.claude 与钥匙圈登录
+    config_dir = work_dir / ".claude-config"
+    await asyncio.to_thread(config_dir.mkdir, mode=0o700)
+    env["CLAUDE_CONFIG_DIR"] = str(config_dir)
     options = ClaudeAgentOptions(
         cwd=str(work_dir),
         tools=["Read"] if attached else [],

@@ -15,6 +15,7 @@ from server.agent_runtime.session_store import SessionMetaStore
 from tests.fakes import (
     FakeSDKClient,
     assistant_frame,
+    connected_provider_env,
     empty_sdk_response_stream,
     result_frame,
     session_state_message,
@@ -85,7 +86,7 @@ async def _cold_revival_clients(session_manager, monkeypatch):
     tests can assert which locale the language regulation was rendered with."""
 
     async def _fake_env():
-        return {}
+        return await connected_provider_env()
 
     use_provider_env(monkeypatch, _fake_env)
 
@@ -147,7 +148,7 @@ class TestSessionManager:
     @pytest.mark.asyncio
     async def test_build_options_and_connect_paths(self, session_manager, meta_store, monkeypatch):
         async def _fake_env():
-            return {}
+            return await connected_provider_env()
 
         use_provider_env(monkeypatch, _fake_env)
 

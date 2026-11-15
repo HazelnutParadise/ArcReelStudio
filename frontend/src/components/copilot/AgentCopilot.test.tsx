@@ -687,6 +687,29 @@ describe("AgentCopilot", () => {
     });
   });
 
+  it("says who can see the conversation", () => {
+    render(<AgentCopilot />);
+    expect(screen.getByText("这个项目的成员都能看到这段对话")).toBeInTheDocument();
+  });
+
+  it("shows a missing Agent connection inline above the input with a link to the Agent settings", () => {
+    useAssistantStore.getState().setError("还没有可用的 Agent 连线", "agent_settings");
+    render(<AgentCopilot />);
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("还没有可用的 Agent 连线");
+    expect(within(alert).getByRole("link", { name: "Agent 设置" })).toHaveAttribute(
+      "href",
+      "/app/settings?section=arcreel-agent",
+    );
+  });
+
+  it("shows other errors without the settings link", () => {
+    useAssistantStore.getState().setError("发送失败");
+    render(<AgentCopilot />);
+    expect(within(screen.getByRole("alert")).queryByRole("link")).not.toBeInTheDocument();
+  });
+
   it("does not send when Enter is used to confirm an IME composition", () => {
     render(<AgentCopilot />);
 

@@ -809,6 +809,7 @@ MESSAGES = {
     "version_resource_not_found": "Resource '{resource_type}/{resource_id}' does not exist",
     "version_snapshot_path_unmanaged": "A '{resource_type}' version record points to an unmanaged snapshot path; the operation was refused",
     "version_snapshot_corrupted": "Version {version} can't be used because its file is damaged. You can choose another version or regenerate.",
+    "agent_connection_missing": "No Agent connection is available, so the Agent can't reply yet. Add one in Settings → ArcReel Agent",
     "session_capacity_exceeded": "Concurrent session limit reached, please try again later",
     "session_question_unavailable": "The session is not running or has no pending question",
     "rewrite_anchor_invalid": "The message you are editing is not part of this conversation; refresh and try again",

@@ -15,7 +15,6 @@ import { refreshAfterWrite } from "@/components/canvas/shared/refreshAfterWrite"
 import { useDemoWorkbench } from "@/onboarding/use-demo-workbench";
 import { isDemoProject } from "@/onboarding/demo-project";
 import { useAppStore } from "@/stores/app-store";
-import { useConfigStatusStore } from "@/stores/config-status-store";
 import { useActiveResourceIds } from "@/stores/tasks-store";
 import { TimelineCanvas } from "./timeline/TimelineCanvas";
 import { OverviewCanvas } from "./overview/OverviewCanvas";
@@ -295,20 +294,9 @@ export function StudioCanvasRouter() {
     [currentProjectName, t],
   );
 
-  // 未配置 audio 供应商时在前端就给出清晰提示（后端入队前还有同语义的 400 兜底）
-  const ensureAudioProviderConfigured = useCallback((): boolean => {
-    const cfg = useConfigStatusStore.getState();
-    if (cfg.initialized && !cfg.hasMediaType("audio")) {
-      useAppStore.getState().pushToast(t("audio_provider_not_configured_toast"), "error");
-      return false;
-    }
-    return true;
-  }, [t]);
-
   const handleGenerateNarration = useCallback(
     async (segmentId: string, scriptFile?: string) => {
       if (!currentProjectName || !currentScripts) return;
-      if (!ensureAudioProviderConfigured()) return;
       const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
       if (!resolvedFile) return;
       try {
@@ -317,13 +305,12 @@ export function StudioCanvasRouter() {
         useAppStore.getState().pushToast(t("generate_narration_failed", { message: errMsg(err) }), "error");
       }
     },
-    [currentProjectName, currentScripts, ensureAudioProviderConfigured, t],
+    [currentProjectName, currentScripts, t],
   );
 
   const handleGenerateEpisodeNarration = useCallback(
     async (scriptFile?: string) => {
       if (!currentProjectName || !currentScripts) return;
-      if (!ensureAudioProviderConfigured()) return;
       const resolvedFile = scriptFile ?? Object.keys(currentScripts)[0];
       if (!resolvedFile) return;
       try {
@@ -332,7 +319,7 @@ export function StudioCanvasRouter() {
         useAppStore.getState().pushToast(t("generate_narration_failed", { message: errMsg(err) }), "error");
       }
     },
-    [currentProjectName, currentScripts, ensureAudioProviderConfigured, t],
+    [currentProjectName, currentScripts, t],
   );
 
   // 后期配音项目不生成旁白配音：收起画布上的生成入口，已有配音照常试听。

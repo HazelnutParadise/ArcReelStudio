@@ -7,7 +7,7 @@ import pytest
 
 from lib.infra.data_root_layout import DataRootLayout
 from server.agent_runtime.session_manager import SessionManager
-from tests.fakes import use_provider_env
+from tests.fakes import connected_provider_env, use_provider_env
 
 
 class _FakeOptions:
@@ -23,7 +23,7 @@ class _FakeHookMatcher:
 
 async def _fake_provider_env():
     """Stub for OptionsAssembler 凭证注入 — 跳过 DB 访问。"""
-    return {}
+    return await connected_provider_env()
 
 
 class TestSessionManagerProjectScope:

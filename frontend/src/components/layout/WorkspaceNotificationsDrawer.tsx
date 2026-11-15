@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowUpRight, Bell, BellRing, CircleAlert, CircleCheck, Info, X } from "lucide-react";
+import { ArrowUpRight, Bell, BellRing, CircleAlert, CircleCheck, Info, Settings, X } from "lucide-react";
+import { Link } from "wouter";
 import { cn } from "cn";
-import { Button } from "@/components/ui/button";
+import { settingsSectionPath } from "@/app-routes";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { useNowTick } from "@/hooks/useNowTick";
@@ -164,6 +166,15 @@ function NotificationRow({
               {t("view_location")}
               <ArrowUpRight aria-hidden data-icon="inline-end" />
             </Button>
+          )}
+          {item.settings && (
+            <Link
+              href={`~${settingsSectionPath(item.settings)}`}
+              className={buttonVariants({ variant: "link", size: "xs" })}
+            >
+              {t("open_settings_action")}
+              <Settings aria-hidden data-icon="inline-end" />
+            </Link>
           )}
         </div>
       </div>

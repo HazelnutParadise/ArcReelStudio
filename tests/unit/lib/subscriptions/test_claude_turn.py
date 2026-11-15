@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -62,6 +63,10 @@ async def test_runs_one_toolless_turn_with_only_the_subscription_token() -> None
     assert options.system_prompt == "be brief"
     assert options.env["CLAUDE_CODE_OAUTH_TOKEN"] == "sk-ant-oat01-x"
     assert options.env["ANTHROPIC_API_KEY"] == ""
+    # 配置目录是这一轮自己的临时目录，CLI 读不到宿主的 ~/.claude 与钥匙圈登录
+    config_dir = Path(options.env["CLAUDE_CONFIG_DIR"])
+    assert config_dir.parent == Path(options.cwd)
+    assert not await asyncio.to_thread(config_dir.exists)  # 一轮结束后随工作目录删掉
     assert options.output_format is None
 
 

@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { History, PanelRightClose, Plus } from "lucide-react";
+import { History, PanelRightClose, Plus, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "wouter";
+import { settingsSectionPath } from "@/app-routes";
 import { Button } from "@/components/ui/button";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { useAssistantSession } from "@/hooks/useAssistantSession";
@@ -37,6 +39,7 @@ export function AgentCopilot() {
   const pendingQuestion = useAssistantStore((s) => s.pendingQuestion);
   const answeringQuestion = useAssistantStore((s) => s.answeringQuestion);
   const error = useAssistantStore((s) => s.error);
+  const errorAction = useAssistantStore((s) => s.errorAction);
   const startupFailureOrigin = useAssistantStore((s) => s.startupFailureOrigin);
 
   const { currentProjectName } = useProjectsStore();
@@ -170,6 +173,11 @@ export function AgentCopilot() {
         </Button>
       </header>
 
+      <p className="flex shrink-0 items-center gap-1.5 border-b border-border px-3 py-1 text-xs text-muted-foreground">
+        <Users className="size-3.5 shrink-0" aria-hidden />
+        {t("dashboard:agent_conversation_shared")}
+      </p>
+
       {historyOpen ? (
         <SessionHistory onPick={handlePickSession} onDelete={deleteSession} onClose={() => setHistoryOpen(false)} />
       ) : (
@@ -191,6 +199,14 @@ export function AgentCopilot() {
           className="shrink-0 border-t border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive"
         >
           {error}
+          {errorAction === "agent_settings" && (
+            <>
+              {" "}
+              <Link href={`~${settingsSectionPath("arcreel-agent")}`} className="font-medium underline">
+                {t("dashboard:agent_failure_open_settings")}
+              </Link>
+            </>
+          )}
         </p>
       )}
 

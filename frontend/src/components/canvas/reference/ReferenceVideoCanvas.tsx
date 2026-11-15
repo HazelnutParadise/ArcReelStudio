@@ -63,7 +63,12 @@ import { PromptAuthoringDraftPanel, usePromptAuthoringDraft } from "./PromptAuth
 import { API } from "@/api";
 import type { UnitJson } from "@/collab/ydoc-json";
 import { scriptItemRef } from "@/collab/collab-client";
-import { enqueueNarration, enqueueReferenceVideoBatch, enqueueReferenceVideoUnit } from "@/actions/generation";
+import {
+  enqueueNarration,
+  enqueueReferenceVideoBatch,
+  enqueueReferenceVideoUnit,
+  GenerationBlockedError,
+} from "@/actions/generation";
 import { useReferenceVideoStore, referenceVideoCacheKey } from "@/stores/reference-video-store";
 import { isResourceBusy, useActiveResourceIds, useLatestTasksByResource } from "@/stores/tasks-store";
 import { useAppStore } from "@/stores/app-store";
@@ -768,7 +773,10 @@ export function ReferenceVideoCanvas({
       } catch (e) {
         setBatchPlan(null);
         setBatchAdmission(null);
-        toastError(e, (msg) => t("reference_batch_request_failed", { error: msg }));
+        // 缺供应商或默认模型：动作层已弹过带「前往设置」的提示
+        if (!(e instanceof GenerationBlockedError)) {
+          toastError(e, (msg) => t("reference_batch_request_failed", { error: msg }));
+        }
       }
     },
     [projectName, episode, t],

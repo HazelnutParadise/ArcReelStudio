@@ -30,7 +30,7 @@ from server.agent_runtime.options_assembler import (
 )
 from server.agent_toolset.toolset import ARCREEL_MCP_TOOL_IDS
 from server.auth import verify_token
-from tests.fakes import blocking_file_read_gate
+from tests.fakes import blocking_file_read_gate, connected_provider_env
 
 _ALLOWED_TOOLS = ["Skill", "Task", "Bash", "BashOutput", "KillBash", "Read", "Write", "Edit"]
 _SETTING_SOURCES = ["project"]
@@ -164,7 +164,7 @@ async def test_build_adds_keep_alive_hook_with_can_use_tool(tmp_path: Path) -> N
     """can_use_tool 存在时，keep-alive hook 排在 file access hook 之前。"""
 
     async def fake_loader():
-        return {}
+        return await connected_provider_env()
 
     async def _can_use_tool(_tool, _input, _ctx):
         return None
@@ -189,7 +189,7 @@ async def test_build_system_prompt_renders_language_rule_for_locale(tmp_path: Pa
     """追加的系统提示按 locale 渲染语言规范，只含语言规范、项目上下文与用户记忆三段。"""
 
     async def fake_loader():
-        return {}
+        return await connected_provider_env()
 
     assembler = _make_assembler(tmp_path, provider_env_loader=fake_loader)
     options = await assembler.build("demo", locale=locale)
@@ -211,7 +211,7 @@ async def test_build_sandbox_disabled_strips_bash(tmp_path: Path) -> None:
     """sandbox 关闭（Windows 回退）→ Bash 系列剥离出 allowed_tools。"""
 
     async def fake_loader():
-        return {}
+        return await connected_provider_env()
 
     policy = _make_policy(tmp_path, sandbox_enabled=False)
     assembler = _make_assembler(tmp_path, policy=policy, provider_env_loader=fake_loader)
@@ -279,7 +279,7 @@ async def test_build_settings_redirects_auto_memory_to_project_memory_dir(tmp_pa
     由 SDK 在拼命令行时并进同一份 JSON。"""
 
     async def fake_loader():
-        return {}
+        return await connected_provider_env()
 
     options = await _make_assembler(tmp_path, provider_env_loader=fake_loader).build("demo")
 
@@ -440,7 +440,7 @@ async def test_read_only_subagents_cannot_call_any_tool_beyond_reading(tmp_path:
     """只读子智能体只能看图与读文件：任何写入、命令、派生、生成与其余 ArcReel 工具都在 PreToolUse 被拒。"""
 
     async def fake_loader():
-        return {}
+        return await connected_provider_env()
 
     options = await _make_assembler(tmp_path, provider_env_loader=fake_loader).build("demo")
     every_tool = [*_BUILTIN_TOOLS, *(f"mcp__arcreel__{tool_id}" for tool_id in ARCREEL_MCP_TOOL_IDS)]

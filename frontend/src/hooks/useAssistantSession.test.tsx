@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi, type MockInstance } from "vite-plus/test";
-import { AgentFailureError, API } from "@/api";
+import { AgentFailureError, API, ApiRequestError } from "@/api";
+import i18n from "@/i18n";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
 import type {
@@ -926,6 +927,26 @@ describe("useAssistantSession", () => {
     expect(useAssistantStore.getState().startupFailure).toEqual(failure);
     expect(useAssistantStore.getState().error).toBeNull();
     expect(useAssistantStore.getState().turns).toEqual([]);
+  });
+
+  it("explains a missing Agent connection and offers the Agent settings instead of a generic send error", async () => {
+    mockIdleSession();
+    vi.spyOn(API, "sendAssistantMessage").mockRejectedValue(
+      new ApiRequestError("server text", { code: "agent_connection_missing" }, 409),
+    );
+
+    const { result } = renderHook(() => useAssistantSession("demo"));
+    await waitFor(() => {
+      expect(useAssistantStore.getState().currentSessionId).toBe("session-1");
+    });
+
+    await act(async () => {
+      expect(await result.current.sendMessage("hello")).toBe(false);
+    });
+
+    expect(useAssistantStore.getState().error).toBe(i18n.t("dashboard:agent_connection_missing"));
+    expect(useAssistantStore.getState().errorAction).toBe("agent_settings");
+    expect(useAssistantStore.getState().startupFailure).toBeNull();
   });
 
   it("uses a fresh idempotency key for different content", async () => {

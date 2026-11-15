@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { API } from "@/api";
-import { enqueueAssetSheetBatch } from "@/actions/generation";
+import { enqueueAssetSheetBatch, GenerationBlockedError } from "@/actions/generation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,7 +84,9 @@ export function AssetSheetBatchDialog({
       }
       onClose();
     } catch (err) {
-      useAppStore.getState().pushToast(errMsg(err), "error");
+      // 缺供应商或默认模型：动作层已弹过带「前往设置」的提示
+      if (err instanceof GenerationBlockedError) onClose();
+      else useAppStore.getState().pushToast(errMsg(err), "error");
     } finally {
       setSubmitting(false);
     }

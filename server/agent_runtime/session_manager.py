@@ -43,6 +43,7 @@ from server.agent_runtime.message_serialization import (
     utc_now_iso,
 )
 from server.agent_runtime.models import (
+    AgentConnectionMissing,
     Heartbeat,
     LiveMessage,
     QueuedMessage,
@@ -993,6 +994,10 @@ class SessionManager:
                 locale=locale,
                 stderr=startup_stderr,
             )
+        except AgentConnectionMissing:
+            # 没有连线：一个进程都没起，原样交给路由层提示去设置
+            startup_stderr.stop()
+            raise
         except Exception as exc:
             sdk_stderr = startup_stderr.render()
             startup_stderr.stop()
@@ -1393,6 +1398,10 @@ class SessionManager:
                 locale=locale,
                 stderr=startup_stderr,
             )
+        except AgentConnectionMissing:
+            # 没有连线：一个进程都没起，原样交给路由层提示去设置
+            startup_stderr.stop()
+            raise
         except Exception as exc:
             sdk_stderr = startup_stderr.render()
             startup_stderr.stop()

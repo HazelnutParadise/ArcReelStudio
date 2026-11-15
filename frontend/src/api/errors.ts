@@ -102,6 +102,13 @@ export function isEditConflict(error: unknown): error is ApiRequestError {
   return diagnostic?.code === "edit_conflict";
 }
 
+/** 当前 Agent 引擎没有可用连线，发送被拒绝、没有启动任何进程（服务端 409 `agent_connection_missing`）。 */
+export function isAgentConnectionMissing(error: unknown): error is ApiRequestError {
+  if (!(error instanceof ApiRequestError) || error.status !== 409) return false;
+  const diagnostic = error.diagnostic as { code?: unknown } | null | undefined;
+  return diagnostic?.code === "agent_connection_missing";
+}
+
 /** Preserves reference request blockers so the UI can show a repair action. */
 export class ReferenceProjectionError extends Error {
   readonly code = "reference_request_projection_blocked" as const;

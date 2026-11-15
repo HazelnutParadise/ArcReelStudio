@@ -72,7 +72,6 @@ export type EpisodeRefs = readonly Pick<EpisodeMeta, "episode" | "title" | "scri
 
 const SUMMARY_JOINER = " · ";
 const MAX_LISTED = 3;
-const MAX_FALLBACK_CHARS = 120;
 
 function str(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -193,6 +192,7 @@ const BUILTIN_TOOLS: Record<string, { key: string; icon: LucideIcon }> = {
   WebFetch: { key: "tool_builtin_web_fetch", icon: Globe },
   TodoWrite: { key: "tool_builtin_todo_write", icon: ListChecks },
   AskUserQuestion: { key: "tool_builtin_ask_user_question", icon: MessageCircleQuestion },
+  ToolSearch: { key: "tool_builtin_tool_search", icon: Wrench },
 };
 
 function arcreelToolIcon(id: string): LucideIcon {
@@ -227,6 +227,18 @@ function builtinSummary(name: string, input: ToolInput, t: TFunction, f: Summary
     }
     case "AskUserQuestion":
       return f.join(...f.field(input.questions, "question").map(str));
+    case "ToolSearch": {
+      // 「select:a,b」是按名称载入工具：列出其中 ArcReel 工具的本地化名称；关键词搜索不显示原文
+      const query = f.text(input.query);
+      if (!query.startsWith("select:")) return "";
+      const names = query
+        .slice("select:".length)
+        .split(",")
+        .map((tool) => ARCREEL_TOOL_PREFIX.exec(tool.trim())?.[1])
+        .filter((id): id is string => !!id && t(`dashboard:tool_name_${id}`, { defaultValue: "" }) !== "")
+        .map((id) => t(`dashboard:tool_name_${id}`));
+      return f.list(names);
+    }
     case "BashOutput":
     case "KillBash":
       return "";
@@ -235,19 +247,13 @@ function builtinSummary(name: string, input: ToolInput, t: TFunction, f: Summary
   }
 }
 
-function fallbackSummary(input: ToolInput): string {
-  if (Object.keys(input).length === 0) return "";
-  const json = JSON.stringify(input);
-  return json.length > MAX_FALLBACK_CHARS ? `${json.slice(0, MAX_FALLBACK_CHARS)}…` : json;
-}
-
 export interface WorkLabel {
   name: string;
   summary: string;
   icon: LucideIcon;
 }
 
-/** 工具调用的显示名、图标与摘要。ArcReel 工具与内置工具都有本地化名称，其余工具保留原名。 */
+/** 工具调用的显示名、图标与摘要。ArcReel 工具与内置工具都有本地化名称；其余工具统称「工具」、不写摘要，原名与参数只在展开后的详情里。 */
 export function toolLabel(
   name: string,
   input: ToolInput | undefined,
@@ -263,16 +269,16 @@ export function toolLabel(
     const id = arcreel[1];
     const summarize = ARCREEL_TOOL_SUMMARIES[id];
     return {
-      name: t(`dashboard:tool_name_${id}`, { defaultValue: id }),
-      summary: summarize ? summarize(args, f) : fallbackSummary(args),
+      name: t(`dashboard:tool_name_${id}`, { defaultValue: t("dashboard:work_tool_fallback") }),
+      summary: summarize ? summarize(args, f) : "",
       icon: arcreelToolIcon(id),
     };
   }
 
   const builtin = BUILTIN_TOOLS[name];
   return {
-    name: builtin ? t(`dashboard:${builtin.key}`) : name,
-    summary: builtinSummary(name, args, t, f) ?? fallbackSummary(args),
+    name: builtin ? t(`dashboard:${builtin.key}`) : t("dashboard:work_tool_fallback"),
+    summary: builtinSummary(name, args, t, f) ?? "",
     icon: builtin?.icon ?? Wrench,
   };
 }

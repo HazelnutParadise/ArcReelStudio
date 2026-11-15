@@ -1,7 +1,10 @@
 /**
  * 入队动作层：所有生成类入队操作的唯一入口。
  *
- * 每个动作内部固定封装三件事：
+ * 每个动作先查前置条件（{@link blockGeneration}）：缺少能生成该媒体的供应商或默认模型时不提交，
+ * 只弹一条带「前往设置」的提示，单条入口返回 `blocked: true`，批量入口抛 {@link GenerationBlockedError}。
+ *
+ * 通过后固定封装三件事：
  * 1. 在**请求发出前**于 tasks-store 打乐观占用标记，请求失败即回滚，成功则用后端
  *    返回的 task_id 兑现（见 {@link submit}）——占用态因此从点击那一刻起就成立，
  *    调用方无须自备「请求在途」标记来覆盖网络往返窗口；目标集合由服务端决定的批量
@@ -17,6 +20,7 @@
  */
 import { API, derivativeResourceId } from "@/api";
 import i18n from "@/i18n";
+import { blockGeneration } from "./generation-prerequisites";
 import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import type {
@@ -51,6 +55,21 @@ function itemLabel(itemId: string): string {
 export interface EnqueueResult {
   taskIds: string[];
   deduped: boolean;
+  /** 缺少供应商或默认模型、没有提交：已弹过带「前往设置」的提示，调用方不必再提示。 */
+  blocked?: boolean;
+}
+
+const BLOCKED: EnqueueResult = { taskIds: [], deduped: false, blocked: true };
+
+/**
+ * 批量入口缺少前置条件、没有提交时抛出：已弹过带「前往设置」的提示，调用方捕获后不再提示。
+ * 批量入口的返回值是服务端的准入结果，没有「未提交」的形状，所以改用异常表达。
+ */
+export class GenerationBlockedError extends Error {
+  constructor() {
+    super("generation_blocked");
+    this.name = "GenerationBlockedError";
+  }
 }
 
 /**
@@ -142,6 +161,7 @@ export async function enqueueStoryboard(
   prompt: string | Record<string, unknown>,
   scriptFile: string,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "storyboard", segmentId, "storyboard")],
     () => API.generateStoryboard(projectName, segmentId, prompt, scriptFile),
@@ -158,6 +178,7 @@ export async function enqueueVideo(
   scriptFile: string,
   durationSeconds?: number,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("video")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "video", segmentId, "video")],
     () => API.generateVideo(projectName, segmentId, prompt, scriptFile, durationSeconds),
@@ -172,6 +193,7 @@ export async function enqueueNarration(
   segmentId: string,
   scriptFile: string,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("audio")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "tts", segmentId, "tts")],
     () => API.generateNarrationAudio(projectName, segmentId, scriptFile),
@@ -182,6 +204,7 @@ export async function enqueueNarration(
 }
 
 export async function enqueueEpisodeNarration(projectName: string, scriptFile: string): Promise<EnqueueResult> {
+  if (blockGeneration("audio")) return BLOCKED;
   const res = await API.generateEpisodeNarrationAudio(projectName, scriptFile);
   // 入队哪几段由服务端筛选（缺旁白且有原文），请求发出前无从打标，故按响应映射逐段补打。
   markResourcesByTaskId(projectName, "tts", "tts", res.task_ids_by_segment);
@@ -195,6 +218,7 @@ export async function enqueueEpisodeNarration(projectName: string, scriptFile: s
 }
 
 export async function enqueueCharacter(projectName: string, name: string): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "character", name, "character")],
     () => API.generateCharacter(projectName, name),
@@ -213,6 +237,7 @@ export async function enqueueCharacterDerivative(
   characterName: string,
   derivativeName: string,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   const resourceId = derivativeResourceId(characterName, derivativeName);
   const res = await submit(
     [markResource(projectName, "character_derivative", resourceId, "character_derivative")],
@@ -229,6 +254,7 @@ export async function enqueueCharacterVoiceSample(
   text: string,
   voice: string,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("audio")) return BLOCKED;
   // 音色试听样本与该角色的资产图生成/编辑共用同一资源槽（kind "character"）：
   // 二者互斥可接受——试听样本本就该在角色卡其它生成任务空闲时才发起。
   const res = await submit(
@@ -241,6 +267,7 @@ export async function enqueueCharacterVoiceSample(
 }
 
 export async function enqueueScene(projectName: string, name: string): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "scene", name, "scene")],
     () => API.generateProjectScene(projectName, name),
@@ -251,6 +278,7 @@ export async function enqueueScene(projectName: string, name: string): Promise<E
 }
 
 export async function enqueueProp(projectName: string, name: string): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "prop", name, "prop")],
     () => API.generateProjectProp(projectName, name),
@@ -261,6 +289,7 @@ export async function enqueueProp(projectName: string, name: string): Promise<En
 }
 
 export async function enqueueProduct(projectName: string, name: string): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "product", name, "product")],
     () => API.generateProjectProduct(projectName, name),
@@ -279,6 +308,7 @@ export async function enqueueImageEdit(
     scriptFile?: string | null;
   },
 ): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   // image_edit 与生成任务共享同一资源槽位：kind 按被编辑资源类型归槽，
   // pendingTaskType 固定 image_edit，与 taskResourceKind 的归一化保持一致。
   const res = await submit(
@@ -296,6 +326,7 @@ export async function enqueueGrid(
   scriptFile: string,
   sceneIds?: string[],
 ): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   // task_ids 可能为空数组（如缺失即生成时各组分镜图都已就绪、或联合图都在等切分落格）：此时后端不产生任何任务行，
   // settle([]) 会把标记回滚掉，不留下永远等不到真实行的残留。
   const res = await submit(
@@ -315,6 +346,7 @@ export async function enqueueGridRegenerate(
   gridId: string,
   scriptFile: string | null,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("image")) return BLOCKED;
   const res = await submit(
     [
       markResource(projectName, "grid", gridId, "grid"),
@@ -334,6 +366,7 @@ export async function enqueueReferenceVideoUnit(
   unitId: string,
   options: ReferenceGenerationRequestOptions = {},
 ): Promise<EnqueueResult> {
+  if (blockGeneration("video")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "reference_video", unitId, "reference_video")],
     () => API.generateReferenceVideoUnit(projectName, episode, unitId, options),
@@ -355,6 +388,7 @@ export async function enqueueReferenceVideoBatch(
   episode: number,
   payload: ReferenceBatchGenerateRequest,
 ): Promise<ReferenceBatchAdmission> {
+  if (blockGeneration("video")) throw new GenerationBlockedError();
   const unitIds = payload.unit_ids ?? [];
   const marks = unitIds.map((unitId) => markResource(projectName, "reference_video", unitId, "reference_video"));
   const res = await submit(
@@ -398,6 +432,7 @@ export async function enqueueStoryboardBatch(
   episode: number,
   kind: StoryboardBatchKind,
 ): Promise<StoryboardBatchSubmitted> {
+  if (blockGeneration(kind === "storyboards" ? "image" : "video")) throw new GenerationBlockedError();
   const res = await API.submitStoryboardBatch(projectName, episode, kind);
   if (res.admission && res.admission.decision !== "admitted") return res;
   const taskType = kind === "storyboards" ? "storyboard" : "video";
@@ -424,6 +459,7 @@ export async function enqueueAssetSheetBatch(
   projectName: string,
   scope: AssetSheetBatchScope,
 ): Promise<AssetSheetBatchSubmitted> {
+  if (blockGeneration("image")) throw new GenerationBlockedError();
   const res = await API.submitAssetSheetBatch(projectName, scope);
   let queued = 0;
   for (const member of res.members) {
@@ -460,6 +496,7 @@ export async function enqueuePromptAuthoring(
   episode: number,
   request: AuthorPromptsRequest,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("text")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "text_episode_script", promptAuthoringResourceId(episode), "text_episode_script")],
     () => API.authorPrompts(projectName, episode, request),
@@ -516,6 +553,7 @@ export async function enqueueScriptPlan(
   episode: number,
   request: PlanScriptRequest,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("text")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "text_script_plan", scriptPlanResourceId(episode), "text_script_plan")],
     () => API.planScript(projectName, episode, request),
@@ -536,6 +574,7 @@ export async function enqueueAdScript(
   episode: number,
   request: GenerateAdScriptRequest,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("text")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "text_episode_script", promptAuthoringResourceId(episode), "text_episode_script")],
     () => API.generateAdScript(projectName, episode, request),
@@ -559,6 +598,7 @@ export async function enqueueEpisodePlanning(
   instructions: string | null,
   gap: PlanningGap | null = null,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("text")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "text_episode_plan", EPISODE_PLANNING_SLOTS[0], "text_episode_plan")],
     () => API.planEpisodes(projectName, instructions, gap),
@@ -579,6 +619,7 @@ export async function enqueueEpisodeReplan(
   episode: number,
   instructions: string | null,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("text")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "text_episode_plan", EPISODE_PLANNING_SLOTS[0], "text_episode_plan")],
     () => API.startEpisodeReplan(projectName, episode, instructions),
@@ -592,6 +633,7 @@ export async function enqueueEpisodeReplan(
 
 /** 接着生成中途停止的新的分集方案，与分集规划占同一对槽。服务端的拒绝原样抛出。 */
 export async function enqueueEpisodeReplanContinue(projectName: string, candidateId: string): Promise<EnqueueResult> {
+  if (blockGeneration("text")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "text_episode_plan", EPISODE_PLANNING_SLOTS[0], "text_episode_plan")],
     () => API.continueEpisodeReplan(projectName, candidateId),
@@ -619,6 +661,7 @@ export async function enqueueDraftRepair(
   baseRevision: string,
   instructions: string | null,
 ): Promise<EnqueueResult> {
+  if (blockGeneration("text")) return BLOCKED;
   const res = await submit(
     [markResource(projectName, "text_draft_repair", draftRepairResourceId(episode, docType), "text_draft_repair")],
     () => API.repairEpisodeDraft(projectName, episode, docType, baseRevision, instructions),

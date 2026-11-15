@@ -1312,3 +1312,8 @@ async def stage_and_commit(commit_formal_output, staged: Path, current: Path, co
         return commit_formal_output(staged, current, metadata)
 
     return await asyncio.to_thread(_run)
+
+
+async def connected_provider_env() -> dict[str, str]:
+    """一条假的生效 Agent 连线（测试用 API Key），给不关心认证的会话装配用例；不读库。"""
+    return {"ANTHROPIC_API_KEY": "sk-test-agent-connection"}

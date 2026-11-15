@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { API } from "@/api";
-import { enqueueStoryboardBatch } from "@/actions/generation";
+import { enqueueStoryboardBatch, GenerationBlockedError } from "@/actions/generation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,7 +72,9 @@ export function StoryboardBatchDialog({
       }
       onClose();
     } catch (err) {
-      useAppStore.getState().pushToast(errMsg(err), "error");
+      // 缺供应商或默认模型：动作层已弹过带「前往设置」的提示
+      if (err instanceof GenerationBlockedError) onClose();
+      else useAppStore.getState().pushToast(errMsg(err), "error");
     } finally {
       setSubmitting(false);
     }

@@ -22,6 +22,9 @@ import {
   type DraftMirror,
 } from "@/utils/entry-projection";
 
+/** 助手错误旁可给的处理入口。 */
+export type AssistantErrorAction = "agent_settings";
+
 /** 启动失败的来源入口——决定故障卡片的重试重放哪一处输入。 */
 export type StartupFailureOrigin = "send" | "rewrite";
 
@@ -59,6 +62,8 @@ interface AssistantState {
   sending: boolean;
   interrupting: boolean;
   error: string | null;
+  /** 错误附带的处理入口：`agent_settings` 表示没有可用的 Agent 连线，错误旁给出前往设置的链接。 */
+  errorAction: AssistantErrorAction | null;
   /** 当前面板生命周期内最近一次 Agent 启动失败观测；不做跨刷新持久化。 */
   startupFailure: FailureObservation | null;
   /**
@@ -133,7 +138,7 @@ interface AssistantState {
   takeComposerAppends: () => ContentBlock[][];
   setSending: (sending: boolean) => void;
   setInterrupting: (interrupting: boolean) => void;
-  setError: (error: string | null) => void;
+  setError: (error: string | null, action?: AssistantErrorAction) => void;
   setStartupFailure: (failure: FailureObservation | null, origin?: StartupFailureOrigin) => void;
   setSessionStatus: (status: SessionStatus | null) => void;
   setSessionStatusDetail: (detail: string | null) => void;
@@ -215,6 +220,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
     sending: false,
     interrupting: false,
     error: null,
+    errorAction: null,
     startupFailure: null,
     startupFailureOrigin: null,
     sessionStatus: null,
@@ -347,7 +353,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => {
     },
     setSending: (sending) => set({ sending }),
     setInterrupting: (interrupting) => set({ interrupting }),
-    setError: (error) => set({ error }),
+    setError: (error, action) => set({ error, errorAction: error ? (action ?? null) : null }),
     // origin 与 failure 同一次写入，两者不会各自漂移
     setStartupFailure: (failure, origin = "send") =>
       set({ startupFailure: failure, startupFailureOrigin: failure ? origin : null }),
