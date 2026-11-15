@@ -67,6 +67,12 @@ describe("ShotDetail 空提示词", () => {
     expect(screen.getByText(/^待编写/)).toBeInTheDocument();
   });
 
+  it("只填了分镜图提示词时，提示还差视频提示词", () => {
+    renderDetail(makeSegment({ image_prompt: "港口", video_prompt: null, pending_authoring: true }));
+    expect(screen.getByText(/还差视频提示词/)).toBeInTheDocument();
+    expect(screen.queryByText(/提示词尚未编写/)).not.toBeInTheDocument();
+  });
+
   it("未带待编写标记的条目即使提示词为空也不显示待编写提示", () => {
     renderDetail(makeSegment());
     expect(screen.queryByText(/^待编写/)).not.toBeInTheDocument();

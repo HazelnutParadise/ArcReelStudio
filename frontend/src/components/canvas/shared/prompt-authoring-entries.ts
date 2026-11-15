@@ -40,3 +40,15 @@ export function promptAuthoringEntries(script: unknown): PromptAuthoringEntry[] 
     ];
   });
 }
+
+/**
+ * 待编写条目还缺哪一侧提示词：服务端在两侧都写好后才清除待编写标记，只写了一侧时说出另一侧，
+ * 免得写好一侧的人以为状态没跟上。两侧都空或不是图/视频两侧的形态时为 null，按整体待编写显示。
+ */
+export function pendingPromptSide(item: { image_prompt?: unknown; video_prompt?: unknown }): "image" | "video" | null {
+  const image = filled(item.image_prompt);
+  const video = filled(item.video_prompt);
+  if (image && !video) return "video";
+  if (video && !image) return "image";
+  return null;
+}

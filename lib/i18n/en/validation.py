@@ -233,6 +233,7 @@ MESSAGES = {
     "arch_multiple_project_json": "The ZIP contains multiple project.json files; the project root cannot be determined",
     "arch_extract_path_traversal": "Extraction path escapes the target directory: {path}",
     "arch_conflict_detected": "Project ID conflict detected",
+    "arch_import_copy_title": "{title} (copy)",
     "arch_project_name_conflict": (
         "Project ID '{name}' already exists. Choose to overwrite the existing project or import under a new name."
     ),

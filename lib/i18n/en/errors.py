@@ -510,6 +510,13 @@ MESSAGES = {
     "grid_storyboard_not_enabled": "Multi-grid Storyboard is not enabled for this project",
     "ad_target_duration_required": "Ad/short-video projects require a target duration (positive integer seconds)",
     "project_deleted": "Project '{name}' moved to deleted projects. You can restore it within 30 days",
+    "edit_timeline_placed_bgm": "Placed BGM",
+    "edit_timeline_placed_sfx": "Placed a sound effect",
+    "edit_timeline_removed_bgm": "Removed BGM",
+    "edit_timeline_removed_sfx": "Removed a sound effect",
+    "edit_timeline_audio_not_placeable": "It doesn't fit here: there may already be BGM at this point, or it's past the end of the timeline",
+    "edit_timeline_audio_changed": "The timeline changed after this was placed, so it can't be undone",
+    "edit_timeline_audio_gone": "This clip is no longer on the timeline, so it can't be undone",
     "scene_updated": "Scene '{scene_id}' updated",
     "segment_updated": "Segment '{segment_id}' updated",
     # Characters / Scenes / Props

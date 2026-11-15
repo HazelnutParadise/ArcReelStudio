@@ -341,3 +341,13 @@ export class ReadOnlyModeError extends Error {
     this.name = "ReadOnlyModeError";
   }
 }
+
+/**
+ * 保存被拒的发声问题代码（如 `parse_failed`、`empty_speaker`）：剧本编辑命令或发声准入拒绝时取第一条问题的代码，
+ * 其他失败（网络、服务端错误、修订冲突）返回 null。
+ */
+export function speechProblemCodeOf(error: unknown): string | null {
+  if (error instanceof ScriptEditCommandError) return error.result.problems[0]?.code ?? null;
+  if (error instanceof SpeechAdmissionError) return error.admission.problems[0]?.code ?? null;
+  return null;
+}

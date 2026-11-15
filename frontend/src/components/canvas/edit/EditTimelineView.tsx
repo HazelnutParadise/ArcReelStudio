@@ -298,6 +298,7 @@ export function EditTimelineView({
             ttsNarration={ttsNarration}
             seekRequest={jump && (jump.timelineId === null || jump.timelineId === selected.id) ? jump : null}
             onSeekHandled={handleJumpApplied}
+            onTimelineChanged={reload}
           />
         ) : current && "error" in current ? (
           <LoadFailed message={current.error} onRetry={reload} />
@@ -319,6 +320,8 @@ interface TimelinePreviewProps {
   /** 链接要求定位的位置；处理完调用 `onSeekHandled`。 */
   seekRequest: LinkJump | null;
   onSeekHandled: () => void;
+  /** 在时间线上放入或拿出音频后重新读取。 */
+  onTimelineChanged: () => void;
 }
 
 function TimelinePreview({
@@ -330,6 +333,7 @@ function TimelinePreview({
   aspect,
   seekRequest,
   onSeekHandled,
+  onTimelineChanged,
 }: TimelinePreviewProps) {
   const { t } = useTranslation("dashboard");
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
@@ -468,6 +472,7 @@ function TimelinePreview({
           sfx={sfx}
           onSelectClip={setSelectedClipId}
           onSeek={playback.seek}
+          onTimelineChanged={onTimelineChanged}
         />
       </div>
     </div>

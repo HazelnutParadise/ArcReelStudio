@@ -231,6 +231,7 @@ MESSAGES = {
     "arch_multiple_project_json": "ZIP chứa nhiều tệp project.json nên không xác định được thư mục gốc dự án",
     "arch_extract_path_traversal": "Đường dẫn giải nén vượt ra ngoài thư mục đích: {path}",
     "arch_conflict_detected": "Phát hiện trùng mã dự án",
+    "arch_import_copy_title": "{title} (bản sao)",
     "arch_project_name_conflict": (
         "Mã dự án '{name}' đã tồn tại. Hãy chọn ghi đè dự án hiện có hoặc nhập với tên mới."
     ),

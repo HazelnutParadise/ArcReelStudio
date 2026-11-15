@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipIconButton } from "./TooltipIconButton";
+import { isUtteranceIncomplete } from "./utterance-completeness";
 
 interface UtteranceListEditorProps {
   utterances: Utterance[];
@@ -243,6 +244,12 @@ export function UtteranceListEditor({
           ))}
         </ul>
       )}
+
+      {utterances.some(isUtteranceIncomplete) ? (
+        <p role="status" className="text-xs text-warn">
+          {t("utterance_incomplete_hint")}
+        </p>
+      ) : null}
 
       {speakerListId && (
         <datalist id={speakerListId}>

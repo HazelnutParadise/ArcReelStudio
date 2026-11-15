@@ -3,6 +3,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import type { CollabPeer, CollabRef } from "@/collab/collab-client";
 import type { CollabFieldProps } from "@/collab/useLiveFields";
 import type { UnitJson } from "@/collab/ydoc-json";
+import { speechProblemCodeOf } from "@/api/errors";
 import { errMsg } from "@/utils/async";
 
 import { EditUnitRetentionContext, useRetainWhile } from "./edit-unit-retention";
@@ -92,6 +93,11 @@ export interface EditUnit<T> {
   status: SaveStatus;
   /** 最近一次保存失败的原因；再次编辑、放弃或保存成功时清除。 */
   error: string | null;
+  /**
+   * 保存被拒时服务端给的问题代码（如发声内容的 `parse_failed`）；网络等其他失败为 null。
+   * 调用方据此只对特定的拒绝换一种说法，其余失败照常显示。
+   */
+  errorCode?: string | null;
   /** 有未保存修改期间，已保存内容被外部更新。放弃修改即采用新内容。 */
   externallyUpdated: boolean;
   /** 外部移除或替换了当前单元，保留可见内容时的说明。 */
@@ -123,6 +129,7 @@ interface UnitState<T> {
   seenSource: T;
   status: SaveStatus;
   error: string | null;
+  errorCode: string | null;
   externallyUpdated: boolean;
   /** `expectSource` 登记的、之后的重读应当得到的已保存内容，按写入顺序。 */
   expected: T[];
@@ -213,6 +220,7 @@ export function useEditUnit<T>({
     seenSource: source,
     status: "idle",
     error: null,
+    errorCode: null,
     externallyUpdated: false,
     expected: [],
   }));
@@ -225,7 +233,7 @@ export function useEditUnit<T>({
     setState(current);
   }
 
-  const { value, saved, status, error } = current;
+  const { value, saved, status, error, errorCode } = current;
   const dirty = !isEqual(value, saved);
   const retention = useContext(EditUnitRetentionContext);
 
@@ -288,11 +296,12 @@ export function useEditUnit<T>({
           value: unsaved !== undefined && isEqual(prev.value, submitted) ? unsaved : prev.value,
           status: "error",
           error: errMsg(err),
+          errorCode: null,
           externallyUpdated: false,
         }));
         return false;
       }
-      setState((prev) => ({ ...prev, status: "error", error: errMsg(err) }));
+      setState((prev) => ({ ...prev, status: "error", error: errMsg(err), errorCode: speechProblemCodeOf(err) }));
       return false;
     }
   }, [dirty, value, saved, submit, isEqual]);
@@ -333,6 +342,7 @@ export function useEditUnit<T>({
     dirty,
     status,
     error,
+    errorCode,
     externallyUpdated: (current.externallyUpdated || Boolean(retention?.message)) && dirty,
     externalChangeMessage: retention?.message,
     save,

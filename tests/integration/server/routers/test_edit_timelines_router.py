@@ -158,3 +158,89 @@ async def test_edit_overview_states_the_episode_timelines(timeline_project: Proj
     assert response.status_code == 200
     body = response.json()
     assert (body["timeline_count"], body["latest"]["name"], body["stale_final_cuts"]) == (1, "完整版", [])
+
+
+def test_creator_places_an_uploaded_bgm_and_sfx_and_can_take_them_out(timeline_project: ProjectManager) -> None:
+    import asyncio
+
+    from lib.bgm.service import BgmLibraryService
+    from lib.sfx.service import SfxLibraryService
+    from tests.factories import wav_bytes
+
+    _install_available_video(timeline_project, "E1U1")
+    track = asyncio.run(
+        BgmLibraryService(timeline_project).upload("demo", filename="雨夜.wav", content=wav_bytes(2.0, tone_hz=330))
+    )
+    sound = asyncio.run(
+        SfxLibraryService(timeline_project).upload("demo", filename="关门.wav", content=wav_bytes(0.2, tone_hz=440))
+    )
+    client = _client(EditTimelineService(timeline_project), WorkflowStateService(timeline_project))
+    created = client.post("/api/v1/projects/demo/episodes/1/edit-timelines", json={"from": "script", "name": "完整版"})
+    timeline_id = created.json()["timeline"]["id"]
+    base = "/api/v1/projects/demo/edit-timelines"
+
+    placed_bgm = client.post(
+        f"{base}/{timeline_id}/audio-clips", json={"kind": "bgm", "audio_id": track.id, "start": 0, "base_revision": 1}
+    )
+    placed_sfx = client.post(
+        f"{base}/{timeline_id}/audio-clips",
+        json={"kind": "sfx", "audio_id": sound.id, "start": 0.1, "base_revision": 2},
+    )
+
+    assert (placed_bgm.status_code, placed_sfx.status_code) == (200, 200), placed_bgm.text + placed_sfx.text
+    [bgm_clip] = placed_bgm.json()["bgm"]
+    [sfx_clip] = placed_sfx.json()["sfx"]
+    assert (bgm_clip["start"], sfx_clip["start"]) == (0, 0.1)
+    readout = client.get(f"{base}/{timeline_id}").json()
+    assert [clip["id"] for clip in readout["bgm"]] == [bgm_clip["id"]]
+    assert readout["revision"] == 3
+    assert {entry["author"]["kind"] for entry in client.get(f"{base}/{timeline_id}/revisions").json()["revisions"]} == {
+        "creator"
+    }
+
+    removed = client.request(
+        "DELETE",
+        f"{base}/{timeline_id}/audio-clips/{bgm_clip['id']}",
+        params={"kind": "bgm", "base_revision": 3},
+    )
+
+    assert removed.status_code == 200, removed.text
+    assert client.get(f"{base}/{timeline_id}").json()["bgm"] == []
+
+
+def test_placing_audio_where_it_does_not_fit_and_undoing_a_changed_clip_say_why(
+    timeline_project: ProjectManager,
+) -> None:
+    import asyncio
+
+    from lib.bgm.service import BgmLibraryService
+    from tests.factories import wav_bytes
+
+    _install_available_video(timeline_project, "E1U1")
+    track = asyncio.run(
+        BgmLibraryService(timeline_project).upload("demo", filename="雨夜.wav", content=wav_bytes(2.0, tone_hz=330))
+    )
+    client = _client(EditTimelineService(timeline_project), WorkflowStateService(timeline_project))
+    created = client.post("/api/v1/projects/demo/episodes/1/edit-timelines", json={"from": "script", "name": "完整版"})
+    path = f"/api/v1/projects/demo/edit-timelines/{created.json()['timeline']['id']}/audio-clips"
+    duration = created.json()["duration"]
+
+    def place(start: float, base: int):
+        return client.post(path, json={"kind": "bgm", "audio_id": track.id, "start": start, "base_revision": base})
+
+    first = place(0, 1)
+    overlapping = place(0, 2)
+    past_end = place(duration, 2)
+    removed = client.request(
+        "DELETE", f"{path}/{first.json()['bgm'][0]['id']}", params={"kind": "bgm", "base_revision": 2}
+    )
+    removed_again = client.request(
+        "DELETE", f"{path}/{first.json()['bgm'][0]['id']}", params={"kind": "bgm", "base_revision": 3}
+    )
+
+    assert first.status_code == 200
+    assert (overlapping.status_code, past_end.status_code) == (422, 422)
+    assert "放不下" in overlapping.json()["detail"]
+    assert removed.status_code == 200
+    assert removed_again.status_code == 409
+    assert "不在时间线上" in removed_again.json()["detail"]

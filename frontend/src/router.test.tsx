@@ -4,7 +4,7 @@ import i18n from "@/i18n";
 import { DEMO_PROJECT_NAME } from "@/onboarding/demo-project";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
-import { API } from "@/api";
+import { API, ApiRequestError } from "@/api";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -290,6 +290,17 @@ describe("AppRoutes", () => {
       expect(projectState.currentProjectData).toBeNull();
       expect(projectState.projectDetailLoading).toBe(false);
     });
+  });
+
+  it("shows a project-not-found page with a way back instead of the workspace when the project does not exist", async () => {
+    vi.spyOn(API, "getProject").mockRejectedValue(new ApiRequestError("项目不存在", undefined, 404));
+
+    renderAt("/app/projects/does-not-exist");
+
+    expect(await screen.findByRole("heading", { name: "找不到这个项目" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "返回项目列表" })).toHaveAttribute("href", "/app/projects");
+    expect(screen.queryByTestId("studio-layout")).not.toBeInTheDocument();
+    expect(useAppStore.getState().toast).toBeNull();
   });
 
   it("redirects unauthenticated nested project URL to top-level /login", async () => {

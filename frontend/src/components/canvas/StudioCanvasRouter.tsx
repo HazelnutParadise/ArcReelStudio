@@ -547,6 +547,18 @@ export function StudioCanvasRouter() {
           const durationEndpointFixed = capabilities.durationEndpointFixed;
           const hasDraft = episode?.script_status === "segmented" || episode?.script_status === "generated";
           const isAd = currentProjectData?.content_mode === "ad";
+          // 地址里的集不存在：不渲染一个看起来能用的空集工作区，直接说明找不到并给出返回入口。
+          // 广告项目恒单集，第 1 集在建立前也可能还没有登记，不算找不到。
+          if (currentProjectData && !episode && !(isAd && epNum === 1)) {
+            return (
+              <WorkspaceNotFound
+                title={t("episode_not_found_title", { episode: params.episodeId })}
+                description={t("episode_not_found_description")}
+                backHref={isAd || demoMode ? "/" : `/${WORKSPACE_ROUTE_EPISODES}`}
+                backLabel={isAd || demoMode ? undefined : t("episode_not_found_back")}
+              />
+            );
+          }
           return (
             <EpisodePage
               projectName={currentProjectName}

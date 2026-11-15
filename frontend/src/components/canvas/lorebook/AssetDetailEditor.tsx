@@ -1,5 +1,6 @@
-import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { ImageUp, Loader2 } from "lucide-react";
 import { cn } from "cn";
 import { API } from "@/api";
 import { CollabField } from "@/collab/CollabField";
@@ -10,12 +11,16 @@ import { UnsavedChangesBar } from "@/components/shared/edit-unit/UnsavedChangesB
 import { useEditUnit, type EditUnit } from "@/components/shared/edit-unit/useEditUnit";
 import { PromptPreviewButton } from "@/components/shared/PromptPreviewButton";
 import { TruncatedText } from "@/components/shared/TruncatedText";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SheetBody, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { SheetBody, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { useAppStore } from "@/stores/app-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { DEFAULT_CHARACTER_VOICE_BINDING } from "@/types";
+import { errMsg } from "@/utils/async";
+import { buildEntityRevisionKey } from "@/utils/project-changes";
 import type { AssetSheetStatusRow, AssetSheetType, Character, Product } from "@/types";
 import { refreshAfterWrite } from "@/components/canvas/shared/refreshAfterWrite";
 import { ASSET_SHEET_TYPE_ICON } from "@/components/assets/asset-type-icons";
@@ -186,6 +191,28 @@ export function AssetDetailEditor({
     );
   };
 
+  // 直接上传定稿的资产图：与卡片菜单里的「上传资产图」同一个接口，写入计入占用态
+  const sheetUploadRef = useRef<HTMLInputElement>(null);
+  const [uploadingSheet, setUploadingSheet] = useState(false);
+  const uploadSheet = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || busy || uploadingSheet) return;
+    if (rejectIfAssetBusy(assetType, projectName, name, t, "assets:gallery_busy_hint")) return;
+    setUploadingSheet(true);
+    try {
+      await writes.track(API.uploadFile(projectName, assetType, file, name));
+    } catch (err) {
+      useAppStore.getState().pushToast(errMsg(err), "error");
+      setUploadingSheet(false);
+      return;
+    }
+    await writes.track(
+      refreshAfterWrite(projectName, t, { invalidateKeys: [buildEntityRevisionKey(assetType, name)] }),
+    );
+    setUploadingSheet(false);
+  };
+
   const setField = <K extends keyof AssetFields>(key: K, next: AssetFields[K]) =>
     setValue((prev) => ({ ...prev, [key]: next }));
 
@@ -259,13 +286,35 @@ export function AssetDetailEditor({
             </div>
             {readOnly ? null : (
               <div className="flex flex-col gap-1.5">
-                <GenerateButton
-                  onClick={generate}
-                  loading={generating}
-                  disabled={!describable || busy}
-                  label={generateLabel}
-                  className="w-full"
-                />
+                <div className="flex gap-2">
+                  <GenerateButton
+                    onClick={generate}
+                    loading={generating}
+                    disabled={!describable || busy}
+                    label={generateLabel}
+                    className="min-w-0 flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    disabled={busy || uploadingSheet}
+                    onClick={() => sheetUploadRef.current?.click()}
+                  >
+                    {uploadingSheet ? (
+                      <Loader2 aria-hidden data-icon="inline-start" className="animate-spin" />
+                    ) : (
+                      <ImageUp aria-hidden data-icon="inline-start" />
+                    )}
+                    {t("assets:upload_sheet")}
+                  </Button>
+                  <input
+                    ref={sheetUploadRef}
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp"
+                    aria-label={t("assets:upload_sheet")}
+                    className="hidden"
+                    onChange={(event) => void uploadSheet(event)}
+                  />
+                </div>
                 {describable ? null : (
                   <p className="text-xs text-muted-foreground">{t("assets:sheet_description_required")}</p>
                 )}
@@ -277,6 +326,9 @@ export function AssetDetailEditor({
             ? null
             : (character || product) && (
                 <EditorSection title={product ? t("dashboard:product_reference_images") : t("assets:original_section")}>
+                  {product ? null : (
+                    <p className="text-xs text-muted-foreground">{t("assets:original_section_hint")}</p>
+                  )}
                   <AssetOriginalsField
                     projectName={projectName}
                     name={name}
@@ -342,7 +394,14 @@ export function AssetDetailEditor({
         </div>
       </SheetBody>
 
-      {readOnly ? null : <UnsavedChangesBar unit={unit} className="mx-5 mb-4 shrink-0" />}
+      {readOnly ? null : unit.live ? (
+        // 协作中的连线状态常驻在底部：放进带分隔线的页脚，免得和滚到底的正文（如别名）贴在一起像是盖住了它
+        <SheetFooter className="justify-start">
+          <UnsavedChangesBar unit={unit} className="min-w-0 px-0" />
+        </SheetFooter>
+      ) : (
+        <UnsavedChangesBar unit={unit} className="mx-5 mb-4 shrink-0" />
+      )}
 
       <AssetImageDialog
         src={viewingSheet ? imageUrl : null}

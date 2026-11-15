@@ -10,6 +10,7 @@ import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import type { EpisodeMeta, ProjectData, ProjectStatus } from "@/types/project";
+import type { EpisodesView as EpisodesViewData } from "@/types/episodes-view";
 import type { WorkflowNextAction, WorkflowStatus } from "@/types/workflow";
 
 import { makeContent } from "@/test/factories";
@@ -262,6 +263,34 @@ describe("ProjectStatusBar", () => {
 
     expect(await screen.findByRole("button", { name: /继续 AI 分集规划/ })).toBeInTheDocument();
     expect(screen.queryByText("全部完成")).not.toBeInTheDocument();
+  });
+
+  it("says how much source text is still unassigned when episode planning continues", async () => {
+    const done: Partial<EpisodeMeta>[] = [{ episode: 4, title: "旧账", status: "completed" }];
+    setProject({ ...SUMMARY, episodes_summary: { total: 1, scripted: 1, in_production: 0, completed: 1 } }, done);
+    vi.spyOn(API, "getWorkflowStatus").mockResolvedValue(
+      workflowStatus(action("plan_episodes"), { content: makeContent({ episode_count: 1, project_complete: false }) }),
+    );
+    vi.spyOn(API, "getEpisodesView").mockResolvedValue({
+      unit: "chars",
+      units: 757,
+      cut_units: 670,
+      files: [
+        {
+          segments: [
+            { kind: "episode", gap: false, units: 670 },
+            { kind: "unsplit", gap: false, units: 87 },
+          ],
+        },
+      ],
+      episodes: [],
+      unregistered: [],
+      replan: null,
+      external_changes: [],
+    } as unknown as EpisodesViewData);
+    renderBar();
+
+    expect(await screen.findByRole("button", { name: /继续 AI 分集规划（还剩 87 字）/ })).toBeInTheDocument();
   });
 
   it("shows short-film progress without an episode list for ad projects", () => {

@@ -730,6 +730,39 @@ describe("资产详情 Sheet", () => {
     expect(within(sheet).queryByText("未保存的修改")).not.toBeInTheDocument();
   });
 
+  it("uploads the asset sheet itself from the details and tells it apart from the reference image", async () => {
+    const user = userEvent.setup();
+    const upload = vi.spyOn(API, "uploadFile").mockImplementation(() => {
+      server.characters.苏白 = { ...server.characters.苏白, character_sheet: "characters/苏白.png" };
+      return Promise.resolve({ success: true });
+    });
+    renderGallery();
+    const sheet = await openAsset(user, "苏白");
+
+    expect(within(sheet).getByText(/原图只给 AI 生成资产图时参考/)).toBeInTheDocument();
+    const file = new File(["png"], "sheet.png", { type: "image/png" });
+    await user.upload(within(sheet).getByLabelText("上传资产图"), file);
+
+    await waitFor(() => expect(upload).toHaveBeenCalledWith("demo", "character", file, "苏白"));
+    await waitFor(() =>
+      expect(useProjectsStore.getState().currentProjectData?.characters.苏白.character_sheet).toBe(
+        "characters/苏白.png",
+      ),
+    );
+  });
+
+  it("offers uploading the asset sheet from the details of a scene", async () => {
+    const user = userEvent.setup();
+    const upload = vi.spyOn(API, "uploadFile").mockResolvedValue({ success: true });
+    renderGallery("scene");
+    const sheet = await openAsset(user, "庭院");
+
+    const file = new File(["png"], "sheet.png", { type: "image/png" });
+    await user.upload(within(sheet).getByLabelText("上传资产图"), file);
+
+    await waitFor(() => expect(upload).toHaveBeenCalledWith("demo", "scene", file, "庭院"));
+  });
+
   it("warns that the upload went through when refreshing the project afterwards fails", async () => {
     const user = userEvent.setup();
     vi.spyOn(API, "uploadFile").mockResolvedValue({ success: true });

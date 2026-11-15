@@ -110,7 +110,7 @@ class TestProjectArchiveRoutes:
 
         assert response.status_code == 200
         assert response.headers["content-type"] == "application/zip"
-        assert 'filename="demo-' in response.headers["content-disposition"]
+        assert 'filename="Demo-' in response.headers["content-disposition"]
 
         archive_path = tmp_path / "download.zip"
         archive_path.write_bytes(response.content)

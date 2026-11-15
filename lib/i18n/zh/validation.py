@@ -203,6 +203,7 @@ MESSAGES = {
     "arch_multiple_project_json": "ZIP 中包含多个 project.json，无法确定项目根目录",
     "arch_extract_path_traversal": "解压路径越界：{path}",
     "arch_conflict_detected": "检测到项目编号冲突",
+    "arch_import_copy_title": "{title}（副本）",
     "arch_project_name_conflict": "项目编号 '{name}' 已存在，请选择覆盖现有项目或自动重命名导入。",
     # ---- 自定义调用端点 · 定义校验 ----
     "val_ce_missing_field": "缺少必填字段：{field}",

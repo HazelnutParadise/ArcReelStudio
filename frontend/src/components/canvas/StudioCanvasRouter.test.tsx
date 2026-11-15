@@ -439,6 +439,17 @@ describe("StudioCanvasRouter", () => {
     expect(screen.getByTestId("overview-canvas")).toBeInTheDocument();
   });
 
+  it("says an episode that does not exist was not found and leads back to the episode list", async () => {
+    useProjectsStore.setState({ currentProjectName: "demo", currentProjectData: makeProjectData() });
+
+    renderAt("/episodes/99");
+
+    expect(screen.getByRole("heading", { name: "找不到第 99 集" })).toBeInTheDocument();
+    expect(screen.queryByTestId("timeline-canvas")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: "回到分集列表" }));
+    expect(await screen.findByTestId("episodes-view")).toBeInTheDocument();
+  });
+
   it("shows an empty state for an unknown workspace path and leads back to the overview", async () => {
     useProjectsStore.setState({ currentProjectName: "demo", currentProjectData: makeProjectData() });
 

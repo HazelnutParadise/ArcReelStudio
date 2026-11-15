@@ -148,6 +148,8 @@ export default {
   'members_password_hint': 'Не менее {{min}} символов',
   'members_password': 'Начальный пароль',
   'members_role': 'Роль',
+  'members_role_hint':
+    'Участники работают со всеми проектами и настройками. Администраторы также управляют участниками (добавляют, меняют роли, отключают, сбрасывают пароли) и настраивают вход по подписке и движок агента.',
   'members_add_submit': 'Добавить',
   'members_add_failed': 'Не удалось добавить участника: {{message}}',
   'members_update_failed': 'Не удалось изменить участника: {{message}}',
@@ -2406,6 +2408,7 @@ export default {
   'utterance_move_down': 'Переместить ниже',
   'utterance_remove': 'Удалить реплику',
   'utterance_add_dialogue': 'Добавить диалог',
+  'utterance_incomplete_hint': 'Укажите персонажа и реплику, чтобы сохранить',
   'utterance_add_voiceover': 'Добавить закадровый голос',
   'utterance_empty': 'В этой сцене пока нет реплик.',
   'review_utterances_label': 'Озвучиваемый текст (по порядку)',
@@ -2593,6 +2596,9 @@ export default {
   'remove_notification': 'Убрать уведомление',
   'workspace_not_found_title': 'Такой страницы нет',
   'workspace_not_found_back': 'Вернуться к обзору',
+  'episode_not_found_title': 'Серия {{episode}} не найдена',
+  'episode_not_found_description': 'В этом проекте нет такой серии: возможно, она удалена или адрес указан неверно.',
+  'episode_not_found_back': 'К списку серий',
   'episode_reorder': 'Изменить порядок «{{name}}»',
   'project_switcher_settings': 'Настройки проекта',
   'episodes_section_title': 'Серии',
@@ -2925,6 +2931,7 @@ export default {
   'guide_go_named_episode': 'Перейти к «{{name}}»',
   'guide_plan_title': 'Планирование серий с ИИ',
   'guide_plan_continue_title': 'Продолжить планирование серий с ИИ',
+  'guide_plan_continue_title_remaining': 'Продолжить планирование серий с ИИ (осталось {{volume}})',
   'guide_plan_detail':
     'Планирует от начала исходного текста до его конца; после этого каждую серию можно скорректировать.',
   'guide_plan_continue_detail': 'Продолжает после последней спланированной серии до конца исходного текста.',
@@ -3146,6 +3153,12 @@ export default {
   'detail_pending_authoring_hint':
     'Промпты этого кадра ещё не написаны. Попросите агента заполнить их или напишите ниже',
   'shot_pending_authoring': 'Нет промптов',
+  'shot_pending_authoring_image': 'Нет промпта изображения',
+  'shot_pending_authoring_video': 'Нет промпта видео',
+  'detail_pending_authoring_hint_image':
+    'Не хватает промпта изображения раскадровки. Когда оба промпта написаны, кадр перестаёт ждать. Попросите агента дописать его или напишите ниже',
+  'detail_pending_authoring_hint_video':
+    'Не хватает промпта видео. Когда оба промпта написаны, кадр перестаёт ждать. Попросите агента дописать его или напишите ниже',
   'detail_image_prompt_title': 'Промпт изображения раскадровки',
   'detail_video_prompt_title': 'Промпт видео',
   'detail_image_prompt_placeholder': 'Опишите кадр: обстановку, персонажей, действия, композицию…',
@@ -3155,6 +3168,8 @@ export default {
   'detail_field_chars_count': '{{count}} симв.',
   'media_storyboard_title': 'Раскадровка',
   'media_video_title': 'Видео',
+  'media_video_length_mismatch':
+    'Видео длится {{actual}} с, а длительность кадра — {{planned}} с. Таймлайн монтажа использует фактическую длину',
   'media_versions_label': 'Версии',
   'media_not_generated': 'Ещё не сгенерировано',
   'media_no_prompt_yet': 'У этого кадра ещё нет промптов.',
@@ -3357,6 +3372,11 @@ export default {
   'lobby_rename_desc': 'Меняется только отображаемое название. ID проекта «{{name}}» и его URL остаются прежними.',
   'lobby_rename_label': 'Название проекта',
   'lobby_delete_title': 'Удалить «{{title}}»?',
+  'lobby_deleted': 'Проект «{{title}}» удалён',
+  'lobby_delete_undone': 'Проект «{{title}}» восстановлен',
+  'lobby_delete_undo_gone':
+    'Не удалось отменить: проекта «{{title}}» уже нет среди удалённых — возможно, его восстановили или удалили навсегда',
+  'lobby_delete_undo_failed': 'Не удалось отменить: {{message}}',
   'lobby_delete_desc':
     'Проект перейдёт в «Удалённые проекты» и будет храниться 30 дней. В это время его можно восстановить из списка проектов. Задачи в очереди будут отменены.',
   'lobby_deleted_projects': 'Удалённые проекты',
@@ -4527,8 +4547,14 @@ export default {
   'edit_view_bgm_uploading': 'Загрузка BGM…',
   'edit_view_bgm_uploaded':
     'BGM «{{name}}» загружена. Её могут использовать монтажные таймлайны всех серий; попросите агента разместить её на таймлайне',
+  'edit_view_bgm_placed': 'BGM «{{name}}» загружена и размещена на {{start}} с',
+  'edit_view_bgm_occupied':
+    'BGM «{{name}}» загружена, но здесь уже звучит BGM «{{other}}», а одновременно может звучать только одна. Попросите агента разместить её в другом месте или сдвинуть прежнюю',
+  'edit_view_bgm_place_failed':
+    'BGM «{{name}}» загружена, но не размещена на таймлайне: {{message}}. Попросите агента разместить её',
+  'edit_view_bgm_unplace_failed': 'Не удалось отменить: {{message}}',
   'edit_view_bgm_upload_failed': 'Не удалось загрузить BGM: {{message}}',
-  'edit_view_bgm_track_empty': 'Клипов BGM пока нет. После загрузки BGM попросите агента разместить её на таймлайне',
+  'edit_view_bgm_track_empty': 'Клипов BGM пока нет. Загруженная BGM ставится на позицию курсора',
   'edit_view_track_sfx': 'Эффекты',
   'edit_view_sfx_title': '{{sfx}}: {{start}}–{{end}} с, громкость {{volume}}',
   'edit_view_sfx_upload': 'Загрузить звуковой эффект',
@@ -4579,9 +4605,13 @@ export default {
   'edit_view_sfx_uploading': 'Загрузка звукового эффекта…',
   'edit_view_sfx_uploaded':
     'Звуковой эффект «{{name}}» загружен. Его можно использовать в таймлайнах любой серии; попросите Agent поставить его',
+  'edit_view_sfx_placed': 'Звуковой эффект «{{name}}» загружен и размещён на {{start}} с',
+  'edit_view_sfx_place_failed':
+    'Звуковой эффект «{{name}}» загружен, но не размещён на таймлайне: {{message}}. Попросите агента разместить его',
+  'edit_view_sfx_unplace_failed': 'Не удалось отменить: {{message}}',
   'edit_view_sfx_upload_failed': 'Не удалось загрузить звуковой эффект: {{message}}',
   'edit_view_sfx_track_empty':
-    'Звуковых эффектов пока нет. Загрузите или сгенерируйте эффект, а затем попросите Agent поставить его',
+    'Звуковых эффектов пока нет. Загруженные ставятся на позицию курсора, созданные может разместить агент',
   'edit_view_subtitles_toggle': 'Субтитры',
   'edit_view_buffering': 'Буферизация…',
   'edit_view_playback_blocked': 'Браузер заблокировал автовоспроизведение. Нажмите «Воспроизвести», чтобы продолжить.',

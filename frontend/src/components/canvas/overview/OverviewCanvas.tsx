@@ -82,7 +82,21 @@ export function OverviewCanvas({ projectName, projectData, readOnly = false }: O
   const showWelcome = !readOnly && !generating && (emptyProject || uploadFiles !== null);
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto p-6 [scrollbar-gutter:stable] @3xl/canvas:p-8">
+    <div
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto p-6 [scrollbar-gutter:stable] @3xl/canvas:p-8"
+      // 欢迎页整块画布都收拖入的文件：拖放区之外松手也交给上传对话框，格式不对的在对话框里点名，
+      // 不会落到浏览器默认行为里打开文件。拖放区自己处理过的（defaultPrevented）不再重复处理。
+      onDragOver={showWelcome && uploadFiles === null ? (event) => event.preventDefault() : undefined}
+      onDrop={
+        showWelcome && uploadFiles === null
+          ? (event) => {
+              if (event.defaultPrevented) return;
+              event.preventDefault();
+              setUpload({ projectName, files: Array.from(event.dataTransfer.files) });
+            }
+          : undefined
+      }
+    >
       {showWelcome ? (
         <WelcomeCanvas projectTitle={projectData.title} onSelectFiles={(files) => setUpload({ projectName, files })} />
       ) : (

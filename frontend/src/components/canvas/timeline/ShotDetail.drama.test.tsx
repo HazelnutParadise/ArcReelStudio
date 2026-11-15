@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, onTestFinished, vi } from "vite-plus/test";
+import { ScriptEditCommandError } from "@/api/errors";
 import { ShotDetail } from "./ShotDetail";
 import { useProjectsStore } from "@/stores/projects-store";
 import type { DramaScene, ProjectData, Utterance } from "@/types";
@@ -111,6 +112,48 @@ describe("ShotDetail 剧情演绎", () => {
       }),
       expect.anything(),
     );
+  });
+
+  it("新增的台词还空着时提示先填角色与台词，不报保存失败", async () => {
+    const onUpdatePrompt = vi.fn().mockRejectedValue(
+      new ScriptEditCommandError({
+        success: false,
+        script: "episode_1.json",
+        episode: 1,
+        before_revision: "r1",
+        revision: "r1",
+        affected_ids: [],
+        problems: [
+          {
+            code: "parse_failed",
+            operation_index: 0,
+            unit_id: "E1S01",
+            locations: [{ path: ["utterances", 2, "text"], line: null }],
+            reason: "speech_input_unparseable",
+            next_action: "fix_input",
+          },
+        ],
+      } as ConstructorParameters<typeof ScriptEditCommandError>[0]),
+    );
+    renderDetail({ onUpdatePrompt });
+
+    fireEvent.click(screen.getByText("添加台词"));
+    expect(screen.getByText("填好角色和台词后才会保存")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText(/保存失败/)).not.toBeInTheDocument());
+    expect(screen.getByText("填好角色和台词后才会保存")).toBeInTheDocument();
+  });
+
+  it("新增的台词还空着时，网络等其他保存失败仍照常显示", async () => {
+    const onUpdatePrompt = vi.fn().mockRejectedValue(new Error("网络连接中断"));
+    renderDetail({ onUpdatePrompt });
+
+    fireEvent.click(screen.getByText("添加台词"));
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(await screen.findByText(/保存失败.*网络连接中断/)).toBeInTheDocument();
   });
 
   it("上游静默更新时：干净草稿跟随新 utterances", () => {

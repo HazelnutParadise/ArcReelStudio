@@ -117,7 +117,8 @@ export function ManualSplitToolbar({
       role="toolbar"
       aria-label={t("dashboard:manual_split_toolbar_label")}
       className={cn(
-        "absolute top-full -left-6 z-sticky mt-1.5 inline-flex items-center gap-2.5 rounded-md border bg-popover px-2.5 py-1 font-sans text-xs leading-normal whitespace-nowrap shadow-overlay",
+        // 在正文里自成一行（不浮在正文上），把落点之后的文字往下推，不会盖住下一段
+        "my-1.5 flex w-fit max-w-full flex-wrap items-center gap-x-2.5 gap-y-1 rounded-md border bg-popover px-2.5 py-1 font-sans text-xs leading-normal shadow-overlay",
         tinted === null ? "border-primary" : "border-episode",
       )}
       style={{ "--episode-hue": episodeHue(tinted ?? 0) } as CSSProperties}

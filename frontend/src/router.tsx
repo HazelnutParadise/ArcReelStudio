@@ -1,6 +1,6 @@
 // router.tsx — Route definitions for the studio layout
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Route, Switch, Redirect, useParams } from "wouter";
 import { useTranslation } from "react-i18next";
 import { StudioLayout } from "@/components/layout";
@@ -14,7 +14,7 @@ import { LoadingState } from "@/components/shared/LoadingState";
 import { LeaveGuardProvider } from "@/components/shared/edit-unit/LeaveGuard";
 import { useTrackReturnTo } from "@/components/shared/page-shell/return-to";
 import { buildDemoProjectData, buildDemoScripts, DEMO_PROJECT_NAME, isDemoProject } from "@/onboarding/demo-project";
-import { setApiReadOnly } from "@/api";
+import { ApiRequestError, setApiReadOnly } from "@/api";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useAppStore } from "@/stores/app-store";
 import { useAssistantStore } from "@/stores/assistant-store";
@@ -128,6 +128,8 @@ function StudioWorkspace() {
   const projectName = params.projectName ?? null;
   const { setCurrentProject, setProjectDetailLoading } = useProjectsStore();
   const { t } = useTranslation("onboarding");
+  // 地址里的项目不存在（详情接口 404）：按项目名记下，整个工作区换成「找不到项目」页
+  const [missingProject, setMissingProject] = useState<string | null>(null);
   // 把 t 通过 ref 暴露给首屏加载的 onError 回调，避免切语言触发 t 重建 → effect
   // 依赖跟着重建 → 真实项目整条加载重跑（下方 effect 依赖里刻意不含 t，理由见下）。
   const tRef = useRef(t);
@@ -170,10 +172,15 @@ function StudioWorkspace() {
     void useProjectsStore
       .getState()
       .refreshProject(projectName, {
-        onError: (err) =>
+        onError: (err) => {
+          if (err instanceof ApiRequestError && err.status === 404) {
+            setMissingProject(projectName);
+            return;
+          }
           useAppStore
             .getState()
-            .pushToast(tRef.current("dashboard:project_load_failed", { message: errMsg(err) }), "error"),
+            .pushToast(tRef.current("dashboard:project_load_failed", { message: errMsg(err) }), "error");
+        },
       })
       .then((result) => {
         // "cancelled" 代表本轮未同步（项目已被切走、取消域已轮换），loading 状态交由
@@ -192,6 +199,16 @@ function StudioWorkspace() {
     if (!projectName || !isDemoProject(projectName)) return;
     setCurrentProject(projectName, buildDemoProjectData(t), buildDemoScripts(t));
   }, [projectName, setCurrentProject, t]);
+
+  if (missingProject !== null && missingProject === projectName) {
+    return (
+      <NotFoundPage
+        title={t("common:project_not_found_title")}
+        description={t("common:project_not_found_description", { name: projectName })}
+        backLabel={t("common:project_not_found_back")}
+      />
+    );
+  }
 
   return (
     <StudioLayout>

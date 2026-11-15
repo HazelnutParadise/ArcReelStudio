@@ -182,6 +182,7 @@ import type {
 import type {
   EditTimelinePreviewMedia,
   EditTimelineReadout,
+  EditTimelineWriteResult,
   EditTimelineSummary,
   EpisodeEditOverview,
   ProjectBgm,
@@ -705,7 +706,8 @@ class API {
     return this.request(`${agentMemoryBase(scope)}/clear`, { method: "POST" });
   }
 
-  static async deleteProject(name: string): Promise<SuccessResponse> {
+  /** 删除项目（移入「已删除项目」）；`deleted_id` 是恢复用的已删除项目 ID。 */
+  static async deleteProject(name: string): Promise<SuccessResponse & { deleted_id?: string }> {
     return this.request(`/projects/${encodeURIComponent(name)}`, {
       method: "DELETE",
     });
@@ -907,6 +909,33 @@ class API {
       method: "PATCH",
       body: JSON.stringify({ name }),
     });
+  }
+
+  /** 把一首 BGM 或一个音效放进剪辑时间线（默认音量与淡入淡出），基于 `base_revision` 追加一个修订。 */
+  static async placeEditTimelineAudio(
+    projectName: string,
+    timelineId: string,
+    body: { kind: "bgm" | "sfx"; audio_id: string; start: number; base_revision: number },
+  ): Promise<EditTimelineWriteResult> {
+    return this.request(`${this.editTimelinePath(projectName, timelineId)}/audio-clips`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  /** 把剪辑时间线上的一个 BGM 或音效片段拿出来（放入后的撤销）。 */
+  static async removeEditTimelineAudio(
+    projectName: string,
+    timelineId: string,
+    clipId: string,
+    kind: "bgm" | "sfx",
+    baseRevision: number,
+  ): Promise<EditTimelineWriteResult> {
+    const query = new URLSearchParams({ kind, base_revision: String(baseRevision) });
+    return this.request(
+      `${this.editTimelinePath(projectName, timelineId)}/audio-clips/${encodeURIComponent(clipId)}?${query.toString()}`,
+      { method: "DELETE" },
+    );
   }
 
   /** 删除剪辑时间线及其成片与剪映草稿；仍有渲染任务在排队或执行时服务端拒绝。 */
@@ -1455,11 +1484,12 @@ class API {
     );
   }
 
+  /** 删除项目资产（移入项目回收站）；`trash_record_id` 是恢复用的删除记录 ID，没有记录时为 null。 */
   static async deleteProjectAsset(
     projectName: string,
     assetType: ProjectAssetType,
     name: string,
-  ): Promise<SuccessResponse> {
+  ): Promise<SuccessResponse & { trash_record_id?: string | null }> {
     return this.request(
       `/projects/${encodeURIComponent(projectName)}/${ASSET_TYPE_PATH[assetType]}/${encodeURIComponent(name)}`,
       { method: "DELETE" },

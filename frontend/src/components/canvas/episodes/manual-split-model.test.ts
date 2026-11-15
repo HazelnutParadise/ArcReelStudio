@@ -6,6 +6,7 @@ import {
   adjacentBoundaries,
   cutEpisodeActions,
   pointInRun,
+  snapPointToLine,
   rangeUnits,
   resolvePointAction,
   stepPoint,
@@ -65,6 +66,28 @@ const view: EpisodesView = {
     file("b.txt", 8, [segment({ start: 0, end: 8 })]),
   ],
 };
+
+describe("点击对齐行首", () => {
+  it("点在一行前半段落到行首，后半段落到行尾，补充平面字符算一个字", () => {
+    expect(snapPointToLine(0, 100, "第二章　钥匙", 2)).toEqual({ file: 0, offset: 100 });
+    expect(snapPointToLine(0, 100, "第二章　钥匙", 3)).toEqual({ file: 0, offset: 100 });
+    expect(snapPointToLine(0, 100, "第二章　钥匙", 4)).toEqual({ file: 0, offset: 106 });
+    expect(snapPointToLine(1, 10, "尾😀", 3)).toEqual({ file: 1, offset: 12 });
+  });
+
+  it("没有换行的整段中文落到最近的句末，点在边界上就停在边界", () => {
+    const run = "第一句话。第二句话！第三句";
+    // 点在「第二句话」中间：最近的边界是「。」之后
+    expect(snapPointToLine(0, 0, run, 6)).toEqual({ file: 0, offset: 5 });
+    // 正好点在「。」之后的边界上
+    expect(snapPointToLine(0, 0, run, 5)).toEqual({ file: 0, offset: 5 });
+    // 靠近「！」之后
+    expect(snapPointToLine(0, 0, run, 9)).toEqual({ file: 0, offset: 10 });
+    // 没有标点的长行仍按行首、行尾取近的一端
+    expect(snapPointToLine(0, 0, "啊".repeat(100), 30)).toEqual({ file: 0, offset: 0 });
+    expect(snapPointToLine(0, 0, "啊".repeat(100), 70)).toEqual({ file: 0, offset: 100 });
+  });
+});
 
 describe("落点", () => {
   it("行内光标按码位换算成文件内偏移，补充平面字符算一个字", () => {
