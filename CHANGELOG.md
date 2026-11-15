@@ -2,6 +2,45 @@
 
 ## 0.1.0 (2026-11-15)
 
+ArcReelStudio 的第一個版本。它是 [ArcReel](https://github.com/ArcReel/ArcReel) 的 fork，以 ArcReel 0.35.0 為基礎，加上以下功能。
+
+### 🌟 版本亮點
+
+* **多人帳號：** 帳號分管理員與成員，管理員可以新增、停用成員和重設密碼，每個人用自己的帳號登入。(#2)
+* **即時共編：** 多人可以同時編輯同一個專案，看得到誰在線上、誰改了什麼，專案設定、素材庫與 Agent 記憶也會即時同步。(#2, #4, #5)
+* **連線中心：** 在同一處管理所有 API 金鑰與訂閱連線，每個模型設定可以指定要用哪一條連線。(#6)
+* **用訂閱帳號生成：** 登入 Claude、ChatGPT、Grok 訂閱後，就能拿來生成文字與圖片，原本的 API 金鑰連線照常可用。(#7, #8)
+* **更多 Agent 引擎：** Agent 除了 Claude，也能改用 Codex（ChatGPT 訂閱或 OpenAI API 金鑰）或 Grok（實驗性）。(#9, #10)
+* **配樂與音效：** 可以用 AI 生成背景音樂與音效，剪輯時間線多了一條可以重疊的音效軌，成片與剪映草稿都會帶上。(#12, #13)
+* **免版權素材庫：** 剪輯時可以直接挑選不需署名就能商用的音樂、音效與圖片，不花生成費用。(#14)
+* **系列：** 把多個專案歸進同一個系列，共用世界觀、劇情設定與素材。(#16)
+* **繁體中文：** 介面與 Agent 回覆支援台灣繁體中文用語。(#2, #30)
+* **匯出不再中途卡住：** 專案裡有個別產物缺檔時照樣能匯出備份，並清楚列出哪些內容沒帶上、匯入後會看到什麼。(#25, #26)
+* **Agent 不會用到主機上的登入：** Agent 只使用應用裡設定的連線，沒有連線時直接拒絕，不會悄悄用掉主機使用者本人的 Claude 登入與額度。(#29)
+* **部署：** 預設時區改為台北，映像發佈在 GitHub Container Registry，可以連接既有的 PostgreSQL，並支援 GPU 影片編碼。(#2, #3)
+* **官方服務預設關閉：** 使用者主動開啟前，不會向官方服務送出任何請求。(#24)
+
+---
+
+The first release of ArcReelStudio, a fork of [ArcReel](https://github.com/ArcReel/ArcReel) built on ArcReel 0.35.0.
+
+### 🌟 Highlights
+
+* **Multi-user accounts:** admins and members; admins can add or disable members and reset passwords, and everyone signs in with their own account. (#2)
+* **Live co-editing:** several people can edit one project at once and see who is online and who changed what; project settings, the asset library and Agent memory sync live too. (#2, #4, #5)
+* **Connection center:** manage every API key and subscription in one place, and pick which connection each model setting uses. (#6)
+* **Generate with your subscriptions:** sign in Claude, ChatGPT and Grok subscriptions and use them for text and image generation; API key connections keep working. (#7, #8)
+* **More Agent engines:** besides Claude, the Agent can run on Codex (ChatGPT subscription or OpenAI API key) or Grok (experimental). (#9, #10)
+* **Music and sound effects:** generate background music and sound effects with AI; the edit timeline gains an overlapping sound effect track that goes into the final cut and the Jianying draft. (#12, #13)
+* **Royalty-free library:** pick music, sound effects and images that need no attribution for commercial use, without generation costs. (#14)
+* **Series:** group projects into a series that shares world and plot settings and assets. (#16)
+* **Traditional Chinese:** the interface and the Agent speak Taiwan Traditional Chinese. (#2, #30)
+* **Export keeps going:** a project with a few missing files still exports, and the export lists what it could not carry and what you will see after import. (#25, #26)
+* **The Agent never uses the host's login:** the Agent uses only the connections set up in the app and refuses when there is none, instead of silently spending the host user's own Claude login. (#29)
+* **Deployment:** Taipei as the default time zone, images on GitHub Container Registry, an existing PostgreSQL can be used, and GPU video encoding. (#2, #3)
+* **Official service off by default:** nothing is sent to the official service until you turn it on. (#24)
+
+
 
 ### ✨ 新功能
 
