@@ -21,7 +21,7 @@ from tests.auth_deps import AUTH_DEPENDENCIES
 from tests.factories import make_translator
 from tests.http_capture import capture_http
 
-_GITHUB_LATEST = "https://api.github.com/repos/ArcReel/ArcReel/releases/latest"
+_GITHUB_LATEST = "https://api.github.com/repos/HazelnutParadise/ArcReelStudio/releases/latest"
 
 
 def _make_app(version_reader: Callable[[], str] = lambda: "0.9.0") -> FastAPI:

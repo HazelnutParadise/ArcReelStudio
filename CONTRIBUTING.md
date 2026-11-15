@@ -208,6 +208,14 @@ release-please 优先使用仓库配置的 GitHub App（secret `RELEASE_PLEASE_A
 
 `pyproject.toml` 和 `frontend/package.json` 的 `version` 字段由 release-please 自动维护（见 `pyproject.toml` 的 `# managed by release-please` 注释），**开发者视为只读**。`uv.lock` 同样由 release-please workflow 在 Release PR 分支上自动 `uv lock` 同步。出厂模型目录快照（`lib/catalog/snapshot/`）同样在 Release PR 分支上自动更新：workflow 抓取目录数据仓库的最新数据，通过校验器后提交；抓取失败或校验不过时快照保持不变，workflow 给出提示。实际版本状态以 git tag + `.release-please-manifest.json` 为准。
 
+### 版本号与首次发版
+
+本仓库是 ArcReel 的 fork，版本号从 `0.1.0` 重新起算，`CHANGELOG.md` 只记录本仓库自己的版本；fork 之前的上游历史保留在 `docs/history/upstream-changelog.md`。首次发版的设置不需要事后清理：`.release-please-manifest.json` 记为 `0.0.0` 表示还没有发过版，release-please 找不到任何 release 时只取 `bootstrap-sha`（fork 起点）之后的提交，并以 `initial-version` 定出 `0.1.0`。`v0.1.0` 发布后 manifest 由 release-please 自动改为 `0.1.0`，之后按上表正常步进，这两项设置不再生效。
+
+每个版本的「🌟 版本亮点」由人工撰写，草稿放在 `docs/release-notes/<版本>.md`。GitHub Release 的正文取自合并时 Release PR 的描述，所以要在确认不再有提交进入 `main` 之后、合并 Release PR 之前，把亮点贴进 Release PR 描述里该版本的说明开头，并在 Release PR 分支的 `CHANGELOG.md` 对应版本下加入同一段。期间若有新的 `main` 提交，release-please 会重写描述，需要再贴一次。
+
+本仓库的版本号只用于显示与发版。官方模型目录和市场条目里的最低应用版本按上游 ArcReel 的版本号标注，实例拿 `lib/app_version.py` 的 `UPSTREAM_COMPAT_VERSION` 和它比较。从上游同步代码后，按 `docs/adr/0136` 的「同步上游时」更新这个值，release-please 不会改它。
+
 ### commit 示例
 
 ```

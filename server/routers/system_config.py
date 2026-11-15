@@ -23,7 +23,7 @@ from packaging.version import InvalidVersion, Version
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from lib.app_version import PYPROJECT_PATH, load_app_version
+from lib.app_version import PYPROJECT_PATH, load_app_version, upstream_compat_version
 from lib.backends.audio_backends.base import AudioCapability
 from lib.backends.generation_type_buckets import (
     BUCKETS_BY_MEDIA_TYPE,
@@ -66,7 +66,7 @@ from server.services.tasks.generation_context import audio_backend_profile
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-_GITHUB_RELEASE_LATEST_URL = "https://api.github.com/repos/ArcReel/ArcReel/releases/latest"
+_GITHUB_RELEASE_LATEST_URL = "https://api.github.com/repos/HazelnutParadise/ArcReelStudio/releases/latest"
 _GITHUB_USER_AGENT = "ArcReel"
 _VERSION_CACHE_TTL_SECONDS = 300
 _latest_release_cache: dict[str, datetime | dict[str, str] | None] = {
@@ -111,6 +111,11 @@ def _read_app_version() -> str:
 def get_app_version_reader() -> Callable[[], str]:
     """版本读取器的路由依赖；读失败的处置归路由，故注入可调用对象而非版本值。"""
     return _read_app_version
+
+
+def get_compat_version_reader() -> Callable[[], str]:
+    """与 ``min_app_version`` 比较用的上游 ArcReel 兼容版本读取器（ADR 0136）；本 fork 自己的版本号只用于显示。"""
+    return upstream_compat_version
 
 
 def _parse_version(raw: str) -> Version | None:

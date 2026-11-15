@@ -70,6 +70,10 @@ _Avoid_: 把它当作市场源、同步服务器。
 官方收录的供应商模型上标注的、能调用这个模型的最低 ArcReel 版本。目录构建按所挂调用端点推导，也可以手写（见 `docs/adr/0103`）。
 _Avoid_: schema 版本、兼容版本。
 
+**上游兼容版本（upstream compat version）**：
+本 fork 已包含其内容的上游 ArcReel 版本（`UPSTREAM_COMPAT_VERSION`），实例拿它和最低应用版本比较；应用自己的版本号只用于显示与发版（见 `docs/adr/0136`）。
+_Avoid_: 应用版本、fork 版本。
+
 **第三方数据源（third-party metadata source）**：
 由外部项目维护的模型元信息与价格数据，如 basellm、models.dev，是目录数据仓库的构建输入。
 _Avoid_: 同步源、上游目录。

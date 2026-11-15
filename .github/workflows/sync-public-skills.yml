@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   sync:
+    # 公开技能仓库 ArcReel/skills 属于上游；fork 没有它的写权限与 App secret，只在上游仓库运行
+    if: github.repository == 'ArcReel/ArcReel'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0

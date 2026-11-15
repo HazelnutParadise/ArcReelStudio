@@ -83,6 +83,7 @@ def entries_client(entries_sessions: async_sessionmaker[AsyncSession]) -> Genera
     app.dependency_overrides[get_current_user] = lambda: CurrentUserInfo(id="test", sub="test", role="admin")
     app.dependency_overrides[get_market_entry_service] = lambda: service
     app.dependency_overrides[system_config.get_app_version_reader] = lambda: lambda: "0.30.0"
+    app.dependency_overrides[system_config.get_compat_version_reader] = lambda: lambda: "0.30.0"
     app.include_router(market.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
     register_error_handlers(app)
     with TestClient(app) as test_client:
@@ -152,7 +153,9 @@ def test_unknown_entry_type_lists_nothing(entries_client: TestClient, catalog: N
     assert entries_client.get("/api/v1/market/entries", params={"type": "prompt"}).json()["entries"] == []
 
 
-def test_unreadable_app_version_does_not_gate_entries(entries_client: TestClient, catalog: None) -> None:
+def test_unreadable_app_version_still_gates_entries_by_compat_version(
+    entries_client: TestClient, catalog: None
+) -> None:
     def _broken() -> str:
         raise OSError("pyproject missing")
 
@@ -162,8 +165,26 @@ def test_unreadable_app_version_does_not_gate_entries(entries_client: TestClient
 
     body = entries_client.get("/api/v1/market/entries").json()
 
+    # 门槛按上游兼容版本判，与读不读得到本应用的版本无关
     assert body["app_version"] is None
-    assert all(entry["min_app_version_satisfied"] for entry in body["entries"])
+    assert [entry["min_app_version_satisfied"] for entry in body["entries"]] == [False, True, True]
+
+
+@pytest.mark.parametrize(("compat", "satisfied"), [("0.31.0", True), ("0.30.9", False)])
+def test_entries_are_gated_by_upstream_compat_version_not_app_version(
+    entries_client: TestClient, catalog: None, compat: str, satisfied: bool
+) -> None:
+    app = entries_client.app
+    assert isinstance(app, FastAPI)
+    # 本 fork 的版本号低于上游，但兼容的上游版本达到条目要求时照常可用
+    app.dependency_overrides[system_config.get_app_version_reader] = lambda: lambda: "0.1.0"
+    app.dependency_overrides[system_config.get_compat_version_reader] = lambda: lambda: compat
+
+    body = entries_client.get("/api/v1/market/entries").json()
+
+    assert body["app_version"] == "0.1.0"
+    official_alpha = body["entries"][0]
+    assert (official_alpha["min_app_version"], official_alpha["min_app_version_satisfied"]) == ("0.31.0", satisfied)
 
 
 def test_entry_detail_returns_index_entry_and_source_summary_without_fetching(

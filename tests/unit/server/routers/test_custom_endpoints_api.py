@@ -43,7 +43,8 @@ def endpoints_app(db_engine, set_error_handler_sessions) -> FastAPI:
 
     app.dependency_overrides[get_async_session] = _override_session
     app.dependency_overrides[get_current_user] = lambda: CurrentUserInfo(id="test", sub="test", role="admin")
-    app.dependency_overrides[system_config.get_app_version_reader] = lambda: lambda: "0.30.0"
+    app.dependency_overrides[system_config.get_app_version_reader] = lambda: lambda: "0.1.0"
+    app.dependency_overrides[system_config.get_compat_version_reader] = lambda: lambda: "0.30.0"
     app.include_router(custom_endpoints.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
     app.include_router(custom_providers.router, prefix="/api/v1", dependencies=AUTH_DEPENDENCIES)
     register_error_handlers(app)
@@ -346,7 +347,7 @@ class TestValidateMinAppVersion:
         assert body["min_app_version"] is None
 
     @pytest.mark.parametrize(("required", "satisfied"), [("0.30.0", True), ("0.31.0", False)])
-    def test_compares_requirement_with_the_app_version(
+    def test_compares_requirement_with_the_upstream_compat_version(
         self, endpoints_client: TestClient, required: str, satisfied: bool
     ):
         definition = custom_endpoint_definition()
@@ -354,14 +355,15 @@ class TestValidateMinAppVersion:
 
         body = endpoints_client.post("/api/v1/custom-endpoints/validate", json=definition).json()
 
+        # 应用自身是 0.1.0，比对用的是兼容的上游 ArcReel 版本
         assert body["min_app_version"] == {"required": required, "current": "0.30.0", "satisfied": satisfied}
         assert body["errors"] == [], "版本门槛只是提示，不拦导入"
 
-    def test_unreadable_app_version_skips_the_comparison(self, endpoints_app: FastAPI):
+    def test_unreadable_compat_version_skips_the_comparison(self, endpoints_app: FastAPI):
         def _broken() -> str:
-            raise OSError("pyproject missing")
+            raise OSError("compat version missing")
 
-        endpoints_app.dependency_overrides[system_config.get_app_version_reader] = lambda: _broken
+        endpoints_app.dependency_overrides[system_config.get_compat_version_reader] = lambda: _broken
         definition = custom_endpoint_definition()
         definition["meta"]["min_app_version"] = "0.31.0"
 

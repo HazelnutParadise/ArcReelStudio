@@ -7,7 +7,7 @@
 #       branches: [main]
 #   jobs:
 #     publish-index:
-#       uses: ArcReel/ArcReel/.github/workflows/market-publish-index.yml@main
+#       uses: HazelnutParadise/ArcReelStudio/.github/workflows/market-publish-index.yml@main
 #       permissions:
 #         contents: write
 #       secrets: # 可选：仅在配置了下面两个 App secret 时需要
@@ -75,10 +75,11 @@ jobs:
           ref: ${{ github.ref }}
           persist-credentials: false
 
-      - name: Checkout ArcReel
+      # 校验规则取自本应用仓库，与调用方实例实际运行的市场校验器一致
+      - name: Checkout ArcReelStudio
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ArcReel/ArcReel
+          repository: HazelnutParadise/ArcReelStudio
           ref: main
           path: arcreel
           persist-credentials: false

@@ -782,7 +782,7 @@ MESSAGES = {
     "market_entry_definition_mismatch": "索引与定义不一致，无法安装",
     "market_entry_definition_changed": "市场条目的定义在你核对后已变化，请重新打开确认页核对后再安装",
     "market_entry_changed_during_fetch": "市场源在读取定义期间已刷新，请重试",
-    "market_entry_requires_newer_app": "此条目需要应用版本 ≥ {version}",
+    "market_entry_requires_newer_app": "此条目需要兼容 ArcReel {version} 及以上的版本",
     "market_entry_already_installed": "此条目已安装，请选择已安装的端点进行更新",
     "market_endpoint_already_installed": "该端点已有其他安装记录，无法覆盖",
     "market_overwrite_target_not_duplicate": "只能覆盖与该条目同作者、同名的端点",

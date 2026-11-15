@@ -6,10 +6,10 @@
 #     pull_request:
 #   jobs:
 #     validate:
-#       uses: ArcReel/ArcReel/.github/workflows/market-validate.yml@main
+#       uses: HazelnutParadise/ArcReelStudio/.github/workflows/market-validate.yml@main
 #
-# 参数：无。权限：contents: read（读调用方仓库与公开的 ArcReel/ArcReel）。
-# 校验规则来自 ArcReel/ArcReel main 分支的 arcreel-market-core 子包（packages/arcreel-market-core），
+# 参数：无。权限：contents: read（读调用方仓库与公开的 HazelnutParadise/ArcReelStudio）。
+# 校验规则来自 HazelnutParadise/ArcReelStudio main 分支的 arcreel-market-core 子包（packages/arcreel-market-core），
 # 调用方不维护任何校验逻辑。
 #
 # 仓内的 arcreel-market.json 是合并后由 market-publish-index 重生成的投影，PR 中通常是旧的；
@@ -38,10 +38,11 @@ jobs:
           path: market
           persist-credentials: false
 
-      - name: Checkout ArcReel
+      # 校验规则取自本应用仓库，与调用方实例实际运行的市场校验器一致
+      - name: Checkout ArcReelStudio
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ArcReel/ArcReel
+          repository: HazelnutParadise/ArcReelStudio
           ref: main
           path: arcreel
           persist-credentials: false

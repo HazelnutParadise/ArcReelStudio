@@ -149,11 +149,11 @@ describe("ProviderModelList", () => {
 
     const row = (await screen.findByText("Chat Next")).closest("li");
     expect(row).not.toBeNull();
-    expect(within(row!).getByText("需要 ArcReel ≥ 0.36.0")).toBeInTheDocument();
+    expect(within(row!).getByText("需要兼容 ArcReel 0.36.0 及以上的版本")).toBeInTheDocument();
     expect(within(row!).getByRole("switch", { name: /Chat Next/ })).toHaveAttribute("aria-disabled", "true");
     expect(within(row!).queryByRole("button")).not.toBeInTheDocument();
     // 满足版本要求的行不带这个标注，仍可打开 Sheet
-    expect(screen.getAllByText(/需要 ArcReel/)).toHaveLength(1);
+    expect(screen.getAllByText(/需要兼容 ArcReel/)).toHaveLength(1);
     fireEvent.click(screen.getByText("Chat One"));
     await waitFor(() => expect(getModel).toHaveBeenCalled());
   });
