@@ -18,7 +18,7 @@ from pydantic_core import PydanticCustomError
 from lib import PROJECT_ROOT
 from lib.infra.api_errors import BadRequestError, ConflictError, NotFoundError, ServiceUnavailableError
 from server.agent_runtime.failure_observation import build_startup_failure_observation
-from server.agent_runtime.models import SessionMeta, WithdrawalIntent
+from server.agent_runtime.models import AgentConnectionMissing, SessionMeta, WithdrawalIntent
 from server.agent_runtime.service import (
     AssistantService,
     InterruptSettleTimeoutError,
@@ -52,6 +52,11 @@ MAX_IMAGE_BASE64_CHARS = 4 * ((MAX_IMAGE_SOURCE_BYTES + 2) // 3)
 MAX_RESIZED_IMAGE_BASE64_CHARS = 4 * ((MAX_RESIZED_IMAGE_SOURCE_BYTES + 2) // 3)
 MAX_IMAGES_PER_REQUEST = 5
 MAX_IMAGES_TOTAL_BASE64_CHARS = MAX_IMAGES_PER_REQUEST * MAX_RESIZED_IMAGE_BASE64_CHARS
+
+
+def _connection_missing() -> ConflictError:
+    """当前 Agent 引擎没有可用连线：带上 ``code``，前端据此在输入框旁给出前往设置的入口。"""
+    return ConflictError("agent_connection_missing").with_diagnostic({"code": "agent_connection_missing"})
 
 
 def get_assistant_service() -> AssistantService:
@@ -181,6 +186,8 @@ async def send_message(
         # 空消息内容 / 非法项目名等坏请求，str(exc) 只进日志
         logger.warning("会话发送请求非法: %s", exc)
         raise BadRequestError("request_invalid") from exc
+    except AgentConnectionMissing as exc:
+        raise _connection_missing() from exc
     except AgentStartupError as exc:
         raise HTTPException(
             status_code=502,
@@ -244,6 +251,8 @@ async def rewrite_message(
     except ValueError as exc:
         logger.warning("会话改写请求非法: %s", exc)
         raise BadRequestError("request_invalid") from exc
+    except AgentConnectionMissing as exc:
+        raise _connection_missing() from exc
     except AgentStartupError as exc:
         raise HTTPException(
             status_code=502,
@@ -372,6 +381,8 @@ async def stream_entries(
             yield event
     except HTTPException:
         raise
+    except AgentConnectionMissing as exc:
+        raise _connection_missing() from exc
     except AgentStartupError as exc:
         detail = agent_startup_failure_detail(
             exc,
@@ -421,6 +432,8 @@ async def _act_on_queued_message(
         raise ServiceUnavailableError("session_capacity_exceeded") from exc
     except FileNotFoundError as exc:
         raise NotFoundError("session_not_found", session_id=session_id) from exc
+    except AgentConnectionMissing as exc:
+        raise _connection_missing() from exc
     except AgentStartupError as exc:
         raise HTTPException(
             status_code=502,

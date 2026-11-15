@@ -96,9 +96,8 @@ ArcReel 启动时会自动执行数据库与项目结构迁移。正常更新不
 
 默认 Docker 部署的主要数据位于 Compose 目录：
 
-- `projects/`：数据根，含项目、素材、默认 SQLite 数据库、日志和 Vertex 凭据文件，布局见[持久化目录](../ops/deployment.md#sqlite-volumes)
+- `projects/`：数据根，含项目、素材、默认 SQLite 数据库、日志、Vertex 凭据文件和 Agent 会话数据，布局见[持久化目录](../ops/deployment.md#sqlite-volumes)
 - `.env`：登录与部署配置
-- `claude_data/`：Agent 会话数据
 
 生产 PostgreSQL 部署还需要备份 PostgreSQL 数据库。全站备份应同时覆盖数据根与数据库；PostgreSQL 使用 `pg_dump` / `pg_restore`，SQLite 应在停止服务后复制，或使用 SQLite 在线备份机制。
 

@@ -1683,8 +1683,9 @@ describe("StudioCanvasRouter", () => {
 
     fireEvent.click(screen.getByText("generate-narration"));
     await waitFor(() => {
-      expect(useAppStore.getState().toast?.text).toContain("音频供应商");
+      expect(useAppStore.getState().toast?.text).toContain("语音的供应商");
       expect(useAppStore.getState().toast?.tone).toBe("error");
+      expect(useAppStore.getState().toast?.action?.label).toBe("前往设置");
     });
     expect(generateSpy).not.toHaveBeenCalled();
   });

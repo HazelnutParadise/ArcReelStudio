@@ -8,12 +8,12 @@ import pytest
 
 from lib.agent.agent_session_store.store import DbSessionStore
 from server.agent_runtime.session_manager import SessionManager
-from tests.fakes import use_provider_env
+from tests.fakes import connected_provider_env, use_provider_env
 
 
 async def _fake_provider_env():
-    """Stub: 跳过 DB 访问，返回空 dict（不影响 session_store/flush 字段断言）。"""
-    return {}
+    """Stub: 跳过 DB 访问，带一条假连线（不影响 session_store/flush 字段断言）。"""
+    return await connected_provider_env()
 
 
 def _build_sm(tmp_path: Path) -> SessionManager:

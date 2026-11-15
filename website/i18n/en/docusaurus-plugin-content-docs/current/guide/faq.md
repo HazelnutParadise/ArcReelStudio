@@ -96,9 +96,8 @@ The About section of the Settings page can check for a new version and open its 
 
 The main data for a default Docker deployment is stored in its Compose directory:
 
-- `projects/`: the data root, containing projects, assets, the default SQLite database, logs, and Vertex credential files; see [Persistent Directories](../ops/deployment.md#sqlite-volumes) for its layout
+- `projects/`: the data root, containing projects, assets, the default SQLite database, logs, Vertex credential files, and Agent session data; see [Persistent Directories](../ops/deployment.md#sqlite-volumes) for its layout
 - `.env`: login and deployment configuration
-- `claude_data/`: Agent session data
 
 A production PostgreSQL deployment also requires a PostgreSQL database backup. A full-instance backup must cover the data root and the database. Use `pg_dump` / `pg_restore` for PostgreSQL. Copy SQLite only after stopping the service, or use SQLite's online backup mechanism.
 

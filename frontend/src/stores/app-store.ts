@@ -1,4 +1,7 @@
+import { navigate } from "wouter/use-browser-location";
 import { create } from "zustand";
+import { settingsSectionPath, type SettingsSection } from "@/app-routes";
+import i18n from "@/i18n";
 import type {
   PlaybackStartRequest,
   WorkspaceFocusTarget,
@@ -9,7 +12,7 @@ import type {
 } from "@/types";
 
 /** 提示上的操作按钮，用于可逆操作的「撤销」，或在用户已离开时打开刚完成的结果（如「打开项目」）；点击后执行回调并关闭这条提示。 */
-interface ToastAction {
+export interface ToastAction {
   label: string;
   onClick: () => void;
 }
@@ -84,7 +87,7 @@ interface AppState {
   pushNotification: (
     text: string,
     tone?: Toast["tone"],
-    options?: { target?: WorkspaceNotificationTarget | null },
+    options?: { target?: WorkspaceNotificationTarget | null; settings?: SettingsSection | null },
   ) => void;
   workspaceNotifications: WorkspaceNotification[];
   pushWorkspaceNotification: (input: WorkspaceNotificationInput) => void;
@@ -164,7 +167,13 @@ function buildWorkspaceNotification(input: WorkspaceNotificationInput): Workspac
     created_at: Date.now(),
     read: input.read ?? false,
     target: input.target ?? null,
+    settings: input.settings ?? null,
   };
+}
+
+/** 通知提示上的「前往设置」：打开出问题的设置分区。 */
+function settingsToastAction(section: SettingsSection): ToastAction {
+  return { label: i18n.t("dashboard:open_settings_action"), onClick: () => navigate(settingsSectionPath(section)) };
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -212,9 +221,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     }),
   pushNotification: (text, tone = "info", options) =>
     set((s) => ({
-      toast: { id: `${Date.now()}-${Math.random()}`, text, tone },
+      toast: {
+        id: `${Date.now()}-${Math.random()}`,
+        text,
+        tone,
+        action: options?.settings ? settingsToastAction(options.settings) : undefined,
+      },
       workspaceNotifications: [
-        buildWorkspaceNotification({ text, tone, target: options?.target ?? null }),
+        buildWorkspaceNotification({
+          text,
+          tone,
+          target: options?.target ?? null,
+          settings: options?.settings ?? null,
+        }),
         ...s.workspaceNotifications,
       ].slice(0, MAX_WORKSPACE_NOTIFICATIONS),
     })),

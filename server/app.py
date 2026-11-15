@@ -39,7 +39,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from lib import PROJECT_ROOT
 from lib.agent.agent_auth import auth_availability
-from lib.agent.agent_session_store import default_sdk_config_dir, session_store_enabled
+from lib.agent.agent_session_store import default_sdk_config_dir, pin_sdk_config_dir, session_store_enabled
 from lib.agent.agent_session_store.import_local import migrate_local_transcripts_to_store
 from lib.agent.agent_session_store.key_alignment import align_session_keys
 from lib.agent.agent_session_store.store import DbSessionStore
@@ -470,6 +470,8 @@ async def lifespan(app: FastAPI):
     # 会话存储键对齐（幂等；失败不阻塞启动）：数据根换了绝对路径后，会话的 Agent 上下文改到当前项目目录派生的键下。
     # 排在本地 transcript 导入之前：导入按当前键列本地会话、按当前键判断是否已导入，键没对齐时会在新键下
     # 再导入一份，同一会话两个键下都有记录，对齐就不再改它。
+    # SDK 的本地会话读写只认进程环境的 CLAUDE_CONFIG_DIR：钉到数据根下应用自己的目录，宿主的 ~/.claude 一律不碰
+    await asyncio.to_thread(pin_sdk_config_dir)
     try:
         await align_session_keys(
             async_session_factory,

@@ -23,6 +23,7 @@ from lib.subscriptions.connection_home import connection_home
 from server.agent_runtime.agent_access_policy import AgentAccessPolicy
 from server.agent_runtime.codex_engine import build_session_tools
 from server.agent_runtime.grok_client import GrokSessionConfig
+from server.agent_runtime.models import AgentConnectionMissing
 from server.agent_runtime.session_tool_endpoint import SESSION_TOOL_PATH
 
 GROK_CREDENTIAL_SETTING_KEY = "agent_grok_credential_id"
@@ -34,7 +35,7 @@ GROK_MODELS: tuple[str, ...] = ("grok-4.6", "grok-4.5")
 GROK_PROVIDERS = frozenset({PROVIDER_GROK_SUBSCRIPTION, "grok"})
 
 
-class GrokConnectionMissing(RuntimeError):
+class GrokConnectionMissing(AgentConnectionMissing):
     """设定选了 Grok 引擎，但找不到能用的 Grok 订阅或 xAI 连线。"""
 
 

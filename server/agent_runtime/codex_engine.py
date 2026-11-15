@@ -23,6 +23,7 @@ from server.agent_runtime.agent_access_policy import AgentAccessPolicy
 from server.agent_runtime.codex_client import CodexSessionConfig
 from server.agent_runtime.codex_file_tools import FILE_TOOL_NAMES, FILE_TOOL_SPECS, CodexFileTools
 from server.agent_runtime.codex_tools import build_arcreel_codex_tools
+from server.agent_runtime.models import AgentConnectionMissing
 
 AgentEngine = Literal["claude", "codex", "grok"]
 AGENT_ENGINES: tuple[AgentEngine, ...] = get_args(AgentEngine)
@@ -36,7 +37,7 @@ DEFAULT_CODEX_MODEL = "gpt-5.5"
 CODEX_PROVIDERS = frozenset({PROVIDER_CHATGPT_SUBSCRIPTION, "openai"})
 
 
-class CodexConnectionMissing(RuntimeError):
+class CodexConnectionMissing(AgentConnectionMissing):
     """设定选了 Codex 引擎，但找不到能用的 ChatGPT 订阅或 OpenAI 连线。"""
 
 

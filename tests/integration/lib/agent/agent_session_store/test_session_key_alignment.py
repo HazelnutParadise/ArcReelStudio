@@ -203,3 +203,35 @@ async def test_store_off_moves_local_transcripts_of_a_moved_data_root(tmp_path, 
         session_factory, projects_dir=new_dir.parent, sdk_config_dir=sdk_config_dir, store_enabled=False
     )
     assert again.moved == set()
+
+
+async def test_default_alignment_moves_only_the_apps_own_transcripts(tmp_path, monkeypatch, session_factory):
+    """对齐用的配置目录随数据根一起搬走；宿主用户自己的 ``~/.claude``（含同名会话目录）一个字节都不动。"""
+    from lib.agent.agent_session_store import default_sdk_config_dir
+    from lib.infra.app_data_dir import reset_for_tests
+
+    host_home = tmp_path / "host-home"
+    monkeypatch.setenv("HOME", str(host_home))
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(host_home / ".claude"))
+    monkeypatch.setenv("ARCREEL_DATA_DIR", str(tmp_path / "A"))
+    reset_for_tests()
+    old_projects = _make_project_dirs(tmp_path / "A", "demo")
+    _write_local_transcript(default_sdk_config_dir(), old_projects / "demo", SID)
+    _write_local_transcript(host_home / ".claude", old_projects / "demo", SID)
+    host_files = {p: p.read_bytes() for p in (host_home / ".claude").rglob("*") if p.is_file()}
+    await _create_session(session_factory, "demo", SID)
+
+    (tmp_path / "A").rename(tmp_path / "B")
+    monkeypatch.setenv("ARCREEL_DATA_DIR", str(tmp_path / "B"))
+    reset_for_tests()
+    new_dir = tmp_path / "B" / "projects" / "demo"
+    config_dir = default_sdk_config_dir()
+    assert config_dir == tmp_path / "B" / "runtime" / "claude-agent-config"
+
+    result = await align_session_keys(
+        session_factory, projects_dir=new_dir.parent, sdk_config_dir=config_dir, store_enabled=False
+    )
+
+    assert result.moved == {SID}
+    assert (config_dir / "projects" / make_project_key(new_dir) / f"{SID}.jsonl").is_file()
+    assert {p: p.read_bytes() for p in (host_home / ".claude").rglob("*") if p.is_file()} == host_files

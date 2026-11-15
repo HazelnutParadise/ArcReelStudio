@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -62,6 +63,10 @@ async def test_runs_one_toolless_turn_with_only_the_subscription_token() -> None
     assert options.system_prompt == "be brief"
     assert options.env["CLAUDE_CODE_OAUTH_TOKEN"] == "sk-ant-oat01-x"
     assert options.env["ANTHROPIC_API_KEY"] == ""
+    # 配置目录是这一轮自己的临时目录，CLI 读不到宿主的 ~/.claude 与钥匙圈登录
+    config_dir = Path(options.env["CLAUDE_CONFIG_DIR"])
+    assert config_dir.parent == Path(options.cwd)
+    assert not await asyncio.to_thread(config_dir.exists)  # 一轮结束后随工作目录删掉
     assert options.output_format is None
 
 
@@ -126,3 +131,16 @@ async def test_images_are_copied_in_and_only_the_read_tool_is_allowed(tmp_path) 
     assert options.max_turns == 3
     assert "./image-1.jpg" in fake.calls[0]["prompt"]
     assert seen["copied"] == b"jpg"
+
+
+async def test_inherited_claude_and_anthropic_variables_are_blanked(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CLAUDE_CODE_USE_FOUNDRY", "1")
+    monkeypatch.setenv("ANTHROPIC_CUSTOM_HEADERS", "X-Host: 1")
+    fake = FakeQuery(_result())
+
+    await run_claude_turn("sk-ant-oat01-x", "hello", query_fn=fake)
+
+    env = fake.calls[0]["options"].env
+    assert env["CLAUDE_CODE_USE_FOUNDRY"] == ""
+    assert env["ANTHROPIC_CUSTOM_HEADERS"] == ""
+    assert env["CLAUDE_CODE_OAUTH_TOKEN"] == "sk-ant-oat01-x"

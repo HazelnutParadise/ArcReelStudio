@@ -63,15 +63,24 @@ describe("toolLabel", () => {
     );
   });
 
-  it("names built-in tools and falls back to truncated parameters for unknown tools", () => {
+  it("names built-in tools and keeps unknown tools' raw names and parameters out of the row", () => {
     expect(label("Read", { file_path: "/data/projects/demo/scripts/episode_3.json" })).toMatchObject({
       name: "读取文件",
       summary: "scripts/episode_3.json",
     });
-    const unknown = label("NotebookEdit", { notebook_path: "x".repeat(200) });
-    expect(unknown.name).toBe("NotebookEdit");
-    expect(unknown.summary.endsWith("…")).toBe(true);
-    expect(unknown.summary.length).toBeLessThan(200);
+    // 参数原文只留在展开后的「参数」段，行内不出现内部名称与 JSON
+    expect(label("NotebookEdit", { notebook_path: "x".repeat(200) })).toMatchObject({ name: "工具", summary: "" });
+    expect(label("mcp__arcreel__not_yet_named", { whole_source_missing: true })).toMatchObject({
+      name: "工具",
+      summary: "",
+    });
+  });
+
+  it("describes loading tools in plain words and names the ArcReel tools it loads", () => {
+    expect(
+      label("ToolSearch", { query: "select:mcp__arcreel__generate_script_plan,mcp__arcreel__read_timeline" }),
+    ).toMatchObject({ name: "准备工具", summary: "生成脚本规划、读取剪辑时间线" });
+    expect(label("ToolSearch", { query: "storyboard image" })).toMatchObject({ name: "准备工具", summary: "" });
   });
 });
 

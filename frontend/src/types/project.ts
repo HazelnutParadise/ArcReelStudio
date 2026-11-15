@@ -240,6 +240,9 @@ export interface ProjectData {
   /** TTS 快照：provider/model、音色与语速。创建时以全局默认预填，之后不继承全局默认；
    *  改为后期配音后保留。语速缺省表示不向供应商传语速 */
   audio_backend?: string | null;
+  /** 项目自己的音乐、音效模型；留空回退全局默认，全局也没设就不能生成。 */
+  music_backend?: string | null;
+  sfx_backend?: string | null;
   narration_voice?: string | null;
   narration_speed?: number | null;
   /** 源文语言码（zh / en / vi / ru），由内容分析写入；界面只读，用于口播语速的单位名词 */

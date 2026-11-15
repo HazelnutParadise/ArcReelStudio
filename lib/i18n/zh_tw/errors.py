@@ -755,6 +755,7 @@ MESSAGES = {
     "version_resource_not_found": "資源 '{resource_type}/{resource_id}' 不存在",
     "version_snapshot_path_unmanaged": "'{resource_type}' 的版本記錄指向非託管的快照路徑，已拒絕該操作",
     "version_snapshot_corrupted": "無法使用第 {version} 版，此版本的檔案已損壞。你可以選擇其他版本，或重新生成。",
+    "agent_connection_missing": "還沒有可用的 Agent 連線，Agent 暫時無法對話。請先到「設定 → ArcReel Agent」新增連線",
     "session_capacity_exceeded": "併發會話數已達上限，請稍後再試",
     "session_question_unavailable": "會話未執行或沒有待回答的問題",
     "rewrite_anchor_invalid": "要改寫的訊息不在這個會話裡，請重新整理後重試",

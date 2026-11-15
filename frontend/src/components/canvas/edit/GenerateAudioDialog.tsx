@@ -2,6 +2,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { blockGeneration } from "@/actions/generation-prerequisites";
 import { API } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,7 +44,10 @@ export function GenerateAudioButton({ projectName, kind }: { projectName: string
       <TrackActionButton
         label={t(`edit_view_${kind}_generate`)}
         testId={`edit-${kind}-generate`}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          // 没设默认模型就不能生成：弹带「前往设置」的提示，不打开对话框
+          if (!blockGeneration(kind === "bgm" ? "music" : "sfx")) setOpen(true);
+        }}
       >
         <Sparkles aria-hidden />
       </TrackActionButton>

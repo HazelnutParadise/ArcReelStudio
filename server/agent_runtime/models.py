@@ -6,6 +6,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
+
+class AgentConnectionMissing(RuntimeError):
+    """当前 Agent 引擎没有能用的连线（API Key 或订阅），会话不启动任何进程。"""
+
+
 SessionStatus = Literal["idle", "running", "completed", "error", "interrupted", "closed"]
 
 

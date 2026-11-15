@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { settingsSectionForFailure } from "@/actions/generation-prerequisites";
 import { useTasksStore } from "@/stores/tasks-store";
 import { useProjectsStore } from "@/stores/projects-store";
 import { useAppStore } from "@/stores/app-store";
@@ -87,6 +88,8 @@ export function useTaskFailureNotifications(projectName?: string | null): void {
         if (text) {
           useAppStore.getState().pushNotification(text, "error", {
             target: buildTaskFailureTarget(tk, projectDataRef.current),
+            // 失败原因是设置没配好时，提示与通知都给「前往设置」，与入队前的拦截是同一个入口
+            settings: settingsSectionForFailure(tk.error_code),
           });
         }
       }

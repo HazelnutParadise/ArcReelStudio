@@ -43,6 +43,7 @@ from server.agent_runtime.message_serialization import (
     utc_now_iso,
 )
 from server.agent_runtime.models import (
+    AgentConnectionMissing,
     Heartbeat,
     LiveMessage,
     QueuedMessage,
@@ -784,6 +785,10 @@ class SessionManager:
             session_id=session_id,
         )
 
+    async def require_connection(self, engine: str) -> None:
+        """``engine`` 引擎现在有没有可用连线；没有时抛 :class:`AgentConnectionMissing`，不起任何进程。"""
+        await self._options_assembler.require_connection(engine)
+
     async def _launch(
         self,
         project_name: str,
@@ -993,6 +998,10 @@ class SessionManager:
                 locale=locale,
                 stderr=startup_stderr,
             )
+        except AgentConnectionMissing:
+            # 没有连线：一个进程都没起，原样交给路由层提示去设置
+            startup_stderr.stop()
+            raise
         except Exception as exc:
             sdk_stderr = startup_stderr.render()
             startup_stderr.stop()
@@ -1393,6 +1402,10 @@ class SessionManager:
                 locale=locale,
                 stderr=startup_stderr,
             )
+        except AgentConnectionMissing:
+            # 没有连线：一个进程都没起，原样交给路由层提示去设置
+            startup_stderr.stop()
+            raise
         except Exception as exc:
             sdk_stderr = startup_stderr.render()
             startup_stderr.stop()

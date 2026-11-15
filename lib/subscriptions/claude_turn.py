@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import shutil
 import tempfile
 from collections.abc import AsyncIterator, Callable, Mapping, Sequence
@@ -18,7 +19,7 @@ from typing import Any
 
 from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, TextBlock, query
 
-from lib.config.env_keys import ANTHROPIC_ENV_KEYS
+from lib.config.env_keys import ANTHROPIC_ENV_KEYS, inherited_claude_cli_env_keys
 from lib.config.service import OAUTH_TOKEN_ENV_KEY
 
 DEFAULT_TURN_TIMEOUT_SECONDS = 10 * 60.0
@@ -68,8 +69,12 @@ async def run_claude_turn(
         listing = "\n".join(f"- ./{name}" for name in attached)
         prompt = f"{prompt}\n\nAttached images (read each with the Read tool before answering):\n{listing}"
     # 只带订阅令牌：API Key 凭证的地址、密钥与档位模型都清空，免得 CLI 读到容器里别的 Anthropic 设置
-    env = dict.fromkeys(ANTHROPIC_ENV_KEYS, "")
+    env = dict.fromkeys((*ANTHROPIC_ENV_KEYS, *inherited_claude_cli_env_keys(os.environ)), "")
     env[OAUTH_TOKEN_ENV_KEY] = oauth_token
+    # 配置目录也用这一轮自己的：CLI 读不到宿主用户的 ~/.claude 与钥匙圈登录
+    config_dir = work_dir / ".claude-config"
+    await asyncio.to_thread(config_dir.mkdir, mode=0o700)
+    env["CLAUDE_CONFIG_DIR"] = str(config_dir)
     options = ClaudeAgentOptions(
         cwd=str(work_dir),
         tools=["Read"] if attached else [],

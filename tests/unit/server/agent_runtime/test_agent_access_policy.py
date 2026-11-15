@@ -934,3 +934,16 @@ def test_search_rooted_above_data_root_denied(policy: AgentAccessPolicy, tool: s
         assert reason
     allowed, _ = policy.check_path_access(str(policy.project_root / "lib"), tool, _cwd(policy), user_id=_USER_ID)
     assert allowed
+
+
+def test_sdk_tool_results_are_read_from_the_apps_config_dir_not_the_host_home(tmp_path, monkeypatch) -> None:
+    from lib.infra.data_root_layout import DataRootLayout
+
+    monkeypatch.setenv("HOME", str(tmp_path / "host-home"))
+    policy = AgentAccessPolicy(
+        project_root=(tmp_path / "repo").resolve(),
+        data_root=(tmp_path / "data").resolve(),
+        agent_profile_root=(tmp_path / "profile").resolve(),
+    )
+    expected = DataRootLayout((tmp_path / "data").resolve()).claude_agent_config_dir / "projects"
+    assert policy.effective_claude_projects_dir == expected

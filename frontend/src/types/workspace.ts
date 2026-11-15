@@ -1,3 +1,4 @@
+import type { SettingsSection } from "@/app-routes";
 import type { PresentationResourceType } from "./presentation";
 
 export type ProjectEventSource = "webui" | "worker" | "filesystem";
@@ -166,11 +167,14 @@ export interface WorkspaceNotification {
   created_at: number;
   read: boolean;
   target?: WorkspaceNotificationTarget | null;
+  /** 失败原因是设置没配好时，要打开的设置分区（通知里给「前往设置」）。 */
+  settings?: SettingsSection | null;
 }
 
 export interface WorkspaceNotificationInput {
   text: string;
   tone?: WorkspaceNotification["tone"];
   target?: WorkspaceNotification["target"];
+  settings?: WorkspaceNotification["settings"];
   read?: boolean;
 }

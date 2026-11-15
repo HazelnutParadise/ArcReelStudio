@@ -126,6 +126,11 @@ class DataRootLayout:
         return self.root / "runtime"
 
     @property
+    def claude_agent_config_dir(self) -> Path:
+        """Claude 引擎会话的 ``CLAUDE_CONFIG_DIR``：应用自己的配置目录，CLI 读不到宿主用户的 Claude 登录与设置。"""
+        return self.runtime_dir / "claude-agent-config"
+
+    @property
     def system_dirs(self) -> tuple[Path, ...]:
         """数据根下由布局登记的、项目目录以外的顶层目录。
 

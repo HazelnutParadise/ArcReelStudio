@@ -18,6 +18,7 @@ from lib.agent.agent_session_store.store import DbSessionStore
 from lib.infra.data_root_layout import DataRootLayout
 from lib.project.project_manager import ProjectManager
 from server.agent_runtime.event_log import EventLogService, EventLogStore
+from server.agent_runtime.models import AgentConnectionMissing
 from server.agent_runtime.sdk_transcript_adapter import SdkTranscriptAdapter
 from server.agent_runtime.service import (
     AssistantService,
@@ -57,6 +58,11 @@ class FakeSessionManager:
         self.closed: list[str] = []
         self.send_failure: BaseException | None = None
         self.settle_after_interrupt = True
+        self.connection_missing = False
+
+    async def require_connection(self, engine: str) -> None:
+        if self.connection_missing:
+            raise AgentConnectionMissing(f"no connection for {engine}")
 
     async def get_pending_questions_snapshot(self, session_id: str) -> list[dict[str, Any]]:
         return self.pending_questions.get(session_id, [])
@@ -246,6 +252,21 @@ class TestRewriteHappyPath:
 
         assert runtime.interrupted == [session_id]
         assert runtime.dispatched[0]["session_id"] == result["session_id"]
+
+    async def test_without_a_connection_the_running_turn_is_left_alone(self, rewriting):
+        """没有可用连线时先拒绝：不中断运行中的轮次、不分叉，原会话照旧。"""
+        service, runtime, session_id, _ = rewriting
+        runtime.statuses[session_id] = "running"
+        runtime.connection_missing = True
+
+        with pytest.raises(AgentConnectionMissing):
+            await _rewrite(service, session_id, SECOND_USER_ENTRY)
+
+        assert runtime.interrupted == []
+        assert runtime.dispatched == []
+        origin = await service.meta_store.get(session_id)
+        assert origin is not None
+        assert origin.superseded_by is None
 
     async def test_interrupt_is_skipped_for_an_idle_session(self, rewriting):
         service, runtime, session_id, _ = rewriting
