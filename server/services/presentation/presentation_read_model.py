@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from lib.artifacts.artifact_activation import UNPROVEN_MEDIA_BASIS_DIGEST
 from lib.artifacts.artifact_manifest import (
     ArtifactBasisDescriptor,
     ArtifactKey,
@@ -537,7 +538,17 @@ class PresentationReadModelService:
             else ArtifactKey.episode_video(selected.target.episode, resource_id)
         )
         expected = ArtifactManifestEntry(artifact_path=artifact_path, basis_digest=selected.target.basis.digest)
-        if observation.blocker is not None or not observation.present or adapter.get_entry(key) != expected:
+        if observation.blocker is not None or not observation.present:
+            raise PresentationUnavailableError("current media selection is not backed by its typed manifest entry")
+        registered = adapter.get_entry(key)
+        # 归档以 stale 带进来的媒体登记依据是占位摘要（ADR 0134）：它仍是这个正式文件的登记、照常可用，
+        # 呈现与源项目里同一件 stale 媒体一样照常物化；用户重新生成或切换版本后登记换回真实依据。
+        carried_as_stale = (
+            registered is not None
+            and registered.artifact_path == artifact_path
+            and registered.basis_digest == UNPROVEN_MEDIA_BASIS_DIGEST
+        )
+        if registered != expected and not carried_as_stale:
             raise PresentationUnavailableError("current media selection is not backed by its typed manifest entry")
         return artifact_path
 
