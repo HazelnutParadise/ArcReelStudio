@@ -861,3 +861,50 @@ def test_import_refuses_an_archive_with_duplicate_entry_names(tmp_path: Path) ->
 
     assert exc.value.status_code == 400
     assert [message.key for message in exc.value.errors] == ["arch_zip_duplicate_entry"]
+
+
+@pytest.mark.parametrize(
+    "twin",
+    [
+        "demo/VIDEOS/scene_E1S1.mp4",
+        "demo/videos/SCENE_E1S1.MP4",
+        # 「é」的组合写法（e + U+0301）与预组合写法在 NFC 下是同一个名字
+        "demo/videos/café.mp4|demo/videos/café.mp4",
+    ],
+)
+def test_entry_names_that_differ_only_in_case_or_unicode_form_are_refused(tmp_path: Path, twin: str) -> None:
+    """不分大小写的磁盘上这些名字落在同一个文件，后一份覆盖前一份：与完全同名一样拒绝。"""
+    pm, _project_dir = _current_project(tmp_path)
+    archive_path, _ = ProjectArchiveService(pm).export_project("demo", scope="full")
+    duplicated = tmp_path / "case.zip"
+    with zipfile.ZipFile(archive_path) as source, zipfile.ZipFile(duplicated, "w") as rebuilt:
+        for info in source.infolist():
+            rebuilt.writestr(info, source.read(info))
+        for name in twin.split("|"):
+            rebuilt.writestr(name, b"twin")
+
+    with pytest.raises(ProjectArchiveValidationError) as exc:
+        ProjectArchiveService(ProjectManager(tmp_path / "target")).import_project_archive(
+            duplicated, uploaded_filename="demo.zip"
+        )
+
+    assert [message.key for message in exc.value.errors] == ["arch_zip_duplicate_entry"]
+
+
+def test_a_storyboard_carried_with_an_unproven_basis_is_announced_on_import(tmp_path: Path) -> None:
+    """不只视频与配音：任何以占位依据带进来的登记导入后都是 stale，都要告诉用户。"""
+    pm, _project_dir = _current_project(tmp_path)
+    archive_path, _ = ProjectArchiveService(pm).export_project("demo", scope="full")
+    with zipfile.ZipFile(archive_path) as archive:
+        envelope = json.loads(archive.read(f"demo/{ARCHIVE_MANIFEST_NAME}"))
+    envelope["artifact_manifest"]["entries"][_STORYBOARD.encode()]["basis_digest"] = UNPROVEN_MEDIA_BASIS_DIGEST
+    rebuilt = _rezip_with(
+        archive_path,
+        tmp_path / "unproven.zip",
+        {f"demo/{ARCHIVE_MANIFEST_NAME}": json.dumps(envelope).encode("utf-8")},
+    )
+
+    target, result = _import_archive(rebuilt, tmp_path / "target")
+
+    assert ("claim_imported_as_stale_unproven_basis", _STORYBOARD_PATH) in _noticed(result.diagnostics, "warnings")
+    assert _status(target.get_project_path(result.project_name), _STORYBOARD, _STORYBOARD_PATH) is ArtifactStatus.STALE

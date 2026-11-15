@@ -9,6 +9,7 @@ import secrets
 import shutil
 import stat
 import tempfile
+import unicodedata
 import zipfile
 from collections import Counter
 from collections.abc import AsyncGenerator, Callable, Iterator, Mapping
@@ -18,7 +19,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Literal, NoReturn, Protocol, cast
+from typing import Any, BinaryIO, Literal, NoReturn, Protocol, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -993,7 +994,7 @@ class ProjectArchiveService:
                         # 带信封的包判完时效再补快照：补回的快照只让恢复版本与成片取材可用，不把这次判成 stale 的
                         # 登记借包里的快照证明改回最新。补完再告知，才说得准能不能切回那个版本。
                         self._restore_version_snapshots(staging_dir, diagnostics, side="import")
-                        self._report_media_imported_as_stale(staging_dir, preserved_manifest, diagnostics)
+                        self._report_claims_imported_as_stale(staging_dir, preserved_manifest, diagnostics)
 
                     # 修复期补的占位、导入激活没能登记的产物与迁移链的结果一起进报告，不分归档的
                     # schema 版本：导入前请用户确认一次（ADR 0098）。占位从诊断移进报告，导入成功
@@ -1226,10 +1227,10 @@ class ProjectArchiveService:
             location=notice.artifact_path,
         )
 
-    def _report_media_imported_as_stale(
+    def _report_claims_imported_as_stale(
         self, project_dir: Path, preserved_manifest: ArtifactManifestArchiveSnapshot, diagnostics: ArchiveDiagnostics
     ) -> None:
-        """包里证明不了是所选版本、按 stale 导入的视频与配音，逐条告诉用户（ADR 0134）。
+        """按 stale 导入的登记逐条告诉用户（ADR 0134）：证明不了是所选版本的视频与配音，以及以占位依据带进来的其余产物。
 
         这一类是带着信封里的登记、却没有内容事实的，或登记依据是占位摘要的（上一次导出就以 stale 带出）。
         选中版本的版本文件在场且对得上记录时，告诉用户切回那个版本即可恢复；否则不作这个承诺。
@@ -1238,7 +1239,17 @@ class ProjectArchiveService:
         versions = self._load_json_file(project_dir / "versions" / "versions.json")
         for key in sorted(preserved_manifest.entries, key=ArtifactKey.encode):
             entry = committed.get(key)
-            if key.kind not in _MEDIA_ARTIFACT_KINDS or entry is None:
+            if entry is None:
+                continue
+            if key.kind not in _MEDIA_ARTIFACT_KINDS:
+                # 分镜、宫格、设定图等以占位依据带进来的（导出时它的生成输入被清掉或规整过）：同样按 stale 导入。
+                if entry.basis_digest == UNPROVEN_MEDIA_BASIS_DIGEST:
+                    diagnostics.add(
+                        "warnings",
+                        "claim_imported_as_stale_unproven_basis",
+                        ValidationMessage("arch_claim_imported_as_stale_unproven_basis", {"path": entry.artifact_path}),
+                        location=entry.artifact_path,
+                    )
                 continue
             if entry.content is not None and entry.basis_digest != UNPROVEN_MEDIA_BASIS_DIGEST:
                 continue
@@ -1534,7 +1545,11 @@ class ProjectArchiveService:
         claims = present
         adapter.replace_entries_atomically(claims)
         try:
-            resolver = ArtifactCurrencyResolver(project_dir)
+            try:
+                resolver = ArtifactCurrencyResolver(project_dir)
+            except OSError, RuntimeError, ValueError:
+                # 与单条判不出同一规则：一条也不算「变成了 current」，交给导出规划器照常处理。
+                return {}
             statuses: dict[ArtifactKey, ArtifactStatus] = {}
             for key, entry in claims.items():
                 try:
@@ -1826,8 +1841,9 @@ class ProjectArchiveService:
             if relative_dir != Path("."):
                 signature.append((f"{relative_dir.as_posix()}/", "directory"))
             for filename in filenames:
-                path = current_path / filename
-                signature.append(((relative_dir / filename).as_posix(), sha256_file(path)))
+                with self._open_regular_file(current_path / filename) as source:
+                    hexdigest, _size, _content = digest_stream(source.read)
+                signature.append(((relative_dir / filename).as_posix(), hexdigest))
         return tuple(signature)
 
     def _iter_visible_tree(self, root: Path) -> Iterator[tuple[Path, Path, tuple[str, ...]]]:
@@ -1853,6 +1869,25 @@ class ProjectArchiveService:
             yield current_path, current_path.relative_to(root), visible_files
 
     @staticmethod
+    def _open_regular_file(path: Path) -> BinaryIO:
+        """只读打开项目里的普通文件；命名管道、套接字、设备等抛 ``OSError``（带文件名），不读它。
+
+        直接 ``open`` 一个命名管道会一直等写端，导出就挂住了：以非阻塞、不跟随链接的方式打开，再按打开的
+        句柄确认类型，先查后开之间被换掉也查得出。
+        """
+        flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
+        descriptor = os.open(path, flags)
+        try:
+            if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+                raise OSError(errno.EINVAL, "not a regular file", os.fspath(path))
+            if hasattr(os, "set_blocking"):
+                os.set_blocking(descriptor, True)
+            return os.fdopen(descriptor, "rb")
+        except BaseException:
+            os.close(descriptor)
+            raise
+
+    @staticmethod
     def _raise_walk_error(exc: OSError) -> NoReturn:
         """``os.walk`` 默认略过读不出的目录：导出里那意味着整目录内容悄悄缺席，这里改为报错。"""
         raise exc
@@ -1870,7 +1905,7 @@ class ProjectArchiveService:
                 source_path = current_path / filename
                 destination_path = destination_dir / filename
                 destination_path.parent.mkdir(parents=True, exist_ok=True)
-                with source_path.open("rb") as source, destination_path.open("wb") as destination:
+                with self._open_regular_file(source_path) as source, destination_path.open("wb") as destination:
 
                     def _copy_chunk(size: int, source=source, destination=destination) -> bytes:
                         chunk = source.read(size)
@@ -3024,13 +3059,15 @@ class ProjectArchiveService:
             if not stripped_name:
                 continue
 
-            if stripped_name in seen_names:
+            # 不分大小写的磁盘上只差大小写或 Unicode 写法的名字落在同一个文件：按 NFC + casefold 比较。
+            collision_key = unicodedata.normalize("NFC", stripped_name).casefold()
+            if collision_key in seen_names:
                 # 同名条目解压时后一份覆盖前一份，哪一份算数取决于解压实现：一律拒绝。
                 raise ProjectArchiveValidationError(
                     ValidationMessage("arch_import_validation_failed"),
                     errors=[ValidationMessage("arch_zip_duplicate_entry", {"name": info.filename})],
                 )
-            seen_names.add(stripped_name)
+            seen_names.add(collision_key)
 
             parts = tuple(part for part in stripped_name.split("/") if part)
             if parts and len(parts[0]) == 2 and parts[0][1] == ":":
