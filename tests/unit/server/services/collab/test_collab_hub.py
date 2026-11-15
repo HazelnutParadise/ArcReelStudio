@@ -1014,3 +1014,65 @@ async def test_shutdown_writes_every_room_back_at_the_same_time(hub_project_file
             await stopping
 
     assert (unit.store["k"]["body"], unit.store["k2"]["body"]) == ("甲初稿", "乙初稿")
+
+
+async def test_a_record_that_did_not_land_does_not_swallow_a_later_outside_change_to_its_value(
+    quiet_global_hub,
+) -> None:
+    unit = RaisesAfterLandingUnit(lands=False)
+    hub = quiet_global_hub(unit)
+    alice = FakeConn("c1", "alice")
+    await _join_global(hub, alice)
+
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "新"))
+    # 写回报错且没写进去；别处先改成别的内容，之后又改成那次写回想写的值
+    await hub.flush(alice, GLOBAL_REF, 1)
+    unit.store["k"]["body"] = "Q"
+    await hub.refresh_project("")
+    unit.store["k"]["body"] = "新初稿"
+    await hub.refresh_project("")
+    await hub.flush(alice, GLOBAL_REF, 2)
+
+    # 第二次是别处的改动：它把「Q」删掉了，不能当成自己的写入吞掉
+    assert "Q" not in alice.text("body")
+    assert unit.store["k"]["body"] == alice.text("body")
+
+
+class UnholdableContentUnit(InMemoryGlobalUnit):
+    """``k2`` 在写回前的核对里读出文档容纳不了的内容，让那个房间的写回抛错。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.store = {"k": {"body": "初稿"}, "k2": {"body": "初稿"}}
+        self.broken = False
+
+    async def read(self, key: str) -> dict[str, Any]:
+        if self.broken and key == "k2":
+            return {"body": object()}
+        return await super().read(key)
+
+
+async def test_shutdown_still_writes_the_other_rooms_when_one_write_back_raises(hub_project_files) -> None:
+    unit = UnholdableContentUnit()
+    hub = _quiet_hub(hub_project_files, {**UNIT_SPECS, "note": unit})
+    other = UnitRef(project="", kind="note", key="k2")
+    alice, bob = FakeConn("c1", "alice"), FakeConn("c2", "bob")
+    await _join_global(hub, alice)
+    await hub.join(bob, other)
+    await hub.on_sync(bob, other, create_sync_message(bob.doc))
+    await hub.on_sync(alice, GLOBAL_REF, alice.type_into("body", 0, "甲"))
+    await hub.on_sync(bob, other, bob.type_into("body", 0, "乙"))
+    loop_errors: list[dict[str, Any]] = []
+    loop = asyncio.get_running_loop()
+    previous = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _loop, context: loop_errors.append(context))
+    unit.broken = True
+    try:
+        async with asyncio.timeout(5):
+            await hub.shutdown()
+    finally:
+        loop.set_exception_handler(previous)
+
+    # 关停照常返回，其余房间照常写回
+    assert unit.store["k"]["body"] == "甲初稿"
+    assert loop_errors == []
