@@ -4,8 +4,15 @@
   收到某个连接的更新就套进文档并转发给房间里的其他连接。
 - **写回**：文档有改动后，安静 ``debounce`` 秒（最长 ``max_wait`` 秒）就把改过的顶层字段写回项目文件，
   变更来源记为 ``collab``、改动者记为最近一位改动的成员。写回失败（内容不合规）时把原因告诉房间里的每个人。
+  写之前在同一次读写里核对要写的字段：存储里的值与房间上次见到的不同（别处刚改过、中枢还没重读），就不写，
+  先把那次改动像外部改动一样合并进文档、转发给成员，再按合并后的内容重写，最多试 ``_MAX_WRITE_ATTEMPTS`` 次；
+  都对不上就报写回失败，等下一个安静期再试。每次写回之前记下要写的值（``_PendingWrite``），之后在存储里读到
+  这些值就认定是自己的写入，不当成外部改动再合并一遍。写回一旦开始不可取消，关停与关闭房间会等它写完
+  （关停时各房间同时写回，只等最慢的那个）；
+  中枢不给读写加时限，放进线程的读写停不下来，时限只会把已写成的写入报成失败。
 - **外部改动**：Agent、后台任务或其他接口改了同一个单元时，从「上次与存储一致时的文档状态」出发套上新内容算出
-  差异，再合并进当前文档。正在打、还没写回的字因此不会被覆盖，由 CRDT 与外部改动合并。
+  差异，再合并进当前文档。正在打、还没写回的字因此不会被覆盖，由 CRDT 与外部改动合并。别处删掉的字段，
+  没人改过就从文档里删掉，有人正在改就保留那份修改并写回。
 - **收尾**：最后一个人离开后等 ``close_grace`` 秒（给刷新页面、断线重连留时间），写回并关闭房间。
 """
 
@@ -34,7 +41,7 @@ from pycrdt import (
 )
 
 from lib.collab.ydoc_json import apply_json, new_unit_doc, unit_json
-from lib.infra.async_thread import run_sync_transaction
+from lib.infra.async_thread import run_noninterruptible_async, run_sync_transaction
 from lib.project.project_change_hints import ProjectChangeActor, project_change_actor, project_change_source
 from lib.project.project_manager import ProjectManager
 from server.services.collab.units import (
@@ -62,6 +69,48 @@ class WriteFailure:
     code: str
     detail: str = ""
     params: dict[str, object] = field(default_factory=dict)
+
+
+#: 一次写回最多尝试几次：每次核对到存储已被别处改过，就并进文档再试；都对不上时报写回失败，安静期过后再试
+_MAX_WRITE_ATTEMPTS = 3
+
+#: 存储里没有这个字段（单元读出时省略了缺省的选填字段）
+_ABSENT = object()
+
+
+@dataclass(frozen=True)
+class _Stale:
+    """要写的字段在存储里已被别处改过，这次没有写。"""
+
+    #: 核对时读到的存储内容
+    latest: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class _Written:
+    #: 写回后读回的内容；读回失败时为 None
+    stored: dict[str, Any] | None
+
+
+#: 房间最多记住几次结果未定的写回
+_MAX_PENDING_WRITES = 8
+
+
+@dataclass(frozen=True)
+class _PendingWrite:
+    """一次已经交给单元、还没确认写成的写回：要写的值，以及这些值对应的文档状态。
+
+    之后在存储里读到其中某个值，就认定是这次写回落了地（或别处正好写了同样的内容），合并基准前进到
+    ``snapshot``，不把它当成别处的改动再合并一遍。
+    """
+
+    values: dict[str, Any]
+    snapshot: bytes
+
+
+def _is_stale(latest: dict[str, Any], changes: dict[str, Any], expected: dict[str, Any]) -> bool:
+    """要写的字段里，存储现在的值与房间上次见到的不同：写下去会盖掉别处的改动。"""
+    return any(latest.get(key, _ABSENT) != expected.get(key, _ABSENT) for key in changes)
 
 
 class Connection(Protocol):
@@ -98,6 +147,8 @@ class Room:
     #: 不属于项目的单元：打开期间定时重读的任务
     poll_task: asyncio.Task | None = None
     closed: bool = False
+    #: 结果未定的写回（写入中、报错或被拒前），从旧到新
+    pending_writes: list[_PendingWrite] = field(default_factory=list)
 
 
 def _b64(data: bytes) -> str:
@@ -224,14 +275,19 @@ class CollabHub:
         await conn.send({"type": "flushed", "room": _room_id(ref), "id": request_id, "ok": room.error is None})
 
     async def shutdown(self) -> None:
-        for room in list(self._rooms.values()):
+        """写回所有房间再关闭。各房间同时写回：一个房间的写入卡住，只让关停等它这一个，不会让其余房间排队。"""
+        rooms = list(self._rooms.values())
+        for room in rooms:
             if room.persist_task is not None:
                 room.persist_task.cancel()
             if room.close_task is not None:
                 room.close_task.cancel()
             if room.poll_task is not None:
                 room.poll_task.cancel()
-            await self._persist(room)
+        results = await asyncio.gather(*(self._persist(room) for room in rooms), return_exceptions=True)
+        for room, result in zip(rooms, results, strict=True):
+            if isinstance(result, BaseException):
+                logger.error("关停时协作内容写回失败 kind=%s", room.ref.kind, exc_info=result)
             room.closed = True
         self._rooms.clear()
         for task in self._watchers.values():
@@ -324,34 +380,87 @@ class CollabHub:
             await self._persist(room)
 
     async def _persist(self, room: Room) -> None:
+        """写回一旦开始就做完，再把取消传给调用方。
+
+        中途取消会留下「文件已写、房间还记着旧的存储内容」：下次写回核对时把自己刚写的内容当成别处的改动，
+        再合并一遍，同一段字就重复了。房间关闭、有人重新加入、关停都会取消正在等待写回的任务。
+        """
+        task = asyncio.create_task(self._persist_now(room), name=f"collab-write-{room.ref.kind}")
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            with contextlib.suppress(Exception):
+                await run_noninterruptible_async(task)
+            raise
+
+    async def _persist_now(self, room: Room) -> None:
         async with room.lock:
             room.dirty = False
             current = unit_json(room.doc)
-            snapshot = room.doc.get_update()
             changes = {key: value for key, value in current.items() if room.sent.get(key) != value}
             if not changes:
                 return
             actor = room.last_actor
             await self._broadcast(room, {"type": "status", "room": _room_id(room.ref), "state": "saving"})
-            try:
-                stored = await self._write_and_read(room.ref, changes, actor)
-            except UnitNotFoundError:
-                await self._remove(room, "not_found")
-                return
-            except UnitWriteError as exc:
-                room.error = WriteFailure(exc.code, exc.detail, exc.params)
-                logger.info("协作内容写回被拒绝 kind=%s code=%s", room.ref.kind, exc.code)
-                await self._broadcast_status(room)
-                return
-            except Exception:
+            for _attempt in range(_MAX_WRITE_ATTEMPTS):
+                current = unit_json(room.doc)
+                snapshot = room.doc.get_update()
+                changes = {key: value for key, value in current.items() if room.sent.get(key) != value}
+                if not changes:
+                    # 外部改动并进来后与存储已经一致，不必再写
+                    room.error = None
+                    break
+                pending = _PendingWrite(values=changes, snapshot=snapshot)
+                room.pending_writes = [*room.pending_writes, pending][-_MAX_PENDING_WRITES:]
+                try:
+                    outcome = await self._write_and_read(room.ref, changes, room.stored, actor)
+                except UnitNotFoundError:
+                    await self._remove(room, "not_found")
+                    return
+                except UnitWriteError as exc:
+                    # 被拒的写回没有落地
+                    room.pending_writes = [item for item in room.pending_writes if item is not pending]
+                    room.error = WriteFailure(exc.code, exc.detail, exc.params)
+                    logger.info("协作内容写回被拒绝 kind=%s code=%s", room.ref.kind, exc.code)
+                    await self._broadcast_status(room)
+                    return
+                except Exception:
+                    # 结果不明（例如提交之后连线中断）：记录留着，之后读到这些值就按自己的写入处理
+                    room.error = WriteFailure("save_failed")
+                    logger.exception("协作内容写回失败 kind=%s project=%s", room.ref.kind, room.ref.project)
+                    await self._broadcast_status(room)
+                    return
+                if isinstance(outcome, _Stale):
+                    # 要写的字段在存储里已被别处改过：先把那次改动并进文档，再按合并后的内容重写。
+                    # 存储里若正是要写的值（之前结果不明的写回落了地，或别处写了同样的内容），合并时按自己的写入处理
+                    # 这次什么也没写；它的记录只在这次合并里用来认出「存储已是要写的值」，合并会把涉及变动字段的记录作废
+                    await self._merge_stored(room, outcome.latest)
+                    continue
+                # 写成的这次涵盖了之前所有结果未定的写回：没写成的字段都还在这次的改动里
+                room.pending_writes = []
+                room.error = None
+                room.sent = current
+                room.base_update = snapshot
+                # 只认这次写过的字段：其余字段若在这次写回前后被别处改了，由随后的重读照常并进文档。
+                # 读回失败时按写下去的值记，存储若另有规整，下次重读照常并进来
+                written = outcome.stored if outcome.stored is not None else changes
+                stored = dict(room.stored)
+                for key in changes:
+                    if key in written:
+                        stored[key] = written[key]
+                    else:
+                        stored.pop(key, None)
+                room.stored = stored
+                break
+            else:
                 room.error = WriteFailure("save_failed")
-                logger.exception("协作内容写回失败 kind=%s project=%s", room.ref.kind, room.ref.project)
-                await self._broadcast_status(room)
-                return
-            room.error = None
-            room.sent = current
-            room.base_update = snapshot
-            room.stored = stored
+                logger.warning(
+                    "协作内容写回时存储一直被别处改动，安静期过后再试 kind=%s project=%s",
+                    room.ref.kind,
+                    room.ref.project,
+                )
+                # 每个安静期最多核对 _MAX_WRITE_ATTEMPTS 次，别处一直在写也不会空转；房间关闭后不再试
+                self._schedule_persist(room)
             await self._broadcast_status(room)
 
     async def _read(self, ref: UnitRef) -> dict[str, Any]:
@@ -361,20 +470,39 @@ class CollabHub:
         return await run_sync_transaction(spec.read, self._pm, ref.project, ref.key)
 
     async def _write_and_read(
-        self, ref: UnitRef, changes: dict[str, Any], actor: ProjectChangeActor | None
-    ) -> dict[str, Any]:
+        self, ref: UnitRef, changes: dict[str, Any], expected: dict[str, Any], actor: ProjectChangeActor | None
+    ) -> _Stale | _Written:
         spec = self._specs[ref.kind]
         if is_global(spec):
+            latest = await spec.read(ref.key)
+            if _is_stale(latest, changes, expected):
+                return _Stale(latest)
             await spec.write(ref.key, changes)
-            return await spec.read(ref.key)
-        return await run_sync_transaction(self._write_and_read_project, spec, ref, changes, actor)
+            try:
+                return _Written(await spec.read(ref.key))
+            except Exception:
+                logger.warning("协作内容写回后读回失败 kind=%s", ref.kind, exc_info=True)
+                return _Written(None)
+        return await run_sync_transaction(self._write_and_read_project, spec, ref, changes, expected, actor)
 
     def _write_and_read_project(
-        self, spec: UnitSpec, ref: UnitRef, changes: dict[str, Any], actor: ProjectChangeActor | None
-    ) -> dict[str, Any]:
+        self,
+        spec: UnitSpec,
+        ref: UnitRef,
+        changes: dict[str, Any],
+        expected: dict[str, Any],
+        actor: ProjectChangeActor | None,
+    ) -> _Stale | _Written:
+        latest = spec.read(self._pm, ref.project, ref.key)
+        if _is_stale(latest, changes, expected):
+            return _Stale(latest)
         with project_change_source("collab"), project_change_actor(actor):
             spec.write(self._pm, ref.project, ref.key, changes)
-        return spec.read(self._pm, ref.project, ref.key)
+        try:
+            return _Written(spec.read(self._pm, ref.project, ref.key))
+        except Exception:
+            logger.warning("协作内容写回后读回失败 kind=%s project=%s", ref.kind, ref.project, exc_info=True)
+            return _Written(None)
 
     # ── 外部改动 ─────────────────────────────────────────────────
 
@@ -420,32 +548,111 @@ class CollabHub:
             except UnitNotFoundError:
                 await self._remove(room, "not_found")
                 return
-            changed = [key for key, value in latest.items() if room.stored.get(key) != value]
-            if not changed:
+            if not await self._merge_stored(room, latest):
                 return
-            # 从上次与存储一致的状态出发套上外部的新内容，得到「外部改了什么」的增量，再合并进当前文档
-            base = Doc()
-            base.apply_update(room.base_update)
-            base_state = base.get_state()
-            target = {**unit_json(base), **{key: latest[key] for key in changed}}
-            apply_json(base, target)
-            delta = base.get_update(base_state)
-            before = room.doc.get_state()
-            room.doc.apply_update(delta)
-            update = room.doc.get_update(before)
-            room.stored = latest
-            room.base_update = base.get_update()
-            room.sent = {**room.sent, **{key: latest[key] for key in changed}}
-            if update != _EMPTY_UPDATE:
-                await self._broadcast(
-                    room, {"type": "sync", "room": _room_id(room.ref), "data": _b64(create_update_message(update))}
-                )
             # 合并后文档里还有没写回的字（别人正在打的）时照常写回
             if unit_json(room.doc) != {**room.sent}:
-                room.dirty = True
-                room.first_dirty_at = room.last_change_at = time.monotonic()
-                if room.persist_task is None or room.persist_task.done():
-                    room.persist_task = asyncio.create_task(self._persist_when_quiet(room))
+                self._schedule_persist(room)
+            elif room.error is not None:
+                # 之前报失败的写回其实已落地，文档与存储一致了
+                room.error = None
+                await self._broadcast_status(room)
+
+    def _schedule_persist(self, room: Room) -> None:
+        """从现在起等一个安静期再写回。"""
+        room.dirty = True
+        room.first_dirty_at = room.last_change_at = time.monotonic()
+        if room.persist_task is None or room.persist_task.done():
+            room.persist_task = asyncio.create_task(self._persist_when_quiet(room))
+
+    async def _merge_stored(self, room: Room, latest: dict[str, Any]) -> bool:
+        """把存储里的新内容合并进文档并转发给成员；调用方持有 ``room.lock``。存储没变时返回 False。
+
+        合并基准（``base_update``）是「文档与存储一致时」的状态，三方合并从它出发，所以每认定一个字段已与
+        存储一致，就要让基准前进到对应的文档状态，否则下次从旧基准出发会把同一段字再插一遍：
+
+        - 存储里的值是一次结果未定的写回要写的值：认定那次写回落了地，基准前进到它的文档状态。
+        - 存储里的值与文档当前的值相同（别处写入的正是还没写回的字）：别的字段都没有没写回的修改时，基准
+          前进到当前文档；否则只记下存储内容，等随后的写回把基准一并带上。
+        - 别处删掉了某个字段：没人改过它就从文档里删掉；有人改过、还没写回，就保留这个字段在文档里的整段内容
+          并照常写回。照 CRDT 的规则删除会连同正在打的字一起丢掉，这里让修改胜过删除。
+        """
+        current = unit_json(room.doc)
+        changed = [
+            key
+            for key in latest.keys() | room.stored.keys()
+            if latest.get(key, _ABSENT) != room.stored.get(key, _ABSENT)
+        ]
+        if not changed:
+            return False
+        base = Doc()
+        base.apply_update(room.base_update)
+        sent = dict(room.sent)
+        outside = changed
+        landed = self._take_landed_write(room, latest, changed)
+        if landed is not None:
+            base.apply_update(landed.snapshot)
+            sent.update(landed.values)
+            outside = [key for key in changed if key not in landed.values]
+        already = {key for key in outside if latest.get(key, _ABSENT) == current.get(key, _ABSENT)}
+        unsaved = {
+            key for key in current.keys() | sent.keys() if current.get(key, _ABSENT) != sent.get(key, _ABSENT)
+        } - already
+        if already and not unsaved:
+            base.apply_update(room.doc.get_update())
+            for key in already:
+                if key in current:
+                    sent[key] = current[key]
+                else:
+                    sent.pop(key, None)
+        # 从上次与存储一致的状态出发套上外部的新内容，得到「外部改了什么」的增量，再合并进当前文档
+        base_state = base.get_state()
+        target = unit_json(base)
+        for key in outside:
+            if key in already:
+                continue
+            if key in latest:
+                target[key] = latest[key]
+                sent[key] = latest[key]
+            elif current.get(key, _ABSENT) == room.sent.get(key, _ABSENT):
+                target.pop(key, None)
+                sent.pop(key, None)
+            else:
+                sent.pop(key, None)
+        apply_json(base, target)
+        delta = base.get_update(base_state)
+        before = room.doc.get_state()
+        room.doc.apply_update(delta)
+        update = room.doc.get_update(before)
+        room.stored = latest
+        room.base_update = base.get_update()
+        room.sent = sent
+        if update != _EMPTY_UPDATE:
+            await self._broadcast(
+                room, {"type": "sync", "room": _room_id(room.ref), "data": _b64(create_update_message(update))}
+            )
+        return True
+
+    @staticmethod
+    def _take_landed_write(room: Room, latest: dict[str, Any], changed: list[str]) -> _PendingWrite | None:
+        """存储里正是某次结果未定的写回要写的全部值时，取出最新的那次。
+
+        只有整条记录都对得上才算落了地：只对上一部分时，那次写回没有整条写进去，其快照里别的字段还是没写回的字，
+        并进合并基准会让之后别处的改动把这些字删掉。涉及这次变动字段的记录一律作废：落了地的已经用上，
+        对不上的说明存储已是别的内容。
+        """
+        touched = set(changed)
+        landed = next(
+            (
+                item
+                for item in reversed(room.pending_writes)
+                if touched & item.values.keys()
+                and all(latest.get(key, _ABSENT) == value for key, value in item.values.items())
+            ),
+            None,
+        )
+        room.pending_writes = [item for item in room.pending_writes if not touched & item.values.keys()]
+        return landed
 
     async def _remove(self, room: Room, reason: str) -> None:
         room.closed = True
