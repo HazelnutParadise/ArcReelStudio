@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from packaging.version import Version
 
 from arcreel_catalog_core import BUILTIN_ENDPOINTS, BUILTIN_PROVIDER_ENDPOINTS, ENDPOINT_DECLARATIONS_SINCE
+from lib.app_version import UPSTREAM_COMPAT_VERSION
 from lib.backends.backend_assembly.specs import PROVIDER_ENDPOINTS, endpoint_media_type
-
-REPO_ROOT = Path(__file__).resolve().parents[5]
 
 
 def test_endpoint_manifest_matches_registry_and_provider_declarations():
@@ -35,10 +31,9 @@ def test_endpoint_manifest_matches_registry_and_provider_declarations():
     assert {name: endpoint.media_type for name, endpoint in BUILTIN_ENDPOINTS.items()} == code_endpoints
 
 
-def test_start_versions_do_not_exceed_next_release():
-    """起始版本填合入 main 时 release-please 清单版本的下一个补丁号，不会高于它。"""
-    released = Version(json.loads((REPO_ROOT / ".release-please-manifest.json").read_text())["."])
-    next_patch = Version(f"{released.major}.{released.minor}.{released.micro + 1}")
+def test_start_versions_do_not_exceed_upstream_compat_version():
+    """起始版本按上游 ArcReel 的版本号填写，不高于本 fork 兼容的上游版本（ADR 0136）。"""
+    compat = Version(UPSTREAM_COMPAT_VERSION)
     versions = [endpoint.since for endpoint in BUILTIN_ENDPOINTS.values()] + [ENDPOINT_DECLARATIONS_SINCE]
 
-    assert [version for version in versions if version is not None and Version(version) > next_patch] == []
+    assert [version for version in versions if version is not None and Version(version) > compat] == []

@@ -53,7 +53,7 @@ from server.routers._market_installations import (
 )
 from server.routers._reorder import full_permutation_error
 from server.routers.custom_endpoints import CustomEndpointResponse, endpoint_response
-from server.routers.system_config import get_app_version_reader
+from server.routers.system_config import get_app_version_reader, get_compat_version_reader
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +62,8 @@ router = APIRouter(prefix="/market", tags=["Market"])
 Service = Annotated[MarketSourceService, Depends(get_market_source_service)]
 EntryService = Annotated[MarketEntryService, Depends(get_market_entry_service)]
 AppVersionReader = Annotated[Callable[[], str], Depends(get_app_version_reader)]
+#: 与条目 ``min_app_version`` 比较的上游 ArcReel 兼容版本（ADR 0136）；``app_version`` 字段仍回本应用自己的版本
+CompatVersionReader = Annotated[Callable[[], str], Depends(get_compat_version_reader)]
 OfficialService = Annotated[OfficialServiceGateway, Depends(get_official_service_gateway)]
 
 #: icon 地址由前端带上条目版本作查询参数，版本变了地址就变，故浏览器可缓存较久。
@@ -237,13 +239,13 @@ def _index_summary(source: MarketSource) -> MarketIndexSummary | None:
 
 
 def _entry_response(
-    sourced: SourcedEntry, app_version: str | None, installation: EntryInstallationResponse | None = None
+    sourced: SourcedEntry, compat_version: str | None, installation: EntryInstallationResponse | None = None
 ) -> MarketEntryResponse:
     entry: MarketIndexEntry = sourced.entry
     satisfied = (
         entry.min_app_version is None
-        or app_version is None
-        or meets_min_app_version(entry.min_app_version, app_version)
+        or compat_version is None
+        or meets_min_app_version(entry.min_app_version, compat_version)
     )
     return MarketEntryResponse(
         installation=installation,
@@ -389,17 +391,19 @@ async def refresh_sources(
 @router.get("/entries", response_model=MarketEntryListResponse)
 async def list_entries(
     read_app_version: AppVersionReader,
+    read_compat_version: CompatVersionReader,
     session: AsyncSession = Depends(get_async_session),
     entry_type: Annotated[str, Query(alias="type", description="条目类型；首期只有 endpoint")] = ENDPOINT_ENTRY_TYPE,
 ) -> MarketEntryListResponse:
     """所有启用源缓存快照里的条目：按源顺序、源内按名称排列，不分页、不发请求。"""
     sources = await MarketSourceRepository(session).list_ordered()
     app_version = _app_version(read_app_version)
+    compat_version = _app_version(read_compat_version)
     merged = merge_entries(sources, entry_type=entry_type)
     installations = await entry_installations(session, merged)
     return MarketEntryListResponse(
         entries=[
-            _entry_response(item, app_version, installations.get((item.source.canonical_key, item.entry.slug)))
+            _entry_response(item, compat_version, installations.get((item.source.canonical_key, item.entry.slug)))
             for item in merged
         ],
         app_version=app_version,
@@ -440,6 +444,7 @@ async def get_entry(
     source_id: int,
     slug: str,
     read_app_version: AppVersionReader,
+    read_compat_version: CompatVersionReader,
     session: AsyncSession = Depends(get_async_session),
 ) -> MarketEntryDetailResponse:
     """索引条目与源摘要，只读缓存快照、不抓定义；禁用源的条目同样可查。"""
@@ -450,7 +455,7 @@ async def get_entry(
     app_version = _app_version(read_app_version)
     sourced = SourcedEntry(source=source, entry=entry)
     return MarketEntryDetailResponse(
-        entry=_entry_response(sourced, app_version, await entry_installation(session, sourced)),
+        entry=_entry_response(sourced, _app_version(read_compat_version), await entry_installation(session, sourced)),
         source=MarketEntrySourceSummary(
             id=source.id,
             kind=source.kind,
@@ -552,6 +557,7 @@ async def install_entry(
     official: OfficialService,
     background_tasks: BackgroundTasks,
     read_app_version: AppVersionReader,
+    read_compat_version: CompatVersionReader,
     _t: Translator,
     session: AsyncSession = Depends(get_async_session),
 ) -> InstallMarketEntryResponse:
@@ -565,7 +571,7 @@ async def install_entry(
     if not checked.matches_entry:
         raise UnprocessableError("market_entry_definition_mismatch")
     if entry.min_app_version is not None and not meets_min_app_version(
-        entry.min_app_version, _app_version(read_app_version) or ""
+        entry.min_app_version, _app_version(read_compat_version) or ""
     ):
         raise UnprocessableError("market_entry_requires_newer_app", version=entry.min_app_version)
     if checked.issues or not isinstance(definition, dict):

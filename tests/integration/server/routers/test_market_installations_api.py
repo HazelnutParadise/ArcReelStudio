@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from arcreel_market_core.market.entry import project_meta
+from lib.app_version import UPSTREAM_COMPAT_VERSION
 from lib.db import get_async_session
 from lib.db.models.custom_endpoint import CustomEndpoint
 from lib.db.models.custom_provider import CustomProvider, CustomProviderModel
@@ -75,7 +76,7 @@ async def install_client(session_factory: async_sessionmaker[AsyncSession]) -> A
         service = MarketEntryService(session_factory, http_client=lambda: network)
         app.dependency_overrides[get_async_session] = session_override
         app.dependency_overrides[get_market_entry_service] = lambda: service
-        app.dependency_overrides[system_config.get_app_version_reader] = lambda: lambda: "0.30.0"
+        app.dependency_overrides[system_config.get_app_version_reader] = lambda: lambda: "0.1.0"
         app.include_router(market.router)
         app.include_router(custom_endpoints.router)
         register_error_handlers(app)
@@ -140,7 +141,7 @@ async def test_rejected_install_leaves_no_endpoint_or_record(
                 "entries": [{**source.cached_index["entries"][0], "min_app_version": "99.0.0"}],
             }
             await session.commit()
-        detail = "此条目需要应用版本 ≥ 99.0.0"
+        detail = "此条目需要兼容 ArcReel 99.0.0 及以上的版本"
     else:
         del definition["submit"]
     with respx.mock() as remote:
@@ -151,6 +152,27 @@ async def test_rejected_install_leaves_no_endpoint_or_record(
     async with session_factory() as session:
         assert await session.scalar(select(func.count()).select_from(CustomEndpoint)) == 0
         assert await session.scalar(select(func.count()).select_from(MarketInstallation)) == 0
+
+
+async def test_install_accepts_entry_requiring_the_upstream_compat_version(
+    install_client: httpx2.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+):
+    # 应用自身是 0.1.0；条目要求的上游 ArcReel 版本等于本 fork 兼容的版本，照常安装
+    definition = custom_endpoint_definition()
+    definition["meta"]["min_app_version"] = UPSTREAM_COMPAT_VERSION
+    async with session_factory() as session:
+        source = await session.get(MarketSource, 1)
+        assert source is not None
+        assert source.cached_index is not None
+        source.cached_index = {
+            **source.cached_index,
+            "entries": [{**source.cached_index["entries"][0], "min_app_version": UPSTREAM_COMPAT_VERSION}],
+        }
+        await session.commit()
+    with respx.mock() as remote:
+        remote.get(URL).respond(json=definition)
+        response = await install_client.post(f"{BASE}/install", json=_install_body(definition))
+    assert response.status_code == 200, response.text
 
 
 async def test_install_rejects_definition_changed_after_review(

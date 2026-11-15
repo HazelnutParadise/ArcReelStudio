@@ -842,7 +842,7 @@ MESSAGES = {
     "market_entry_definition_mismatch": "Индекс и определение не совпадают; установка заблокирована",
     "market_entry_definition_changed": "Определение записи изменилось после того, как вы его проверили; откройте подтверждение заново и проверьте ещё раз",
     "market_entry_changed_during_fetch": "Источник маркета обновился во время чтения определения; повторите попытку",
-    "market_entry_requires_newer_app": "Для этой записи нужна версия приложения ≥ {version}",
+    "market_entry_requires_newer_app": "Для этой записи нужна сборка, совместимая с ArcReel {version} или новее",
     "market_entry_already_installed": "Эта запись уже установлена; чтобы обновить её, выберите её эндпоинт",
     "market_endpoint_already_installed": "У этого эндпоинта есть другая запись об установке, перезаписать её нельзя",
     "market_overwrite_target_not_duplicate": "Перезаписать можно только эндпоинт с тем же автором и именем, что у этой записи",

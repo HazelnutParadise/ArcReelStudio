@@ -187,7 +187,7 @@ describe("MarketInstallDialog", () => {
   it.each([
     ["mismatch", "索引与定义不一致，无法安装"],
     ["errors", "Invalid submit URL"],
-    ["version", "需要 ArcReel ≥ 99.0.0"],
+    ["version", "需要兼容 ArcReel 99.0.0 及以上的版本"],
   ])("blocks installation for %s and shows the reason", async (reason, shownReason) => {
     if (reason === "mismatch")
       vi.mocked(API.getMarketEntryDefinition).mockResolvedValue({

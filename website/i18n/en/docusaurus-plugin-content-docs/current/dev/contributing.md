@@ -215,6 +215,14 @@ release-please uses the repository's GitHub App (secrets `RELEASE_PLEASE_APP_CLI
 
 The `version` fields in `pyproject.toml` and `frontend/package.json` are maintained automatically by release-please (see the `# managed by release-please` comment in `pyproject.toml`) and are **read-only for developers**. `uv.lock` is likewise synchronized automatically by `uv lock` in the release-please workflow on the Release PR branch. The factory model-catalog snapshot (`lib/catalog/snapshot/`) is refreshed on the Release PR branch the same way: the workflow fetches the latest data from the catalog data repository and commits it once it passes the validator; if the fetch fails or validation fails, the snapshot is left unchanged and the workflow shows a notice. The actual version state is defined by the git tag and `.release-please-manifest.json`.
 
+### Version numbers and the first release {#first-release}
+
+This repository is a fork of ArcReel. Its version numbers restart at `0.1.0`, and `CHANGELOG.md` records only this repository's own releases; the upstream history before the fork is kept in `docs/history/upstream-changelog.md`. The first-release settings need no cleanup afterwards: `.release-please-manifest.json` set to `0.0.0` means nothing has been released yet, so release-please, finding no release, takes only the commits after `bootstrap-sha` (the fork point) and uses `initial-version` to pick `0.1.0`. Once `v0.1.0` is released, release-please updates the manifest to `0.1.0` on its own, later releases step normally as in the table above, and the two settings no longer have any effect.
+
+The "🌟 Highlights" of each release are written by hand, with the draft in `docs/release-notes/<version>.md`. The GitHub Release body is taken from the Release PR description at merge time, so once no more commits will land on `main`, and before merging the Release PR, paste the highlights at the top of that release's notes in the Release PR description and add the same section under that version in `CHANGELOG.md` on the Release PR branch. If a new commit lands on `main` in between, release-please rewrites the description and the highlights have to be pasted again.
+
+This repository's version number is used only for display and releases. The minimum app version in the official model catalog and in market entries is written in upstream ArcReel's version numbers, and an instance compares it with `UPSTREAM_COMPAT_VERSION` in `lib/app_version.py`. After syncing code from upstream, update that value as described under "When syncing upstream" in `docs/adr/0136`; release-please does not change it.
+
 ### commit examples {#commit-examples}
 
 ```

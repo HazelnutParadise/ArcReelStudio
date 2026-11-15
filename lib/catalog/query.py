@@ -42,7 +42,7 @@ from arcreel_catalog_core import (
     load_catalog,
     normalize_model_name,
 )
-from lib.app_version import app_version
+from lib.app_version import upstream_compat_version
 from lib.catalog.composition import ComposedCatalog, EntrySource, compose_catalog, merge_official
 from lib.catalog.entry_matching import match_entry
 from lib.catalog.errors import ModelDiscontinuedError, ModelNotInCatalogError
@@ -455,7 +455,7 @@ def get_entry(key: EntryKey) -> CatalogEntry | None:
 def _provider_index(provider_id: str) -> _ProviderIndex | None:
     data = catalog_data()
     if not _index_cache or _index_cache[0][0] is not data:
-        _index_cache[:] = [(data, _build_index(data, _user_added[0], app_version()))]
+        _index_cache[:] = [(data, _build_index(data, _user_added[0], upstream_compat_version()))]
     return _index_cache[0][1].get(provider_id)
 
 

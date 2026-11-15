@@ -3,6 +3,7 @@
 import pytest
 
 from arcreel_catalog_core import parse_catalog, parse_entry
+from lib.app_version import UPSTREAM_COMPAT_VERSION
 from lib.catalog import query as catalog
 from lib.catalog.errors import ModelNotInCatalogError
 from lib.catalog.query import CatalogModel
@@ -331,3 +332,22 @@ def test_kling_amphibious_models_are_readable_in_both_media(monkeypatch, api_nam
     assert image is not None
     assert (image.media_type, image.api_model_name, image.default) == ("image", api_name, True)
     assert catalog.default_model("kling", "image") == f"{api_name}-image"
+
+
+def _next_patch(version: str) -> str:
+    major, minor, patch = (int(part) for part in version.split("."))
+    return f"{major}.{minor}.{patch + 1}"
+
+
+def test_min_app_version_is_compared_with_the_upstream_compat_version(monkeypatch):
+    # 官方目录按上游 ArcReel 的版本号标注门槛；本 fork 自己的版本号（0.1.x）不参与比较
+    raw = _with_listing_models(
+        {"api_model_name": "compat", "entry": "acme/next", "min_app_version": UPSTREAM_COMPAT_VERSION},
+        {"api_model_name": "later", "entry": "acme/next", "min_app_version": _next_patch(UPSTREAM_COMPAT_VERSION)},
+    )
+    install_catalog(monkeypatch, parse_catalog(raw))
+
+    assert catalog.get_model("acme", "compat") is not None
+    assert catalog.get_model("acme", "later") is None
+    [gated] = catalog.version_gated_models("acme")
+    assert (gated.model_id, gated.min_app_version) == ("later", _next_patch(UPSTREAM_COMPAT_VERSION))

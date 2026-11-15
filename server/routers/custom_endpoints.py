@@ -47,7 +47,7 @@ from server.routers._market_installations import (
     endpoint_installation,
     endpoint_installations,
 )
-from server.routers.system_config import get_app_version_reader
+from server.routers.system_config import get_compat_version_reader
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class SchemaVersionInfo(BaseModel):
 
 
 class MinAppVersionInfo(BaseModel):
-    """``meta.min_app_version`` 与当前应用版本的比对。不满足只是提示，不拦导入。"""
+    """``meta.min_app_version`` 与本 fork 兼容的上游 ArcReel 版本的比对（ADR 0136）。不满足只是提示，不拦导入。"""
 
     required: str
     current: str
@@ -261,7 +261,7 @@ def _schema_version_of(definition: object) -> str | None:
     return value if isinstance(value, str) else None
 
 
-def _min_app_version_of(definition: object, read_app_version: Callable[[], str]) -> MinAppVersionInfo | None:
+def _min_app_version_of(definition: object, read_compat_version: Callable[[], str]) -> MinAppVersionInfo | None:
     if not isinstance(definition, Mapping):
         return None
     meta = definition.get("meta")
@@ -269,9 +269,9 @@ def _min_app_version_of(definition: object, read_app_version: Callable[[], str])
     if not isinstance(required, str) or parse_semver(required) is None:
         return None
     try:
-        current = read_app_version()
+        current = read_compat_version()
     except Exception:
-        logger.exception("Failed to read app version")
+        logger.exception("Failed to read upstream compat version")
         return None
     return MinAppVersionInfo(required=required, current=current, satisfied=meets_min_app_version(required, current))
 
@@ -336,7 +336,7 @@ async def list_endpoints(session: AsyncSession = Depends(get_async_session)) -> 
 async def validate_endpoint_definition(
     body: DefinitionBody,
     _t: Translator,
-    read_app_version: Annotated[Callable[[], str], Depends(get_app_version_reader)],
+    read_compat_version: Annotated[Callable[[], str], Depends(get_compat_version_reader)],
     exclude_id: int | None = None,
     media_type: ImportMediaType = "video",
     session: AsyncSession = Depends(get_async_session),
@@ -360,7 +360,7 @@ async def validate_endpoint_definition(
             current=current_version,
             level=schema_version_level(file_version, current_version),
         ),
-        min_app_version=_min_app_version_of(definition, read_app_version),
+        min_app_version=_min_app_version_of(definition, read_compat_version),
         import_shape=shape,
         wrapped_definition=definition if shape is ImportShape.COMFYUI_API_WORKFLOW else None,
     )

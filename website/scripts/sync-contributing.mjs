@@ -35,6 +35,7 @@ const ANCHORS = new Map([
   ["## 发版流程", "release-process"],
   ["### 工作流程", "release-workflow"],
   ["### commit type → 版本步进", "commit-type-version-bump"],
+  ["### 版本号与首次发版", "first-release"],
   ["### commit 示例", "commit-examples"],
 ]);
 
