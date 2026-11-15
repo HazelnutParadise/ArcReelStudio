@@ -175,6 +175,7 @@ MESSAGES = {
     "arch_version_record_dropped": "{location}：有版本紀錄的檔案路徑不在版本歷史目錄裡，匯入會拒收，歸檔裡拿掉這幾筆紀錄；其餘版本照常帶上",
     "arch_version_history_malformed_dropped": "{location}：版本歷史的結構損壞，匯入會拒收，歸檔裡拿掉這一項；其餘版本照常帶上",
     "arch_claim_imported_as_stale": "{path}：匯入包裡沒有能核對的所選版本檔案（缺少或與版本紀錄不符），以已過期匯入，仍可檢視和使用；在版本歷史裡切回該版本即可恢復為最新",
+    "arch_claim_imported_as_stale_unproven_basis": "{path}：歸檔證明不了它依據的生成輸入仍是最新，以已過期匯入，仍可檢視和使用；重新產生即可恢復為最新",
     "arch_claim_carried_as_stale": "{path}：無法確認它仍是所選版本（版本檔案不見了、與版本紀錄不符、版本紀錄缺漏，或上次匯入時就是已過期），檔案與登記照常帶上；匯入後顯示為已過期，仍可檢視和使用",
     "arch_claim_left_out_missing": "{path}：檔案已不在專案裡，歸檔不帶它的登記；匯入後與現在一樣顯示為缺少",
     "arch_presentation_claim_left_out": "{path}：與它依據的影片或配音版本對不上，歸檔不帶它的登記；匯入後預覽、剪輯或匯出剪映草稿時，會在本機依當時選取的媒體重新產生，不會產生費用",

@@ -203,6 +203,7 @@ MESSAGES = {
     "arch_version_record_dropped": "{location}: một số bản ghi phiên bản trỏ ra ngoài thư mục lịch sử phiên bản, việc nhập sẽ từ chối nên bản xuất bỏ các bản ghi đó; các phiên bản khác vẫn được đưa vào",
     "arch_version_history_malformed_dropped": "{location}: phần lịch sử phiên bản này bị hỏng cấu trúc, việc nhập sẽ từ chối nên bản xuất bỏ phần này; các phiên bản khác vẫn được đưa vào",
     "arch_claim_imported_as_stale": "{path}: gói không có tệp xác nhận phiên bản đang chọn (bị thiếu hoặc khác bản ghi phiên bản) nên được nhập là đã cũ và vẫn dùng được; chọn lại phiên bản đó trong lịch sử phiên bản sẽ đưa nó về mới nhất",
+    "arch_claim_imported_as_stale_unproven_basis": "{path}: gói lưu trữ không chứng minh được các đầu vào dùng để tạo nó vẫn là mới nhất nên được nhập là đã cũ và vẫn dùng được; tạo lại sẽ đưa nó về mới nhất",
     "arch_claim_carried_as_stale": "{path}: không còn xác nhận được đây là phiên bản đang chọn (tệp phiên bản bị thiếu, khác bản ghi, mất bản ghi phiên bản, hoặc đã cũ ngay từ lần nhập trước). Tệp và đăng ký vẫn được đưa vào; sau khi nhập sẽ hiển thị là đã cũ và vẫn dùng được",
     "arch_claim_left_out_missing": "{path}: tệp không còn trong dự án nên bản xuất không mang đăng ký của nó; sau khi nhập sẽ hiển thị là thiếu như hiện tại",
     "arch_presentation_claim_left_out": "{path}: không khớp phiên bản video hoặc lồng tiếng mà nó dựa vào nên bản xuất không mang đăng ký của nó; sau khi nhập, nó được tạo lại cục bộ theo nội dung đang chọn khi bạn xem trước, dựng hoặc xuất bản nháp Jianying, không tốn phí",
