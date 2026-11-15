@@ -1579,7 +1579,7 @@ class API {
   }
 
   /**
-   * 集页填写或改写本集原文。无原文的集保存后转为自带原文的集；切自整本源文的集返回 409。
+   * 集页填写或改写本集原文。无原文的集保存后转为自带原文的集；切自完整原文的集返回 409。
    * `sourceKind` 只对剧情演绎项目生效，缺省时保留已有类型。改类型会让本集已有的脚本规划判 stale 时，
    * 不带 `confirm` 不写入，返回 `needs_confirmation` 与受影响的集。
    */
@@ -1890,14 +1890,14 @@ class API {
     name: string | null = null,
     options: {
       onConflict?: "fail" | "replace" | "rename";
-      /** 仅 source：whole_source 登记为整本源文的文件，episode 在播出顺序末尾登记一集自带原文的集。 */
+      /** 仅 source：whole_source 登记为完整原文的文件，episode 在播出顺序末尾登记一集自带原文的集。 */
       role?: "whole_source" | "episode";
-      /** 仅 source 的 whole_source：登记后文件在整本源文清单里的下标，缺省接在末尾。 */
+      /** 仅 source 的 whole_source：登记后文件在完整原文清单里的下标，缺省接在末尾。 */
       insertAt?: number;
       /** 仅 source：剧情演绎项目这份原文的源文件类型，缺省为小说。 */
       sourceKind?: SourceKind;
       /**
-       * 仅 source 的 whole_source：确认过的受影响集清单的版本。插入或覆盖整本源文文件波及切出集时，
+       * 仅 source 的 whole_source：确认过的受影响集清单的版本。插入或覆盖完整原文文件波及切出集时，
        * 不带它的上传不写入，返回 `status=confirmation_required`、受影响集清单与 `revision`。
        */
       revision?: string;
@@ -1906,7 +1906,7 @@ class API {
   ): Promise<{
     success: boolean;
     path?: string;
-    /** 整本源文文件的插入或覆盖：是否已执行，以及受影响集清单。 */
+    /** 完整原文文件的插入或覆盖：是否已执行，以及受影响集清单。 */
     status?: SourceFileChangeResponse["status"];
     impact?: SourceFileChangeResponse["impact"];
     revision?: string;
@@ -2179,7 +2179,7 @@ class API {
     return response.text();
   }
 
-  /** 「分集」视图：整本源文按集分段、每集体量与首尾句、source/ 里没有登记的文件。 */
+  /** 「分集」视图：完整原文按集分段、每集体量与首尾句、source/ 里没有登记的文件。 */
   static async getEpisodesView(projectName: string, options: { signal?: AbortSignal } = {}): Promise<EpisodesView> {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episodes-view`, {
       signal: options.signal,
@@ -2207,8 +2207,8 @@ class API {
   }
 
   /**
-   * AI 规划分集：从规划起点逐窗规划到整本源文结尾，每一窗是一个排队的文本任务；提交即返首窗的生成批次。
-   * 已有进行中的分集规划时 409，没有整本源文等准入不成立时 422。附加指令不写进项目。
+   * AI 规划分集：从规划起点逐窗规划到完整原文结尾，每一窗是一个排队的文本任务；提交即返首窗的生成批次。
+   * 已有进行中的分集规划时 409，没有完整原文等准入不成立时 422。附加指令不写进项目。
    * @enqueue
    */
   static async planEpisodes(
@@ -2247,7 +2247,7 @@ class API {
   }
 
   /**
-   * 接着生成中途停止的新的分集方案：从方案的结尾逐窗生成到整本源文结尾，沿用发起时的附加指令；提交即返首窗的
+   * 接着生成中途停止的新的分集方案：从方案的结尾逐窗生成到完整原文结尾，沿用发起时的附加指令；提交即返首窗的
    * 生成批次。方案已覆盖到结尾或已过时时 409，分集规划在进行时 409。
    * @enqueue
    */
@@ -2321,7 +2321,7 @@ class API {
     return this.request(`/projects/${encodeURIComponent(projectName)}/episode-planning/stop`, { method: "POST" });
   }
 
-  /** 处置 source/ 里没有登记的文件：加入整本源文，或用作一集的原文（原文件随即删除）。 */
+  /** 处置 source/ 里没有登记的文件：加入完整原文，或用作一集的原文（原文件随即删除）。 */
   static async adoptSourceFile(
     projectName: string,
     filename: string,
@@ -2334,7 +2334,7 @@ class API {
   }
 
   /**
-   * 改整本源文文件的源文件类型（只对剧情演绎开放）。会让已开始制作的集的脚本规划判 stale 时，
+   * 改完整原文文件的源文件类型（只对剧情演绎开放）。会让已开始制作的集的脚本规划判 stale 时，
    * 不带 `confirm` 不写入，返回 `needs_confirmation` 与这些集。
    */
   static async setSourceFileKind(
@@ -2350,7 +2350,7 @@ class API {
   }
 
   /**
-   * 整本源文文件的编辑、替换、调序与删除。不带 `revision` 时，波及切出集的改动不写入，返回服务端成文的
+   * 完整原文文件的编辑、替换、调序与删除。不带 `revision` 时，波及切出集的改动不写入，返回服务端成文的
    * 受影响集清单与 `revision`；带上它重新提交才执行，清单在两次调用之间变了时再次返回确认。没有受影响的集时直接执行。
    */
   static async editSourceFile(
@@ -2365,7 +2365,7 @@ class API {
     );
   }
 
-  /** 用上传的文件替换整本源文文件：保留位置与文件名；`sourceKind` 缺省时类型不变。确认协议同 `editSourceFile`。 */
+  /** 用上传的文件替换完整原文文件：保留位置与文件名；`sourceKind` 缺省时类型不变。确认协议同 `editSourceFile`。 */
   static async replaceSourceFile(
     projectName: string,
     filename: string,
@@ -2382,7 +2382,7 @@ class API {
     return (await response.json()) as SourceFileChangeResponse;
   }
 
-  /** 把整本源文文件上移或下移一位，其中的切出集整块跟着走。确认协议同 `editSourceFile`。 */
+  /** 把完整原文文件上移或下移一位，其中的切出集整块跟着走。确认协议同 `editSourceFile`。 */
   static async moveSourceFile(
     projectName: string,
     filename: string,
@@ -2407,7 +2407,7 @@ class API {
     );
   }
 
-  /** 删除整本源文文件：等同于删掉它的全部文字，再移出整本源文。确认协议同 `editSourceFile`。 */
+  /** 删除完整原文文件：等同于删掉它的全部文字，再移出完整原文。确认协议同 `editSourceFile`。 */
   static async deleteWholeSourceFile(
     projectName: string,
     filename: string,

@@ -5,7 +5,7 @@ import type { SourceFileImpact } from "@/types/episodes-view";
 
 import { ImpactConfirmDialog } from "./ImpactConfirmDialog";
 
-/** 整本源文文件改动命令的响应：上传接口在 `status` 之外还带别的字段，这里只看确认协议需要的部分。 */
+/** 完整原文文件改动命令的响应：上传接口在 `status` 之外还带别的字段，这里只看确认协议需要的部分。 */
 export interface SourceFileChangeReply {
   status?: "applied" | "confirmation_required";
   impact?: SourceFileImpact & { text?: string };
@@ -28,7 +28,7 @@ function isDanger(impact: SourceFileImpact | undefined): boolean {
 }
 
 /**
- * 整本源文文件的插入、替换、编辑、删除与调序共用的确认流程。
+ * 完整原文文件的插入、替换、编辑、删除与调序共用的确认流程。
  *
  * `run(title, confirmLabel, call)` 先以 `call(null)` 提交：没有受影响的集时服务端直接执行。需要确认时，确认框只呈现
  * 服务端成文的受影响集清单；确认后带上清单的 `revision` 再提交，清单在此期间变了时换成新清单再确认一次。

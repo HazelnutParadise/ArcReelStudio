@@ -101,7 +101,7 @@ describe("SourceUploadDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "上传 1 个文件" }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(useAppStore.getState().toast?.text).toBe("已把 1 个文件加入整本源文，与已有文件重名的另存为 a (1).txt");
+    expect(useAppStore.getState().toast?.text).toBe("已把 1 个文件加入完整原文，与已有文件重名的另存为 a (1).txt");
   });
 
   it("appends per-episode files to the end of the playback order in list order", async () => {

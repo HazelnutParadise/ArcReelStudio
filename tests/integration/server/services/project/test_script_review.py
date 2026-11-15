@@ -213,7 +213,7 @@ def _write_prompt_authoring(pm: ProjectManager) -> Path:
 
 
 def _make_manual_split_project(tmp_path: Path, content_mode: str) -> ProjectManager:
-    """没有整本源文、账本为空的项目：集由调用方逐集登记或直接写文件构造。"""
+    """没有完整原文、账本为空的项目：集由调用方逐集登记或直接写文件构造。"""
     pm = ProjectManager(tmp_path / "projects")
     pm.create_project("demo")
     pm.create_project_metadata("demo", "Demo", "Anime", content_mode)

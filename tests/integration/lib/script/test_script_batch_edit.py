@@ -1070,7 +1070,7 @@ def _reference_project(tmp_path: Path, *, sources: dict[str, str]) -> tuple[Proj
         (source_dir / filename).write_text(text, encoding="utf-8")
 
     def _register(project: dict) -> None:
-        # episode_1.txt 登记为第 1 集自带的原文，其余文件登记为整本源文
+        # episode_1.txt 登记为第 1 集自带的原文，其余文件登记为完整原文
         project["whole_source_files"] = [
             {"source_file": f"source/{filename}"} for filename in sources if filename != "episode_1.txt"
         ]

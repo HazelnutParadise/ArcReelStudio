@@ -202,7 +202,7 @@ class WorkflowContent(BaseModel):
 
     ``episode_complete`` 是目标集已完成（判定见 ``is_episode_complete``）；完成的集仍可能有集内建议的
     下一步，例如待编写条目或缺资产图。``project_complete`` 只在不指定集的查询里出现：每集都完成、
-    没有待重新规划的集，且整本源文没有剩余。
+    没有待重新规划的集，且完整原文没有剩余。
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -376,7 +376,7 @@ class ProjectSummary(BaseModel):
     assets: dict[str, ArtifactCount]
     episodes_summary: EpisodesSummary
     episodes: list[EpisodeSummary]
-    #: 整本源文还有未规划的原文：已有的集全部完成也不算项目完成，下一步是继续分集规划。
+    #: 完整原文还有未规划的原文：已有的集全部完成也不算项目完成，下一步是继续分集规划。
     source_remaining: bool
 
 
@@ -426,7 +426,7 @@ def _action(
 
 
 def planning_docs(project: Mapping[str, Any], source: SourceRevisionResult | None) -> tuple[SourceDoc, ...]:
-    """把修订号计算那一次读取的原文转成整本源文：按项目登记的文件清单顺序，账本坐标系里的规范化全文。
+    """把修订号计算那一次读取的原文转成完整原文：按项目登记的文件清单顺序，账本坐标系里的规范化全文。
 
     源文在一次状态查询里只读一遍：``compute_source_revision`` 已经把每份源文读进内存，
     分集排布所需的归一化全文由那一次读取派生，不再回磁盘重读。
@@ -1234,7 +1234,7 @@ class WorkflowStateService:
     ) -> WorkflowStatus:
         """没有指定集时：取账本顺序中第一个未完成、且集规划状态不是 stale 的集。
 
-        其余集都完成时回到项目层：整本源文还有未切分的原文就继续分集规划；有 stale 集时停在
+        其余集都完成时回到项目层：完整原文还有未切分的原文就继续分集规划；有 stale 集时停在
         第一个 stale 集上陈述现状，不给动作；否则全部完成。
         """
         if not shared.episodes:
@@ -1319,7 +1319,7 @@ class WorkflowStateService:
         }
 
     def _project_status(self, project: dict[str, Any], shared: _SharedWorkflowFacts) -> WorkflowStatus:
-        """没有集的项目：有整本源文则 AI 分集规划，否则上传原文；两者都可以改为新建一集。"""
+        """没有集的项目：有完整原文则 AI 分集规划，否则上传原文；两者都可以改为新建一集。"""
         if shared.whole_source:
             next_action = self._planning_action(project, shared, "episode ledger has no episodes")
         else:

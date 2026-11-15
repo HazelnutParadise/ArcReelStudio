@@ -1,6 +1,6 @@
 """项目入口工具的声明：列出、创建项目，上传与编辑源文。
 
-``source/`` 是 Agent 的受保护写路径，源文只经这里的两个工具写入：改动整本源文的文件时按改动前后的对齐重映射分集账本。
+``source/`` 是 Agent 的受保护写路径，源文只经这里的两个工具写入：改动完整原文的文件时按改动前后的对齐重映射分集账本。
 """
 
 from __future__ import annotations
@@ -46,11 +46,11 @@ UPLOAD_SOURCE = ToolDeclaration(
     name="upload_source",
     description=(
         "把一段文本源文规范化为 UTF-8 后写入项目 source/ 目录并登记，返回写入后的项目相对路径、识别出的原始编码"
-        "与章节数。role=whole_source（默认）登记为整本源文的文件，接在文件清单末尾，供分集规划切分；只接受 .txt / .md "
+        "与章节数。role=whole_source（默认）登记为完整原文的文件，接在文件清单末尾，供分集规划切分；只接受 .txt / .md "
         "文件名，episode_N.txt 形式的文件名留给集文件，会被拒绝；同名文件的处理由 on_conflict 决定。role=episode 登记为"
         "一集自带原文的集：分配新集 ID、写入 source/episode_{集 ID}.txt、接在播出顺序末尾，另返回集 ID，用户自行拆好的"
         "分集逐个这样上传。剧情演绎项目用 source_kind 标明这份原文是小说（缺省）还是用户写好的成品剧本，其他创作类型"
-        "忽略这个参数。on_conflict=replace 覆盖已登记的整本源文文件时，保留它在清单里的位置，按新旧文本的对齐重映射"
+        "忽略这个参数。on_conflict=replace 覆盖已登记的完整原文文件时，保留它在清单里的位置，按新旧文本的对齐重映射"
         "原文范围触及它的切出集；波及切出集时先不写入，返回 confirmation_required=true、按类分组的受影响集清单 impact "
         "与 revision，把清单如实告知用户，确认后带上同一 revision 重新调用。要移除或退下的集还有排队或执行中的任务时"
         "拒绝。source/ 只经本工具与 edit_source_text 写入。写入项目文件。"
@@ -64,9 +64,9 @@ UPLOAD_SOURCE = ToolDeclaration(
 EDIT_SOURCE_TEXT = ToolDeclaration(
     name="edit_source_text",
     description=(
-        "修改已登记的源文：filename 指整本源文的一个文件，episode_id 指一集自带原文或无原文的集的原文（无原文的集写入后"
-        "转为自带原文）。切出集的原文由整本源文派生，要改就改它所在的整本源文文件。replacements 按片段替换，每个 old_text "
-        "须在当前原文里恰好出现一次；text 整段改写。改整本源文的文件时按改动前后的对齐重映射触及它的切出集：文字没变的"
+        "修改已登记的源文：filename 指完整原文的一个文件，episode_id 指一集自带原文或无原文的集的原文（无原文的集写入后"
+        "转为自带原文）。切出集的原文由完整原文派生，要改就改它所在的完整原文文件。replacements 按片段替换，每个 old_text "
+        "须在当前原文里恰好出现一次；text 整段改写。改完整原文的文件时按改动前后的对齐重映射触及它的切出集：文字没变的"
         "集只平移，文字变了的集标「原文已重新规划」，整段被删的集退下或移除；波及切出集时先不写入，返回 "
         "confirmation_required=true、按类分组的受影响集清单 impact 与 revision，把清单如实告知用户，确认后带上同一 "
         "revision 重新调用。文件在 ArcReel 之外被改动过、尚未在 Web 端「分集」视图里更新分集账本时拒绝。删除、调序整本"

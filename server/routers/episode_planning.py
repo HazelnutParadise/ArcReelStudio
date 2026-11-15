@@ -1,7 +1,7 @@
 """AI 分集规划的 Web 入口：AI 规划分集与重新规划。
 
-「AI 规划分集」调用 :func:`server.tool_runtime.start_episode_planning`：准入（有整本源文、没有悬而未决的
-重新规划候选）与 Agent 的 ``plan_episodes`` 同一个谓词，从账本推导的规划起点逐窗规划到整本源文结尾，每一窗是
+「AI 规划分集」调用 :func:`server.tool_runtime.start_episode_planning`：准入（有完整原文、没有悬而未决的
+重新规划候选）与 Agent 的 ``plan_episodes`` 同一个谓词，从账本推导的规划起点逐窗规划到完整原文结尾，每一窗是
 一个排队的文本任务。提交后立即返回首窗的生成批次，进度经任务事件与项目快照呈现。附加指令随任务传递，不写进项目。
 
 「从这一集开始重新规划」调用 :func:`server.tool_runtime.start_episode_replan`：逐窗生成一份候选，分集账本不动；
@@ -70,7 +70,7 @@ class EpisodePlanningRequest(BaseModel):
         default=None, description="附加指令原文；空白视同未传"
     )
     gap: PlanningGap | None = Field(
-        default=None, description="只规划以这一点为终点的那段未切分原文；缺省时从规划起点规划到整本源文结尾"
+        default=None, description="只规划以这一点为终点的那段未切分原文；缺省时从规划起点规划到完整原文结尾"
     )
 
 
@@ -116,7 +116,7 @@ def _context(project_name: str, user_id: str) -> tuple[ProjectScope, CallerConte
 
 @router.post("/projects/{project_name}/episode-planning")
 async def plan_episodes_to_end(project_name: str, req: EpisodePlanningRequest, user: CurrentUser, _t: Translator):
-    """提交 AI 分集规划，从规划起点逐窗规划到整本源文结尾，返回首窗的生成批次。
+    """提交 AI 分集规划，从规划起点逐窗规划到完整原文结尾，返回首窗的生成批次。
 
     带 ``gap`` 时是「规划这段未切分的原文」：只规划到这段原文的结尾，新集按源文位置插入。
     """
@@ -182,7 +182,7 @@ class ReplanContinueRequest(BaseModel):
 
 @router.post("/projects/{project_name}/episode-replan/continue", dependencies=[Depends(require_project_migration_ok)])
 async def continue_replan(project_name: str, req: ReplanContinueRequest, user: CurrentUser, _t: Translator):
-    """接着生成中途停止的新的分集方案：从方案的结尾逐窗生成到整本源文结尾，沿用发起时的附加指令。
+    """接着生成中途停止的新的分集方案：从方案的结尾逐窗生成到完整原文结尾，沿用发起时的附加指令。
 
     返回首窗的生成批次。方案已覆盖到结尾、已过时或已不在时按原因码拒绝；分集规划在进行时 409。
     """

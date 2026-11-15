@@ -1,4 +1,4 @@
-"""整本源文文件改动（``SourceFileChangeOutcome`` / ``SourceFileChangeError``）→ HTTP 响应的共享映射。
+"""完整原文文件改动（``SourceFileChangeOutcome`` / ``SourceFileChangeError``）→ HTTP 响应的共享映射。
 
 命令从 ``episodes_view``（「分集」视图的文件条）与 ``files``（上传、按文件名写入与删除源文件）两个 router 冒出来，
 同一结果给出同一种响应形态。

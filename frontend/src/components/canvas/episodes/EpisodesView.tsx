@@ -122,7 +122,7 @@ function useCurrentEpisode(scrollRoot: RefObject<HTMLElement | null>, view: Epis
 }
 
 /**
- * 项目层「分集」视图：页头工具行，左侧是集目录，右侧是整本源文全文、按集分段。
+ * 项目层「分集」视图：页头工具行，左侧是集目录，右侧是完整原文全文、按集分段。
  * 有新的分集方案时集目录让位，原文右侧出现方案栏，对照现有分集与新方案。
  *
  * 查询参数 `upload=whole_source|episode` 打开上传对话框，`episode=<集 ID>` 把原文滚到这一集，

@@ -1,11 +1,11 @@
-"""分集规划重置：把账本中切自整本源文的集退回未规划状态的逃生口。
+"""分集规划重置：把账本中切自完整原文的集退回未规划状态的逃生口。
 
-只动切出集：自带原文与无原文的集不占用整本源文，两种重置都原样保留它们的条目、集文件与下游产物，
+只动切出集：自带原文与无原文的集不占用完整原文，两种重置都原样保留它们的条目、集文件与下游产物，
 相对顺序不变（见 ``docs/adr/0031``）。
 
 账本坐标绑定具体源文内容，源文被替换或账本被写坏后，规划入口会因坐标越界 / 范围无效而永久失败。
 全量重置（不指定集）是这种局面的唯一出路：**零前置校验**——不读旧坐标、不解析范围，账本处于任何
-损坏状态都必须执行成功，执行后切出集不再占用整本源文、源文指纹与快照清除，``plan_episodes`` 可从头
+损坏状态都必须执行成功，执行后切出集不再占用完整原文、源文指纹与快照清除，``plan_episodes`` 可从头
 重新规划。
 
 部分重置（指定播出顺序中第一个切出集之外的某个切出集）保留账本里它之前的集、清除它及其后的切出集，
@@ -283,7 +283,7 @@ def _resolve_partial_reset(project_dir: Path, project: Mapping[str, Any], *, epi
       ``EpisodePlanner`` 的提交门禁同一套逃生口）
     - 保留段里带可信 ``source_range`` 的切出集须落在对应源文件当前长度界内且非空（``start < end``），
       并按播出顺序沿源文位置前进：同一源文件内后一条 ``start`` 不早于前一条 ``end``，跨源文件时
-      切到整本源文清单中更靠后的文件。两集之间留下的未切分原文空段是合法的；重叠或倒退说明账本已损坏
+      切到完整原文清单中更靠后的文件。两集之间留下的未切分原文空段是合法的；重叠或倒退说明账本已损坏
 
     - 保留段里的切出集都须带结构完整的 ``source_range``：缺失的是旧流程留下的切出集，保留下来仍会拦住
       分集规划，部分重置解决不了
@@ -412,7 +412,7 @@ def reset_episode_planning(
         and (target := episode_entry(project, episode_id)) is not None
         and not is_cut_episode(target)
     ):
-        raise EpisodeResetError(f"集（id={episode_id}）不是切自整本源文的集；分集规划重置只能从切出集起算")
+        raise EpisodeResetError(f"集（id={episode_id}）不是切自完整原文的集；分集规划重置只能从切出集起算")
     partial_from = None if episode_id is None or episode_id == first_cut_episode_id(project) else episode_id
 
     def _boundary(p: Mapping[str, Any]) -> _PartialReset | None:

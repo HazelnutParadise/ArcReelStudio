@@ -3,8 +3,8 @@
 plan() 从账本推导的规划起点（按源文位置排在最后的切出集的结尾，见
 :func:`lib.episode.episode_sources.planning_start`）起取一个源文窗口，由文本模型一次规划出窗口内所有
 剧情弧完整的集（标题/钩子/切分锚点；drama 另含分集大纲），schema 强约束 + 锚点存在性/唯一性/连续性
-机械校验，失败自动重试并附上一轮失败原因。整本源文的文件先后取项目登记的清单顺序。自带原文与无原文的
-集不占用整本源文，也不挡规划；新切出的集紧接在最后一个切出集之后，账本里还没有切出集时排在末尾。
+机械校验，失败自动重试并附上一轮失败原因。完整原文的文件先后取项目登记的清单顺序。自带原文与无原文的
+集不占用完整原文，也不挡规划；新切出的集紧接在最后一个切出集之后，账本里还没有切出集时排在末尾。
 窗口内找不到剧情弧完整的切分点时，模型返回空列表，这一批以 :class:`NoCutPointError` 报错。
 
 写入阶段在同一把项目锁内完成：写账本 + 写本批新集的集文件（其他集的集文件不动）+ 清理余文文件 + 同步源文
@@ -208,7 +208,7 @@ class CandidateEpisodeSummary:
 
 @dataclass
 class CandidatePlanResult:
-    """候选生成一批的结果：本批追加的候选集、候选是否已覆盖到整本源文结尾，以及候选的集数。"""
+    """候选生成一批的结果：本批追加的候选集、候选是否已覆盖到完整原文结尾，以及候选的集数。"""
 
     episodes: list[CandidateEpisodeSummary]
     source_exhausted: bool
@@ -223,7 +223,7 @@ class _Window:
     text: str
     start: int
     limit: int
-    #: ``limit`` 之后再没有待规划的原文：整本源文的最后一个文件，或规划空段时的空段结尾。
+    #: ``limit`` 之后再没有待规划的原文：完整原文的最后一个文件，或规划空段时的空段结尾。
     reaches_end: bool
     #: ``limit`` 之后紧接着已有的集（规划空段）：最后一窗要规划到 ``limit``，不留尾巴。
     followed_by_episode: bool = False
@@ -535,10 +535,10 @@ class EpisodePlanner:
     ) -> PlanResult:
         """规划下一批集：从账本推导的规划起点取窗口，产出剧情弧完整的集并提交账本。
 
-        当前源文件已无剩余有效内容时按整本源文清单的顺序推进到下一个文件；
+        当前源文件已无剩余有效内容时按完整原文清单的顺序推进到下一个文件；
         ``source_exhausted=True`` 表示全部源文件都已规划完毕。
 
-        ``on_more_to_plan`` 在本批之后整本源文还有待规划的原文时调用一次：窗口不含整本源文的结尾时，
+        ``on_more_to_plan`` 在本批之后完整原文还有待规划的原文时调用一次：窗口不含完整原文的结尾时，
         在请求模型之前调用；含结尾时，在模型给出的本批没有规划到结尾（如被每批集数上限截断）时调用。
         源文已全部规划完毕、或本批报错时不调用。
 
@@ -567,7 +567,7 @@ class EpisodePlanner:
             return project, sources, compute_source_fingerprints(sources)
 
         # 提交时复核的基线只留指纹摘要，不为暂不参与本批规划的源文件常驻其全文：
-        # discover_sources 已读入整本源文全部文件的原文用于计算这批指纹，本函数下方
+        # discover_sources 已读入完整原文全部文件的原文用于计算这批指纹，本函数下方
         # 显式释放该列表，避免大型多源项目在跨模型调用的等待期间叠加持有整套原文
         project, pre_call_sources, used_fingerprints = await asyncio.to_thread(snapshot)
         source_order = [doc.rel_path for doc in pre_call_sources]
@@ -750,9 +750,9 @@ class EpisodePlanner:
     ) -> CandidatePlanResult:
         """为重新规划的候选生成下一批集：从候选的结尾取窗口，产出的集追加到候选，分集账本不动。
 
-        候选见 :mod:`lib.episode.episode_replan`。候选不在了（已放弃或已采纳）、被并发追加过，或整本源文在
+        候选见 :mod:`lib.episode.episode_replan`。候选不在了（已放弃或已采纳）、被并发追加过，或完整原文在
         候选生成后有改动时拒绝。账本里旧拆分流程的存量集与已记录的源文指纹不挡候选生成：这两种情况下候选从
-        整本源文开头起。``on_more_to_plan`` 与 :meth:`plan` 同义；候选已覆盖到整本源文结尾时标记候选完成。
+        完整原文开头起。``on_more_to_plan`` 与 :meth:`plan` 同义；候选已覆盖到完整原文结尾时标记候选完成。
         """
         planning_instructions = (instructions or "").strip() or None
 
@@ -768,7 +768,7 @@ class EpisodePlanner:
         source_order = [doc.rel_path for doc in sources]
         source_rel, start = cursor
         if source_rel not in source_order:
-            raise EpisodePlanningError(f"整本源文里没有这个可读的文件：{source_rel}")
+            raise EpisodePlanningError(f"完整原文里没有这个可读的文件：{source_rel}")
         text = sources[source_order.index(source_rel)].text
         while not text[start:].strip():
             next_rel = _next_source_rel(source_order, source_rel)
@@ -1013,12 +1013,12 @@ class EpisodePlanner:
         """下一批规划起点：由账本推导，见 :func:`lib.episode.episode_sources.planning_start`。"""
         start = planning_start(project, sources)
         if start is None:
-            raise EpisodePlanningError("整本源文还没有文件，请先上传小说原文")
+            raise EpisodePlanningError("完整原文还没有文件，请先上传小说原文")
         return start
 
     @staticmethod
     def _span_files(order: list[str], span: SourceSpan) -> list[str]:
-        """原文范围经过的文件，按整本源文顺序；起止文件不在清单里时只给起止两个文件。"""
+        """原文范围经过的文件，按完整原文顺序；起止文件不在清单里时只给起止两个文件。"""
         if span.source_file in order and span.end_file in order:
             return order[order.index(span.source_file) : order.index(span.end_file) + 1]
         return list(dict.fromkeys((span.source_file, span.end_file)))
@@ -1052,7 +1052,7 @@ class EpisodePlanner:
 
         没有 ``source_range`` 的切出集既无法重造派生文件、也无法证明其覆盖的原文范围，
         续接规划只会与它重叠或遗漏。消费链路（剧本 / 媒体 / 状态 / 导出）不受影响；
-        自带原文与无原文的集不占用整本源文，不在此列。
+        自带原文与无原文的集不占用完整原文，不在此列。
         """
         missing = legacy_cut_episode_ids(project)
         if missing:
@@ -1196,7 +1196,7 @@ class EpisodePlanner:
 
 
 def _next_source_rel(source_order: list[str], rel: str) -> str | None:
-    """整本源文清单中 ``rel`` 之后的下一个文件；``rel`` 不在清单或已是最后一个时返回 None。"""
+    """完整原文清单中 ``rel`` 之后的下一个文件；``rel`` 不在清单或已是最后一个时返回 None。"""
     try:
         index = source_order.index(rel)
     except ValueError:
@@ -1209,7 +1209,7 @@ def _gap_start(project: Mapping[str, Any], sources: list[SourceDoc], gap: tuple[
     rel, end = gap
     index = next((i for i, doc in enumerate(sources) if doc.rel_path == rel), None)
     if index is None:
-        raise EpisodePlanningError(f"整本源文里没有这个可读的文件：{rel}")
+        raise EpisodePlanningError(f"完整原文里没有这个可读的文件：{rel}")
     if not 0 < end <= len(sources[index].text):
         raise EpisodePlanningError(f"未切分原文的终点越界：{rel} 长度 {len(sources[index].text)}，终点 {end}")
     found = unsplit_range_ending_at(cut_episode_placements(project, sources), file_index=index, end=end)
@@ -1234,7 +1234,7 @@ def _gap_context_entries(
 
 
 def _candidate_source_changed_error() -> EpisodePlanningError:
-    return EpisodePlanningError("整本源文在生成新的分集方案后有改动，这份方案已过时；请放弃后重新规划")
+    return EpisodePlanningError("完整原文在生成新的分集方案后有改动，这份方案已过时；请放弃后重新规划")
 
 
 def _require_candidate(project: Mapping[str, Any], candidate_id: str) -> dict[str, Any]:
@@ -1259,7 +1259,7 @@ def _check_candidate_sources(candidate: Mapping[str, Any], sources: list[SourceD
 def _candidate_context_before(
     project: Mapping[str, Any], sources: list[SourceDoc], candidate: Mapping[str, Any]
 ) -> list[Mapping[str, Any]]:
-    """候选起点之前的切出集，按源文位置；从整本源文开头重新规划时为空。"""
+    """候选起点之前的切出集，按源文位置；从完整原文开头重新规划时为空。"""
     if candidate.get("from_beginning"):
         return []
     try:

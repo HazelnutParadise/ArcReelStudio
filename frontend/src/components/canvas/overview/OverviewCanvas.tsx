@@ -28,7 +28,7 @@ function hasStorySetting(overview: ProjectOverview | undefined): boolean {
 
 /**
  * 项目概览：单列限宽的设定页（页头、资产完成度、费用、故事设定）；空项目显示欢迎页。
- * 从欢迎页上传整本原文后立即切到概览，故事设定区显示骨架，生成完成后就地填入。
+ * 从欢迎页上传完整原文后立即切到概览，故事设定区显示骨架，生成完成后就地填入。
  * 广告项目没有初始化页：概览常驻「创作灵感」与「商品」区承担首次录入，故事设定在视频页的「故事设定」tab。
  */
 export function OverviewCanvas({ projectName, projectData, readOnly = false }: OverviewCanvasProps) {
@@ -43,7 +43,7 @@ export function OverviewCanvas({ projectName, projectData, readOnly = false }: O
   }, [projectName, projectData?.episodes, debouncedFetch]);
 
   // 上传对话框按项目记录，切项目后不沿用。对话框打开期间保留欢迎页（见 showWelcome），
-  // 上传登记出整本源文或第一集后背景不会先闪成概览。
+  // 上传登记出完整原文或第一集后背景不会先闪成概览。
   const [upload, setUpload] = useState<{ projectName: string; files: File[] } | null>(null);
   const uploadFiles = upload?.projectName === projectName ? upload.files : null;
 
@@ -56,7 +56,7 @@ export function OverviewCanvas({ projectName, projectData, readOnly = false }: O
 
   const handleUploaded = useCallback(
     (result: SourceUploadResult) => {
-      // 第一次放进整本源文时就地读取原文；只登记了逐集原文时不生成
+      // 第一次放进完整原文时就地读取原文；只登记了逐集原文时不生成
       if (result.wholeSourceFiles.length > 0) runGenerate();
     },
     [runGenerate],

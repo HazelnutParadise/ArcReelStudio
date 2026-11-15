@@ -1,4 +1,4 @@
-"""整本源文文件的插入、替换、编辑、删除与调序（ADR 0097）。
+"""完整原文文件的插入、替换、编辑、删除与调序（ADR 0097）。
 
 文件改动只影响原文范围触及这个文件的切出集，不要求从第 1 集起重新规划。原文范围按
 :mod:`lib.episode.source_remap` 重映射后，各集分六类：
@@ -90,7 +90,7 @@ MoveDirection = Literal["up", "down"]
 
 
 class SourceFileChangeError(ValueError):
-    """整本源文文件的改动被拒；``code`` 是稳定的原因码，入口据此映射状态码与文案。没有写入。"""
+    """完整原文文件的改动被拒；``code`` 是稳定的原因码，入口据此映射状态码与文案。没有写入。"""
 
     def __init__(self, code: str, message: str):
         super().__init__(message)
@@ -135,12 +135,12 @@ class SourceFileChangeOutcome:
 
 @dataclass
 class _Change:
-    """一次文件改动的推演结果。推演只读；``commit`` 在确认之后改写源文件与整本源文清单。"""
+    """一次文件改动的推演结果。推演只读；``commit`` 在确认之后改写源文件与完整原文清单。"""
 
-    #: 改动后的整本源文文件顺序（只含可读的文件），用来给切出集排源文位置。
+    #: 改动后的完整原文文件顺序（只含可读的文件），用来给切出集排源文位置。
     docs: list[SourceDoc]
     remaps: list[RangeRemap]
-    #: 改写源文件与整本源文清单；每改一处盘上文件都把撤销登记进 ``undo``。
+    #: 改写源文件与完整原文清单；每改一处盘上文件都把撤销登记进 ``undo``。
     commit: Callable[[dict[str, Any], ExitStack], None]
     #: 内容变了的文件：已记录的源文指纹随之更新或去掉。
     touched: list[str] = field(default_factory=list)
@@ -158,19 +158,19 @@ class _Change:
 def _filename_rel(project: Mapping[str, Any], filename: str) -> str:
     rel = f"source/{filename}"
     if "/" in filename or "\\" in filename or rel not in whole_source_files(project):
-        raise SourceFileChangeError("source_file_not_found", f"整本源文里没有这个文件：{filename}")
+        raise SourceFileChangeError("source_file_not_found", f"完整原文里没有这个文件：{filename}")
     return rel
 
 
 def _entries(project: Mapping[str, Any]) -> list[dict[str, Any]]:
     entries = well_formed_ledger_entries(project)
     if entries is None:
-        raise SourceFileChangeError("ledger_invalid", "分集账本的形状异常，不能改动整本源文的文件")
+        raise SourceFileChangeError("ledger_invalid", "分集账本的形状异常，不能改动完整原文的文件")
     return entries
 
 
 def _spans(project: Mapping[str, Any], docs: list[SourceDoc]) -> dict[int, SourceSpan]:
-    """能落进整本源文的切出集的原文范围（终点超出文件长度时已截到文件末尾）。"""
+    """能落进完整原文的切出集的原文范围（终点超出文件长度时已截到文件末尾）。"""
     return {
         episode: SourceSpan(
             source_file=docs[p.file_index].rel_path,
@@ -323,7 +323,7 @@ def _sync_snapshots(
 
 
 def _record_fingerprints(project: dict[str, Any], docs: list[SourceDoc], touched: Iterable[str]) -> None:
-    """改动过的文件：已记录指纹的更新为新文本的指纹；移出整本源文的去掉记录。"""
+    """改动过的文件：已记录指纹的更新为新文本的指纹；移出完整原文的去掉记录。"""
     raw = project.get(SOURCE_FINGERPRINTS_KEY)
     if not isinstance(raw, Mapping):
         return
@@ -372,13 +372,13 @@ def _apply(
         if remap.episode in changed and remap.after is not None:
             text = span_text(texts, rels, remap.after)
             if text is None:
-                raise SourceFileChangeError("conflict", f"集（id={remap.episode}）的原文范围落不进改动后的整本源文")
+                raise SourceFileChangeError("conflict", f"集（id={remap.episode}）的原文范围落不进改动后的完整原文")
             _write_text(episode_source_path(project_dir, remap.episode), text, undo)
     for episode in [*impact.retired, *impact.removed]:
         path = episode_source_path(project_dir, episode)
         if path.is_file() and not path.is_symlink():
             _remember(path, undo)
-            path.unlink()  # hard-delete: derived -- 整本源文变化后退下的派生集原文，可由分集账本重新生成
+            path.unlink()  # hard-delete: derived -- 完整原文变化后退下的派生集原文，可由分集账本重新生成
     _sync_snapshots(project_dir, project, docs, change.touched, undo)
     _record_fingerprints(project, docs, change.touched)
 
@@ -403,7 +403,7 @@ def _run(
             return SourceFileChangeOutcome(applied=False, impact=impact, revision=current)
         change.commit(project, undo)
         _apply(project_dir, project, entries, change, impact, order, undo)
-    logger.info("整本源文文件已改动：项目 %s，%s，受影响 %s", project_name, dict(operation), impact.to_dict())
+    logger.info("完整原文文件已改动：项目 %s，%s，受影响 %s", project_name, dict(operation), impact.to_dict())
     return SourceFileChangeOutcome(applied=True, impact=impact, revision=current)
 
 
@@ -455,7 +455,7 @@ def edit_whole_source_file(
     revision: str | None = None,
     dry_run: bool = False,
 ) -> SourceFileChangeOutcome:
-    """编辑整本源文文件 ``source/<filename>`` 的全文：按改动前后的对齐重映射触及它的切出集。"""
+    """编辑完整原文文件 ``source/<filename>`` 的全文：按改动前后的对齐重映射触及它的切出集。"""
     normalized = _require_text(text)
     operation = {"action": "edit", "file": filename, "text": _text_digest(normalized)}
     plan = _plan_rewrite(filename, normalized, replace=False)
@@ -472,7 +472,7 @@ def replace_whole_source_file(
     revision: str | None = None,
     dry_run: bool = False,
 ) -> SourceFileChangeOutcome:
-    """用新内容替换整本源文文件 ``source/<filename>``：保留它的位置与文件名，类型缺省时不变。
+    """用新内容替换完整原文文件 ``source/<filename>``：保留它的位置与文件名，类型缺省时不变。
 
     重映射与编辑相同。改了类型时，起点在这个文件、已有脚本规划的切出集归入「因改类型而 stale 的脚本规划」。
     旧文件连同原件备份移入项目回收站。
@@ -486,7 +486,7 @@ def replace_whole_source_file(
 def delete_whole_source_file(
     pm: ProjectManager, project_name: str, filename: str, *, revision: str | None = None, dry_run: bool = False
 ) -> SourceFileChangeOutcome:
-    """删除整本源文文件 ``source/<filename>``：等同于删掉它的全部文字，再移出整本源文清单，文件与原件备份移入项目回收站。
+    """删除完整原文文件 ``source/<filename>``：等同于删掉它的全部文字，再移出完整原文清单，文件与原件备份移入项目回收站。
 
     文件在服务之外被改动过时同样可以删除。文件在盘上已缺失或读不出时，原文范围起点或终点记在它里面的切出集
     整段按删除处理（读不到它的长度，跨进别的文件的部分也不保留）。
@@ -528,7 +528,7 @@ def move_whole_source_file(
     revision: str | None = None,
     dry_run: bool = False,
 ) -> SourceFileChangeOutcome:
-    """把整本源文文件 ``source/<filename>`` 在清单里上移或下移一位。
+    """把完整原文文件 ``source/<filename>`` 在清单里上移或下移一位。
 
     其中的切出集在播出顺序里整块跟着走，不标 stale；跨过被移动文件边界的集只保留起点所在文件里仍相连的部分。
     """
@@ -540,7 +540,7 @@ def move_whole_source_file(
         other = index - 1 if direction == "up" else index + 1
         if not 0 <= other < len(files):
             raise SourceFileChangeError(
-                "move_out_of_range", f"{filename} 已经在整本源文的{'最前' if direction == 'up' else '最后'}"
+                "move_out_of_range", f"{filename} 已经在完整原文的{'最前' if direction == 'up' else '最后'}"
             )
         docs = discover_sources(project_dir, project)
         for doc in docs:
@@ -578,7 +578,7 @@ def accept_external_source_change(
     revision: str | None = None,
     dry_run: bool = False,
 ) -> SourceFileChangeOutcome:
-    """更新在服务之外被改动过的整本源文文件 ``source/<filename>`` 的分集账本。
+    """更新在服务之外被改动过的完整原文文件 ``source/<filename>`` 的分集账本。
 
     以快照为旧文本、当前文本为新文本对齐，重映射触及它的切出集，确认协议与编辑相同；执行后指纹与快照换成当前文本。
     文件没有改动过时拒绝（``source_not_changed``）。文件里有切出集却没有快照时无从对齐（``source_snapshot_missing``），
@@ -624,7 +624,7 @@ def insert_whole_source_file(
     source_kind: SourceKind | None = None,
     revision: str | None = None,
 ) -> tuple[SourceFileChangeOutcome, str | None]:
-    """在整本源文清单第 ``index`` 位插入一个新文件（缺省接在末尾），返回结果与登记的项目相对路径。
+    """在完整原文清单第 ``index`` 位插入一个新文件（缺省接在末尾），返回结果与登记的项目相对路径。
 
     ``write(source_dir, undo)`` 在确认之后写出新文件并返回它的项目相对路径，写入的撤销登记进 ``undo``。插入处落在一个
     跨文件的集内部时，新文件归这一集，这一集的原文有变化；否则不动任何集，直接执行。

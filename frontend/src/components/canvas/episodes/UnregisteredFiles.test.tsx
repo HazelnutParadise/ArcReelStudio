@@ -67,7 +67,7 @@ describe("UnregisteredFilesBanner", () => {
     const dialog = openDialog();
 
     fireEvent.click(
-      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }),
+      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入完整原文" }),
     );
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
@@ -80,7 +80,7 @@ describe("UnregisteredFilesBanner", () => {
     const { onChanged } = renderBanner();
     const item = within(openDialog().getByRole("listitem", { name: "_notes.txt" }));
 
-    expect(item.getByRole("button", { name: "加入整本源文" })).toBeDisabled();
+    expect(item.getByRole("button", { name: "加入完整原文" })).toBeDisabled();
     fireEvent.click(item.getByRole("button", { name: "作为一集的原文" }));
     expect(screen.getAllByRole("menuitem").map((option) => option.textContent)).toEqual([
       "新的一集（排在播出顺序末尾）",
@@ -112,7 +112,7 @@ describe("UnregisteredFilesBanner", () => {
     const dialog = openDialog();
 
     fireEvent.click(
-      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }),
+      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入完整原文" }),
     );
 
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
@@ -128,7 +128,7 @@ describe("UnregisteredFilesBanner", () => {
     const dialog = openDialog();
 
     fireEvent.click(
-      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入整本源文" }),
+      within(dialog.getByRole("listitem", { name: "旧稿.txt" })).getByRole("button", { name: "加入完整原文" }),
     );
 
     expect(await dialog.findByRole("alert")).toHaveTextContent("处理 旧稿.txt 失败：文件已被登记");

@@ -247,7 +247,7 @@ class TestFilesRouter:
         client, pm = _client(monkeypatch, tmp_path)
         use_project_manager(monkeypatch, pm)
         source_dir = pm.get_project_path("demo") / "source"
-        (source_dir / "novel.txt").write_text("旧整本源文", encoding="utf-8")
+        (source_dir / "novel.txt").write_text("旧完整原文", encoding="utf-8")
         record_migration_failure(
             pm.get_project_path("demo"), RuntimeError("step failed"), schema_version=CURRENT_PROJECT_SCHEMA_VERSION
         )
@@ -329,7 +329,7 @@ class TestFilesRouter:
     def test_delete_source_keeps_the_file_when_the_ledger_cannot_be_written(self, tmp_path, monkeypatch):
         client, pm = _client(monkeypatch, tmp_path)
         source_dir = pm.get_project_path("demo") / "source"
-        (source_dir / "novel.txt").write_bytes("整本源文\r\n第二行".encode())
+        (source_dir / "novel.txt").write_bytes("完整原文\r\n第二行".encode())
         pm.update_project(
             "demo", lambda project: project.update(whole_source_files=[{"source_file": "source/novel.txt"}])
         )
@@ -340,7 +340,7 @@ class TestFilesRouter:
             resp = client.delete("/api/v1/projects/demo/source/novel.txt")
 
         assert resp.status_code == 500
-        assert (source_dir / "novel.txt").read_bytes() == "整本源文\r\n第二行".encode()
+        assert (source_dir / "novel.txt").read_bytes() == "完整原文\r\n第二行".encode()
         assert pm.load_project("demo")["whole_source_files"] == [{"source_file": "source/novel.txt"}]
 
     def test_episode_role_upload_rejects_blank_text(self, tmp_path, monkeypatch):
@@ -2325,7 +2325,7 @@ class TestSourceMultiFormatUpload:
             (record,) = project_trash.list_records(project_dir)
             assert sorted(record.files) == ["source/raw/to_delete.txt", "source/to_delete.txt"]
 
-            # 恢复为未纳入整本源文的源文件，原始上传件随之回原处
+            # 恢复为未纳入完整原文的源文件，原始上传件随之回原处
             project_trash.restore(project_dir, record.id)
             assert (project_dir / "source/to_delete.txt").is_file()
             assert raw_path.is_file()

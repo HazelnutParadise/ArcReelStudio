@@ -95,7 +95,7 @@ class EpisodeDeletionImpact:
     #: 切出集按源文位置前后相邻的切出集（集 ID）；不是落位的切出集时都为 None。
     cut_before: int | None
     cut_after: int | None
-    #: 切出集落在整本源文里。
+    #: 切出集落在完整原文里。
     placed: bool
 
     @property

@@ -152,7 +152,7 @@ def indexed_project_dir(tmp_path: Path) -> Path:
         ("source/snapshots/novel.txt", FileReference(FileRole.DERIVED, FileOwner("source"))),
         ("source/episode_1.txt", FileReference(FileRole.DERIVED, FileOwner("episode", episode=1))),
         ("source/episode_2.txt", FileReference(FileRole.STRUCTURE, FileOwner("episode", episode=2))),
-        # 未纳入整本源文的源文件与它的原始上传件交给分集视图。
+        # 未纳入完整原文的源文件与它的原始上传件交给分集视图。
         ("source/draft.txt", FileReference(FileRole.UNREFERENCED, FileOwner("source"))),
         ("source/raw/draft.docx", FileReference(FileRole.UNREFERENCED, FileOwner("source"))),
         ("storyboards/scene_E1S09.png", FileReference(FileRole.UNREFERENCED)),

@@ -10,7 +10,7 @@ function episode(id: number, title: string, overrides: Partial<EpisodeMeta> = {}
   return { episode: id, title, script_file: `scripts/episode_${id}.json`, ...overrides } as EpisodeMeta;
 }
 
-// 「第二章」「第三章」切自整本源文，按源文位置排列；「番外」自带原文，放在哪里都行。
+// 「第二章」「第三章」切自完整原文，按源文位置排列；「番外」自带原文，放在哪里都行。
 const FILES = [{ source_file: "source/novel.txt" }];
 const EPISODES = [
   episode(1, "番外"),

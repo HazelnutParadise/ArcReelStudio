@@ -113,7 +113,7 @@ from server.services.stock_access import member_account, stock_http_error, stock
 
 router = APIRouter()
 
-#: 上传源文时的登记方式：整本源文的文件，或一集自带原文的集。
+#: 上传源文时的登记方式：完整原文的文件，或一集自带原文的集。
 SourceUploadRole = Literal["whole_source", "episode"]
 
 _IMAGE_EXTS: tuple[str, ...] = IMAGE_FILE_EXTENSIONS
@@ -482,12 +482,12 @@ async def upload_file(
         name: 可选，用于角色/场景/道具/商品名称（自动更新元数据）；product_ref 必填；
             分镜/视频上传走 shot_uploads 路由
         on_conflict: source 类型独有 — fail / replace / rename
-        role: source 类型独有 — whole_source 登记为整本源文的文件，接在清单末尾；episode 登记为
+        role: source 类型独有 — whole_source 登记为完整原文的文件，接在清单末尾；episode 登记为
             播出顺序末尾的一集自带原文的集
-        insert_at: role=whole_source 独有 — 登记后文件在整本源文清单里的下标，缺省或超出末尾时接在末尾
+        insert_at: role=whole_source 独有 — 登记后文件在完整原文清单里的下标，缺省或超出末尾时接在末尾
         source_kind: source 类型独有 — 剧情演绎项目这份原文的源文件类型，缺省为小说；其他创作类型忽略
         revision: role=whole_source 独有 — 确认过的受影响集清单的版本。插入处落在一个跨文件的集内部，或
-            on_conflict=replace 覆盖已登记的整本源文文件时，有受影响的集而它缺省或已过时，不写入，返回
+            on_conflict=replace 覆盖已登记的完整原文文件时，有受影响的集而它缺省或已过时，不写入，返回
             ``status=confirmation_required`` 与受影响集清单
     """
     spec = UPLOAD_SPECS.get(upload_type)
@@ -514,7 +514,7 @@ async def upload_file(
 
     # Source 分支早返 — 走 SourceLoader 规范化
     if upload_type == "source":
-        # 源文登记写的是当前 schema 的字段；迁移没完成的项目先写进去，重试迁移时会把旧整本源文漏登
+        # 源文登记写的是当前 schema 的字段；迁移没完成的项目先写进去，重试迁移时会把旧完整原文漏登
         await asyncio.to_thread(assert_project_migration_ok, project_name)
         if role == "episode":
             return await _handle_episode_source_upload(
@@ -859,9 +859,9 @@ async def _handle_source_upload(
     revision: str | None,
     _t: Translator,
 ):
-    """Source 分支：通过 SourceLoader 规范化为 UTF-8 .txt，并按需备份原始字节，登记为整本源文的文件。
+    """Source 分支：通过 SourceLoader 规范化为 UTF-8 .txt，并按需备份原始字节，登记为完整原文的文件。
 
-    插入整本源文与覆盖已登记的整本源文文件都经 :mod:`lib.episode.source_file_changes`，重映射触及它的切出集。
+    插入完整原文与覆盖已登记的完整原文文件都经 :mod:`lib.episode.source_file_changes`，重映射触及它的切出集。
     """
     original_filename = _require_filename(file, _t)
     normalized_name = f"{Path(original_filename).stem}.txt"
@@ -1162,7 +1162,7 @@ async def _ensure_no_displaced_tasks_for_whole_source(
     preview: Callable[[ProjectManager], SourceFileChangeOutcome],
     _t: Translator,
 ) -> None:
-    """``source/<filename>`` 是已登记的整本源文文件时，执行前拦要移除或转为无原文的集的在途任务。"""
+    """``source/<filename>`` 是已登记的完整原文文件时，执行前拦要移除或转为无原文的集的在途任务。"""
     if revision is None:
         return
     manager = get_project_manager()
@@ -1179,9 +1179,9 @@ async def update_source_file(
     content: str = Body(..., media_type="text/plain"),
     revision: str | None = None,
 ):
-    """更新或创建 source 文件；新建的文件登记为整本源文的文件，接在清单末尾。
+    """更新或创建 source 文件；新建的文件登记为完整原文的文件，接在清单末尾。
 
-    已登记的整本源文文件按编辑处理（:func:`lib.episode.source_file_changes.edit_whole_source_file`）：有受影响的集而
+    已登记的完整原文文件按编辑处理（:func:`lib.episode.source_file_changes.edit_whole_source_file`）：有受影响的集而
     ``revision`` 缺省或已过时时不写入，返回 ``status=confirmation_required`` 与受影响集清单。
     ``episode_N.txt`` 是集原文文件名，这里拒绝：集原文经集页填写，切出集的集原文由分集规划派生。
     """
@@ -1238,9 +1238,9 @@ async def update_source_file(
 
 @router.delete("/projects/{project_name}/source/{filename}", dependencies=[Depends(require_project_migration_ok)])
 async def delete_source_file(project_name: str, filename: str, _t: Translator, revision: str | None = None):
-    """删除 source 文件，并撤销它的登记：移出整本源文；是自带原文的集的集文件时，该集转为无原文。
+    """删除 source 文件，并撤销它的登记：移出完整原文；是自带原文的集的集文件时，该集转为无原文。
 
-    已登记的整本源文文件按删除处理（:func:`lib.episode.source_file_changes.delete_whole_source_file`）：有受影响的
+    已登记的完整原文文件按删除处理（:func:`lib.episode.source_file_changes.delete_whole_source_file`）：有受影响的
     集而 ``revision`` 缺省或已过时时不删除，返回 ``status=confirmation_required`` 与受影响集清单。
     切出集的集文件由分集规划派生，这里拒绝删除。
     """

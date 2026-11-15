@@ -113,7 +113,7 @@ type FileViewSection = "files" | "trash";
 /**
  * 项目级「文件」视图，分「文件」与「回收站」两个分区。
  * 文件分区：左侧按磁盘目录树列出项目文件，目录按需展开；右侧是选中文件的角色、预览、下载与所属界面入口。
- * 只有未引用文件能在这里移入回收站；被引用的文件跳到所属界面修改，未纳入整本源文的源文件交给「分集」。
+ * 只有未引用文件能在这里移入回收站；被引用的文件跳到所属界面修改，未纳入完整原文的源文件交给「分集」。
  */
 export function FileView({ projectName }: { projectName: string }) {
   const { t } = useTranslation("dashboard");

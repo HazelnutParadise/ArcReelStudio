@@ -47,7 +47,7 @@ MESSAGES = {
     # ---- 劇集條目與帳本 ----
     "val_ledger_status_type": "{prefix}: ledger_status 必須是字串，當前取值：{value}",
     "val_source_origin_invalid": "{prefix}: source_origin 值無效：'{value}'，必須是 {allowed}",
-    "val_source_range_requires_whole_source": "{prefix}: 只有切自整本源文（source_origin 為 whole_source）的集可以帶 source_range",
+    "val_source_range_requires_whole_source": "{prefix}: 只有切自完整原文（source_origin 為 whole_source）的集可以帶 source_range",
     "val_whole_source_file_invalid": "whole_source_files[{index}] 必須是帶 source_file 的物件，檔案直接位於 source/ 下，副檔名為 .txt 或 .md",
     "val_episode_missing_num_at": "{prefix}: 缺少必填欄位 episode (整數)",
     "val_episode_missing_title_at": "{prefix}: 缺少必填欄位 title (字串，可為空)",

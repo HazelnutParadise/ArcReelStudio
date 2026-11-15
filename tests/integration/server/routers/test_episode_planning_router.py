@@ -34,7 +34,7 @@ def test_planning_without_a_whole_source_is_refused(planning_client: TestClient)
         resp = planning_client.post("/api/v1/projects/demo/episode-planning", json={"instructions": "按章节"})
 
     assert resp.status_code == 422
-    assert resp.json()["detail"].startswith("分集规划未能提交：项目还没有整本源文")
+    assert resp.json()["detail"].startswith("分集规划未能提交：项目还没有完整原文")
 
 
 def test_instructions_are_the_only_accepted_field(planning_client: TestClient) -> None:

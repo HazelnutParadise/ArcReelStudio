@@ -78,7 +78,7 @@ def _refused(reason: AdmissionReason) -> OperationAdmission:
 
 
 def whole_source_present(docs: Iterable[SourceDoc]) -> bool:
-    """有可供分集规划的整本源文：项目登记的整本源文文件里有非空白的原文。
+    """有可供分集规划的完整原文：项目登记的完整原文文件里有非空白的原文。
 
     ``docs`` 取自 :func:`lib.episode.episode_sources.discover_sources`；未登记的文件不算。
     """
@@ -131,7 +131,7 @@ def pending_authoring_entry_ids(items: Sequence[Any], kind: str | None) -> list[
 def admit_plan_episodes(
     content_mode: object, *, whole_source: bool, replan_pending: bool = False
 ) -> OperationAdmission:
-    """AI 分集规划：有整本源文，且没有悬而未决的重新规划候选。"""
+    """AI 分集规划：有完整原文，且没有悬而未决的重新规划候选。"""
     if content_mode == "ad":
         return NOT_APPLICABLE
     if not whole_source:

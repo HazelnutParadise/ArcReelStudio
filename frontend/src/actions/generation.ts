@@ -590,7 +590,7 @@ export async function enqueueAdScript(
 export const EPISODE_PLANNING_SLOTS = ["episode-planning", "episode-planning-next"] as const;
 
 /**
- * 提交 AI 规划分集：从规划起点逐窗规划到整本源文结尾。已有进行中的分集规划或准入不成立时，
+ * 提交 AI 规划分集：从规划起点逐窗规划到完整原文结尾。已有进行中的分集规划或准入不成立时，
  * 服务端的错误原样抛出。附加指令只随本次提交，不写进项目。
  */
 export async function enqueueEpisodePlanning(

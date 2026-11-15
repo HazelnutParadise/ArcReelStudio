@@ -561,7 +561,7 @@ def register_project_sources(
     whole_source: dict[str, str] | None = None,
     own_episodes: tuple[str, ...] = (),
 ) -> list[int]:
-    """经登记命令放入源文：``whole_source`` 是文件名到全文的整本源文，``own_episodes`` 逐集登记为自带原文的集。
+    """经登记命令放入源文：``whole_source`` 是文件名到全文的完整原文，``own_episodes`` 逐集登记为自带原文的集。
 
     返回自带原文的集分配到的集 ID。
     """

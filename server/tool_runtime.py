@@ -1744,7 +1744,7 @@ class UploadSourceRequest(BaseModel):
     role: Literal["whole_source", "episode"] = Field(
         default="whole_source",
         description=(
-            "whole_source：登记为整本源文的文件，接在文件清单末尾，供分集规划切分；"
+            "whole_source：登记为完整原文的文件，接在文件清单末尾，供分集规划切分；"
             "episode：登记为一集自带原文的集，接在播出顺序末尾，分配新集 ID，逐集直接做脚本规划"
         ),
     )
@@ -1752,13 +1752,13 @@ class UploadSourceRequest(BaseModel):
         default=None,
         description=(
             "源文件类型，只对剧情演绎项目生效，其他创作类型忽略：novel 小说（缺省），由 AI 改编；"
-            "screenplay 用户写好的成品剧本，分集、台词与画外音照用作者原文。替换已登记的同名整本源文文件时保留它原有的类型"
+            "screenplay 用户写好的成品剧本，分集、台词与画外音照用作者原文。替换已登记的同名完整原文文件时保留它原有的类型"
         ),
     )
     revision: str | SkipJsonSchema[None] = Field(
         default=None,
         description=(
-            "on_conflict=replace 覆盖已登记的整本源文文件、波及切出集时，上一次调用返回的受影响集清单的 revision；"
+            "on_conflict=replace 覆盖已登记的完整原文文件、波及切出集时，上一次调用返回的受影响集清单的 revision；"
             "用户确认清单后原样带回才写入"
         ),
     )
@@ -1865,12 +1865,12 @@ class EditSourceTextRequest(BaseModel):
 
     filename: str | SkipJsonSchema[None] = Field(
         default=None,
-        description="要修改的整本源文文件名（source/ 下已登记的纯文件名，如 novel.txt）；与 episode_id 二选一",
+        description="要修改的完整原文文件名（source/ 下已登记的纯文件名，如 novel.txt）；与 episode_id 二选一",
     )
     episode_id: int | SkipJsonSchema[None] = Field(
         default=None,
         gt=0,
-        description="要修改原文的集 ID，只接受自带原文或无原文的集；切出集的原文要改整本源文的文件。与 filename 二选一",
+        description="要修改原文的集 ID，只接受自带原文或无原文的集；切出集的原文要改完整原文的文件。与 filename 二选一",
     )
     replacements: list[SourceReplacement] | SkipJsonSchema[None] = Field(
         default=None,
@@ -1880,7 +1880,7 @@ class EditSourceTextRequest(BaseModel):
     text: str | SkipJsonSchema[None] = Field(default=None, description="整段改写后的完整原文；与 replacements 二选一")
     revision: str | SkipJsonSchema[None] = Field(
         default=None,
-        description="修改整本源文的文件、波及切出集时，上一次调用返回的受影响集清单的 revision；用户确认清单后原样带回才写入",
+        description="修改完整原文的文件、波及切出集时，上一次调用返回的受影响集清单的 revision；用户确认清单后原样带回才写入",
     )
 
     @model_validator(mode="after")
@@ -1915,7 +1915,7 @@ async def _run_source_file_change(
     revision: str | None,
     command: Callable[[bool], SourceFileChangeOutcome],
 ) -> SourceFileChangeOutcome | ToolProblem:
-    """跑一个整本源文文件改动命令（``command(dry_run)``）。带着确认过的 ``revision`` 执行前，要移除或退下的集
+    """跑一个完整原文文件改动命令（``command(dry_run)``）。带着确认过的 ``revision`` 执行前，要移除或退下的集
     还有排队或执行中的任务时不写入。"""
     if revision is not None:
         preview = await run_sync_transaction(command, True)
@@ -1963,7 +1963,7 @@ async def upload_source(
             raise FileNotFoundError(f"项目 '{scope.project_name}' 缺少 project.json")
         if value.role == "whole_source" and is_derived_episode_name(f"{Path(value.filename).stem}.txt"):
             raise ValueError(
-                f"文件名 {value.filename} 与集文件 episode_N.txt 同名，整本源文的文件须改名后上传；"
+                f"文件名 {value.filename} 与集文件 episode_N.txt 同名，完整原文的文件须改名后上传；"
                 "逐集原文用 role=episode 上传"
             )
 
@@ -2134,7 +2134,7 @@ async def edit_source_text(
             raise ValueError("filename 必须是 source/ 下的纯文件名")
         rel = f"source/{filename}"
         if rel not in whole_source_files(project_before):
-            raise SourceFileChangeError("source_file_not_found", f"整本源文里没有这个文件：{filename}")
+            raise SourceFileChangeError("source_file_not_found", f"完整原文里没有这个文件：{filename}")
         text = await asyncio.to_thread(_new_text, project_dir / rel)
         changed = await _run_source_file_change(
             scope,
@@ -2791,7 +2791,7 @@ def _render_ledger_stats(stats: LedgerStats, project: Mapping[str, Any]) -> list
 
 
 def _format_plan(result: PlanResult, project: Mapping[str, Any], *, gap: bool = False) -> str:
-    # 规划未切分的空段时，``source_exhausted`` 只表示这段原文规划完了，整本源文后面可能还有未规划的原文
+    # 规划未切分的空段时，``source_exhausted`` 只表示这段原文规划完了，完整原文后面可能还有未规划的原文
     done = "这段未切分的原文已全部规划完毕" if gap else "源文已全部规划完毕"
     if not result.episodes and result.source_exhausted:
         lines = [f"{done}，没有可规划的新内容。"]
@@ -2922,7 +2922,7 @@ async def _execute_plan_episodes(
 
 
 def _plan_episodes_preflight(projects: ProjectManager, project_name: str) -> None:
-    """AI 分集规划的准入：有整本源文；与制作状态读同一份源文并调用同一谓词。"""
+    """AI 分集规划的准入：有完整原文；与制作状态读同一份源文并调用同一谓词。"""
     project = projects.load_project(project_name)
     source = compute_source_revision(projects.get_project_path(project_name), project, SourceScope(kind="all"))
     require_admitted(
@@ -2978,7 +2978,7 @@ async def start_episode_planning(
     *,
     gap: tuple[str, int] | None = None,
 ) -> ToolOutcome[Any]:
-    """「AI 规划分集」：从规划起点逐窗规划到整本源文结尾，每一窗是一个排队的文本任务。
+    """「AI 规划分集」：从规划起点逐窗规划到完整原文结尾，每一窗是一个排队的文本任务。
 
     已完成的窗口各自提交，停止（:func:`stop_episode_planning`）或某一窗失败后，已切出的集保留；再次调用
     从账本推导的规划起点继续。附加指令随每一窗的任务载荷传递，不写进项目。
@@ -3004,7 +3004,7 @@ async def start_episode_planning(
 
 
 class ReplanWindowResult(ToolMessage):
-    #: 本批追加的候选集数、候选的集数，以及候选是否已覆盖到整本源文结尾。
+    #: 本批追加的候选集数、候选的集数，以及候选是否已覆盖到完整原文结尾。
     planned: int
     total: int
     complete: bool
@@ -3039,7 +3039,7 @@ async def start_episode_replan(
     episode: int,
     dry_run: bool = False,
 ) -> ToolOutcome[Any]:
-    """「从这一集开始重新规划」：登记一份候选，逐窗生成到整本源文结尾，每一窗是一个排队的文本任务。
+    """「从这一集开始重新规划」：登记一份候选，逐窗生成到完整原文结尾，每一窗是一个排队的文本任务。
 
     候选写进项目，分集账本不动；附加指令随每一窗的任务载荷传递。``dry_run`` 时只返回重新规划的范围
     （:class:`lib.episode.episode_replan.ReplanScope`），不登记候选。已有候选或分集规划在进行时拒绝。
@@ -3081,7 +3081,7 @@ async def start_episode_replan(
 async def continue_episode_replan(
     candidate_id: str, scope: ProjectScope, caller: CallerContext, services: Services
 ) -> ToolOutcome[Any]:
-    """接着生成中途停止的候选：从候选的结尾逐窗生成到整本源文结尾，沿用发起时的附加指令。
+    """接着生成中途停止的候选：从候选的结尾逐窗生成到完整原文结尾，沿用发起时的附加指令。
 
     候选已不在、已覆盖到结尾或已过时时拒绝；分集规划在进行时拒绝。候选本身挡住分集规划的准入，这里不走它。
     """
@@ -3187,7 +3187,7 @@ async def _draft_replan_window(
         return ToolOutcome(problem=ToolProblem("episode_planning_failed", str(exc) or type(exc).__name__))
     finally:
         _STOPPED_PLANNING_WINDOWS.discard(str(chain.task["task_id"]))
-    done = "，已覆盖到整本源文结尾" if result.source_exhausted else ""
+    done = "，已覆盖到完整原文结尾" if result.source_exhausted else ""
     return ToolOutcome(
         value=ReplanWindowResult(
             message=f"新的分集方案追加了 {len(result.episodes)} 集，共 {result.total} 集{done}。",
@@ -3362,7 +3362,7 @@ async def reset_episode_planning(
         scope_note = (
             f"从 {start} 起的切出集退回未规划，播出顺序中它之前的集保留不动"
             if partial
-            else "全部切出集退回未规划，接续规划从整本源文开头读起"
+            else "全部切出集退回未规划，接续规划从完整原文开头读起"
         )
         lines = [f"⚠️ 本次重置波及已有产物的集，尚未执行任何改动。确认后{scope_note}："]
         if result.retired_episodes:
@@ -3393,7 +3393,7 @@ async def reset_episode_planning(
             "接续规划从保留段最后一个切出集的结尾读起。"
         ]
     else:
-        lines = [f"✅ 已全量重置分集规划：{count} 个切出集退回未规划，下次规划从整本源文开头读起。"]
+        lines = [f"✅ 已全量重置分集规划：{count} 个切出集退回未规划，下次规划从完整原文开头读起。"]
     if result.retired_episodes:
         lines.append(f"{_episodes(result.retired_episodes)} {retired_note}。")
     if result.removed_episodes:

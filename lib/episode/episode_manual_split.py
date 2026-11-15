@@ -1,4 +1,4 @@
-"""手工切分：创作者在整本源文上直接划定集的边界，直接写入分集账本，不经候选（ADR 0032）。
+"""手工切分：创作者在完整原文上直接划定集的边界，直接写入分集账本，不经候选（ADR 0032）。
 
 五个命令共用同一套落位与提交纪律：
 
@@ -15,7 +15,7 @@
 原文范围变了且有产物的集标 stale。波及有产物的集时先返回 :class:`ManualSplitConfirmationRequired`，
 创作者确认后带上确认过的集 ID 重新调用；锁内复核出确认清单之外的有产物集时同样退回确认。
 
-落点是「文件 + 文件内偏移」，偏移落在 ``normalize_source_text`` 的坐标系内。一集的原文范围可以沿整本源文的文件
+落点是「文件 + 文件内偏移」，偏移落在 ``normalize_source_text`` 的坐标系内。一集的原文范围可以沿完整原文的文件
 顺序跨文件，但不新跨过源文件类型的切换处（ADR 0097）。改动原文范围前先核对范围经过的文件的源文指纹：文件在服务之外
 被改动过时拒绝，账本更新前不能在它上面切分；清除之后的切分不改原文范围，不受限。
 """
@@ -119,7 +119,7 @@ ManualSplitOutcome = ManualSplitResult | ManualSplitConfirmationRequired
 
 @dataclass
 class _Edit:
-    """一次手工切分对账本的改动，由落位推出，提交时照此改写。偏移是整本源文的全局位置（见 :class:`_Layout`）。"""
+    """一次手工切分对账本的改动，由落位推出，提交时照此改写。偏移是完整原文的全局位置（见 :class:`_Layout`）。"""
 
     #: 改动原文范围（有新集或范围变了）时为 True；只移除切分时为 False。
     touches_source: bool = False
@@ -148,7 +148,7 @@ class _NeedsConfirmation(Exception):
 
 @dataclass(frozen=True)
 class _Layout:
-    """整本源文与落位。全局位置是把整本源文的文件按顺序接起来之后的字符下标。"""
+    """完整原文与落位。全局位置是把完整原文的文件按顺序接起来之后的字符下标。"""
 
     docs: list[SourceDoc]
     entries: list[dict[str, Any]]
@@ -181,7 +181,7 @@ class _Layout:
     def doc_index(self, source_file: str) -> int:
         index = next((i for i, doc in enumerate(self.docs) if doc.rel_path == source_file), None)
         if index is None:
-            raise ManualSplitError("source_file_not_found", f"整本源文里没有这个可读的文件：{source_file}")
+            raise ManualSplitError("source_file_not_found", f"完整原文里没有这个可读的文件：{source_file}")
         return index
 
     def to_global(self, source_file: str, offset: int) -> int:
@@ -223,7 +223,7 @@ class _Layout:
             raise ManualSplitError("episode_not_found", f"集（id={episode}）不在账本中")
         placement = self.placements.get(episode)
         if placement is None:
-            raise ManualSplitError("episode_not_placed", f"集（id={episode}）的原文不在整本源文里，不能调整它的边界")
+            raise ManualSplitError("episode_not_placed", f"集（id={episode}）的原文不在完整原文里，不能调整它的边界")
         return placement
 
     def ordered(self) -> list[CutPlacement]:
@@ -287,7 +287,7 @@ def _plan_cut(layout: _Layout, *, source_file: str, end: int, title: str) -> _Ed
     spans = [layout.span(p) for p in layout.ordered()]
     if any(low < at < high for low, high in spans):
         raise ManualSplitError("inside_episode", "这个位置在一集的原文里，应当拆分这一集")
-    # 从前面最近的切出集结尾（没有时从整本源文开头）切起，不跨过源文件类型的切换处
+    # 从前面最近的切出集结尾（没有时从完整原文开头）切起，不跨过源文件类型的切换处
     start = max([high for _low, high in spans if high <= at] + [wall for wall in layout.kind_walls if wall < at] + [0])
     _require_text(layout, start, at)
     insert_before = cut_insert_index(layout.entries, layout.placements, (index, end))

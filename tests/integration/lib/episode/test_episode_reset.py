@@ -932,7 +932,7 @@ def test_partial_reset_rejects_backward_source_file_switch(tmp_path: Path) -> No
 
 
 def test_partial_reset_allows_first_episode_after_blank_leading_source(tmp_path: Path) -> None:
-    """整本源文清单中排在第 1 集源文件之前的文件若只剩空白（EpisodePlanner 会自动跳过），
+    """完整原文清单中排在第 1 集源文件之前的文件若只剩空白（EpisodePlanner 会自动跳过），
     第 1 集合法落在非首个文件，不应被误判为账本损坏。"""
     project_dir = _write_project(tmp_path)
     (project_dir / "source" / "a.txt").write_text("   \n  ", encoding="utf-8")
@@ -1040,7 +1040,7 @@ def test_reset_from_an_episode_that_was_not_cut_is_refused(tmp_path: Path, origi
     )
     before = _load_project(project_dir)
 
-    with pytest.raises(EpisodeResetError, match="不是切自整本源文的集"):
+    with pytest.raises(EpisodeResetError, match="不是切自完整原文的集"):
         reset_episode_planning(project_dir, episode_id=2)
 
     assert _load_project(project_dir) == before

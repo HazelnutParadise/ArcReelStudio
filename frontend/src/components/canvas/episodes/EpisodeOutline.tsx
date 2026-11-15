@@ -45,8 +45,8 @@ interface EpisodeOutlineProps {
 }
 
 /**
- * 「分集」视图的集目录：按整本源文文件分组列出切出集，夹在其间的未切分原文是虚线行；
- * 原文不在整本源文里的集列在「其他集」。高亮原文视口顶部所在的集，点击一集让原文滚到这一集。
+ * 「分集」视图的集目录：按完整原文文件分组列出切出集，夹在其间的未切分原文是虚线行；
+ * 原文不在完整原文里的集列在「其他集」。高亮原文视口顶部所在的集，点击一集让原文滚到这一集。
  */
 export function EpisodeOutline({ view, episodes, current, onLocate, onLocateFile, actions }: EpisodeOutlineProps) {
   const { t } = useTranslation("dashboard");
@@ -174,7 +174,7 @@ function OutlineRow({
   );
   return (
     <li data-outline-episode={id} className="relative" style={{ "--episode-hue": episodeHue(id) } as CSSProperties}>
-      {/* 原文在整本源文里的集点击后滚到原文中这一集；其他集不在原文里，点击打开这一集 */}
+      {/* 原文在完整原文里的集点击后滚到原文中这一集；其他集不在原文里，点击打开这一集 */}
       {info?.placed ? (
         <button
           type="button"

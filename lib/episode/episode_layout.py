@@ -1,6 +1,6 @@
-"""「分集」视图的只读投影：整本源文按集分段，外加每集的体量、首尾句与 ``source/`` 里没有登记的文件。
+"""「分集」视图的只读投影：完整原文按集分段，外加每集的体量、首尾句与 ``source/`` 里没有登记的文件。
 
-- 整本源文按清单顺序逐个文件给出规范化全文，切成「集」与「未切分的原文」两类段。段的偏移与
+- 完整原文按清单顺序逐个文件给出规范化全文，切成「集」与「未切分的原文」两类段。段的偏移与
   ``source_range`` 同一坐标系（规范化文本的字符下标）。只含空白的未切分段不单独成段。
 - 未切分段排在按源文位置最后一个切出集之前的，是夹在切出集之间的空段（``gap``）；其余是尚未分集的原文。
 - 原文范围落不到清单文件里（没有范围、文件不在清单里、越界或与前一集重叠）的切出集不进左栏，
@@ -47,7 +47,7 @@ ReadingUnit = Literal["chars", "words"]
 
 @dataclass(frozen=True)
 class LayoutSegment:
-    """整本源文一个文件里的一段：一集的原文，或未切分的原文。"""
+    """完整原文一个文件里的一段：一集的原文，或未切分的原文。"""
 
     kind: SegmentKind
     start: int
@@ -66,7 +66,7 @@ class LayoutSegment:
 
 @dataclass(frozen=True)
 class LayoutFile:
-    """整本源文清单中的一个文件。"""
+    """完整原文清单中的一个文件。"""
 
     source_file: str
     name: str
@@ -91,9 +91,9 @@ class LayoutEpisode:
 
     episode: int
     origin: SourceOrigin
-    #: 原文段出现在左栏整本源文里。
+    #: 原文段出现在左栏完整原文里。
     placed: bool
-    #: 原文范围起点所在的整本源文文件（仅 ``placed``）。
+    #: 原文范围起点所在的完整原文文件（仅 ``placed``）。
     source_file: str | None
     #: 读不到原文（无原文的集，或集文件缺失）时为 None。
     units: int | None
@@ -102,17 +102,17 @@ class LayoutEpisode:
     last_sentence: str
     #: 源文件类型：自带原文的集取条目记录，切出集取范围起点所在文件；无原文的集与非剧情演绎项目为 None。
     source_kind: SourceKind | None = None
-    #: 原文范围终点所在的整本源文文件（仅 ``placed``）；不跨文件时与 ``source_file`` 相同。
+    #: 原文范围终点所在的完整原文文件（仅 ``placed``）；不跨文件时与 ``source_file`` 相同。
     end_file: str | None = None
 
 
 @dataclass(frozen=True)
 class UnregisteredFile:
-    """直接位于 ``source/`` 下、既不在整本源文清单里、也不是账本里任何一集的集文件的文本文件。"""
+    """直接位于 ``source/`` 下、既不在完整原文清单里、也不是账本里任何一集的集文件的文本文件。"""
 
     name: str
     size: int
-    #: 文件名能直接登记为整本源文（非下划线前缀，也不是 ``episode_N.txt``）。
+    #: 文件名能直接登记为完整原文（非下划线前缀，也不是 ``episode_N.txt``）。
     can_join_whole_source: bool
 
 

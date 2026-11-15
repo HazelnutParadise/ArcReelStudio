@@ -2005,7 +2005,7 @@ class ProjectManager:
     def locked_source_registration(self, project_name: str) -> Generator[tuple[Path, dict, ExitStack]]:
         """:meth:`locked_source_mutation` 的登记变体：源文文件与 project.json 的登记在同一把项目锁内改。
 
-        产出 ``(source_dir, project, undo)``；块内就地修改 ``project``（整本源文清单、分集账本），块正常
+        产出 ``(source_dir, project, undo)``；块内就地修改 ``project``（完整原文清单、分集账本），块正常
         退出时先按盘上源文重记源文是否还有未规划的原文，``project`` 有变化时写回 ``project.json``。调用方
         每改一处盘上文件，就把它的撤销回调登记进 ``undo``；块内抛错或写回 ``project.json`` 失败时不写回，
         并在锁内按登记的逆序执行这些回调。
