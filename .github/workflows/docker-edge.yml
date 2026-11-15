@@ -103,6 +103,7 @@ jobs:
           severity: CRITICAL,HIGH
           limit-severities-for-sarif: true
           ignore-unfixed: true
+          scanners: vuln
           exit-code: "0"
 
       - name: Trivy vulnerability scan arm64 (report only)
@@ -118,6 +119,7 @@ jobs:
           severity: CRITICAL,HIGH
           limit-severities-for-sarif: true
           ignore-unfixed: true
+          scanners: vuln
           exit-code: "0"
 
       - name: Upload Trivy SARIF amd64
