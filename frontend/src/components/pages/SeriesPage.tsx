@@ -131,7 +131,8 @@ export function SeriesPage() {
           actions={
             <Button disabled={list === null} onClick={() => setCreating(true)}>
               <Plus aria-hidden data-icon="inline-start" />
-              {t("dashboard:series_new")}
+              {/* 窄顶栏只留图标，名称仍是按钮的可访问名称 */}
+              <span className="sr-only @xl/topbar:not-sr-only">{t("dashboard:series_new")}</span>
             </Button>
           }
         />

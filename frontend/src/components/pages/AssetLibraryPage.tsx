@@ -88,7 +88,8 @@ export function AssetLibraryPage() {
   const createButton = (
     <Button onClick={() => setCreatingType(activeTab)}>
       <Plus aria-hidden data-icon="inline-start" />
-      {t("add_asset")}
+      {/* 窄顶栏只留图标，名称仍是按钮的可访问名称 */}
+      <span className="sr-only @xl/topbar:not-sr-only">{t("add_asset")}</span>
     </Button>
   );
 
@@ -102,7 +103,7 @@ export function AssetLibraryPage() {
           subtitle={t("library_subtitle")}
           actions={
             <>
-              <InputGroup className="w-56">
+              <InputGroup className="w-32 @2xl/topbar:w-56">
                 <InputGroupAddon>
                   <Search aria-hidden />
                 </InputGroupAddon>
