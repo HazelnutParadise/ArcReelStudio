@@ -12,6 +12,7 @@ import pytest
 from lib.artifacts.artifact_activation import ArtifactCurrencyResolver
 from lib.artifacts.artifact_manifest import ArtifactKey, ArtifactStatus, ProjectArtifactManifestAdapter
 from lib.artifacts.version_manager import VersionManager, selected_manual_upload_snapshot
+from lib.infra.api_errors import ApiError
 from lib.infra.app_data_dir import reset_for_tests
 from lib.project.project_manager import ProjectManager, reset_project_manager_for_tests
 from lib.speech.speech_presentation import presentation_artifact_paths
@@ -138,8 +139,15 @@ async def test_current_archive_without_the_old_claims_imports(tmp_path: Path, mo
     pm, project_path, _timeline_id = await _project_with_materialized_presentations(tmp_path)
     await _upload_e1s01_video(pm, project_path, monkeypatch)
     service = ProjectArchiveService(pm)
+    diagnostics = service.get_export_diagnostics("demo", scope="current")
     archive_path, _ = service.export_project("demo", scope="current")
 
+    # 不随包的旧版本登记逐条告诉用户
+    assert {
+        item["location"]
+        for item in diagnostics["warnings"]
+        if item["code"] == "old_version_presentation_claim_left_out"
+    } == {_SUBTITLE_PATH, _PRESENTATION_PATH}
     shutil.rmtree(project_path)
     service.import_project_archive(archive_path, uploaded_filename="demo.zip")
 
@@ -180,7 +188,11 @@ async def test_regenerating_or_switching_the_ai_video_keeps_export_available(tmp
     assert {_SUBTITLE.encode(), _PRESENTATION.encode()} <= _archived_claims(full_archive)
 
 
-async def test_old_claims_that_do_not_hold_for_their_own_video_version_still_fail_export(
+def _left_out_presentation_claims(diagnostics: dict) -> set[str]:
+    return {item["location"] for item in diagnostics["warnings"] if item["code"] == "presentation_claim_left_out"}
+
+
+async def test_old_claims_that_do_not_hold_for_their_own_video_version_are_left_out_with_a_warning(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     pm, project_path, _timeline_id = await _project_with_materialized_presentations(tmp_path)
@@ -189,12 +201,16 @@ async def test_old_claims_that_do_not_hold_for_their_own_video_version_still_fai
     subtitle = json.loads(subtitle_file.read_text(encoding="utf-8"))
     subtitle["cues"][0]["text"] = "被改过的字幕"
     subtitle_file.write_text(json.dumps(subtitle, ensure_ascii=False), encoding="utf-8")
+    service = ProjectArchiveService(pm)
 
-    with pytest.raises(ValueError, match="unprovable formal claims"):
-        ProjectArchiveService(pm).get_export_diagnostics("demo", scope="current")
+    for scope in ("current", "full"):
+        diagnostics = service.get_export_diagnostics("demo", scope=scope)
+        archive_path, _ = service.export_project("demo", scope=scope)
+        assert _left_out_presentation_claims(diagnostics) == {_SUBTITLE_PATH, _PRESENTATION_PATH}
+        assert not {_SUBTITLE.encode(), _PRESENTATION.encode()} & _archived_claims(archive_path)
 
 
-async def test_old_claims_naming_a_missing_video_version_still_fail_export(
+async def test_old_claims_naming_a_missing_video_version_are_left_out_with_a_warning(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     pm, project_path, _timeline_id = await _project_with_materialized_presentations(tmp_path)
@@ -205,8 +221,29 @@ async def test_old_claims_naming_a_missing_video_version_still_fail_export(
     bucket["versions"] = [record for record in bucket["versions"] if record["version"] != 1]
     versions_path.write_text(json.dumps(versions, ensure_ascii=False), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="unprovable formal claims"):
-        ProjectArchiveService(pm).get_export_diagnostics("demo", scope="current")
+    diagnostics = ProjectArchiveService(pm).get_export_diagnostics("demo", scope="current")
+
+    assert _left_out_presentation_claims(diagnostics) == {_SUBTITLE_PATH, _PRESENTATION_PATH}
+
+
+async def test_subtitles_survive_a_missing_selected_video_snapshot(tmp_path: Path) -> None:
+    pm, project_path, _ = await _project_with_materialized_presentations(tmp_path)
+    versions = json.loads((project_path / "versions" / "versions.json").read_text(encoding="utf-8"))
+    history = versions["videos"]["E1S01"]
+    [selected] = [record for record in history["versions"] if record["version"] == history["current_version"]]
+    (project_path / selected["file"]).unlink()
+    service = ProjectArchiveService(pm)
+
+    for scope in ("current", "full"):
+        archive_path, _ = service.export_project("demo", scope=scope)
+        assert {_SUBTITLE.encode(), _PRESENTATION.encode()} <= _archived_claims(archive_path)
+        shutil.rmtree(pm.get_project_path("demo"))
+        service.import_project_archive(archive_path, uploaded_filename="demo.zip")
+        imported = pm.get_project_path("demo")
+        # 快照按正式文件补回，字幕与呈现对着它重新成立
+        assert _status(imported, _SUBTITLE, _SUBTITLE_PATH) is ArtifactStatus.CURRENT
+        assert _status(imported, _PRESENTATION, _PRESENTATION_PATH) is ArtifactStatus.CURRENT
+        (imported / selected["file"]).unlink()
 
 
 async def test_regenerating_narration_keeps_export_and_draft_download_available(tmp_path: Path) -> None:
@@ -252,7 +289,7 @@ async def test_regenerating_narration_keeps_export_and_draft_download_available(
 
 
 @pytest.mark.parametrize("damage", ["subtitle", "snapshot", "record", "basis", "current_video", "current_audio"])
-async def test_unprovable_old_audio_claims_still_fail_export(tmp_path: Path, damage: str) -> None:
+async def test_unprovable_old_audio_claims_are_left_out_and_the_archive_imports(tmp_path: Path, damage: str) -> None:
     pm, project_path, _ = await _project_with_materialized_presentations(tmp_path)
     _install_narration(project_path, narration_segment("E1S01", "旁白一句"), 1.4)
     versions_path = project_path / "versions" / "versions.json"
@@ -276,27 +313,30 @@ async def test_unprovable_old_audio_claims_still_fail_export(tmp_path: Path, dam
     else:
         (project_path / "audio/segment_E1S01.wav").write_bytes(b"corrupted current audio")
 
+    service = ProjectArchiveService(pm)
     for scope in ("current", "full"):
-        with pytest.raises(ValueError, match="unprovable formal claims") as exc:
-            ProjectArchiveService(pm).get_export_diagnostics("demo", scope=scope)
-        assert _SUBTITLE.encode() in str(exc.value)
-        assert _PRESENTATION.encode() in str(exc.value)
+        diagnostics = service.get_export_diagnostics("demo", scope=scope)
+        assert _left_out_presentation_claims(diagnostics) == {_SUBTITLE_PATH, _PRESENTATION_PATH}
+    archive_path, _ = service.export_project("demo", scope="full")
+    assert not {_SUBTITLE.encode(), _PRESENTATION.encode()} & _archived_claims(archive_path)
+
+    shutil.rmtree(project_path)
+    service.import_project_archive(archive_path, uploaded_filename="demo.zip")
+    imported_claims = ProjectArtifactManifestAdapter(pm.get_project_path("demo")).snapshot_entries()
+    assert not {_SUBTITLE, _PRESENTATION} & set(imported_claims)
 
 
 async def test_a_failed_export_leaves_no_snapshot_directory_behind(tmp_path: Path, monkeypatch) -> None:
     pm, project_path, _ = await _project_with_materialized_presentations(tmp_path)
-    _install_narration(project_path, narration_segment("E1S01", "旁白一句"), 1.4)
-    versions_path = project_path / "versions" / "versions.json"
-    versions = json.loads(versions_path.read_text(encoding="utf-8"))
-    versions["audio"]["E1S01"]["versions"][0]["artifact_audio_basis"]["digest"] = "sha256-v1:" + "0" * 64
-    versions_path.write_text(json.dumps(versions), encoding="utf-8")
+    # 剧本读不出是仍会让导出停下的情形之一
+    (project_path / "scripts" / "episode_1.json").write_text("{ not json", encoding="utf-8")
     scratch = private_tempdir(tmp_path, monkeypatch)
 
     for export in (
         lambda service: service.get_export_diagnostics("demo", scope="full"),
         lambda service: service.export_project("demo", scope="full"),
     ):
-        with pytest.raises(ValueError, match="unprovable formal claims") as exc:
+        with pytest.raises(ApiError, match="export_project_unreadable") as exc:
             export(ProjectArchiveService(pm))
         # 异常（连同它的调用栈）还被持有时目录就已删除：不靠垃圾回收在不确定的时刻（可能在事件循环里）清理
         assert exc.value.__traceback__ is not None

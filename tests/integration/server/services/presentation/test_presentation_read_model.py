@@ -12,11 +12,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from lib.artifacts.artifact_activation import ArtifactCurrencyResolver
+from lib.artifacts.artifact_activation import UNPROVEN_MEDIA_BASIS_DIGEST, ArtifactCurrencyResolver
 from lib.artifacts.artifact_manifest import (
     ArtifactBasisDescriptor,
     ArtifactKey,
     ArtifactManifest,
+    ArtifactManifestEntry,
     ArtifactStatus,
     ProjectArtifactManifestAdapter,
     compose_video_artifact_basis,
@@ -1077,3 +1078,55 @@ async def test_legacy_subtitle_policy_is_stale_and_regenerates_as_current(
         .status
         is ArtifactStatus.CURRENT
     )
+
+
+async def test_a_video_carried_into_the_project_as_stale_still_materializes_its_presentation(tmp_path: Path) -> None:
+    """归档以 stale 带进来的视频登记依据是占位摘要（ADR 0134）：它照常可用，呈现照常物化。"""
+    pm, project_path, settings = _setup_narrator_project(tmp_path)
+    adapter = ProjectArtifactManifestAdapter(project_path)
+    key = ArtifactKey.episode_video(1, "E1S01")
+    entry = adapter.get_entry(key)
+    assert entry is not None
+    adapter.put_entry(
+        key, ArtifactManifestEntry(artifact_path=entry.artifact_path, basis_digest=UNPROVEN_MEDIA_BASIS_DIGEST)
+    )
+
+    async def probe(path: Path) -> float | None:
+        return 4.5 if path.suffix == ".wav" else 6.25
+
+    result = await PresentationReadModelService(
+        pm,
+        settings_resolver_factory=lambda _project_name, _project_path: _SettingsResolver(settings),
+        duration_probe=probe,
+    ).materialize_unit(project_name="demo", resource_type="videos", resource_id="E1S01", variant="use_tts")
+
+    assert (project_path / result.subtitle_artifact_path).is_file()
+
+
+@pytest.mark.parametrize("registered", ["other_path", "other_basis"])
+async def test_only_a_placeholder_claim_on_the_same_file_stands_in_for_the_selected_version(
+    tmp_path: Path, registered: str
+) -> None:
+    pm, project_path, settings = _setup_narrator_project(tmp_path)
+    adapter = ProjectArtifactManifestAdapter(project_path)
+    key = ArtifactKey.episode_video(1, "E1S01")
+    entry = adapter.get_entry(key)
+    assert entry is not None
+    if registered == "other_path":
+        other = project_path / "videos" / "other.mp4"
+        other.write_bytes((project_path / entry.artifact_path).read_bytes())
+        replacement = ArtifactManifestEntry(artifact_path="videos/other.mp4", basis_digest=UNPROVEN_MEDIA_BASIS_DIGEST)
+    else:
+        replacement = ArtifactManifestEntry(artifact_path=entry.artifact_path, basis_digest="sha256-v1:" + "0" * 64)
+    adapter.put_entry(key, replacement)
+
+    async def probe(path: Path) -> float | None:
+        return 4.5 if path.suffix == ".wav" else 6.25
+
+    # 只有清单登记这一道检查能拦下：时长等其余输入都备齐
+    with pytest.raises(PresentationUnavailableError, match="typed manifest entry"):
+        await PresentationReadModelService(
+            pm,
+            settings_resolver_factory=lambda _project_name, _project_path: _SettingsResolver(settings),
+            duration_probe=probe,
+        ).materialize_unit(project_name="demo", resource_type="videos", resource_id="E1S01", variant="use_tts")
