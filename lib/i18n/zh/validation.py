@@ -175,6 +175,7 @@ MESSAGES = {
     "arch_version_record_dropped": "{location}：有版本记录的文件路径不在版本历史目录里，导入会拒收，归档里去掉这几条记录；其余版本照常带上",
     "arch_version_history_malformed_dropped": "{location}：版本历史的结构损坏，导入会拒收，归档里去掉这一项；其余版本照常带上",
     "arch_claim_imported_as_stale": "{path}：包里没有能核对的所选版本文件（缺失或与版本记录不符），以已过期导入，仍可查看和使用；在版本历史里切回该版本即可恢复为最新",
+    "arch_claim_imported_as_stale_unproven_basis": "{path}：归档证明不了它依据的生成输入仍是最新，以已过期导入，仍可查看和使用；重新生成即可恢复为最新",
     "arch_claim_carried_as_stale": "{path}：无法确认它仍是所选版本（版本文件不见了、与版本记录不符、版本记录缺失，或上次导入时就是已过期），文件与登记照常带上；导入后显示为已过期，仍可查看和使用",
     "arch_claim_left_out_missing": "{path}：文件已不在项目里，归档不带它的登记；导入后与现在一样显示为缺失",
     "arch_presentation_claim_left_out": "{path}：与它依据的视频或配音版本对不上，归档不带它的登记；导入后预览、剪辑或导出剪映草稿时会在本地按当时选中的媒体重新生成，不产生费用",

@@ -6,7 +6,10 @@ import errno
 import hashlib
 import json
 import os
+import shutil
+import threading
 import zipfile
+from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
@@ -15,6 +18,7 @@ from lib.artifacts.artifact_activation import ArtifactCurrencyResolver, Artifact
 from lib.artifacts.artifact_manifest import (
     MANIFEST_FILENAME,
     ArtifactKey,
+    ArtifactManifestEntry,
     ArtifactStatus,
     ProjectArtifactManifestAdapter,
 )
@@ -460,3 +464,77 @@ def test_an_unreadable_location_is_part_of_the_message_the_user_sees(tmp_path: P
 
     assert exc.value.key == "export_project_unreadable_at"
     assert exc.value.params == {"location": "scripts/episode_1.json (episode 1)"}
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="这个平台做不出命名管道")
+@pytest.mark.parametrize("relative", ["videos/scene_E1S1.mp4", "scripts/notes.pipe"])
+def test_a_named_pipe_in_the_project_stops_the_export_with_its_location_instead_of_hanging(
+    tmp_path: Path, relative: str
+) -> None:
+    """读命名管道会一直等写端：导出必须先看出它不是普通文件，点名停下，而不是挂住。"""
+    _pm, project_dir = _current_project(tmp_path)
+    target = project_dir / relative
+    target.unlink(missing_ok=True)
+    os.mkfifo(target)
+    outcome: list[tuple[int, str, object]] = []
+    worker = threading.Thread(target=lambda: outcome.append(_unreadable(project_dir)), daemon=True)
+    worker.start()
+    worker.join(30)
+    if worker.is_alive():
+        # 解开挂住的读端，让线程能退出，再判失败
+        with open(target, "wb"):
+            pass
+        pytest.fail("export hung on a named pipe")
+
+    assert outcome == [(422, "export_project_unreadable_at", relative)]
+
+
+def _claims_and_copy(tmp_path: Path) -> tuple[Mapping[ArtifactKey, ArtifactManifestEntry], Path]:
+    _pm, project_dir = _current_project(tmp_path)
+    claims = ProjectArtifactManifestAdapter(project_dir).snapshot_entries()
+    copy = tmp_path / "export-copy"
+    shutil.copytree(project_dir, copy)
+    (copy / MANIFEST_FILENAME).unlink()
+    return claims, copy
+
+
+def test_the_temporary_manifest_in_the_export_copy_is_removed_after_judging(tmp_path: Path) -> None:
+    claims, copy = _claims_and_copy(tmp_path)
+
+    statuses = ProjectArchiveService._claim_statuses(copy, claims)
+
+    assert statuses[_VIDEO] is ArtifactStatus.CURRENT
+    assert not (copy / MANIFEST_FILENAME).exists()
+
+
+@pytest.mark.parametrize("error", [OSError(errno.EIO, "boom"), RuntimeError("boom"), ValueError("boom")])
+def test_a_resolver_that_cannot_be_built_judges_nothing_and_still_removes_the_temporary_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: Exception
+) -> None:
+    claims, copy = _claims_and_copy(tmp_path)
+
+    def _broken(*_args: object, **_kwargs: object) -> object:
+        raise error
+
+    monkeypatch.setattr(project_archive_module, "ArtifactCurrencyResolver", _broken)
+
+    assert ProjectArchiveService._claim_statuses(copy, claims) == {}
+    assert not (copy / MANIFEST_FILENAME).exists()
+
+
+def test_a_temporary_manifest_is_removed_even_when_judging_escapes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    claims, copy = _claims_and_copy(tmp_path)
+
+    class _Escapes(Exception):
+        pass
+
+    def _broken(*_args: object, **_kwargs: object) -> object:
+        raise _Escapes
+
+    monkeypatch.setattr(project_archive_module, "ArtifactCurrencyResolver", _broken)
+
+    with pytest.raises(_Escapes):
+        ProjectArchiveService._claim_statuses(copy, claims)
+    assert not (copy / MANIFEST_FILENAME).exists()
