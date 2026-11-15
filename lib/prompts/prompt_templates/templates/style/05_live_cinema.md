@@ -6,7 +6,7 @@ description: "真人画风，达芬奇调色 · 电影色调。"
 i18n:
   zh-TW:
     title: "院線電影"
-    description: "真人畫風，達芬奇調色 · 電影色調。"
+    description: "真人畫風，DaVinci 調色 · 電影色調。"
   en:
     title: "Theatrical Film"
     description: "Live-action style: DaVinci grade · Filmic."

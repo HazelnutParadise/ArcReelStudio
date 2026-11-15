@@ -12,7 +12,7 @@ i18n:
     description: "Animated style: Soft cel · Tateishi."
   ru:
     title: "Kyoto Animation"
-    description: "Анимационный стиль: Мягкий селл · Татэиси."
+    description: "Анимационный стиль: Мягкая цел-анимация · Татэиси."
   vi:
     title: "Kyoto Animation"
     description: "Phong cách hoạt hình: Cel mềm · Tateishi."
