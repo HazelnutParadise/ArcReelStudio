@@ -678,6 +678,8 @@ export default {
   'queued_message_resend': '傳送',
   'queued_message_resend_failed': '沒能傳送這條訊息，請稍後重試',
   'agent_connection_missing': '還沒有可用的 Agent 連線，Agent 暫時無法對話，這則訊息沒有送出。',
+  'agent_connection_missing_ask_admin':
+    '還沒有可用的 Agent 連線，Agent 暫時無法對話，這則訊息沒有送出。請聯絡管理員在設定中新增連線。',
   'agent_conversation_shared': '這個專案的成員都看得到這段對話',
   'queued_message_images_one': '{{count}} 張圖片',
   'queued_message_images_other': '{{count}} 張圖片',

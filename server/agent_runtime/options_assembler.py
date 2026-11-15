@@ -14,7 +14,7 @@ import asyncio
 import json
 import logging
 import os
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -91,7 +91,7 @@ async def load_provider_env_overrides() -> dict[str, str]:
     环境变量名单以 ``env_keys`` 为单一真相源；SDK 子进程只认 env 认证，父进程环境
     又是外部输入，故真值注入与空值围堵是常驻机制而非技术债（见 ADR）。
     """
-    from lib.config.env_keys import OTHER_PROVIDER_ENV_KEYS
+    from lib.config.env_keys import OTHER_PROVIDER_ENV_KEYS, inherited_claude_cli_env_keys
     from lib.config.service import build_anthropic_env
     from lib.db import async_session_factory
 
@@ -99,7 +99,7 @@ async def load_provider_env_overrides() -> dict[str, str]:
         anthropic = await build_anthropic_env(session)
 
     result = AgentEnv(anthropic.env, agent_pricing=anthropic.pricing, auth_source=anthropic.source)
-    for key in OTHER_PROVIDER_ENV_KEYS:
+    for key in (*OTHER_PROVIDER_ENV_KEYS, *inherited_claude_cli_env_keys(os.environ)):
         # 认证来源自己带的值（订阅令牌）保留，其余一律空值覆盖
         result.setdefault(key, "")
     return result
@@ -107,6 +107,12 @@ async def load_provider_env_overrides() -> dict[str, str]:
 
 #: 有其一即说明这次会话带着一条连线：API Key、订阅令牌，或无密钥的自建网关地址
 _CONNECTION_ENV_KEYS = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_BASE_URL")
+
+
+def _require_claude_connection(provider_env: Mapping[str, str]) -> None:
+    """没有生效的 Agent 连线时拒绝：不起 CLI，否则它会退回宿主用户自己的 Claude 登录。"""
+    if not any(provider_env.get(key) for key in _CONNECTION_ENV_KEYS):
+        raise AgentConnectionMissing("no active Agent connection for the Claude engine")
 
 
 def _prepare_private_dir(path: Path) -> None:
@@ -337,6 +343,24 @@ class OptionsAssembler:
             raw = await SystemSettingRepository(session).get(AGENT_ENGINE_SETTING_KEY, "")
         return parse_agent_engine(raw)
 
+    async def require_connection(self, engine: str) -> None:
+        """``engine`` 引擎现在有没有可用连线；没有时抛 :class:`AgentConnectionMissing`。只查不起进程。"""
+        from lib.config.repository import SystemSettingRepository
+        from server.agent_runtime.codex_engine import CodexConnectionMissing, codex_connection
+        from server.agent_runtime.grok_engine import GrokConnectionMissing, grok_connection
+
+        if engine not in ("codex", "grok"):
+            _require_claude_connection(await self.build_provider_env_overrides())
+            return
+        factory = self._session_factory_provider() or default_async_session_factory
+        async with factory() as session:
+            settings = await SystemSettingRepository(session).get_all()
+            if engine == "codex":
+                if await codex_connection(session, settings) is None:
+                    raise CodexConnectionMissing("no ChatGPT subscription or OpenAI connection for the Codex engine")
+            elif await grok_connection(session, settings) is None:
+                raise GrokConnectionMissing("no Grok subscription or xAI connection for the Grok engine")
+
     async def build_codex(
         self,
         project_name: str,
@@ -471,9 +495,7 @@ class OptionsAssembler:
         }
 
         provider_env = await self.build_provider_env_overrides()
-        if not any(provider_env.get(key) for key in _CONNECTION_ENV_KEYS):
-            # 没有生效的 Agent 连线：不起 CLI，否则它会退回宿主用户自己的 Claude 登录
-            raise AgentConnectionMissing("no active Agent connection for the Claude engine")
+        _require_claude_connection(provider_env)
         config_dir = self.layout.claude_agent_config_dir
         await asyncio.to_thread(_prepare_private_dir, config_dir)
         provider_env.update(

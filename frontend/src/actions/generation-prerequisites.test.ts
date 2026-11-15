@@ -110,6 +110,43 @@ describe("generationBlocker", () => {
     expect(generationBlocker("sfx")).toBeNull();
   });
 
+  it("lets the project's own music or sound-effect model stand in for a missing global default", () => {
+    configStatus({ unsetDefaults: ["music", "sfx"] });
+    useProjectsStore.setState({
+      currentProjectData: { music_backend: "elevenlabs/music-v1", sfx_backend: "elevenlabs/sfx-v2" } as ProjectData,
+    });
+    expect(generationBlocker("music")).toBeNull();
+    expect(generationBlocker("sfx")).toBeNull();
+  });
+
+  it("counts a Claude-subscription-only setup as a ready text provider", async () => {
+    vi.spyOn(API, "getProviders").mockResolvedValue({
+      providers: [
+        {
+          id: "claude-subscription",
+          display_name: "Claude 订阅",
+          description: "",
+          status: "ready",
+          media_types: ["text"],
+          capabilities: [],
+          credential_count: 1,
+          models: {},
+        },
+      ],
+    } as never);
+    vi.spyOn(API, "listCustomProviders").mockResolvedValue({ providers: [] });
+    vi.spyOn(API, "getSystemConfig").mockResolvedValue({
+      settings: { default_text_backend: "claude-subscription/claude-sonnet-5-5" },
+      options: {},
+    } as never);
+    vi.spyOn(API, "getAutoBackends").mockResolvedValue({} as never);
+
+    await useConfigStatusStore.getState().fetch();
+
+    expect(generationBlocker("text")).toBeNull();
+    expect(generationBlocker("image")).toEqual({ reason: "no_provider", section: "providers" });
+  });
+
   it("never blocks while the settings could not be read, leaving the decision to the server", () => {
     configStatus({ initialized: false, available: [] });
     expect(blockGeneration("image")).toBe(false);

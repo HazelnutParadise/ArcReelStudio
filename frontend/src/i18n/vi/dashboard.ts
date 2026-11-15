@@ -709,6 +709,8 @@ export default {
   'queued_message_resend': 'Gửi',
   'queued_message_resend_failed': 'Không gửi được tin nhắn này. Hãy thử lại sau',
   'agent_connection_missing': 'Chưa thiết lập kết nối Agent nên Agent chưa thể trả lời, tin nhắn này chưa được gửi.',
+  'agent_connection_missing_ask_admin':
+    'Chưa thiết lập kết nối Agent nên Agent chưa thể trả lời, tin nhắn này chưa được gửi. Hãy nhờ quản trị viên thêm kết nối trong Cài đặt.',
   'agent_conversation_shared': 'Mọi thành viên của dự án đều xem được cuộc trò chuyện này',
   'queued_message_images_one': '{{count}} ảnh',
   'queued_message_images_other': '{{count}} ảnh',

@@ -265,6 +265,9 @@ def isolated_data_root(tmp_path_factory: pytest.TempPathFactory, monkeypatch: py
     from lib.project.project_manager import reset_project_manager_for_tests
 
     monkeypatch.setenv("ARCREEL_DATA_DIR", str(tmp_path_factory.mktemp("data-root")))
+    # 应用启动（lifespan）会把进程的 CLAUDE_CONFIG_DIR 钉到当前数据根下（pin_sdk_config_dir）；经 monkeypatch 登记，
+    # 用例结束时还原成会话级的测试值，不漏给后面的用例
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", os.environ.get("CLAUDE_CONFIG_DIR", ""))
     reset_for_tests()
     reset_project_manager_for_tests()
     yield

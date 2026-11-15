@@ -715,6 +715,8 @@ export default {
   'queued_message_resend_failed': "Couldn't send this message. Try again later",
   'agent_connection_missing':
     "No Agent connection is set up yet, so the Agent can't reply and this message wasn't sent.",
+  'agent_connection_missing_ask_admin':
+    "No Agent connection is set up yet, so the Agent can't reply and this message wasn't sent. Ask an admin to add one in Settings.",
   'agent_conversation_shared': 'Everyone on this project can see this conversation',
   'queued_message_images_one': '{{count}} image',
   'queued_message_images_other': '{{count}} images',

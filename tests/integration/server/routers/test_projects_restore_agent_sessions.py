@@ -11,7 +11,7 @@ from claude_agent_sdk import ClaudeAgentOptions, get_session_messages
 from claude_agent_sdk._internal.session_resume import materialize_resume_session
 from httpx2 import ASGITransport, AsyncClient
 
-from lib.agent.agent_session_store import make_project_key
+from lib.agent.agent_session_store import default_sdk_config_dir, make_project_key, pin_sdk_config_dir
 from lib.agent.agent_session_store.import_local import migrate_local_transcripts_to_store
 from lib.agent.agent_session_store.key_alignment import align_session_keys
 from lib.agent.agent_session_store.store import DbSessionStore
@@ -83,7 +83,8 @@ def _write_local_transcript(sdk_projects_dir: Path, key: str, sid: str, cwd: Pat
 
 
 async def test_renamed_restore_moves_session_transcripts_to_the_new_key(tmp_path, monkeypatch, session_factory):
-    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "cfg"))
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)  # 用例结束时还原进程环境
+    pin_sdk_config_dir()  # 服务启动时同样钉到应用目录
     manager = ProjectManager(tmp_path / "data")
     old_dir = _create(manager, "Old")
     old_key = make_project_key(old_dir)
@@ -138,8 +139,9 @@ async def test_renamed_restore_moves_session_transcripts_to_the_new_key(tmp_path
 
 async def test_renamed_restore_moves_local_sdk_transcripts(tmp_path, monkeypatch, session_factory):
     """``ARCREEL_SDK_SESSION_STORE=off`` 时 SDK 只读本地 jsonl，它们同样移到新键目录下。"""
-    sdk_projects_dir = tmp_path / "cfg" / "projects"
-    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "cfg"))
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)  # 用例结束时还原进程环境
+    pin_sdk_config_dir()  # 服务启动时同样钉到应用目录
+    sdk_projects_dir = default_sdk_config_dir() / "projects"
     monkeypatch.setenv("ARCREEL_SDK_SESSION_STORE", "off")
     manager = ProjectManager(tmp_path / "data")
     old_dir = _create(manager, "Old")
@@ -169,7 +171,8 @@ async def test_renamed_restore_moves_local_sdk_transcripts(tmp_path, monkeypatch
 
 
 async def test_restore_under_the_original_name_keeps_the_session_key(tmp_path, monkeypatch, session_factory):
-    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "cfg"))
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)  # 用例结束时还原进程环境
+    pin_sdk_config_dir()  # 服务启动时同样钉到应用目录
     manager = ProjectManager(tmp_path / "data")
     old_dir = _create(manager, "Old")
     old_key = make_project_key(old_dir)
@@ -190,8 +193,9 @@ async def test_restore_under_the_original_name_keeps_the_session_key(tmp_path, m
 async def test_moved_data_root_then_renamed_restore_keeps_both_projects_sessions(
     tmp_path, monkeypatch, session_factory, store_enabled
 ):
-    sdk_config_dir = tmp_path / "cfg"
-    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(sdk_config_dir))
+    # 改键只认应用自己的配置目录（服务启动时把进程的 CLAUDE_CONFIG_DIR 钉到这里）
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)  # 用例结束时还原进程环境
+    sdk_config_dir = pin_sdk_config_dir()
     monkeypatch.setenv("ARCREEL_SDK_SESSION_STORE", "db" if store_enabled else "off")
     old_root = tmp_path / "A"
     manager = ProjectManager(old_root)

@@ -28,18 +28,26 @@ function lastEntrySeq(entries: TimelineEntry[]): number {
   return entries.length > 0 ? entries[entries.length - 1].seq : -1;
 }
 
-/** 发送类操作失败时的错误条：没有可用的 Agent 连线时换成说明，并在错误旁给出前往设置的入口。 */
-function reportSendError(
+/**
+ * 发送类操作失败时的错误条：没有可用的 Agent 连线时换成说明。能改全局设置的管理员在错误旁得到前往设置的入口，
+ * 其他成员改为请管理员添加连线（设置页对他们只读，链接用不上）；读不到身份时按成员处理。
+ */
+async function reportSendError(
   store: typeof useAssistantStore,
   err: unknown,
   fallback: string,
   t: (key: string) => string,
-): void {
-  if (isAgentConnectionMissing(err)) {
-    store.getState().setError(t("agent_connection_missing"), "agent_settings");
-  } else {
+): Promise<void> {
+  if (!isAgentConnectionMissing(err)) {
     store.getState().setError(errMsg(err, fallback));
+    return;
   }
+  const isAdmin = await API.getMe().then(
+    (me) => me.role === "admin",
+    () => false,
+  );
+  if (isAdmin) store.getState().setError(t("agent_connection_missing"), "agent_settings");
+  else store.getState().setError(t("agent_connection_missing_ask_admin"));
 }
 
 function deletingKey(projectName: string, sessionId: string): string {
@@ -585,7 +593,7 @@ export function useAssistantSession(projectName: string | null) {
         if (err instanceof AgentFailureError) {
           store.getState().setStartupFailure(err.failure);
         } else {
-          reportSendError(store, err, "发送失败", t);
+          await reportSendError(store, err, "发送失败", t);
         }
         store.getState().setSending(false);
         return false;
@@ -652,7 +660,7 @@ export function useAssistantSession(projectName: string | null) {
         await API.resendQueuedMessage(projectName, sessionId, messageId);
       } catch (err) {
         if (projectAbortOwnerRef.current !== projectName || store.getState().currentSessionId !== sessionId) return;
-        reportSendError(store, err, t("queued_message_resend_failed"), t);
+        await reportSendError(store, err, t("queued_message_resend_failed"), t);
       }
     },
     [projectName, store, t],
@@ -670,7 +678,7 @@ export function useAssistantSession(projectName: string | null) {
           useAppStore.getState().pushToast(t("queued_message_already_accepted"), "info");
       } catch (err) {
         if (projectAbortOwnerRef.current !== projectName || store.getState().currentSessionId !== sessionId) return;
-        reportSendError(store, err, t("queued_message_send_now_failed"), t);
+        await reportSendError(store, err, t("queued_message_send_now_failed"), t);
       }
     },
     [projectName, store, t],
@@ -830,7 +838,7 @@ export function useAssistantSession(projectName: string | null) {
         if (err instanceof AgentFailureError) {
           store.getState().setStartupFailure(err.failure, "rewrite");
         } else {
-          reportSendError(store, err, t("message_rewrite_failed"), t);
+          await reportSendError(store, err, t("message_rewrite_failed"), t);
         }
         store.getState().setSending(false);
         return false;

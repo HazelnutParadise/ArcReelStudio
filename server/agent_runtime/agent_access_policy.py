@@ -14,7 +14,7 @@ import shlex
 import tempfile
 import unicodedata
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -50,11 +50,6 @@ AGENT_PROTECTED_MEDIA_DIRS: tuple[str, ...] = (
     "renders",
 )
 AGENT_PROTECTED_MEDIA_FILES: tuple[str, ...] = tuple(f"style_reference.{ext}" for ext in ("png", "jpg", "jpeg", "webp"))
-
-
-def _default_claude_projects_dir() -> Path:
-    """SDK 存放 per-project 会话数据的基准目录。"""
-    return Path.home() / ".claude" / "projects"
 
 
 @dataclass(frozen=True)
@@ -110,8 +105,9 @@ class AgentAccessPolicy:
     sandbox_enabled: bool = True
     # SandboxSettings.enableWeakerNestedSandbox 标志。
     in_docker: bool = False
-    # SDK 存放 per-project 会话数据的基准目录（tool-results 读放行例外的基准）。
-    claude_projects_dir: Path = field(default_factory=_default_claude_projects_dir)
+    # SDK 存放 per-project 会话数据的基准目录（tool-results 读放行例外的基准）；缺省为数据根下应用自己的
+    # Claude 配置目录的 ``projects/``，不是宿主用户的 ``~/.claude``。
+    claude_projects_dir: Path | None = None
 
     # Bash 系列工具：sandbox 启用时进 allowed_tools（autoAllowBashIfSandboxed
     # 协同放行）；sandbox 关闭（Windows 回退）时剥离，命令落到 can_use_tool
@@ -584,6 +580,13 @@ class AgentAccessPolicy:
             "/private/tmp/claude-",
         )
 
+    @property
+    def effective_claude_projects_dir(self) -> Path:
+        """``claude_projects_dir``，缺省时取数据根下应用自己的 Claude 配置目录的 ``projects/``。"""
+        if self.claude_projects_dir is not None:
+            return self.claude_projects_dir
+        return DataRootLayout(self.data_root).claude_agent_config_dir / "projects"
+
     @functools.cached_property
     def _claude_projects_dir_resolved(self) -> Path | None:
         """已 resolve 的 ``claude_projects_dir`` 基准目录（实例内算一次缓存）。
@@ -600,7 +603,7 @@ class AgentAccessPolicy:
         例外、落到更严格的拒绝分支，不让异常冒泡中断工具调用。
         """
         try:
-            return self.claude_projects_dir.resolve(strict=False)
+            return self.effective_claude_projects_dir.resolve(strict=False)
         except OSError, RuntimeError:
             return None
 

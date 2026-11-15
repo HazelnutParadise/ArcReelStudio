@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 # —— SDK 子进程需要的 Anthropic env keys（通过 options.env 注入）——
 ANTHROPIC_ENV_KEYS: tuple[str, ...] = (
     "ANTHROPIC_API_KEY",
@@ -50,6 +52,19 @@ OTHER_PROVIDER_ENV_KEYS: tuple[str, ...] = (
     "FILE_SERVICE_BASE_URL",
     "DEFAULT_VIDEO_PROVIDER",
 )
+
+# —— Claude CLI 从宿主环境继承的认证、供应商与路由变量（按前缀）——
+# SDK 把整个父进程环境传给 CLI，只用 options.env 覆盖；凡这些前缀的变量，应用没有自己设值的一律空值覆盖，
+# 新出现的同类变量（如 Foundry、自定义请求头）不必逐个登记。
+CLAUDE_CLI_ENV_PREFIXES: tuple[str, ...] = ("ANTHROPIC_", "CLAUDE_CODE_")
+#: 按前缀命中但只用于在宿主机器上找到程序、不涉及认证与路由的变量，照常继承
+CLAUDE_CLI_ENV_INHERITED: frozenset[str] = frozenset({"CLAUDE_CODE_GIT_BASH_PATH", "CLAUDE_CODE_ENTRYPOINT"})
+
+
+def inherited_claude_cli_env_keys(environ: Mapping[str, str]) -> list[str]:
+    """宿主环境里要对 Claude CLI 空值覆盖的变量名。"""
+    return [key for key in environ if key.startswith(CLAUDE_CLI_ENV_PREFIXES) and key not in CLAUDE_CLI_ENV_INHERITED]
+
 
 # —— 启动断言：真密钥子集，命中即 fail-fast ——
 PROVIDER_SECRET_KEYS: frozenset[str] = frozenset(

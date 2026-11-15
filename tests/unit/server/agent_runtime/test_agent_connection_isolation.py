@@ -142,3 +142,48 @@ async def test_the_cli_gets_an_app_owned_config_dir_and_only_the_selected_connec
         assert options.env[key] == ""
     assert "sk-host-personal" not in options.env.values()
     assert "sk-ant-oat01-host" not in options.env.values()
+
+
+@pytest.mark.asyncio
+async def test_no_inherited_claude_or_anthropic_variable_reaches_the_cli(
+    manager: SessionManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """SDK 把整个宿主环境传给 CLI、只用 options.env 覆盖：宿主的 ANTHROPIC_* / CLAUDE_CODE_* 一律按前缀置空。"""
+    host = {
+        "CLAUDE_CODE_USE_FOUNDRY": "1",
+        "ANTHROPIC_FOUNDRY_API_KEY": "foundry-host",
+        "ANTHROPIC_FOUNDRY_RESOURCE": "host-resource",
+        "ANTHROPIC_CUSTOM_HEADERS": "X-Host: 1",
+        "ANTHROPIC_VERTEX_PROJECT_ID": "host-gcp",
+        "CLAUDE_CODE_API_KEY_HELPER_TTL_MS": "1",
+        "CLAUDE_CODE_SOME_FUTURE_ROUTING": "host",
+    }
+    for key, value in host.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setenv("CLAUDE_CODE_GIT_BASH_PATH", r"C:\Git\bin\bash.exe")
+
+    async def selected() -> dict[str, str]:
+        return await _real_overrides(
+            AnthropicEnv(env={"ANTHROPIC_API_KEY": "sk-app-selected"}, pricing=AgentPricing(credential_id=1))
+        )
+
+    use_provider_env(monkeypatch, selected)
+
+    env = (await manager._build_options("demo")).env
+
+    for key in host:
+        assert env[key] == "", key
+    assert env["ANTHROPIC_API_KEY"] == "sk-app-selected"
+    assert env["CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS"] == "1"
+    # 只为在宿主机器上找到程序的变量不涉及认证与路由，照常继承
+    assert "CLAUDE_CODE_GIT_BASH_PATH" not in env
+
+
+@pytest.mark.asyncio
+async def test_require_connection_checks_without_starting_anything(
+    manager: SessionManager, spawned: list[Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    use_provider_env(monkeypatch, _no_connection)
+    with pytest.raises(AgentConnectionMissing):
+        await manager.require_connection("claude")
+    assert spawned == []

@@ -38,7 +38,6 @@ services:
     # 宿主机上的数据存放位置取 .env 的 ARCREEL_HOST_DATA_DIR（绝对路径，或以 ./、../ 开头、以本目录为基准的相对路径），未设置时为本目录
     volumes:
       - ${ARCREEL_HOST_DATA_DIR:-.}/projects:/app/projects
-      - ${ARCREEL_HOST_DATA_DIR:-.}/claude_data:/root/.claude
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:1241/health"]

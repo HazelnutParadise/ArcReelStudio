@@ -131,3 +131,16 @@ async def test_images_are_copied_in_and_only_the_read_tool_is_allowed(tmp_path) 
     assert options.max_turns == 3
     assert "./image-1.jpg" in fake.calls[0]["prompt"]
     assert seen["copied"] == b"jpg"
+
+
+async def test_inherited_claude_and_anthropic_variables_are_blanked(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CLAUDE_CODE_USE_FOUNDRY", "1")
+    monkeypatch.setenv("ANTHROPIC_CUSTOM_HEADERS", "X-Host: 1")
+    fake = FakeQuery(_result())
+
+    await run_claude_turn("sk-ant-oat01-x", "hello", query_fn=fake)
+
+    env = fake.calls[0]["options"].env
+    assert env["CLAUDE_CODE_USE_FOUNDRY"] == ""
+    assert env["ANTHROPIC_CUSTOM_HEADERS"] == ""
+    assert env["CLAUDE_CODE_OAUTH_TOKEN"] == "sk-ant-oat01-x"

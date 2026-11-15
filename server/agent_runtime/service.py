@@ -523,6 +523,8 @@ class AssistantService:
         # 可回答的问答，读内存即读真相。
         if await self.session_manager.get_pending_questions_snapshot(session_id):
             raise PendingQuestionError(f"session {session_id} has pending questions")
+        # 连线先于中断：没有可用连线时分支也起不来，不能先把运行中的轮次停掉
+        await self.session_manager.require_connection(meta.engine)
         # 排队检查到分支发布之间不受理新消息：中断只停当前轮，排队消息会接着执行，分支里也不会有它们
         async with self._admission_locks.lock_for(session_id):
             if self.session_manager.get_queued_messages_snapshot(session_id):

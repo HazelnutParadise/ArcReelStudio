@@ -71,14 +71,15 @@ The default Compose configuration mounts:
 | Host Path | Container Path | Contents |
 |---|---|---|
 | `deploy/projects/` | `/app/projects` | Data root: projects, generated assets, the default SQLite database, logs, Vertex AI credentials, and all other runtime data |
-| `deploy/claude_data/` | `/root/.claude` | Agent runtime data |
 
-The table shows the default locations. After you set `ARCREEL_HOST_DATA_DIR` in `deploy/.env`, `projects/` and `claude_data/` are placed under that directory instead. For example, `ARCREEL_HOST_DATA_DIR=/srv/arcreel` maps to `/srv/arcreel/projects/` and `/srv/arcreel/claude_data/`. A relative path is resolved against `deploy/` and must start with `./` or `../`, for example `./data`. A bare `data` is read by Compose as a named volume, and the container does not start. The paths inside the container stay the same, so you do not need to change the in-container data root `ARCREEL_DATA_DIR`.
+Earlier versions also mounted `deploy/claude_data/` at `/root/.claude`. Agent session data now lives in the data root under `runtime/claude-agent-config/`, so that directory is no longer used and can be deleted; it holds nothing you need to keep.
+
+The table shows the default locations. After you set `ARCREEL_HOST_DATA_DIR` in `deploy/.env`, `projects/` is placed under that directory instead. For example, `ARCREEL_HOST_DATA_DIR=/srv/arcreel` maps to `/srv/arcreel/projects/`. A relative path is resolved against `deploy/` and must start with `./` or `../`, for example `./data`. A bare `data` is read by Compose as a named volume, and the container does not start. The paths inside the container stay the same, so you do not need to change the in-container data root `ARCREEL_DATA_DIR`.
 
 To move an existing deployment to a new location:
 
 1. Run `docker compose down` in `deploy/`;
-2. Move `projects/` and `claude_data/` to the new directory as a whole, preserving file ownership and permissions (for example with `mv` or `rsync -a`);
+2. Move `projects/` to the new directory as a whole, preserving file ownership and permissions (for example with `mv` or `rsync -a`);
 3. Set `ARCREEL_HOST_DATA_DIR` in `deploy/.env`, then run `docker compose up -d`.
 
 `deploy/.env` only supplies Compose interpolation values and is not mounted into the container. The container receives exactly the environment variables listed under `environment` in `docker-compose.yml`.
@@ -163,10 +164,9 @@ curl http://localhost:1241/health
 |---|---|
 | `deploy/production/pgdata/` | PostgreSQL data directory |
 | `deploy/production/projects/` | Data root: projects, media assets, logs, Vertex AI credentials, and so on; same layout as the [default deployment](#sqlite-volumes), without the database |
-| `deploy/production/claude_data/` | Agent runtime data |
 | `deploy/production/.env` | Authentication and database configuration; only supplies Compose interpolation values and is not mounted into the container |
 
-The locations of `pgdata/`, `projects/`, and `claude_data/` are likewise set by `ARCREEL_HOST_DATA_DIR` in `deploy/production/.env`; when it is not set, they are under `deploy/production/`. Move them with the same steps as the [default deployment](#sqlite-volumes), and move all three directories. `pgdata/` is owned by the user inside the PostgreSQL container, so preserve its ownership and permissions when moving it; otherwise PostgreSQL cannot start.
+The locations of `pgdata/` and `projects/` are likewise set by `ARCREEL_HOST_DATA_DIR` in `deploy/production/.env`; when it is not set, they are under `deploy/production/`. Move them with the same steps as the [default deployment](#sqlite-volumes), and move both directories. `pgdata/` is owned by the user inside the PostgreSQL container, so preserve its ownership and permissions when moving it; otherwise PostgreSQL cannot start.
 
 `pgdata/` stores only the PostgreSQL cluster, while `projects/` is the data root and stores project metadata, media assets, and the remaining runtime data. Both directories must be persisted and backed up together. The production deployment uses PostgreSQL through `DATABASE_URL` and does not use `deploy/production/projects/arcreel.db`. Do not copy SQLite files into `pgdata/`, and do not treat these two directories as interchangeable database backups.
 
@@ -475,13 +475,13 @@ Run `docker compose up -d` after setting it. Changing this value explicitly when
 
 ## 6. Backup and Restore {#backup-and-restore}
 
-After the whole site is moved to a different absolute path, the application relocates the storage of existing Agent sessions to match the current project directories at startup, so conversations can continue with their context. Sessions of deleted projects follow the new name the project is restored under. With `ARCREEL_SDK_SESSION_STORE=off`, sessions are stored only in the SDK's local directory, so keep that directory when migrating (`claude_data/` for Docker, or `CLAUDE_CONFIG_DIR` or the default `~/.claude` for native deployments). When the same session has records in several source locations, or the destination already has a record, they are not merged automatically; a failed move logs a warning, and the service still starts.
+After the whole site is moved to a different absolute path, the application relocates the storage of existing Agent sessions to match the current project directories at startup, so conversations can continue with their context. Sessions of deleted projects follow the new name the project is restored under. With `ARCREEL_SDK_SESSION_STORE=off`, sessions are stored only in the SDK's local directory, which is `runtime/claude-agent-config/` inside the data root, so it moves with the data root; the application does not read or write the host user's `~/.claude`. When the same session has records in several source locations, or the destination already has a record, they are not merged automatically; a failed move logs a warning, and the service still starts.
 
 After object storage is enabled under **Save new images to**, the content of remote images lives only in your TOS bucket; backups of the data root and the database contain only their records and a local cache that can be cleaned up. When restoring a backup, the connection must still point to the original bucket, and the objects in the bucket must be kept as well. ArcReel deletes image objects that are no longer used, so objects of projects or versions deleted after the backup may already be gone from the bucket, and those images cannot be read after restoring an older backup. If you need to restore to an earlier point in time, back up the objects under `arcreel-materials/` while writes are stopped (or enable versioning on the bucket), and put them back into the original bucket under the same keys when restoring; see [Save New Images to Object Storage](../guide/providers.md#remote-image-storage).
 
 ### 6.1 Back Up a SQLite Deployment {#backup-sqlite}
 
-The data root already contains projects, the default SQLite database, logs, and Vertex credentials, so a file-system backup only needs to archive the data root plus `.env` and `claude_data/`.
+The data root already contains projects, the default SQLite database, logs, and Vertex credentials, so a file-system backup only needs to archive the data root plus `.env`.
 
 First identify the data location on the host, then stop writes. It is `deploy/` by default; if you set `ARCREEL_HOST_DATA_DIR` in `.env`, set `host_dir` to that value:
 
@@ -504,7 +504,7 @@ mkdir -p backups
 chmod 700 backups
 
 tar -czf "backups/arcreel-config-${backup_stamp}.tar.gz" \
-  .env -C "${host_dir}" claude_data
+  .env
 
 tar -czf "backups/arcreel-projects-${backup_stamp}.tar.gz" \
   -C "${data_dir}" .
@@ -522,7 +522,7 @@ To restore:
 
 1. Stop ArcReel;
 2. Back up the current directory so you can roll back if files are overwritten;
-3. Restore `.env` from the configuration archive to `deploy/` and `claude_data/` to `host_dir`, then extract the paired data archive completely into an empty `data_dir`;
+3. Restore `.env` from the configuration archive to `deploy/`, then extract the paired data archive completely into an empty `data_dir`;
 4. Start the service and check `/health`;
 5. Open several projects and verify their images, videos, and version history.
 
@@ -546,7 +546,7 @@ docker compose exec -T postgres sh -c \
   > "backups/arcreel-db-${backup_stamp}.sql"
 
 tar -czf "backups/arcreel-files-${backup_stamp}.tar.gz" \
-  .env docker-compose.yml -C "${host_dir}" projects claude_data
+  .env docker-compose.yml -C "${host_dir}" projects
 
 docker compose start arcreel
 ```
@@ -569,10 +569,10 @@ docker compose stop arcreel
 
 backup_stamp=YYYYMMDD-HHMMSS
 tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" .env docker-compose.yml
-tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" -C "${host_dir}" projects claude_data
+tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" -C "${host_dir}" projects
 ```
 
-The file archive restores `.env` and `docker-compose.yml` to `deploy/production/`, and the data root `projects/` and `claude_data/` to `host_dir`. The following procedure also deletes the existing data in the target `arcreel` database. First verify that the database and file backups with the same `backup_stamp` are complete, and rehearse the restoration procedure in an isolated environment.
+The file archive restores `.env` and `docker-compose.yml` to `deploy/production/`, and the data root `projects/` to `host_dir`. The following procedure also deletes the existing data in the target `arcreel` database. First verify that the database and file backups with the same `backup_stamp` are complete, and rehearse the restoration procedure in an isolated environment.
 
 Recreate an empty database before importing to avoid conflicts with existing schemas or data:
 

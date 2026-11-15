@@ -931,6 +931,7 @@ describe("useAssistantSession", () => {
 
   it("explains a missing Agent connection and offers the Agent settings instead of a generic send error", async () => {
     mockIdleSession();
+    vi.spyOn(API, "getMe").mockResolvedValue({ id: "u1", username: "admin", role: "admin" } as never);
     vi.spyOn(API, "sendAssistantMessage").mockRejectedValue(
       new ApiRequestError("server text", { code: "agent_connection_missing" }, 409),
     );
@@ -947,6 +948,25 @@ describe("useAssistantSession", () => {
     expect(useAssistantStore.getState().error).toBe(i18n.t("dashboard:agent_connection_missing"));
     expect(useAssistantStore.getState().errorAction).toBe("agent_settings");
     expect(useAssistantStore.getState().startupFailure).toBeNull();
+  });
+
+  it("asks members who cannot change settings to contact an admin, without a settings link", async () => {
+    mockIdleSession();
+    vi.spyOn(API, "getMe").mockResolvedValue({ id: "u2", username: "friend", role: "member" } as never);
+    vi.spyOn(API, "sendAssistantMessage").mockRejectedValue(
+      new ApiRequestError("server text", { code: "agent_connection_missing" }, 409),
+    );
+
+    const { result } = renderHook(() => useAssistantSession("demo"));
+    await waitFor(() => {
+      expect(useAssistantStore.getState().currentSessionId).toBe("session-1");
+    });
+    await act(async () => {
+      expect(await result.current.sendMessage("hello")).toBe(false);
+    });
+
+    expect(useAssistantStore.getState().error).toBe(i18n.t("dashboard:agent_connection_missing_ask_admin"));
+    expect(useAssistantStore.getState().errorAction).toBeNull();
   });
 
   it("uses a fresh idempotency key for different content", async () => {

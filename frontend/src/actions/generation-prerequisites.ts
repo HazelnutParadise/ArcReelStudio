@@ -33,8 +33,8 @@ function projectPicksModel(media: GenerationMedia, project: ProjectData | null):
     video: [project.video_backend, project.video_provider_i2v, project.video_provider_r2v],
     text: [project.default_text_backend, project.text_backend_simple, project.text_backend_complex],
     audio: [project.audio_backend],
-    music: [],
-    sfx: [],
+    music: [project.music_backend],
+    sfx: [project.sfx_backend],
   };
   return picks[media].some((value) => !!value);
 }
@@ -45,7 +45,10 @@ export function generationBlocker(media: GenerationMedia): GenerationBlocker | n
   if (!status.initialized) return null;
   if (media === "music" || media === "sfx") {
     // 音乐与音效没有自动挑选：没设默认模型就不能生成
-    return status.unsetDefaultModels.includes(media) ? { reason: "no_default_model", section: "default-models" } : null;
+    const unset = status.unsetDefaultModels.includes(media);
+    return unset && !projectPicksModel(media, useProjectsStore.getState().currentProjectData)
+      ? { reason: "no_default_model", section: "default-models" }
+      : null;
   }
   if (!status.hasMediaType(media)) return { reason: "no_provider", section: "providers" };
   const defaultMissing = status.issues.some((issue) => issue.key === `no-default-${media}-model`);

@@ -678,6 +678,8 @@ export default {
   'queued_message_resend': '发送',
   'queued_message_resend_failed': '没能发送这条消息，请稍后重试',
   'agent_connection_missing': '还没有可用的 Agent 连线，Agent 暂时无法对话，这条消息没有发出。',
+  'agent_connection_missing_ask_admin':
+    '还没有可用的 Agent 连线，Agent 暂时无法对话，这条消息没有发出。请联系管理员在设置中添加连线。',
   'agent_conversation_shared': '这个项目的成员都能看到这段对话',
   'queued_message_images_one': '{{count}} 张图片',
   'queued_message_images_other': '{{count}} 张图片',

@@ -70,15 +70,16 @@ curl http://localhost:1241/health
 
 | 宿主机路径 | 容器路径 | 内容 |
 |---|---|---|
-| `deploy/projects/` | `/app/projects` | 数据根：项目、生成资产、默认 SQLite 数据库、日志、Vertex AI 凭据等全部运行数据 |
-| `deploy/claude_data/` | `/root/.claude` | Agent 运行时相关数据 |
+| `deploy/projects/` | `/app/projects` | 数据根：项目、生成资产、默认 SQLite 数据库、日志、Vertex AI 凭据、Agent 会话数据等全部运行数据 |
 
-表中是默认位置。在 `deploy/.env` 中设置 `ARCREEL_HOST_DATA_DIR` 后，`projects/` 与 `claude_data/` 改放在该目录下，例如 `ARCREEL_HOST_DATA_DIR=/srv/arcreel` 对应 `/srv/arcreel/projects/` 与 `/srv/arcreel/claude_data/`；相对路径以 `deploy/` 为基准，并且要以 `./` 或 `../` 开头，例如 `./data`。只写 `data` 时，Compose 会把它当成命名卷，容器无法启动。容器内的路径不变，不需要修改容器内数据根的 `ARCREEL_DATA_DIR`。
+早期版本另外挂载 `deploy/claude_data/` 到 `/root/.claude`，现在 Agent 会话数据放在数据根下的 `runtime/claude-agent-config/`，那个目录不再使用，可以删除，里面没有需要保留的数据。
+
+表中是默认位置。在 `deploy/.env` 中设置 `ARCREEL_HOST_DATA_DIR` 后，`projects/` 改放在该目录下，例如 `ARCREEL_HOST_DATA_DIR=/srv/arcreel` 对应 `/srv/arcreel/projects/`；相对路径以 `deploy/` 为基准，并且要以 `./` 或 `../` 开头，例如 `./data`。只写 `data` 时，Compose 会把它当成命名卷，容器无法启动。容器内的路径不变，不需要修改容器内数据根的 `ARCREEL_DATA_DIR`。
 
 已有部署更换存放位置时，按以下顺序操作：
 
 1. 在 `deploy/` 执行 `docker compose down`；
-2. 把 `projects/` 与 `claude_data/` 整个移到新目录，保留文件属主与权限（例如使用 `mv` 或 `rsync -a`）；
+2. 把 `projects/` 整个移到新目录，保留文件属主与权限（例如使用 `mv` 或 `rsync -a`）；
 3. 在 `deploy/.env` 中设置 `ARCREEL_HOST_DATA_DIR`，执行 `docker compose up -d`。
 
 `deploy/.env` 只作为 Compose 的插值来源，不挂进容器。容器收到哪些环境变量，以 `docker-compose.yml` 中 `environment` 列出的为准。
@@ -163,10 +164,9 @@ curl http://localhost:1241/health
 |---|---|
 | `deploy/production/pgdata/` | PostgreSQL 数据目录 |
 | `deploy/production/projects/` | 数据根：项目、媒体资产、日志、Vertex AI 凭据等，布局与[默认部署](#sqlite-volumes)相同，不含数据库 |
-| `deploy/production/claude_data/` | Agent 运行时数据 |
 | `deploy/production/.env` | 认证和数据库配置；只作为 Compose 的插值来源，不挂进容器 |
 
-`pgdata/`、`projects/` 与 `claude_data/` 的位置同样由 `deploy/production/.env` 中的 `ARCREEL_HOST_DATA_DIR` 决定，未设置时在 `deploy/production/` 下；更换位置的步骤与[默认部署](#sqlite-volumes)相同，三个目录都要移动。`pgdata/` 由 PostgreSQL 容器内的用户持有，移动时必须保留属主与权限，否则 PostgreSQL 无法启动。
+`pgdata/` 与 `projects/` 的位置同样由 `deploy/production/.env` 中的 `ARCREEL_HOST_DATA_DIR` 决定，未设置时在 `deploy/production/` 下；更换位置的步骤与[默认部署](#sqlite-volumes)相同，两个目录都要移动。`pgdata/` 由 PostgreSQL 容器内的用户持有，移动时必须保留属主与权限，否则 PostgreSQL 无法启动。
 
 `pgdata/` 只保存 PostgreSQL 集群数据，`projects/` 是数据根，保存项目元数据、媒体资产和其余运行数据，两者都必须持久化且配套备份。生产部署通过 `DATABASE_URL` 使用 PostgreSQL，不会使用 `deploy/production/projects/arcreel.db`；不要把 SQLite 文件复制进 `pgdata/`，也不要把两个目录当成可相互替代的数据库备份。
 
@@ -475,13 +475,13 @@ ARCREEL_IMAGE_TAG=X.Y.Z
 
 ## 6. 备份与恢复 {#backup-and-restore}
 
-迁移整个站点到不同的绝对路径后，应用启动时会按当前项目目录调整已有 Agent 会话的存储位置，保留续聊上下文；已删除项目的会话也会随其恢复到的新名称调整。使用 `ARCREEL_SDK_SESSION_STORE=off` 时，会话仅保存在 SDK 本地目录，迁移时须一并保留该目录（Docker 为 `claude_data/`，原生部署为 `CLAUDE_CONFIG_DIR` 或默认的 `~/.claude`）。同一会话在多个来源位置都有记录，或目标位置已有记录时，不会自动合并；移动失败会记录告警，服务仍会启动。
+迁移整个站点到不同的绝对路径后，应用启动时会按当前项目目录调整已有 Agent 会话的存储位置，保留续聊上下文；已删除项目的会话也会随其恢复到的新名称调整。使用 `ARCREEL_SDK_SESSION_STORE=off` 时，会话仅保存在 SDK 本地目录，该目录在数据根下的 `runtime/claude-agent-config/`，随数据根一起迁移即可；应用不读写宿主用户的 `~/.claude`。同一会话在多个来源位置都有记录，或目标位置已有记录时，不会自动合并；移动失败会记录告警，服务仍会启动。
 
 在「新增图片保存位置」中启用对象存储后，远端图片的内容只保存在你的 TOS 存储桶里，数据根与数据库备份只含它们的记录与可清理的本地缓存。恢复备份时连接须仍指向原来的桶，桶里的对象需要一并保留。ArcReel 会删除不再使用的图片对象，备份之后删除的项目或版本，其对象可能已从桶里删除，恢复较早的备份后这些图片无法读取；需要恢复到较早时间点时，请在停止写入期间一并备份桶里 `arcreel-materials/` 下的对象（或为桶开启版本控制），恢复时放回原来的桶与对象键，见[新增图片保存到对象存储](../guide/providers.md#remote-image-storage)。
 
 ### 6.1 SQLite 部署备份 {#backup-sqlite}
 
-数据根已经包含项目、默认 SQLite 数据库、日志和 Vertex 凭据，文件系统备份只需归档数据根，外加 `.env` 与 `claude_data/`。
+数据根已经包含项目、默认 SQLite 数据库、日志和 Vertex 凭据，文件系统备份只需归档数据根，外加 `.env`。
 
 先确认宿主机上的数据存放位置，再停止写入。默认在 `deploy/` 下；在 `.env` 中设置了 `ARCREEL_HOST_DATA_DIR` 时，把 `host_dir` 改为该值：
 
@@ -504,7 +504,7 @@ mkdir -p backups
 chmod 700 backups
 
 tar -czf "backups/arcreel-config-${backup_stamp}.tar.gz" \
-  .env -C "${host_dir}" claude_data
+  .env
 
 tar -czf "backups/arcreel-projects-${backup_stamp}.tar.gz" \
   -C "${data_dir}" .
@@ -522,7 +522,7 @@ docker compose start arcreel
 
 1. 停止 ArcReel；
 2. 备份当前目录，避免覆盖后无法回退；
-3. 将配置归档中的 `.env` 恢复到 `deploy/`，`claude_data/` 恢复到 `host_dir`，并将配套数据归档完整解压到空的 `data_dir`；
+3. 将配置归档中的 `.env` 恢复到 `deploy/`，并将配套数据归档完整解压到空的 `data_dir`；
 4. 启动并检查 `/health`；
 5. 打开几个项目验证图片、视频和版本历史。
 
@@ -546,7 +546,7 @@ docker compose exec -T postgres sh -c \
   > "backups/arcreel-db-${backup_stamp}.sql"
 
 tar -czf "backups/arcreel-files-${backup_stamp}.tar.gz" \
-  .env docker-compose.yml -C "${host_dir}" projects claude_data
+  .env docker-compose.yml -C "${host_dir}" projects
 
 docker compose start arcreel
 ```
@@ -569,10 +569,10 @@ docker compose stop arcreel
 
 backup_stamp=YYYYMMDD-HHMMSS
 tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" .env docker-compose.yml
-tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" -C "${host_dir}" projects claude_data
+tar -xzf "backups/arcreel-files-${backup_stamp}.tar.gz" -C "${host_dir}" projects
 ```
 
-文件归档会把 `.env`、`docker-compose.yml` 恢复到 `deploy/production/`，把数据根 `projects/` 和 `claude_data/` 恢复到 `host_dir`。以下流程还会删除目标 `arcreel` 数据库中的现有数据；先确认同一 `backup_stamp` 的数据库与文件备份完整，并在隔离环境演练恢复流程。
+文件归档会把 `.env`、`docker-compose.yml` 恢复到 `deploy/production/`，把数据根 `projects/` 恢复到 `host_dir`。以下流程还会删除目标 `arcreel` 数据库中的现有数据；先确认同一 `backup_stamp` 的数据库与文件备份完整，并在隔离环境演练恢复流程。
 
 重建空数据库后再导入，避免与已有表结构或数据冲突：
 

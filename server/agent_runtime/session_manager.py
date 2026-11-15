@@ -785,6 +785,10 @@ class SessionManager:
             session_id=session_id,
         )
 
+    async def require_connection(self, engine: str) -> None:
+        """``engine`` 引擎现在有没有可用连线；没有时抛 :class:`AgentConnectionMissing`，不起任何进程。"""
+        await self._options_assembler.require_connection(engine)
+
     async def _launch(
         self,
         project_name: str,
