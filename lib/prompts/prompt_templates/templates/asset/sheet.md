@@ -3,6 +3,19 @@ id: asset/sheet
 category: asset
 title: 资产图
 description: 角色、角色衍生、场景、道具与商品资产图的完整提示词。
+i18n:
+  zh-TW:
+    title: "資產圖"
+    description: "角色、角色衍生、場景、道具與商品資產圖的完整提示詞。"
+  en:
+    title: "Asset image"
+    description: "The full prompt for character, character variant, scene, prop and product asset images."
+  ru:
+    title: "Изображение материала"
+    description: "Полный промпт для изображений персонажей, их вариантов, сцен, реквизита и товаров."
+  vi:
+    title: "Ảnh tài sản"
+    description: "Prompt đầy đủ cho ảnh tài sản nhân vật, biến thể nhân vật, cảnh, đạo cụ và sản phẩm."
 stage: asset_sheet
 invoked_by:
   kind: generation_task

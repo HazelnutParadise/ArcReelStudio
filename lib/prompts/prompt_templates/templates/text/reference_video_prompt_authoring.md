@@ -3,6 +3,19 @@ id: text/reference_video_prompt_authoring
 category: text
 title: 参考生视频 · 提示词编写
 description: 把已确认的参考生视频单元正文扩写出景别、构图、运镜与画面细节。
+i18n:
+  zh-TW:
+    title: "參考生影片 · 提示詞編寫"
+    description: "把已確認的參考生影片單元正文擴寫出景別、構圖、運鏡與畫面細節。"
+  en:
+    title: "Reference-to-video · Prompt writing"
+    description: "Expands confirmed reference-to-video unit bodies with shot size, composition, camera movement and visual detail."
+  ru:
+    title: "Видео по референсу · Написание промптов"
+    description: "Дополняет утверждённые тексты блоков видео по референсу планом, композицией, движением камеры и деталями изображения."
+  vi:
+    title: "Video tham chiếu · Viết prompt"
+    description: "Mở rộng nội dung các đơn vị video tham chiếu đã xác nhận với cỡ cảnh, bố cục, chuyển động máy quay và chi tiết hình ảnh."
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool

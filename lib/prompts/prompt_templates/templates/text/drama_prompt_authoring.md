@@ -3,6 +3,19 @@ id: text/drama_prompt_authoring
 category: text
 title: 剧情演绎 · 提示词编写
 description: 为剧情演绎已定稿的分镜补全画面与视频提示词（image_prompt / video_prompt）。
+i18n:
+  zh-TW:
+    title: "劇情演繹 · 提示詞編寫"
+    description: "為劇情演繹已定稿的分鏡補上畫面與影片提示詞（image_prompt / video_prompt）。"
+  en:
+    title: "Drama · Prompt writing"
+    description: "Fills in the image and video prompts (image_prompt / video_prompt) for finalized drama shots."
+  ru:
+    title: "Драма · Написание промптов"
+    description: "Дописывает промпты изображения и видео (image_prompt / video_prompt) для утверждённых кадров драмы."
+  vi:
+    title: "Phim truyện · Viết prompt"
+    description: "Bổ sung prompt hình ảnh và video (image_prompt / video_prompt) cho các phân cảnh phim truyện đã chốt."
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool

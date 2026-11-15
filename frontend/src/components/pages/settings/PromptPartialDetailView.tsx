@@ -25,7 +25,7 @@ export function PromptPartialDetailView({
   onBack: () => void;
   onOpenTemplate: (id: string) => void;
 }) {
-  const { t } = useTranslation(["dashboard", "common"]);
+  const { t, i18n } = useTranslation(["dashboard", "common"]);
   const [state, setState] = useState<Load<PartialDetail>>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -52,7 +52,7 @@ export function PromptPartialDetailView({
       },
     );
     return () => controller.abort();
-  }, [name, attempt]);
+  }, [name, attempt, i18n.language]);
 
   const retry = () => {
     setState({ status: "loading" });

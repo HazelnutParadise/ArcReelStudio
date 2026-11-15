@@ -3,6 +3,19 @@ id: text/ad_reference_video_script
 category: text
 title: 广告 / 短片 · 参考生视频单元
 description: 按 brief 与资产候选一次产出广告片的参考生视频单元，每个单元含引用语法正文。
+i18n:
+  zh-TW:
+    title: "廣告 / 短片 · 參考生影片單元"
+    description: "依 brief 與資產候選一次產出廣告片的參考生影片單元，每個單元都附引用語法正文。"
+  en:
+    title: "Ad / short · Reference-to-video units"
+    description: "Produces all reference-to-video units of an ad in one pass from the brief and candidate assets, each with its reference-syntax body."
+  ru:
+    title: "Реклама / короткое видео · Блоки видео по референсу"
+    description: "За один проход создаёт все блоки видео по референсу для рекламного ролика по брифу и подходящим материалам, у каждого блока есть текст с синтаксисом ссылок."
+  vi:
+    title: "Quảng cáo / phim ngắn · Đơn vị video tham chiếu"
+    description: "Tạo toàn bộ đơn vị video tham chiếu của quảng cáo trong một lần từ brief và các tài sản đề xuất, mỗi đơn vị kèm nội dung theo cú pháp tham chiếu."
 stage: script_plan
 invoked_by:
   kind: agent_tool

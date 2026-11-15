@@ -3,6 +3,19 @@ id: text/reference_video_script_plan
 category: text
 title: 参考生视频 · 单元拆分
 description: 把源文拆分为参考生视频单元表，每个单元含时长、原文锚与引用语法正文。
+i18n:
+  zh-TW:
+    title: "參考生影片 · 單元拆分"
+    description: "把原文拆成參考生影片單元表，每個單元附時長、原文錨點與引用語法正文。"
+  en:
+    title: "Reference-to-video · Unit splitting"
+    description: "Breaks the source text into a table of reference-to-video units, each with a duration, a source anchor and a reference-syntax body."
+  ru:
+    title: "Видео по референсу · Разбивка на блоки"
+    description: "Делит исходный текст на таблицу блоков видео по референсу, у каждого есть длительность, привязка к источнику и текст с синтаксисом ссылок."
+  vi:
+    title: "Video tham chiếu · Chia đơn vị"
+    description: "Tách văn bản nguồn thành bảng đơn vị video tham chiếu, mỗi đơn vị có thời lượng, mốc neo nguồn và nội dung theo cú pháp tham chiếu."
 stage: script_plan
 invoked_by:
   kind: agent_tool

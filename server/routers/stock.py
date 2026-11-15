@@ -123,11 +123,17 @@ async def search(
     session: Session,
     kind: StockKind,
     q: Annotated[str, Query(min_length=1, max_length=200)],
+    _t: Translator,
     page: Annotated[int, Query(ge=1, le=50)] = 1,
+    source: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
 ) -> StockSearchResult:
-    """问所有提供这种素材的来源。某个来源缺密钥或失败时照常返回其他来源的结果，状态写在 ``sources`` 里。"""
+    """问所有提供这种素材的来源，或只问 ``source`` 一个。某个来源缺密钥或失败时照常返回其他来源的结果，
+    状态写在 ``sources`` 里；页面逐个来源发请求，以便显示各来源的进度、也能中途取消。"""
     keys = await stock_keys(session, library, member_account(user))
-    return await library.search(kind=kind, query=q.strip(), page=page, keys=keys)
+    try:
+        return await library.search(kind=kind, query=q.strip(), page=page, keys=keys, source_id=source)
+    except StockError as exc:
+        raise stock_http_error(exc, _t) from exc
 
 
 @router.get("/image")

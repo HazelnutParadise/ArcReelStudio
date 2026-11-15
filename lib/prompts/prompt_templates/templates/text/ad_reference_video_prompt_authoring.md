@@ -3,6 +3,19 @@ id: text/ad_reference_video_prompt_authoring
 category: text
 title: 广告 / 短片 · 参考生视频单元编写
 description: 为广告参考生视频脚本里待编写的单元写出引用语法正文。
+i18n:
+  zh-TW:
+    title: "廣告 / 短片 · 參考生影片單元編寫"
+    description: "為廣告參考生影片腳本裡還沒寫的單元寫出引用語法正文。"
+  en:
+    title: "Ad / short · Reference-to-video unit writing"
+    description: "Writes the reference-syntax body for units still to be written in an ad's reference-to-video script."
+  ru:
+    title: "Реклама / короткое видео · Написание блоков видео по референсу"
+    description: "Пишет текст с синтаксисом ссылок для ещё не написанных блоков в сценарии рекламного видео по референсу."
+  vi:
+    title: "Quảng cáo / phim ngắn · Viết đơn vị video tham chiếu"
+    description: "Viết nội dung theo cú pháp tham chiếu cho các đơn vị chưa viết trong kịch bản video tham chiếu của quảng cáo."
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool

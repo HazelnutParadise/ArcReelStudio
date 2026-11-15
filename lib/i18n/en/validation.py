@@ -164,6 +164,7 @@ MESSAGES = {
         "The project was imported, but {count} asset library links could not be saved; generation sends these "
         "images as image content. Upload them again or select them from the asset library if needed"
     ),
+    "arch_provider_asset_links_not_restored_one": "The project was imported, but {count} asset library link could not be saved; generation sends this image as image content. Upload it again or select it from the asset library if needed",
     "arch_non_standard_entry_excluded": "Non-standard top-level directory/file '{entry}' was excluded from the export",
     "arch_invalid_project_json": "Cannot parse {file}",
     "arch_version_history_malformed": "{location}: the version history is not in the expected format",
@@ -474,7 +475,10 @@ MESSAGES = {
     "val_market_min_app_version_invalid": 'min_app_version "{value}" is not semver (x.y.z)',
     "val_market_detail_meta_not_object": "The definition has no meta object",
     "val_market_cli_check_passed": "Market source check passed: {directory}",
-    "val_market_cli_check_failed": "Market source check failed with {count} issue(s)",
+    "val_market_cli_check_failed": "Market source check failed with {count} issues",
+    "val_market_cli_check_failed_one": "Market source check failed with {count} issue",
     "val_market_cli_generate_written": "Wrote {path} ({count} entries)",
-    "val_market_cli_generate_failed": "Cannot generate the index: {count} issue(s)",
+    "val_market_cli_generate_written_one": "Wrote {path} ({count} entry)",
+    "val_market_cli_generate_failed": "Cannot generate the index: {count} issues",
+    "val_market_cli_generate_failed_one": "Cannot generate the index: {count} issue",
 }

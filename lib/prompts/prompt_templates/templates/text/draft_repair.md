@@ -3,6 +3,19 @@ id: text/draft_repair
 category: text
 title: 待修复草稿 AI 修复
 description: 按违约报告修改待修复草稿：违约落在条目上时只改这些条目，落在整集层面时整份修改。脚本规划草稿与参考生视频的提示词编写草稿共用。
+i18n:
+  zh-TW:
+    title: "待修復草稿 AI 修復"
+    description: "依違規報告修改待修復草稿：違規出在個別條目時只改那些條目，出在整集層面時整份修改。腳本規劃草稿與參考生影片的提示詞編寫草稿共用。"
+  en:
+    title: "AI repair for drafts"
+    description: "Revises a draft that needs repair according to its violation report: only the affected entries when violations are on entries, the whole draft when they concern the episode as a whole. Shared by script planning drafts and reference-to-video prompt writing drafts."
+  ru:
+    title: "ИИ-исправление черновика"
+    description: "Исправляет черновик по отчёту о нарушениях: если нарушения в отдельных записях, меняются только они, если на уровне всей серии — весь черновик. Общий для черновиков планирования сценария и черновиков промптов видео по референсу."
+  vi:
+    title: "AI sửa bản nháp"
+    description: "Sửa bản nháp cần sửa theo báo cáo vi phạm: nếu vi phạm nằm ở từng mục thì chỉ sửa các mục đó, nếu ở cấp cả tập thì sửa toàn bộ. Dùng chung cho bản nháp lập kế hoạch kịch bản và bản nháp viết prompt video tham chiếu."
 stage: script_plan
 invoked_by:
   kind: user_action

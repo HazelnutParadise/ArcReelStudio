@@ -3,6 +3,19 @@ id: text/drama_script_plan
 category: text
 title: 剧情演绎脚本规划
 description: 把本集源文拆为剧情演绎的结构化分镜内容：分镜边界、出场资产、画面描述、逐字口播与原文锚。
+i18n:
+  zh-TW:
+    title: "劇情演繹腳本規劃"
+    description: "把本集原文拆成劇情演繹的結構化分鏡內容：分鏡邊界、出場資產、畫面描述、逐字口播與原文錨點。"
+  en:
+    title: "Drama script planning"
+    description: "Breaks the episode's source text into structured drama shots: shot boundaries, assets on screen, visual descriptions, verbatim lines and source anchors."
+  ru:
+    title: "Планирование сценария драмы"
+    description: "Разбивает исходный текст серии на структурированные кадры драмы: границы кадров, материалы в кадре, описание изображения, дословные реплики и привязки к источнику."
+  vi:
+    title: "Lập kế hoạch kịch bản phim truyện"
+    description: "Tách văn bản nguồn của tập thành các phân cảnh phim truyện có cấu trúc: ranh giới phân cảnh, tài sản xuất hiện, mô tả hình ảnh, lời thoại nguyên văn và mốc neo nguồn."
 stage: script_plan
 invoked_by:
   kind: agent_tool

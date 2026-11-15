@@ -1,5 +1,5 @@
 import { ExternalLink, Loader2, Search } from "lucide-react";
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import { API } from "@/api";
@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAppStore } from "@/stores/app-store";
-import type { StockItem, StockKind, StockSearchResult, StockSource } from "@/types/stock";
+import type { StockItem, StockKind, StockSource, StockSourceStatus } from "@/types/stock";
 import { errMsg, voidCall } from "@/utils/async";
 
 interface StockPickerDialogProps {
@@ -26,18 +26,35 @@ interface StockPickerDialogProps {
   onClose: () => void;
 }
 
+/** 一个来源这次搜索走到哪一步：还在等、已取消，或者来源回报的状态。 */
+type SourceProgress = { status: "searching" | "cancelled" } | { status: StockSourceStatus; items: StockItem[] };
+
+/** 各来源的结果轮流排列，与一次问所有来源时服务端的排法一致。 */
+function interleave(lists: StockItem[][]): StockItem[] {
+  const out: StockItem[] = [];
+  const longest = Math.max(0, ...lists.map((list) => list.length));
+  for (let index = 0; index < longest; index += 1) {
+    for (const list of lists) {
+      const item = list[index];
+      if (item) out.push(item);
+    }
+  }
+  return out;
+}
+
 /**
  * 免版权素材库的挑选对话框（docs/adr/0128）：搜索所有提供这种素材的来源，试听或看缩略图，选一条存进项目。
- * 只列不用署名就能商用的素材；还没设置密钥的来源在结果上方列出，能设的人可以当场填。
+ * 只列不用署名就能商用的素材。搜索前先说明哪些来源能直接用、哪些要先填密钥；搜索时逐个来源发请求，
+ * 每个来源各自显示进度与结果，可以中途取消。
  */
 export function StockPickerDialog({ kind, onPick, onClose }: StockPickerDialogProps) {
   const { t } = useTranslation("dashboard");
   const queryId = useId();
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState<StockSearchResult | null>(null);
-  const [searching, setSearching] = useState(false);
+  const [progress, setProgress] = useState<Map<string, SourceProgress> | null>(null);
   const [pickingId, setPickingId] = useState<string | null>(null);
   const [sources, setSources] = useState<StockSource[]>([]);
+  const controllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -50,21 +67,77 @@ export function StockPickerDialog({ kind, onPick, onClose }: StockPickerDialogPr
       });
     return () => {
       active = false;
+      controllerRef.current?.abort();
     };
   }, []);
 
-  const search = async (event: FormEvent) => {
+  const relevant = sources.filter((source) => source.kinds.includes(kind));
+  const usable = relevant.filter((source) => source.available);
+  const locked = relevant.filter((source) => !source.available);
+  const names = new Map(sources.map((source) => [source.id, source.display_name]));
+  const nameOf = (id: string) => names.get(id) ?? id;
+  const searching = progress !== null && [...progress.values()].some((entry) => entry.status === "searching");
+
+  const settle = (sourceId: string, next: SourceProgress) => {
+    setProgress((current) => {
+      if (current === null || current.get(sourceId)?.status !== "searching") return current;
+      return new Map(current).set(sourceId, next);
+    });
+  };
+
+  const search = (event: FormEvent) => {
     event.preventDefault();
     const text = query.trim();
     if (!text || searching) return;
-    setSearching(true);
-    try {
-      setResult(await API.searchStock(kind, text));
-    } catch (cause) {
-      useAppStore.getState().pushToast(t("stock_search_failed", { message: errMsg(cause) }), "error");
-    } finally {
-      setSearching(false);
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    if (usable.length === 0 && sources.length > 0) {
+      setProgress(new Map());
+      return;
     }
+    // 来源清单没取到时退回一次问所有来源
+    const targets = usable.length > 0 ? usable.map((source) => source.id) : [null];
+    setProgress(new Map(targets.map((id) => [id ?? "", { status: "searching" as const }])));
+    for (const id of targets) {
+      API.searchStock(kind, text, 1, { signal: controller.signal, source: id ?? undefined }).then(
+        (result) => {
+          if (controller.signal.aborted) return;
+          if (id === null) {
+            setProgress(
+              new Map(
+                result.sources.map((entry) => [
+                  entry.source,
+                  { status: entry.status, items: result.items.filter((item) => item.source === entry.source) },
+                ]),
+              ),
+            );
+            return;
+          }
+          settle(id, { status: result.sources[0]?.status ?? "ok", items: result.items });
+        },
+        (cause: unknown) => {
+          if (controller.signal.aborted) return;
+          if (id === null) {
+            setProgress(null);
+            useAppStore.getState().pushToast(t("stock_search_failed", { message: errMsg(cause) }), "error");
+            return;
+          }
+          settle(id, { status: "failed", items: [] });
+        },
+      );
+    }
+  };
+
+  const cancel = () => {
+    controllerRef.current?.abort();
+    setProgress((current) => {
+      if (current === null) return current;
+      const next = new Map(current);
+      for (const [id, entry] of next) {
+        if (entry.status === "searching") next.set(id, { status: "cancelled" });
+      }
+      return next;
+    });
   };
 
   const pick = async (item: StockItem) => {
@@ -80,10 +153,11 @@ export function StockPickerDialog({ kind, onPick, onClose }: StockPickerDialogPr
     }
   };
 
-  const relevant = sources.filter((source) => source.kinds.includes(kind));
-  const names = new Map(sources.map((source) => [source.id, source.display_name]));
-  const failed = (result?.sources ?? []).filter((entry) => entry.status === "failed");
-  const rejected = (result?.sources ?? []).filter((entry) => entry.status === "key_rejected");
+  const entries = progress === null ? [] : [...progress.entries()];
+  const items = interleave(entries.map(([, entry]) => ("items" in entry ? entry.items : [])));
+  const finished = progress !== null && !searching;
+  const allEmpty =
+    finished && items.length === 0 && entries.length > 0 && entries.every(([, entry]) => entry.status === "ok");
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
@@ -94,7 +168,7 @@ export function StockPickerDialog({ kind, onPick, onClose }: StockPickerDialogPr
         </DialogHeader>
         <DialogBody>
           <div className="flex flex-col gap-4">
-            <form className="flex items-end gap-2" onSubmit={(event) => voidCall(search(event))}>
+            <form className="flex items-end gap-2" onSubmit={search}>
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <Label htmlFor={queryId}>{t("stock_query")}</Label>
                 <Input
@@ -105,52 +179,103 @@ export function StockPickerDialog({ kind, onPick, onClose }: StockPickerDialogPr
                   onChange={(event) => setQuery(event.target.value)}
                 />
               </div>
-              <Button type="submit" disabled={!query.trim() || searching}>
-                {searching ? <Loader2 aria-hidden className="animate-spin" /> : <Search aria-hidden />}
-                {t("stock_search")}
-              </Button>
-            </form>
-            <SourceKeys sources={relevant} onChange={setSources} />
-            {rejected.length > 0 && (
-              <p role="alert" className="text-xs text-destructive">
-                {t("stock_sources_key_rejected", {
-                  sources: rejected.map((entry) => names.get(entry.source) ?? entry.source).join("、"),
-                })}
-              </p>
-            )}
-            {failed.length > 0 && (
-              <p role="status" className="text-xs text-muted-foreground">
-                {t("stock_sources_failed", {
-                  sources: failed.map((entry) => names.get(entry.source) ?? entry.source).join("、"),
-                })}
-              </p>
-            )}
-            {result !== null &&
-              (result.items.length === 0 ? (
-                <p role="status" className="text-sm text-muted-foreground">
-                  {t("stock_no_results")}
-                </p>
+              {searching ? (
+                <Button type="button" variant="outline" onClick={cancel}>
+                  <Loader2 aria-hidden className="animate-spin" />
+                  {t("stock_search_cancel")}
+                </Button>
               ) : (
-                <ul
-                  aria-label={t("stock_results")}
-                  className={kind === "image" ? "grid grid-cols-3 gap-3" : "flex flex-col gap-2"}
-                >
-                  {result.items.map((item) => (
-                    <StockResult
-                      key={`${item.source}:${item.id}`}
-                      item={item}
-                      sourceName={names.get(item.source) ?? item.source}
-                      picking={pickingId === `${item.source}:${item.id}`}
-                      disabled={pickingId !== null}
-                      onPick={() => voidCall(pick(item))}
-                    />
-                  ))}
-                </ul>
-              ))}
+                <Button type="submit" disabled={!query.trim()}>
+                  <Search aria-hidden />
+                  {t("stock_search")}
+                </Button>
+              )}
+            </form>
+            {relevant.length > 0 && (
+              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                <p>
+                  {usable.length > 0
+                    ? t("stock_sources_ready", { sources: usable.map((source) => source.display_name).join("、") })
+                    : t("stock_sources_none_ready")}
+                </p>
+                {locked.length > 0 && (
+                  <p>
+                    {t("stock_sources_locked", { sources: locked.map((source) => source.display_name).join("、") })}
+                  </p>
+                )}
+              </div>
+            )}
+            <SourceKeys sources={relevant} onChange={setSources} />
+            {entries.length > 0 && (
+              <ul aria-label={t("stock_progress")} aria-live="polite" className="flex flex-col gap-1 text-xs">
+                {entries.map(([id, entry]) => (
+                  <SourceProgressRow key={id} name={nameOf(id)} entry={entry} />
+                ))}
+              </ul>
+            )}
+            {finished && progress.size === 0 && (
+              <p role="status" className="text-sm text-muted-foreground">
+                {t("stock_sources_none_ready")}
+              </p>
+            )}
+            {allEmpty && (
+              <p role="status" className="text-sm text-muted-foreground">
+                {t("stock_no_results")}
+              </p>
+            )}
+            {items.length > 0 && (
+              <ul
+                aria-label={t("stock_results")}
+                className={kind === "image" ? "grid grid-cols-3 gap-3" : "flex flex-col gap-2"}
+              >
+                {items.map((item) => (
+                  <StockResult
+                    key={`${item.source}:${item.id}`}
+                    item={item}
+                    sourceName={nameOf(item.source)}
+                    picking={pickingId === `${item.source}:${item.id}`}
+                    disabled={pickingId !== null}
+                    onPick={() => voidCall(pick(item))}
+                  />
+                ))}
+              </ul>
+            )}
           </div>
         </DialogBody>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** 一个来源这次搜索的进度：等待中、找到几条、没找到、连不上、密钥被拒或已取消，各用一句白话。 */
+function SourceProgressRow({ name, entry }: { name: string; entry: SourceProgress }) {
+  const { t } = useTranslation("dashboard");
+  if (entry.status === "searching") {
+    return (
+      <li className="flex items-center gap-1.5 text-muted-foreground">
+        <Loader2 aria-hidden className="size-3 animate-spin" />
+        {t("stock_source_searching", { source: name })}
+      </li>
+    );
+  }
+  if (entry.status === "cancelled") {
+    return <li className="text-muted-foreground">{t("stock_source_cancelled", { source: name })}</li>;
+  }
+  if (entry.status === "key_rejected") {
+    return <li className="text-destructive">{t("stock_source_key_rejected", { source: name })}</li>;
+  }
+  if (entry.status === "failed" || entry.status === "key_missing") {
+    return (
+      <li className="text-muted-foreground">
+        {t(entry.status === "failed" ? "stock_source_failed" : "stock_source_key_missing", { source: name })}
+      </li>
+    );
+  }
+  const found = "items" in entry ? entry.items.length : 0;
+  return (
+    <li className="text-muted-foreground">
+      {found > 0 ? t("stock_source_found", { source: name, count: found }) : t("stock_source_empty", { source: name })}
+    </li>
   );
 }
 

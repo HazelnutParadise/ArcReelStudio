@@ -126,3 +126,37 @@ def test_shared_partial_scan_includes_files_unreachable_from_templates(tmp_path:
     (parent.parent / "orphan_child.md").write_text("孤立措辞", encoding="utf-8")
 
     assert _single_parent_shared_partials(tmp_path, []) == ["shared/orphan_child"]
+
+
+def test_every_builtin_template_has_localized_title_and_description():
+    """设置页按界面语言显示标题与说明：简体原文之外的每种界面语言都要有译文，且不能照抄简体原文。"""
+    from typing import get_args
+
+    from lib.i18n import DEFAULT_LOCALE, SUPPORTED_LOCALES
+    from lib.prompts.prompt_templates.builtin import builtin_templates
+    from lib.prompts.prompt_templates.engine import TranslatedLocale
+
+    assert set(get_args(TranslatedLocale)) == set(SUPPORTED_LOCALES) - {DEFAULT_LOCALE}
+    for meta in builtin_templates.list_templates():
+        assert set(meta.i18n) == set(get_args(TranslatedLocale)), meta.id
+        for locale, text in meta.i18n.items():
+            assert text.title.strip(), (meta.id, locale)
+            assert text.description.strip(), (meta.id, locale)
+            if locale != "zh-TW":
+                assert text.title != meta.title or text.title.isascii(), (meta.id, locale)
+            assert meta.localized(locale).title == text.title
+        assert meta.localized(DEFAULT_LOCALE) == meta
+
+
+def test_zh_tw_template_texts_follow_taiwan_wording():
+    """繁体标题与说明套用与后端文案相同的字形、简转繁残留与标点规则。"""
+    from lib.prompts.prompt_templates.builtin import builtin_templates
+    from tests.unit.lib.i18n.test_locale_wording import OPENCC_ARTEFACTS, SIMPLIFIED_ONLY, ZH_RULES
+
+    for meta in builtin_templates.list_templates():
+        text = meta.i18n["zh-TW"]
+        for value in (text.title, text.description):
+            assert not SIMPLIFIED_ONLY.search(value), (meta.id, value)
+            assert not OPENCC_ARTEFACTS.search(value), (meta.id, value)
+            for rule, pattern in ZH_RULES:
+                assert not pattern.search(value), (meta.id, rule, value)

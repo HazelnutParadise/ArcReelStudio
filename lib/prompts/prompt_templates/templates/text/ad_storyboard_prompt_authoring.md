@@ -3,6 +3,19 @@ id: text/ad_storyboard_prompt_authoring
 category: text
 title: 广告 / 短片 · 分镜提示词编写
 description: 为广告分镜脚本里待编写的分镜补全画面与视频提示词（image_prompt / video_prompt）。
+i18n:
+  zh-TW:
+    title: "廣告 / 短片 · 分鏡提示詞編寫"
+    description: "為廣告分鏡腳本裡還沒寫的分鏡補上畫面與影片提示詞（image_prompt / video_prompt）。"
+  en:
+    title: "Ad / short · Storyboard prompt writing"
+    description: "Fills in the image and video prompts (image_prompt / video_prompt) for shots still to be written in an ad's storyboard script."
+  ru:
+    title: "Реклама / короткое видео · Написание промптов раскадровки"
+    description: "Дописывает промпты изображения и видео (image_prompt / video_prompt) для ещё не написанных кадров в рекламной раскадровке."
+  vi:
+    title: "Quảng cáo / phim ngắn · Viết prompt phân cảnh"
+    description: "Bổ sung prompt hình ảnh và video (image_prompt / video_prompt) cho các phân cảnh chưa viết trong kịch bản phân cảnh quảng cáo."
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool

@@ -1,7 +1,8 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { API } from "@/api";
+import i18n from "@/i18n";
 import type { PromptTemplateMeta } from "@/types";
 import { PromptTemplateList } from "./PromptTemplateList";
 
@@ -74,6 +75,20 @@ describe("PromptTemplateList", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(API, "listPromptTemplates").mockResolvedValue({ templates: TEMPLATES });
+  });
+
+  it("refetches when the interface language changes, since titles come back in the request language", async () => {
+    const list = vi.mocked(API.listPromptTemplates);
+    render(<PromptTemplateList onSelect={vi.fn()} />);
+    await screen.findByText("剧情脚本规划");
+    list.mockResolvedValue({ templates: [{ ...DRAMA_PLAN, title: "Drama script planning" }] });
+    try {
+      await act(() => i18n.changeLanguage("en"));
+      expect(await screen.findByText("Drama script planning")).toBeInTheDocument();
+      expect(list).toHaveBeenCalledTimes(2);
+    } finally {
+      await act(() => i18n.changeLanguage("zh"));
+    }
   });
 
   it("orders categories along the pipeline regardless of response order, unknown last", async () => {

@@ -7,7 +7,7 @@ from typing import get_args
 import pytest
 
 from lib.config.registry import PROVIDER_REGISTRY
-from lib.i18n import MESSAGES, SUPPORTED_LOCALES
+from lib.i18n import MESSAGES, PLURAL_SUFFIXES, SUPPORTED_LOCALES
 from lib.i18n.en import emails as en_emails
 from lib.i18n.en import errors as en_errors
 from lib.i18n.en import events as en_events
@@ -28,9 +28,21 @@ from lib.prompts.prompt_templates.engine import TemplateAxis
 from lib.prompts.style_templates import list_template_ids
 
 
+def _base_keys(messages: dict[str, str]) -> set[str]:
+    """去掉复数变体（``<key>_one`` 等且基础键存在）：变体按语言需要才补，不要求各语言一致。"""
+    return {key for key in messages if not _plural_base(messages, key)}
+
+
+def _plural_base(messages: dict[str, str], key: str) -> str | None:
+    for suffix in PLURAL_SUFFIXES:
+        if key.endswith(suffix) and key.removesuffix(suffix) in messages:
+            return key.removesuffix(suffix)
+    return None
+
+
 def test_all_locales_have_same_keys():
     """Every locale must define the exact same set of merged keys."""
-    key_sets = {locale: set(msgs.keys()) for locale, msgs in MESSAGES.items()}
+    key_sets = {locale: _base_keys(msgs) for locale, msgs in MESSAGES.items()}
     locales = list(key_sets.keys())
     for i in range(1, len(locales)):
         missing = key_sets[locales[0]] - key_sets[locales[i]]
@@ -41,32 +53,32 @@ def test_all_locales_have_same_keys():
 
 def test_errors_module_keys_match():
     """en/errors.py and zh/errors.py must have identical key sets."""
-    en_keys = set(en_errors.MESSAGES.keys())
-    zh_keys = set(zh_errors.MESSAGES.keys())
+    en_keys = _base_keys(en_errors.MESSAGES)
+    zh_keys = _base_keys(zh_errors.MESSAGES)
     assert en_keys == zh_keys, (
         f"en-zh errors key mismatch: missing_in_zh={en_keys - zh_keys}, missing_in_en={zh_keys - en_keys}"
     )
 
 
 def test_system_module_keys_match():
-    en_keys = set(en_system.MESSAGES.keys())
-    zh_keys = set(zh_system.MESSAGES.keys())
+    en_keys = _base_keys(en_system.MESSAGES)
+    zh_keys = _base_keys(zh_system.MESSAGES)
     assert en_keys == zh_keys, (
         f"en-zh system key mismatch: missing_in_zh={en_keys - zh_keys}, missing_in_en={zh_keys - en_keys}"
     )
 
 
 def test_emails_module_keys_match():
-    en_keys = set(en_emails.MESSAGES.keys())
-    zh_keys = set(zh_emails.MESSAGES.keys())
+    en_keys = _base_keys(en_emails.MESSAGES)
+    zh_keys = _base_keys(zh_emails.MESSAGES)
     assert en_keys == zh_keys, (
         f"en-zh emails key mismatch: missing_in_zh={en_keys - zh_keys}, missing_in_en={zh_keys - en_keys}"
     )
 
 
 def test_templates_module_keys_match():
-    en_keys = set(en_templates.MESSAGES.keys())
-    zh_keys = set(zh_templates.MESSAGES.keys())
+    en_keys = _base_keys(en_templates.MESSAGES)
+    zh_keys = _base_keys(zh_templates.MESSAGES)
     assert en_keys == zh_keys, (
         f"en-zh templates key mismatch: missing_in_zh={en_keys - zh_keys}, missing_in_en={zh_keys - en_keys}"
     )
@@ -89,32 +101,32 @@ def test_templates_cover_all_style_template_ids():
 
 def test_vi_errors_module_keys_match():
     """vi/errors.py and en/errors.py must have identical key sets."""
-    en_keys = set(en_errors.MESSAGES.keys())
-    vi_keys = set(vi_errors.MESSAGES.keys())
+    en_keys = _base_keys(en_errors.MESSAGES)
+    vi_keys = _base_keys(vi_errors.MESSAGES)
     assert en_keys == vi_keys, (
         f"en-vi errors key mismatch: missing_in_vi={en_keys - vi_keys}, missing_in_en={vi_keys - en_keys}"
     )
 
 
 def test_vi_system_module_keys_match():
-    en_keys = set(en_system.MESSAGES.keys())
-    vi_keys = set(vi_system.MESSAGES.keys())
+    en_keys = _base_keys(en_system.MESSAGES)
+    vi_keys = _base_keys(vi_system.MESSAGES)
     assert en_keys == vi_keys, (
         f"en-vi system key mismatch: missing_in_vi={en_keys - vi_keys}, missing_in_en={vi_keys - en_keys}"
     )
 
 
 def test_vi_emails_module_keys_match():
-    en_keys = set(en_emails.MESSAGES.keys())
-    vi_keys = set(vi_emails.MESSAGES.keys())
+    en_keys = _base_keys(en_emails.MESSAGES)
+    vi_keys = _base_keys(vi_emails.MESSAGES)
     assert en_keys == vi_keys, (
         f"en-vi emails key mismatch: missing_in_vi={en_keys - vi_keys}, missing_in_en={vi_keys - en_keys}"
     )
 
 
 def test_vi_templates_module_keys_match():
-    en_keys = set(en_templates.MESSAGES.keys())
-    vi_keys = set(vi_templates.MESSAGES.keys())
+    en_keys = _base_keys(en_templates.MESSAGES)
+    vi_keys = _base_keys(vi_templates.MESSAGES)
     assert en_keys == vi_keys, (
         f"en-vi templates key mismatch: missing_in_vi={en_keys - vi_keys}, missing_in_en={vi_keys - en_keys}"
     )
@@ -137,7 +149,15 @@ def test_format_placeholders_consistent():
 
     base_locale = SUPPORTED_LOCALES[0]
 
-    for key in MESSAGES[base_locale]:
+    for locale in SUPPORTED_LOCALES:
+        for key, msg in MESSAGES[locale].items():
+            base = _plural_base(MESSAGES[locale], key)
+            if base is not None:
+                assert placeholders(msg) == placeholders(MESSAGES[locale][base]), (
+                    f"{locale} plural variant '{key}' must use the same placeholders as '{base}'"
+                )
+
+    for key in _base_keys(MESSAGES[base_locale]):
         base_placeholders = placeholders(MESSAGES[base_locale][key])
         for locale in SUPPORTED_LOCALES[1:]:
             if key not in MESSAGES[locale]:
@@ -200,9 +220,9 @@ def _event_label_keys(messages: dict[str, str]) -> set[str]:
 
 
 def test_events_module_keys_match():
-    en_keys = set(en_events.MESSAGES.keys())
-    zh_keys = set(zh_events.MESSAGES.keys())
-    vi_keys = set(vi_events.MESSAGES.keys())
+    en_keys = _base_keys(en_events.MESSAGES)
+    zh_keys = _base_keys(zh_events.MESSAGES)
+    vi_keys = _base_keys(vi_events.MESSAGES)
     assert en_keys == zh_keys == vi_keys, (
         f"events key mismatch: missing_in_zh={en_keys - zh_keys}, "
         f"missing_in_vi={en_keys - vi_keys}, missing_in_en={(zh_keys | vi_keys) - en_keys}"

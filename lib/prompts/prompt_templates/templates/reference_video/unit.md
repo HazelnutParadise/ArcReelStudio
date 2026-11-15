@@ -3,6 +3,19 @@ id: reference_video/unit
 category: video
 title: 参考生视频
 description: 参考生视频单元的完整提示词，由参考素材声明、单元正文、风格与负向约束三段组成。
+i18n:
+  zh-TW:
+    title: "參考生影片"
+    description: "參考生影片單元的完整提示詞，由參考素材宣告、單元正文、風格與負向限制三段組成。"
+  en:
+    title: "Reference-to-Video"
+    description: "The full prompt for a reference-to-video unit, made of three parts: reference declarations, the unit body, and style with negative constraints."
+  ru:
+    title: "Видео по референсу"
+    description: "Полный промпт для блока видео по референсу из трёх частей: объявление референсов, текст блока, стиль и негативные ограничения."
+  vi:
+    title: "Video từ ảnh tham chiếu"
+    description: "Prompt đầy đủ cho một đơn vị video từ ảnh tham chiếu, gồm ba phần: khai báo tư liệu tham chiếu, nội dung đơn vị, phong cách và ràng buộc loại trừ."
 stage: reference_video
 invoked_by:
   kind: generation_task

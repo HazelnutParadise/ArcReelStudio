@@ -3,6 +3,19 @@ id: text/episode_plan
 category: text
 title: 分集规划
 description: 把源文切分为若干集，每集给出标题、集尾钩子与结尾锚点，剧情演绎另给故事节点与下集预告语。
+i18n:
+  zh-TW:
+    title: "分集規劃"
+    description: "把原文切成若干集，每集給出標題、集尾鉤子與結尾錨點；劇情演繹另外給出故事節點與下集預告。"
+  en:
+    title: "Episode planning"
+    description: "Splits the source text into episodes, each with a title, an end-of-episode hook and an ending anchor; drama also gets story beats and a next-episode teaser."
+  ru:
+    title: "Планирование серий"
+    description: "Делит исходный текст на серии, у каждой есть название, крючок в конце и якорь окончания; для драмы также сюжетные точки и анонс следующей серии."
+  vi:
+    title: "Lập kế hoạch chia tập"
+    description: "Chia văn bản nguồn thành nhiều tập, mỗi tập có tiêu đề, điểm móc cuối tập và mốc kết thúc; phim truyện có thêm các nút truyện và lời giới thiệu tập sau."
 stage: episode_plan
 invoked_by:
   kind: agent_tool

@@ -24,9 +24,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     args, remaining = parser.parse_known_args(argv)
     # lib.__init__ 会加载项目与数据库依赖；工作流只安装子包，直接读独立的消息字典。
     messages = runpy.run_path(str(CATALOG_ROOT / args.locale / "validation.py"))["MESSAGES"]
+    pick_plural = runpy.run_path(str(CATALOG_ROOT / "plurals.py"))["pick_plural"]
+    locale = args.locale.replace("_", "-").replace("-tw", "-TW")
 
     def translate(key: str, **params: Any) -> str:
-        return messages[key].format(**params)
+        message = pick_plural(messages, key, locale, params.get("count")) or messages[key]
+        return message.format(**params)
 
     return market_main(remaining, translate=translate)
 

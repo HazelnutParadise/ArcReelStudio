@@ -3,6 +3,19 @@ id: text/ad_storyboard_script
 category: text
 title: 广告 / 短片 · 分镜脚本
 description: 按 brief 与商品信息一次产出广告片的平铺分镜脚本。
+i18n:
+  zh-TW:
+    title: "廣告 / 短片 · 分鏡腳本"
+    description: "依 brief 與商品資訊一次產出廣告片的平鋪分鏡腳本。"
+  en:
+    title: "Ad / short · Storyboard script"
+    description: "Produces an ad's flat storyboard script in one pass from the brief and product details."
+  ru:
+    title: "Реклама / короткое видео · Сценарий раскадровки"
+    description: "За один проход создаёт линейный сценарий раскадровки рекламного ролика по брифу и данным о товаре."
+  vi:
+    title: "Quảng cáo / phim ngắn · Kịch bản phân cảnh"
+    description: "Tạo kịch bản phân cảnh dạng phẳng cho quảng cáo trong một lần từ brief và thông tin sản phẩm."
 stage: script_plan
 invoked_by:
   kind: agent_tool

@@ -3,6 +3,19 @@ id: text/narration_script_plan
 category: text
 title: 旁白解说 · 片段切分
 description: 按朗读节奏把源文逐字切分为旁白解说分镜，并登记出场资产与时长。
+i18n:
+  zh-TW:
+    title: "旁白解說 · 片段切分"
+    description: "依朗讀節奏把原文逐字切成旁白解說分鏡，並登記出場資產與時長。"
+  en:
+    title: "Narration · Segment splitting"
+    description: "Splits the source text word for word into narration shots by reading pace, recording the assets on screen and each duration."
+  ru:
+    title: "Закадровый текст · Разбивка на фрагменты"
+    description: "Дословно делит исходный текст на кадры с закадровым текстом по темпу чтения и отмечает материалы в кадре и длительность."
+  vi:
+    title: "Thuyết minh · Chia đoạn"
+    description: "Chia nguyên văn văn bản nguồn thành các phân cảnh thuyết minh theo nhịp đọc, ghi lại tài sản xuất hiện và thời lượng."
 stage: script_plan
 invoked_by:
   kind: agent_tool

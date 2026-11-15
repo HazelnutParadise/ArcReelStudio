@@ -1041,15 +1041,19 @@ class API {
     return this.request(`/stock/sources/${encodeURIComponent(sourceId)}/key`, { method: "DELETE" });
   }
 
-  /** 问所有提供这种素材的来源；缺密钥或失败的来源写在 `sources` 里，其余来源的结果照常返回。 */
+  /**
+   * 问所有提供这种素材的来源，或用 `source` 只问一个；缺密钥或失败的来源写在 `sources` 里，
+   * 其余来源的结果照常返回。
+   */
   static async searchStock(
     kind: StockKind,
     query: string,
     page = 1,
-    options: { signal?: AbortSignal } = {},
+    options: { signal?: AbortSignal; source?: string } = {},
   ): Promise<StockSearchResult> {
-    const params = new URLSearchParams({ kind, q: query, page: String(page) }).toString();
-    return this.request(`/stock/search?${params}`, { signal: options.signal });
+    const params = new URLSearchParams({ kind, q: query, page: String(page) });
+    if (options.source) params.set("source", options.source);
+    return this.request(`/stock/search?${params.toString()}`, { signal: options.signal });
   }
 
   /** 取一张素材图片的档案，交给现有的图片上传接口存进项目。 */

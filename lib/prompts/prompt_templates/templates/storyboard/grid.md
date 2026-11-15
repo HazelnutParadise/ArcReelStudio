@@ -3,6 +3,19 @@ id: storyboard/grid
 category: storyboard
 title: 宫格联合图
 description: 把一组分镜按首尾帧链画进一张宫格联合图的提示词，生成后按画格切回各分镜。
+i18n:
+  zh-TW:
+    title: "宮格分鏡圖"
+    description: "把一組分鏡依首尾影格串接畫進一張宮格分鏡圖的提示詞，生成後再依畫格切回各個分鏡。"
+  en:
+    title: "Multi-grid storyboard"
+    description: "The prompt that draws a group of shots into one grid image, chained by their first and last frames; after generation the image is cut back into the individual shots."
+  ru:
+    title: "Раскадровка-сетка"
+    description: "Промпт, который рисует группу кадров на одном изображении-сетке, связывая их по первым и последним кадрам; после генерации изображение разрезается обратно на отдельные кадры."
+  vi:
+    title: "Phân cảnh đa lưới"
+    description: "Prompt vẽ một nhóm phân cảnh vào một ảnh lưới, nối theo khung đầu và khung cuối; sau khi tạo, ảnh được cắt lại thành từng phân cảnh."
 stage: grid
 invoked_by:
   kind: generation_task

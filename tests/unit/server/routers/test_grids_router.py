@@ -573,7 +573,7 @@ def test_generate_grid_success_message_localized_en(monkeypatch, tmp_path):
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert body["message"] == "Submitted 1 multi-grid storyboard generation tasks"
+        assert body["message"] == "Submitted 1 multi-grid storyboard generation task"
 
 
 class _FakePMScenes(_FakePMGenerate):

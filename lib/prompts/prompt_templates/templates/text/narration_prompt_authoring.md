@@ -3,6 +3,19 @@ id: text/narration_prompt_authoring
 category: text
 title: 旁白解说 · 提示词编写
 description: 为旁白解说已定稿的分镜补全画面与视频提示词（image_prompt / video_prompt）。
+i18n:
+  zh-TW:
+    title: "旁白解說 · 提示詞編寫"
+    description: "為旁白解說已定稿的分鏡補上畫面與影片提示詞（image_prompt / video_prompt）。"
+  en:
+    title: "Narration · Prompt writing"
+    description: "Fills in the image and video prompts (image_prompt / video_prompt) for finalized narration shots."
+  ru:
+    title: "Закадровый текст · Написание промптов"
+    description: "Дописывает промпты изображения и видео (image_prompt / video_prompt) для утверждённых кадров с закадровым текстом."
+  vi:
+    title: "Thuyết minh · Viết prompt"
+    description: "Bổ sung prompt hình ảnh và video (image_prompt / video_prompt) cho các phân cảnh thuyết minh đã chốt."
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool

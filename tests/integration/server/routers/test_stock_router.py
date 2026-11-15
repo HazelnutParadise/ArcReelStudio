@@ -281,3 +281,18 @@ async def test_saving_a_key_twice_replaces_it(db_factory, stock_env) -> None:
 
     assert second.status_code == 200
     assert stock_env.personal.seen_keys == ["second-token"]
+
+
+async def test_a_search_can_ask_a_single_source_so_the_page_shows_progress_per_source(db_factory, stock_env) -> None:
+    async with _client(db_factory, stock_env, account="u-bob", role="user") as bob:
+        one = await bob.get(f"{BASE}/search", params={"kind": "image", "q": "sea", "source": "free"})
+        unknown = await bob.get(f"{BASE}/search", params={"kind": "image", "q": "sea", "source": "nope"})
+        wrong_kind = await bob.get(f"{BASE}/search", params={"kind": "image", "q": "sea", "source": "personal"})
+
+    assert one.status_code == 200
+    body = one.json()
+    assert [entry["source"] for entry in body["sources"]] == ["free"]
+    assert [item["source"] for item in body["items"]] == ["free"]
+    assert stock_env.shared.seen_keys == []
+    assert unknown.status_code == 404
+    assert wrong_kind.status_code == 400
