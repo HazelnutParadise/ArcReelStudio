@@ -146,6 +146,8 @@ export default {
   'members_password_hint': 'Ít nhất {{min}} ký tự',
   'members_password': 'Mật khẩu ban đầu',
   'members_role': 'Vai trò',
+  'members_role_hint':
+    'Thành viên dùng được mọi dự án và cài đặt. Quản trị viên còn quản lý thành viên (thêm, đổi vai trò, vô hiệu hóa, đặt lại mật khẩu) và thiết lập đăng nhập gói đăng ký cùng engine của Agent.',
   'members_add_submit': 'Thêm',
   'members_add_failed': 'Không thể thêm thành viên: {{message}}',
   'members_update_failed': 'Không thể cập nhật thành viên: {{message}}',
@@ -2280,6 +2282,7 @@ export default {
   'utterance_move_down': 'Di chuyển xuống',
   'utterance_remove': 'Xoá lời',
   'utterance_add_dialogue': 'Thêm lời thoại',
+  'utterance_incomplete_hint': 'Điền nhân vật và lời thoại để lưu',
   'utterance_add_voiceover': 'Thêm lời dẫn',
   'utterance_empty': 'Cảnh này chưa có nội dung lời nói.',
   'review_utterances_label': 'Nội dung lời nói (theo thứ tự)',
@@ -2623,6 +2626,12 @@ export default {
   'detail_pending_authoring_hint':
     'Chờ biên soạn: prompt của phân cảnh này chưa được biên soạn. Hãy nhờ Agent bổ sung hoặc tự điền bên dưới',
   'shot_pending_authoring': 'Chờ biên soạn',
+  'shot_pending_authoring_image': 'Thiếu lời nhắc ảnh',
+  'shot_pending_authoring_video': 'Thiếu lời nhắc video',
+  'detail_pending_authoring_hint_image':
+    'Chờ biên soạn: còn thiếu lời nhắc ảnh phân cảnh. Khi đã viết đủ cả hai lời nhắc, phân cảnh sẽ không còn chờ biên soạn. Hãy nhờ Agent bổ sung hoặc tự điền bên dưới',
+  'detail_pending_authoring_hint_video':
+    'Chờ biên soạn: còn thiếu lời nhắc video. Khi đã viết đủ cả hai lời nhắc, phân cảnh sẽ không còn chờ biên soạn. Hãy nhờ Agent bổ sung hoặc tự điền bên dưới',
   'detail_image_prompt_title': 'Lời nhắc ảnh phân cảnh',
   'detail_section_dialogue': 'Lời thoại',
   'detail_legacy_dialogue_hint':
@@ -2763,6 +2772,8 @@ export default {
   'lobby_rename_desc': 'Chỉ đổi tiêu đề hiển thị. ID dự án “{{name}}” và địa chỉ dự án giữ nguyên.',
   'lobby_rename_label': 'Tiêu đề dự án',
   'lobby_delete_title': 'Xóa “{{title}}”?',
+  'lobby_deleted': 'Đã xóa "{{title}}"',
+  'lobby_delete_undo_failed': 'Không thể hoàn tác: {{message}}',
   'lobby_delete_desc':
     'Dự án sẽ được chuyển vào Dự án đã xóa và giữ trong 30 ngày. Trong thời gian đó bạn có thể khôi phục toàn bộ từ danh sách dự án. Các tác vụ đang xếp hàng sẽ bị hủy.',
   'lobby_deleted_projects': 'Dự án đã xóa',
@@ -2819,6 +2830,8 @@ export default {
   'media_refresh_failed': 'Đã tải lên, nhưng làm mới danh sách thất bại: {{message}}',
   'media_versions_label': 'Phiên bản',
   'media_video_title': 'Video',
+  'media_video_length_mismatch':
+    'Video thực tế dài {{actual}} giây, còn phân cảnh đặt {{planned}} giây. Dòng thời gian dựng dùng độ dài thực tế',
   'no_episode_search_results': 'Không có tập phù hợp',
   'open_assistant_panel': 'Mở bảng Agent',
   'resize_assistant_panel': 'Điều chỉnh chiều rộng bảng Agent (nhấp đúp để đặt lại)',
@@ -2841,6 +2854,9 @@ export default {
   'remove_notification': 'Xóa thông báo này',
   'workspace_not_found_title': 'Trang này không tồn tại',
   'workspace_not_found_back': 'Về trang tổng quan',
+  'episode_not_found_title': 'Không tìm thấy tập {{episode}}',
+  'episode_not_found_description': 'Dự án này không có tập này. Có thể tập đã bị xóa hoặc địa chỉ không đúng.',
+  'episode_not_found_back': 'Về danh sách tập',
   'episode_reorder': 'Sắp xếp lại “{{name}}”',
   'project_switcher_settings': 'Cài đặt dự án',
   'shot_detail_save_first': 'Hãy lưu hoặc hủy thay đổi hiện tại trước',
@@ -3017,6 +3033,7 @@ export default {
   'guide_go_named_episode': 'Đến "{{name}}"',
   'guide_plan_title': 'AI lập kế hoạch phân tập',
   'guide_plan_continue_title': 'Tiếp tục AI lập kế hoạch phân tập',
+  'guide_plan_continue_title_remaining': 'Tiếp tục AI lập kế hoạch phân tập (còn {{volume}})',
   'guide_plan_detail': 'Lập kế hoạch từ đầu đến cuối văn bản nguồn; sau đó có thể điều chỉnh từng tập.',
   'guide_plan_continue_detail': 'Tiếp tục sau tập cuối cùng đã lập kế hoạch cho đến hết văn bản nguồn.',
   'guide_prefill_plan': 'Hãy lập kế hoạch phân tập cho toàn bộ văn bản nguồn, cho đến hết văn bản.',
@@ -4308,8 +4325,12 @@ export default {
   'edit_view_bgm_uploading': 'Đang tải lên BGM…',
   'edit_view_bgm_uploaded':
     'Đã tải lên BGM "{{name}}". Mọi dòng thời gian dựng của các tập đều dùng được; hãy nhờ Agent đặt vào dòng thời gian',
+  'edit_view_bgm_placed': 'Đã tải lên BGM "{{name}}" và đặt ở giây {{start}}',
+  'edit_view_bgm_place_failed':
+    'Đã tải lên BGM "{{name}}" nhưng chưa đặt được vào dòng thời gian: {{message}}. Hãy nhờ Agent đặt',
+  'edit_view_bgm_unplace_failed': 'Không thể hoàn tác: {{message}}',
   'edit_view_bgm_upload_failed': 'Tải lên BGM thất bại: {{message}}',
-  'edit_view_bgm_track_empty': 'Chưa có đoạn BGM. Sau khi tải lên BGM, hãy nhờ Agent đặt vào dòng thời gian',
+  'edit_view_bgm_track_empty': 'Chưa có đoạn BGM. BGM tải lên sẽ được đặt tại đầu phát',
   'edit_view_track_sfx': 'Hiệu ứng',
   'edit_view_sfx_title': '{{sfx}}: {{start}}–{{end}} giây, âm lượng {{volume}}',
   'edit_view_sfx_upload': 'Tải hiệu ứng âm thanh lên',
@@ -4359,8 +4380,13 @@ export default {
   'edit_view_sfx_uploading': 'Đang tải hiệu ứng âm thanh lên…',
   'edit_view_sfx_uploaded':
     'Đã tải lên hiệu ứng âm thanh “{{name}}”. Dòng thời gian của mọi tập đều dùng được; hãy nhờ Agent đặt nó vào',
+  'edit_view_sfx_placed': 'Đã tải lên hiệu ứng âm thanh "{{name}}" và đặt ở giây {{start}}',
+  'edit_view_sfx_place_failed':
+    'Đã tải lên hiệu ứng âm thanh "{{name}}" nhưng chưa đặt được vào dòng thời gian: {{message}}. Hãy nhờ Agent đặt',
+  'edit_view_sfx_unplace_failed': 'Không thể hoàn tác: {{message}}',
   'edit_view_sfx_upload_failed': 'Tải hiệu ứng âm thanh lên thất bại: {{message}}',
-  'edit_view_sfx_track_empty': 'Chưa có hiệu ứng âm thanh. Hãy tải lên hoặc tạo một hiệu ứng, rồi nhờ Agent đặt nó vào',
+  'edit_view_sfx_track_empty':
+    'Chưa có hiệu ứng âm thanh. Hiệu ứng tải lên sẽ được đặt tại đầu phát; hiệu ứng tạo bằng AI có thể nhờ Agent đặt',
   'edit_view_subtitles_toggle': 'Phụ đề',
   'edit_view_buffering': 'Đang tải đệm…',
   'edit_view_playback_blocked': 'Trình duyệt đã chặn tự động phát. Nhấp Phát để tiếp tục.',

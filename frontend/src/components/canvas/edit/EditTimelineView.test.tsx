@@ -641,7 +641,7 @@ describe("EditTimelineView", () => {
 
     await screen.findByTestId("edit-clip-c1");
     expect(screen.getByText("旁白")).toBeInTheDocument();
-    expect(screen.getByText("暂无 BGM 片段。上传 BGM 后，可以让 Agent 摆进时间线")).toBeInTheDocument();
+    expect(screen.getByText("暂无 BGM 片段。上传的 BGM 会放在播放头处")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "上传 BGM" })).toBeEnabled();
     expect(screen.queryByText("转场效果以成片为准")).not.toBeInTheDocument();
   });
@@ -667,6 +667,11 @@ describe("EditTimelineView", () => {
       },
     });
 
+    const place = vi
+      .spyOn(API, "placeEditTimelineAudio")
+      .mockResolvedValue({ revision: 4, bgm: [{ id: "b1" }], sfx: [] } as never);
+    const remove = vi.spyOn(API, "removeEditTimelineAudio").mockResolvedValue({ revision: 5 } as never);
+
     renderView();
 
     await screen.findByTestId("edit-clip-c1");
@@ -681,7 +686,16 @@ describe("EditTimelineView", () => {
 
     await waitFor(() => expect(useAppStore.getState().toast?.tone).toBe("success"));
     expect(upload).toHaveBeenCalledWith("demo", file);
-    expect(useAppStore.getState().toast?.text).toContain("雨夜");
+    expect(place).toHaveBeenCalledWith("demo", "tl-00000002", {
+      kind: "bgm",
+      audio_id: "bgm-0001",
+      start: 0,
+      base_revision: 3,
+    });
+    expect(useAppStore.getState().toast?.text).toBe("已上传 BGM「雨夜」，放在时间线第 0 秒");
+
+    act(() => useAppStore.getState().toast?.action?.onClick());
+    await waitFor(() => expect(remove).toHaveBeenCalledWith("demo", "tl-00000002", "b1", "bgm", 4));
   });
 
   it("reports a refused BGM upload with the server's reason", async () => {
@@ -790,11 +804,53 @@ describe("EditTimelineView", () => {
       .map((media) => media.getAttribute("src"));
     expect(sources).toEqual(expect.arrayContaining([expect.stringContaining("sfx/sfx-0001.wav")]));
 
+    const place = vi
+      .spyOn(API, "placeEditTimelineAudio")
+      .mockResolvedValue({ revision: 4, bgm: [], sfx: [{ id: "s4" }] } as never);
     const file = new File(["wav"], "关门.wav", { type: "audio/wav" });
     fireEvent.change(screen.getByTestId("edit-sfx-upload-input"), { target: { files: [file] } });
     await waitFor(() => expect(useAppStore.getState().toast?.tone).toBe("success"));
     expect(upload).toHaveBeenCalledWith("demo", file);
+    expect(place).toHaveBeenCalledWith(
+      "demo",
+      "tl-00000002",
+      expect.objectContaining({ kind: "sfx", audio_id: "sfx-0002" }),
+    );
     expect(useAppStore.getState().toast?.text).toContain("关门");
+  });
+
+  it("keeps the uploaded BGM and says why when it cannot be placed on the timeline", async () => {
+    useAppStore.setState({ toast: null });
+    vi.spyOn(API, "listEditTimelines").mockResolvedValue({
+      timelines: [summary("tl-00000002", "初剪", "2026-09-30T10:00:00Z", 3)],
+    });
+    vi.spyOn(API, "getEditTimeline").mockResolvedValue(INITIAL_CUT);
+    vi.spyOn(API, "uploadBgm").mockResolvedValue({
+      success: true,
+      bgm: {
+        id: "bgm-0001",
+        name: "雨夜",
+        duration: 30,
+        gain: 1,
+        path: "bgm/bgm-0001.mp3",
+        url: "/x",
+        source: "upload",
+        license: null,
+        source_url: null,
+      },
+    });
+    vi.spyOn(API, "placeEditTimelineAudio").mockRejectedValue(new Error("同一时刻只能有一首 BGM"));
+
+    renderView();
+    await screen.findByTestId("edit-clip-c1");
+    fireEvent.change(screen.getByTestId("edit-bgm-upload-input"), {
+      target: { files: [new File(["mp3"], "雨夜.mp3", { type: "audio/mpeg" })] },
+    });
+
+    await waitFor(() => expect(useAppStore.getState().toast?.tone).toBe("warning"));
+    expect(useAppStore.getState().toast?.text).toBe(
+      "已上传 BGM「雨夜」，但没能放进时间线：同一时刻只能有一首 BGM。可以让 Agent 摆放",
+    );
   });
 
   it("unlocks every narration on play but only loads the ones about to be heard", async () => {

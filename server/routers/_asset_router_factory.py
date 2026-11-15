@@ -496,7 +496,15 @@ def build_asset_router(
 
                 with project_change_source("webui"):
                     manager.delete_asset(project_name, spec.bucket_key, entry_name)
-                return {"success": True, "message": _t(keys["deleted"], name=entry_name)}
+                # 删除记录的 ID 随响应返回，前端在提示里给「撤销」，直接按它从回收站恢复
+                trash_record = asset_trash.deleted_asset_record(
+                    manager.get_project_path(project_name), asset_type, entry_name
+                )
+                return {
+                    "success": True,
+                    "message": _t(keys["deleted"], name=entry_name),
+                    "trash_record_id": trash_record,
+                }
 
             return await run_sync_transaction(_sync)
         except ProjectAssetNameConflictError as exc:

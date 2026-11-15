@@ -266,6 +266,21 @@ class ExportProjectUnreadableError(UnprocessableError):
 _DISK_FULL_ERRNOS = frozenset(code for code in (errno.ENOSPC, getattr(errno, "EDQUOT", None)) if code is not None)
 
 
+#: 下载文件名里各平台都不允许的字符，换成下划线。
+_UNSAFE_FILENAME_CHARS = frozenset('\\/:*?"<>|')
+_DOWNLOAD_STEM_MAX_CHARS = 80
+
+
+def _download_stem(title: object, fallback: str) -> str:
+    """导出包下载文件名的主干：用项目标题，去掉文件名不允许的字符；标题里没有可用的字时用项目编号。"""
+    text = unicodedata.normalize("NFC", title).strip() if isinstance(title, str) else ""
+    cleaned = "".join(
+        "_" if ch in _UNSAFE_FILENAME_CHARS or unicodedata.category(ch).startswith("C") else ch for ch in text
+    )
+    cleaned = cleaned.strip(" .")[:_DOWNLOAD_STEM_MAX_CHARS].strip(" .")
+    return cleaned if any(ch.isalnum() for ch in cleaned) else fallback
+
+
 def _is_disk_full(exc: BaseException) -> bool:
     """磁盘写满或超出磁盘配额：两者对用户是同一件事，清出空间后重试。"""
     return isinstance(exc, OSError) and exc.errno in _DISK_FULL_ERRNOS
@@ -721,7 +736,9 @@ class ProjectArchiveService:
             if temp_dir is not None:
                 temp_dir.cleanup()
 
-        download_name = f"{project_name}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
+        # 下载名用项目标题，导出的包一眼认得出是哪个项目；项目编号仍在包内的清单里
+        title = self.project_manager.load_project(project_name).get("title")
+        download_name = f"{_download_stem(title, project_name)}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
         return archive_path, download_name
 
     def _archived_links(self, project_name: str, snapshot_dir: Path, scope: str) -> list[ArchivedLink]:
@@ -1034,6 +1051,9 @@ class ProjectArchiveService:
                         project_title=str(project.get("title") or "").strip(),
                         conflict_policy=conflict_policy,
                     )
+                    if conflict_resolution == "renamed":
+                        # 自动重命名导入的是同一个项目的另一份：标题标上「副本」，首页才分得出两份
+                        self._mark_copy_title(staging_dir / self.project_manager.PROJECT_FILE, project, translate)
 
                     self._ensure_standard_subdirs(staging_dir)
                     # 安装会把暂存目录移走：先按包内的真实内容核对随带的关联，安装后再写入。
@@ -3266,6 +3286,15 @@ class ProjectArchiveService:
         if target_dir.exists():
             return preferred_name, "overwritten"
         return preferred_name, "none"
+
+    def _mark_copy_title(
+        self, project_path: Path, project: dict[str, Any], translate: Callable[..., str] | None
+    ) -> None:
+        title = str(project.get("title") or "").strip()
+        if not title:
+            return
+        project["title"] = (translate or default_translate)("arch_import_copy_title", title=title)
+        self._write_json_file(project_path, project)
 
     def _ensure_standard_subdirs(self, project_dir: Path) -> None:
         for subdir in self.project_manager.SUBDIRS:

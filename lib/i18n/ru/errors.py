@@ -512,6 +512,10 @@ MESSAGES = {
     "grid_storyboard_not_enabled": "В этом проекте не включена многокадровая раскадровка",
     "ad_target_duration_required": "Для проектов «Реклама / короткое видео» нужна целевая длительность (целое число секунд больше 0)",
     "project_deleted": "Проект «{name}» перемещён в удалённые. Восстановить его можно в течение 30 дней",
+    "edit_timeline_placed_bgm": "Добавлена фоновая музыка",
+    "edit_timeline_placed_sfx": "Добавлен звуковой эффект",
+    "edit_timeline_removed_bgm": "Удалена фоновая музыка",
+    "edit_timeline_removed_sfx": "Удалён звуковой эффект",
     "scene_updated": "Сцена «{scene_id}» обновлена",
     "segment_updated": "Сегмент «{segment_id}» обновлён",
     # Characters / Scenes / Props

@@ -291,6 +291,8 @@ export default {
   "gallery_delete_episode_count_one": "{{count}} lần",
   "gallery_delete_episode_count_other": "{{count}} lần",
   "gallery_delete_merge_instead": "Gộp thay vì xóa…",
+  "gallery_deleted": 'Đã xóa "{{name}}". Có thể khôi phục từ thùng rác dự án',
+  "gallery_delete_undone": 'Đã khôi phục "{{name}}"',
   "gallery_delete_refresh_failed":
     "Đã xóa xong nhưng không làm mới được dữ liệu trang. Hãy làm mới thủ công để xem trạng thái mới nhất",
   "aliases_add": "Thêm bí danh",
@@ -302,6 +304,8 @@ export default {
   "sheet_section": "Hình tài nguyên",
   "view_image": "Xem ảnh lớn: {{name}}",
   "original_section": "Ảnh gốc",
+  "original_section_hint":
+    "Ảnh gốc chỉ dùng làm tham khảo khi AI tạo hình tài sản, không xuất hiện trong phân cảnh. Phân cảnh dùng hình tài sản ở trên: có thể tạo bằng AI hoặc tải lên ảnh hoàn chỉnh của bạn.",
   "original_upload": "Tải ảnh gốc lên",
   "original_replace": "Thay ảnh gốc",
   "original_alt": 'Ảnh gốc của "{{name}}"',

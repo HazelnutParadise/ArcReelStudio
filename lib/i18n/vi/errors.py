@@ -509,6 +509,10 @@ MESSAGES = {
     "grid_storyboard_not_enabled": "Dự án chưa bật phân cảnh đa lưới",
     "ad_target_duration_required": "Dự án quảng cáo/video ngắn bắt buộc phải có tổng thời lượng mục tiêu (số giây nguyên dương)",
     "project_deleted": "Đã chuyển dự án '{name}' vào dự án đã xóa. Bạn có thể khôi phục trong 30 ngày",
+    "edit_timeline_placed_bgm": "Đã thêm nhạc nền",
+    "edit_timeline_placed_sfx": "Đã thêm hiệu ứng âm thanh",
+    "edit_timeline_removed_bgm": "Đã gỡ nhạc nền",
+    "edit_timeline_removed_sfx": "Đã gỡ hiệu ứng âm thanh",
     "scene_updated": "Đã cập nhật cảnh '{scene_id}'",
     "segment_updated": "Đã cập nhật đoạn '{segment_id}'",
     # Characters / Scenes / Props

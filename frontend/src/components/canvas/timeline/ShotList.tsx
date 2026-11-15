@@ -20,6 +20,14 @@ import { StatusBadge } from "@/components/canvas/timeline/StatusBadge";
 import { getScriptItemId, type EditorContentMode, type ScriptItem } from "@/utils/script-shape";
 import { ItemPositionBadge } from "@/components/shared/episode-item/ItemPositionBadge";
 import { InsertShotButton, type InsertShotHandler } from "./ShotStructureActions";
+import { pendingPromptSide } from "@/components/canvas/shared/prompt-authoring-entries";
+
+/** 列表里的待编写标签：只缺一侧提示词时说出缺哪一侧。 */
+const PENDING_LABEL = {
+  both: "shot_pending_authoring",
+  image: "shot_pending_authoring_image",
+  video: "shot_pending_authoring_video",
+} as const;
 
 type Segment = ScriptItem;
 type ListContentMode = EditorContentMode;
@@ -295,7 +303,7 @@ export function ShotList({
                         </span>
                         {section ? <Badge variant="outline">{section}</Badge> : null}
                         {seg.pending_authoring === true ? (
-                          <span className="text-warn">{t("shot_pending_authoring")}</span>
+                          <span className="text-warn">{t(PENDING_LABEL[pendingPromptSide(seg) ?? "both"])}</span>
                         ) : null}
                       </span>
                     </span>

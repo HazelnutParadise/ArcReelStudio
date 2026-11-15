@@ -6,7 +6,8 @@ import { AlertTriangle, Bot, ChevronDown, Loader2 } from "lucide-react";
 import { API } from "@/api";
 import { EPISODE_PLANNING_SLOTS, enqueueEpisodePlanning } from "@/actions/generation";
 import { ApiRequestError } from "@/api/errors";
-import { episodesViewPath } from "@/components/canvas/episodes/episodes-view-model";
+import { remainingUnits } from "@/components/canvas/episodes/episode-planning-model";
+import { episodesViewPath, formatVolume } from "@/components/canvas/episodes/episodes-view-model";
 import { prefillAssistant } from "@/components/shared/prefill-assistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -390,6 +391,30 @@ function SchemaUnsupportedBar({ reason }: { reason: string | null }) {
 }
 
 /**
+ * 接续分集规划时还没分集的原文体量（如「87 字」），给顶栏「下一步」说清还剩多少。
+ * 项目数据每次刷新后重拉；取不到时返回 null，标题退回不带体量的写法。
+ */
+function useRemainingSourceVolume(projectName: string, enabled: boolean): string | null {
+  const { t } = useTranslation("dashboard");
+  const project = useProjectsStore((s) => s.currentProjectData);
+  const [result, setResult] = useState<{ key: string; units: number; unit: "chars" | "words" } | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    const controller = new AbortController();
+    API.getEpisodesView(projectName, { signal: controller.signal })
+      .then((view) => {
+        if (!controller.signal.aborted) setResult({ key: projectName, units: remainingUnits(view), unit: view.unit });
+      })
+      .catch(() => {
+        // 体量只是标题上的补充说明，取不到时保留不带体量的标题
+      });
+    return () => controller.abort();
+  }, [projectName, enabled, project]);
+  if (!enabled || result?.key !== projectName || result.units <= 0) return null;
+  return formatVolume(t, result.units, result.unit);
+}
+
+/**
  * 顶栏中间的状态条：左段是集进度（点开是逐集清单），右段是项目层的下一步（点开是说明与按钮）。
  * 数据升级失败时整条换成迁移形态；升级有报告且尚未确认过时，旁边多一枚可关闭的升级提示。
  * 只投影后端给出的项目摘要与制作状态，不自行推断下一步。
@@ -408,9 +433,12 @@ export function ProjectStatusBar({ projectName }: { projectName: string }) {
   const episodes = useMemo(() => project?.episodes ?? [], [project?.episodes]);
   const activePlanning = useActiveResourceIds("text_episode_plan", projectName);
   const planningActive = EPISODE_PLANNING_SLOTS.some((slot) => activePlanning.has(slot));
+  const continuesPlanning =
+    workflowStatus?.next_action.type === "plan_episodes" && (workflowStatus.content?.episode_count ?? 0) > 0;
+  const remainingVolume = useRemainingSourceVolume(projectName, continuesPlanning && !planningActive);
   const guide = useMemo(
-    () => (workflowStatus ? projectNextGuide(t, workflowStatus, episodes, { planningActive }) : null),
-    [t, workflowStatus, episodes, planningActive],
+    () => (workflowStatus ? projectNextGuide(t, workflowStatus, episodes, { planningActive, remainingVolume }) : null),
+    [t, workflowStatus, episodes, planningActive, remainingVolume],
   );
 
   if (!project || !summary) return null;

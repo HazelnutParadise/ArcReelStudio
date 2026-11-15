@@ -441,6 +441,17 @@ describe("OverviewCanvas", () => {
       expect(screen.getByText("novel.txt")).toBeInTheDocument();
     });
 
+    it("takes a file dropped anywhere on the welcome canvas and names a file of the wrong type", () => {
+      renderOverview({ projectData: makeProjectData({ ...EMPTY_PROJECT, title: "哈喽项目" }) });
+
+      fireEvent.drop(screen.getByRole("heading", { name: "开始制作《哈喽项目》" }), {
+        dataTransfer: { files: [new File(["x"], "cover.png", { type: "image/png" })] },
+      });
+
+      expect(screen.getByRole("dialog", { name: "上传原文" })).toBeInTheDocument();
+      expect(screen.getByText(/cover\.png/)).toBeInTheDocument();
+    });
+
     it("switches to the overview right after the first whole-source upload and fills the story setting in place", async () => {
       const user = userEvent.setup();
       vi.spyOn(API, "uploadFile").mockResolvedValue({ success: true, path: "source/novel.txt", filename: "novel.txt" });

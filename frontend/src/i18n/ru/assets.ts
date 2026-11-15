@@ -328,6 +328,8 @@ export default {
   "gallery_delete_episode_count_many": "{{count}} ссылок",
   "gallery_delete_episode_count_other": "{{count}} ссылки",
   "gallery_delete_merge_instead": "Объединить вместо удаления…",
+  "gallery_deleted": "«{{name}}» удалён. Его можно вернуть из корзины проекта",
+  "gallery_delete_undone": "«{{name}}» восстановлен",
   "gallery_delete_refresh_failed":
     "Материал удалён, но данные страницы не удалось обновить. Обновите страницу вручную, чтобы увидеть актуальное состояние",
   "aliases_add": "Добавить псевдоним",
@@ -339,6 +341,8 @@ export default {
   "sheet_section": "Изображение материала",
   "view_image": "Открыть в полном размере: {{name}}",
   "original_section": "Референс",
+  "original_section_hint":
+    "Референс нужен только ИИ при создании изображения материала и в кадры не попадает. Кадры используют изображение материала выше: создайте его или загрузите своё готовое.",
   "original_upload": "Загрузить референс",
   "original_replace": "Заменить референс",
   "original_alt": "Референс «{{name}}»",

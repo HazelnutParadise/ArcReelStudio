@@ -21,6 +21,7 @@ import { useProjectsStore } from "@/stores/projects-store";
 import type { AssetSheetType } from "@/types";
 import { errMsg } from "@/utils/async";
 import { episodeDisplayName, type EpisodeLedger } from "@/utils/episode-display";
+import { refreshAfterWrite } from "@/components/canvas/shared/refreshAfterWrite";
 import { rejectIfAssetBusy } from "./assetBusyGuard";
 
 interface ProjectAssetDeleteDialogProps {
@@ -95,18 +96,38 @@ export function ProjectAssetDeleteDialog({
     onDeletingChange(next);
   };
 
+  const undoDelete = async (recordId: string) => {
+    const { pushToast } = useAppStore.getState();
+    try {
+      const result = await API.restoreTrashRecord(projectName, recordId);
+      if ((await refreshAfterWrite(projectName, t)) === "success") {
+        pushToast(t("assets:gallery_delete_undone", { name: result.object.name }), "success");
+      }
+    } catch (err) {
+      pushToast(t("assets:create_trash_restore_failed", { message: errMsg(err) }), "error");
+    }
+  };
+
   const executeDelete = async (): Promise<boolean> => {
     if (busy || deleting) return false;
     if (rejectIfAssetBusy(assetType, projectName, name, t, "assets:gallery_busy_hint")) return false;
     updateDeleting(true);
     setError(null);
     try {
-      await API.deleteProjectAsset(projectName, assetType, name);
+      const { trash_record_id: recordId } = await API.deleteProjectAsset(projectName, assetType, name);
       onOpenChange(false);
       // 删除已提交，刷新是独立的后续步骤：卡片随刷新消失，刷新失败时它会停在页面上。
       const refreshed = await useProjectsStore.getState().refreshProject(projectName);
+      const { pushToast } = useAppStore.getState();
       if (refreshed === "failed") {
-        useAppStore.getState().pushToast(t("assets:gallery_delete_refresh_failed"), "warning");
+        pushToast(t("assets:gallery_delete_refresh_failed"), "warning");
+      } else {
+        // 删除可以撤销：提示里直接给「撤销」，按删除记录从项目回收站恢复
+        pushToast(
+          t("assets:gallery_deleted", { name }),
+          "success",
+          recordId ? { action: { label: t("common:undo"), onClick: () => void undoDelete(recordId) } } : undefined,
+        );
       }
       return true;
     } catch (err) {

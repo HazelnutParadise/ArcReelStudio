@@ -152,6 +152,7 @@ export function AssetGallery<T extends GalleryAssetSource>({
         filterCounts={filterCounts}
         onAdd={onAdd}
         onPickFromLibrary={onPickFromLibrary}
+        showTrash={!readOnly}
       >
         {!readOnly && <AssetSheetBatchControls projectName={projectName} assetType={assetType} rows={rows} />}
       </GalleryToolbar>

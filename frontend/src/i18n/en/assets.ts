@@ -292,6 +292,8 @@ export default {
   "gallery_delete_episode_count_one": "{{count}} reference",
   "gallery_delete_episode_count_other": "{{count}} references",
   "gallery_delete_merge_instead": "Merge instead…",
+  "gallery_deleted": 'Deleted "{{name}}". You can restore it from the project trash',
+  "gallery_delete_undone": 'Restored "{{name}}"',
   "gallery_delete_refresh_failed":
     "The asset is deleted, but the page data failed to refresh. Refresh manually to see the latest state",
   "aliases_add": "Add alias",
@@ -303,6 +305,8 @@ export default {
   "sheet_section": "Asset image",
   "view_image": "View full size: {{name}}",
   "original_section": "Reference image",
+  "original_section_hint":
+    "The reference image only guides AI when it generates the asset image; it never appears in shots. Shots use the asset image above: generate it or upload your own final image.",
   "original_upload": "Upload reference image",
   "original_replace": "Replace reference image",
   "original_alt": 'Reference image of "{{name}}"',

@@ -482,6 +482,10 @@ MESSAGES = {
     "grid_storyboard_not_enabled": "项目未启用多宫格分镜，无法生成多宫格分镜",
     "ad_target_duration_required": "广告/短片项目必须设置目标总时长（正整数秒）",
     "project_deleted": "项目 '{name}' 已移入已删除项目，30 天内可以恢复",
+    "edit_timeline_placed_bgm": "放入 BGM",
+    "edit_timeline_placed_sfx": "放入音效",
+    "edit_timeline_removed_bgm": "移除 BGM",
+    "edit_timeline_removed_sfx": "移除音效",
     "scene_updated": "分镜 '{scene_id}' 已更新",
     "segment_updated": "分镜 '{segment_id}' 已更新",
     # Characters / Scenes / Props

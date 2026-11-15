@@ -279,6 +279,8 @@ export default {
   "gallery_delete_episode_count_one": "{{count}} 處",
   "gallery_delete_episode_count_other": "{{count}} 處",
   "gallery_delete_merge_instead": "改為併入…",
+  "gallery_deleted": "已刪除「{{name}}」，可在專案垃圾桶找回",
+  "gallery_delete_undone": "已復原「{{name}}」",
   "gallery_delete_refresh_failed": "刪除已完成，但頁面資料重新整理失敗，請手動重新整理檢視最新狀態",
   "aliases_add": "新增別名",
   "aliases_removed": "已刪除別名「{{alias}}」",
@@ -288,6 +290,8 @@ export default {
   "sheet_section": "資產圖",
   "view_image": "檢視大圖：{{name}}",
   "original_section": "原圖",
+  "original_section_hint":
+    "原圖只在 AI 生成資產圖時參考，不會出現在分鏡裡。分鏡引用的是上方的資產圖：可以生成，也可以直接上傳自己的定稿圖。",
   "original_upload": "上傳原圖",
   "original_replace": "更換原圖",
   "original_alt": "「{{name}}」的原圖",

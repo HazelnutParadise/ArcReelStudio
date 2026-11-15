@@ -143,6 +143,8 @@ export default {
   'members_password_hint': 'At least {{min}} characters',
   'members_password': 'Initial password',
   'members_role': 'Role',
+  'members_role_hint':
+    "Members can use every project and setting. Admins can also manage members (add, change roles, deactivate, reset passwords) and set up the Agent's subscription sign-in and engine.",
   'members_add_submit': 'Add',
   'members_add_failed': "Couldn't add the member: {{message}}",
   'members_update_failed': "Couldn't update the member: {{message}}",
@@ -2294,6 +2296,7 @@ export default {
   'utterance_move_down': 'Move down',
   'utterance_remove': 'Remove line',
   'utterance_add_dialogue': 'Add dialogue',
+  'utterance_incomplete_hint': 'Fill in the speaker and the line before this is saved',
   'utterance_add_voiceover': 'Add voiceover',
   'utterance_empty': 'No spoken content in this scene yet.',
   'review_utterances_label': 'Spoken content (in order)',
@@ -2469,6 +2472,10 @@ export default {
   'remove_notification': 'Remove notification',
   'workspace_not_found_title': "This page doesn't exist",
   'workspace_not_found_back': 'Back to overview',
+  'episode_not_found_title': 'Episode {{episode}} not found',
+  'episode_not_found_description':
+    'This project has no such episode. It may have been deleted, or the address is wrong.',
+  'episode_not_found_back': 'Back to episodes',
   'episode_reorder': 'Reorder “{{name}}”',
   'project_switcher_settings': 'Project settings',
   'episodes_section_title': 'Episodes',
@@ -2781,6 +2788,7 @@ export default {
   'guide_go_named_episode': 'Go to "{{name}}"',
   'guide_plan_title': 'AI episode planning',
   'guide_plan_continue_title': 'Continue AI episode planning',
+  'guide_plan_continue_title_remaining': 'Continue AI episode planning ({{volume}} left)',
   'guide_plan_detail': 'Plans from the start of the source text to its end; you can adjust each episode afterwards.',
   'guide_plan_continue_detail': 'Continues after the last planned episode until the end of the source text.',
   'guide_prefill_plan': 'Please plan episodes for the whole source text, all the way to its end.',
@@ -2992,6 +3000,12 @@ export default {
   'detail_pending_authoring_hint':
     "Pending authoring: this shot's prompts haven't been authored yet. Ask the agent to fill them in, or write them below",
   'shot_pending_authoring': 'Pending authoring',
+  'shot_pending_authoring_image': 'Image prompt missing',
+  'shot_pending_authoring_video': 'Video prompt missing',
+  'detail_pending_authoring_hint_image':
+    'Pending authoring: the storyboard image prompt is still missing. Once both prompts are written, the shot is no longer pending. Ask the agent to fill it in, or write it below',
+  'detail_pending_authoring_hint_video':
+    'Pending authoring: the video prompt is still missing. Once both prompts are written, the shot is no longer pending. Ask the agent to fill it in, or write it below',
   'detail_image_prompt_title': 'Storyboard image prompt',
   'detail_video_prompt_title': 'Video prompt',
   'detail_image_prompt_placeholder': 'Describe the frame: setting, characters, actions, composition…',
@@ -3001,6 +3015,8 @@ export default {
   'detail_field_chars_count': '{{count}} chars',
   'media_storyboard_title': 'Storyboard',
   'media_video_title': 'Video',
+  'media_video_length_mismatch':
+    'The video is {{actual}} s long, but the shot is set to {{planned}} s. The edit timeline uses the actual length',
   'media_versions_label': 'Versions',
   'media_not_generated': 'Not generated yet',
   'media_no_prompt_yet': "This shot doesn't have prompts yet.",
@@ -3198,6 +3214,8 @@ export default {
   'lobby_rename_desc': 'Only the displayed title changes. The project ID “{{name}}” and the project URL stay the same.',
   'lobby_rename_label': 'Project title',
   'lobby_delete_title': 'Delete “{{title}}”?',
+  'lobby_deleted': 'Deleted "{{title}}"',
+  'lobby_delete_undo_failed': "Couldn't undo: {{message}}",
   'lobby_delete_desc':
     'The project moves to Deleted projects and is kept for 30 days. You can restore it from the project list during that time. Its queued tasks will be cancelled.',
   'lobby_deleted_projects': 'Deleted projects',
@@ -4316,8 +4334,12 @@ export default {
   'edit_view_bgm_uploading': 'Uploading BGM…',
   'edit_view_bgm_uploaded':
     'Uploaded BGM "{{name}}". Edit timelines in every episode can use it; ask the Agent to place it on the timeline',
+  'edit_view_bgm_placed': 'Uploaded BGM "{{name}}" and placed it at {{start}} s',
+  'edit_view_bgm_place_failed':
+    'Uploaded BGM "{{name}}", but couldn\'t place it on the timeline: {{message}}. Ask the Agent to place it',
+  'edit_view_bgm_unplace_failed': "Couldn't undo: {{message}}",
   'edit_view_bgm_upload_failed': 'BGM upload failed: {{message}}',
-  'edit_view_bgm_track_empty': 'No BGM clips yet. After uploading BGM, ask the Agent to place it on the timeline',
+  'edit_view_bgm_track_empty': 'No BGM clips yet. Uploaded BGM is placed at the playhead',
   'edit_view_track_sfx': 'SFX',
   'edit_view_sfx_title': '{{sfx}}: {{start}}–{{end}}s, volume {{volume}}',
   'edit_view_sfx_upload': 'Upload sound effect',
@@ -4368,8 +4390,13 @@ export default {
   'edit_view_sfx_uploading': 'Uploading sound effect…',
   'edit_view_sfx_uploaded':
     "Uploaded sound effect “{{name}}”. Every episode's timelines can use it; ask the Agent to place it",
+  'edit_view_sfx_placed': 'Uploaded sound effect "{{name}}" and placed it at {{start}} s',
+  'edit_view_sfx_place_failed':
+    'Uploaded sound effect "{{name}}", but couldn\'t place it on the timeline: {{message}}. Ask the Agent to place it',
+  'edit_view_sfx_unplace_failed': "Couldn't undo: {{message}}",
   'edit_view_sfx_upload_failed': 'Sound effect upload failed: {{message}}',
-  'edit_view_sfx_track_empty': 'No sound effect clips yet. Upload or generate one, then ask the Agent to place it',
+  'edit_view_sfx_track_empty':
+    'No sound effect clips yet. Uploaded sound effects are placed at the playhead; ask the Agent to place generated ones',
   'edit_view_subtitles_toggle': 'Subtitles',
   'edit_view_buffering': 'Buffering…',
   'edit_view_playback_blocked': 'The browser blocked autoplay. Click Play to continue.',

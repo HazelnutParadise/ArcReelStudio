@@ -113,6 +113,19 @@ describe("ShotDetail 剧情演绎", () => {
     );
   });
 
+  it("新增的台词还空着时提示先填角色与台词，不报保存失败", async () => {
+    const onUpdatePrompt = vi.fn().mockRejectedValue(new Error("无法解析该单元的台词内容，请检查文稿格式"));
+    renderDetail({ onUpdatePrompt });
+
+    fireEvent.click(screen.getByText("添加台词"));
+    expect(screen.getByText("填好角色和台词后才会保存")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText(/保存失败/)).not.toBeInTheDocument());
+    expect(screen.getByText("填好角色和台词后才会保存")).toBeInTheDocument();
+  });
+
   it("上游静默更新时：干净草稿跟随新 utterances", () => {
     const { rerender } = renderDetail();
 

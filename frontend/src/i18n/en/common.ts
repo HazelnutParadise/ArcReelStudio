@@ -71,6 +71,10 @@ export default {
   'not_found_title': 'Page not found',
   'not_found_description': 'The address may be wrong, or this page has been removed.',
   'not_found_back': 'Back to home',
+  'project_not_found_title': 'Project not found',
+  'project_not_found_description':
+    'Project "{{name}}" does not exist. It may have been deleted, or the address is wrong.',
+  'project_not_found_back': 'Back to projects',
   'recommended': 'Recommended',
   'elapsed_seconds': '{{seconds}}s',
   'elapsed_minutes': '{{minutes}}m {{seconds}}s',

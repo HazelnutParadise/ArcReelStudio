@@ -723,3 +723,19 @@ it("uses the current position after restoring a shot under a new ID", async () =
 
   await waitFor(() => expect(toasts.at(-1)?.text).toBe("雨夜 · 2 已恢复"));
 });
+
+it("opens on the project trash when the address asks for it", async () => {
+  window.history.pushState({}, "", "/?section=trash");
+  onTestFinished(() => window.history.pushState({}, "", "/"));
+  vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+    const url = new URL(String(input), "http://localhost");
+    if (url.pathname.endsWith("/trash")) {
+      return Promise.resolve(Response.json({ records: [], total_size: 0, retention_days: 30 }));
+    }
+    return Promise.resolve(Response.json({ path: "", entries: [] }));
+  });
+
+  render(<FileView projectName="demo" />);
+
+  expect(screen.getByRole("tab", { name: "项目回收站" })).toHaveAttribute("aria-selected", "true");
+});

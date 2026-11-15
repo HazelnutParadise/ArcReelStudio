@@ -1,4 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { API } from "@/api";
+import type { PresentationReadModel } from "@/types/presentation";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { DEMO_PROJECT_NAME } from "@/onboarding/demo-project";
 import { useProjectsStore } from "@/stores/projects-store";
@@ -27,6 +29,63 @@ describe("MediaCard storyboard image", () => {
     fireEvent.click(screen.getByRole("button", { name: /分镜图」的大图$/ }));
     const preview = screen.getAllByRole("img", { name: /分镜图$/ }).find((img) => !img.hasAttribute("srcset"));
     expect(preview).toHaveAttribute("src", "/api/v1/files/demo/storyboards/E1S01.png?v=5");
+  });
+});
+
+describe("MediaCard video length", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function mockVideoLength(seconds: number) {
+    vi.spyOn(API, "getPresentation").mockResolvedValue({
+      schema_version: 1,
+      provenance: "verified",
+      episode: 1,
+      resource_type: "videos",
+      script_file: "episode_1.json",
+      subtitle_artifact_path: null,
+      presentation_artifact_path: null,
+      persisted: true,
+      unit_id: "E1S01",
+      variant: "post_production",
+      speech_mode: "silent",
+      selection: "current",
+      currency: "current",
+      video: {
+        artifact_path: "videos/scene_E1S01.mp4",
+        version: 1,
+        selection: "current",
+        currency: "current",
+        basis: null,
+        content_digest: "sha256-v1:video",
+        actual_duration_seconds: seconds,
+        start_microseconds: 0,
+        duration_microseconds: seconds * 1_000_000,
+        audio_enabled: true,
+        gain: 1,
+      },
+      narration_audio: null,
+      subtitles: [],
+      subtitle_basis: null,
+      presentation_basis: null,
+      timing: "mechanical",
+      subtitles_adjustable: false,
+      subtitles_webvtt: "WEBVTT\n",
+    } as PresentationReadModel);
+  }
+
+  it("says when the uploaded video is not as long as the shot and that the edit timeline uses the real length", async () => {
+    mockVideoLength(4);
+    renderCard({ kind: "video", assetPath: "videos/scene_E1S01.mp4", plannedDurationSeconds: 8 });
+
+    expect(await screen.findByText("视频实际 4 秒，分镜时长是 8 秒。剪辑时间轴按实际长度排")).toBeInTheDocument();
+  });
+
+  it("says nothing when the video matches the shot length", async () => {
+    mockVideoLength(8.02);
+    renderCard({ kind: "video", assetPath: "videos/scene_E1S01.mp4", plannedDurationSeconds: 8 });
+
+    await vi.waitFor(() => expect(API.getPresentation).toHaveBeenCalled());
+    expect(screen.queryByText(/视频实际/)).not.toBeInTheDocument();
   });
 });
 

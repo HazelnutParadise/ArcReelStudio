@@ -60,7 +60,14 @@ export function projectNextGuide(
   t: TFunction,
   status: WorkflowStatus,
   episodes: EpisodeLedger,
-  { planningActive = false }: { planningActive?: boolean } = {},
+  {
+    planningActive = false,
+    remainingVolume = null,
+  }: {
+    planningActive?: boolean;
+    /** 接续分集规划时尚未分集的原文体量（如「87 字」）；未取到时为 null，标题不带体量。 */
+    remainingVolume?: string | null;
+  } = {},
 ): ProjectNextGuide | null {
   const action = status.next_action;
   if (action.type === "retry_project_migration" || action.type === "upgrade_project_upstream") return null;
@@ -143,7 +150,11 @@ export function projectNextGuide(
   switch (action.type) {
     case "plan_episodes":
       return {
-        title: planned ? t("dashboard:guide_plan_continue_title") : t("dashboard:guide_plan_title"),
+        title: !planned
+          ? t("dashboard:guide_plan_title")
+          : remainingVolume
+            ? t("dashboard:guide_plan_continue_title_remaining", { volume: remainingVolume })
+            : t("dashboard:guide_plan_continue_title"),
         detail: planned ? t("dashboard:guide_plan_continue_detail") : t("dashboard:guide_plan_detail"),
         instruction: true,
         primary: [

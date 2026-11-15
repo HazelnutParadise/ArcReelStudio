@@ -72,6 +72,17 @@ export function pointInRun(file: number, runStart: number, runText: string, inde
   return { file, offset: runStart + codePointsBefore(runText, Math.min(index, runText.length)) };
 }
 
+/**
+ * 点击的落点对齐到行的边界：点在一行（段落）前半段落到行首，后半段落到行尾。
+ * 分集几乎总是切在段落之间，点在标题或句子中间不该把它切成两半；需要更细的位置时再用 ←/→ 微调。
+ * 下标与 `pointInRun` 同为行文字的 UTF-16 下标。
+ */
+export function snapPointToLine(file: number, runStart: number, runText: string, index: number): ManuscriptPoint {
+  const end = pointInRun(file, runStart, runText, runText.length);
+  const at = pointInRun(file, runStart, runText, index);
+  return at.offset - runStart <= (end.offset - runStart) / 2 ? { file, offset: runStart } : end;
+}
+
 function lengths(view: EpisodesView): number[] {
   return view.files.map((file) => (file.missing ? 0 : file.length));
 }

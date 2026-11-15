@@ -427,6 +427,7 @@ function AddMemberForm({ onAdded }: { onAdded: (member: MemberInfo) => void }) {
   const passwordId = useId();
   const passwordHintId = useId();
   const roleId = useId();
+  const roleHintId = useId();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<AccountRole>("user");
@@ -491,7 +492,7 @@ function AddMemberForm({ onAdded }: { onAdded: (member: MemberInfo) => void }) {
                 if (value === "admin" || value === "user") setRole(value);
               }}
             >
-              <SelectTrigger aria-labelledby={roleId} className="w-40">
+              <SelectTrigger aria-labelledby={roleId} aria-describedby={roleHintId} className="w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -502,6 +503,9 @@ function AddMemberForm({ onAdded }: { onAdded: (member: MemberInfo) => void }) {
                 ))}
               </SelectContent>
             </Select>
+            <p id={roleHintId} className="text-xs text-muted-foreground">
+              {t("dashboard:members_role_hint")}
+            </p>
           </div>
           {error && (
             <p role="alert" className="text-sm text-destructive">

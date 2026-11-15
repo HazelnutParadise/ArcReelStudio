@@ -403,6 +403,30 @@ describe("ProjectsPage", () => {
     });
   });
 
+  it("offers undo right after deleting a project and restores it from the deleted projects", async () => {
+    vi.spyOn(API, "listProjects")
+      .mockResolvedValueOnce({ projects: [summary("second", { title: "Second" })] })
+      .mockResolvedValueOnce({ projects: [] })
+      .mockResolvedValue({ projects: [summary("second", { title: "Second" })] });
+    vi.spyOn(API, "deleteProject").mockResolvedValue({
+      success: true,
+      deleted_id: "second#deleted-20261115T000000Z",
+    } as never);
+    const restore = vi.spyOn(API, "restoreDeletedProject").mockResolvedValue({ name: "second" });
+
+    renderPage();
+    const user = await openCardMenu("Second");
+    await user.click(await screen.findByRole("menuitem", { name: "删除" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "删除「Second」？" });
+    await user.click(within(dialog).getByRole("button", { name: "删除项目" }));
+
+    await waitFor(() => expect(useAppStore.getState().toast?.text).toBe("已删除「Second」"));
+    act(() => useAppStore.getState().toast?.action?.onClick());
+
+    await waitFor(() => expect(restore).toHaveBeenCalledWith("second#deleted-20261115T000000Z"));
+    expect(await screen.findByRole("link", { name: /Second/ })).toBeInTheDocument();
+  });
+
   it("keeps the delete confirmation open and shows the backend's reason when deleting fails", async () => {
     vi.spyOn(API, "listProjects").mockResolvedValue({ projects: [summary("second", { title: "Second" })] });
     vi.spyOn(API, "deleteProject").mockRejectedValue(new Error("项目名称 'second' 非法"));

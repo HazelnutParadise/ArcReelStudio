@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Library, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Library, Plus, Trash2 } from "lucide-react";
+import { Link } from "wouter";
+import { WORKSPACE_PROJECT_TRASH_PATH } from "@/app-routes";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { AssetSheetType } from "@/types";
 import type { GalleryFilter } from "./gallery-model";
@@ -21,6 +23,7 @@ export function GalleryToolbar({
   filterCounts,
   onAdd,
   onPickFromLibrary,
+  showTrash = false,
   children,
 }: {
   assetType: AssetSheetType;
@@ -34,10 +37,12 @@ export function GalleryToolbar({
   onAdd?: () => void;
   /** 未提供时隐藏「从资产库选择」入口（如不入全局库的资产类型）。 */
   onPickFromLibrary?: () => void;
+  /** 显示「项目回收站」入口：删除的资产在那里恢复。只读展示时不显示。 */
+  showTrash?: boolean;
   /** 批量生成入口。 */
   children?: ReactNode;
 }) {
-  const { t } = useTranslation("assets");
+  const { t } = useTranslation(["assets", "dashboard"]);
   const counts: Record<GalleryFilter, number> = { all: count, ...filterCounts };
   return (
     <div className="sticky top-0 z-sticky flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-background px-5 py-2.5">
@@ -64,6 +69,12 @@ export function GalleryToolbar({
       </ToggleGroup>
       <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
         {children}
+        {showTrash && (
+          <Link href={WORKSPACE_PROJECT_TRASH_PATH} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            <Trash2 aria-hidden data-icon="inline-start" />
+            {t("dashboard:file_view_section_trash")}
+          </Link>
+        )}
         {onPickFromLibrary && (
           <Button variant="outline" size="sm" onClick={onPickFromLibrary}>
             <Library aria-hidden data-icon="inline-start" />

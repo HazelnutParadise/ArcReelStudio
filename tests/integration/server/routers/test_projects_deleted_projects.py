@@ -76,6 +76,19 @@ async def test_restore_keeps_the_original_name_when_it_is_free(tmp_path, monkeyp
         assert (await TaskRepository(session).get(old["running"]) or {})["project_name"] == "demo"
 
 
+async def test_delete_returns_the_deleted_project_id_so_it_can_be_undone(tmp_path, monkeypatch, db_factory):
+    manager = ProjectManager(tmp_path)
+    _create(manager, "Old")
+
+    with build_projects_client(monkeypatch, manager, session_factory=db_factory) as client:
+        deleted = client.delete("/api/v1/projects/demo")
+        assert deleted.status_code == 200
+        deleted_id = deleted.json()["deleted_id"]
+        [entry] = client.get(DELETED).json()["projects"]
+        assert entry["id"] == deleted_id
+        assert client.post(f"{DELETED}/{quote(deleted_id, safe='')}/restore").json()["name"] == "demo"
+
+
 def _files_size(root) -> int:
     return sum(path.stat().st_size for path in root.rglob("*") if path.is_file() and not path.is_symlink())
 

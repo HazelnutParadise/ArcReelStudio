@@ -118,6 +118,18 @@ describe("AccountSection", () => {
     expect(await within(table).findByText("writer")).toBeInTheDocument();
   });
 
+  it("新增成员时说明成员与管理员能做的事有什么不同", async () => {
+    vi.spyOn(API, "getMe").mockResolvedValue(ADMIN);
+    vi.spyOn(API, "listMembers").mockResolvedValue([member({ id: "default", username: "admin", role: "admin" })]);
+    const user = userEvent.setup();
+    render(<AccountSection />);
+
+    await user.click(await screen.findByRole("button", { name: "新增成员" }));
+    const dialog = await screen.findByRole("dialog");
+
+    expect(within(dialog).getByText(/管理员另外可以管理成员/)).toBeInTheDocument();
+  });
+
   it("管理员替成员重设密码", async () => {
     vi.spyOn(API, "getMe").mockResolvedValue(ADMIN);
     vi.spyOn(API, "listMembers").mockResolvedValue([member({})]);

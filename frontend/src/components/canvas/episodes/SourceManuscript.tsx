@@ -14,7 +14,15 @@ import { ReplannedBadge } from "./ReplannedBadge";
 import { SourceFileActions } from "./SourceFileActions";
 import { SourceFileKindControl } from "./SourceFileKindControl";
 import { episodeHue, formatSpoken, formatVolume } from "./episodes-view-model";
-import { adjacentBoundaries, pointInRun, textRuns, type ManuscriptPoint, type TextRun } from "./manual-split-model";
+import {
+  adjacentBoundaries,
+  pointInRun,
+  resolvePointAction,
+  snapPointToLine,
+  textRuns,
+  type ManuscriptPoint,
+  type TextRun,
+} from "./manual-split-model";
 import { lanesContinue, type ReplanCompare } from "./replan-compare-model";
 
 /** 原文阅读列：衬线正文，行距加大；行长由视图的 40em 限宽控制在约 40 个汉字。 */
@@ -63,8 +71,11 @@ function caretRunStart(file: EpisodesViewFile, offset: number): number | null {
   return last;
 }
 
-/** 点击处的落点：文本节点的父元素带 `data-file` 与 `data-run`（这段文字在文件内的码位起点）。 */
-function pointFromMouse(event: MouseEvent): ManuscriptPoint | null {
+/**
+ * 点击处的落点：文本节点的父元素带 `data-file` 与 `data-run`（这段文字在文件内的码位起点）。
+ * 同时给出对齐到行首或行尾的落点（`snapped`）与点击的确切位置（`exact`）。
+ */
+function pointFromMouse(event: MouseEvent): { exact: ManuscriptPoint; snapped: ManuscriptPoint } | null {
   const doc = document as Document & {
     caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
   };
@@ -84,7 +95,11 @@ function pointFromMouse(event: MouseEvent): ManuscriptPoint | null {
   const file = host?.getAttribute("data-file");
   const run = host?.getAttribute("data-run");
   if (file == null || run == null) return null;
-  return pointInRun(Number(file), Number(run), node.textContent ?? "", index);
+  const text = node.textContent ?? "";
+  return {
+    exact: pointInRun(Number(file), Number(run), text, index),
+    snapped: snapPointToLine(Number(file), Number(run), text, index),
+  };
 }
 
 /**
@@ -135,8 +150,10 @@ export function SourceManuscript({
     if (event.button !== 0 || (event.target as HTMLElement).closest("[data-no-caret]")) return;
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) return;
-    const point = pointFromMouse(event);
-    if (point !== null) onPlace(point);
+    const hit = pointFromMouse(event);
+    if (hit === null) return;
+    // 优先落在行的边界；对齐后不能切（如文件开头）时退回点击的确切位置
+    onPlace(resolvePointAction(view, hit.snapped, moving) !== null ? hit.snapped : hit.exact);
   };
 
   return (
@@ -227,20 +244,23 @@ export function SourceManuscript({
 
 function CaretMarker({ episode, children }: { episode: number | null; children: ReactNode }) {
   return (
-    <span
-      data-no-caret
-      className="relative inline-block h-[1.35em] w-0 align-text-bottom"
-      style={{ "--episode-hue": episodeHue(episode ?? 0) } as CSSProperties}
-    >
+    <>
       <span
-        aria-hidden
-        className={cn(
-          "absolute top-0 -left-px h-full w-0.5 animate-caret-blink rounded-sm",
-          episode === null ? "bg-primary" : "bg-episode",
-        )}
-      />
+        data-no-caret
+        className="relative inline-block h-[1.35em] w-0 align-text-bottom"
+        style={{ "--episode-hue": episodeHue(episode ?? 0) } as CSSProperties}
+      >
+        <span
+          aria-hidden
+          className={cn(
+            "absolute top-0 -left-px h-full w-0.5 animate-caret-blink rounded-sm",
+            episode === null ? "bg-primary" : "bg-episode",
+          )}
+        />
+      </span>
+      {/* 操作条紧跟光标、在正文里自成一行，落点之后的文字顺延到它下方 */}
       {children}
-    </span>
+    </>
   );
 }
 

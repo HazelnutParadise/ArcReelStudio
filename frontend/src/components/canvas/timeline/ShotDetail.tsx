@@ -8,6 +8,7 @@ import { ImagePromptEditor } from "./ImagePromptEditor";
 import { VideoPromptEditor } from "./VideoPromptEditor";
 import { DialogueListEditor } from "./DialogueListEditor";
 import { UtteranceListEditor } from "./UtteranceListEditor";
+import { isUtteranceIncomplete } from "./utterance-completeness";
 import { SourceTextReadonly } from "@/components/shared/SourceTextReadonly";
 import { TruncatedText } from "@/components/shared/TruncatedText";
 import { ShotDetailLayout, ShotGroup, ShotMediaGrid, ShotSection, ShotSourceCollapsible } from "./ShotDetailLayout";
@@ -64,6 +65,7 @@ import {
 } from "@/utils/prompt-shape";
 import { isContinuousIntegerRange } from "@/utils/duration_format";
 import { PromptAuthoringButton } from "@/components/canvas/shared/PromptAuthoringButton";
+import { pendingPromptSide } from "@/components/canvas/shared/prompt-authoring-entries";
 
 type Segment = NarrationSegment | DramaScene | AdShot;
 type DetailContentMode = "narration" | "drama" | "ad";
@@ -177,6 +179,13 @@ const SHOT_FIELD_KEYS = [
 type ShotFieldKey = (typeof SHOT_FIELD_KEYS)[number];
 
 const EMPTY_UTTERANCES: Utterance[] = [];
+
+/** 待编写提示：只缺一侧提示词时说出缺哪一侧，写好后服务端才清除待编写。 */
+const PENDING_HINT = {
+  both: "detail_pending_authoring_hint",
+  image: "detail_pending_authoring_hint_image",
+  video: "detail_pending_authoring_hint_video",
+} as const;
 
 // voiceover 的 speaker 允许缺省或 null，两种写法语义等价（无说话人）。比较前归一：
 // voiceover speaker 统一为 null、并固定键序，避免 `{}` 与 `{ speaker: null }` 判成不同，
@@ -547,6 +556,7 @@ export function ShotDetail({
   });
   const live = unit.live;
   const { value: fields, setValue, dirty } = unit;
+  const utterancesIncomplete = (fields.utterances ?? EMPTY_UTTERANCES).some(isUtteranceIncomplete);
   const saving = unit.status === "saving";
   // 结构化 → 文本切换在途：返回后整体替换该侧提示词，期间该侧的编辑会被覆盖。
   // 与保存中一样占用编辑单元：结构化编辑入口与各保存入口一并禁用。
@@ -838,7 +848,7 @@ export function ShotDetail({
           role="status"
           className="rounded-lg border border-border/50 bg-warn/5 px-3 py-2 text-xs text-subtle-foreground"
         >
-          {t("detail_pending_authoring_hint")}
+          {t(PENDING_HINT[pendingPromptSide(segment) ?? "both"])}
         </div>
       )}
 
@@ -1089,6 +1099,7 @@ export function ShotDetail({
         segmentId={segmentId}
         assetPath={assets?.video_clip ?? null}
         posterPath={assets?.video_thumbnail ?? null}
+        plannedDurationSeconds={unit.savedValue.duration_seconds}
         aspectRatio={aspectRatio}
         generating={generatingVideo}
         generateDisabled={!hasStoryboard || editBusy || refreshPending}
@@ -1203,7 +1214,14 @@ export function ShotDetail({
     <>
       <ShotDetailLayout
         header={header}
-        footer={<UnsavedChangesBar unit={unit} busy={formSwitching !== null} className="mx-5 my-3 shrink-0" />}
+        footer={
+          <UnsavedChangesBar
+            // 有发声条目没填完时，服务端拒收的「无法解析台词」不当保存失败报：编辑区已提示先填角色与台词
+            unit={utterancesIncomplete && unit.status === "error" ? { ...unit, status: "idle", error: null } : unit}
+            busy={formSwitching !== null}
+            className="mx-5 my-3 shrink-0"
+          />
+        }
         main={
           <>
             {refsGroup}
