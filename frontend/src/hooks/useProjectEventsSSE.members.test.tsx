@@ -107,6 +107,29 @@ describe("useProjectEventsSSE：其他成员的修改", () => {
     expect(useAppStore.getState().workspaceNotifications.map((n) => n.text)).toEqual(["bob：道具「玉佩」已更新"]);
   });
 
+  it("同一成员连续修改同一条目，只提示一次", async () => {
+    const stream = mount("/characters");
+
+    stream.emit({ actor: BOB, changes: [PROP_UPDATED] });
+    await waitFor(() => {
+      expect(useAppStore.getState().workspaceNotifications).toHaveLength(1);
+    });
+    act(() => useAppStore.setState({ toast: null }));
+
+    for (let i = 0; i < 3; i += 1) {
+      const calls = vi.mocked(API.getProject).mock.calls.length;
+      stream.emit({ actor: BOB, batch_id: `batch-${i + 2}`, changes: [PROP_UPDATED] });
+      await waitFor(() => {
+        expect(vi.mocked(API.getProject).mock.calls.length).toBeGreaterThan(calls);
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+    expect(useAppStore.getState().toast).toBeNull();
+    expect(useAppStore.getState().workspaceNotifications).toHaveLength(1);
+  });
+
   it("其他成员新建的草稿不把我带到那一集", async () => {
     const stream = mount("/characters");
 

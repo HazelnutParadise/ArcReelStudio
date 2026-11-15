@@ -38,6 +38,17 @@ export interface RoomSnapshot {
   /** 有还没送到服务端的本机修改（离线时）。 */
   pending: boolean;
   peers: CollabPeer[];
+  /** 其他成员最近改过的字段：按字段路径记下最后一次是谁改的（只记认得出是谁的修改）。 */
+  remoteEdits: Readonly<Record<string, RemoteEdit>>;
+}
+
+/** 某个字段最近一次被其他成员修改。 */
+export interface RemoteEdit {
+  userId: string;
+  name: string;
+  color: string;
+  /** 本机收到这次修改的时间（毫秒时间戳）。 */
+  at: number;
 }
 
 export interface CollabPeer {
@@ -128,6 +139,7 @@ export class CollabRoom {
       json: null,
       pending: false,
       peers: [],
+      remoteEdits: {},
     };
     this.doc.on("update", this.handleDocUpdate);
     this.awareness.on("update", this.handleAwarenessUpdate);
@@ -149,7 +161,8 @@ export class CollabRoom {
       next.error === this.snapshot.error &&
       next.json === this.snapshot.json &&
       next.pending === this.snapshot.pending &&
-      next.peers === this.snapshot.peers
+      next.peers === this.snapshot.peers &&
+      next.remoteEdits === this.snapshot.remoteEdits
     ) {
       return;
     }
@@ -292,7 +305,13 @@ export class CollabRoom {
   }
 
   private handleDocUpdate = (update: Uint8Array, origin: unknown): void => {
-    if (this.synced) this.update({ json: unitJson(this.doc) });
+    if (this.synced) {
+      const previous = this.snapshot.json;
+      const json = unitJson(this.doc);
+      const remoteEdits =
+        origin === REMOTE_ORIGIN && previous ? this.attributeRemoteEdit(update, previous, json) : null;
+      this.update(remoteEdits ? { json, remoteEdits } : { json });
+    }
     // 其他人的光标以相对位置广播：停在结尾时打字前后的相对位置一样，不会有新的在线状态，内容变了就重新换算位置
     if (this.snapshot.peers.some((peer) => peer.selection !== null)) this.handleAwarenessChange();
     if (origin === REMOTE_ORIGIN) return;
@@ -334,6 +353,32 @@ export class CollabRoom {
     this.update({ peers });
   };
 
+  /**
+   * 远端更新里的条目带着写入方文档的客户端编号，与那位成员在线状态的编号相同：据此认出是谁改的，
+   * 再把内容前后不同的字段记到他名下。认不出（服务端或 Agent 写回）时不记。
+   */
+  private attributeRemoteEdit(
+    update: Uint8Array,
+    previous: UnitJson,
+    json: UnitJson,
+  ): Readonly<Record<string, RemoteEdit>> | null {
+    let clients: Set<number>;
+    try {
+      const decoded = Y.decodeUpdate(update);
+      clients = new Set([...decoded.structs.map((struct) => struct.id.client), ...decoded.ds.clients.keys()]);
+    } catch {
+      return null;
+    }
+    const author = this.snapshot.peers.find((peer) => clients.has(peer.clientId));
+    if (!author) return null;
+    const paths = changedPaths(previous, json);
+    if (paths.length === 0) return null;
+    const edit: RemoteEdit = { userId: author.userId, name: author.name, color: author.color, at: Date.now() };
+    const next = { ...this.snapshot.remoteEdits };
+    for (const path of paths) next[path] = edit;
+    return next;
+  }
+
   private resolveSelection(
     focus: { anchor?: unknown; head?: unknown } | null | undefined,
   ): { anchor: number; head: number } | null {
@@ -357,6 +402,21 @@ export class CollabRoom {
     encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(this.awareness, clientIds));
     this.client.sendData("awareness", this.ref, encoding.toUint8Array(encoder));
   }
+}
+
+/** 两份内容里取值不同的字段路径，路径写法与在线状态的 `field` 相同（如 `utterances.0.text`）。 */
+function changedPaths(before: unknown, after: unknown, prefix = ""): string[] {
+  if (Object.is(before, after)) return [];
+  const isContainer = (value: unknown) => value !== null && typeof value === "object";
+  if (!isContainer(before) || !isContainer(after) || Array.isArray(before) !== Array.isArray(after)) {
+    return prefix ? [prefix] : [];
+  }
+  const a = before as Record<string, unknown>;
+  const b = after as Record<string, unknown>;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  const out: string[] = [];
+  for (const key of keys) out.push(...changedPaths(a[key], b[key], prefix ? `${prefix}.${key}` : key));
+  return out;
 }
 
 function parsePointer(value: unknown): PointerPosition | null {

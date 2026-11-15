@@ -27,6 +27,16 @@ function useCompactViewport() {
   }));
 }
 
+/** 手机宽度：同时是紧凑档，`(max-width: …)` 的手机查询匹配。 */
+function usePhoneViewport() {
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query.includes("max-width"),
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
+}
+
 function renderShell(path: string) {
   const location = memoryLocation({ path });
   render(
@@ -158,6 +168,16 @@ describe("StudioLayout", () => {
 
     expect(agentToggle()).toHaveAttribute("aria-pressed", "false");
     expect(agentToggle()).toHaveFocus();
+  });
+
+  it("starts with the agent panel collapsed on phones, and the header toggle opens it", () => {
+    usePhoneViewport();
+    useAppStore.setState({ assistantPanelOpen: true });
+    renderShell("/");
+
+    expect(agentToggle()).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(agentToggle());
+    expect(agentToggle()).toHaveAttribute("aria-pressed", "true");
   });
 
   it("keeps the side-by-side agent panel open on Escape on standard viewports", () => {

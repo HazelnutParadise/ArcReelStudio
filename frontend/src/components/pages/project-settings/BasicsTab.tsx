@@ -9,6 +9,8 @@ import { ROUTE_META } from "@/components/shared/generation-route-meta";
 import { GridStoryboardBar } from "@/components/shared/GridStoryboardBar";
 import { InlineWarning } from "@/components/shared/InlineWarning";
 import { SpeechRateField } from "@/components/shared/SpeechRateField";
+import type { RemoteEdit } from "@/collab/collab-client";
+import { RecentEditNote } from "@/collab/RecentEditNote";
 
 import { gridToggleVisible, type ProjectFacts, type ProjectSettingsForm } from "./project-settings-form";
 import { SettingsBlock, TabHeader } from "./SettingsBlock";
@@ -23,10 +25,14 @@ interface BasicsTabProps {
   savedValue: ProjectSettingsForm;
   onChange: (update: (prev: ProjectSettingsForm) => ProjectSettingsForm) => void;
   facts: ProjectFacts & { sourceLanguage: string | null };
+  /** 多人协作中其他成员最近改过的字段；不在协作中时为空。 */
+  remoteEdits?: Readonly<Record<string, RemoteEdit>>;
 }
 
+const NO_EDITS: Readonly<Record<string, RemoteEdit>> = {};
+
 /** 「基础」：画面比例、生成方式（只读，含宫格开关）、口播语速估算与目标时长。 */
-export function BasicsTab({ value, savedValue, onChange, facts }: BasicsTabProps) {
+export function BasicsTab({ value, savedValue, onChange, facts, remoteEdits = NO_EDITS }: BasicsTabProps) {
   const { t } = useTranslation("dashboard");
   const aspectId = useId();
   const route = ROUTE_META[facts.generationRoute];
@@ -35,7 +41,11 @@ export function BasicsTab({ value, savedValue, onChange, facts }: BasicsTabProps
     <div className="flex flex-col gap-6">
       <TabHeader title={t("project_settings_tab_basics")} />
 
-      <SettingsBlock title={t("aspect_ratio")} titleId={aspectId}>
+      <SettingsBlock
+        title={t("aspect_ratio")}
+        titleId={aspectId}
+        aside={<RecentEditNote edits={remoteEdits} path="aspect_ratio" />}
+      >
         <div role="radiogroup" aria-labelledby={aspectId} className="flex gap-2.5">
           {ASPECT_RATIOS.map(({ ratio, labelKey, glyph }) => {
             const selected = value.aspectRatio === ratio;
@@ -66,10 +76,7 @@ export function BasicsTab({ value, savedValue, onChange, facts }: BasicsTabProps
 
       <SettingsBlock title={t("generation_route")} aside={<RouteLockBadge />}>
         <div className="rounded-lg border border-border px-3.5 py-2.5">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium text-foreground">{t(route.nameKey)}</span>
-            <span className="text-xs text-muted-foreground">{route.tag}</span>
-          </div>
+          <span className="text-sm font-medium text-foreground">{t(route.nameKey)}</span>
           <p className="mt-0.5 text-xs text-muted-foreground">{t(route.descKey)}</p>
         </div>
         {gridToggleVisible(facts) && (
@@ -80,7 +87,18 @@ export function BasicsTab({ value, savedValue, onChange, facts }: BasicsTabProps
         )}
       </SettingsBlock>
 
-      <SettingsBlock title={t("project_settings_pacing_title")}>
+      <SettingsBlock
+        title={t("project_settings_pacing_title")}
+        aside={
+          <>
+            <RecentEditNote edits={remoteEdits} path="speech_rate_units_per_second" />
+            <RecentEditNote
+              edits={remoteEdits}
+              path={facts.contentMode === "ad" ? "target_duration" : "episode_target_duration"}
+            />
+          </>
+        }
+      >
         <div className="flex flex-col gap-5">
           <SpeechRateField
             value={value.speechRate}

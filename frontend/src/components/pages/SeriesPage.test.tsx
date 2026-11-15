@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { Router } from "wouter";
@@ -59,6 +59,21 @@ describe("SeriesPage", () => {
     expect(within(list).getByText("1 个项目 · 1 个资产")).toBeInTheDocument();
     expect(within(list).getByText("1 个项目 · 0 个资产")).toBeInTheDocument();
     expect(screen.getByLabelText("名称")).toHaveValue("星海纪事");
+  });
+
+  it("hides the internal project id unless two projects share a title", async () => {
+    mockBackend();
+    await openPage();
+    expect(screen.queryByText("p1")).not.toBeInTheDocument();
+
+    vi.restoreAllMocks();
+    vi.spyOn(API, "listSeries").mockResolvedValue({ series: [{ ...STARS, project_names: ["p1", "p9"] }] });
+    vi.spyOn(API, "listProjects").mockResolvedValue({ projects: [project("p1", "第一部"), project("p9", "第一部")] });
+    vi.spyOn(API, "getAsset").mockResolvedValue({ asset: makeSeriesAsset({ id: "a1", name: "王小明" }) });
+    cleanup();
+    renderPage();
+    expect(await screen.findByText("p1")).toBeInTheDocument();
+    expect(screen.getByText("p9")).toBeInTheDocument();
   });
 
   it("creates a series and selects it", async () => {

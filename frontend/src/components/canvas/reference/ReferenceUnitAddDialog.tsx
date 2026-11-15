@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useProjectsStore } from "@/stores/projects-store";
 
 /**
  * 新增视频单元前填写正文。正文是单元唯一的内容真相，空正文的单元服务端以 needs_replan
@@ -35,6 +36,7 @@ export function ReferenceUnitAddDialog({
   onClose: () => void;
 }) {
   const { t } = useTranslation(["dashboard", "common"]);
+  const isAd = useProjectsStore((s) => s.currentProjectData?.content_mode === "ad");
   const textareaId = useId();
   return (
     <Dialog
@@ -55,7 +57,7 @@ export function ReferenceUnitAddDialog({
             <Textarea
               id={textareaId}
               value={prompt}
-              placeholder={t("reference_editor_placeholder")}
+              placeholder={t(isAd ? "reference_editor_placeholder_ad" : "reference_editor_placeholder")}
               onChange={(e) => onPromptChange(e.target.value)}
               disabled={submitting}
             />

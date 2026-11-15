@@ -84,6 +84,14 @@ export function useCompactTier(): boolean {
   return useSyncExternalStore(subscribeTier, isCompactTier);
 }
 
+// 手机宽度与 Tailwind 的 md 一致：覆盖层的 Agent 面板在这个宽度下会盖住整个画布。
+const PHONE_QUERY = "(max-width: 47.999rem)";
+
+/** 当前视口是否为手机宽度。只在进入工作区时读一次，用来决定 Agent 面板的初始开合。 */
+export function isPhoneViewport(): boolean {
+  return typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches;
+}
+
 /** 顶栏「Agent」开关与 Agent 面板的 DOM id：开关经 aria-controls 指向面板，面板收起时焦点回到开关。 */
 export const AGENT_PANEL_ID = "workspace-agent-panel";
 export const AGENT_PANEL_TOGGLE_ID = "workspace-agent-toggle";

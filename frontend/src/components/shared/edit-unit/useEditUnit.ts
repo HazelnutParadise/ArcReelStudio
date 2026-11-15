@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 
-import type { CollabPeer, CollabRef } from "@/collab/collab-client";
+import type { CollabPeer, CollabRef, RemoteEdit } from "@/collab/collab-client";
 import type { CollabFieldProps } from "@/collab/useLiveFields";
 import type { UnitJson } from "@/collab/ydoc-json";
 import { speechProblemCodeOf } from "@/api/errors";
@@ -69,6 +69,8 @@ export interface LiveEditing {
   connection: "synced" | "offline";
   /** 同一单元里的其他成员。 */
   peers: CollabPeer[];
+  /** 其他成员最近改过的字段（按字段路径），用来在字段旁标出是谁改的。 */
+  remoteEdits: Readonly<Record<string, RemoteEdit>>;
   /** 绑到输入框上：回报自己的光标位置、远端改动时保住光标、Ctrl/⌘+Z 只撤销自己的修改。 */
   fieldProps: (path: string) => CollabFieldProps;
   undo: () => void;

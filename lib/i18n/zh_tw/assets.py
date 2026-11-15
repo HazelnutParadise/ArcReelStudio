@@ -1,7 +1,7 @@
 MESSAGES = {
     "asset_not_found": "資產「{name}」不存在",
     "asset_already_exists": "同類型下已有同名資產「{name}」",
-    "asset_invalid_type": "資產型別必須為 character / scene / prop",
+    "asset_invalid_type": "資產類型必須為 character / scene / prop",
     "asset_upload_too_large": "圖片大小超過限制（5 MB）",
     "asset_unsupported_format": "僅支援 png/jpg/jpeg/webp",
     "asset_source_resource_not_found": "專案「{project}」中不存在{kind}「{name}」",

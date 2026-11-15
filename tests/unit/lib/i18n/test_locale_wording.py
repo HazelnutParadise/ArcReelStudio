@@ -40,3 +40,14 @@ def test_zh_messages_follow_punctuation_rule(rule, pattern, locale):
 def test_zh_tw_messages_are_traditional_chinese():
     offenders = {key: text for key, text in MESSAGES["zh-TW"].items() if SIMPLIFIED_ONLY.search(text)}
     assert offenders == {}
+
+
+#: 简转繁逐字转换留下的大陆词形；与前端 OPENCC_ARTEFACTS 同一口径。
+OPENCC_ARTEFACTS = re.compile(
+    "全域性|區域性|釋出|例項|自定義|型別|稽核|許可權|擴充套件|整整合|撤銷|標識|響應|定製|豎屏|橫屏|獲取|超時"
+)
+
+
+def test_zh_tw_messages_avoid_conversion_artefacts():
+    offenders = {key: text for key, text in MESSAGES["zh-TW"].items() if OPENCC_ARTEFACTS.search(text)}
+    assert offenders == {}

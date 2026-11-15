@@ -354,7 +354,7 @@ describe("ProjectsPage", () => {
     const user = await openCardMenu("Second");
     await user.click(await screen.findByRole("menuitem", { name: "重命名" }));
     const dialog = await screen.findByRole("dialog", { name: "重命名项目" });
-    expect(dialog).toHaveTextContent("项目 ID「second」不随标题变化");
+    expect(dialog).toHaveTextContent("项目代号「second」不随标题变化");
 
     const input = within(dialog).getByRole("textbox", { name: "项目标题" });
     await user.clear(input);
@@ -678,8 +678,8 @@ describe("ProjectsPage", () => {
     await projectList();
     const file = chooseZip(container);
 
-    const dialog = await screen.findByRole("alertdialog", { name: "项目 ID 已存在" });
-    expect(dialog).toHaveTextContent("项目 ID「demo」已被现有项目占用");
+    const dialog = await screen.findByRole("alertdialog", { name: "项目代号已存在" });
+    expect(dialog).toHaveTextContent("项目代号「demo」已被现有项目占用");
     fireEvent.click(within(dialog).getByRole("button", { name: "自动重命名导入" }));
 
     await waitFor(() => expect(API.importProject).toHaveBeenNthCalledWith(2, file, "rename", { confirmReport: false }));
@@ -758,7 +758,7 @@ describe("ProjectsPage", () => {
       }),
     );
     fireEvent.click(
-      within(await screen.findByRole("alertdialog", { name: "项目 ID 已存在" })).getByRole("button", {
+      within(await screen.findByRole("alertdialog", { name: "项目代号已存在" })).getByRole("button", {
         name: "自动重命名导入",
       }),
     );
@@ -842,7 +842,7 @@ describe("ProjectsPage", () => {
       const toast = useAppStore.getState().toast;
       expect(toast?.tone).toBe("warning");
       expect(toast?.text).toContain("项目未导入");
-      expect(toast?.text).toContain("项目 ID「demo」已被现有项目占用");
+      expect(toast?.text).toContain("项目代号「demo」已被现有项目占用");
     });
 
     it("says the import needs the upgrade report confirmed", async () => {

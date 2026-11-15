@@ -147,6 +147,26 @@ function getPrimaryGroupTarget(group: GroupedProjectChange): WorkspaceNotificati
  * 用户正在编辑时，Agent 改动带来的自动定位与跳转一律不执行：焦点在输入控件里、旧式卡片标了编辑中，
  * 或有编辑单元带着未保存修改（分镜详情、视频单元正文等不靠焦点判断，切走会触发离开拦截）。
  */
+/** 其他成员连续编辑同一条目时，这段时间内只提示一次：共编时每次落盘都会发一批 updated。 */
+const MEMBER_EDIT_NOTICE_WINDOW_MS = 5 * 60_000;
+
+/**
+ * 判断其他成员这一组「修改」是否已在窗口内提示过；没提示过就记下并返回 false。
+ * 只收敛 updated：新建、删除这类结构变化每次都提示。
+ */
+function isRepeatedMemberEdit(
+  group: GroupedProjectChange,
+  memberKey: string,
+  noticedAt: Map<string, number>,
+  now: number,
+): boolean {
+  if (!group.changes.every((c) => c.action === "updated")) return false;
+  const keys = group.changes.map((c) => `${memberKey}|${c.entity_type}|${c.entity_id}`);
+  const repeated = keys.every((key) => now - (noticedAt.get(key) ?? -Infinity) < MEMBER_EDIT_NOTICE_WINDOW_MS);
+  if (!repeated) for (const key of keys) noticedAt.set(key, now);
+  return repeated;
+}
+
 function isWorkspaceEditing(hasUnsavedChanges: () => boolean): boolean {
   if (hasUnsavedChanges()) return true;
   const active = document.activeElement;
@@ -189,6 +209,7 @@ export function useProjectEventsSSE(projectName?: string | null): void {
   const sourceRef = useRef<SseStreamHandle | null>(null);
   const lastFingerprintRef = useRef<string | null>(null);
   const queuedFocusRef = useRef<WorkspaceNotificationTarget | null>(null);
+  const memberEditNoticedAtRef = useRef(new Map<string, number>());
 
   const executeFocus = useCallback(
     (target: WorkspaceNotificationTarget) => {
@@ -435,6 +456,17 @@ export function useProjectEventsSSE(projectName?: string | null): void {
             const episodeLedger = currentProjectData?.episodes ?? [];
             for (const group of groupedChanges) {
               if (!hasImportantChanges(group)) {
+                continue;
+              }
+              if (
+                otherMember &&
+                isRepeatedMemberEdit(
+                  group,
+                  `${projectName}|${otherMember.user_id}`,
+                  memberEditNoticedAtRef.current,
+                  Date.now(),
+                )
+              ) {
                 continue;
               }
               pushNotification(

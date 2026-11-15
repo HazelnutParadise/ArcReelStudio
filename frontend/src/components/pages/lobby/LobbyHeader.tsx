@@ -49,17 +49,20 @@ export function LobbyHeader({ query, onQueryChange, onCreate, onImport, importin
     <PageHeader
       actions={
         <>
+          {/* 顶栏变窄时：资产库、系列只留图标，外部 Agent 接入（设置里也有入口）收起，品牌名与搜索快捷键提示隐藏 */}
           <Link href={ROUTE_APP_ASSETS} className={buttonVariants({ variant: "ghost" })}>
             <Library aria-hidden data-icon="inline-start" />
-            {t("assets:library_title")}
+            <span className="sr-only @4xl/topbar:not-sr-only">{t("assets:library_title")}</span>
           </Link>
           <Link href={ROUTE_APP_SERIES} className={buttonVariants({ variant: "ghost" })}>
             <Layers aria-hidden data-icon="inline-start" />
-            {t("dashboard:series_title")}
+            <span className="sr-only @4xl/topbar:not-sr-only">{t("dashboard:series_title")}</span>
           </Link>
-          <IconLink href={settingsSectionPath("external-agent")} label={t("dashboard:settings_external_agent")}>
-            <Bot aria-hidden />
-          </IconLink>
+          <span className="hidden @2xl/topbar:flex">
+            <IconLink href={settingsSectionPath("external-agent")} label={t("dashboard:settings_external_agent")}>
+              <Bot aria-hidden />
+            </IconLink>
+          </span>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -75,11 +78,11 @@ export function LobbyHeader({ query, onQueryChange, onCreate, onImport, importin
             </TooltipTrigger>
             <TooltipContent>{t("dashboard:lobby_deleted_projects")}</TooltipContent>
           </Tooltip>
-          <span aria-hidden className="mx-1 h-5 w-px bg-border" />
+          <span aria-hidden className="mx-1 hidden h-5 w-px bg-border @2xl/topbar:block" />
           <ButtonGroup>
             <Button onClick={onCreate} data-onboarding={ONBOARDING_ANCHORS.lobbyCreateProject}>
               <Plus aria-hidden data-icon="inline-start" />
-              {t("dashboard:lobby_new_project")}
+              <span className="sr-only @xl/topbar:not-sr-only">{t("dashboard:lobby_new_project")}</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -117,9 +120,9 @@ export function LobbyHeader({ query, onQueryChange, onCreate, onImport, importin
       <div className="flex shrink-0 items-center gap-2 pl-1">
         <img src="/logo-light.svg" alt="" className="size-7 dark:hidden" />
         <img src="/logo.svg" alt="" className="hidden size-7 dark:block" />
-        <span className="text-base font-medium">{BRAND.name}</span>
+        <span className="hidden text-base font-medium @2xl/topbar:inline">{BRAND.name}</span>
       </div>
-      <InputGroup className="ml-3 max-w-80">
+      <InputGroup className="min-w-24 max-w-80 @2xl/topbar:ml-3">
         <InputGroupAddon>
           <Search aria-hidden />
         </InputGroupAddon>
@@ -134,7 +137,7 @@ export function LobbyHeader({ query, onQueryChange, onCreate, onImport, importin
           autoComplete="off"
           spellCheck={false}
         />
-        <InputGroupAddon align="inline-end">
+        <InputGroupAddon align="inline-end" className="hidden @2xl/topbar:flex">
           <InputGroupText aria-hidden>{t("dashboard:lobby_search_kbd")}</InputGroupText>
         </InputGroupAddon>
       </InputGroup>

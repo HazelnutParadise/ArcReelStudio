@@ -412,7 +412,9 @@ export function ReferenceVideoCard({
           aria-autocomplete="list"
           aria-activedescendant={pickerOpen && activeOptionId ? activeOptionId : undefined}
           aria-describedby={unknownMentions.length > 0 ? "reference-editor-unknown-desc" : undefined}
-          placeholder={t("reference_editor_placeholder")}
+          placeholder={t(
+            project?.content_mode === "ad" ? "reference_editor_placeholder_ad" : "reference_editor_placeholder",
+          )}
           aria-label={t("reference_editor_aria_name")}
           spellCheck={false}
           className={`absolute inset-0 h-full w-full resize-none bg-transparent ${EDITOR_LAYER_CLASS} text-transparent caret-foreground placeholder:text-muted-foreground focus:outline-none`}

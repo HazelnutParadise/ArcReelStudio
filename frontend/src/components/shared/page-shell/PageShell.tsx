@@ -32,6 +32,7 @@ interface PageShellProps {
  * （限宽与铺满档）或全出血区段的各栏里。
  *
  * 外壳是唯一按视口切换标准档与紧凑档的地方（`xl`，1280）：侧栏 224 / 200px，内容内边距 32 / 24px。
+ * 手机宽度（`md` 以下）侧栏改为内容上方的一行分区导航，内容单栏占满全宽，内边距 16px。
  * 内容列是名为 `page` 的尺寸容器，区段内部按 `@md/page:` 这类容器查询响应宽度。
  *
  * 限宽与铺满档在主体下方有一行固定的保存栏，区段用 `PageShellFooter` 把保存栏渲染进来；
@@ -49,15 +50,15 @@ export function PageShell({ header, sidebar, tier, children }: PageShellProps) {
     // 不会逃出滚动容器把文档撑高。
     <div className="relative flex h-dvh flex-col overflow-hidden text-foreground">
       {header}
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         {sidebar}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <FooterSlotContext.Provider value={footerSlot}>
             {tier === "bleed" ? (
               <main className="@container/page relative flex min-h-0 min-w-0 flex-1 flex-col">{children}</main>
             ) : (
               <main className="relative min-h-0 min-w-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
-                <div className="p-6 xl:p-8">
+                <div className="p-4 md:p-6 xl:p-8">
                   <div className={cn("@container/page min-w-0", tier === "constrained" && "max-w-190")}>{children}</div>
                 </div>
               </main>
@@ -67,7 +68,7 @@ export function PageShell({ header, sidebar, tier, children }: PageShellProps) {
             // 区段经 PageShellFooter 渲染进来；没有内容时整行隐藏。
             <div
               ref={setFooterElement}
-              className="shrink-0 border-t border-border bg-card px-6 py-3 empty:hidden xl:px-8"
+              className="shrink-0 border-t border-border bg-card px-4 py-3 empty:hidden md:px-6 xl:px-8"
             />
           )}
         </div>

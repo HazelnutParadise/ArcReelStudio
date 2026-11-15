@@ -57,7 +57,7 @@ export default {
   'updated_externally': '此內容已被其他成員或 Agent 更新',
   'adopt_new_content': '採用新內容',
   'leave_dialog_description': '放棄的修改無法恢復。',
-  'undo': '撤銷',
+  'undo': '復原',
   'sortable_instructions': '按空格鍵或回車鍵拿起，用方向鍵移動，再按空格鍵或回車鍵放下；按 Esc 取消。',
   'sortable_role_description': '可排序的項',
   'sortable_picked_up': '已拿起「{{name}}」，位於第 {{position}} 項，共 {{total}} 項。',

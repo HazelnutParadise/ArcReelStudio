@@ -19,7 +19,7 @@ export default {
   'lobby_demo_body': '點選卡片開啟演示專案，檢視製作介面。',
   'workbench_overview_title': '專案概覽',
   'workbench_overview_body':
-    '這裡是從原文自動提煉的梗概、型別、主題和世界觀，可以直接修改。下方顯示資產圖的完成情況和費用，每一集的狀態在側欄檢視。',
+    '這裡是從原文自動提煉的梗概、類型、主題和世界觀，可以直接修改。下方顯示資產圖的完成情況和費用，每一集的狀態在側欄檢視。',
   'workbench_agent_title': 'Agent',
   'workbench_agent_body':
     '右側是 Agent 面板。在對話中把任務交給 Agent，它會執行任務並在這裡彙報進度。面板可以用頂欄的「Agent」開關收起或展開。',

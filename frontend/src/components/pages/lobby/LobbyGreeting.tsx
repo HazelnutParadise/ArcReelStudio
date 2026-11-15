@@ -38,7 +38,11 @@ export function LobbyGreeting({
       </h1>
       {projectCount > 0 && (
         <p className="text-sm text-muted-foreground">
-          {t("lobby_hero_summary", { completed: episodesCompleted, inProduction: episodesInProduction })}
+          {t("lobby_hero_summary", {
+            count: episodesCompleted,
+            completed: episodesCompleted,
+            inProduction: episodesInProduction,
+          })}
         </p>
       )}
     </div>

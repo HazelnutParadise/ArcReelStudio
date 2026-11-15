@@ -5,6 +5,8 @@ import type { LiveEditing } from "@/components/shared/edit-unit/useEditUnit";
 
 import { caretCoordinates, type CaretPoint } from "./caret-coordinates";
 import type { CollabPeer } from "./collab-client";
+import { RecentEditNote } from "./RecentEditNote";
+import { useRecentChange } from "./useRecentChange";
 
 /**
  * 协作单元里一个输入框的外框：画出正在这个字段里的其他成员的光标与名字，并在框上加上对方的颜色。
@@ -20,11 +22,21 @@ export function CollabField({ live, path, children }: { live: LiveEditing | null
   );
 }
 
-/** 只画其他人的光标与外框，交给已经有定位容器的输入框（如带着色镜像层的编辑器）自己摆放。 */
+/** 只画其他人的光标与外框、「某某刚改了这项」，交给已经有定位容器的输入框（如带着色镜像层的编辑器）自己摆放。 */
 export function CollabCarets({ live, path }: { live: LiveEditing | null; path: string }) {
-  const here = live ? live.peers.filter((peer) => peer.field === path) : [];
-  if (!live || here.length === 0) return null;
-  return <PeerCarets live={live} path={path} peers={here} />;
+  if (!live) return null;
+  const here = live.peers.filter((peer) => peer.field === path);
+  return (
+    <>
+      {here.length > 0 && <PeerCarets live={live} path={path} peers={here} />}
+      {/* 别人刚改了这个字段：压在外框右下角，不推动版面 */}
+      <RecentEditNote
+        edits={live.remoteEdits}
+        path={path}
+        className="pointer-events-none absolute right-2 -bottom-2 rounded-sm bg-popover px-1 shadow-sm"
+      />
+    </>
+  );
 }
 
 function PeerCarets({ live, path, peers }: { live: LiveEditing; path: string; peers: CollabPeer[] }) {
@@ -70,23 +82,7 @@ function PeerCarets({ live, path, peers }: { live: LiveEditing; path: string; pe
       </span>
       {points.map(({ peer, caret }) =>
         caret ? (
-          <span
-            key={peer.clientId}
-            aria-hidden
-            className="pointer-events-none absolute top-(--caret-top) left-(--caret-left) h-(--caret-height) w-0.5 bg-(--peer-color)"
-            style={
-              {
-                "--peer-color": peer.color,
-                "--caret-top": `${caret.top}px`,
-                "--caret-left": `${caret.left}px`,
-                "--caret-height": `${caret.height}px`,
-              } as CSSProperties
-            }
-          >
-            <span className="absolute -top-4 left-0 rounded-sm bg-(--peer-color) px-1 text-xs leading-4 whitespace-nowrap text-white">
-              {peer.name}
-            </span>
-          </span>
+          <PeerCaret key={peer.clientId} peer={peer} caret={caret} />
         ) : (
           <span
             key={peer.clientId}
@@ -99,6 +95,35 @@ function PeerCarets({ live, path, peers }: { live: LiveEditing; path: string; pe
         ),
       )}
     </>
+  );
+}
+
+/** 对方停止移动光标这么久后，名字标签淡出，只留光标竖线，不再盖住上一行的正文。 */
+const LABEL_IDLE_MS = 2000;
+
+function PeerCaret({ peer, caret }: { peer: CollabPeer; caret: CaretPoint }) {
+  // 按对方的选区判断是否在动：自己打字挤动版面只改坐标，不算对方在动
+  const active = useRecentChange(JSON.stringify(peer.selection), LABEL_IDLE_MS);
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute top-(--caret-top) left-(--caret-left) h-(--caret-height) w-0.5 bg-(--peer-color)"
+      style={
+        {
+          "--peer-color": peer.color,
+          "--caret-top": `${caret.top}px`,
+          "--caret-left": `${caret.left}px`,
+          "--caret-height": `${caret.height}px`,
+        } as CSSProperties
+      }
+    >
+      <span
+        data-idle={active ? undefined : ""}
+        className="absolute -top-4 left-0 rounded-sm bg-(--peer-color) px-1 text-xs leading-4 whitespace-nowrap text-white transition-opacity duration-fast data-idle:opacity-0"
+      >
+        {peer.name}
+      </span>
+    </span>
   );
 }
 

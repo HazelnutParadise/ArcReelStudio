@@ -10,6 +10,7 @@ const IDLE_SNAPSHOT: RoomSnapshot = {
   json: null,
   pending: false,
   peers: [],
+  remoteEdits: {},
 };
 
 const noopSubscribe = () => () => {};

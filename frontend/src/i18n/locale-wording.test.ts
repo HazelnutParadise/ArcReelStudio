@@ -30,6 +30,10 @@ const CHINESE_PACKS = [
 const SIMPLIFIED_ONLY =
   /[们这个设视频项时为于与说对进会发动务类页选码号应关开当无将让还从网络数据图显输删编辑览载传导级链帮请确认]/u;
 
+/** 簡轉繁逐字轉換留下的大陸詞形：台灣用語分別是全域、局部、發布、實例、自訂、類型、審核、權限、擴充、整集成片、復原、識別碼、回應、直式、橫式、取得、逾時。 */
+const OPENCC_ARTEFACTS =
+  /全域性|區域性|釋出|例項|自定義|型別|稽核|許可權|擴充套件|整整合|撤銷|標識|響應|定製|豎屏|橫屏|獲取|超時/u;
+
 describe('locale wording', () => {
   it.each(CHINESE_PACKS)('uses a full-width colon after Chinese text in the %s pack', (_, modules) => {
     const offenders = entries(modules).filter(([, text]) => /\p{Script=Han}\s?:/u.test(text));
@@ -52,6 +56,11 @@ describe('locale wording', () => {
 
   it('writes the zh-TW pack in Traditional Chinese', () => {
     const offenders = entries(zhTW).filter(([, text]) => SIMPLIFIED_ONLY.test(text));
+    expect(offenders).toEqual([]);
+  });
+
+  it('keeps conversion artefacts out of the zh-TW pack', () => {
+    const offenders = entries(zhTW).filter(([, text]) => OPENCC_ARTEFACTS.test(text));
     expect(offenders).toEqual([]);
   });
 

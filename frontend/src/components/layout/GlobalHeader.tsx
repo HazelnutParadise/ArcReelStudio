@@ -105,22 +105,32 @@ export function GlobalHeader() {
       <div className="flex min-w-0 items-center gap-1">
         <Link href={`~${ROUTE_APP_PROJECTS}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
           <ChevronLeft aria-hidden data-icon="inline-start" />
-          {t("dashboard:projects")}
+          <span className="sr-only @2xl/header:not-sr-only">{t("dashboard:projects")}</span>
         </Link>
         <span aria-hidden className="h-4 w-px shrink-0 bg-border" />
         <ProjectMenu />
         {demoMode && <DemoReadOnlyBadge />}
       </div>
 
+      {/* 顶栏变窄（手机）时：制作进度条、用量、在线成员、资产库与系列入口收起，返回、导出与 Agent 开关只留图标，
+          保证 Agent 开关始终在画面内，面板覆盖画布时随时能收起 */}
       <div className="flex justify-center">
-        {currentProjectName ? <ProjectStatusBar key={currentProjectName} projectName={currentProjectName} /> : null}
+        {currentProjectName ? (
+          <div className="hidden @3xl/header:contents">
+            <ProjectStatusBar key={currentProjectName} projectName={currentProjectName} />
+          </div>
+        ) : null}
       </div>
 
       <div className="flex items-center justify-end gap-1">
         <WorkspaceNotifications onNavigate={handleNotificationNavigate} />
-        {usageProjectName && <PresenceAvatars />}
-        {usageProjectName && <UsageHeaderEntry projectName={usageProjectName} />}
-        <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-border" />
+        {usageProjectName && (
+          <span className="hidden items-center gap-1 @2xl/header:flex">
+            <PresenceAvatars />
+            <UsageHeaderEntry projectName={usageProjectName} />
+          </span>
+        )}
+        <span aria-hidden className="mx-1 hidden h-4 w-px shrink-0 bg-border @2xl/header:block" />
         <span className="flex" data-onboarding={ONBOARDING_ANCHORS.workbenchExport}>
           <Tooltip>
             <TooltipTrigger
@@ -140,19 +150,23 @@ export function GlobalHeader() {
               ) : (
                 <Download aria-hidden data-icon="inline-start" />
               )}
-              {exporting ? t("dashboard:exporting_zip") : t("dashboard:export_zip")}
+              <span className="sr-only @4xl/header:not-sr-only">
+                {exporting ? t("dashboard:exporting_zip") : t("dashboard:export_zip")}
+              </span>
             </TooltipTrigger>
             <TooltipContent side="bottom">
               {demoMode ? t("onboarding:demo_action_unavailable") : t("dashboard:export_project_zip")}
             </TooltipContent>
           </Tooltip>
         </span>
-        <IconLink href={`~${ROUTE_APP_ASSETS}`} label={t("assets:library_title")}>
-          <Library aria-hidden />
-        </IconLink>
-        <IconLink href={`~${ROUTE_APP_SERIES}`} label={t("dashboard:series_title")}>
-          <Layers aria-hidden />
-        </IconLink>
+        <span className="hidden @2xl/header:flex">
+          <IconLink href={`~${ROUTE_APP_ASSETS}`} label={t("assets:library_title")}>
+            <Library aria-hidden />
+          </IconLink>
+          <IconLink href={`~${ROUTE_APP_SERIES}`} label={t("dashboard:series_title")}>
+            <Layers aria-hidden />
+          </IconLink>
+        </span>
         <IconLink href={`~${ROUTE_APP_SETTINGS}`} label={t("dashboard:global_settings")}>
           <Settings aria-hidden />
           {!isConfigComplete && (

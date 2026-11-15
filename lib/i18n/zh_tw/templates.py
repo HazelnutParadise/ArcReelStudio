@@ -2,7 +2,7 @@
 
 MESSAGES: dict[str, str] = {
     # ===== Category names =====
-    "template_category_custom": "自定義",
+    "template_category_custom": "自訂",
     "template_category_live": "AI 真人劇",
     "template_category_anim": "AI 漫劇",
     # ===== Live names (18) =====

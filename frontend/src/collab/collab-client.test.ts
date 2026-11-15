@@ -118,6 +118,35 @@ describe("CollabClient", () => {
     expect(room.getSnapshot().peers[0]?.selection).toEqual({ anchor: 5, head: 5 });
   });
 
+  it("records which member changed which field", async () => {
+    const client = new CollabClient("ws://test/collab");
+    const room = client.acquire(REF);
+    await waitFor(room, "synced");
+    room.markRendered(room.getSnapshot().json!);
+
+    // 服务端替身的文档就是这位成员写入时用的文档：更新里的客户端编号与在线状态一致
+    const peer = new Awareness(server.docFor(REF));
+    peer.setLocalState({ user: { id: "u-bob", name: "bob", color: "#2563eb" }, focus: null });
+    server.deliverAwareness(REF, peer);
+    await settle();
+
+    server.externalChange(REF, { synopsis: "雨夜的街口" });
+    await settle();
+
+    expect(room.getSnapshot().remoteEdits.synopsis).toMatchObject({ userId: "u-bob", name: "bob" });
+  });
+
+  it("does not attribute a change nobody in the room made", async () => {
+    const client = new CollabClient("ws://test/collab");
+    const room = client.acquire(REF);
+    await waitFor(room, "synced");
+
+    server.externalChange(REF, { synopsis: "雨夜的街口" });
+    await settle();
+
+    expect(room.getSnapshot().remoteEdits).toEqual({});
+  });
+
   it("answers flush requests", async () => {
     const client = new CollabClient("ws://test/collab");
     const room = client.acquire(REF);

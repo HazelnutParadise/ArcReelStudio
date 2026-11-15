@@ -148,7 +148,10 @@ function SourceRangeNote({ meta }: { meta: EpisodeMeta | undefined }) {
         fileName(r.source_file),
         r.start != null && r.end != null ? `${r.start.toLocaleString()}–${r.end.toLocaleString()}` : null,
         r.start != null && r.end != null
-          ? t("episode_workspace_chars_approx", { count: (r.end - r.start).toLocaleString() })
+          ? t("episode_workspace_chars_approx", {
+              count: r.end - r.start,
+              chars: (r.end - r.start).toLocaleString(),
+            })
           : null,
       ];
   return (

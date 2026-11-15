@@ -17,11 +17,11 @@ interface PageHeaderProps {
 
 /**
  * 页面外壳的顶栏，高 56px：「返回 | 标题 | 副标题」成组靠左，返回箭头与侧栏图标在同一条竖线上，
- * 页面级动作靠右。
+ * 页面级动作靠右。顶栏是名为 `topbar` 的尺寸容器：放进来的品牌、搜索与动作按 `@xl/topbar:` 这类容器查询收放。
  */
 export function PageHeader({ back, title, subtitle, children, actions }: PageHeaderProps) {
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border pr-6 pl-3 xl:pr-8">
+    <header className="@container/topbar flex h-14 shrink-0 items-center gap-3 border-b border-border pr-3 pl-3 md:pr-6 xl:pr-8">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         {back && (
           <>
@@ -40,7 +40,7 @@ export function PageHeader({ back, title, subtitle, children, actions }: PageHea
         {subtitle && <TruncatedText text={subtitle} className="text-sm text-muted-foreground" />}
         {children}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && <div className="flex shrink-0 items-center gap-1 @xl/topbar:gap-2">{actions}</div>}
     </header>
   );
 }
