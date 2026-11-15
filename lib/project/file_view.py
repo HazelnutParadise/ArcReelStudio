@@ -355,7 +355,7 @@ def _open_checked(project_dir: Path, parts: tuple[str, ...]) -> int:
 def move_file_to_trash(project_dir: Path, rel: str) -> project_trash.TrashRecord:
     """把一个未引用文件或历史版本移进项目回收站，成为一条只含它的删除记录。
 
-    在项目锁内重建引用索引再判定：历史版本经版本管理删除（当前版本拒绝），其余角色一律拒绝；未纳入整本源文的源文件交给分集视图处理。
+    在项目锁内重建引用索引再判定：历史版本经版本管理删除（当前版本拒绝），其余角色一律拒绝；未纳入完整原文的源文件交给分集视图处理。
     """
     parts = _parts(rel)
     with project_metadata_lock(project_dir):

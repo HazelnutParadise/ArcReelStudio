@@ -80,7 +80,7 @@ from tests.fakes import FakeTextGenerator, refuse_resume_execution, use_text_gen
 
 
 def _admit_text_operations(projects: ProjectManager, project_name: str) -> None:
-    """放上文本长调用的准入输入：整本源文与第 1 集集原文；广告/短片填创作灵感。"""
+    """放上文本长调用的准入输入：完整原文与第 1 集集原文；广告/短片填创作灵感。"""
     if projects.load_project(project_name).get("content_mode") == "ad":
         projects.update_project(project_name, lambda project: project.update(brief="夏季新品"))
         return

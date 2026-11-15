@@ -900,7 +900,7 @@ def _anchor_sources(project_dir: Path, project: Mapping[str, Any], episode: int 
     """对应原文的比对源文。
 
     账本记录本集有原文、且集文件 ``source/episode_N.txt`` 可读且非空时只认它，与拆分工具生成对应原文时
-    读的是同一份；本集无原文、集文件缺失或集号未知时回落到整本源文（命中任一份即可），项目也没有源文时
+    读的是同一份；本集无原文、集文件缺失或集号未知时回落到完整原文（命中任一份即可），项目也没有源文时
     返回空列表。无原文的集不读盘上与它同名的文件。
     """
     entry = None if episode is None else episode_entry(project, episode)

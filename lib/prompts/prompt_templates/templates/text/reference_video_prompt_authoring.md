@@ -3,6 +3,75 @@ id: text/reference_video_prompt_authoring
 category: text
 title: 参考生视频 · 提示词编写
 description: 把已确认的参考生视频单元正文扩写出景别、构图、运镜与画面细节。
+i18n:
+  zh-TW:
+    title: "參考生影片 · 提示詞編寫"
+    description: "把已確認的參考生影片單元正文擴寫出景別、構圖、運鏡與畫面細節。"
+    slots:
+      target_language: "輸出語言"
+      project_overview: "專案概述，鍵齊全的物件 {synopsis, genre, theme, world_setting}；缺值時傳 null"
+      style: "專案風格值"
+      style_description: "專案風格描述"
+      aspect_ratio: "畫面比例（例如 9:16）"
+      assets: "資產外觀，物件 {characters, scenes, props}，每項是 [{name, appearance}] 清單（角括號已中和）"
+      character_names: "角色候選引用名稱清單（含 本體/衍生）"
+      scene_names: "場景候選引用名稱清單"
+      prop_names: "道具候選引用名稱清單"
+      units_content: "已確認影片單元的渲染文字（由程式碼投影：序號 + 時長 + 正文）"
+      episode: "目前集數"
+      max_refs: "單個影片單元的參考圖上限；不限制時傳 null"
+      instructions: "附加指示內容；缺值時傳 null"
+  en:
+    title: "Reference-to-video · Prompt writing"
+    description: "Expands confirmed reference-to-video unit bodies with shot size, composition, camera movement and visual detail."
+    slots:
+      target_language: "Output language"
+      project_overview: "Project overview, an object with all keys {synopsis, genre, theme, world_setting}; null when missing"
+      style: "Project style value"
+      style_description: "Project style description"
+      aspect_ratio: "Aspect ratio (e.g. 9:16)"
+      assets: "Asset appearance, object {characters, scenes, props}, each a [{name, appearance}] list (angle brackets neutralized)"
+      character_names: "Candidate character reference names (including base/variant)"
+      scene_names: "Candidate scene reference names"
+      prop_names: "Candidate prop reference names"
+      units_content: "Rendered text of the confirmed video units (projected by code: number + duration + body)"
+      episode: "Current episode number"
+      max_refs: "Maximum reference images per video unit; null when unlimited"
+      instructions: "Additional instructions; null when missing"
+  ru:
+    title: "Видео по референсу · Написание промптов"
+    description: "Дополняет утверждённые тексты блоков видео по референсу планом, композицией, движением камеры и деталями изображения."
+    slots:
+      target_language: "Язык вывода"
+      project_overview: "Обзор проекта, объект со всеми ключами {synopsis, genre, theme, world_setting}; null при отсутствии"
+      style: "Значение стиля проекта"
+      style_description: "Описание стиля проекта"
+      aspect_ratio: "Соотношение сторон (например, 9:16)"
+      assets: "Внешний вид материалов, объект {characters, scenes, props}, каждый — список [{name, appearance}] (угловые скобки нейтрализованы)"
+      character_names: "Список имён персонажей-кандидатов для ссылок (включая основной/вариант)"
+      scene_names: "Список названий сцен-кандидатов для ссылок"
+      prop_names: "Список названий реквизита-кандидатов для ссылок"
+      units_content: "Отрисованный текст утверждённых видеоблоков (проекция кодом: номер + длительность + текст)"
+      episode: "Номер текущей серии"
+      max_refs: "Максимум референсов на один видеоблок; null, если без ограничений"
+      instructions: "Дополнительные указания; null при отсутствии значения"
+  vi:
+    title: "Video tham chiếu · Viết prompt"
+    description: "Mở rộng nội dung các đơn vị video tham chiếu đã xác nhận với cỡ cảnh, bố cục, chuyển động máy quay và chi tiết hình ảnh."
+    slots:
+      target_language: "Ngôn ngữ đầu ra"
+      project_overview: "Tổng quan dự án, đối tượng đủ khóa {synopsis, genre, theme, world_setting}; null khi thiếu"
+      style: "Giá trị phong cách dự án"
+      style_description: "Mô tả phong cách dự án"
+      aspect_ratio: "Tỷ lệ khung hình (ví dụ 9:16)"
+      assets: "Ngoại hình tài sản, đối tượng {characters, scenes, props}, mỗi mục là danh sách [{name, appearance}] (dấu ngoặc nhọn đã được vô hiệu hóa)"
+      character_names: "Danh sách tên nhân vật đề xuất để tham chiếu (gồm gốc/biến thể)"
+      scene_names: "Danh sách tên cảnh đề xuất để tham chiếu"
+      prop_names: "Danh sách tên đạo cụ đề xuất để tham chiếu"
+      units_content: "Văn bản đã kết xuất của các đơn vị video đã xác nhận (do mã chiếu ra: số thứ tự + thời lượng + nội dung)"
+      episode: "Số tập hiện tại"
+      max_refs: "Số ảnh tham chiếu tối đa cho một đơn vị video; null khi không giới hạn"
+      instructions: "Chỉ dẫn bổ sung; null khi thiếu"
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool

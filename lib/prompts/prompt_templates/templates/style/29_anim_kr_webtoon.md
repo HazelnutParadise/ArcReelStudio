@@ -3,6 +3,19 @@ id: style/anim_kr_webtoon
 category: style
 title: 韩漫风格
 description: "动画画风，半写实 · 浪漫光影。"
+i18n:
+  zh-TW:
+    title: "韓漫風格"
+    description: "動畫畫風，半寫實 · 浪漫光影。"
+  en:
+    title: "KR Webtoon"
+    description: "Animated style: Semi-realistic · Romantic."
+  ru:
+    title: "Корейский вебтун"
+    description: "Анимационный стиль: Полуреализм · Романтика."
+  vi:
+    title: "Webtoon Hàn Quốc"
+    description: "Phong cách hoạt hình: Bán thực · Lãng mạn."
 stage: style
 invoked_by:
   kind: user_action

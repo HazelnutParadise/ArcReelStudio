@@ -96,7 +96,7 @@ function matchesFilter(template: PromptTemplateMeta, filter: AxisFilter): boolea
 
 /** 模版列表：按流水线顺序分组，画风组默认折叠，可按创作类型、生成模式、源文件类型筛选。 */
 export function PromptTemplateList({ onSelect }: { onSelect: (id: string) => void }) {
-  const { t } = useTranslation("dashboard");
+  const { t, i18n } = useTranslation("dashboard");
   const [state, setState] = useState<Load<PromptTemplateMeta[]>>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [filter, setFilter] = useState<AxisFilter>({});
@@ -112,7 +112,7 @@ export function PromptTemplateList({ onSelect }: { onSelect: (id: string) => voi
       },
     );
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, i18n.language]);
 
   const templates = useMemo(() => (state.status === "ready" ? state.data : []), [state]);
   const axisValues = useMemo(() => collectAxisValues(templates), [templates]);

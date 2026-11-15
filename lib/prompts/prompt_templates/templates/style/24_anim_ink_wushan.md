@@ -3,6 +3,19 @@ id: style/anim_ink_wushan
 category: style
 title: 硬核水墨
 description: "动画画风，雾山五行 · 枯笔。"
+i18n:
+  zh-TW:
+    title: "硬核水墨"
+    description: "動畫畫風，霧山五行 · 枯筆。"
+  en:
+    title: "Hardcore Ink"
+    description: "Animated style: Wushan · Dry brush."
+  ru:
+    title: "Жёсткая тушь"
+    description: "Анимационный стиль: Ушань · Сухая кисть."
+  vi:
+    title: "Thủy mặc Hardcore"
+    description: "Phong cách hoạt hình: Wushan · Cọ khô."
 stage: style
 invoked_by:
   kind: user_action

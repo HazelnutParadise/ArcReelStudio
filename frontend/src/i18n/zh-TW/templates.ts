@@ -50,7 +50,7 @@ export default {
     live_zhang_yimou: '極致用色 · 儀式感',
     live_ancient_xianxia: '臨江仙 · 美白濾鏡',
     live_premium_drama: '真人電視劇 · 大師構圖',
-    live_cinema: '達芬奇調色 · 電影色調',
+    live_cinema: 'DaVinci 調色 · 電影色調',
     live_spartan: '角鬥士 · 濃重明暗',
     live_bladerunner: '極簡野蠻 · 賽博粒子',
     live_got: '冷色史詩 · 權謀',

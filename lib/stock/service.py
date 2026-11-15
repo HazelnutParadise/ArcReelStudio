@@ -187,10 +187,27 @@ class StockLibraryService:
             raise StockError("stock_unknown_source", f"没有这个素材来源：{source_id}", source=source_id) from None
 
     async def search(
-        self, *, kind: StockKind, query: str, page: int, keys: Mapping[str, str | None]
+        self,
+        *,
+        kind: StockKind,
+        query: str,
+        page: int,
+        keys: Mapping[str, str | None],
+        source_id: str | None = None,
     ) -> StockSearchResult:
-        """问所有提供 ``kind`` 的来源，结果按来源轮流排列。``keys`` 是来源 id 到当前成员可用密钥的映射。"""
-        sources = [source for source in self._sources.values() if kind in source.kinds]
+        """问所有提供 ``kind`` 的来源，结果按来源轮流排列。``keys`` 是来源 id 到当前成员可用密钥的映射。
+
+        给了 ``source_id`` 时只问这一个来源：页面逐个来源发请求，好在等待时显示每个来源的进度。
+        """
+        if source_id is not None:
+            source = self.source(source_id)
+            if kind not in source.kinds:
+                raise StockError(
+                    "stock_kind_unsupported", f"{source_id} 不提供 {kind}", source=source.display_name, kind=kind
+                )
+            sources = [source]
+        else:
+            sources = [source for source in self._sources.values() if kind in source.kinds]
 
         async def one(client: httpx2.AsyncClient, source: StockSource) -> tuple[list[StockItem], SourceStatus]:
             if source.key_scope != "none" and not keys.get(source.id):

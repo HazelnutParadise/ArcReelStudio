@@ -86,6 +86,20 @@ TemplateTrigger = Annotated[
 ]
 
 
+#: 设置页显示模版标题与说明的界面语言。``title`` / ``description`` 本身是简体中文原文，
+#: 其余语言写在 frontmatter ``i18n`` 下，键与 ``lib.i18n.SUPPORTED_LOCALES`` 一致。
+TranslatedLocale = Literal["zh-TW", "en", "ru", "vi"]
+
+
+class LocalizedText(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+
+    title: str
+    description: str
+    #: 槽位说明的译文，键与模版 ``slots`` 一致；没有槽位的模版省略。
+    slots: dict[str, str] = Field(default_factory=dict)
+
+
 class TemplateMeta(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
 
@@ -93,6 +107,7 @@ class TemplateMeta(BaseModel):
     category: str
     title: str
     description: str
+    i18n: dict[TranslatedLocale, LocalizedText] = Field(default_factory=dict, exclude=True)
     stage: TemplateStage
     invoked_by: TemplateTrigger
     applies_to: dict[TemplateAxis, list[str]]
@@ -100,6 +115,14 @@ class TemplateMeta(BaseModel):
     protected: bool
     output_schema: str | None = None
     idempotent: bool = Field(default=False, exclude=True)
+
+    def localized(self, locale: str) -> TemplateMeta:
+        """标题、说明与槽位说明换成 ``locale`` 的译文；没有该语言（含简体中文）或缺某条译文时保留原文。"""
+        text = next((value for key, value in self.i18n.items() if key == locale), None)
+        if text is None:
+            return self
+        slots = {name: text.slots.get(name, original) for name, original in self.slots.items()}
+        return self.model_copy(update={"title": text.title, "description": text.description, "slots": slots})
 
 
 class _PartialHeader(BaseModel):

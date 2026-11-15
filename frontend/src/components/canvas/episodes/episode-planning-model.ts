@@ -53,7 +53,7 @@ export function lastPlanningFailure(tasks: TaskItem[], projectName: string): Pla
   return failureOf(root);
 }
 
-/** 整本源文分集后的体量统计：集数、中位体量与中位朗读时长。 */
+/** 完整原文分集后的体量统计：集数、中位体量与中位朗读时长。 */
 export interface WholeSourceStats {
   count: number;
   medianUnits: number;

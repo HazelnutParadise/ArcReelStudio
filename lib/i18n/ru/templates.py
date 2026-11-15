@@ -65,7 +65,7 @@ MESSAGES: dict[str, str] = {
     # ===== Anim taglines (18) =====
     "template_tagline_anim_3d_cg": "Кинематографичность · Unreal Engine",
     "template_tagline_anim_cn_3d": "Кинематографичность · Unreal Engine",
-    "template_tagline_anim_kyoto": "Мягкий селл · Татэиси",
+    "template_tagline_anim_kyoto": "Мягкая цел-анимация · Татэиси",
     "template_tagline_anim_arcane": "Arcane · Fortiche",
     "template_tagline_anim_us_3d": "Кинематографичность · Pixar",
     "template_tagline_anim_ink_wushan": "Ушань · Сухая кисть",

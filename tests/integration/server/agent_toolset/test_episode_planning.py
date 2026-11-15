@@ -73,7 +73,7 @@ def _episode(episode: int, title: str = "第一章", **overrides: Any) -> Episod
 
 @pytest.fixture(autouse=True)
 def whole_source(request: pytest.FixtureRequest) -> None:
-    """分集规划的准入要求整本源文：用到 ``fake_ctx`` 的用例都先放一份。"""
+    """分集规划的准入要求完整原文：用到 ``fake_ctx`` 的用例都先放一份。"""
     if "fake_ctx" in request.fixturenames:
         ctx: ToolHarness = request.getfixturevalue("fake_ctx")
         _write_whole_source(ctx.project_path)

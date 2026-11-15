@@ -9,7 +9,7 @@ export type LobbyFilter = "all" | "in_progress" | "completed" | "repair";
 export const LOBBY_FILTERS = ["all", "in_progress", "completed", "repair"] as const satisfies readonly LobbyFilter[];
 
 /**
- * 项目的集进度：没有集、制作中、项目完成。不是流水线阶段。项目完成要求已有的集全部完成，且整本源文
+ * 项目的集进度：没有集、制作中、项目完成。不是流水线阶段。项目完成要求已有的集全部完成，且完整原文
  * 没有未规划成集的原文，与项目顶栏的「全部完成」同一口径。源文是否规划完由账本命令记进项目摘要，大厅不读源文。
  */
 export type ProjectProgress = "empty" | "in_progress" | "completed";

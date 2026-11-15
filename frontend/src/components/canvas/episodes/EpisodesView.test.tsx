@@ -155,7 +155,7 @@ function reportIntersecting(target: Element) {
   );
 }
 
-const findManuscript = () => screen.findByRole("region", { name: "整本源文" });
+const findManuscript = () => screen.findByRole("region", { name: "完整原文" });
 const findOutline = () => screen.findByRole("navigation", { name: "集目录" });
 
 /** 打开集目录里一集的「⋯」菜单并选一项。 */
@@ -217,7 +217,7 @@ describe("EpisodesView", () => {
     const header = within(screen.getByRole("heading", { name: "分集" }).closest("header") as HTMLElement);
     expect(header.getByText("3 集")).toBeInTheDocument();
     expect(header.getByText("已分集 20 / 30 字")).toBeInTheDocument();
-    expect(header.getByRole("progressbar", { name: "整本源文中已分集的比例" })).toHaveAttribute("aria-valuenow", "67");
+    expect(header.getByRole("progressbar", { name: "完整原文中已分集的比例" })).toHaveAttribute("aria-valuenow", "67");
   });
 
   it("lists cut episodes under their file and other episodes separately", async () => {
@@ -271,7 +271,7 @@ describe("EpisodesView", () => {
     expect(await screen.findByRole("dialog", { name: "上传原文" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /逐集原文/ })).toBeChecked();
     // 模态对话框打开期间背景对辅助技术隐藏（含之后才加载出的正文），按 hidden 查询确认正文照常加载。
-    expect(await screen.findByRole("region", { name: "整本源文", hidden: true })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "完整原文", hidden: true })).toBeInTheDocument();
     await waitFor(() => expect(location.history?.at(-1)).toBe("/episodes"));
   });
 
@@ -317,7 +317,7 @@ describe("EpisodesView", () => {
     vi.spyOn(API, "getEpisodesView").mockResolvedValue({ ...VIEW, files: [], units: 0, cut_units: 0 });
     renderView();
 
-    expect(await screen.findByText("还没有整本源文")).toBeInTheDocument();
+    expect(await screen.findByText("还没有完整原文")).toBeInTheDocument();
   });
 
   it("reports a failed load", async () => {
@@ -391,8 +391,8 @@ describe("EpisodesView", () => {
       renderView();
 
       const popover = await openPlanning("已规划到结尾");
-      expect(popover.getByRole("heading", { name: "已规划到整本源文结尾，中间还有未切分的原文" })).toBeInTheDocument();
-      expect(popover.queryByRole("heading", { name: "整本源文已全部分集" })).not.toBeInTheDocument();
+      expect(popover.getByRole("heading", { name: "已规划到完整原文结尾，中间还有未切分的原文" })).toBeInTheDocument();
+      expect(popover.queryByRole("heading", { name: "完整原文已全部分集" })).not.toBeInTheDocument();
     });
 
     it("creates an episode after the one chosen in the outline", async () => {
@@ -746,7 +746,7 @@ describe("EpisodesView", () => {
       expect(within(panel).getByRole("button", { name: "采纳已完成的部分" })).toBeInTheDocument();
       expect(within(panel).getByRole("button", { name: "放弃新方案" })).toBeInTheDocument();
 
-      const manuscript = screen.getByRole("region", { name: "整本源文" });
+      const manuscript = screen.getByRole("region", { name: "完整原文" });
       expect(within(manuscript).getByText("等待规划")).toBeInTheDocument();
       expect(manuscript.querySelectorAll('[data-replan-lane="pending"]').length).toBeGreaterThan(0);
 

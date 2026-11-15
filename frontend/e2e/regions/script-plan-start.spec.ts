@@ -94,7 +94,7 @@ const SCRIPTLESS_PLAN: ApiOverrides[string] = {
   },
 };
 
-// 切自整本源文的集：长原文、十条节拍与长尾钩子。
+// 切自完整原文的集：长原文、十条节拍与长尾钩子。
 const CUT_EPISODE: ApiOverrides = {
   ...BASE,
   "GET /api/v1/projects/demo": scriptlessProject({
@@ -266,7 +266,7 @@ async function railLayout(page: Page) {
 
 defineRegionScenarios("脚本规划起步态", [
   {
-    name: "切自整本源文的集：起步区在上、原文只读，导览按视图宽放右栏或原文上方",
+    name: "切自完整原文的集：起步区在上、原文只读，导览按视图宽放右栏或原文上方",
     path: EPISODE_PATH,
     api: CUT_EPISODE,
     ready: cutSourceReady,

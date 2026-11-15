@@ -3,8 +3,8 @@
 候选存放在 ``project.json`` 的 :data:`REPLAN_CANDIDATE_KEY` 下，同一项目同时最多一份。它记下：
 
 - 重新规划的起点：发起的那一集的原文开头。账本里有旧拆分流程的存量集，或源文与账本记录的指纹不一致（源文已替换）
-  时，只能从第一个切出集起重新规划，起点是整本源文开头。
-- 生成时账本的切分结构（:func:`ledger_layout_revision`）与整本源文各文件的指纹。采纳时在项目锁内校验两者，
+  时，只能从第一个切出集起重新规划，起点是完整原文开头。
+- 生成时账本的切分结构（:func:`ledger_layout_revision`）与完整原文各文件的指纹。采纳时在项目锁内校验两者，
   任一不符就拒绝，提示重新生成。
 - 候选集：标题、钩子、原文范围（剧情演绎另含分集大纲），按源文位置排列，尚未分配集 ID。生成由
   :meth:`lib.episode.episode_planner.EpisodePlanner.plan_candidate` 逐窗追加。
@@ -153,7 +153,7 @@ def ledger_layout_revision(project: Mapping[str, Any]) -> str:
 
 
 def candidate_staleness(project: Mapping[str, Any], candidate: Mapping[str, Any], docs: list[SourceDoc]) -> str | None:
-    """候选是否已过时：账本的切分结构变了为 ``ledger_changed``，整本源文变了为 ``source_changed``，否则为 None。"""
+    """候选是否已过时：账本的切分结构变了为 ``ledger_changed``，完整原文变了为 ``source_changed``，否则为 None。"""
     if candidate.get("ledger_revision") != ledger_layout_revision(project):
         return "ledger_changed"
     if candidate.get("source_fingerprints") != compute_source_fingerprints(docs):
@@ -174,7 +174,7 @@ class ReplanScope:
     #: 重新规划的起点：文件与文件内偏移。
     source_file: str
     offset: int
-    #: 从整本源文开头重新规划（有旧拆分流程的存量集，或源文已替换）。
+    #: 从完整原文开头重新规划（有旧拆分流程的存量集，或源文已替换）。
     from_beginning: bool
     #: 源文与账本记录的指纹不一致：现有分集的原文范围已对不上当前源文。
     source_replaced: bool
@@ -222,10 +222,10 @@ def replan_scope(project_dir: Path, project: Mapping[str, Any], episode: int) ->
     if entry is None:
         raise ReplanError("episode_not_found", f"集（id={episode}）不在账本中")
     if not is_cut_episode(entry):
-        raise ReplanError("not_cut_episode", f"集（id={episode}）不是切自整本源文的集")
+        raise ReplanError("not_cut_episode", f"集（id={episode}）不是切自完整原文的集")
     docs = discover_sources(project_dir, project)
     if not any(doc.text.strip() for doc in docs):
-        raise ReplanError("whole_source_missing", "整本源文还没有可规划的原文")
+        raise ReplanError("whole_source_missing", "完整原文还没有可规划的原文")
     source_replaced = bool(mismatched_source_fingerprints(project.get(SOURCE_FINGERPRINTS_KEY), docs))
     from_beginning = source_replaced or bool(legacy_cut_episode_ids(project))
     placements = cut_episode_placements(project, docs)
@@ -236,7 +236,7 @@ def replan_scope(project_dir: Path, project: Mapping[str, Any], episode: int) ->
     else:
         placement = placements.get(episode)
         if placement is None:
-            raise ReplanError("episode_not_placed", f"集（id={episode}）的原文范围落不到整本源文里")
+            raise ReplanError("episode_not_placed", f"集（id={episode}）的原文范围落不到完整原文里")
         source_file, offset, start = docs[placement.file_index].rel_path, placement.start, placement.position
     replaced = _replaced_ids(entries, placements, episode=episode, start=start, from_beginning=from_beginning)
     product_nums = discover_product_episode_nums(project_dir)
@@ -316,7 +316,7 @@ def record_replan_interruption(project_path: str | Path, candidate_id: str, reas
 def resume_replan_candidate(project_path: str | Path, candidate_id: str) -> str | None:
     """接着生成中途停止的候选：清掉中断原因，返回发起时的附加指令。
 
-    候选已覆盖到整本源文结尾（``candidate_complete``）或已过时（``ledger_changed`` / ``source_changed``）时拒绝。
+    候选已覆盖到完整原文结尾（``candidate_complete``）或已过时（``ledger_changed`` / ``source_changed``）时拒绝。
     """
     project_dir = Path(project_path)
     resumed: dict[str, str | None] = {}
@@ -324,7 +324,7 @@ def resume_replan_candidate(project_path: str | Path, candidate_id: str) -> str 
     def _commit(p: dict[str, Any]) -> None:
         candidate = _require_candidate(p, candidate_id)
         if candidate.get("complete"):
-            raise ReplanError("candidate_complete", "新的分集方案已覆盖到整本源文结尾")
+            raise ReplanError("candidate_complete", "新的分集方案已覆盖到完整原文结尾")
         stale = candidate_staleness(p, candidate, discover_sources(project_dir, p))
         if stale is not None:
             raise ReplanError(stale, "生成这份方案之后分集或源文有改动，需要重新生成")
@@ -359,7 +359,7 @@ class _Adoption:
     removed: list[int]
     #: 已开始制作、且原文范围在候选里找不到一模一样的一集。
     needs_review: list[int]
-    #: 原文超出候选覆盖范围的被替换集（候选没有生成到整本源文结尾时）。
+    #: 原文超出候选覆盖范围的被替换集（候选没有生成到完整原文结尾时）。
     uncovered: list[int]
     #: 播出位置变了的其他集：（集 ID，原位置，新位置）。
     moved: list[tuple[int, int, int]]
@@ -385,7 +385,7 @@ def _candidate_positions(candidate: Mapping[str, Any], docs: list[SourceDoc]) ->
         raw = episode.get("source_range")
         position = _source_position(order, raw) if isinstance(raw, Mapping) else None
         if position is None:
-            raise ReplanError("candidate_invalid", "候选集的原文范围落不到整本源文里")
+            raise ReplanError("candidate_invalid", "候选集的原文范围落不到完整原文里")
         positions.append(position)
     return positions
 
@@ -403,7 +403,7 @@ def _plan_adoption(project_dir: Path, project: Mapping[str, Any], candidate: Map
     order = {doc.rel_path: index for index, doc in enumerate(docs)}
     source_file, offset = candidate_start(candidate)
     if source_file not in order:
-        raise ReplanError("source_changed", "重新规划的起点所在文件已不在整本源文里")
+        raise ReplanError("source_changed", "重新规划的起点所在文件已不在完整原文里")
     start = (order[source_file], offset)
     replaced = _replaced_ids(
         entries,
@@ -506,7 +506,7 @@ class ReplanAdoptionImpact:
     removed: list[int]
     #: 已开始制作且原文范围有变化。
     needs_review: list[int]
-    #: 原文超出新方案覆盖范围、同样按被替换处理的集（新方案没有生成到整本源文结尾时）。
+    #: 原文超出新方案覆盖范围、同样按被替换处理的集（新方案没有生成到完整原文结尾时）。
     uncovered: list[int]
     #: 播出位置变了的其他集：（集 ID，原位置，新位置）。
     moved: list[tuple[int, int, int]]

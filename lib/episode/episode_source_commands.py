@@ -1,10 +1,10 @@
-"""登记集原文与整本源文文件的服务命令（ADR 0031、0097）。
+"""登记集原文与完整原文文件的服务命令（ADR 0031、0097）。
 
-- 整本源文：上传或新建的源文件接在清单末尾（:func:`register_whole_source_file`）；删除时移出清单。
+- 完整原文：上传或新建的源文件接在清单末尾（:func:`register_whole_source_file`）；删除时移出清单。
 - 逐集原文：每个文件登记为播出顺序末尾的一集自带原文的集，分配新集 ID（:func:`add_own_source_episode`）。
 - 集页填写：无原文的集填上原文后转为自带原文的集；自带原文的集改写原文；切出集的集文件是派生物，
   不经这里改写（:func:`set_episode_source_text`）。
-- 源文件类型（ADR 0036）：剧情演绎项目登记原文时一并记类型，缺省为小说；整本源文文件的类型可以单独改
+- 源文件类型（ADR 0036）：剧情演绎项目登记原文时一并记类型，缺省为小说；完整原文文件的类型可以单独改
   （:func:`set_whole_source_file_kind`）。改类型不改源文指纹，也不动账本；会让已有脚本规划的集判 stale 时
   先确认。
 
@@ -63,7 +63,7 @@ class EpisodeSourceError(ValueError):
 def register_whole_source_file(
     project: dict[str, Any], rel: str, *, index: int | None = None, source_kind: SourceKind | None = None
 ) -> bool:
-    """把直接位于 ``source/`` 下的源文件登记进整本源文，返回是否新增。
+    """把直接位于 ``source/`` 下的源文件登记进完整原文，返回是否新增。
 
     ``index`` 是登记后文件在清单里的下标，缺省时接在末尾。已登记、不是源文文件名（点 / 下划线前缀、
     扩展名不是 .txt / .md），或是账本里某一集的集文件时不登记。剧情演绎项目新登记的文件记
@@ -78,7 +78,7 @@ def register_whole_source_file(
 
 
 def unregister_source_file(project: dict[str, Any], rel: str) -> None:
-    """删除源文件前的登记处置：移出整本源文清单；是自带原文的集的集文件时，该集转为无原文。
+    """删除源文件前的登记处置：移出完整原文清单；是自带原文的集的集文件时，该集转为无原文。
 
     切出集的集文件由分集规划派生，拒绝删除。
     """
@@ -221,7 +221,7 @@ def set_episode_source_text(
         if origin is SourceOrigin.WHOLE_SOURCE:
             raise EpisodeSourceError(
                 "episode_source_derived",
-                f"集（id={episode}）切自整本源文，集原文由分集规划派生，不能直接改写",
+                f"集（id={episode}）切自完整原文，集原文由分集规划派生，不能直接改写",
             )
         affected = (
             [episode]
@@ -277,13 +277,13 @@ def _read_source_bytes(path: Path) -> tuple[bytes, str]:
 
 
 def adopt_source_file_as_whole_source(pm: ProjectManager, project_name: str, filename: str) -> None:
-    """把 ``source/`` 下没有登记的文件加入整本源文，接在清单末尾。"""
+    """把 ``source/`` 下没有登记的文件加入完整原文，接在清单末尾。"""
     project_dir = pm.get_project_path(project_name)
     with pm.locked_source_registration(project_name) as (_source_dir, project, _undo):
         path = _unregistered_source_path(project_dir, project, filename)
         rel = f"source/{filename}"
         if not is_whole_source_file_path(rel):
-            raise EpisodeSourceError("source_name_not_whole_source", f"这个文件名不能用作整本源文：{filename}")
+            raise EpisodeSourceError("source_name_not_whole_source", f"这个文件名不能用作完整原文：{filename}")
         _read_source_bytes(path)
         append_whole_source_file(project, rel)
         record_whole_source_file_kind(project, rel, None)
@@ -328,7 +328,7 @@ def adopt_source_file_as_episode(pm: ProjectManager, project_name: str, filename
 
 @dataclass(frozen=True)
 class SourceKindChange:
-    """改整本源文文件类型的结果。"""
+    """改完整原文文件类型的结果。"""
 
     #: 类型确实变了（已写入，或待确认）。
     changed: bool
@@ -341,7 +341,7 @@ class SourceKindChange:
 def set_whole_source_file_kind(
     pm: ProjectManager, project_name: str, filename: str, source_kind: SourceKind, *, confirm: bool
 ) -> SourceKindChange:
-    """改整本源文文件 ``source/<filename>`` 的类型。
+    """改完整原文文件 ``source/<filename>`` 的类型。
 
     只改清单项上的记录，不改源文指纹，也不动账本。文件在服务之外被改动过、还没有更新分集账本时拒绝。会让已开始制作的集（已有脚本规划）的脚本规划判
     stale 时，``confirm`` 为 False 就不写入，只返回这些集；没有这类集时直接写入。只有剧情演绎项目有类型。
@@ -352,7 +352,7 @@ def set_whole_source_file_kind(
         if not source_kind_applies(project):
             raise EpisodeSourceError("source_kind_not_applicable", "只有剧情演绎项目有源文件类型")
         if rel not in whole_source_files(project):
-            raise EpisodeSourceError("source_file_not_found", f"整本源文里没有这个文件：{filename}")
+            raise EpisodeSourceError("source_file_not_found", f"完整原文里没有这个文件：{filename}")
         if whole_source_file_kind(project, rel) == source_kind:
             return SourceKindChange(changed=False, applied=False, affected_episodes=[])
         if any(

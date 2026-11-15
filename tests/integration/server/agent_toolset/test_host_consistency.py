@@ -586,7 +586,7 @@ _PROBLEM_ON_SAMPLE = frozenset(
         COMPLETE_SCRIPT_PLAN_REBUILD.name,
         # 测试项目只登记了一个角色，没有可并入的保留方。
         MERGE_ASSET.name,
-        # 测试项目没有登记整本源文的文件。
+        # 测试项目没有登记完整原文的文件。
         EDIT_SOURCE_TEXT.name,
         # 测试项目里没有样例路径的文件，回收站里也没有删除记录。
         DELETE_PROJECT_FILE.name,

@@ -28,7 +28,7 @@ export interface ImpactConfirmRequest {
 }
 
 /**
- * 「分集」视图里改动分集与源文前的确认：删除一集、手工切分、整本源文文件改动、重新规划与采纳新方案等。
+ * 「分集」视图里改动分集与源文前的确认：删除一集、手工切分、完整原文文件改动、重新规划与采纳新方案等。
  * `request` 为 null 时关闭；提交中禁用两个按钮并忽略关闭请求。受影响集清单可能很长，正文可以用键盘滚动。
  */
 export function ImpactConfirmDialog({

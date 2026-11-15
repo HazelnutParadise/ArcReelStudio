@@ -1,6 +1,6 @@
-"""整本源文改动时，切出集原文范围的重映射（ADR 0097）。
+"""完整原文改动时，切出集原文范围的重映射（ADR 0097）。
 
-整本源文的一个文件被编辑或替换、删除、插入或调序时，只有原文范围触及这个文件的切出集受影响：
+完整原文的一个文件被编辑或替换、删除、插入或调序时，只有原文范围触及这个文件的切出集受影响：
 
 - **编辑、替换**（:func:`remap_for_edit`）：对改动前后的规范化文本做对齐，逐集映射原文范围的边界。范围内文字
   没变的集只平移；范围内文字有变化的集取映射后的范围，``text_changed``。恰好插在两集分界上的新文字归前一集；
@@ -206,7 +206,7 @@ def _unchanged(episode: int, span: SourceSpan) -> RangeRemap:
 def remap_for_edit(
     docs: Sequence[SourceDoc], spans: Mapping[int, SourceSpan], *, rel: str, new_text: str
 ) -> list[RangeRemap]:
-    """文件 ``rel`` 的规范化全文改为 ``new_text`` 后各集的原文范围。``docs`` 是改动前的整本源文。"""
+    """文件 ``rel`` 的规范化全文改为 ``new_text`` 后各集的原文范围。``docs`` 是改动前的完整原文。"""
     old = _Files(docs)
     target = old.index(rel)
     old_text = old.docs[target].text

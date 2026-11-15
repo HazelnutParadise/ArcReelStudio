@@ -1,4 +1,4 @@
-"""「分集」视图：整本源文按集分段的只读投影、``source/`` 里没有登记的文件的处置，整本源文文件的类型、
+"""「分集」视图：完整原文按集分段的只读投影、``source/`` 里没有登记的文件的处置，完整原文文件的类型、
 替换、编辑、删除与调序，以及按文件在服务之外的改动更新分集账本。"""
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ router = APIRouter()
 
 @router.get("/projects/{name}/episodes-view")
 async def get_episodes_view(name: str, _t: Translator) -> dict[str, Any]:
-    """整本源文按集分段、每集的体量与首尾句、``source/`` 里没有登记的文本文件、新的分集方案 ``replan``，
+    """完整原文按集分段、每集的体量与首尾句、``source/`` 里没有登记的文本文件、新的分集方案 ``replan``，
     以及在服务之外被改动过的文件 ``external_changes``。
 
     ``replan`` 是悬而未决的重新规划候选的摘要与逐集变化（见 :func:`lib.episode.episode_replan.replan_candidate_summary`），
@@ -117,7 +117,7 @@ async def get_episodes_view(name: str, _t: Translator) -> dict[str, Any]:
 
 
 class AdoptSourceFileRequest(BaseModel):
-    #: whole_source 加入整本源文末尾；episode 用作一集的原文。
+    #: whole_source 加入完整原文末尾；episode 用作一集的原文。
     target: Literal["whole_source", "episode"]
     #: target=episode 时填给这一集（须是无原文的集）；缺省时在播出顺序末尾新建一集。
     episode: int | None = None
@@ -128,7 +128,7 @@ class AdoptSourceFileRequest(BaseModel):
     dependencies=[Depends(require_project_migration_ok)],
 )
 async def adopt_source_file(name: str, filename: str, req: AdoptSourceFileRequest, _t: Translator) -> dict[str, Any]:
-    """处置 ``source/`` 里没有登记的文件：加入整本源文，或用作一集的原文（原文件随即删除）。"""
+    """处置 ``source/`` 里没有登记的文件：加入完整原文，或用作一集的原文（原文件随即删除）。"""
 
     def _sync() -> dict[str, Any]:
         manager = get_project_manager()
@@ -170,7 +170,7 @@ class SplitRequest(_ManualSplitBase):
     action: Literal["split"]
     episode: int
     at: int
-    #: ``at`` 所在的整本源文文件；缺省时按这一集起点所在的文件算。
+    #: ``at`` 所在的完整原文文件；缺省时按这一集起点所在的文件算。
     source_file: str | None = None
 
 
@@ -178,7 +178,7 @@ class MoveBoundaryRequest(_ManualSplitBase):
     action: Literal["move_boundary"]
     episode: int
     at: int
-    #: ``at`` 所在的整本源文文件；缺省时按这一集终点所在的文件算。
+    #: ``at`` 所在的完整原文文件；缺省时按这一集终点所在的文件算。
     source_file: str | None = None
 
 
@@ -282,7 +282,7 @@ class SetSourceFileKindRequest(BaseModel):
 async def set_source_file_kind(
     name: str, filename: str, req: SetSourceFileKindRequest, _t: Translator
 ) -> dict[str, Any]:
-    """改整本源文文件的源文件类型（只对剧情演绎开放）；不改源文指纹，也不动分集账本。
+    """改完整原文文件的源文件类型（只对剧情演绎开放）；不改源文指纹，也不动分集账本。
 
     会让已开始制作的集的脚本规划判 stale 而 ``confirm`` 为 false 时不写入，返回 ``needs_confirmation``
     与这些集的集 ID（``affected_episodes``）。
@@ -313,7 +313,7 @@ async def set_source_file_kind(
 
 
 # ---------------------------------------------------------------------------
-# 整本源文文件的替换、编辑、删除与调序
+# 完整原文文件的替换、编辑、删除与调序
 # ---------------------------------------------------------------------------
 
 
@@ -340,7 +340,7 @@ async def _run_source_file_change(
     revision: str | None,
     command: Callable[[ProjectManager, bool], SourceFileChangeOutcome],
 ) -> dict[str, Any]:
-    """``command(manager, dry_run)`` 跑一个整本源文文件改动命令，``revision`` 已经传给了它。"""
+    """``command(manager, dry_run)`` 跑一个完整原文文件改动命令，``revision`` 已经传给了它。"""
 
     def _manager() -> ProjectManager:
         manager = get_project_manager()
@@ -372,7 +372,7 @@ async def _run_source_file_change(
     dependencies=[Depends(require_project_migration_ok)],
 )
 async def edit_source_file(name: str, filename: str, req: EditSourceFileRequest, _t: Translator) -> dict[str, Any]:
-    """编辑整本源文文件的全文，按改动前后的对齐重映射触及它的切出集。
+    """编辑完整原文文件的全文，按改动前后的对齐重映射触及它的切出集。
 
     没有受影响的集时直接执行，返回 ``status=applied``；有受影响的集而 ``revision`` 缺省或已过时时不写入，
     返回 ``status=confirmation_required``、按类分组的受影响集清单（含服务端成文的 ``impact.text``）与 ``revision``。
@@ -400,7 +400,7 @@ async def replace_source_file(
     source_kind: Annotated[SourceKind | None, Form()] = None,
     revision: Annotated[str | None, Form()] = None,
 ) -> dict[str, Any]:
-    """用上传的文件替换整本源文文件：保留位置与文件名，类型缺省时不变。
+    """用上传的文件替换完整原文文件：保留位置与文件名，类型缺省时不变。
 
     没有受影响的集时直接执行，返回 ``status=applied``；有受影响的集而 ``revision`` 缺省或已过时时不写入，
     返回 ``status=confirmation_required``、按类分组的受影响集清单（含服务端成文的 ``impact.text``）与 ``revision``。
@@ -422,7 +422,7 @@ async def replace_source_file(
     dependencies=[Depends(require_project_migration_ok)],
 )
 async def move_source_file(name: str, filename: str, req: MoveSourceFileRequest, _t: Translator) -> dict[str, Any]:
-    """把整本源文文件上移或下移一位，其中的切出集整块跟着走。
+    """把完整原文文件上移或下移一位，其中的切出集整块跟着走。
 
     没有受影响的集时直接执行，返回 ``status=applied``；有受影响的集而 ``revision`` 缺省或已过时时不写入，
     返回 ``status=confirmation_required``、按类分组的受影响集清单（含服务端成文的 ``impact.text``）与 ``revision``。
@@ -468,7 +468,7 @@ async def accept_external_change(
     dependencies=[Depends(require_project_migration_ok)],
 )
 async def delete_whole_source(name: str, filename: str, req: DeleteSourceFileRequest, _t: Translator) -> dict[str, Any]:
-    """删除整本源文文件，等同于删掉它的全部文字。
+    """删除完整原文文件，等同于删掉它的全部文字。
 
     没有受影响的集时直接执行，返回 ``status=applied``；有受影响的集而 ``revision`` 缺省或已过时时不写入，
     返回 ``status=confirmation_required``、按类分组的受影响集清单（含服务端成文的 ``impact.text``）与 ``revision``。

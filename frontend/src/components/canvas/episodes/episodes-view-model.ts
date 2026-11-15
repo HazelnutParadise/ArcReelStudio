@@ -55,7 +55,7 @@ export interface OutlineFileGroup {
   tailUnits: number;
 }
 
-/** 集目录「来自整本源文」：按文件分组，组内按源文位置列出切出集与夹在其间的未切分原文。 */
+/** 集目录「来自完整原文」：按文件分组，组内按源文位置列出切出集与夹在其间的未切分原文。 */
 export function outlineFileGroups(view: EpisodesView, episodes: EpisodeMeta[]): OutlineFileGroup[] {
   const meta = new Map(episodes.map((episode) => [episode.episode, episode]));
   const info = new Map(view.episodes.map((episode) => [episode.episode, episode]));
@@ -85,7 +85,7 @@ export function outlineFileGroups(view: EpisodesView, episodes: EpisodeMeta[]): 
   });
 }
 
-/** 集目录「其他集」：原文不在整本源文里的集（自带原文、无原文、原文位置没有记录的切出集），按播出顺序。 */
+/** 集目录「其他集」：原文不在完整原文里的集（自带原文、无原文、原文位置没有记录的切出集），按播出顺序。 */
 export function otherEpisodes(
   view: EpisodesView,
   episodes: EpisodeMeta[],
@@ -96,7 +96,7 @@ export function otherEpisodes(
     .map((episode) => ({ episode, info: info.get(episode.episode) ?? null }));
 }
 
-/** 形如 episode_N 的文件名主干留给集原文文件，不能作为整本源文上传（与后端 `is_derived_episode_name` 同一口径）。 */
+/** 形如 episode_N 的文件名主干留给集原文文件，不能作为完整原文上传（与后端 `is_derived_episode_name` 同一口径）。 */
 export function isReservedEpisodeFileName(filename: string): boolean {
   const stem = filename.replace(/\.[^.]*$/, "");
   return /^episode_[0-9]+$/.test(stem);

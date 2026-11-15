@@ -1305,7 +1305,7 @@ async def test_normalize_drama_script_defaults_to_the_episode_derived_source(
 ) -> None:
     """省略 source 时只读本集派生源文：``source/`` 里的原文与别集派生文件都不进 prompt。
 
-    该目录同时存放整本原文与各集派生文件，把它们一并送进 prompt 会让每一集拿到同一份源文。
+    该目录同时存放完整原文与各集派生文件，把它们一并送进 prompt 会让每一集拿到同一份源文。
     """
     source_dir = fake_ctx.project_path / "source"
     source_dir.mkdir(parents=True)

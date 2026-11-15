@@ -118,7 +118,7 @@ def commit_video(unit_id: str, video_kb: int, script_file: str, *, register: boo
 
 
 def build(*, episodes: int, units: int, assets: int, video_kb: int, sheet_kb: int, video_ratio: float) -> None:
-    """构建参考生视频合成项目：整本源文、每集已确认的单元规划与剧本、按比例已出片的视频。"""
+    """构建参考生视频合成项目：完整原文、每集已确认的单元规划与剧本、按比例已出片的视频。"""
 
     from lib.artifacts.artifact_activation import activate_artifact_target_state
     from lib.artifacts.artifact_manifest import ArtifactKey

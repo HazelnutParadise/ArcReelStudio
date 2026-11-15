@@ -64,7 +64,7 @@ interface StorySettingProps {
   projectName: string;
   overview: ProjectOverview | undefined;
   readOnly: boolean;
-  /** 项目有可读的原文（整本源文或已有故事设定），提供「从原文生成」。 */
+  /** 项目有可读的原文（完整原文或已有故事设定），提供「从原文生成」。 */
   canGenerate: boolean;
   /** 正在从原文生成：显示骨架与「正在读取原文…」，完成后就地填入。 */
   generating: boolean;

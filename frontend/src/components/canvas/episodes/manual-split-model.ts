@@ -1,7 +1,7 @@
 import type { EpisodesView } from "@/types";
 
 /**
- * 手工切分的落点：整本源文清单里第 `file` 个文件、文件内第 `offset` 个码位之前。
+ * 手工切分的落点：完整原文清单里第 `file` 个文件、文件内第 `offset` 个码位之前。
  *
  * 偏移与后端 `source_range` 同一坐标系（规范化文本的 Unicode 码位），不是 JS 字符串的 UTF-16 下标。
  */
@@ -12,7 +12,7 @@ export interface ManuscriptPoint {
 
 /**
  * 落点上能做的手工切分。`file` / `offset` 是落点本身（随请求发给服务端）；`start`、`at`、`end`、`boundary`
- * 是整本源文里的全局码位偏移（前面各文件的码位数之和加文件内偏移），一集的原文可以跨文件。
+ * 是完整原文里的全局码位偏移（前面各文件的码位数之和加文件内偏移），一集的原文可以跨文件。
  */
 export type PointAction =
   /** 在未切分的原文上切分：`[start, end)` 成为新的一集。 */
@@ -100,7 +100,7 @@ function bases(view: EpisodesView): number[] {
   return result;
 }
 
-/** 落点在整本源文里的全局偏移：前面各文件的码位数之和加文件内偏移。 */
+/** 落点在完整原文里的全局偏移：前面各文件的码位数之和加文件内偏移。 */
 export function toGlobal(view: EpisodesView, point: ManuscriptPoint): number {
   return bases(view)[point.file] + point.offset;
 }
@@ -127,7 +127,7 @@ interface Span {
   end: number;
 }
 
-/** 落位的切出集在整本源文里的全局范围，按起点排序；跨文件的集合成一段。 */
+/** 落位的切出集在完整原文里的全局范围，按起点排序；跨文件的集合成一段。 */
 function episodeSpans(view: EpisodesView): Span[] {
   const base = bases(view);
   const spans = new Map<number, Span>();
@@ -259,7 +259,7 @@ function sameAction(a: PointAction, b: PointAction): boolean {
 }
 
 /**
- * ←/→ 微调：沿整本源文移动 `delta` 个码位，可以跨过文件边界。
+ * ←/→ 微调：沿完整原文移动 `delta` 个码位，可以跨过文件边界。
  *
  * 只在同一种操作里移动（拆分不换集）：目标位置恰是不能落点的单个位置（原分界、刚好切空）时再跨一格，
  * 仍然不行就退回到这个方向上最远的可用位置；一格也动不了时保持原位。
@@ -296,7 +296,7 @@ export function stepPoint(
 const ZH_UNIT = /[\u3400-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef\u{20000}-\u{323af}]/gu;
 const WORD_UNIT = /[\p{L}\p{N}_]+/gu;
 
-/** 整本源文里全局范围 `[start, end)` 的阅读单位数，供操作条预览两侧体量。 */
+/** 完整原文里全局范围 `[start, end)` 的阅读单位数，供操作条预览两侧体量。 */
 export function rangeUnits(view: EpisodesView, start: number, end: number): number {
   const pattern = view.unit === "words" ? WORD_UNIT : ZH_UNIT;
   const base = bases(view);

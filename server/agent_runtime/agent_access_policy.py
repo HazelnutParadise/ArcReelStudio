@@ -805,7 +805,7 @@ class AgentAccessPolicy:
     def _is_protected_source(cls, target: Path, bases: list[Path]) -> bool:
         """命中源文目录（``source/`` 整子树，含目录本身）。
 
-        整本源文、集原文与快照只经服务命令写入：改动要按改动前后的对齐重映射分集账本，直改会让账本与源文对不上。
+        完整原文、集原文与快照只经服务命令写入：改动要按改动前后的对齐重映射分集账本，直改会让账本与源文对不上。
         ``bases`` 与 target 的 raw/resolved 双形式口径同 ``_is_protected_project_json``。
         """
         target_s = cls._normalize_path_for_protected_compare(target)
@@ -924,8 +924,8 @@ AgentAccessPolicy.PROTECTED_WRITE_RULES = (
         matches=AgentAccessPolicy._is_protected_source,
         deny_message=(
             "访问被拒绝：source/ 下的源文不可直接写入，改动要按对齐重映射分集账本；"
-            "新增或整份替换源文走 mcp__arcreel__upload_source，修改整本源文的文件或自带原文的集的原文走 "
-            "mcp__arcreel__edit_source_text。删除、调序整本源文的文件请用户在「分集」视图里操作。"
+            "新增或整份替换源文走 mcp__arcreel__upload_source，修改完整原文的文件或自带原文的集的原文走 "
+            "mcp__arcreel__edit_source_text。删除、调序完整原文的文件请用户在「分集」视图里操作。"
         ),
         sandbox_subpaths=("source",),
     ),

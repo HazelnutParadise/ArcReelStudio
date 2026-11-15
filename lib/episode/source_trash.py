@@ -1,7 +1,7 @@
 """源文件进出项目回收站：删除或替换上传时，源文件连同它的原始上传件成为一条带结构快照的删除记录。
 
-原始上传件是 ``source/raw/`` 下与源文件同主干的文件，按主干与源文件对应。恢复时源文件一律作为未纳入整本源文的
-源文件加回，由创作者在分集视图里决定是否接回；原路径空闲（盘上没有、不在整本源文清单里、不是集文件名）就沿用，
+原始上传件是 ``source/raw/`` 下与源文件同主干的文件，按主干与源文件对应。恢复时源文件一律作为未纳入完整原文的
+源文件加回，由创作者在分集视图里决定是否接回；原路径空闲（盘上没有、不在完整原文清单里、不是集文件名）就沿用，
 否则源文件与原始上传件一起换成「<主干> (n)」，保持主干对应。
 """
 
@@ -43,7 +43,7 @@ def trash_source_file(project_dir: Path, rel: str, undo: ExitStack) -> project_t
 
 
 def take_source_file(project_dir: Path, staged: Path, obj: Mapping[str, Any]) -> Restoration:
-    """从迁移后的临时项目取出源文件与它的原始上传件，作为未纳入整本源文的源文件加回。"""
+    """从迁移后的临时项目取出源文件与它的原始上传件，作为未纳入完整原文的源文件加回。"""
     rel = str(obj.get("path"))
     raw = [str(item) for item in obj.get("raw") or [] if _plain_file(staged / str(item))]
     text = [rel] if _plain_file(staged / rel) else []

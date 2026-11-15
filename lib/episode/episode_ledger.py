@@ -2,7 +2,7 @@
 
 project.json 的 episodes 列表是分集单一真相源，条目在 episode/title/script_file 之外扩展账本字段
 （source_range / hook / outline / ledger_status），并记录集原文的来源（见
-``lib.episode.episode_sources``）。切自整本源文的集的物理 ``source/episode_N.txt`` 是派生物；自带原文
+``lib.episode.episode_sources``）。切自完整原文的集的物理 ``source/episode_N.txt`` 是派生物；自带原文
 的集文件就是该集的源文。
 
 ``source_range`` 是切出集唯一的位置真相：有它才能从源文重造派生文件、才能续接规划。旧拆分流程切出的
@@ -38,7 +38,7 @@ _EPISODE_FILE_RE = re.compile(r"episode_([0-9]+)\.txt")
 _SCRIPT_FILE_RE = re.compile(r"episode_([0-9]+)\.json")
 _DRAFT_DIR_RE = re.compile(r"episode_([0-9]+)")
 
-# 「什么后缀算源文本文件」的唯一定义，整本源文清单与其他源文读取方共用
+# 「什么后缀算源文本文件」的唯一定义，完整原文清单与其他源文读取方共用
 SOURCE_TEXT_SUFFIXES = {".txt", ".md"}
 
 # project.json 顶层源文指纹字段（源文相对路径 → 归一化文本 sha256）。账本坐标绑定
@@ -68,12 +68,12 @@ def _validate_rel_posix_path(value: str) -> str:
 
 
 class SourceRange(BaseModel):
-    """集对应的原文素材范围，可以沿整本源文的文件顺序跨文件（ADR 0097）。
+    """集对应的原文素材范围，可以沿完整原文的文件顺序跨文件（ADR 0097）。
 
     起点是 ``source_file`` 里的 ``start``，终点是 ``end_file`` 里的 ``end``（不含）；``end_file`` 缺省时与
     ``source_file`` 相同。偏移量落在 ``normalize_source_text`` 的归一化坐标系内（narration 为精确切分点，
     drama 为软素材范围），是各自文件内的下标。路径是项目根相对 POSIX 路径（如 ``source/novel.txt``）。
-    两个文件之间的先后由整本源文清单决定，这里不校验。
+    两个文件之间的先后由完整原文清单决定，这里不校验。
     """
 
     model_config = _STRICT_CONFIG
@@ -163,7 +163,7 @@ def normalize_source_text(text: str) -> str:
 
 @dataclass
 class SourceDoc:
-    """整本源文的一个文件：项目根相对 POSIX 路径 + 归一化全文。"""
+    """完整原文的一个文件：项目根相对 POSIX 路径 + 归一化全文。"""
 
     rel_path: str
     text: str
@@ -233,7 +233,7 @@ def mismatched_source_fingerprints(recorded: Any, sources: list[SourceDoc]) -> l
 
     只比对「已记录」的文件：``recorded`` 非 ``Mapping`` 或某文件不在其中，视为存量项目 /
     新源文件尚未补记指纹，不参与比对（不阻塞首次规划）。已记录文件若当前指纹不同、或该
-    文件已从整本源文中消失（被删除/移出清单），均判为不一致——账本坐标绑定的原文内容已不
+    文件已从完整原文中消失（被删除/移出清单），均判为不一致——账本坐标绑定的原文内容已不
     可信，唯一出路是全量重置。记录值形状损坏（非 str）按未记录处理，不让脏数据本身崩溃
     比对逻辑。
     """

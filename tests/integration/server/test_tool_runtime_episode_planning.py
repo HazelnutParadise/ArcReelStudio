@@ -180,7 +180,7 @@ async def test_a_final_window_capped_by_the_batch_size_keeps_planning_to_the_end
     planning, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     projects, services, session_factory = planning
-    # 整本源文落在一个窗口里，模型一次给出三集；输出上限只够每批一集
+    # 完整原文落在一个窗口里，模型一次给出三集；输出上限只够每批一集
     _use_generator(monkeypatch, _Generator(max_output_tokens=400), window_chars=len("".join(_CHAPTERS)))
 
     await start_episode_planning(ToolRequest(PlanEpisodesRequest()), _scope(projects), _WEB, services)
@@ -219,7 +219,7 @@ async def test_stop_during_a_capped_final_window_does_not_queue_another(
     planning, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     projects, services, session_factory = planning
-    # 整本源文落在一个窗口里、每批只够一集：下一窗要等模型返回后才知道要不要排，停止时还没有可取消的窗口
+    # 完整原文落在一个窗口里、每批只够一集：下一窗要等模型返回后才知道要不要排，停止时还没有可取消的窗口
     generator = _Generator(hold=True, max_output_tokens=400)
     _use_generator(monkeypatch, generator, window_chars=len("".join(_CHAPTERS)))
     await start_episode_planning(ToolRequest(PlanEpisodesRequest()), _scope(projects), _WEB, services)

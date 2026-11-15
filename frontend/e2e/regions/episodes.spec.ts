@@ -24,7 +24,7 @@ const recordedProject = (JSON.parse(readFileSync(join(RECORDED_DIR, "project-dem
 const [firstEpisode] = recordedProject.project.episodes;
 
 // ---------------------------------------------------------------------------
-// 压力数据：两个整本源文文件、几十集、长标题与长文件名，切出集之间留一段空当，结尾还有未分集的原文
+// 压力数据：两个完整原文文件、几十集、长标题与长文件名，切出集之间留一段空当，结尾还有未分集的原文
 // ---------------------------------------------------------------------------
 
 const PARAGRAPHS = [
@@ -135,7 +135,7 @@ const files = FILES.map((spec) => {
   };
 });
 
-// 原文不在整本源文里的集：两集自带原文、一集还没有原文
+// 原文不在完整原文里的集：两集自带原文、一集还没有原文
 for (const origin of ["own", "own", "none"] as const) {
   infos.push({
     episode: nextEpisode,
@@ -248,7 +248,7 @@ const WITH_REPLAN: ApiOverrides = {
 
 const canvas = (page: Page) => page.getByRole("main");
 const outline = (page: Page) => page.getByRole("navigation", { name: "集目录" });
-const manuscript = (page: Page) => page.getByRole("region", { name: "整本源文" });
+const manuscript = (page: Page) => page.getByRole("region", { name: "完整原文" });
 const outlineRow = (page: Page, episode: number) =>
   outline(page).locator(`[data-outline-episode="${episode}"] > :first-child`);
 const agentToggle = (page: Page) => page.getByRole("button", { name: "Agent", exact: true });
@@ -287,16 +287,16 @@ async function expectOnlyColumnsScroll(page: Page) {
       })
       .map((el) => el.getAttribute("aria-label")),
   );
-  expect(scrolling.sort()).toEqual(["整本源文", "集目录"]);
+  expect(scrolling.sort()).toEqual(["完整原文", "集目录"]);
 }
 
 defineRegionScenarios("分集视图", [
   {
-    name: "没有整本源文时集目录只列其他集，原文区邀请上传",
+    name: "没有完整原文时集目录只列其他集，原文区邀请上传",
     path: PATH,
     api: API,
     ready: async (page) => {
-      await page.getByText("还没有整本源文").waitFor();
+      await page.getByText("还没有完整原文").waitFor();
     },
     act: async (page) => {
       await expect(outline(page).getByRole("link", { name: /第 1 集/ })).toBeVisible();
@@ -304,7 +304,7 @@ defineRegionScenarios("分集视图", [
     screenshot: { name: "episodes-empty", target: canvas },
   },
   {
-    name: "整本源文按集分段，集目录与原文各自滚动，正文行长受控",
+    name: "完整原文按集分段，集目录与原文各自滚动，正文行长受控",
     path: PATH,
     api: POPULATED,
     ready: populatedReady,

@@ -13,6 +13,9 @@ from .en import providers as en_providers
 from .en import system as en_system
 from .en import templates as en_templates
 from .en import validation as en_validation
+from .plurals import PLURAL_SUFFIXES as PLURAL_SUFFIXES
+from .plurals import pick_plural
+from .plurals import plural_category as plural_category
 from .ru import assets as ru_assets
 from .ru import emails as ru_emails
 from .ru import errors as ru_errors
@@ -117,9 +120,14 @@ MESSAGES: dict[str, dict[str, str]] = {
 
 
 def _(key: str, locale: str = DEFAULT_LOCALE, **kwargs: Any) -> str:
-    """Translate a message key to the given locale."""
+    """Translate a message key to the given locale.
+
+    传入整数 ``count`` 时先找该语言的复数变体（见 ``PLURAL_SUFFIXES``），没有就用基础键。
+    """
     msg_map = MESSAGES.get(locale, MESSAGES[DEFAULT_LOCALE])
-    msg = msg_map.get(key, MESSAGES[DEFAULT_LOCALE].get(key, key))
+    msg = pick_plural(msg_map, key, locale if locale in MESSAGES else DEFAULT_LOCALE, kwargs.get("count"))
+    if msg is None:
+        msg = msg_map.get(key, MESSAGES[DEFAULT_LOCALE].get(key, key))
     try:
         return msg.format(**kwargs)
     except Exception:

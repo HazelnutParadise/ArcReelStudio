@@ -85,7 +85,7 @@ describe("StockAudioButton", () => {
     await openAndSearch("sfx", "从素材库挑音效");
 
     const results = await screen.findByRole("list", { name: "搜索结果" });
-    expect(search).toHaveBeenCalledWith("sfx", "rain");
+    expect(search).toHaveBeenCalledWith("sfx", "rain", 1, expect.objectContaining({ source: "openverse" }));
     const row = within(results).getByRole("listitem");
     expect(within(row).getByText("CC0")).toBeInTheDocument();
     expect(within(row).getByRole("link", { name: /Openverse/ })).toHaveAttribute("href", "https://example.org/ov-1");
@@ -131,17 +131,14 @@ describe("StockAudioButton", () => {
     vi.spyOn(API, "listStockSources").mockResolvedValue({
       sources: [source({}), { ...FREESOUND, available: true, key_masked: "ab…yz" }],
     });
-    vi.spyOn(API, "searchStock").mockResolvedValue({
+    vi.spyOn(API, "searchStock").mockImplementation(async (_kind, _query, _page, options) => ({
       items: [],
-      sources: [
-        { source: "openverse", status: "ok" },
-        { source: "freesound", status: "key_rejected" },
-      ],
-    });
+      sources: [{ source: options?.source ?? "", status: options?.source === "freesound" ? "key_rejected" : "ok" }],
+    }));
     const removeKey = vi.spyOn(API, "deleteStockSourceKey").mockResolvedValue({ sources: [source({}), FREESOUND] });
     await openAndSearch("sfx", "从素材库挑音效");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("这些来源拒绝了密钥：Freesound");
+    expect(await screen.findByText("Freesound：密钥被拒绝，请移除后重新填入正确的密钥")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "移除 Freesound 密钥" }));
 
     await waitFor(() => expect(removeKey).toHaveBeenCalledWith("freesound"));
@@ -178,11 +175,11 @@ describe("StockAudioButton", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("says so when nothing is found and names the sources that failed", async () => {
+  it("says plainly that a source could not be reached instead of calling it an empty result", async () => {
     vi.spyOn(API, "searchStock").mockResolvedValue({ items: [], sources: [{ source: "openverse", status: "failed" }] });
     await openAndSearch("sfx", "从素材库挑音效");
 
-    expect(await screen.findByText(/没有找到素材/)).toBeInTheDocument();
-    expect(screen.getByText("这些来源这次没有返回结果：Openverse")).toBeInTheDocument();
+    expect(await screen.findByText("Openverse：连不上或等太久没有回应，稍后再试")).toBeInTheDocument();
+    expect(screen.queryByText(/没有找到素材/)).not.toBeInTheDocument();
   });
 });

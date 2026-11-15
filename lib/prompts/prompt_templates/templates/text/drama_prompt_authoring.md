@@ -3,6 +3,63 @@ id: text/drama_prompt_authoring
 category: text
 title: 剧情演绎 · 提示词编写
 description: 为剧情演绎已定稿的分镜补全画面与视频提示词（image_prompt / video_prompt）。
+i18n:
+  zh-TW:
+    title: "劇情演繹 · 提示詞編寫"
+    description: "為劇情演繹已定稿的分鏡補上畫面與影片提示詞（image_prompt / video_prompt）。"
+    slots:
+      target_language: "輸出語言（自然語言字串值使用的語言）"
+      project_overview: "專案概述，鍵齊全的物件 {synopsis, genre, theme, world_setting}；缺值時傳 null"
+      style: "專案風格值"
+      style_description: "專案風格描述"
+      aspect_ratio: "畫面比例（例如 16:9）"
+      aspect_ratio_label: "畫面比例的文字說明（直式構圖 / 橫式構圖 / 「<比例> 構圖」），由程式碼依比例產生"
+      assets: "出場資產外觀，物件 {characters, scenes, props}，每項是 [{name, appearance}] 清單（角括號已中和）；呼叫端不提供資產區塊時傳 null"
+      scenes_content: "script_plan 已定稿分鏡內容的渲染文字（由程式碼投影，含口播與原文錨點）"
+      episode: "集數"
+      instructions: "附加指示內容；沒有時傳 null"
+  en:
+    title: "Drama · Prompt writing"
+    description: "Fills in the image and video prompts (image_prompt / video_prompt) for finalized drama shots."
+    slots:
+      target_language: "Output language (the language of natural-language string values)"
+      project_overview: "Project overview, an object with all keys {synopsis, genre, theme, world_setting}; null when missing"
+      style: "Project style value"
+      style_description: "Project style description"
+      aspect_ratio: "Aspect ratio (e.g. 16:9)"
+      aspect_ratio_label: "Text description of the aspect ratio (portrait composition / landscape composition / \"<ratio> composition\"), produced by code from the ratio"
+      assets: "Appearance of assets on screen, object {characters, scenes, props}, each a [{name, appearance}] list (angle brackets neutralized); null when the caller provides no asset block"
+      scenes_content: "Rendered text of the finalized script_plan shots (projected by code, with spoken lines and source anchors)"
+      episode: "Episode number"
+      instructions: "Additional instructions; null when absent"
+  ru:
+    title: "Драма · Написание промптов"
+    description: "Дописывает промпты изображения и видео (image_prompt / video_prompt) для утверждённых кадров драмы."
+    slots:
+      target_language: "Язык вывода (язык строковых значений на естественном языке)"
+      project_overview: "Обзор проекта, объект со всеми ключами {synopsis, genre, theme, world_setting}; null при отсутствии"
+      style: "Значение стиля проекта"
+      style_description: "Описание стиля проекта"
+      aspect_ratio: "Соотношение сторон (например, 16:9)"
+      aspect_ratio_label: "Текстовое описание соотношения сторон (вертикальная композиция / горизонтальная композиция / \"композиция <соотношение>\"), формируется кодом"
+      assets: "Внешний вид материалов в кадре, объект {characters, scenes, props}, каждый — список [{name, appearance}] (угловые скобки нейтрализованы); null, если вызывающая сторона не передаёт блок материалов"
+      scenes_content: "Отрисованный текст утверждённых кадров script_plan (проекция кодом, с репликами и привязками к источнику)"
+      episode: "Номер серии"
+      instructions: "Дополнительные указания; null, если их нет"
+  vi:
+    title: "Phim truyện · Viết prompt"
+    description: "Bổ sung prompt hình ảnh và video (image_prompt / video_prompt) cho các phân cảnh phim truyện đã chốt."
+    slots:
+      target_language: "Ngôn ngữ đầu ra (ngôn ngữ của các giá trị chuỗi ngôn ngữ tự nhiên)"
+      project_overview: "Tổng quan dự án, đối tượng đủ khóa {synopsis, genre, theme, world_setting}; null khi thiếu"
+      style: "Giá trị phong cách dự án"
+      style_description: "Mô tả phong cách dự án"
+      aspect_ratio: "Tỷ lệ khung hình (ví dụ 16:9)"
+      aspect_ratio_label: "Mô tả bằng chữ của tỷ lệ khung hình (bố cục dọc / bố cục ngang / \"bố cục <tỷ lệ>\"), do mã tạo ra theo tỷ lệ"
+      assets: "Ngoại hình tài sản xuất hiện, đối tượng {characters, scenes, props}, mỗi mục là danh sách [{name, appearance}] (dấu ngoặc nhọn đã được vô hiệu hóa); null khi bên gọi không cung cấp khối tài sản"
+      scenes_content: "Văn bản đã kết xuất của các phân cảnh script_plan đã chốt (do mã chiếu ra, gồm lời thoại và mốc neo nguồn)"
+      episode: "Số tập"
+      instructions: "Chỉ dẫn bổ sung; null khi không có"
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool

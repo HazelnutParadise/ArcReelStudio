@@ -20,7 +20,7 @@ export function PromptTemplateDetailView({
   onBack: () => void;
   onOpenPartial: (name: string) => void;
 }) {
-  const { t } = useTranslation(["dashboard", "common"]);
+  const { t, i18n } = useTranslation(["dashboard", "common"]);
   const [state, setState] = useState<Load<PromptTemplateDetail>>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -35,7 +35,7 @@ export function PromptTemplateDetailView({
       },
     );
     return () => controller.abort();
-  }, [templateId, attempt]);
+  }, [templateId, attempt, i18n.language]);
 
   const retry = () => {
     setState({ status: "loading" });

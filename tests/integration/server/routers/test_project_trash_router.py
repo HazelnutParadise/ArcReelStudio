@@ -76,7 +76,7 @@ def _records(trash_client) -> list[dict]:
 
 
 def test_deleting_a_referenced_file_is_rejected(trash_client, trash_project_dir):
-    # 未纳入整本源文的源文件同样拒绝：它交给分集视图处理
+    # 未纳入完整原文的源文件同样拒绝：它交给分集视图处理
     for path in ("storyboards/scene_E1S01.png", "project.json", "scripts/episode_1.json", "source/extra.txt"):
         response = trash_client.delete(FILES, params={"path": path})
         assert response.status_code == 409, path

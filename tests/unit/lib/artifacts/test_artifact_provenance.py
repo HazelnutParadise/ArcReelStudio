@@ -362,7 +362,7 @@ def test_structured_basis_rejects_malformed_formal_inputs() -> None:
 def _project_with_source_kinds(
     content_mode: str, generation_mode: str, *, first: str | None, second: str | None
 ) -> dict[str, object]:
-    """两个整本源文文件各记一种类型（None 为不记），第 1 集切自第一个文件，第 2 集切自第二个。"""
+    """两个完整原文文件各记一种类型（None 为不记），第 1 集切自第一个文件，第 2 集切自第二个。"""
     return {
         "content_mode": content_mode,
         "generation_mode": generation_mode,

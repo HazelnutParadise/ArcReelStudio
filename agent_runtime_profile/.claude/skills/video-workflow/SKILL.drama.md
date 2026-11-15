@@ -26,7 +26,7 @@ description: 将小说转换为短视频的端到端工作流编排器。当用�
 
 1. 提示用户在 Web 端先创建项目，**创建时指定 content_mode（narration / drama）与 generation_mode（storyboard / reference_video）**；两者创建后均不可变更，Agent 无对应写入权限。session 启动后 cwd 已绑定到对应项目根
 2. 使用 Read 工具读取 `project.json`，确认 `title`、`content_mode`、`generation_mode` 字段（本 session 当前 content_mode 为 `drama`，创建后不可变更）
-3. 请用户在 Web 端上传小说文本（整本源文），或经 `mcp__arcreel__upload_source` 写入；直接放进 `source/` 而未登记的文件不是源文。用户给的是写好的成品剧本时，经工具登记要带 `source_kind=screenplay`，缺省按小说
+3. 请用户在 Web 端上传小说文本（完整原文），或经 `mcp__arcreel__upload_source` 写入；直接放进 `source/` 而未登记的文件不是源文。用户给的是写好的成品剧本时，经工具登记要带 `source_kind=screenplay`，缺省按小说
 4. **上传后自动生成项目概述**（synopsis、genre、theme、world_setting）
 
 > 标准项目子目录由 `create_project()` 自动建好：`source/`、`scripts/`、`drafts/`、`characters/`、`scenes/`、`props/`、`storyboards/`、`grids/`、`videos/`、`reference_videos/`、`thumbnails/`、`output/`。
@@ -83,9 +83,9 @@ description: 将小说转换为短视频的端到端工作流编排器。当用�
 
 **触发**：`next_action.type == "plan_episodes"`
 
-**用户已自行分集时不走本节**：用户拆好的每集原文逐集经 `mcp__arcreel__upload_source`（`role=episode`）登记为自带原文的集，或在集页直接填写；这些集不参与分集规划，计划逐集直接进入脚本规划。把每一集原样登记为一集，保持用户给出的分集与先后；合并成全本再用 `plan_episodes` 重切只在用户明确要求重新切分时才做。分集规划与重置只动切自整本源文的集，自带原文与无原文的集原样保留。
+**用户已自行分集时不走本节**：用户拆好的每集原文逐集经 `mcp__arcreel__upload_source`（`role=episode`）登记为自带原文的集，或在集页直接填写；这些集不参与分集规划，计划逐集直接进入脚本规划。把每一集原样登记为一集，保持用户给出的分集与先后；合并成全本再用 `plan_episodes` 重切只在用户明确要求重新切分时才做。分集规划与重置只动切自完整原文的集，自带原文与无原文的集原样保留。
 
-分集规划由服务端工具完成：工具内部按整本源文文件清单（`whole_source_files`）的顺序，从最后一个切出集的结尾起读一个源文窗口，调用项目配置的文本模型一次规划出窗口内所有剧情弧完整的集（标题/钩子/原文范围 + 分集大纲：故事节点与下集预告），在同一把项目锁内写账本、派生 `source/episode_{N}.txt` 并清理残留派生文件。**主 Agent 只调一次工具、只收摘要**——不读小说原文、不自行选切分点：
+分集规划由服务端工具完成：工具内部按完整原文文件清单（`whole_source_files`）的顺序，从最后一个切出集的结尾起读一个源文窗口，调用项目配置的文本模型一次规划出窗口内所有剧情弧完整的集（标题/钩子/原文范围 + 分集大纲：故事节点与下集预告），在同一把项目锁内写账本、派生 `source/episode_{N}.txt` 并清理残留派生文件。**主 Agent 只调一次工具、只收摘要**——不读小说原文、不自行选切分点：
 
 1. 规划前快速核对 `project.json`：
    - `source_language` 是否与源文实际语言一致。优先级：**用户显式配置 > 自动推断**（正常路径由 overview 生成自动落盘）；发现不一致时**提醒用户（WARN）、说明后果并建议修正**（错误配置会使规划的体量度量与语言前提失真），用户未修正时按显式配置继续，不阻塞流程。字段缺失或经用户确认有误时，走 `mcp__arcreel__patch_project({"settings": {"source_language": "en"|"vi"|"zh"}})` 写入

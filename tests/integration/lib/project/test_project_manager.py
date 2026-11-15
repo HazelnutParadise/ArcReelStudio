@@ -217,7 +217,7 @@ class TestProjectManager:
         assert project["image_provider_t2i"] == "openai/gpt-image-1"
 
     def test_create_project_metadata_is_latest_schema_with_empty_whole_source_files(self, tmp_path):
-        """新项目即最新 schema 形态：版本对齐迁移目标版本，整本源文清单以空列表初始。"""
+        """新项目即最新 schema 形态：版本对齐迁移目标版本，完整原文清单以空列表初始。"""
         from lib.project.project_migrations import CURRENT_SCHEMA_VERSION
 
         pm = ProjectManager(tmp_path / "projects")

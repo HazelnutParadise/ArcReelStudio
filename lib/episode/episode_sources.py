@@ -1,10 +1,10 @@
-"""集原文来源与整本源文的文件清单：由项目显式登记，不按 ``source/`` 目录内容推断（ADR 0031、0097）。
+"""集原文来源与完整原文的文件清单：由项目显式登记，不按 ``source/`` 目录内容推断（ADR 0031、0097）。
 
-- 每个账本条目用 :data:`SOURCE_ORIGIN_FIELD` 记录集原文的来源：切自整本源文、自带原文、无原文。
-  切自整本源文的集文件 ``source/episode_N.txt`` 是账本的派生物；自带原文的集文件就是该集的源文；
+- 每个账本条目用 :data:`SOURCE_ORIGIN_FIELD` 记录集原文的来源：切自完整原文、自带原文、无原文。
+  切自完整原文的集文件 ``source/episode_N.txt`` 是账本的派生物；自带原文的集文件就是该集的源文；
   无原文的集没有集文件，即使 ``source/`` 里恰好有同名文件也不算。
-- ``project.json`` 顶层 :data:`WHOLE_SOURCE_FILES_KEY` 按创作者排定的顺序列出整本源文的文件，新文件
-  接在末尾。``source/`` 里没有登记的文件不属于整本源文，也不是任何一集的原文。
+- ``project.json`` 顶层 :data:`WHOLE_SOURCE_FILES_KEY` 按创作者排定的顺序列出完整原文的文件，新文件
+  接在末尾。``source/`` 里没有登记的文件不属于完整原文，也不是任何一集的原文。
 - 接续规划的起点由账本推导：按源文位置（文件在清单中的先后，再按文件内偏移）排在最后的那个切出集的
   结尾，不另存游标。
 - 登记过切出集的文件在 ``source/snapshots/`` 下保留一份规范化文本快照，是服务之外改动文件时的对齐基准。
@@ -42,13 +42,13 @@ logger = logging.getLogger(__name__)
 #: 账本条目字段：集原文的来源。
 SOURCE_ORIGIN_FIELD = "source_origin"
 
-#: ``project.json`` 顶层字段：整本源文的文件清单，元素形如 ``{"source_file": "source/novel.txt"}``。
+#: ``project.json`` 顶层字段：完整原文的文件清单，元素形如 ``{"source_file": "source/novel.txt"}``。
 WHOLE_SOURCE_FILES_KEY = "whole_source_files"
 
 #: 规范化文本快照所在目录（相对项目根）。
 SOURCE_SNAPSHOTS_DIR = "source/snapshots"
 
-#: ``project.json`` 顶层字段：整本源文是否还有未规划成集的原文（:func:`source_remaining` 的结论）。
+#: ``project.json`` 顶层字段：完整原文是否还有未规划成集的原文（:func:`source_remaining` 的结论）。
 #: ``ProjectManager`` 写 ``project.json`` 时按当时的源文记下，项目列表据此判「已完成」而不读源文；
 #: 源文在 ArcReel 之外被改动、账本尚未更新时，它与制作状态可能短暂不一致。
 SOURCE_REMAINING_KEY = "source_remaining"
@@ -57,7 +57,7 @@ SOURCE_REMAINING_KEY = "source_remaining"
 class SourceOrigin(StrEnum):
     """一集的集原文来源。"""
 
-    #: 由分集规划从整本源文切出一段范围。
+    #: 由分集规划从完整原文切出一段范围。
     WHOLE_SOURCE = "whole_source"
     #: 创作者逐集上传或直接填写的一份原文，集文件就是该集的源文。
     OWN = "own"
@@ -71,7 +71,7 @@ SOURCE_ORIGINS: tuple[str, ...] = tuple(origin.value for origin in SourceOrigin)
 def episode_source_origin(entry: Mapping[str, Any]) -> SourceOrigin:
     """条目记录的集原文来源。
 
-    字段缺失或取值非法时，带 ``source_range`` 字段（不论结构是否完整）的按切自整本源文处理，其余按无原文
+    字段缺失或取值非法时，带 ``source_range`` 字段（不论结构是否完整）的按切自完整原文处理，其余按无原文
     处理；不看磁盘上有没有集文件。结构损坏的原文范围因此仍落在切出集的校验里，不会被当成无原文放过。
     """
     raw = entry.get(SOURCE_ORIGIN_FIELD)
@@ -81,15 +81,15 @@ def episode_source_origin(entry: Mapping[str, Any]) -> SourceOrigin:
 
 
 def is_cut_episode(entry: Mapping[str, Any]) -> bool:
-    """条目是否为切自整本源文的集（含没有原文范围记录的旧拆分流程存量集）。"""
+    """条目是否为切自完整原文的集（含没有原文范围记录的旧拆分流程存量集）。"""
     return episode_source_origin(entry) is SourceOrigin.WHOLE_SOURCE
 
 
 def legacy_cut_episode_ids(project: Mapping[str, Any]) -> list[int]:
-    """切自整本源文、却没有原文范围记录的集 ID（旧拆分流程的存量集），按播出顺序。
+    """切自完整原文、却没有原文范围记录的集 ID（旧拆分流程的存量集），按播出顺序。
 
     这类集照常消费，但无法据以续接规划：分集规划遇到它们拒绝执行，要重新规划须从第 1 集起。
-    自带原文与无原文的集本来就不占用整本源文，不在此列。
+    自带原文与无原文的集本来就不占用完整原文，不在此列。
     """
     ids: list[int] = []
     for entry in _entries(project):
@@ -134,14 +134,14 @@ def _entries(project: Mapping[str, Any]) -> Iterable[Mapping[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
-# 整本源文的文件清单
+# 完整原文的文件清单
 # ---------------------------------------------------------------------------
 
 
 def is_whole_source_file_path(value: object) -> TypeGuard[str]:
     """直接位于 ``source/`` 下、扩展名合法、非点 / 下划线前缀的项目相对 POSIX 路径。
 
-    ``episode_N.txt`` 留给集文件：切出集的集文件由规划按集 ID 写出，整本源文用这个名字会被覆盖。
+    ``episode_N.txt`` 留给集文件：切出集的集文件由规划按集 ID 写出，完整原文用这个名字会被覆盖。
     """
     if not isinstance(value, str) or "\\" in value:
         return False
@@ -156,7 +156,7 @@ def is_whole_source_file_path(value: object) -> TypeGuard[str]:
 
 
 def whole_source_files(project: Mapping[str, Any]) -> list[str]:
-    """整本源文的文件（项目相对路径），按清单顺序；形状非法或重复的元素跳过。"""
+    """完整原文的文件（项目相对路径），按清单顺序；形状非法或重复的元素跳过。"""
     raw = project.get(WHOLE_SOURCE_FILES_KEY)
     files: list[str] = []
     for item in raw if isinstance(raw, list) else []:
@@ -167,12 +167,12 @@ def whole_source_files(project: Mapping[str, Any]) -> list[str]:
 
 
 def append_whole_source_file(project: dict[str, Any], rel: str, *, index: int | None = None) -> bool:
-    """把文件登记进整本源文清单；已在清单里时不动，返回是否新增。
+    """把文件登记进完整原文清单；已在清单里时不动，返回是否新增。
 
     ``index`` 是登记后文件在 :func:`whole_source_files` 里的下标，缺省或超出末尾时接在末尾，负数按 0 处理。
     """
     if not is_whole_source_file_path(rel):
-        raise ValueError(f"整本源文的文件须直接位于 source/ 下且为 .txt / .md：{rel}")
+        raise ValueError(f"完整原文的文件须直接位于 source/ 下且为 .txt / .md：{rel}")
     files = whole_source_files(project)
     if rel in files:
         return False
@@ -191,7 +191,7 @@ def append_whole_source_file(project: dict[str, Any], rel: str, *, index: int | 
 
 
 def remove_whole_source_file(project: dict[str, Any], rel: str) -> bool:
-    """从整本源文清单移除文件，返回是否移除。"""
+    """从完整原文清单移除文件，返回是否移除。"""
     raw = project.get(WHOLE_SOURCE_FILES_KEY)
     if not isinstance(raw, list):
         return False
@@ -211,7 +211,7 @@ def _read_text_or_none(path: Path) -> str | None:
 
 
 def discover_sources(project_dir: Path, project: Mapping[str, Any]) -> list[SourceDoc]:
-    """整本源文的各个文件，按清单顺序给出规范化全文。
+    """完整原文的各个文件，按清单顺序给出规范化全文。
 
     读不到的文件（不存在、符号链接、非 UTF-8）跳过；``source/`` 目录本身是符号链接或目录联接时视为没有源文。
     """
@@ -237,7 +237,7 @@ def discover_sources(project_dir: Path, project: Mapping[str, Any]) -> list[Sour
 def planning_start(project: Mapping[str, Any], docs: list[SourceDoc]) -> tuple[str, int] | None:
     """接续规划的起点：按源文位置排在最后的切出集的结尾；还没有切出集时是第一个文件的开头。
 
-    原文范围的终点文件不在 ``docs`` 里的切出集不参与推导；文件按 NFC 归一后的路径对应。整本源文没有文件时返回 None。
+    原文范围的终点文件不在 ``docs`` 里的切出集不参与推导；文件按 NFC 归一后的路径对应。完整原文没有文件时返回 None。
     """
     order = {unicodedata.normalize("NFC", doc.rel_path): index for index, doc in enumerate(docs)}
     last: tuple[int, int] | None = None
@@ -257,7 +257,7 @@ def planning_start(project: Mapping[str, Any], docs: list[SourceDoc]) -> tuple[s
 
 @dataclass(frozen=True)
 class CutPlacement:
-    """一个切出集在整本源文里的位置：起点 ``(file_index, start)``，终点 ``(end_file_index, end)``（不含）。
+    """一个切出集在完整原文里的位置：起点 ``(file_index, start)``，终点 ``(end_file_index, end)``（不含）。
 
     下标指 ``docs`` 里的文件，偏移是各自文件内的下标。原文范围可以跨文件，中间的文件整个属于这一集。
     """
@@ -304,7 +304,7 @@ def placement_text(docs: Sequence[SourceDoc], placement: CutPlacement) -> str:
 
 
 def span_text(texts: Mapping[str, str], order: Sequence[str], span: SourceSpan) -> str | None:
-    """账本里一段原文范围的文字：``texts`` 是文件的规范化全文，``order`` 是整本源文的文件顺序。
+    """账本里一段原文范围的文字：``texts`` 是文件的规范化全文，``order`` 是完整原文的文件顺序。
 
     单个文件内的范围不看 ``order``。跨文件时起止文件不在 ``order`` 里、先后颠倒，或文件文字缺失、偏移越界时返回 None。
     """
@@ -330,7 +330,7 @@ def span_text(texts: Mapping[str, str], order: Sequence[str], span: SourceSpan) 
 
 
 def cut_episode_placements(project: Mapping[str, Any], docs: list[SourceDoc]) -> dict[int, CutPlacement]:
-    """能落进整本源文的切出集，按集 ID 索引。
+    """能落进完整原文的切出集，按集 ID 索引。
 
     起止文件不在 ``docs`` 里、终点文件排在起点文件之前、起点越界的不落位；文件按 NFC 归一后的路径对应。
     按源文位置排序，与前一集重叠的不落位。终点超出文件长度时截到文件末尾。「分集」视图与手工切分按同一份落位认集。
@@ -440,9 +440,9 @@ def source_fingerprints_diverged(project: Mapping[str, Any], docs: list[SourceDo
 
 
 def source_remaining(project: Mapping[str, Any], docs: list[SourceDoc]) -> bool:
-    """整本源文还有未规划成集的原文，下一步是继续分集规划。
+    """完整原文还有未规划成集的原文，下一步是继续分集规划。
 
-    有非空白的整本源文，且源文在规划之后被改动过（规划转为重置），或规划起点之后还有非空白的原文。
+    有非空白的完整原文，且源文在规划之后被改动过（规划转为重置），或规划起点之后还有非空白的原文。
     广告项目没有分集规划，恒为 False。制作状态的「继续分集规划」与项目列表的「已完成」都取这一判定。
     """
     if project.get("content_mode") == "ad" or not any(doc.text.strip() for doc in docs):
@@ -472,7 +472,7 @@ def source_planning_inputs(project: Mapping[str, Any]) -> str:
 
 
 def record_source_remaining(project_dir: Path, project: dict[str, Any]) -> None:
-    """按盘上的整本源文把 :func:`source_remaining` 的结论写进 ``project`` 的 :data:`SOURCE_REMAINING_KEY`。"""
+    """按盘上的完整原文把 :func:`source_remaining` 的结论写进 ``project`` 的 :data:`SOURCE_REMAINING_KEY`。"""
     project[SOURCE_REMAINING_KEY] = source_remaining(project, discover_sources(project_dir, project))
 
 
@@ -484,7 +484,7 @@ def stored_source_remaining(project: Mapping[str, Any]) -> bool:
 def archive_episode_file_path(path: Path) -> Path:
     """集文件的留底路径：下划线前缀 + ``.bak`` 尾缀，同名时追加序号。
 
-    下划线前缀与 ``.bak`` 尾缀让留底文件既不是整本源文文件名，也不匹配 ``episode_N.txt``。
+    下划线前缀与 ``.bak`` 尾缀让留底文件既不是完整原文文件名，也不匹配 ``episode_N.txt``。
     """
     base = f"_{path.name}"
     candidate = path.with_name(f"{base}.bak")
@@ -502,12 +502,12 @@ def archive_episode_file_path(path: Path) -> Path:
 
 
 def source_snapshot_path(project_dir: Path, rel: str) -> Path:
-    """整本源文文件 ``rel`` 的快照路径。"""
+    """完整原文文件 ``rel`` 的快照路径。"""
     return project_dir / SOURCE_SNAPSHOTS_DIR / PurePosixPath(rel).name
 
 
 def cut_episode_source_files(project: Mapping[str, Any]) -> list[str]:
-    """登记过切出集的整本源文文件，按首次出现的播出顺序去重；跨文件的集经过的中间文件也算。"""
+    """登记过切出集的完整原文文件，按首次出现的播出顺序去重；跨文件的集经过的中间文件也算。"""
     order = whole_source_files(project)
     files: list[str] = []
     for entry in _entries(project):
@@ -561,11 +561,11 @@ def sync_source_snapshots(
     keep = {PurePosixPath(rel).name for rel in wanted}
     for path in snapshot_dir.iterdir():
         if path.name not in keep and (path.is_file() or path.is_symlink()):
-            path.unlink(missing_ok=True)  # hard-delete: derived -- 过期的整本源文快照，可由账本重新生成
+            path.unlink(missing_ok=True)  # hard-delete: derived -- 过期的完整原文快照，可由账本重新生成
 
 
 def read_source_snapshot(project_dir: Path, rel: str) -> str | None:
-    """整本源文文件 ``rel`` 的快照文本；没有快照、快照是符号链接或读不到时为 None。"""
+    """完整原文文件 ``rel`` 的快照文本；没有快照、快照是符号链接或读不到时为 None。"""
     path = source_snapshot_path(project_dir, rel)
     if path.is_symlink() or not path.is_file():
         return None
@@ -573,7 +573,7 @@ def read_source_snapshot(project_dir: Path, rel: str) -> str | None:
 
 
 def changed_outside_service(project_dir: Path, project: Mapping[str, Any], doc: SourceDoc) -> bool:
-    """可读的整本源文文件在服务之外被改动过：已记录的源文指纹或快照与当前的规范化文本不符。
+    """可读的完整原文文件在服务之外被改动过：已记录的源文指纹或快照与当前的规范化文本不符。
 
     没有记录指纹、也没有快照的文件无从比对，不算改动过。
     """

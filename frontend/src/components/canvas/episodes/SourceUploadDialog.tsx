@@ -34,7 +34,7 @@ type Row =
   | { key: string; kind: "new"; file: File; sourceKind: SourceKind };
 
 export interface SourceUploadResult {
-  /** 登记进整本源文的文件名（服务端落盘后的名字）。 */
+  /** 登记进完整原文的文件名（服务端落盘后的名字）。 */
   wholeSourceFiles: string[];
   /** 新登记的自带原文的集 ID，按播出顺序。 */
   episodes: number[];
@@ -75,9 +75,9 @@ function toNewRows(files: File[], sourceKind: SourceKind = "novel"): { rows: Row
 }
 
 /**
- * 上传原文：整本源文或逐集原文。
+ * 上传原文：完整原文或逐集原文。
  *
- * - 整本源文：已有文件锁定显示，新文件默认排在最后、可以拖到任意位置，按列表顺序逐个登记到对应位置。
+ * - 完整原文：已有文件锁定显示，新文件默认排在最后、可以拖到任意位置，按列表顺序逐个登记到对应位置。
  * - 逐集原文：「文件 → 将成为第 N 集」，确认后按列表顺序追加到播出顺序末尾。
  *
  * 文件名不决定先后。上传中途失败时停下，已上传的文件保留，剩下的文件留在列表里。全部上传完成后关闭，

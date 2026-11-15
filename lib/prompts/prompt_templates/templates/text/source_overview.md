@@ -3,6 +3,35 @@ id: text/source_overview
 category: text
 title: 源文总览
 description: 从项目源文提炼项目概述（故事梗概、题材、主题、世界观与源语言），供之后所有生成环节的提示词使用。
+i18n:
+  zh-TW:
+    title: "原文總覽"
+    description: "從專案原文整理出專案概述（故事大綱、題材、主題、世界觀與原文語言），供之後所有生成步驟的提示詞使用。"
+    slots:
+      source_kind: "原文類型"
+      target_language: "輸出語言，用專案的原文語言，預設為中文"
+      source_content: "專案 source 資料夾下所有原文合併後的內容"
+  en:
+    title: "Source overview"
+    description: "Distills a project overview from the source text (synopsis, genre, themes, setting and source language) for the prompts of every later generation step."
+    slots:
+      source_kind: "Source type"
+      target_language: "Output language, the project's source language, Chinese by default"
+      source_content: "All source text in the project's source folder, joined together"
+  ru:
+    title: "Обзор источника"
+    description: "Составляет обзор проекта по исходному тексту (синопсис, жанр, темы, мир и язык источника) для промптов всех последующих этапов генерации."
+    slots:
+      source_kind: "Тип источника"
+      target_language: "Язык вывода — язык источника проекта, по умолчанию китайский"
+      source_content: "Весь исходный текст из папки source проекта, объединённый вместе"
+  vi:
+    title: "Tổng quan nguồn"
+    description: "Rút ra tổng quan dự án từ văn bản nguồn (tóm tắt, thể loại, chủ đề, thế giới và ngôn ngữ nguồn) để dùng trong prompt của mọi bước tạo sau đó."
+    slots:
+      source_kind: "Loại nguồn"
+      target_language: "Ngôn ngữ đầu ra, lấy ngôn ngữ nguồn của dự án, mặc định là tiếng Trung"
+      source_content: "Toàn bộ văn bản nguồn trong thư mục source của dự án, nối lại với nhau"
 stage: source_overview
 invoked_by:
   kind: user_action

@@ -251,7 +251,7 @@ export interface WorkflowContent {
   referenced_assets_without_description: string[];
   /** 目标集已完成：视频齐全且至少有一条剪辑时间线。 */
   episode_complete?: boolean;
-  /** 只在不指定集的查询里为 true：每集都完成，且整本源文没有剩余。 */
+  /** 只在不指定集的查询里为 true：每集都完成，且完整原文没有剩余。 */
   project_complete?: boolean;
 }
 

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from lib.infra.api_errors import NotFoundError
 from lib.prompts.prompt_templates import PartialEntry, PromptTemplates, TemplateError, TemplateMeta, UserActionTrigger
 from lib.prompts.prompt_templates.builtin import builtin_templates
+from server.i18n import Locale
 
 router = APIRouter(prefix="/prompt-templates")
 
@@ -40,10 +41,15 @@ class PromptTemplateDetailResponse(BaseModel):
 
 
 @router.get("")
-async def list_prompt_templates(templates: Templates) -> PromptTemplateListResponse:
-    """Agent 语言规范随 Agent 会话拼进系统提示，展示在 Agent 分栏，不进本列表；详情接口仍可读取。"""
+async def list_prompt_templates(templates: Templates, locale: Locale) -> PromptTemplateListResponse:
+    """Agent 语言规范随 Agent 会话拼进系统提示，展示在 Agent 分栏，不进本列表；详情接口仍可读取。
+
+    标题、说明与槽位说明按请求语言给出，模版正文不翻译。
+    """
     return PromptTemplateListResponse(
-        templates=[item for item in templates.list_templates() if item.invoked_by != _AGENT_SESSION_TRIGGER]
+        templates=[
+            item.localized(locale) for item in templates.list_templates() if item.invoked_by != _AGENT_SESSION_TRIGGER
+        ]
     )
 
 
@@ -57,13 +63,13 @@ async def get_prompt_partial(name: str, templates: Templates) -> PartialEntry:
 
 
 @router.get("/{template_id:path}")
-async def get_prompt_template(template_id: str, templates: Templates) -> PromptTemplateDetailResponse:
+async def get_prompt_template(template_id: str, templates: Templates, locale: Locale) -> PromptTemplateDetailResponse:
     metadata = next((item for item in templates.list_templates() if item.id == template_id), None)
     if metadata is None:
         raise NotFoundError("prompt_template_not_found", id=template_id)
     source, partials = templates.read_source(template_id)
     return PromptTemplateDetailResponse(
-        template=metadata,
+        template=metadata.localized(locale),
         source=source,
         partials=partials,
         output_schema=_output_json_schema(metadata.output_schema),

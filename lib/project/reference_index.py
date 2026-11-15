@@ -3,7 +3,7 @@
 角色只由引用关系判定，不由路径推断。数据源：
 
 - 产物清单（current 正式文件）、版本历史（历史版本）；
-- ``project.json``（资产图、参考图、参考音频、风格参考图、BGM、分集账本、整本源文清单）；
+- ``project.json``（资产图、参考图、参考音频、风格参考图、BGM、分集账本、完整原文清单）；
 - 剧本（分镜条目与视频单元的媒体、尾帧、宫格）。
 
 例外是目录本身就是存储的内容：剪辑时间线按 ``edit_timelines/episode_N/<id>.json`` 存放，项目记忆在
@@ -177,7 +177,7 @@ class ReferenceIndex:
         self._refs: dict[str, FileReference] = {}
         self._resources: set[tuple[str, str]] = set()
         self._item_episodes: dict[str, int] = {}
-        #: 整本源文文件名主体 → 角色；上传时保留的原始文件 ``source/raw/<主体>.<原扩展名>`` 跟随它。
+        #: 完整原文文件名主体 → 角色；上传时保留的原始文件 ``source/raw/<主体>.<原扩展名>`` 跟随它。
         self._source_stems: dict[str, FileReference] = {}
 
     @classmethod
@@ -217,10 +217,10 @@ class ReferenceIndex:
                 FileRole.STRUCTURE, FileOwner("timeline", id=PurePosixPath(timeline).stem, episode=episode)
             )
         if parts[:2] == ("source", "raw") and len(parts) == 3:
-            # 原始上传件随规范化文本一起增删；对应的源文件未纳入整本源文时同样交给分集视图。
+            # 原始上传件随规范化文本一起增删；对应的源文件未纳入完整原文时同样交给分集视图。
             return self._source_stems.get(PurePosixPath(rel).stem, FileReference(FileRole.UNREFERENCED, _SOURCE))
         if is_whole_source_file_path(rel):
-            # 未纳入整本源文、也不是任何一集原文的源文件：由分集视图处理。
+            # 未纳入完整原文、也不是任何一集原文的源文件：由分集视图处理。
             return FileReference(FileRole.UNREFERENCED, _SOURCE)
         return _UNREFERENCED
 

@@ -19,7 +19,7 @@ from lib.infra.content_digest import prefixed_canonical_json_digest
 
 
 def _registered_source_paths(project: Mapping[str, Any]) -> list[str]:
-    """项目登记的全部源文：整本源文清单里的文件，加上自带原文的集的集文件。
+    """项目登记的全部源文：完整原文清单里的文件，加上自带原文的集的集文件。
 
     切出集的集文件是派生物、无原文的集没有集文件，``source/`` 里未登记的文件也不算。
     """

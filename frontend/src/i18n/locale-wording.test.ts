@@ -34,7 +34,15 @@ const SIMPLIFIED_ONLY =
 const OPENCC_ARTEFACTS =
   /全域性|區域性|釋出|例項|自定義|型別|稽核|許可權|擴充套件|整整合|標識|響應|定製|豎屏|橫屏|獲取|超時|源文字|介面網址|吊銷|違約|(?<!一)併發/u;
 
+/** 已改名的术语，界面文案不再使用：整本源文 → 完整原文（GLOSSARY.md）。 */
+const RETIRED_TERMS = /整本源文/u;
+
 describe('locale wording', () => {
+  it.each(CHINESE_PACKS)('keeps retired terms out of the %s pack', (_, modules) => {
+    const offenders = entries(modules).filter(([, text]) => RETIRED_TERMS.test(text));
+    expect(offenders).toEqual([]);
+  });
+
   it.each(CHINESE_PACKS)('uses a full-width colon after Chinese text in the %s pack', (_, modules) => {
     const offenders = entries(modules).filter(([, text]) => /\p{Script=Han}\s?:/u.test(text));
     expect(offenders).toEqual([]);

@@ -22,11 +22,11 @@ from tests.factories import custom_endpoint_definition
         ),
         (
             ["--locale", "en"],
-            "Wrote {path} (1 entries)",
+            "Wrote {path} (1 entry)",
             "Market source check passed: {directory}",
             "polling interval and timeout are runtime policy, not part of a definition",
-            "Market source check failed with 1 issue(s)",
-            "Cannot generate the index: 1 issue(s)",
+            "Market source check failed with 1 issue",
+            "Cannot generate the index: 1 issue",
         ),
         (
             ["--locale", "vi"],

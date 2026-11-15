@@ -3,6 +3,19 @@ id: style/live_bladerunner
 category: style
 title: 银翼杀手
 description: "真人画风，极简野蛮 · 赛博粒子。"
+i18n:
+  zh-TW:
+    title: "銀翼殺手"
+    description: "真人畫風，極簡野蠻 · 賽博粒子。"
+  en:
+    title: "Blade Runner"
+    description: "Live-action style: Minimalist · Cyber particles."
+  ru:
+    title: "Бегущий по лезвию"
+    description: "Игровой стиль: Минимализм · Киберчастицы."
+  vi:
+    title: "Blade Runner"
+    description: "Phong cách người đóng: Tối giản · Hạt cyber."
 stage: style
 invoked_by:
   kind: user_action

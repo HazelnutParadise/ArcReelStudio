@@ -51,3 +51,13 @@ OPENCC_ARTEFACTS = re.compile(
 def test_zh_tw_messages_avoid_conversion_artefacts():
     offenders = {key: text for key, text in MESSAGES["zh-TW"].items() if OPENCC_ARTEFACTS.search(text)}
     assert offenders == {}
+
+
+#: 已改名的术语，界面文案不再使用：整本源文 → 完整原文（GLOSSARY.md）；与前端 RETIRED_TERMS 同一口径。
+RETIRED_TERMS = re.compile("整本源文")
+
+
+@pytest.mark.parametrize("locale", ["zh", "zh-TW"])
+def test_zh_messages_avoid_retired_terms(locale):
+    offenders = {key: text for key, text in MESSAGES[locale].items() if RETIRED_TERMS.search(text)}
+    assert offenders == {}

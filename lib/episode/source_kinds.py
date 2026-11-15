@@ -1,6 +1,6 @@
 """源文件类型：剧情演绎中一份原文是小说还是剧本，随源文件记录（ADR 0036）。
 
-- 整本源文清单的每一项各记一份（``whole_source_files[].source_kind``），自带原文的集记在账本条目上
+- 完整原文清单的每一项各记一份（``whole_source_files[].source_kind``），自带原文的集记在账本条目上
   （``episodes[].source_kind``）。切出集取原文范围起点所在文件的类型，不另存；无原文的集没有类型。
 - 只有剧情演绎项目有源文件类型；其他创作类型一律读作没有类型，也不写入。
 - 剧情演绎里字段缺失或取值非法时按小说读。
@@ -31,7 +31,7 @@ SOURCE_KINDS: tuple[SourceKind, ...] = ("novel", "screenplay")
 #: 缺省类型。
 DEFAULT_SOURCE_KIND: SourceKind = "novel"
 
-#: 整本源文清单项与账本条目上的字段名。
+#: 完整原文清单项与账本条目上的字段名。
 SOURCE_KIND_FIELD = "source_kind"
 
 
@@ -62,7 +62,7 @@ def _whole_source_item(project: Mapping[str, Any], rel: str) -> Mapping[str, Any
 
 
 def whole_source_file_kind(project: Mapping[str, Any], rel: str) -> SourceKind | None:
-    """整本源文文件 ``rel`` 的类型；非剧情演绎项目或文件不在清单里时为 None。"""
+    """完整原文文件 ``rel`` 的类型；非剧情演绎项目或文件不在清单里时为 None。"""
     if not source_kind_applies(project) or rel not in whole_source_files(project):
         return None
     return _recorded(_whole_source_item(project, rel))
@@ -102,7 +102,7 @@ def _all_source_kinds(project: Mapping[str, Any]) -> Iterable[SourceKind]:
 
 
 def project_overview_source_kind(project: Mapping[str, Any]) -> SourceKind:
-    """项目概览按哪种类型生成：全部源文（整本源文的文件与自带原文的集）同一类型时取该类型，否则按小说。"""
+    """项目概览按哪种类型生成：全部源文（完整原文的文件与自带原文的集）同一类型时取该类型，否则按小说。"""
     if not source_kind_applies(project):
         return DEFAULT_SOURCE_KIND
     kinds = set(_all_source_kinds(project))
@@ -110,7 +110,7 @@ def project_overview_source_kind(project: Mapping[str, Any]) -> SourceKind:
 
 
 def record_whole_source_file_kind(project: dict[str, Any], rel: str, kind: SourceKind | None) -> None:
-    """给清单里的整本源文文件记类型；``kind`` 为 None 时记缺省的小说。非剧情演绎项目不记。"""
+    """给清单里的完整原文文件记类型；``kind`` 为 None 时记缺省的小说。非剧情演绎项目不记。"""
     if not source_kind_applies(project):
         return
     raw = project.get(WHOLE_SOURCE_FILES_KEY)
@@ -130,7 +130,7 @@ def record_episode_kind(project: Mapping[str, Any], entry: dict[str, Any], kind:
 
 
 def episodes_from_whole_source_file(project: Mapping[str, Any], rel: str) -> list[int]:
-    """原文范围起点落在整本源文文件 ``rel`` 的切出集，按播出顺序。"""
+    """原文范围起点落在完整原文文件 ``rel`` 的切出集，按播出顺序。"""
     raw = project.get("episodes")
     ids: list[int] = []
     for entry in raw if isinstance(raw, list) else []:

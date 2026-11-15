@@ -233,7 +233,7 @@ class TestCandidate:
 async def _generate_partial(
     project_dir: Path, episode: int, anchors: list[str], *, instructions: str | None = None
 ) -> str:
-    """只生成一批就停下：候选没有覆盖到整本源文结尾。"""
+    """只生成一批就停下：候选没有覆盖到完整原文结尾。"""
     candidate_id = create_replan_candidate(project_dir, episode=episode, instructions=instructions)
     planner = EpisodePlanner(project_dir, generator=_Generator(anchors))
     result = await planner.plan_candidate(candidate_id, instructions)

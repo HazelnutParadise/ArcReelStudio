@@ -29,7 +29,7 @@ interface EpisodesHeaderProps {
 }
 
 /**
- * 「分集」视图的页头工具行：左侧是标题、集数与整本源文的分集进度，右侧是「AI 规划分集」弹层、新建一集与上传原文。
+ * 「分集」视图的页头工具行：左侧是标题、集数与完整原文的分集进度，右侧是「AI 规划分集」弹层、新建一集与上传原文。
  * 有新的分集方案时规划按钮不可用，先在方案栏里采纳或放弃。
  */
 export function EpisodesHeader({ projectName, view, episodeCount, planning, onUpload, onCreate }: EpisodesHeaderProps) {

@@ -142,7 +142,7 @@ def _write_project(
     whole_source: tuple[str, ...] = ("novel.txt",),
     source_kinds: tuple[str, ...] | None = None,
 ) -> Path:
-    """``source_kinds`` 与 ``whole_source`` 逐个对应，记在整本源文清单项上；缺省不记。"""
+    """``source_kinds`` 与 ``whole_source`` 逐个对应，记在完整原文清单项上；缺省不记。"""
     project_dir = tmp_path / "projects" / "demo-proj"
     (project_dir / "source").mkdir(parents=True)
     project = {
@@ -445,7 +445,7 @@ class TestPlan:
         assert not (project_dir / "source" / "episode_3.txt").exists()
 
     async def test_unregistered_files_in_source_do_not_affect_planning(self, tmp_path: Path):
-        """source/ 里未登记的文件（含形似集文件的 episode_N.txt）不是整本源文：不进规划窗口。"""
+        """source/ 里未登记的文件（含形似集文件的 episode_N.txt）不是完整原文：不进规划窗口。"""
         project_dir = _write_project(tmp_path, episodes=[])
         (project_dir / "source" / "0_stray.txt").write_text("没有登记的文件。", encoding="utf-8")
         (project_dir / "source" / "episode_9.txt").write_text("人工放进来的集内容。", encoding="utf-8")

@@ -56,11 +56,11 @@ export interface ExternalSourceChange {
 export interface EpisodesViewEpisode {
   episode: number;
   origin: EpisodeSourceOrigin;
-  /** 原文段出现在整本源文里。 */
+  /** 原文段出现在完整原文里。 */
   placed: boolean;
-  /** 原文范围起点所在的整本源文文件（仅 placed）。 */
+  /** 原文范围起点所在的完整原文文件（仅 placed）。 */
   source_file: string | null;
-  /** 原文范围终点所在的整本源文文件（仅 placed）；不跨文件时与 source_file 相同。 */
+  /** 原文范围终点所在的完整原文文件（仅 placed）；不跨文件时与 source_file 相同。 */
   end_file: string | null;
   /** 读不到原文时为 null。 */
   units: number | null;
@@ -74,7 +74,7 @@ export interface EpisodesViewEpisode {
 export interface UnregisteredSourceFile {
   name: string;
   size: number;
-  /** 文件名能直接加入整本源文（非下划线前缀，也不是 episode_N.txt）。 */
+  /** 文件名能直接加入完整原文（非下划线前缀，也不是 episode_N.txt）。 */
   can_join_whole_source: boolean;
 }
 
@@ -92,7 +92,7 @@ export interface EpisodesView {
   external_changes: ExternalSourceChange[];
 }
 
-/** 整本源文里的一个位置：文件与文件内的码位偏移。 */
+/** 完整原文里的一个位置：文件与文件内的码位偏移。 */
 export interface SourcePoint {
   source_file: string;
   offset: number;
@@ -121,7 +121,7 @@ export interface ReplanSummary {
   /** 从哪一集开始重新规划。 */
   episode: number;
   instructions: string | null;
-  /** 已生成到整本源文结尾。 */
+  /** 已生成到完整原文结尾。 */
   complete: boolean;
   /** 生成中途停止的原因：AI 找不到切分点、出错；创作者主动停止或还在生成时为 null。 */
   interrupted: "no_cut_point" | "failed" | null;
@@ -140,7 +140,7 @@ export interface ReplanSummary {
   removed: number[];
   /** 保留为无原文、且新方案里找不到原文范围一模一样的集。 */
   needs_review: number[];
-  /** 原文超出新方案覆盖范围、采纳时同样按被替换处理的集（方案没有生成到整本源文结尾时）。 */
+  /** 原文超出新方案覆盖范围、采纳时同样按被替换处理的集（方案没有生成到完整原文结尾时）。 */
   uncovered: number[];
   /** 播出位置会变的其他集。 */
   moved: { episode: number; from: number; to: number }[];
@@ -208,7 +208,7 @@ export type ManualSplitResponse =
   /** `impact.text` 是服务端成文的确认清单。 */
   | { status: "confirmation_required"; impact: ManualSplitImpact & { text: string } };
 
-/** 整本源文文件的改动（插入、替换、编辑、删除、调序）波及的集（集 ID）。 */
+/** 完整原文文件的改动（插入、替换、编辑、删除、调序）波及的集（集 ID）。 */
 export interface SourceFileImpact {
   /** 原文没变，只平移位置。 */
   shifted: number[];
@@ -225,7 +225,7 @@ export interface SourceFileImpact {
 }
 
 /**
- * 整本源文文件改动的结果。`confirmation_required` 时没有写入：`impact.text` 是服务端成文的受影响集清单，
+ * 完整原文文件改动的结果。`confirmation_required` 时没有写入：`impact.text` 是服务端成文的受影响集清单，
  * 带上 `revision` 重新提交即执行；清单在此期间变了时服务端再次要求确认。
  */
 export type SourceFileChangeResponse =
@@ -243,7 +243,7 @@ export interface StopEpisodePlanningResponse {
   running: string[];
 }
 
-/** 改整本源文文件类型的结果：`needs_confirmation` 时没有写入，`affected_episodes` 是会让脚本规划判 stale 的集。 */
+/** 改完整原文文件类型的结果：`needs_confirmation` 时没有写入，`affected_episodes` 是会让脚本规划判 stale 的集。 */
 export interface SourceKindChangeResult {
   success: boolean;
   applied: boolean;

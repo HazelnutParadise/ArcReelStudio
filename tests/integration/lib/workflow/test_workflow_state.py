@@ -349,7 +349,7 @@ def test_drama_target_comes_from_ledger_not_derived_filenames(tmp_path: Path) ->
 
 
 def test_own_source_episodes_route_to_script_plan_without_episode_planning(tmp_path: Path) -> None:
-    """逐集登记自带原文、没有整本源文的项目：直达本集脚本规划，不经分集规划，也不先提取资产清单。"""
+    """逐集登记自带原文、没有完整原文的项目：直达本集脚本规划，不经分集规划，也不先提取资产清单。"""
     pm, project_path = _make_project(tmp_path, "drama", generation_mode="reference_video")
     register_project_sources(pm, "demo", own_episodes=tuple(f"第{number}集原文" for number in (1, 2, 3)))
     project_file = project_path / "project.json"
@@ -369,9 +369,9 @@ def test_own_source_episodes_route_to_script_plan_without_episode_planning(tmp_p
 
 
 def test_manual_presplit_project_reaches_edit_without_planning_records(tmp_path: Path) -> None:
-    """逐集登记自带原文的项目没有整本源文与源文指纹（从未走过分集规划），产物齐备时照样进入剪辑。
+    """逐集登记自带原文的项目没有完整原文与源文指纹（从未走过分集规划），产物齐备时照样进入剪辑。
 
-    没有待排布的整本源文；「源文尚未排布完」的口径对它不成立，不得把做完的集打回分集规划。
+    没有待排布的完整原文；「源文尚未排布完」的口径对它不成立，不得把做完的集打回分集规划。
     """
     pm, project_path = _make_project(tmp_path, "narration")
     assert register_project_sources(pm, "demo", own_episodes=("第一集原文",)) == [1]
@@ -734,7 +734,7 @@ def test_unplanned_source_with_legacy_episode_without_source_range_requires_full
 def _one_complete_episode(
     pm: ProjectManager, project_path: Path, *, source_end: int | None = None, **segment_overrides: object
 ) -> None:
-    """单集项目：整本源文切出第一集（``source_end`` 为切到的位置，缺省切完），脚本、分镜图与视频齐全。
+    """单集项目：完整原文切出第一集（``source_end`` 为切到的位置，缺省切完），脚本、分镜图与视频齐全。
 
     ``segment_overrides`` 改写那一个分镜的字段。
     """
@@ -955,7 +955,7 @@ def test_completed_first_episode_does_not_hide_later_incomplete_episode(
     status = WorkflowStateService(pm).get_status("demo")
 
     assert load_calls == 1
-    # 整本源文仍只读一次；自带原文的集的集文件计入源文修订号读一次，另被「本集有集原文」这条准入事实
+    # 完整原文仍只读一次；自带原文的集的集文件计入源文修订号读一次，另被「本集有集原文」这条准入事实
     # 读一次、比对 script_plan 基线时读一次。
     assert source_reads == {"novel.txt": 1, "episode_1.txt": 3}
     assert status.target is not None

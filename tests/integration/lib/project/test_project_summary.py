@@ -441,10 +441,10 @@ def test_stale_artifacts_stay_available_and_are_counted_separately(tmp_path: Pat
 
 
 def test_summary_never_reads_the_source_corpus(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """列出 N 个项目不该读 N 份小说：整本源文与源文修订号都不进本投影。
+    """列出 N 个项目不该读 N 份小说：完整原文与源文修订号都不进本投影。
 
     分集原文（``source/episode_N.txt``）只是 script_plan 基线的输入；本投影计数的剧本与媒体产物
-    都不以 script_plan 为依据，因此同样不读。一旦有人为了算进度又去读整本源文、分集原文，
+    都不以 script_plan 为依据，因此同样不读。一旦有人为了算进度又去读完整原文、分集原文，
     或为了修订号做全量 sha256，它就会红。
     """
 
@@ -464,7 +464,7 @@ def test_summary_never_reads_the_source_corpus(tmp_path: Path, monkeypatch: pyte
     summary = WorkflowStateService(pm).get_project_summary("demo")
 
     assert summary.episodes_summary.completed == 1
-    # 整本源文、分集原文（source/ 直下全部文件）一次不读，修订号也不算。
+    # 完整原文、分集原文（source/ 直下全部文件）一次不读，修订号也不算。
     assert revision_calls == []
     assert source_reads == {}
 

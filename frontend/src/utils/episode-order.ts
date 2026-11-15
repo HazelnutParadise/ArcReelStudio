@@ -2,7 +2,7 @@ import type { EpisodeMeta } from "@/types";
 
 type OrderedEpisode = Pick<EpisodeMeta, "episode" | "source_origin" | "source_range">;
 
-/** 切出集在整本源文里的位置：文件在清单中的先后，再按文件内起点。不是切出集或原文不在整本源文里时为 null。 */
+/** 切出集在完整原文里的位置：文件在清单中的先后，再按文件内起点。不是切出集或原文不在完整原文里时为 null。 */
 function sourcePosition(
   episode: OrderedEpisode,
   files: readonly { source_file: string }[],

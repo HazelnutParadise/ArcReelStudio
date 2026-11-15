@@ -3,6 +3,79 @@ id: text/ad_storyboard_prompt_authoring
 category: text
 title: 广告 / 短片 · 分镜提示词编写
 description: 为广告分镜脚本里待编写的分镜补全画面与视频提示词（image_prompt / video_prompt）。
+i18n:
+  zh-TW:
+    title: "廣告 / 短片 · 分鏡提示詞編寫"
+    description: "為廣告分鏡腳本裡還沒寫的分鏡補上畫面與影片提示詞（image_prompt / video_prompt）。"
+    slots:
+      target_language: "輸出語言"
+      project_overview: "專案概述，鍵齊全的物件 {synopsis, genre, theme, world_setting}；缺值時傳 null"
+      style: "專案風格"
+      style_description: "專案風格描述"
+      aspect_ratio: "畫面比例"
+      aspect_ratio_label: "比例的文字標籤"
+      brief: "創作 brief；沒填時傳 null"
+      character_names: "候選角色名稱清單（本體在前、衍生緊接在後），角括號已中和"
+      scene_names: "候選場景名稱清單"
+      prop_names: "候選道具名稱清單"
+      products: "商品資訊區塊（名稱 / 品牌 / 描述 / 賣點），由程式碼依商品資料渲染；沒有商品時傳 null"
+      shots_content: "整份分鏡的渲染文字（由程式碼投影：待編寫的分鏡帶標記，其餘分鏡附上已有的畫面與動作摘要）"
+      episode: "集數，廣告片一律是單一影片"
+      instructions: "附加指示內容；缺值時傳 null"
+  en:
+    title: "Ad / short · Storyboard prompt writing"
+    description: "Fills in the image and video prompts (image_prompt / video_prompt) for shots still to be written in an ad's storyboard script."
+    slots:
+      target_language: "Output language"
+      project_overview: "Project overview, an object with all keys {synopsis, genre, theme, world_setting}; null when missing"
+      style: "Project style"
+      style_description: "Project style description"
+      aspect_ratio: "Aspect ratio"
+      aspect_ratio_label: "Text label of the aspect ratio"
+      brief: "Creative brief; null when not filled in"
+      character_names: "Candidate character names (each base followed by its variants), angle brackets neutralized"
+      scene_names: "Candidate scene names"
+      prop_names: "Candidate prop names"
+      products: "Product details block (name / brand / description / selling points), rendered by code from the product data; null when there is no product"
+      shots_content: "Rendered text of the whole storyboard (projected by code: shots to write are marked, the rest carry a summary of their existing visuals and action)"
+      episode: "Episode number; an ad is always a single video"
+      instructions: "Additional instructions; null when missing"
+  ru:
+    title: "Реклама / короткое видео · Написание промптов раскадровки"
+    description: "Дописывает промпты изображения и видео (image_prompt / video_prompt) для ещё не написанных кадров в рекламной раскадровке."
+    slots:
+      target_language: "Язык вывода"
+      project_overview: "Обзор проекта, объект со всеми ключами {synopsis, genre, theme, world_setting}; null при отсутствии"
+      style: "Стиль проекта"
+      style_description: "Описание стиля проекта"
+      aspect_ratio: "Соотношение сторон"
+      aspect_ratio_label: "Текстовая метка соотношения сторон"
+      brief: "Творческий бриф; null, если не заполнен"
+      character_names: "Список имён персонажей-кандидатов (сначала основной, сразу за ним варианты), угловые скобки нейтрализованы"
+      scene_names: "Список названий сцен-кандидатов"
+      prop_names: "Список названий реквизита-кандидатов"
+      products: "Блок сведений о товаре (название / бренд / описание / преимущества), формируется кодом из данных товара; null, если товара нет"
+      shots_content: "Отрисованный текст всей раскадровки (проекция кодом: кадры для написания помечены, остальные с кратким описанием изображения и действия)"
+      episode: "Номер серии; реклама всегда одно видео"
+      instructions: "Дополнительные указания; null при отсутствии значения"
+  vi:
+    title: "Quảng cáo / phim ngắn · Viết prompt phân cảnh"
+    description: "Bổ sung prompt hình ảnh và video (image_prompt / video_prompt) cho các phân cảnh chưa viết trong kịch bản phân cảnh quảng cáo."
+    slots:
+      target_language: "Ngôn ngữ đầu ra"
+      project_overview: "Tổng quan dự án, đối tượng đủ khóa {synopsis, genre, theme, world_setting}; null khi thiếu"
+      style: "Phong cách dự án"
+      style_description: "Mô tả phong cách dự án"
+      aspect_ratio: "Tỷ lệ khung hình"
+      aspect_ratio_label: "Nhãn chữ của tỷ lệ"
+      brief: "Brief sáng tác; null khi chưa điền"
+      character_names: "Danh sách tên nhân vật đề xuất (bản gốc trước, biến thể ngay sau), dấu ngoặc nhọn đã được vô hiệu hóa"
+      scene_names: "Danh sách tên cảnh đề xuất"
+      prop_names: "Danh sách tên đạo cụ đề xuất"
+      products: "Khối thông tin sản phẩm (tên / thương hiệu / mô tả / điểm bán hàng), do mã kết xuất từ dữ liệu sản phẩm; null khi không có sản phẩm"
+      shots_content: "Văn bản đã kết xuất của toàn bộ phân cảnh (do mã chiếu ra: phân cảnh cần viết có đánh dấu, các phân cảnh khác kèm tóm tắt hình ảnh và hành động hiện có)"
+      episode: "Số tập; quảng cáo luôn là một video"
+      instructions: "Chỉ dẫn bổ sung; null khi thiếu"
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool

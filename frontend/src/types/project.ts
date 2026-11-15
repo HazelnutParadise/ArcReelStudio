@@ -146,10 +146,10 @@ export interface EpisodeMeta {
   script_file: string;
   /** Written by episode_planner at split time: ending hook / suspense */
   hook?: string;
-  /** 切出集在整本源文里的原文范围（规范化文本的码位偏移）；`end` 落在 `end_file` 里，缺省同 `source_file`。 */
+  /** 切出集在完整原文里的原文范围（规范化文本的码位偏移）；`end` 落在 `end_file` 里，缺省同 `source_file`。 */
   source_range?: { source_file?: string; start?: number; end?: number; end_file?: string };
   /**
-   * 本集原文的来源：切自整本源文、自带原文（逐集上传或在集页填写）、无原文。
+   * 本集原文的来源：切自完整原文、自带原文（逐集上传或在集页填写）、无原文。
    * 缺省按有无 source_range 推断。
    */
   source_origin?: "whole_source" | "own" | "none";
@@ -209,7 +209,7 @@ export interface ProjectData {
   /** 仅 ad：创作诉求短文本（可空）。 */
   brief?: string;
   schema_version?: number;
-  /** 整本源文的文件清单，按创作者排定的顺序。 */
+  /** 完整原文的文件清单，按创作者排定的顺序。 */
   whole_source_files?: { source_file: string; source_kind?: "novel" | "screenplay" }[];
   episodes: EpisodeMeta[];
   characters: Record<string, Character>;
