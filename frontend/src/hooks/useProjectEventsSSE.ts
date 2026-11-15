@@ -143,10 +143,6 @@ function getPrimaryGroupTarget(group: GroupedProjectChange): WorkspaceNotificati
   return primaryChange ? buildNotificationTarget(primaryChange) : null;
 }
 
-/**
- * 用户正在编辑时，Agent 改动带来的自动定位与跳转一律不执行：焦点在输入控件里、旧式卡片标了编辑中，
- * 或有编辑单元带着未保存修改（分镜详情、视频单元正文等不靠焦点判断，切走会触发离开拦截）。
- */
 /** 其他成员连续编辑同一条目时，这段时间内只提示一次：共编时每次落盘都会发一批 updated。 */
 const MEMBER_EDIT_NOTICE_WINDOW_MS = 5 * 60_000;
 
@@ -167,6 +163,10 @@ function isRepeatedMemberEdit(
   return repeated;
 }
 
+/**
+ * 用户正在编辑时，Agent 改动带来的自动定位与跳转一律不执行：焦点在输入控件里、旧式卡片标了编辑中，
+ * 或有编辑单元带着未保存修改（分镜详情、视频单元正文等不靠焦点判断，切走会触发离开拦截）。
+ */
 function isWorkspaceEditing(hasUnsavedChanges: () => boolean): boolean {
   if (hasUnsavedChanges()) return true;
   const active = document.activeElement;

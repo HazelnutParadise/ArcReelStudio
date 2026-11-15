@@ -22,7 +22,7 @@ export default {
   'content_mode_immutable': '專案建立後不支援修改 content_mode',
   'import_failed': '匯入失敗',
   'upload_failed': '上傳失敗',
-  'upload_conflict_incomplete': '上傳「{{filename}}」失敗：服務端返回 409，但衝突詳情不完整',
+  'upload_conflict_incomplete': '上傳「{{filename}}」失敗：服務端回傳 409，但衝突詳情不完整',
   'memory_file_load_failed': '取得記憶檔案失敗',
   'file_view_load_failed': '無法讀取檔案',
   'stock_image_load_failed': '無法取得這張素材圖片',

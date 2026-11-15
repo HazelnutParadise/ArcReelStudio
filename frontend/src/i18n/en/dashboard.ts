@@ -1322,12 +1322,13 @@ export default {
   'script_preview_utterances_value': '{{dialogue}} lines · {{voiceover}} voiceovers',
   'script_preview_none': 'None',
   'reference_editor_placeholder':
-    'Describe this video unit. Type @ to reference a character, scene, or prop. Add {line} right after a character to make them speak; {text} on its own is a voice-over.',
+    'Describe this video unit. Type @ to reference a character, scene, or prop. To make a character speak, put the line in curly braces right after their name; braces on their own are a voice-over.',
   'reference_editor_placeholder_ad':
-    'Describe this video unit. Type @ to reference merchandise, a character, scene, or prop. Add {line} right after a character to make them speak; {text} on its own is a voice-over.',
+    'Describe this video unit. Type @ to reference merchandise, a character, scene, or prop. To make a character speak, put the line in curly braces right after their name; braces on their own are a voice-over.',
   'reference_editor_aria_name': 'Unit prompt',
   'reference_editor_unknown_mentions_label': 'Unregistered mentions',
-  'reference_editor_unknown_mention': 'Unregistered: @{{name}} (not found in merchandise/characters/scenes/props)',
+  'reference_editor_unknown_mention': 'Unregistered: @{{name}} (not found in characters/scenes/props)',
+  'reference_editor_unknown_mention_ad': 'Unregistered: @{{name}} (not found in merchandise/characters/scenes/props)',
   'reference_picker_title': 'Insert reference',
   'reference_picker_empty': 'No matches',
   'reference_picker_group_product': 'Merchandise',

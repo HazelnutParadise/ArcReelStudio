@@ -151,6 +151,8 @@ export function ReferenceVideoCard({
   const currentText = value;
 
   const project = useProjectsStore((s) => s.currentProjectData);
+  // 商品只有广告项目才有：其他项目的提示与候选里不提商品
+  const isAd = project?.content_mode === "ad";
 
   const lookup = useMemo(() => buildMentionLookup(project), [project]);
 
@@ -412,9 +414,7 @@ export function ReferenceVideoCard({
           aria-autocomplete="list"
           aria-activedescendant={pickerOpen && activeOptionId ? activeOptionId : undefined}
           aria-describedby={unknownMentions.length > 0 ? "reference-editor-unknown-desc" : undefined}
-          placeholder={t(
-            project?.content_mode === "ad" ? "reference_editor_placeholder_ad" : "reference_editor_placeholder",
-          )}
+          placeholder={t(isAd ? "reference_editor_placeholder_ad" : "reference_editor_placeholder")}
           aria-label={t("reference_editor_aria_name")}
           spellCheck={false}
           className={`absolute inset-0 h-full w-full resize-none bg-transparent ${EDITOR_LAYER_CLASS} text-transparent caret-foreground placeholder:text-muted-foreground focus:outline-none`}
@@ -452,7 +452,7 @@ export function ReferenceVideoCard({
                 key={name}
                 className={`rounded-sm border px-2 py-0.5 text-xs ${palette.textClass} ${palette.bgClass} ${palette.borderClass}`}
               >
-                {t("reference_editor_unknown_mention", { name })}
+                {t(isAd ? "reference_editor_unknown_mention_ad" : "reference_editor_unknown_mention", { name })}
               </span>
             );
           })}

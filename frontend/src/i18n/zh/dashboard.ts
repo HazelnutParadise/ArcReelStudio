@@ -1260,12 +1260,13 @@ export default {
   'script_preview_utterances_value': '{{dialogue}} 句台词 · {{voiceover}} 段画外音',
   'script_preview_none': '无',
   'reference_editor_placeholder':
-    '写下这个视频单元的画面。输入 @ 引用角色、场景或道具；在角色后面接 {台词} 让角色开口，单独的 {文字} 是画外音。',
+    '写下这个视频单元的画面。输入 @ 可以引用角色、场景或道具；要让角色说话，在角色名后面用大括号写台词，单独的大括号是画外音。',
   'reference_editor_placeholder_ad':
-    '写下这个视频单元的画面。输入 @ 引用商品、角色、场景或道具；在角色后面接 {台词} 让角色开口，单独的 {文字} 是画外音。',
+    '写下这个视频单元的画面。输入 @ 可以引用商品、角色、场景或道具；要让角色说话，在角色名后面用大括号写台词，单独的大括号是画外音。',
   'reference_editor_aria_name': '视频单元提示词',
   'reference_editor_unknown_mentions_label': '未注册提及',
-  'reference_editor_unknown_mention': '未注册：@{{name}}（商品/角色/场景/道具中都未找到）',
+  'reference_editor_unknown_mention': '未注册：@{{name}}（角色/场景/道具中都未找到）',
+  'reference_editor_unknown_mention_ad': '未注册：@{{name}}（商品/角色/场景/道具中都未找到）',
   'reference_picker_title': '插入引用',
   'reference_picker_empty': '无匹配项',
   'reference_picker_group_product': '商品',

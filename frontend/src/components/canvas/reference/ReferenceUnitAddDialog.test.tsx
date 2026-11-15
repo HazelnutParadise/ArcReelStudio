@@ -27,8 +27,8 @@ describe("ReferenceUnitAddDialog", () => {
   it("only mentions merchandise in ad projects and explains the line marks in plain words", () => {
     const drama = renderDialog("drama");
     expect(drama).not.toContain("商品");
-    expect(drama).not.toContain("{}");
-    expect(drama).toContain("{台词}");
+    expect(drama).not.toMatch(/[{}]/);
+    expect(drama).toContain("台词");
   });
 
   it("lists merchandise in ad projects", () => {

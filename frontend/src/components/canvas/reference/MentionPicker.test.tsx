@@ -241,7 +241,8 @@ describe("MentionPicker", () => {
     expect(bob).toHaveAttribute("aria-selected", "true");
   });
 
-  it("renders five tabs (all/product/character/scene/prop) with counts", () => {
+  it("renders five tabs (all/product/character/scene/prop) with counts in an ad project", () => {
+    useProjectsStore.setState({ currentProjectData: { content_mode: "ad" } as never });
     render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />);
     const tabs = screen.getAllByRole("tab");
     expect(tabs).toHaveLength(5);
@@ -249,6 +250,7 @@ describe("MentionPicker", () => {
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
     // 全部 count = 2 (chars) + 1 (scene) + 1 (prop) = 4
     expect(tabs[0]).toHaveTextContent(/4/);
+    useProjectsStore.setState({ currentProjectData: null });
   });
 
   it("activating the scene tab restricts visible options to that kind", async () => {
@@ -351,5 +353,19 @@ describe("MentionPicker", () => {
     render(<Host onClose={onClose} />);
     fireEvent.pointerDown(screen.getByTestId("anchor"));
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("offers a merchandise tab only in ad projects", () => {
+    useProjectsStore.setState({ currentProjectData: { content_mode: "drama" } as never });
+    const { unmount } = render(
+      <MentionPicker open query="" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />,
+    );
+    expect(screen.queryByRole("tab", { name: /商品/ })).not.toBeInTheDocument();
+    unmount();
+
+    useProjectsStore.setState({ currentProjectData: { content_mode: "ad" } as never });
+    render(<MentionPicker open query="" candidates={CANDIDATES} onSelect={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByRole("tab", { name: /商品/ })).toBeInTheDocument();
+    useProjectsStore.setState({ currentProjectData: null });
   });
 });

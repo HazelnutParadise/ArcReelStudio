@@ -273,6 +273,9 @@ describe("ReferenceVideoCard", () => {
     const chip = screen.getByRole("status");
     expect(chip).toHaveTextContent(/路人/);
     expect(chip).toHaveTextContent(/未注册|Unregistered/);
+    // 非广告项目没有商品，提示里不提商品；正文提示也不出现括号记号
+    expect(chip).not.toHaveTextContent("商品");
+    expect(screen.getByRole("combobox").getAttribute("placeholder")).not.toMatch(/[{}]|商品/);
   });
 });
 

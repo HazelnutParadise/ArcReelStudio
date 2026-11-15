@@ -1309,12 +1309,13 @@ export default {
   'script_preview_utterances_value': '{{dialogue}} câu thoại · {{voiceover}} lời dẫn',
   'script_preview_none': 'Không có',
   'reference_editor_placeholder':
-    'Mô tả đơn vị video này. Gõ @ để tham chiếu nhân vật, cảnh hoặc đạo cụ. Thêm {lời thoại} ngay sau nhân vật để nhân vật nói; {văn bản} đứng riêng là lời dẫn ngoài khung hình.',
+    'Mô tả đơn vị video này. Gõ @ để tham chiếu nhân vật, cảnh hoặc đạo cụ. Muốn nhân vật nói, viết lời thoại trong dấu ngoặc nhọn ngay sau tên nhân vật; dấu ngoặc đứng riêng là lời dẫn ngoài khung hình.',
   'reference_editor_placeholder_ad':
-    'Mô tả đơn vị video này. Gõ @ để tham chiếu hàng hóa, nhân vật, cảnh hoặc đạo cụ. Thêm {lời thoại} ngay sau nhân vật để nhân vật nói; {văn bản} đứng riêng là lời dẫn ngoài khung hình.',
+    'Mô tả đơn vị video này. Gõ @ để tham chiếu hàng hóa, nhân vật, cảnh hoặc đạo cụ. Muốn nhân vật nói, viết lời thoại trong dấu ngoặc nhọn ngay sau tên nhân vật; dấu ngoặc đứng riêng là lời dẫn ngoài khung hình.',
   'reference_editor_aria_name': 'Prompt đơn vị',
   'reference_editor_unknown_mentions_label': 'Mention chưa đăng ký',
-  'reference_editor_unknown_mention': 'Chưa đăng ký: @{{name}} (không có trong hàng hóa/nhân vật/cảnh/đạo cụ)',
+  'reference_editor_unknown_mention': 'Chưa đăng ký: @{{name}} (không có trong nhân vật/cảnh/đạo cụ)',
+  'reference_editor_unknown_mention_ad': 'Chưa đăng ký: @{{name}} (không có trong hàng hóa/nhân vật/cảnh/đạo cụ)',
   'reference_picker_title': 'Chèn tham chiếu',
   'reference_picker_empty': 'Không có kết quả',
   'reference_picker_group_product': 'Hàng hóa',

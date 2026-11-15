@@ -122,6 +122,8 @@ export class CollabRoom {
   private synced = false;
   private flushWaiters = new Map<number, (ok: boolean) => void>();
   refCount = 0;
+  /** 本机登录的账号：同一账号在另一个分页的修改不当作别人的修改。 */
+  private selfUserId: string | null = null;
   leaveTimer: ReturnType<typeof setTimeout> | null = null;
   /** 界面最近一次渲染所依据的内容与文档状态，本机修改以它为基准算差异。 */
   private rendered: { json: UnitJson; update: Uint8Array; stateVector: Uint8Array } | null = null;
@@ -229,6 +231,7 @@ export class CollabRoom {
   // ── 由连线调用 ──────────────────────────────────────────────
 
   onConnected(user: { user_id: string; username: string }): void {
+    this.selfUserId = user.user_id;
     this.awareness.setLocalStateField("user", { id: user.user_id, name: user.username, color: colorFor(user.user_id) });
     this.client.send({ type: "join", room: this.ref });
     const encoder = encoding.createEncoder();
@@ -354,23 +357,26 @@ export class CollabRoom {
   };
 
   /**
-   * 远端更新里的条目带着写入方文档的客户端编号，与那位成员在线状态的编号相同：据此认出是谁改的，
-   * 再把内容前后不同的字段记到他名下。认不出（服务端或 Agent 写回）时不记。
+   * 远端更新里新写入的条目带着写入方文档的客户端编号，与那位成员在线状态的编号相同：据此认出是谁改的，
+   * 再把内容前后不同的字段记到他名下。只看新写入的内容：删除记录里的编号是被删内容的作者，不是删除的人。
+   * 以下情形不记，宁可不标也不标错：只有删除、写入方不止一个（重连补送）、写入方不是房间里的成员
+   * （服务端或 Agent 写回）、写入方是我自己在另一个分页。
    */
   private attributeRemoteEdit(
     update: Uint8Array,
     previous: UnitJson,
     json: UnitJson,
   ): Readonly<Record<string, RemoteEdit>> | null {
-    let clients: Set<number>;
+    let writers: Set<number>;
     try {
-      const decoded = Y.decodeUpdate(update);
-      clients = new Set([...decoded.structs.map((struct) => struct.id.client), ...decoded.ds.clients.keys()]);
+      writers = new Set(Y.decodeUpdate(update).structs.map((struct) => struct.id.client));
     } catch {
       return null;
     }
-    const author = this.snapshot.peers.find((peer) => clients.has(peer.clientId));
-    if (!author) return null;
+    if (writers.size !== 1) return null;
+    const [writer] = writers;
+    const author = this.snapshot.peers.find((peer) => peer.clientId === writer);
+    if (!author || author.userId === this.selfUserId) return null;
     const paths = changedPaths(previous, json);
     if (paths.length === 0) return null;
     const edit: RemoteEdit = { userId: author.userId, name: author.name, color: author.color, at: Date.now() };
