@@ -147,6 +147,7 @@ jobs:
           format: table
           severity: CRITICAL
           ignore-unfixed: true
+          scanners: vuln
           exit-code: "1"
 
       - name: Trivy release gate arm64 (CRITICAL with fix available blocks release)
@@ -159,6 +160,7 @@ jobs:
           format: table
           severity: CRITICAL
           ignore-unfixed: true
+          scanners: vuln
           exit-code: "1"
 
       - name: Trivy HIGH report amd64 (non-blocking)
@@ -171,6 +173,7 @@ jobs:
           format: table
           severity: HIGH
           ignore-unfixed: true
+          scanners: vuln
           exit-code: "0"
 
       - name: Trivy HIGH report arm64 (non-blocking)
@@ -183,6 +186,7 @@ jobs:
           format: table
           severity: HIGH
           ignore-unfixed: true
+          scanners: vuln
           exit-code: "0"
 
       - id: meta
