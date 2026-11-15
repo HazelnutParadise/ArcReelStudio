@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import type { CollabPeer, CollabRoom, PointerPosition } from "./collab-client";
 import { pointerFromEvent, resolvePointer } from "./pointer-anchor";
 import { useCollabRoom } from "./useCollabRoom";
+import { useRecentChange } from "./useRecentChange";
 
 /** 指针位置最多每秒送这么多次。 */
 const SEND_INTERVAL_MS = 50;
@@ -84,31 +85,42 @@ function PeerPointers({ peers }: { peers: CollabPeer[] }) {
       {peers.map((peer) => {
         const point = peer.pointer ? resolvePointer(peer.pointer) : null;
         if (!point) return null;
-        return (
-          <div
-            key={peer.clientId}
-            className="pointer-events-none fixed top-0 left-0 translate-x-(--pointer-x) translate-y-(--pointer-y) transition-transform duration-fast ease-emphasized"
-            style={
-              {
-                "--peer-color": peer.color,
-                "--pointer-x": `${point.left}px`,
-                "--pointer-y": `${point.top}px`,
-              } as CSSProperties
-            }
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" className="drop-shadow-sm">
-              <path
-                d="M2 2 L2 15 L6 11 L9 17 L11.5 16 L8.5 10 L14 10 Z"
-                className="fill-(--peer-color) stroke-card"
-                strokeWidth="1.2"
-              />
-            </svg>
-            <span className="absolute top-4 left-3.5 rounded-sm bg-(--peer-color) px-1.5 py-0.5 text-xs leading-none whitespace-nowrap text-white shadow-sm">
-              {peer.name}
-            </span>
-          </div>
-        );
+        return <PeerPointer key={peer.clientId} peer={peer} left={point.left} top={point.top} />;
       })}
+    </div>
+  );
+}
+
+/** 对方指针停住这么久后，名字标签淡出，只留箭头，不长时间盖住下方的正文。 */
+const LABEL_IDLE_MS = 2000;
+
+function PeerPointer({ peer, left, top }: { peer: CollabPeer; left: number; top: number }) {
+  // 按对方送来的锚点判断是否在动：自己卷动画面只改换算出的坐标，不算对方在动
+  const active = useRecentChange(JSON.stringify(peer.pointer), LABEL_IDLE_MS);
+  return (
+    <div
+      className="pointer-events-none fixed top-0 left-0 translate-x-(--pointer-x) translate-y-(--pointer-y) transition-transform duration-fast ease-emphasized"
+      style={
+        {
+          "--peer-color": peer.color,
+          "--pointer-x": `${left}px`,
+          "--pointer-y": `${top}px`,
+        } as CSSProperties
+      }
+    >
+      <svg width="18" height="18" viewBox="0 0 18 18" className="drop-shadow-sm">
+        <path
+          d="M2 2 L2 15 L6 11 L9 17 L11.5 16 L8.5 10 L14 10 Z"
+          className="fill-(--peer-color) stroke-card"
+          strokeWidth="1.2"
+        />
+      </svg>
+      <span
+        data-idle={active ? undefined : ""}
+        className="absolute top-4 left-3.5 rounded-sm bg-(--peer-color) px-1.5 py-0.5 text-xs leading-none whitespace-nowrap text-white shadow-sm transition-opacity duration-fast data-idle:opacity-0"
+      >
+        {peer.name}
+      </span>
     </div>
   );
 }

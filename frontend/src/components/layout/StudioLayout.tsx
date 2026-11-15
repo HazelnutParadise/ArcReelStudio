@@ -28,6 +28,7 @@ import { WorkspaceResizeHandle } from "./WorkspaceResizeHandle";
 import {
   AGENT_PANEL_ID,
   AGENT_PANEL_TOGGLE_ID,
+  isPhoneViewport,
   CANVAS_MIN_WIDTH,
   SIDEBAR_DEFAULT_WIDTH,
   SIDEBAR_MAX_WIDTH,
@@ -82,6 +83,14 @@ export function StudioLayout({ children }: StudioLayoutProps) {
   // 演示面板不可收起，也不覆盖画布：引导后面几步要在画布上高亮
   const agentOpen = demoMode || storeOpen;
   const overlay = compact && !demoMode;
+
+  // 手机宽度下覆盖层会盖住整个画布：进入工作区时先收起面板（不记住这次收起），由顶栏的「Agent」开关打开
+  const phoneCollapseChecked = useRef(false);
+  useEffect(() => {
+    if (phoneCollapseChecked.current) return;
+    phoneCollapseChecked.current = true;
+    if (overlay && isPhoneViewport()) useAppStore.getState().setAssistantPanelOpen(false);
+  }, [overlay]);
 
   // ---- 侧栏折叠：有自动折叠的原因时默认折叠、可临时展开，原因或页面变化后复位 ----
   const collapseReason = sidebarAutoCollapseReason(location, compact);

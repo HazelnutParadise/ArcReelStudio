@@ -50,7 +50,8 @@ export function AgentPanelToggle() {
         }
       >
         <Bot data-icon="inline-start" aria-hidden />
-        {t("agent_panel_toggle")}
+        {/* 顶栏变窄时只留图标，名称仍是开关的可访问名称 */}
+        <span className="sr-only @2xl/header:not-sr-only">{t("agent_panel_toggle")}</span>
         {status && (
           <span
             aria-hidden

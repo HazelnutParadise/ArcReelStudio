@@ -3,7 +3,7 @@ import type { DeepStringify } from '@/i18n/types';
 
 export default {
   category: {
-    custom: '自定義',
+    custom: '自訂',
     live: 'AI 真人劇',
     anim: 'AI 漫劇',
   },
@@ -84,8 +84,8 @@ export default {
     anim_90s_retro: '渡邊信一郎 · 神山健治',
   },
   default_hint: '預設模型可在「專案大廳 → 設定 → 預設模型」中調整',
-  current_global_default: '當前全域性預設：{{value}}',
-  use_global_default: '使用全域性預設',
+  current_global_default: '當前全域預設：{{value}}',
+  use_global_default: '使用全域預設',
   model_video: '影片模型',
   model_video_default: '預設影片模型',
   model_image: '圖片模型',

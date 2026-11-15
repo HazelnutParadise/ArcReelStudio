@@ -68,6 +68,8 @@ export function MentionPicker({
   const { t } = useTranslation("dashboard");
   // 缩略图地址带资产指纹：重新生成后换地址，未变化时命中浏览器的长缓存
   const fingerprints = useProjectsStore((s) => s.assetFingerprints);
+  // 商品只有广告项目才有：其他项目不显示「商品」分页
+  const isAd = useProjectsStore((s) => s.currentProjectData?.content_mode === "ad");
   const [activeIndex, setActiveIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   // Reset highlight to the first option whenever the filter query or tab
@@ -199,7 +201,7 @@ export function MentionPicker({
         className="w-64"
       >
         <div role="tablist" aria-label={t("reference_picker_title")} className="flex border-b border-border">
-          {TAB_ORDER.map((tab) => {
+          {TAB_ORDER.filter((tab) => tab !== "product" || isAd).map((tab) => {
             const count =
               tab === "all"
                 ? totalsByKind.product + totalsByKind.character + totalsByKind.scene + totalsByKind.prop

@@ -10,10 +10,10 @@ MESSAGES = {
     # ---- 通用欄位形狀 ----
     "val_missing_field": "缺少必填欄位：{field}",
     "val_missing_field_at": "{prefix}: 缺少必填欄位 {field}",
-    "val_field_type_string": "欄位型別錯誤：{field} 應為字串",
-    "val_field_type_bool": "欄位型別錯誤：{field} 應為布林值",
-    "val_field_type_number": "欄位型別錯誤：{field} 應為數字",
-    "val_field_type_integer": "欄位型別錯誤：{field} 應為整數",
+    "val_field_type_string": "欄位類型錯誤：{field} 應為字串",
+    "val_field_type_bool": "欄位類型錯誤：{field} 應為布林值",
+    "val_field_type_number": "欄位類型錯誤：{field} 應為數字",
+    "val_field_type_integer": "欄位類型錯誤：{field} 應為整數",
     "val_field_out_of_range": "{field} 的值 {value} 超出範圍，應在 {min} 到 {max} 之間",
     "val_field_must_be_string": "{field} 必須是字串",
     "val_field_must_be_string_typed": "{field} 必須是字串，當前為 {actual}",
@@ -142,7 +142,7 @@ MESSAGES = {
     "arch_non_standard_entry_excluded": "非標準頂層目錄/檔案 '{entry}' 未包含在匯出中",
     "arch_invalid_project_json": "無法解析 {file}",
     "arch_version_history_malformed": "{location}: 版本歷史的結構不符合預期格式",
-    "arch_version_snapshot_path_unmanaged": "{location}: 版本記錄的快照路徑不在該資源型別的版本目錄內",
+    "arch_version_snapshot_path_unmanaged": "{location}: 版本記錄的快照路徑不在該資源類型的版本目錄內",
     "arch_script_file_repaired": "{location}: 自動修復為 {path}",
     "arch_missing_script_file_pending": "{location}: 腳本尚未生成：{path}",
     "arch_missing_script_file": "{location}: 引用的檔案不存在：{path}",
@@ -205,11 +205,11 @@ MESSAGES = {
     "arch_conflict_detected": "檢測到專案編號衝突",
     "arch_import_copy_title": "{title}（副本）",
     "arch_project_name_conflict": "專案編號 '{name}' 已存在，請選擇覆蓋現有專案或自動重新命名匯入。",
-    # ---- 自定義呼叫端點 · 定義校驗 ----
+    # ---- 自訂呼叫端點 · 定義校驗 ----
     "val_ce_missing_field": "缺少必填欄位：{field}",
     "val_ce_unknown_field": "不認識的欄位：{field}",
     "val_ce_removed_field": "欄位已移除：{field}——{reason}",
-    "val_ce_invalid_type": "型別不符，應為 {expected}",
+    "val_ce_invalid_type": "類型不符，應為 {expected}",
     "val_ce_invalid_enum_value": "取值不在允許範圍內，可選：{allowed}",
     "val_ce_invalid_value": "取值不符合格式約定：{detail}",
     "val_ce_schema_violation": "不符合定義格式：{detail}",
@@ -220,8 +220,8 @@ MESSAGES = {
     "val_ce_schema_generic_constraint": "未滿足定義約束（{keyword}）",
     "val_ce_removed_reason_request_query": "靜態與動態 query 都寫進 url 範本，憑證 query 歸 auth.query",
     "val_ce_removed_reason_status_codes": "HTTP 碼策略歸執行時：2xx 成功、429 與 5xx 重試、其餘失敗",
-    "val_ce_removed_reason_polling_policy": "輪詢間隔與超時是執行時策略，不進定義",
-    "val_ce_removed_reason_extract_source": "取值根一律是響應體，HTTP 狀態碼不走 JSONPath",
+    "val_ce_removed_reason_polling_policy": "輪詢間隔與逾時是執行時策略，不進定義",
+    "val_ce_removed_reason_extract_source": "取值根一律是回應體，HTTP 狀態碼不走 JSONPath",
     "val_ce_removed_reason_extract_usage_keys": "用量改掛 poll.extract.usage",
     "val_ce_removed_reason_mime_types": "素材格式不做白名單，由供應商在提交時拒絕",
     "val_ce_removed_reason_comfyui_capabilities": "ComfyUI 端點的能力只從節點繫結推導，定義不存能力宣告",
@@ -251,7 +251,7 @@ MESSAGES = {
     "val_ce_input_not_referenced": "聲明瞭素材卻沒有在 submit 裡引用：既不會發給供應商，也不能據此宣告能力",
     "val_ce_enum_map_variable_not_allowed": "{variable} 不支援列舉對映，可對映的變數：{allowed}",
     "val_ce_default_variable_not_allowed": "{variable} 不支援預設值，可宣告預設值的變數：{allowed}",
-    "val_ce_default_value_type_invalid": "{variable} 的預設值須是 {expected} 型別",
+    "val_ce_default_value_type_invalid": "{variable} 的預設值須是 {expected} 類型",
     "val_ce_default_value_not_in_enum_map": "{variable} 的預設值 {value} 不在 enum_maps 表內，可用的值：{allowed}",
     "val_ce_status_map_target_invalid": "狀態檔位 {target} 不在 {allowed} 之內，過期語義請對映到 failed",
     "val_ce_capability_declared_without_input": "聲明瞭 {capability}，但 submit 沒有引用任何 {source} 素材，能力會撒謊",
@@ -260,7 +260,7 @@ MESSAGES = {
     ),
     "val_ce_capability_incoherent": "能力 {capability} 與同組宣告矛盾，須滿足：{requirement}",
     "val_ce_capability_not_declared": "須在 capabilities 中把至少一項能力宣告為 true：{allowed}",
-    "val_ce_media_type_field_not_allowed": "{name} 不適用於媒體型別為 {media_type} 的定義",
+    "val_ce_media_type_field_not_allowed": "{name} 不適用於媒體類型為 {media_type} 的定義",
     "val_ce_artifact_extract_missing": "缺少產物提取路徑，至少寫一項：{keys}",
     "val_ce_jsonpath_not_a_string": "取值路徑必須是字串：{path_expression}",
     "val_ce_jsonpath_surrounding_whitespace": "取值路徑首尾不得有空白：{path_expression}",
@@ -268,7 +268,7 @@ MESSAGES = {
     "val_ce_jsonpath_recursive_descent": "取值路徑停用遞迴下降（第 {position} 個字元）：{path_expression}",
     "val_ce_jsonpath_union": "取值路徑停用聯合選擇器（第 {position} 個字元）：{path_expression}",
     "val_ce_jsonpath_slice_step": "取值路徑停用切片步長（第 {position} 個字元）：{path_expression}",
-    "val_ce_jsonpath_function_extension": "取值路徑停用函式擴充套件（第 {position} 個字元）：{path_expression}",
+    "val_ce_jsonpath_function_extension": "取值路徑停用函式擴充（第 {position} 個字元）：{path_expression}",
     "val_ce_jsonpath_filter_root_reference": "過濾器內不得引用根節點（第 {position} 個字元）：{path_expression}",
     "val_ce_jsonpath_filter_non_singular": "過濾器內只允許單值查詢（第 {position} 個字元）：{path_expression}",
     "val_ce_jsonpath_regex_operator": "取值路徑停用正則匹配運算子（第 {position} 個字元）：{path_expression}",
@@ -292,7 +292,7 @@ MESSAGES = {
         "節點 {node} 的 {input} 已經是 {owner} 的寫入落點，{binding_key} 不能再寫同一個欄位：後填的值會蓋掉先填的"
     ),
     "val_ce_comfyui_class_type_mismatch": (
-        "條目記的節點 {node} 是 {class_type}，workflow 裡它現在是 {actual}：重匹配按型別認身份，"
+        "條目記的節點 {node} 是 {class_type}，workflow 裡它現在是 {actual}：重匹配按類型認身份，"
         "對不上會把繫結搬到別的節點上。請重新匯入並確認節點繫結"
     ),
     "val_ce_comfyui_consumer_not_fed": (
@@ -341,7 +341,7 @@ MESSAGES = {
     "val_market_index_unreadable": "無法讀取索引檔案：{detail}",
     "val_market_unsupported_schema_version": "索引格式版本 {version} 高於本工具支援的 {supported}",
     "val_market_missing_field": "缺少必填欄位：{field}",
-    "val_market_invalid_type": "型別錯誤，應為 {expected}",
+    "val_market_invalid_type": "類型錯誤，應為 {expected}",
     "val_market_invalid_value": "取值不符合約束 {keyword}：{constraint}",
     "val_market_slug_invalid": "slug「{value}」不合規：只允許小寫字母、數字與連字元，以字母或數字開頭，最長 64 個字元",
     "val_market_slug_duplicate": "slug「{slug}」在本市場源內重複",

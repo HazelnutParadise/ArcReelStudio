@@ -6,7 +6,7 @@ import { CollabClient, scriptItemRef, type CollabRoom } from "./collab-client";
 import { setToken } from "@/utils/auth";
 
 import { FakeCollabServer } from "./collab-test-server";
-import { unitJson } from "./ydoc-json";
+import { applyJson, unitJson } from "./ydoc-json";
 
 const REF = { project: "demo", kind: "overview", key: "" };
 
@@ -116,6 +116,146 @@ describe("CollabClient", () => {
     await settle();
 
     expect(room.getSnapshot().peers[0]?.selection).toEqual({ anchor: 5, head: 5 });
+  });
+
+  it("records which member changed which field", async () => {
+    const client = new CollabClient("ws://test/collab");
+    const room = client.acquire(REF);
+    await waitFor(room, "synced");
+    room.markRendered(room.getSnapshot().json!);
+
+    // 服务端替身的文档就是这位成员写入时用的文档：更新里的客户端编号与在线状态一致
+    const peer = new Awareness(server.docFor(REF));
+    peer.setLocalState({ user: { id: "u-bob", name: "bob", color: "#2563eb" }, focus: null });
+    server.deliverAwareness(REF, peer);
+    await settle();
+
+    server.externalChange(REF, { synopsis: "雨夜的街口" });
+    await settle();
+
+    expect(room.getSnapshot().remoteEdits.synopsis).toMatchObject({ userId: "u-bob", name: "bob" });
+  });
+
+  it("does not attribute a change nobody in the room made", async () => {
+    const client = new CollabClient("ws://test/collab");
+    const room = client.acquire(REF);
+    await waitFor(room, "synced");
+
+    server.externalChange(REF, { synopsis: "雨夜的街口" });
+    await settle();
+
+    expect(room.getSnapshot().remoteEdits).toEqual({});
+  });
+
+  describe("who changed a field", () => {
+    /** 一位成员：有自己的文档（客户端编号）与在线状态，从服务端当前内容出发。 */
+    function member(id: string, name: string) {
+      const doc = new Y.Doc();
+      Y.applyUpdate(doc, Y.encodeStateAsUpdate(server.docFor(REF)));
+      const awareness = new Awareness(doc);
+      awareness.setLocalState({ user: { id, name, color: "#2563eb" }, focus: null });
+      return {
+        doc,
+        announce: () => server.deliverAwareness(REF, awareness),
+        /** 在自己的文档上改内容，把增量经服务端推出去。 */
+        write(value: Record<string, string>) {
+          Y.applyUpdate(doc, Y.encodeStateAsUpdate(server.docFor(REF)));
+          const before = Y.encodeStateVector(doc);
+          applyJson(doc, value);
+          const update = Y.encodeStateAsUpdate(doc, before);
+          server.deliverUpdate(REF, update);
+          return update;
+        },
+      };
+    }
+
+    async function joined() {
+      const client = new CollabClient("ws://test/collab");
+      const room = client.acquire(REF);
+      await waitFor(room, "synced");
+      room.markRendered(room.getSnapshot().json!);
+      return room;
+    }
+
+    it("credits the member who wrote the new value, not the one whose value was replaced", async () => {
+      const bob = member("u-bob", "bob");
+      const amy = member("u-amy", "amy");
+      const room = await joined();
+      bob.announce();
+      amy.announce();
+      bob.write({ synopsis: "bob 的版本" });
+      await settle();
+
+      amy.write({ synopsis: "amy 的版本" });
+      await settle();
+
+      expect(room.getSnapshot().remoteEdits.synopsis).toMatchObject({ userId: "u-amy" });
+    });
+
+    it("does not credit anyone for a pure deletion, least of all the author of the deleted text", async () => {
+      const bob = member("u-bob", "bob");
+      const amy = member("u-amy", "amy");
+      const room = await joined();
+      bob.announce();
+      amy.announce();
+      bob.write({ synopsis: "bob 的版本" });
+      await settle();
+      const before = room.getSnapshot().remoteEdits;
+
+      amy.write({ synopsis: "" });
+      await settle();
+
+      expect(room.getSnapshot().json).toEqual({ synopsis: "" });
+      expect(room.getSnapshot().remoteEdits).toBe(before);
+    });
+
+    it("does not credit a member whose value the server overwrote", async () => {
+      const bob = member("u-bob", "bob");
+      const room = await joined();
+      bob.announce();
+      bob.write({ synopsis: "bob 的版本" });
+      await settle();
+      const before = room.getSnapshot().remoteEdits;
+
+      server.externalChange(REF, { synopsis: "Agent 改写" });
+      await settle();
+
+      expect(room.getSnapshot().remoteEdits).toBe(before);
+    });
+
+    it("does not guess when one update carries several members' writing", async () => {
+      const bob = member("u-bob", "bob");
+      const amy = member("u-amy", "amy");
+      const room = await joined();
+      bob.announce();
+      amy.announce();
+      await settle();
+
+      // 重连补送：两人的修改合在同一份更新里到达
+      const merged = new Y.Doc();
+      Y.applyUpdate(merged, Y.encodeStateAsUpdate(server.docFor(REF)));
+      const base = Y.encodeStateVector(merged);
+      bob.doc.getMap("unit").set("title", new Y.Text("bob"));
+      amy.doc.getMap("unit").set("note", new Y.Text("amy"));
+      Y.applyUpdate(merged, Y.encodeStateAsUpdate(bob.doc));
+      Y.applyUpdate(merged, Y.encodeStateAsUpdate(amy.doc));
+      server.deliverUpdate(REF, Y.encodeStateAsUpdate(merged, base));
+      await settle();
+
+      expect(room.getSnapshot().remoteEdits).toEqual({});
+    });
+
+    it("does not present my own edits from another tab as someone else's", async () => {
+      const otherTab = member("u-me", "me");
+      const room = await joined();
+      otherTab.announce();
+      await settle();
+
+      otherTab.write({ synopsis: "另一个分页" });
+      await settle();
+
+      expect(room.getSnapshot().remoteEdits).toEqual({});
+    });
   });
 
   it("answers flush requests", async () => {

@@ -31,6 +31,7 @@ import { getProjectDisplayName } from "@/utils/project-display";
 import { getCustomProviderModels, getProviderModels } from "@/utils/provider-models";
 
 import { AgentProfileTab } from "./project-settings/AgentProfileTab";
+import { useImpactfulSettingNotice } from "./project-settings/useImpactfulSettingNotice";
 import { BasicsTab } from "./project-settings/BasicsTab";
 import {
   buildProjectPatch,
@@ -367,6 +368,7 @@ function LoadedProjectSettings({ projectName, loaded }: { projectName: string; l
   }, [projectName, facts, globals]);
   const unit = useEditUnit({ source: loaded.source, save, isEqual: formEqual, allowNavigation, collab });
   const { value, savedValue, setValue } = unit;
+  useImpactfulSettingNotice(unit.live?.remoteEdits ?? null, facts.contentMode === "ad");
 
   // 待上传参考图的预览地址由页面持有：不再使用（换图、放弃、保存）或离开页面时收回
   const stylePreview = value.style.kind === "image" ? value.style.preview : null;
@@ -403,7 +405,15 @@ function LoadedProjectSettings({ projectName, loaded }: { projectName: string; l
   let content: ReactNode;
   switch (tab) {
     case "basics":
-      content = <BasicsTab value={value} savedValue={savedValue} onChange={setValue} facts={facts} />;
+      content = (
+        <BasicsTab
+          value={value}
+          savedValue={savedValue}
+          onChange={setValue}
+          facts={facts}
+          remoteEdits={unit.live?.remoteEdits}
+        />
+      );
       break;
     case "style":
       content = (

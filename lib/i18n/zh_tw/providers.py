@@ -34,7 +34,7 @@ MESSAGES: dict[str, str] = {
     "provider_desc_dashscope": "阿里雲的大模型服務平台，提供通義千問（Qwen）等模型的 API 呼叫、精調與部署。",
     "provider_desc_minimax": "上海人工智慧公司 MiniMax（稀宇科技）的開放平台，提供其多模態模型與海螺影片生成服務。預設連線國內站，海外可將 base_url 切換到國際站。",
     "provider_desc_kling": "快手推出的生成式 AI 服務可靈的開放平台。API Key 鑑權適用於全部模型；Access Key + Secret Key（JWT）僅適用於 3.0 及更早模型，二者二選一，同時填寫時 API Key 優先。",
-    "provider_desc_agnes": "Agnes AI 的多模態 AI 平台，通過統一的 API 提供其生成式 AI 模型。",
+    "provider_desc_agnes": "Agnes AI 的多模態 AI 平台，透過統一的 API 提供其生成式 AI 模型。",
     "provider_desc_claude-subscription": "用 Claude 帳號（Pro、Max 等訂閱）登入，使用訂閱額度，目前供 ArcReel Agent 使用。",
     "provider_desc_chatgpt-subscription": "用 ChatGPT 帳號（Plus、Pro 等訂閱）透過 Codex 登入，使用訂閱額度。",
     "provider_desc_grok-subscription": "用 Grok 帳號（SuperGrok、X Premium 等訂閱）透過 Grok CLI 登入，使用訂閱額度。",

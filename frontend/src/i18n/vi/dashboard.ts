@@ -278,7 +278,8 @@ export default {
   'thinking_streaming': 'Đang suy nghĩ',
   'skill_chip_unknown': 'skill',
   'subagent_card_label': 'Subagent',
-  'subagent_tokens': '{{count}} tokens',
+  'subagent_tokens_one': '{{count}} tokens',
+  'subagent_tokens_other': '{{count}} tokens',
   'task_in_progress_default': 'Đang xử lý',
   // Gợi ý tại chỗ một lần sau khi trích xuất xong thiết lập câu chuyện
   'overview_handoff_tip':
@@ -522,7 +523,10 @@ export default {
   // GlobalHeader
   'mode_badge_drama': 'Phim truyện 16:9',
   'mode_badge_narration': 'Thuyết minh/Bình luận 9:16',
-  'project_zip_download_started_with_diagnostics': 'Đã bắt đầu tải ZIP dự án, gói xuất chứa {{count}} mục chẩn đoán',
+  'project_zip_download_started_with_diagnostics_one':
+    'Đã bắt đầu tải ZIP dự án, gói xuất chứa {{count}} mục chẩn đoán',
+  'project_zip_download_started_with_diagnostics_other':
+    'Đã bắt đầu tải ZIP dự án, gói xuất chứa {{count}} mục chẩn đoán',
   'export_failed': 'Xuất thất bại: {{message}}',
   'export_project_zip': 'Xuất bản lưu trữ dự án',
   'exporting_zip': 'Đang xuất...',
@@ -534,9 +538,13 @@ export default {
     'Có thể giao cho Agent dựng một bản, hoặc tạo từ kịch bản: mỗi đơn vị video dùng trọn vẹn, các đoạn nối bằng cắt thẳng.',
   'edit_timeline_create_failed': 'Không tạo được dòng thời gian dựng: {{message}}',
   'edit_render_button': 'Xuất phim',
-  'edit_render_blocked_reason':
+  'edit_render_blocked_reason_one':
     'Dòng thời gian dựng này có {{count}} vấn đề chặn việc xuất phim. Hãy xử lý trước khi xuất.',
-  'edit_render_blocked_reason_units':
+  'edit_render_blocked_reason_other':
+    'Dòng thời gian dựng này có {{count}} vấn đề chặn việc xuất phim. Hãy xử lý trước khi xuất.',
+  'edit_render_blocked_reason_units_one':
+    'Dòng thời gian dựng này có {{count}} vấn đề chặn việc xuất phim ở {{units}}. Hãy xử lý trước khi xuất.',
+  'edit_render_blocked_reason_units_other':
     'Dòng thời gian dựng này có {{count}} vấn đề chặn việc xuất phim ở {{units}}. Hãy xử lý trước khi xuất.',
   'edit_render_blocked_view_issues': 'Xem vấn đề ({{count}})',
   'edit_render_dialog_title': 'Xuất phim · {{name}}',
@@ -653,9 +661,11 @@ export default {
   'cancel_all': 'Hủy tất cả',
   'cancel_all_queued_aria': 'Hủy tất cả tác vụ đang chờ',
   'cancel_confirm_aria': 'Xác nhận hủy',
-  'cancel_cascade_msg': 'Hủy tác vụ này cũng sẽ hủy {{count}} tác vụ phụ thuộc',
+  'cancel_cascade_msg_one': 'Hủy tác vụ này cũng sẽ hủy {{count}} tác vụ phụ thuộc',
+  'cancel_cascade_msg_other': 'Hủy tác vụ này cũng sẽ hủy {{count}} tác vụ phụ thuộc',
   'cancel_single_confirm': 'Hủy tác vụ này?',
-  'cancel_all_confirm': 'Hủy toàn bộ {{count}} tác vụ đang chờ?',
+  'cancel_all_confirm_one': 'Hủy toàn bộ {{count}} tác vụ đang chờ?',
+  'cancel_all_confirm_other': 'Hủy toàn bộ {{count}} tác vụ đang chờ?',
   'cancel_failed': 'Hủy không thành công, vui lòng thử lại.',
   'cancelling': 'Đang hủy...',
   'confirm_cancel': 'Xác nhận hủy',
@@ -699,7 +709,8 @@ export default {
   'start_chat_hint': 'Nhập tin nhắn bên dưới để bắt đầu trò chuyện',
   'quick_skill_hint': 'Gõ / để gọi nhanh các skill',
   'assistant_input': 'Ô nhập Agent',
-  'max_images_hint': 'Tối đa {{count}} ảnh',
+  'max_images_hint_one': 'Tối đa {{count}} ảnh',
+  'max_images_hint_other': 'Tối đa {{count}} ảnh',
   'attach_image': 'Đính kèm ảnh',
   'stop_session': 'Dừng trả lời',
   'send_message': 'Gửi tin nhắn',
@@ -724,7 +735,8 @@ export default {
   'queued_message_already_accepted': 'Agent đã nhận tin nhắn này. Tin nhắn vẫn sẽ vào cuộc trò chuyện như bình thường',
   'queued_message_withdraw_failed': 'Không thu hồi được tin nhắn đang xếp hàng này. Hãy thử lại sau',
   'queued_message_send_now_failed': 'Không gửi ngay được tin nhắn đang xếp hàng này. Hãy thử lại sau',
-  'composer_too_many_images_hint': 'Chỉ đính kèm tối đa {{count}} ảnh. Hãy xóa bớt ảnh thừa để gửi',
+  'composer_too_many_images_hint_one': 'Chỉ đính kèm tối đa {{count}} ảnh. Hãy xóa bớt ảnh thừa để gửi',
+  'composer_too_many_images_hint_other': 'Chỉ đính kèm tối đa {{count}} ảnh. Hãy xóa bớt ảnh thừa để gửi',
   'new_session_action': 'Tạo phiên mới',
   'session_history_title': 'Lịch sử phiên',
   'session_search_placeholder': 'Tìm phiên',
@@ -838,7 +850,8 @@ export default {
   'generate_video_failed': 'Tạo video thất bại: {{message}}',
   'narration_task_submitted_toast': 'Đã gửi tác vụ tạo âm thanh thuyết minh cho "{{id}}"',
   'script_generation_notice_toast': 'Đang tạo kịch bản — bước này mất khá lâu, vui lòng đợi…',
-  'narration_batch_submitted_toast': 'Đã gửi {{count}} tác vụ tạo âm thanh thuyết minh',
+  'narration_batch_submitted_toast_one': 'Đã gửi {{count}} tác vụ tạo âm thanh thuyết minh',
+  'narration_batch_submitted_toast_other': 'Đã gửi {{count}} tác vụ tạo âm thanh thuyết minh',
   'narration_batch_none_missing_toast': 'Tất cả phân cảnh đã có âm thanh thuyết minh',
   'generate_narration_failed': 'Tạo âm thanh thuyết minh thất bại: {{message}}',
   'open_settings_action': 'Mở cài đặt',
@@ -917,7 +930,8 @@ export default {
 
   // Mục nhật ký sử dụng trên thanh trên cùng & popover
   'usage_entry_aria': 'Nhật ký sử dụng · chi phí tham khảo {{cost}}',
-  'usage_entry_aria_active': 'Nhật ký sử dụng · chi phí tham khảo {{cost}} · {{count}} tác vụ đang chạy',
+  'usage_entry_aria_active_one': 'Nhật ký sử dụng · chi phí tham khảo {{cost}} · {{count}} tác vụ đang chạy',
+  'usage_entry_aria_active_other': 'Nhật ký sử dụng · chi phí tham khảo {{cost}} · {{count}} tác vụ đang chạy',
   'usage_close_panel': 'Đóng bảng nhật ký sử dụng',
   'usage_in_progress': 'Đang chạy',
   'usage_recently_finished': 'Vừa kết thúc',
@@ -1045,7 +1059,8 @@ export default {
   'usage_trend_metric_calls': 'Lượt gọi',
   'usage_trend_metric_cost': 'Chi phí tham khảo',
   'usage_trend_weekly_chip': 'Gộp theo tuần',
-  'usage_trend_merged_days': 'gộp {{count}} ngày',
+  'usage_trend_merged_days_one': 'gộp {{count}} ngày',
+  'usage_trend_merged_days_other': 'gộp {{count}} ngày',
   'usage_trend_name_calls_daily': 'Lượt gọi xếp chồng theo ngày',
   'usage_trend_name_calls_weekly': 'Lượt gọi xếp chồng theo tuần đã gộp',
   'usage_trend_name_cost_daily': 'Chi phí tham khảo xếp chồng theo ngày',
@@ -1087,11 +1102,13 @@ export default {
   'usage_attention_failure_rate_detail': '{{failed}} thất bại / {{total}} lượt · {{rate}}, toàn kỳ {{overall}}',
   'usage_attention_failure_rate_action': 'Xem bản ghi thất bại',
   'usage_attention_consecutive_title': '{{project}} · phân cảnh {{segment}} thất bại liên tiếp',
-  'usage_attention_consecutive_detail': '{{count}} lần ({{media}}), gần nhất {{time}}',
+  'usage_attention_consecutive_detail_one': '{{count}} lần ({{media}}), gần nhất {{time}}',
+  'usage_attention_consecutive_detail_other': '{{count}} lần ({{media}}), gần nhất {{time}}',
   'usage_attention_consecutive_action': 'Xem phân cảnh này',
 
   // import diagnostics
-  'import_auto_fixed': 'Đã nhập dự án "{{title}}" (tự sửa {{count}} vấn đề)',
+  'import_auto_fixed_one': 'Đã nhập dự án "{{title}}" (tự sửa {{count}} vấn đề)',
+  'import_auto_fixed_other': 'Đã nhập dự án "{{title}}" (tự sửa {{count}} vấn đề)',
   'import_success_with_diagnostics': 'Nhập hoàn tất với chẩn đoán — xem chi tiết bên dưới',
   'blocking_issues': 'Vấn đề nghiêm trọng',
   'auto_fixed_issues': 'Vấn đề đã tự sửa',
@@ -1123,10 +1140,14 @@ export default {
   'episode_title_update_failed': 'Cập nhật tiêu đề tập thất bại: {{message}}',
   'calculating_cost': 'Đang tính chi phí...',
   'cost_estimate_failed': 'Ước tính chi phí thất bại: {{message}}',
-  'storyboard_count_and_status': '{{count}} cảnh quay · {{status}}',
-  'video_unit_count_and_status': '{{count}} đơn vị video · {{status}}',
-  'storyboard_count': '{{count}} cảnh quay',
-  'video_unit_count': '{{count}} đơn vị video',
+  'storyboard_count_and_status_one': '{{count}} cảnh quay · {{status}}',
+  'storyboard_count_and_status_other': '{{count}} cảnh quay · {{status}}',
+  'video_unit_count_and_status_one': '{{count}} đơn vị video · {{status}}',
+  'video_unit_count_and_status_other': '{{count}} đơn vị video · {{status}}',
+  'storyboard_count_one': '{{count}} cảnh quay',
+  'storyboard_count_other': '{{count}} cảnh quay',
+  'video_unit_count_one': '{{count}} đơn vị video',
+  'video_unit_count_other': '{{count}} đơn vị video',
 
   // ProjectSettingsPage
   'project_settings': 'Cài đặt dự án',
@@ -1182,8 +1203,11 @@ export default {
   'agent_memory_clear': 'Xoá sạch',
   'agent_memory_clear_user_confirm_title': 'Xoá sạch bộ nhớ người dùng?',
   'agent_memory_clear_project_confirm_title': 'Xoá sạch bộ nhớ dự án?',
-  'agent_memory_clear_confirm_desc': 'Toàn bộ {{count}} tệp bộ nhớ sẽ bị xoá. Không thể hoàn tác.',
-  'agent_memory_clear_project_confirm_desc':
+  'agent_memory_clear_confirm_desc_one': 'Toàn bộ {{count}} tệp bộ nhớ sẽ bị xoá. Không thể hoàn tác.',
+  'agent_memory_clear_confirm_desc_other': 'Toàn bộ {{count}} tệp bộ nhớ sẽ bị xoá. Không thể hoàn tác.',
+  'agent_memory_clear_project_confirm_desc_one':
+    'Toàn bộ {{count}} tệp bộ nhớ sẽ được chuyển vào thùng rác dự án. Có thể khôi phục trong 30 ngày.',
+  'agent_memory_clear_project_confirm_desc_other':
     'Toàn bộ {{count}} tệp bộ nhớ sẽ được chuyển vào thùng rác dự án. Có thể khôi phục trong 30 ngày.',
   'agent_memory_session_notice': 'Các phiên đang chạy không bị ảnh hưởng; thay đổi có hiệu lực từ phiên kế tiếp.',
   'agent_memory_delete_confirm_title': 'Xoá {{name}}?',
@@ -1246,7 +1270,8 @@ export default {
   'reference_preview_generate': 'Tạo video',
   'reference_preview_generating': 'Đang tạo…',
   'reference_meta_duration': 'Thời lượng',
-  'reference_units_count': '{{count}} đơn vị',
+  'reference_units_count_one': '{{count}} đơn vị',
+  'reference_units_count_other': '{{count}} đơn vị',
   'reference_needs_replan': 'Đơn vị này cần được lập kế hoạch lại trước khi tạo video.',
   'reference_preview_video_aria': 'Xem trước video cho đơn vị {{id}}',
   // Reference video unit UI status labels — derived from task queue state.
@@ -1284,10 +1309,13 @@ export default {
   'script_preview_utterances_value': '{{dialogue}} câu thoại · {{voiceover}} lời dẫn',
   'script_preview_none': 'Không có',
   'reference_editor_placeholder':
-    'Mô tả đơn vị video này. Dùng @ để tham chiếu hàng hóa / nhân vật / cảnh / đạo cụ và {} cho lời thoại.',
+    'Mô tả đơn vị video này. Gõ @ để tham chiếu nhân vật, cảnh hoặc đạo cụ. Muốn nhân vật nói, viết lời thoại trong dấu ngoặc nhọn ngay sau tên nhân vật; dấu ngoặc đứng riêng là lời dẫn ngoài khung hình.',
+  'reference_editor_placeholder_ad':
+    'Mô tả đơn vị video này. Gõ @ để tham chiếu hàng hóa, nhân vật, cảnh hoặc đạo cụ. Muốn nhân vật nói, viết lời thoại trong dấu ngoặc nhọn ngay sau tên nhân vật; dấu ngoặc đứng riêng là lời dẫn ngoài khung hình.',
   'reference_editor_aria_name': 'Prompt đơn vị',
   'reference_editor_unknown_mentions_label': 'Mention chưa đăng ký',
-  'reference_editor_unknown_mention': 'Chưa đăng ký: @{{name}} (không có trong hàng hóa/nhân vật/cảnh/đạo cụ)',
+  'reference_editor_unknown_mention': 'Chưa đăng ký: @{{name}} (không có trong nhân vật/cảnh/đạo cụ)',
+  'reference_editor_unknown_mention_ad': 'Chưa đăng ký: @{{name}} (không có trong hàng hóa/nhân vật/cảnh/đạo cụ)',
   'reference_picker_title': 'Chèn tham chiếu',
   'reference_picker_empty': 'Không có kết quả',
   'reference_picker_group_product': 'Hàng hóa',
@@ -1790,7 +1818,8 @@ export default {
   'enter_api_key_placeholder': 'Nhập khóa',
   'preview_url': 'Xem trước: ',
   'discover_models': 'Phát hiện mô hình',
-  'discover_models_success': 'Tìm thấy {{count}} mô hình',
+  'discover_models_success_one': 'Tìm thấy {{count}} mô hình',
+  'discover_models_success_other': 'Tìm thấy {{count}} mô hình',
   'discover_no_models': 'Không tìm thấy mô hình',
   'discover_no_base': 'Chọn cấu hình hoặc nhập Base URL trước',
   'discover_api_key_required': 'Nhập khóa trước để phát hiện mô hình',
@@ -2010,7 +2039,8 @@ export default {
   'image_model_i2i_label': 'Mô hình Image-to-Image',
 
   // WorkspaceNotificationsDrawer
-  'notifications_count': '{{count}} thông báo',
+  'notifications_count_one': '{{count}} thông báo',
+  'notifications_count_other': '{{count}} thông báo',
   'no_notifications': 'Không có thông báo',
   'notifications_hint': 'Cập nhật dự án, hoàn tất tạo và các thay đổi có thể điều hướng sẽ xuất hiện ở đây',
   'new_notification': 'Mới',
@@ -2055,7 +2085,8 @@ export default {
     'Mô hình chỉ hỗ trợ tối đa {{duration}} nên video không chứa hết mốc thời lượng yêu cầu.',
   'reference_duration_note_no_trim':
     'Mỗi video được tính phí theo mức đã yêu cầu ở trên. Video được giao đúng thời lượng đó và không bị cắt.',
-  'reference_duration_batch_summary': '{{count}} đơn vị sẽ dùng mức thời lượng video khác:',
+  'reference_duration_batch_summary_one': '{{count}} đơn vị sẽ dùng mức thời lượng video khác:',
+  'reference_duration_batch_summary_other': '{{count}} đơn vị sẽ dùng mức thời lượng video khác:',
   'reference_advisory_heading': 'Các điều chỉnh sau sẽ áp dụng cho lần tạo này:',
   'reference_advisory_confirm_title': 'Xác nhận tạo video',
   'reference_advisory_confirm_cta': 'Vẫn tạo',
@@ -2123,7 +2154,8 @@ export default {
   // Source file normalization toasts
 
   // Grid preview
-  'grid_batch_count': '{{count}} phân cảnh đa lưới',
+  'grid_batch_count_one': '{{count}} phân cảnh đa lưới',
+  'grid_batch_count_other': '{{count}} phân cảnh đa lưới',
   'generating_grid': 'Đang tạo...',
   'generate_grid_btn': 'Tạo phân cảnh đa lưới',
   'insufficient_scenes_for_grid': 'Chưa đủ cảnh để tạo phân cảnh đa lưới',
@@ -2146,14 +2178,16 @@ export default {
   'grid_regenerating': 'Đang gửi...',
   'grid_regenerate_btn': 'Tạo lại',
   'grid_composite_image_alt': 'Ảnh ghép',
-  'grid_cell_info': '{{count}} ô · {{rows}}×{{cols}}',
+  'grid_cell_info_one': '{{count}} ô · {{rows}}×{{cols}}',
+  'grid_cell_info_other': '{{count}} ô · {{rows}}×{{cols}}',
   'grid_picker_label': 'Ảnh ghép của nhóm này',
   'grid_picker_item': 'Ảnh ghép {{index}}',
   'grid_no_image': 'Chưa có ảnh ghép',
   'grid_reference_images': 'Ảnh tham chiếu',
   'grid_split_btn': 'Tách vào khung hình',
   'grid_splitting': 'Đang tách...',
-  'grid_split_success': 'Đã tách {{count}} ô',
+  'grid_split_success_one': 'Đã tách {{count}} ô',
+  'grid_split_success_other': 'Đã tách {{count}} ô',
   'grid_split_missing_skipped_one': '{{count}} phân cảnh không còn trong kịch bản nên đã được bỏ qua',
   'grid_split_missing_skipped_other': '{{count}} phân cảnh không còn trong kịch bản nên đã được bỏ qua',
   'grid_split_failed': 'Tách thất bại: {{message}}',
@@ -2183,6 +2217,8 @@ export default {
   'collab_status_live': 'Đang đồng bộ trực tiếp',
   'collab_status_offline': 'Mất kết nối. Thay đổi sẽ đồng bộ khi kết nối lại',
   'collab_peers_editing_field': '{{names}} đang sửa trường này',
+  'collab_recent_edit': '{{name}} vừa sửa mục này',
+  'collab_setting_changed_notice': '{{name}} đã đổi {{setting}}. Bên bạn đã được cập nhật',
   'claude_subscription_title': 'Gói đăng ký Claude',
   'claude_subscription_desc':
     'Đăng nhập bằng tài khoản Claude để Agent dùng hạn mức gói đăng ký của tài khoản đó. Cả không gian làm việc dùng chung hạn mức của một tài khoản.',
@@ -2379,7 +2415,9 @@ export default {
   'draft_agent_discard_title': 'Bỏ chỉnh sửa chưa hoàn tất của Agent?',
   'draft_name_script_plan': 'bản nháp kế hoạch kịch bản',
   'draft_name_prompt_authoring': 'bản nháp viết prompt',
-  'draft_fix_request_prefill_header':
+  'draft_fix_request_prefill_header_one':
+    '{{draftName}} của {{episodeRef}} có {{count}} vi phạm cần sửa; hãy gọi open_draft với doc_type={{docType}} để đọc, sau đó sửa bằng patch_draft với cùng doc_type và truyền revision trả về làm base_revision:',
+  'draft_fix_request_prefill_header_other':
     '{{draftName}} của {{episodeRef}} có {{count}} vi phạm cần sửa; hãy gọi open_draft với doc_type={{docType}} để đọc, sau đó sửa bằng patch_draft với cùng doc_type và truyền revision trả về làm base_revision:',
   'draft_fix_request_promote_prefill':
     '{{draftName}} của {{episodeRef}} khi xác thực lại không còn vi phạm nhưng vẫn chưa được thăng cấp — hãy gọi open_draft với doc_type={{docType}}, sau đó gọi promote_draft với cùng doc_type và truyền revision trả về làm base_revision.',
@@ -2632,7 +2670,8 @@ export default {
   'detail_collapsible_video_options': 'máy quay / âm thanh / đối thoại',
   'detail_dialogue_add': '+ Thêm đối thoại',
   'detail_dialogue_empty': '(chưa có đối thoại)',
-  'detail_field_chars_count': '{{count}} ký tự',
+  'detail_field_chars_count_one': '{{count}} ký tự',
+  'detail_field_chars_count_other': '{{count}} ký tự',
   'detail_image_prompt_placeholder': 'Mô tả khung hình: bối cảnh, nhân vật, hành động, bố cục…',
   'detail_pending_authoring_hint':
     'Chờ biên soạn: prompt của phân cảnh này chưa được biên soạn. Hãy nhờ Agent bổ sung hoặc tự điền bên dưới',
@@ -2727,8 +2766,10 @@ export default {
   'episode_status_label_in_production': 'Đang sản xuất',
   'episode_status_label_missing': 'Thiếu',
   'episode_status_label_scripted': 'Đã có kịch bản',
-  'episode_workspace_chars_approx': 'khoảng {{count}} ký tự',
-  'episode_workspace_guide_beats': '{{count}} nhịp truyện',
+  'episode_workspace_chars_approx_one': 'khoảng {{chars}} ký tự',
+  'episode_workspace_chars_approx_other': 'khoảng {{chars}} ký tự',
+  'episode_workspace_guide_beats_one': '{{count}} nhịp truyện',
+  'episode_workspace_guide_beats_other': '{{count}} nhịp truyện',
   'episode_workspace_guide_hook': 'Móc câu cuối tập',
   'episode_workspace_guide_title': 'Tổng quan tập',
   'episode_workspace_no_episode':
@@ -2819,7 +2860,8 @@ export default {
   'lobby_hero_greeting_evening': 'Chào buổi tối, đạo diễn.',
   'lobby_hero_greeting_late': 'Đêm đã khuya rồi, đạo diễn.',
   'lobby_hero_greeting_morning': 'Chào buổi sáng, đạo diễn.',
-  'lobby_hero_summary': 'Đã hoàn thành {{completed}} tập, {{inProduction}} tập còn đang sản xuất.',
+  'lobby_hero_summary_one': 'Đã hoàn thành {{completed}} tập, {{inProduction}} tập còn đang sản xuất.',
+  'lobby_hero_summary_other': 'Đã hoàn thành {{completed}} tập, {{inProduction}} tập còn đang sản xuất.',
   'lobby_no_filter_match': 'Không có dự án phù hợp',
   'lobby_no_filter_match_hint': 'Hãy thử xóa bộ lọc hoặc dùng từ khóa khác.',
   'lobby_search_kbd': '⌘K',
@@ -3195,7 +3237,8 @@ export default {
   'ad_script_progress_running': 'AI đang tạo kịch bản.',
   'ad_script_progress_hint': 'Xong sẽ ghi thẳng thành kịch bản chính thức.',
   'ad_script_failed': 'Lần AI tạo kịch bản gần nhất thất bại: {{reason}}',
-  'ad_script_new_assets': 'Đã tạo kịch bản, đăng ký {{count}} tài nguyên chờ tạo: {{names}}',
+  'ad_script_new_assets_one': 'Đã tạo kịch bản, đăng ký {{count}} tài nguyên chờ tạo: {{names}}',
+  'ad_script_new_assets_other': 'Đã tạo kịch bản, đăng ký {{count}} tài nguyên chờ tạo: {{names}}',
   'ad_script_dismiss': 'Đóng thông báo',
   'ad_brief_empty': 'Chưa điền ý tưởng sáng tạo',
   'ad_brief_target_duration': 'Tổng thời lượng mục tiêu: {{value}} giây',
@@ -3879,7 +3922,8 @@ export default {
   'market_share_check_failed': 'Kiểm tra cục bộ thất bại: {{message}}',
   'market_share_checking': 'Đang kiểm tra…',
   'market_share_check_passed': 'Đã qua kiểm tra cục bộ, có thể gửi',
-  'market_share_diagnostics_summary': 'Cần sửa {{count}} vấn đề trước khi gửi',
+  'market_share_diagnostics_summary_one': 'Cần sửa {{count}} vấn đề trước khi gửi',
+  'market_share_diagnostics_summary_other': 'Cần sửa {{count}} vấn đề trước khi gửi',
   'market_share_failed': 'Gửi thất bại',
   'market_share_submit': 'Gửi',
   'market_submission_status_open': 'Đang duyệt',
@@ -3920,8 +3964,10 @@ export default {
   'market_export_current_definition': 'Xuất định nghĩa hiện tại trước',
   'market_update_success': 'Đã cập nhật lên v{{version}}',
   'market_installs_label': 'Lượt cài đặt',
-  'market_rating_summary': 'Trung bình {{average}} sao từ {{count}} lượt đánh giá',
-  'market_rating_count_only': '{{count}} lượt đánh giá, điểm trung bình sẽ hiện khi đủ số lượt',
+  'market_rating_summary_one': 'Trung bình {{average}} sao từ {{count}} lượt đánh giá',
+  'market_rating_summary_other': 'Trung bình {{average}} sao từ {{count}} lượt đánh giá',
+  'market_rating_count_only_one': '{{count}} lượt đánh giá, điểm trung bình sẽ hiện khi đủ số lượt',
+  'market_rating_count_only_other': '{{count}} lượt đánh giá, điểm trung bình sẽ hiện khi đủ số lượt',
   'market_rate_label': 'Đánh giá của bạn',
   'market_rate_star': 'Chấm {{stars}} trên 5 sao',
   'market_rate_install_first': 'Cài đặt mục này để đánh giá',
@@ -4167,7 +4213,9 @@ export default {
     'Tập này vừa thay đổi. Danh sách bên dưới đã được cập nhật; tập chỉ bị xóa sau khi bạn xác nhận lại.',
   'replan_start_action': 'Lập lại kế hoạch từ tập này',
   'replan_start_title': 'Lập lại kế hoạch từ «{{name}}»',
-  'replan_start_detail':
+  'replan_start_detail_one':
+    'AI cắt lại nguyên văn từ tập này đến cuối toàn bộ văn bản nguồn và tạo một phương án phân tập mới, thay thế {{count}} tập cắt kể từ tập này. Các tập hiện có giữ nguyên cho đến khi áp dụng phương án. Khi tạo xong, hãy đối chiếu thay đổi rồi quyết định áp dụng hoặc bỏ.',
+  'replan_start_detail_other':
     'AI cắt lại nguyên văn từ tập này đến cuối toàn bộ văn bản nguồn và tạo một phương án phân tập mới, thay thế {{count}} tập cắt kể từ tập này. Các tập hiện có giữ nguyên cho đến khi áp dụng phương án. Khi tạo xong, hãy đối chiếu thay đổi rồi quyết định áp dụng hoặc bỏ.',
   'replan_start_started':
     'Đã bắt đầu sản xuất: {{names}}. Sau khi áp dụng, các tập này chuyển thành tập không có nguyên văn và vẫn giữ sản phẩm.',
@@ -4178,7 +4226,8 @@ export default {
   'replan_name_separator': ', ',
   'replan_none': 'Không có',
   'replan_pending_hint': 'Hãy áp dụng hoặc bỏ phương án phân tập mới trước',
-  'replan_generating': 'Đang tạo phương án phân tập mới, đã có {{count}} tập',
+  'replan_generating_one': 'Đang tạo phương án phân tập mới, đã có {{count}} tập',
+  'replan_generating_other': 'Đang tạo phương án phân tập mới, đã có {{count}} tập',
   'replan_generating_hint':
     'Các tập hiện có giữ nguyên cho đến khi áp dụng phương án. Khi tạo xong, hãy đối chiếu thay đổi ở đây rồi quyết định áp dụng hoặc bỏ.',
   'replan_stop': 'Dừng tạo',
@@ -4608,7 +4657,8 @@ export default {
     'Tất cả tài khoản và khóa của các nhà cung cấp ở cùng một nơi. Một nhà cung cấp có thể có nhiều kết nối; mỗi nơi dùng mô hình có thể chọn kết nối riêng, nơi không chọn sẽ dùng kết nối mặc định của nhà cung cấp.',
   'connection_center_add': 'Thêm kết nối',
   'connection_center_empty': 'Chưa có kết nối nào. Thêm tài khoản hoặc khóa cho nhà cung cấp để bắt đầu tạo.',
-  'connection_center_count': '{{count}} kết nối',
+  'connection_center_count_one': '{{count}} kết nối',
+  'connection_center_count_other': '{{count}} kết nối',
   'connection_center_manage': 'Quản lý',
   'connection_center_make_default': 'Đặt làm mặc định',
   'connection_center_delete': 'Xóa {{name}}',
@@ -4637,7 +4687,8 @@ export default {
   'connection_center_signed_in_at': 'Đăng nhập {{date}}',
   'credential_delete_in_use_intro':
     'Những nơi sau đang dùng kết nối này. Sau khi xóa, chúng sẽ dùng kết nối mặc định của nhà cung cấp:',
-  'credential_delete_in_use_global': '{{count}} thiết lập mô hình mặc định',
+  'credential_delete_in_use_global_one': '{{count}} thiết lập mô hình mặc định',
+  'credential_delete_in_use_global_other': '{{count}} thiết lập mô hình mặc định',
   'credential_delete_in_use_project': 'Dự án “{{name}}”',
   'series_title': 'Loạt phim',
   'series_subtitle': 'Các dự án dùng chung thế giới, cốt truyện và tài nguyên trong thư viện',
@@ -4681,7 +4732,8 @@ export default {
   'series_assets_add': 'Thêm từ thư viện tài nguyên',
   'series_asset_remove': 'Bỏ {{name}} khỏi loạt phim',
   'series_asset_unavailable': 'Không còn trong thư viện',
-  'series_asset_added': 'Đã thêm {{count}} tài nguyên vào loạt phim',
+  'series_asset_added_one': 'Đã thêm {{count}} tài nguyên vào loạt phim',
+  'series_asset_added_other': 'Đã thêm {{count}} tài nguyên vào loạt phim',
   'series_asset_removed': 'Đã bỏ {{name}} khỏi loạt phim',
   'series_asset_failed': 'Không cập nhật được tài nguyên của loạt phim: {{message}}',
   'series_apply': 'Áp dụng tài nguyên loạt phim',

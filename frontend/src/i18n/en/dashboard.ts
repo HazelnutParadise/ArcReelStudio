@@ -274,7 +274,8 @@ export default {
   'thinking_streaming': 'Thinking',
   'skill_chip_unknown': 'skill',
   'subagent_card_label': 'Subagent',
-  'subagent_tokens': '{{count}} tokens',
+  'subagent_tokens_one': '{{count}} token',
+  'subagent_tokens_other': '{{count}} tokens',
   'task_in_progress_default': 'In progress',
   // One-time inline tip after the story setting is extracted
   'overview_handoff_tip':
@@ -520,7 +521,9 @@ export default {
   // GlobalHeader
   'mode_badge_drama': 'Drama 16:9',
   'mode_badge_narration': 'Narration/Commentary 9:16',
-  'project_zip_download_started_with_diagnostics':
+  'project_zip_download_started_with_diagnostics_one':
+    'Project ZIP download started, export contains {{count}} diagnostic',
+  'project_zip_download_started_with_diagnostics_other':
     'Project ZIP download started, export contains {{count}} diagnostics',
   'export_failed': 'Export failed: {{message}}',
   'toggle_options': 'Toggle options',
@@ -534,9 +537,13 @@ export default {
     'Let the Agent make a cut, or create one from the script: every video unit is used in full, with hard cuts between clips.',
   'edit_timeline_create_failed': 'Couldn’t create the edit timeline: {{message}}',
   'edit_render_button': 'Render',
-  'edit_render_blocked_reason': 'This edit timeline has {{count}} blocking issue(s). Resolve them before rendering.',
-  'edit_render_blocked_reason_units':
-    'This edit timeline has {{count}} blocking issue(s) in {{units}}. Resolve them before rendering.',
+  'edit_render_blocked_reason_one': 'This edit timeline has {{count}} blocking issue. Resolve it before rendering.',
+  'edit_render_blocked_reason_other':
+    'This edit timeline has {{count}} blocking issues. Resolve them before rendering.',
+  'edit_render_blocked_reason_units_one':
+    'This edit timeline has {{count}} blocking issue in {{units}}. Resolve it before rendering.',
+  'edit_render_blocked_reason_units_other':
+    'This edit timeline has {{count}} blocking issues in {{units}}. Resolve them before rendering.',
   'edit_render_blocked_view_issues': 'View issues ({{count}})',
   'edit_render_dialog_title': 'Render · {{name}}',
   'edit_render_kind_label': 'Deliverable',
@@ -658,9 +665,11 @@ export default {
   'cancel_all': 'Cancel All',
   'cancel_all_queued_aria': 'Cancel all queued tasks',
   'cancel_confirm_aria': 'Cancel confirmation',
-  'cancel_cascade_msg': 'Cancelling this task will also cancel {{count}} dependent tasks',
+  'cancel_cascade_msg_one': 'Cancelling this task will also cancel {{count}} dependent task',
+  'cancel_cascade_msg_other': 'Cancelling this task will also cancel {{count}} dependent tasks',
   'cancel_single_confirm': 'Cancel this task?',
-  'cancel_all_confirm': 'Cancel all {{count}} queued tasks?',
+  'cancel_all_confirm_one': 'Cancel {{count}} queued task?',
+  'cancel_all_confirm_other': 'Cancel all {{count}} queued tasks?',
   'cancel_failed': 'Cancellation failed. Please try again.',
   'cancelling': 'Cancelling...',
   'confirm_cancel': 'Confirm Cancel',
@@ -704,7 +713,8 @@ export default {
   'start_chat_hint': 'Type a message below to start chatting',
   'quick_skill_hint': 'Type / to quickly invoke skills',
   'assistant_input': 'Agent Input',
-  'max_images_hint': 'Maximum {{count}} images',
+  'max_images_hint_one': 'Maximum {{count}} image',
+  'max_images_hint_other': 'Maximum {{count}} images',
   'attach_image': 'Attach image',
   'stop_session': 'Stop reply',
   'send_message': 'Send Message',
@@ -730,7 +740,8 @@ export default {
   'queued_message_already_accepted': 'Already received by the Agent. This message will join the conversation as usual',
   'queued_message_withdraw_failed': "Couldn't withdraw this queued message. Try again later",
   'queued_message_send_now_failed': "Couldn't send this queued message now. Try again later",
-  'composer_too_many_images_hint': 'You can attach up to {{count}} images. Remove the extra images to send',
+  'composer_too_many_images_hint_one': 'You can attach up to {{count}} image. Remove the extra images to send',
+  'composer_too_many_images_hint_other': 'You can attach up to {{count}} images. Remove the extra images to send',
   'new_session_action': 'New session',
   'session_history_title': 'Session history',
   'session_search_placeholder': 'Search sessions',
@@ -844,7 +855,8 @@ export default {
   'generate_video_failed': 'Failed to generate video: {{message}}',
   'narration_task_submitted_toast': 'Narration audio task for "{{id}}" submitted',
   'script_generation_notice_toast': 'Generating the script — this step takes a while, please wait…',
-  'narration_batch_submitted_toast': 'Submitted {{count}} narration audio tasks',
+  'narration_batch_submitted_toast_one': 'Submitted {{count}} narration audio task',
+  'narration_batch_submitted_toast_other': 'Submitted {{count}} narration audio tasks',
   'narration_batch_none_missing_toast': 'All shots already have narration audio',
   'generate_narration_failed': 'Failed to generate narration audio: {{message}}',
   'open_settings_action': 'Open settings',
@@ -927,7 +939,8 @@ export default {
 
   // Usage header entry & popover
   'usage_entry_aria': 'Usage records · reference cost {{cost}}',
-  'usage_entry_aria_active': 'Usage records · reference cost {{cost}} · {{count}} tasks in progress',
+  'usage_entry_aria_active_one': 'Usage records · reference cost {{cost}} · {{count}} task in progress',
+  'usage_entry_aria_active_other': 'Usage records · reference cost {{cost}} · {{count}} tasks in progress',
   'usage_close_panel': 'Close usage records panel',
   'usage_in_progress': 'In progress',
   'usage_recently_finished': 'Recently finished',
@@ -1055,7 +1068,8 @@ export default {
   'usage_trend_metric_calls': 'Calls',
   'usage_trend_metric_cost': 'Ref. cost',
   'usage_trend_weekly_chip': 'Merged by week',
-  'usage_trend_merged_days': '{{count}} days merged',
+  'usage_trend_merged_days_one': '{{count}} day merged',
+  'usage_trend_merged_days_other': '{{count}} days merged',
   'usage_trend_name_calls_daily': 'Calls stacked by day',
   'usage_trend_name_calls_weekly': 'Calls stacked by merged week',
   'usage_trend_name_cost_daily': 'Reference cost stacked by day',
@@ -1098,11 +1112,13 @@ export default {
     '{{failed}} failed of {{total}} · {{rate}}, {{overall}} overall for the period',
   'usage_attention_failure_rate_action': 'View failed records',
   'usage_attention_consecutive_title': '{{project}} · shot {{segment}} keeps failing',
-  'usage_attention_consecutive_detail': '{{count}} times ({{media}}), last at {{time}}',
+  'usage_attention_consecutive_detail_one': '{{count}} time ({{media}}), last at {{time}}',
+  'usage_attention_consecutive_detail_other': '{{count}} times ({{media}}), last at {{time}}',
   'usage_attention_consecutive_action': 'View this shot',
 
   // import diagnostics
-  'import_auto_fixed': 'Project "{{title}}" imported ({{count}} issue(s) auto-fixed)',
+  'import_auto_fixed_one': 'Project "{{title}}" imported ({{count}} issue auto-fixed)',
+  'import_auto_fixed_other': 'Project "{{title}}" imported ({{count}} issues auto-fixed)',
   'import_success_with_diagnostics': 'Import completed with diagnostics — review the details below',
   'import_diagnostics': 'Import Diagnostics',
   'import_failure_diagnostics': 'Import Failure Diagnostics',
@@ -1137,10 +1153,14 @@ export default {
   'episode_title_update_failed': 'Failed to update episode title: {{message}}',
   'calculating_cost': 'Calculating cost...',
   'cost_estimate_failed': 'Cost estimation failed: {{message}}',
-  'storyboard_count_and_status': '{{count}} shots · {{status}}',
-  'video_unit_count_and_status': '{{count}} video units · {{status}}',
-  'storyboard_count': '{{count}} shots',
-  'video_unit_count': '{{count}} video units',
+  'storyboard_count_and_status_one': '{{count}} shot · {{status}}',
+  'storyboard_count_and_status_other': '{{count}} shots · {{status}}',
+  'video_unit_count_and_status_one': '{{count}} video unit · {{status}}',
+  'video_unit_count_and_status_other': '{{count}} video units · {{status}}',
+  'storyboard_count_one': '{{count}} shot',
+  'storyboard_count_other': '{{count}} shots',
+  'video_unit_count_one': '{{count}} video unit',
+  'video_unit_count_other': '{{count}} video units',
 
   // ProjectSettingsPage
   'project_settings': 'Project Settings',
@@ -1195,8 +1215,11 @@ export default {
   'agent_memory_clear': 'Clear',
   'agent_memory_clear_user_confirm_title': 'Clear user memory?',
   'agent_memory_clear_project_confirm_title': 'Clear project memory?',
-  'agent_memory_clear_confirm_desc': 'All {{count}} memory files will be deleted. This cannot be undone.',
-  'agent_memory_clear_project_confirm_desc':
+  'agent_memory_clear_confirm_desc_one': 'The {{count}} memory file will be deleted. This cannot be undone.',
+  'agent_memory_clear_confirm_desc_other': 'All {{count}} memory files will be deleted. This cannot be undone.',
+  'agent_memory_clear_project_confirm_desc_one':
+    'The {{count}} memory file will be moved to the project trash. You can restore it for 30 days.',
+  'agent_memory_clear_project_confirm_desc_other':
     'All {{count}} memory files will be moved to the project trash. You can restore them for 30 days.',
   'agent_memory_session_notice':
     'Sessions already running are unaffected; the change takes effect from the next session.',
@@ -1260,7 +1283,8 @@ export default {
   'reference_preview_generate': 'Generate video',
   'reference_preview_generating': 'Generating…',
   'reference_meta_duration': 'Duration',
-  'reference_units_count': '{{count}} units',
+  'reference_units_count_one': '{{count}} unit',
+  'reference_units_count_other': '{{count}} units',
   'reference_needs_replan': 'This unit needs replanning before it can be generated.',
   'reference_preview_video_aria': 'Preview video for unit {{id}}',
   // Reference video unit UI status labels — derived from task queue state.
@@ -1298,10 +1322,13 @@ export default {
   'script_preview_utterances_value': '{{dialogue}} lines · {{voiceover}} voiceovers',
   'script_preview_none': 'None',
   'reference_editor_placeholder':
-    'Describe this video unit. Use @ to reference merchandise, characters, scenes, and props, and {} for spoken lines.',
+    'Describe this video unit. Type @ to reference a character, scene, or prop. To make a character speak, put the line in curly braces right after their name; braces on their own are a voice-over.',
+  'reference_editor_placeholder_ad':
+    'Describe this video unit. Type @ to reference merchandise, a character, scene, or prop. To make a character speak, put the line in curly braces right after their name; braces on their own are a voice-over.',
   'reference_editor_aria_name': 'Unit prompt',
   'reference_editor_unknown_mentions_label': 'Unregistered mentions',
-  'reference_editor_unknown_mention': 'Unregistered: @{{name}} (not found in merchandise/characters/scenes/props)',
+  'reference_editor_unknown_mention': 'Unregistered: @{{name}} (not found in characters/scenes/props)',
+  'reference_editor_unknown_mention_ad': 'Unregistered: @{{name}} (not found in merchandise/characters/scenes/props)',
   'reference_picker_title': 'Insert reference',
   'reference_picker_empty': 'No matches',
   'reference_picker_group_product': 'Merchandise',
@@ -1804,7 +1831,8 @@ export default {
   'enter_api_key_placeholder': 'Enter key',
   'preview_url': 'Preview: ',
   'discover_models': 'Discover Models',
-  'discover_models_success': 'Found {{count}} models',
+  'discover_models_success_one': 'Found {{count}} model',
+  'discover_models_success_other': 'Found {{count}} models',
   'discover_no_models': 'No models found',
   'discover_no_base': 'Select a preset or enter a Base URL first',
   'discover_api_key_required': 'Enter a key first to discover models',
@@ -2022,7 +2050,8 @@ export default {
   'image_model_i2i_label': 'Image-to-Image Model',
 
   // WorkspaceNotificationsDrawer
-  'notifications_count': '{{count}} notifications',
+  'notifications_count_one': '{{count}} notification',
+  'notifications_count_other': '{{count}} notifications',
   'no_notifications': 'No notifications',
   'notifications_hint': 'Project refreshes, generation completions, and navigable changes will appear here',
   'new_notification': 'New',
@@ -2067,7 +2096,8 @@ export default {
     'The model tops out at {{duration}}, so the clip cannot hold the full request basis.',
   'reference_duration_note_no_trim':
     'Each video is billed at its requested tier above. Clips are delivered at that length and are not trimmed.',
-  'reference_duration_batch_summary': '{{count}} units will use a different video duration tier:',
+  'reference_duration_batch_summary_one': '{{count}} unit will use a different video duration tier:',
+  'reference_duration_batch_summary_other': '{{count}} units will use a different video duration tier:',
   'reference_advisory_heading': 'The following adjustments will apply to this generation:',
   'reference_advisory_confirm_title': 'Confirm video generation',
   'reference_advisory_confirm_cta': 'Generate anyway',
@@ -2136,7 +2166,8 @@ export default {
   // Source file normalization toasts
 
   // Grid preview
-  'grid_batch_count': '{{count}} multi-grid storyboards',
+  'grid_batch_count_one': '{{count}} multi-grid storyboard',
+  'grid_batch_count_other': '{{count}} multi-grid storyboards',
   'generating_grid': 'Generating...',
   'generate_grid_btn': 'Generate Multi-grid Storyboard',
   'insufficient_scenes_for_grid': 'Not enough scenes to generate a multi-grid storyboard',
@@ -2159,14 +2190,16 @@ export default {
   'grid_regenerating': 'Submitting...',
   'grid_regenerate_btn': 'Regenerate',
   'grid_composite_image_alt': 'Composite',
-  'grid_cell_info': '{{count}} cells · {{rows}}×{{cols}}',
+  'grid_cell_info_one': '{{count}} cell · {{rows}}×{{cols}}',
+  'grid_cell_info_other': '{{count}} cells · {{rows}}×{{cols}}',
   'grid_picker_label': 'Composites in this group',
   'grid_picker_item': 'Composite {{index}}',
   'grid_no_image': 'No composite yet',
   'grid_reference_images': 'Reference images',
   'grid_split_btn': 'Split into cells',
   'grid_splitting': 'Splitting...',
-  'grid_split_success': 'Split {{count}} cells',
+  'grid_split_success_one': 'Split {{count}} cell',
+  'grid_split_success_other': 'Split {{count}} cells',
   'grid_split_missing_skipped_one': '{{count}} shot is no longer in the script and was skipped',
   'grid_split_missing_skipped_other': '{{count}} shots are no longer in the script and were skipped',
   'grid_split_failed': 'Split failed: {{message}}',
@@ -2196,6 +2229,8 @@ export default {
   'collab_status_live': 'Syncing live',
   'collab_status_offline': 'Offline. Your changes sync when you reconnect',
   'collab_peers_editing_field': '{{names}} editing this field',
+  'collab_recent_edit': '{{name}} just changed this',
+  'collab_setting_changed_notice': '{{name}} changed {{setting}}. It is already updated here',
   'claude_subscription_title': 'Claude subscription',
   'claude_subscription_desc':
     "Sign in with a Claude account so the agent can use that account's subscription. The whole workspace shares one account's usage.",
@@ -2395,8 +2430,10 @@ export default {
   'draft_agent_discard_title': "Discard the Agent's unfinished edit?",
   'draft_name_script_plan': 'script plan draft',
   'draft_name_prompt_authoring': 'prompt authoring draft',
-  'draft_fix_request_prefill_header':
-    'The {{draftName}} of {{episodeRef}} has {{count}} violation(s) to fix — call open_draft with doc_type={{docType}} to read it, then correct it with patch_draft using the same doc_type and pass the returned revision as base_revision:',
+  'draft_fix_request_prefill_header_one':
+    'The {{draftName}} of {{episodeRef}} has {{count}} violation to fix — call open_draft with doc_type={{docType}} to read it, then correct it with patch_draft using the same doc_type and pass the returned revision as base_revision:',
+  'draft_fix_request_prefill_header_other':
+    'The {{draftName}} of {{episodeRef}} has {{count}} violations to fix — call open_draft with doc_type={{docType}} to read it, then correct it with patch_draft using the same doc_type and pass the returned revision as base_revision:',
   'draft_fix_request_promote_prefill':
     'The {{draftName}} of {{episodeRef}} now revalidates with no violations but has not been promoted yet — call open_draft with doc_type={{docType}}, then call promote_draft with the same doc_type and pass the returned revision as base_revision.',
   'draft_agent_finish_prefill':
@@ -2506,9 +2543,11 @@ export default {
   'episode_workspace_no_episode':
     "Episode hasn't been started yet. Begin from the script, or let the agent draft for you.",
   'episode_workspace_guide_title': 'Episode guide',
-  'episode_workspace_guide_beats': '{{count}} beats',
+  'episode_workspace_guide_beats_one': '{{count}} beat',
+  'episode_workspace_guide_beats_other': '{{count}} beats',
   'episode_workspace_guide_hook': 'Ending hook',
-  'episode_workspace_chars_approx': '~{{count}} chars',
+  'episode_workspace_chars_approx_one': '~{{chars}} char',
+  'episode_workspace_chars_approx_other': '~{{chars}} chars',
   'episode_workspace_source_loading': 'Loading source slice…',
   'episode_workspace_source_missing':
     'This episode has no episode source. You can start the script from blank and write it by hand',
@@ -3025,7 +3064,8 @@ export default {
   'detail_video_prompt_placeholder': 'Describe the motion from the storyboard…',
   'detail_collapsible_composition': 'composition',
   'detail_collapsible_video_options': 'camera / audio / dialogue',
-  'detail_field_chars_count': '{{count}} chars',
+  'detail_field_chars_count_one': '{{count}} char',
+  'detail_field_chars_count_other': '{{count}} chars',
   'media_storyboard_title': 'Storyboard',
   'media_video_title': 'Video',
   'media_video_length_mismatch':
@@ -3073,7 +3113,8 @@ export default {
   'ad_script_progress_running': 'AI is generating the script.',
   'ad_script_progress_hint': 'The result is written as the formal script when it finishes.',
   'ad_script_failed': 'The last AI script generation failed: {{reason}}',
-  'ad_script_new_assets': 'Script generated. {{count}} assets to generate were registered: {{names}}',
+  'ad_script_new_assets_one': 'Script generated. {{count}} asset to generate was registered: {{names}}',
+  'ad_script_new_assets_other': 'Script generated. {{count}} assets to generate were registered: {{names}}',
   'ad_script_dismiss': 'Dismiss',
   'ad_brief_empty': 'No creative brief yet',
   'ad_brief_target_duration': 'Target duration: {{value}}s',
@@ -3193,7 +3234,8 @@ export default {
   'lobby_hero_greeting_afternoon': 'Good afternoon, director.',
   'lobby_hero_greeting_evening': 'Good evening, director.',
   'lobby_hero_greeting_late': 'Burning the midnight oil, director.',
-  'lobby_hero_summary': '{{completed}} episodes wrapped, {{inProduction}} still in production.',
+  'lobby_hero_summary_one': '{{completed}} episode wrapped, {{inProduction}} still in production.',
+  'lobby_hero_summary_other': '{{completed}} episodes wrapped, {{inProduction}} still in production.',
   'lobby_filter_all': 'All',
   'lobby_card_needs_repair': 'NEEDS REPAIR',
   'lobby_card_schema_unsupported': 'VERSION TOO OLD',
@@ -3890,7 +3932,8 @@ export default {
   'market_share_check_failed': 'Local validation failed: {{message}}',
   'market_share_checking': 'Validating…',
   'market_share_check_passed': 'Local validation passed. Ready to submit',
-  'market_share_diagnostics_summary': 'Fix {{count}} issues before submitting',
+  'market_share_diagnostics_summary_one': 'Fix {{count}} issue before submitting',
+  'market_share_diagnostics_summary_other': 'Fix {{count}} issues before submitting',
   'market_share_failed': 'Submission failed',
   'market_share_submit': 'Submit',
   'market_submission_status_open': 'In review',
@@ -3931,8 +3974,10 @@ export default {
   'market_export_current_definition': 'Export current definition first',
   'market_update_success': 'Updated to v{{version}}',
   'market_installs_label': 'Installs',
-  'market_rating_summary': 'Average {{average}} stars from {{count}} ratings',
-  'market_rating_count_only': '{{count}} ratings; the average appears once there are enough',
+  'market_rating_summary_one': 'Average {{average}} stars from {{count}} rating',
+  'market_rating_summary_other': 'Average {{average}} stars from {{count}} ratings',
+  'market_rating_count_only_one': '{{count}} rating; the average appears once there are enough',
+  'market_rating_count_only_other': '{{count}} ratings; the average appears once there are enough',
   'market_rate_label': 'Your rating',
   'market_rate_star': 'Rate {{stars}} out of 5',
   'market_rate_install_first': 'Install this entry to rate it',
@@ -4176,8 +4221,10 @@ export default {
     'This episode changed just now. The list below is up to date; the episode is deleted only after you confirm again.',
   'replan_start_action': 'Replan from this episode',
   'replan_start_title': 'Replan from “{{name}}”',
-  'replan_start_detail':
-    'AI re-splits the source text from this episode to the end of the whole source and creates a new episode plan that replaces the {{count}} cut episode(s) from this episode on. The current episodes stay unchanged until you adopt the plan. When it is ready, compare the changes and then adopt or discard it.',
+  'replan_start_detail_one':
+    'AI re-splits the source text from this episode to the end of the whole source and creates a new episode plan that replaces the {{count}} cut episode from this episode on. The current episodes stay unchanged until you adopt the plan. When it is ready, compare the changes and then adopt or discard it.',
+  'replan_start_detail_other':
+    'AI re-splits the source text from this episode to the end of the whole source and creates a new episode plan that replaces the {{count}} cut episodes from this episode on. The current episodes stay unchanged until you adopt the plan. When it is ready, compare the changes and then adopt or discard it.',
   'replan_start_started':
     'Already in production: {{names}}. After adoption, these become episodes without source and keep their outputs.',
   'replan_start_from_beginning':
@@ -4187,7 +4234,8 @@ export default {
   'replan_name_separator': ', ',
   'replan_none': 'None',
   'replan_pending_hint': 'Adopt or discard the new episode plan first',
-  'replan_generating': 'Generating a new episode plan, {{count}} episode(s) so far',
+  'replan_generating_one': 'Generating a new episode plan, {{count}} episode so far',
+  'replan_generating_other': 'Generating a new episode plan, {{count}} episodes so far',
   'replan_generating_hint':
     'The current episodes stay unchanged until you adopt the plan. When it is ready, compare the changes here and then adopt or discard it.',
   'replan_stop': 'Stop generating',
@@ -4619,7 +4667,8 @@ export default {
     "All provider accounts and keys in one place. A provider can have several connections; each place that uses a model can pick which one to use, and the rest use the provider's default connection.",
   'connection_center_add': 'Add connection',
   'connection_center_empty': 'No connections yet. Add an account or key for a provider to start generating.',
-  'connection_center_count': '{{count}} connections',
+  'connection_center_count_one': '{{count}} connection',
+  'connection_center_count_other': '{{count}} connections',
   'connection_center_manage': 'Manage',
   'connection_center_make_default': 'Make default',
   'connection_center_delete': 'Delete {{name}}',
@@ -4648,7 +4697,8 @@ export default {
   'connection_center_signed_in_at': 'Signed in {{date}}',
   'credential_delete_in_use_intro':
     "These places use this connection. After deleting it they will use the provider's default connection:",
-  'credential_delete_in_use_global': '{{count}} default model settings',
+  'credential_delete_in_use_global_one': '{{count}} default model setting',
+  'credential_delete_in_use_global_other': '{{count}} default model settings',
   'credential_delete_in_use_project': 'Project “{{name}}”',
   'series_title': 'Series',
   'series_subtitle': 'Projects that share a world, a plot and library assets',
@@ -4692,7 +4742,8 @@ export default {
   'series_assets_add': 'Add from asset library',
   'series_asset_remove': 'Remove {{name}} from this series',
   'series_asset_unavailable': 'No longer in the library',
-  'series_asset_added': 'Added {{count}} assets to the series',
+  'series_asset_added_one': 'Added {{count}} asset to the series',
+  'series_asset_added_other': 'Added {{count}} assets to the series',
   'series_asset_removed': 'Removed {{name}} from the series',
   'series_asset_failed': 'Couldn’t update the series assets: {{message}}',
   'series_apply': 'Apply series assets',

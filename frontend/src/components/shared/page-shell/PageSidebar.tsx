@@ -31,12 +31,15 @@ interface PageSidebarProps {
   replace?: boolean;
 }
 
-/** 页面外壳的侧栏：贴左、独立滚动，标准档 224px、紧凑档 200px。 */
+/**
+ * 页面外壳的侧栏：贴左、独立滚动，标准档 224px、紧凑档 200px。
+ * 手机宽度（md 以下）改为内容上方一行可横向滚动的分区导航，内容列占满全宽；分组标题在这一档不显示。
+ */
 export function PageSidebar({ label, groups, activeId, replace }: PageSidebarProps) {
   return (
     <nav
       aria-label={label}
-      className="relative flex w-50 shrink-0 flex-col gap-5 overflow-y-auto border-r border-border px-3 py-4 xl:w-56"
+      className="relative flex shrink-0 gap-1 overflow-x-auto max-md:scroll-fade-x border-b border-border px-3 py-2 md:w-50 md:flex-col md:gap-5 md:overflow-x-visible md:overflow-y-auto md:border-r md:border-b-0 md:py-4 xl:w-56"
     >
       {groups.map((group) => (
         <SidebarGroup key={group.id} group={group} activeId={activeId} replace={replace} />
@@ -48,13 +51,13 @@ export function PageSidebar({ label, groups, activeId, replace }: PageSidebarPro
 function SidebarGroup({ group, activeId, replace }: { group: PageSidebarGroup; activeId: string; replace?: boolean }) {
   const labelId = useId();
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex shrink-0 flex-col gap-1">
       {group.label && (
-        <p id={labelId} className="px-2 text-xs font-medium text-muted-foreground">
+        <p id={labelId} className="hidden px-2 text-xs font-medium text-muted-foreground md:block">
           {group.label}
         </p>
       )}
-      <ul aria-labelledby={group.label ? labelId : undefined} className="flex flex-col gap-0.5">
+      <ul aria-labelledby={group.label ? labelId : undefined} className="flex gap-0.5 md:flex-col">
         {group.items.map((item) => {
           const active = item.id === activeId;
           const Icon = item.icon;
@@ -76,7 +79,7 @@ function SidebarGroup({ group, activeId, replace }: { group: PageSidebarGroup; a
                   aria-hidden
                   className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")}
                 />
-                <span className="min-w-0 flex-1">{item.label}</span>
+                <span className="min-w-0 flex-1 whitespace-nowrap md:whitespace-normal">{item.label}</span>
                 {item.badge}
               </Link>
             </li>

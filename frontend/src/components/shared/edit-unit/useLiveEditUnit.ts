@@ -111,6 +111,7 @@ export function useLiveEditUnit<T>({
       live: {
         connection: snapshot.phase === "offline" ? "offline" : "synced",
         peers: snapshot.peers,
+        remoteEdits: snapshot.remoteEdits,
         fieldProps: fields.fieldProps,
         undo: fields.undo,
         redo: fields.redo,

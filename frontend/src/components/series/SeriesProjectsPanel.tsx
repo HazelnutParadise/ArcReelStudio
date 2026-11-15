@@ -108,11 +108,13 @@ export function SeriesProjectsPanel({ series, allSeries, projects, onChange }: S
         <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
           {series.project_names.map((name) => {
             const title = titleOf(name);
+            // 项目代号是内部标识，只在同一系列里有同名项目、需要分辨时才显示
+            const sameTitle = series.project_names.some((other) => other !== name && titleOf(other) === title);
             return (
               <li key={name} className="flex items-center gap-2 px-3 py-2">
                 <div className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-sm font-medium">{title}</span>
-                  {title !== name && <span className="truncate text-xs text-muted-foreground">{name}</span>}
+                  {sameTitle && <span className="truncate text-xs text-muted-foreground">{name}</span>}
                 </div>
                 <Button
                   variant="outline"

@@ -62,6 +62,17 @@ export class FakeCollabServer {
     }
   }
 
+  /** 另一位成员（或重连补送）的文档更新：服务端先套用，再原样推给所有连线。 */
+  deliverUpdate(room: { project: string; kind: string; key: string }, update: Uint8Array): void {
+    Y.applyUpdate(this.docFor(room), update);
+    const encoder = encoding.createEncoder();
+    encoding.writeVarUint(encoder, 0);
+    syncProtocol.writeUpdate(encoder, update);
+    for (const socket of this.sockets) {
+      socket.deliver({ type: "sync", room, data: toBase64(encoding.toUint8Array(encoder)) });
+    }
+  }
+
   /** 把另一位成员的在线状态送给所有连线（服务端转发的替身）。 */
   deliverAwareness(room: { project: string; kind: string; key: string }, awareness: Awareness): void {
     const encoder = encoding.createEncoder();

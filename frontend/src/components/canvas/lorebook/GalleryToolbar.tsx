@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { WORKSPACE_PROJECT_TRASH_PATH } from "@/app-routes";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { AssetSheetType } from "@/types";
 import type { GalleryFilter } from "./gallery-model";
 
@@ -69,11 +70,23 @@ export function GalleryToolbar({
       </ToggleGroup>
       <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
         {children}
+        {/* 次要入口只放图标，名称在提示与读屏里：工具栏在常见宽度下不因它把「新增」挤到第二行 */}
         {showTrash && (
-          <Link href={WORKSPACE_PROJECT_TRASH_PATH} className={buttonVariants({ variant: "ghost", size: "sm" })}>
-            <Trash2 aria-hidden data-icon="inline-start" />
-            {t("dashboard:file_view_section_trash")}
-          </Link>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Link
+                  href={WORKSPACE_PROJECT_TRASH_PATH}
+                  // eslint-disable-next-line shadcn/require-static-classes -- 链接借用 buttonVariants 的 ghost/icon 外观；Button 渲染为链接会被 Base UI 加上 role="button"，故不能换成 render={<Button />}，TooltipTrigger 自身不带样式
+                  className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+                />
+              }
+            >
+              <Trash2 aria-hidden />
+              <span className="sr-only">{t("dashboard:file_view_section_trash")}</span>
+            </TooltipTrigger>
+            <TooltipContent>{t("dashboard:file_view_section_trash")}</TooltipContent>
+          </Tooltip>
         )}
         {onPickFromLibrary && (
           <Button variant="outline" size="sm" onClick={onPickFromLibrary}>

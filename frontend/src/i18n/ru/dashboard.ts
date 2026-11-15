@@ -287,7 +287,10 @@ export default {
   'thinking_streaming': 'Думает',
   'skill_chip_unknown': 'навык',
   'subagent_card_label': 'Субагент',
-  'subagent_tokens': 'токенов: {{count}}',
+  'subagent_tokens_one': 'токенов: {{count}}',
+  'subagent_tokens_few': 'токенов: {{count}}',
+  'subagent_tokens_many': 'токенов: {{count}}',
+  'subagent_tokens_other': 'токенов: {{count}}',
   'task_in_progress_default': 'Выполняется',
   // One-time inline tip after the story setting is extracted
   'overview_handoff_tip': 'Сеттинг истории извлечён. Теперь отправьте агенту справа «Начать производство».',
@@ -543,8 +546,14 @@ export default {
   // GlobalHeader
   'mode_badge_drama': 'Драма 16:9',
   'mode_badge_narration': 'Закадровый текст/комментарий 9:16',
-  'project_zip_download_started_with_diagnostics':
+  'project_zip_download_started_with_diagnostics_one':
+    'Загрузка ZIP-архива проекта началась, в экспорт входит {{count}} сообщение диагностики',
+  'project_zip_download_started_with_diagnostics_few':
+    'Загрузка ZIP-архива проекта началась, в экспорт входит {{count}} сообщения диагностики',
+  'project_zip_download_started_with_diagnostics_many':
     'Загрузка ZIP-архива проекта началась, в экспорт входит {{count}} сообщений диагностики',
+  'project_zip_download_started_with_diagnostics_other':
+    'Загрузка ZIP-архива проекта началась, в экспорт входит {{count}} сообщения диагностики',
   'export_failed': 'Не удалось экспортировать: {{message}}',
   'toggle_options': 'Переключить параметры',
   'export_project_zip': 'Экспортировать архив проекта',
@@ -557,9 +566,21 @@ export default {
     'Поручите агенту сделать монтаж или создайте его по сценарию: каждый видеофрагмент используется целиком, между фрагментами — жёсткие склейки.',
   'edit_timeline_create_failed': 'Не удалось создать таймлайн монтажа: {{message}}',
   'edit_render_button': 'Отрендерить',
-  'edit_render_blocked_reason':
+  'edit_render_blocked_reason_one':
     'Таймлайн монтажа заблокирован: проблем — {{count}}. Устраните их, чтобы выполнить рендер.',
-  'edit_render_blocked_reason_units':
+  'edit_render_blocked_reason_few':
+    'Таймлайн монтажа заблокирован: проблем — {{count}}. Устраните их, чтобы выполнить рендер.',
+  'edit_render_blocked_reason_many':
+    'Таймлайн монтажа заблокирован: проблем — {{count}}. Устраните их, чтобы выполнить рендер.',
+  'edit_render_blocked_reason_other':
+    'Таймлайн монтажа заблокирован: проблем — {{count}}. Устраните их, чтобы выполнить рендер.',
+  'edit_render_blocked_reason_units_one':
+    'Таймлайн монтажа заблокирован: проблем — {{count}}, затронуты {{units}}. Устраните их, чтобы выполнить рендер.',
+  'edit_render_blocked_reason_units_few':
+    'Таймлайн монтажа заблокирован: проблем — {{count}}, затронуты {{units}}. Устраните их, чтобы выполнить рендер.',
+  'edit_render_blocked_reason_units_many':
+    'Таймлайн монтажа заблокирован: проблем — {{count}}, затронуты {{units}}. Устраните их, чтобы выполнить рендер.',
+  'edit_render_blocked_reason_units_other':
     'Таймлайн монтажа заблокирован: проблем — {{count}}, затронуты {{units}}. Устраните их, чтобы выполнить рендер.',
   'edit_render_blocked_view_issues': 'Посмотреть проблемы ({{count}})',
   'edit_render_dialog_title': 'Рендер · {{name}}',
@@ -682,9 +703,15 @@ export default {
   'cancel_all': 'Отменить все',
   'cancel_all_queued_aria': 'Отменить все задачи в очереди',
   'cancel_confirm_aria': 'Подтверждение отмены',
-  'cancel_cascade_msg': 'Вместе с этой задачей будут отменены зависимые задачи: {{count}}',
+  'cancel_cascade_msg_one': 'Вместе с этой задачей будут отменены зависимые задачи: {{count}}',
+  'cancel_cascade_msg_few': 'Вместе с этой задачей будут отменены зависимые задачи: {{count}}',
+  'cancel_cascade_msg_many': 'Вместе с этой задачей будут отменены зависимые задачи: {{count}}',
+  'cancel_cascade_msg_other': 'Вместе с этой задачей будут отменены зависимые задачи: {{count}}',
   'cancel_single_confirm': 'Отменить эту задачу?',
-  'cancel_all_confirm': 'Отменить все задачи в очереди ({{count}})?',
+  'cancel_all_confirm_one': 'Отменить все задачи в очереди ({{count}})?',
+  'cancel_all_confirm_few': 'Отменить все задачи в очереди ({{count}})?',
+  'cancel_all_confirm_many': 'Отменить все задачи в очереди ({{count}})?',
+  'cancel_all_confirm_other': 'Отменить все задачи в очереди ({{count}})?',
   'cancel_failed': 'Не удалось отменить. Попробуйте ещё раз.',
   'cancelling': 'Отмена…',
   'confirm_cancel': 'Подтвердить отмену',
@@ -728,7 +755,10 @@ export default {
   'start_chat_hint': 'Введите сообщение ниже, чтобы начать диалог',
   'quick_skill_hint': 'Введите /, чтобы быстро вызвать навыки',
   'assistant_input': 'Ввод агента',
-  'max_images_hint': 'Не больше {{count}} изображений',
+  'max_images_hint_one': 'Не больше {{count}} изображения',
+  'max_images_hint_few': 'Не больше {{count}} изображений',
+  'max_images_hint_many': 'Не больше {{count}} изображений',
+  'max_images_hint_other': 'Не больше {{count}} изображений',
   'attach_image': 'Прикрепить изображение',
   'stop_session': 'Остановить ответ',
   'send_message': 'Отправить сообщение',
@@ -756,7 +786,14 @@ export default {
   'queued_message_already_accepted': 'Уже получено агентом. Сообщение войдёт в диалог как обычно',
   'queued_message_withdraw_failed': 'Не удалось отозвать сообщение из очереди. Попробуйте позже',
   'queued_message_send_now_failed': 'Не удалось отправить сообщение из очереди сейчас. Попробуйте позже',
-  'composer_too_many_images_hint': 'Можно прикрепить не больше {{count}} изображений. Уберите лишние, чтобы отправить',
+  'composer_too_many_images_hint_one':
+    'Можно прикрепить не больше {{count}} изображения. Уберите лишние, чтобы отправить',
+  'composer_too_many_images_hint_few':
+    'Можно прикрепить не больше {{count}} изображений. Уберите лишние, чтобы отправить',
+  'composer_too_many_images_hint_many':
+    'Можно прикрепить не больше {{count}} изображений. Уберите лишние, чтобы отправить',
+  'composer_too_many_images_hint_other':
+    'Можно прикрепить не больше {{count}} изображений. Уберите лишние, чтобы отправить',
   'new_session_action': 'Новая сессия',
   'session_history_title': 'История сессий',
   'session_search_placeholder': 'Поиск сессий',
@@ -871,7 +908,10 @@ export default {
   'generate_video_failed': 'Не удалось сгенерировать видео: {{message}}',
   'narration_task_submitted_toast': 'Задача озвучки закадрового текста для «{{id}}» отправлена',
   'script_generation_notice_toast': 'Идёт генерация сценария — этот шаг занимает время, подождите…',
-  'narration_batch_submitted_toast': 'Отправлено задач озвучки закадрового текста: {{count}}',
+  'narration_batch_submitted_toast_one': 'Отправлено задач озвучки закадрового текста: {{count}}',
+  'narration_batch_submitted_toast_few': 'Отправлено задач озвучки закадрового текста: {{count}}',
+  'narration_batch_submitted_toast_many': 'Отправлено задач озвучки закадрового текста: {{count}}',
+  'narration_batch_submitted_toast_other': 'Отправлено задач озвучки закадрового текста: {{count}}',
   'narration_batch_none_missing_toast': 'У всех кадров уже есть озвучка закадрового текста',
   'generate_narration_failed': 'Не удалось сгенерировать озвучку закадрового текста: {{message}}',
   'open_settings_action': 'Открыть настройки',
@@ -955,7 +995,10 @@ export default {
 
   // Usage header entry & popover
   'usage_entry_aria': 'Записи расхода · справочная стоимость {{cost}}',
-  'usage_entry_aria_active': 'Записи расхода · справочная стоимость {{cost}} · задач в работе: {{count}}',
+  'usage_entry_aria_active_one': 'Записи расхода · справочная стоимость {{cost}} · задач в работе: {{count}}',
+  'usage_entry_aria_active_few': 'Записи расхода · справочная стоимость {{cost}} · задач в работе: {{count}}',
+  'usage_entry_aria_active_many': 'Записи расхода · справочная стоимость {{cost}} · задач в работе: {{count}}',
+  'usage_entry_aria_active_other': 'Записи расхода · справочная стоимость {{cost}} · задач в работе: {{count}}',
   'usage_close_panel': 'Закрыть панель записей расхода',
   'usage_in_progress': 'В работе',
   'usage_recently_finished': 'Недавно завершены',
@@ -1084,7 +1127,10 @@ export default {
   'usage_trend_metric_calls': 'Вызовы',
   'usage_trend_metric_cost': 'Справ. стоимость',
   'usage_trend_weekly_chip': 'Объединено по неделям',
-  'usage_trend_merged_days': 'Объединено дней: {{count}}',
+  'usage_trend_merged_days_one': 'Объединено дней: {{count}}',
+  'usage_trend_merged_days_few': 'Объединено дней: {{count}}',
+  'usage_trend_merged_days_many': 'Объединено дней: {{count}}',
+  'usage_trend_merged_days_other': 'Объединено дней: {{count}}',
   'usage_trend_name_calls_daily': 'Вызовы с накоплением по дням',
   'usage_trend_name_calls_weekly': 'Вызовы с накоплением по объединённым неделям',
   'usage_trend_name_cost_daily': 'Справочная стоимость с накоплением по дням',
@@ -1129,11 +1175,17 @@ export default {
   'usage_attention_failure_rate_detail': '{{failed}} сбоев из {{total}} · {{rate}}, {{overall}} за период',
   'usage_attention_failure_rate_action': 'Показать записи со сбоями',
   'usage_attention_consecutive_title': '{{project}} · кадр {{segment}} постоянно сбоит',
-  'usage_attention_consecutive_detail': 'Сбоев: {{count}} ({{media}}), последний в {{time}}',
+  'usage_attention_consecutive_detail_one': 'Сбоев: {{count}} ({{media}}), последний в {{time}}',
+  'usage_attention_consecutive_detail_few': 'Сбоев: {{count}} ({{media}}), последний в {{time}}',
+  'usage_attention_consecutive_detail_many': 'Сбоев: {{count}} ({{media}}), последний в {{time}}',
+  'usage_attention_consecutive_detail_other': 'Сбоев: {{count}} ({{media}}), последний в {{time}}',
   'usage_attention_consecutive_action': 'Показать этот кадр',
 
   // import diagnostics
-  'import_auto_fixed': 'Проект «{{title}}» импортирован (автоматически исправлено проблем: {{count}})',
+  'import_auto_fixed_one': 'Проект «{{title}}» импортирован (автоматически исправлено проблем: {{count}})',
+  'import_auto_fixed_few': 'Проект «{{title}}» импортирован (автоматически исправлено проблем: {{count}})',
+  'import_auto_fixed_many': 'Проект «{{title}}» импортирован (автоматически исправлено проблем: {{count}})',
+  'import_auto_fixed_other': 'Проект «{{title}}» импортирован (автоматически исправлено проблем: {{count}})',
   'import_success_with_diagnostics': 'Импорт завершён с замечаниями — проверьте подробности ниже',
   'import_diagnostics': 'Диагностика импорта',
   'import_failure_diagnostics': 'Диагностика сбоя импорта',
@@ -1168,10 +1220,22 @@ export default {
   'episode_title_update_failed': 'Не удалось обновить название серии: {{message}}',
   'calculating_cost': 'Расчёт стоимости…',
   'cost_estimate_failed': 'Не удалось рассчитать стоимость: {{message}}',
-  'storyboard_count_and_status': 'Кадров: {{count}} · {{status}}',
-  'video_unit_count_and_status': 'Видеофрагментов: {{count}} · {{status}}',
-  'storyboard_count': 'Кадров: {{count}}',
-  'video_unit_count': 'Видеофрагментов: {{count}}',
+  'storyboard_count_and_status_one': 'Кадров: {{count}} · {{status}}',
+  'storyboard_count_and_status_few': 'Кадров: {{count}} · {{status}}',
+  'storyboard_count_and_status_many': 'Кадров: {{count}} · {{status}}',
+  'storyboard_count_and_status_other': 'Кадров: {{count}} · {{status}}',
+  'video_unit_count_and_status_one': 'Видеофрагментов: {{count}} · {{status}}',
+  'video_unit_count_and_status_few': 'Видеофрагментов: {{count}} · {{status}}',
+  'video_unit_count_and_status_many': 'Видеофрагментов: {{count}} · {{status}}',
+  'video_unit_count_and_status_other': 'Видеофрагментов: {{count}} · {{status}}',
+  'storyboard_count_one': 'Кадров: {{count}}',
+  'storyboard_count_few': 'Кадров: {{count}}',
+  'storyboard_count_many': 'Кадров: {{count}}',
+  'storyboard_count_other': 'Кадров: {{count}}',
+  'video_unit_count_one': 'Видеофрагментов: {{count}}',
+  'video_unit_count_few': 'Видеофрагментов: {{count}}',
+  'video_unit_count_many': 'Видеофрагментов: {{count}}',
+  'video_unit_count_other': 'Видеофрагментов: {{count}}',
 
   // ProjectSettingsPage
   'project_settings': 'Настройки проекта',
@@ -1234,8 +1298,17 @@ export default {
   'agent_memory_clear': 'Очистить',
   'agent_memory_clear_user_confirm_title': 'Очистить память пользователя?',
   'agent_memory_clear_project_confirm_title': 'Очистить память проекта?',
-  'agent_memory_clear_confirm_desc': 'Все файлы памяти ({{count}}) будут удалены. Это нельзя отменить.',
-  'agent_memory_clear_project_confirm_desc':
+  'agent_memory_clear_confirm_desc_one': 'Все файлы памяти ({{count}}) будут удалены. Это нельзя отменить.',
+  'agent_memory_clear_confirm_desc_few': 'Все файлы памяти ({{count}}) будут удалены. Это нельзя отменить.',
+  'agent_memory_clear_confirm_desc_many': 'Все файлы памяти ({{count}}) будут удалены. Это нельзя отменить.',
+  'agent_memory_clear_confirm_desc_other': 'Все файлы памяти ({{count}}) будут удалены. Это нельзя отменить.',
+  'agent_memory_clear_project_confirm_desc_one':
+    'Все файлы памяти ({{count}}) будут перемещены в корзину проекта. Их можно восстановить в течение 30 дней.',
+  'agent_memory_clear_project_confirm_desc_few':
+    'Все файлы памяти ({{count}}) будут перемещены в корзину проекта. Их можно восстановить в течение 30 дней.',
+  'agent_memory_clear_project_confirm_desc_many':
+    'Все файлы памяти ({{count}}) будут перемещены в корзину проекта. Их можно восстановить в течение 30 дней.',
+  'agent_memory_clear_project_confirm_desc_other':
     'Все файлы памяти ({{count}}) будут перемещены в корзину проекта. Их можно восстановить в течение 30 дней.',
   'agent_memory_session_notice':
     'На уже запущенные сеансы это не влияет; изменение вступит в силу со следующего сеанса.',
@@ -1300,7 +1373,10 @@ export default {
   'reference_preview_generate': 'Сгенерировать видео',
   'reference_preview_generating': 'Генерация…',
   'reference_meta_duration': 'Длительность',
-  'reference_units_count': 'Видеофрагментов: {{count}}',
+  'reference_units_count_one': 'Видеофрагментов: {{count}}',
+  'reference_units_count_few': 'Видеофрагментов: {{count}}',
+  'reference_units_count_many': 'Видеофрагментов: {{count}}',
+  'reference_units_count_other': 'Видеофрагментов: {{count}}',
   'reference_needs_replan': 'Этот видеофрагмент нужно сначала перепланировать, прежде чем генерировать.',
   'reference_preview_video_aria': 'Предпросмотр видео для видеофрагмента {{id}}',
   // Reference video unit UI status labels — derived from task queue state.
@@ -1339,10 +1415,13 @@ export default {
   'script_preview_utterances_value': 'Реплик: {{dialogue}} · закадровых текстов: {{voiceover}}',
   'script_preview_none': 'Нет',
   'reference_editor_placeholder':
-    'Опишите этот видеофрагмент. Используйте @ для ссылок на товары, персонажей, сцены и реквизит, а {} — для реплик.',
+    'Опишите этот видеофрагмент. Введите @, чтобы сослаться на персонажа, сцену или реквизит. Чтобы персонаж заговорил, напишите реплику в фигурных скобках сразу после его имени; скобки без имени перед ними звучат за кадром.',
+  'reference_editor_placeholder_ad':
+    'Опишите этот видеофрагмент. Введите @, чтобы сослаться на товар, персонажа, сцену или реквизит. Чтобы персонаж заговорил, напишите реплику в фигурных скобках сразу после его имени; скобки без имени перед ними звучат за кадром.',
   'reference_editor_aria_name': 'Промпт видеофрагмента',
   'reference_editor_unknown_mentions_label': 'Незарегистрированные упоминания',
-  'reference_editor_unknown_mention':
+  'reference_editor_unknown_mention': 'Не зарегистрировано: @{{name}} (не найдено среди персонажей, сцен и реквизита)',
+  'reference_editor_unknown_mention_ad':
     'Не зарегистрировано: @{{name}} (не найдено среди товаров, персонажей, сцен и реквизита)',
   'reference_picker_title': 'Вставить референс',
   'reference_picker_empty': 'Ничего не найдено',
@@ -1875,7 +1954,10 @@ export default {
   'enter_api_key_placeholder': 'Введите ключ',
   'preview_url': 'Предпросмотр: ',
   'discover_models': 'Найти модели',
-  'discover_models_success': 'Найдено моделей: {{count}}',
+  'discover_models_success_one': 'Найдено моделей: {{count}}',
+  'discover_models_success_few': 'Найдено моделей: {{count}}',
+  'discover_models_success_many': 'Найдено моделей: {{count}}',
+  'discover_models_success_other': 'Найдено моделей: {{count}}',
   'discover_no_models': 'Модели не найдены',
   'discover_no_base': 'Сначала выберите шаблон или укажите базовый URL',
   'discover_api_key_required': 'Сначала введите ключ, чтобы найти модели',
@@ -2097,7 +2179,10 @@ export default {
   'image_model_i2i_label': 'Модель «изображение в изображение»',
 
   // WorkspaceNotificationsDrawer
-  'notifications_count': 'Уведомления: {{count}}',
+  'notifications_count_one': 'Уведомления: {{count}}',
+  'notifications_count_few': 'Уведомления: {{count}}',
+  'notifications_count_many': 'Уведомления: {{count}}',
+  'notifications_count_other': 'Уведомления: {{count}}',
   'no_notifications': 'Уведомлений нет',
   'notifications_hint': 'Здесь появятся обновления проектов, завершения генераций и изменения, к которым можно перейти',
   'new_notification': 'Новое',
@@ -2141,7 +2226,10 @@ export default {
   'reference_duration_note_shorter': 'Модель выдаёт максимум {{duration}}, поэтому ролик не покроет запрошенную длину.',
   'reference_duration_note_no_trim':
     'Каждое видео оплачивается по запрошенной градации, указанной выше. Ролики выдаются такой длительности и не обрезаются.',
-  'reference_duration_batch_summary': 'Видеофрагментов с другой градацией длительности: {{count}}',
+  'reference_duration_batch_summary_one': 'Видеофрагментов с другой градацией длительности: {{count}}',
+  'reference_duration_batch_summary_few': 'Видеофрагментов с другой градацией длительности: {{count}}',
+  'reference_duration_batch_summary_many': 'Видеофрагментов с другой градацией длительности: {{count}}',
+  'reference_duration_batch_summary_other': 'Видеофрагментов с другой градацией длительности: {{count}}',
   'reference_advisory_heading': 'К этой генерации будут применены следующие изменения:',
   'reference_advisory_confirm_title': 'Подтвердите генерацию видео',
   'reference_advisory_confirm_cta': 'Всё равно сгенерировать',
@@ -2234,7 +2322,10 @@ export default {
   // Source file normalization toasts
 
   // Grid preview
-  'grid_batch_count': 'Мультисеточных раскадровок: {{count}}',
+  'grid_batch_count_one': 'Мультисеточных раскадровок: {{count}}',
+  'grid_batch_count_few': 'Мультисеточных раскадровок: {{count}}',
+  'grid_batch_count_many': 'Мультисеточных раскадровок: {{count}}',
+  'grid_batch_count_other': 'Мультисеточных раскадровок: {{count}}',
   'generating_grid': 'Генерация...',
   'generate_grid_btn': 'Сгенерировать мультисеточную раскадровку',
   'insufficient_scenes_for_grid': 'Недостаточно сцен для мультисеточной раскадровки',
@@ -2257,14 +2348,20 @@ export default {
   'grid_regenerating': 'Отправка...',
   'grid_regenerate_btn': 'Сгенерировать заново',
   'grid_composite_image_alt': 'Композит',
-  'grid_cell_info': 'Ячеек: {{count}} · {{rows}}×{{cols}}',
+  'grid_cell_info_one': 'Ячеек: {{count}} · {{rows}}×{{cols}}',
+  'grid_cell_info_few': 'Ячеек: {{count}} · {{rows}}×{{cols}}',
+  'grid_cell_info_many': 'Ячеек: {{count}} · {{rows}}×{{cols}}',
+  'grid_cell_info_other': 'Ячеек: {{count}} · {{rows}}×{{cols}}',
   'grid_picker_label': 'Композиты этой группы',
   'grid_picker_item': 'Композит {{index}}',
   'grid_no_image': 'Композита пока нет',
   'grid_reference_images': 'Референсы',
   'grid_split_btn': 'Разделить на ячейки',
   'grid_splitting': 'Разделение...',
-  'grid_split_success': 'Разделено ячеек: {{count}}',
+  'grid_split_success_one': 'Разделено ячеек: {{count}}',
+  'grid_split_success_few': 'Разделено ячеек: {{count}}',
+  'grid_split_success_many': 'Разделено ячеек: {{count}}',
+  'grid_split_success_other': 'Разделено ячеек: {{count}}',
   'grid_split_missing_skipped_one': '{{count}} кадр больше не в сценарии и пропущен',
   'grid_split_missing_skipped_few': '{{count}} кадра больше нет в сценарии, они пропущены',
   'grid_split_missing_skipped_many': '{{count}} кадров больше нет в сценарии, они пропущены',
@@ -2296,6 +2393,8 @@ export default {
   'collab_status_live': 'Синхронизация в реальном времени',
   'collab_status_offline': 'Нет связи. Изменения синхронизируются после переподключения',
   'collab_peers_editing_field': '{{names}} редактирует это поле',
+  'collab_recent_edit': 'Только что изменено: {{name}}',
+  'collab_setting_changed_notice': 'Участник {{name}} изменил настройку «{{setting}}». У вас она уже обновлена',
   'claude_subscription_title': 'Подписка Claude',
   'claude_subscription_desc':
     'Войдите в аккаунт Claude, чтобы Agent использовал лимиты его подписки. Все в рабочем пространстве делят лимиты одного аккаунта.',
@@ -2505,8 +2604,14 @@ export default {
   'draft_agent_discard_title': 'Отклонить незавершённую правку агента?',
   'draft_name_script_plan': 'черновик плана сценария',
   'draft_name_prompt_authoring': 'черновик написания промптов',
-  'draft_fix_request_prefill_header':
-    '{{draftName}} ({{episodeRef}}): нужно исправить {{count}} нарушение(я) — вызовите open_draft с doc_type={{docType}}, чтобы прочитать его, затем исправьте его через patch_draft с тем же doc_type и передайте возвращённую ревизию как base_revision:',
+  'draft_fix_request_prefill_header_one':
+    '{{draftName}} ({{episodeRef}}): нужно исправить {{count}} нарушение — вызовите open_draft с doc_type={{docType}}, чтобы прочитать его, затем исправьте его через patch_draft с тем же doc_type и передайте возвращённую ревизию как base_revision:',
+  'draft_fix_request_prefill_header_few':
+    '{{draftName}} ({{episodeRef}}): нужно исправить {{count}} нарушения — вызовите open_draft с doc_type={{docType}}, чтобы прочитать его, затем исправьте его через patch_draft с тем же doc_type и передайте возвращённую ревизию как base_revision:',
+  'draft_fix_request_prefill_header_many':
+    '{{draftName}} ({{episodeRef}}): нужно исправить {{count}} нарушений — вызовите open_draft с doc_type={{docType}}, чтобы прочитать его, затем исправьте его через patch_draft с тем же doc_type и передайте возвращённую ревизию как base_revision:',
+  'draft_fix_request_prefill_header_other':
+    '{{draftName}} ({{episodeRef}}): нужно исправить {{count}} нарушения — вызовите open_draft с doc_type={{docType}}, чтобы прочитать его, затем исправьте его через patch_draft с тем же doc_type и передайте возвращённую ревизию как base_revision:',
   'draft_fix_request_promote_prefill':
     '{{draftName}} ({{episodeRef}}) теперь проходит проверку без нарушений, но ещё не применён — вызовите open_draft с doc_type={{docType}}, затем вызовите promote_draft с тем же doc_type и передайте возвращённую ревизию как base_revision.',
   'draft_agent_finish_prefill':
@@ -2618,9 +2723,15 @@ export default {
   'episode_card_progress_label': 'Прогресс',
   'episode_workspace_no_episode': 'Серия ещё не начата. Начните со сценария или поручите агенту подготовить черновик.',
   'episode_workspace_guide_title': 'Гид по серии',
-  'episode_workspace_guide_beats': 'Битов: {{count}}',
+  'episode_workspace_guide_beats_one': 'Битов: {{count}}',
+  'episode_workspace_guide_beats_few': 'Битов: {{count}}',
+  'episode_workspace_guide_beats_many': 'Битов: {{count}}',
+  'episode_workspace_guide_beats_other': 'Битов: {{count}}',
   'episode_workspace_guide_hook': 'Финальный крючок',
-  'episode_workspace_chars_approx': 'Символов: ~{{count}}',
+  'episode_workspace_chars_approx_one': 'Символов: ~{{chars}}',
+  'episode_workspace_chars_approx_few': 'Символов: ~{{chars}}',
+  'episode_workspace_chars_approx_many': 'Символов: ~{{chars}}',
+  'episode_workspace_chars_approx_other': 'Символов: ~{{chars}}',
   'episode_workspace_source_loading': 'Загрузка фрагмента исходного текста…',
   'episode_workspace_source_missing':
     'У этой серии нет исходного текста серии. Можно начать сценарий с нуля и написать его вручную',
@@ -3165,7 +3276,10 @@ export default {
   'detail_video_prompt_placeholder': 'Опишите движение, начиная с изображения раскадровки…',
   'detail_collapsible_composition': 'Композиция',
   'detail_collapsible_video_options': 'Камера / звук / диалог',
-  'detail_field_chars_count': '{{count}} симв.',
+  'detail_field_chars_count_one': '{{count}} симв.',
+  'detail_field_chars_count_few': '{{count}} симв.',
+  'detail_field_chars_count_many': '{{count}} симв.',
+  'detail_field_chars_count_other': '{{count}} симв.',
   'media_storyboard_title': 'Раскадровка',
   'media_video_title': 'Видео',
   'media_video_length_mismatch':
@@ -3213,7 +3327,10 @@ export default {
   'ad_script_progress_running': 'ИИ генерирует сценарий.',
   'ad_script_progress_hint': 'По завершении результат записывается как основной сценарий.',
   'ad_script_failed': 'Прошлая генерация сценария с ИИ не удалась: {{reason}}',
-  'ad_script_new_assets': 'Сценарий сгенерирован. Зарегистрировано материалов к генерации: {{count}} — {{names}}',
+  'ad_script_new_assets_one': 'Сценарий сгенерирован. Зарегистрировано материалов к генерации: {{count}} — {{names}}',
+  'ad_script_new_assets_few': 'Сценарий сгенерирован. Зарегистрировано материалов к генерации: {{count}} — {{names}}',
+  'ad_script_new_assets_many': 'Сценарий сгенерирован. Зарегистрировано материалов к генерации: {{count}} — {{names}}',
+  'ad_script_new_assets_other': 'Сценарий сгенерирован. Зарегистрировано материалов к генерации: {{count}} — {{names}}',
   'ad_script_dismiss': 'Закрыть',
   'ad_brief_empty': 'Бриф ещё не заполнен',
   'ad_brief_target_duration': 'Целевая длительность: {{value}} с',
@@ -3333,7 +3450,10 @@ export default {
   'lobby_hero_greeting_afternoon': 'Добрый день, режиссёр.',
   'lobby_hero_greeting_evening': 'Добрый вечер, режиссёр.',
   'lobby_hero_greeting_late': 'Уже глубокая ночь, режиссёр.',
-  'lobby_hero_summary': 'Завершено серий: {{completed}}, в работе: {{inProduction}}.',
+  'lobby_hero_summary_one': 'Завершено серий: {{completed}}, в работе: {{inProduction}}.',
+  'lobby_hero_summary_few': 'Завершено серий: {{completed}}, в работе: {{inProduction}}.',
+  'lobby_hero_summary_many': 'Завершено серий: {{completed}}, в работе: {{inProduction}}.',
+  'lobby_hero_summary_other': 'Завершено серий: {{completed}}, в работе: {{inProduction}}.',
   'lobby_filter_all': 'Все',
   'lobby_card_needs_repair': 'ТРЕБУЕТ ИСПРАВЛЕНИЯ',
   'lobby_card_schema_unsupported': 'СЛИШКОМ СТАРАЯ ВЕРСИЯ',
@@ -4044,7 +4164,10 @@ export default {
   'market_share_check_failed': 'Локальная проверка не прошла: {{message}}',
   'market_share_checking': 'Проверка…',
   'market_share_check_passed': 'Локальная проверка пройдена. Можно отправлять',
-  'market_share_diagnostics_summary': 'Перед отправкой исправьте замечания ({{count}})',
+  'market_share_diagnostics_summary_one': 'Перед отправкой исправьте замечания ({{count}})',
+  'market_share_diagnostics_summary_few': 'Перед отправкой исправьте замечания ({{count}})',
+  'market_share_diagnostics_summary_many': 'Перед отправкой исправьте замечания ({{count}})',
+  'market_share_diagnostics_summary_other': 'Перед отправкой исправьте замечания ({{count}})',
   'market_share_failed': 'Не удалось отправить',
   'market_share_submit': 'Отправить',
   'market_submission_status_open': 'На проверке',
@@ -4087,8 +4210,14 @@ export default {
   'market_export_current_definition': 'Сначала экспортируйте текущее определение',
   'market_update_success': 'Обновлено до v{{version}}',
   'market_installs_label': 'Установки',
-  'market_rating_summary': 'Средняя оценка {{average}} по {{count}} оценкам',
-  'market_rating_count_only': 'Оценок: {{count}}. Средняя появится, когда их станет достаточно',
+  'market_rating_summary_one': 'Средняя оценка {{average}} по {{count}} оценке',
+  'market_rating_summary_few': 'Средняя оценка {{average}} по {{count}} оценкам',
+  'market_rating_summary_many': 'Средняя оценка {{average}} по {{count}} оценкам',
+  'market_rating_summary_other': 'Средняя оценка {{average}} по {{count}} оценкам',
+  'market_rating_count_only_one': 'Оценок: {{count}}. Средняя появится, когда их станет достаточно',
+  'market_rating_count_only_few': 'Оценок: {{count}}. Средняя появится, когда их станет достаточно',
+  'market_rating_count_only_many': 'Оценок: {{count}}. Средняя появится, когда их станет достаточно',
+  'market_rating_count_only_other': 'Оценок: {{count}}. Средняя появится, когда их станет достаточно',
   'market_rate_label': 'Ваша оценка',
   'market_rate_star': 'Оценить на {{stars}} из 5',
   'market_rate_install_first': 'Установите эндпоинт, чтобы оценить его',
@@ -4362,8 +4491,14 @@ export default {
     'Эта серия только что изменилась. Список ниже обновлён; серия будет удалена только после повторного подтверждения.',
   'replan_start_action': 'Перепланировать с этой серии',
   'replan_start_title': 'Перепланировать с «{{name}}»',
-  'replan_start_detail':
+  'replan_start_detail_one':
+    'ИИ заново разобьёт исходный текст с этой серии до конца общего исходного текста и создаст новый план серий. Он заменит {{count}} вырезанную серию начиная с этой. Текущие серии останутся без изменений, пока вы не примете план. Когда он будет готов, сравните изменения и примите или отклоните его.',
+  'replan_start_detail_few':
+    'ИИ заново разобьёт исходный текст с этой серии до конца общего исходного текста и создаст новый план серий. Он заменит {{count}} вырезанные серии начиная с этой. Текущие серии останутся без изменений, пока вы не примете план. Когда он будет готов, сравните изменения и примите или отклоните его.',
+  'replan_start_detail_many':
     'ИИ заново разобьёт исходный текст с этой серии до конца общего исходного текста и создаст новый план серий. Он заменит {{count}} вырезанных серий начиная с этой. Текущие серии останутся без изменений, пока вы не примете план. Когда он будет готов, сравните изменения и примите или отклоните его.',
+  'replan_start_detail_other':
+    'ИИ заново разобьёт исходный текст с этой серии до конца общего исходного текста и создаст новый план серий. Он заменит {{count}} вырезанные серии начиная с этой. Текущие серии останутся без изменений, пока вы не примете план. Когда он будет готов, сравните изменения и примите или отклоните его.',
   'replan_start_started':
     'Уже в работе: {{names}}. После принятия они станут сериями без исходного текста и сохранят свои результаты.',
   'replan_start_from_beginning':
@@ -4373,7 +4508,10 @@ export default {
   'replan_name_separator': ', ',
   'replan_none': 'Нет',
   'replan_pending_hint': 'Сначала примите или отклоните новый план серий',
-  'replan_generating': 'Идёт создание нового плана серий, серий пока: {{count}}',
+  'replan_generating_one': 'Идёт создание нового плана серий, серий пока: {{count}}',
+  'replan_generating_few': 'Идёт создание нового плана серий, серий пока: {{count}}',
+  'replan_generating_many': 'Идёт создание нового плана серий, серий пока: {{count}}',
+  'replan_generating_other': 'Идёт создание нового плана серий, серий пока: {{count}}',
   'replan_generating_hint':
     'Текущие серии останутся без изменений, пока вы не примете план. Когда он будет готов, сравните изменения здесь и примите или отклоните его.',
   'replan_stop': 'Остановить генерацию',
@@ -4834,7 +4972,10 @@ export default {
     'Все аккаунты и ключи поставщиков в одном месте. У поставщика может быть несколько подключений: каждое место, где используется модель, может выбрать своё, остальные используют подключение поставщика по умолчанию.',
   'connection_center_add': 'Добавить подключение',
   'connection_center_empty': 'Подключений пока нет. Добавьте аккаунт или ключ поставщика, чтобы начать генерацию.',
-  'connection_center_count': 'Подключений: {{count}}',
+  'connection_center_count_one': 'Подключений: {{count}}',
+  'connection_center_count_few': 'Подключений: {{count}}',
+  'connection_center_count_many': 'Подключений: {{count}}',
+  'connection_center_count_other': 'Подключений: {{count}}',
   'connection_center_manage': 'Управлять',
   'connection_center_make_default': 'Сделать основным',
   'connection_center_delete': 'Удалить {{name}}',
@@ -4864,7 +5005,10 @@ export default {
   'connection_center_signed_in_at': 'Вход {{date}}',
   'credential_delete_in_use_intro':
     'Это подключение выбрано в следующих местах. После удаления там будет использоваться подключение поставщика по умолчанию:',
-  'credential_delete_in_use_global': 'Настроек моделей по умолчанию: {{count}}',
+  'credential_delete_in_use_global_one': 'Настроек моделей по умолчанию: {{count}}',
+  'credential_delete_in_use_global_few': 'Настроек моделей по умолчанию: {{count}}',
+  'credential_delete_in_use_global_many': 'Настроек моделей по умолчанию: {{count}}',
+  'credential_delete_in_use_global_other': 'Настроек моделей по умолчанию: {{count}}',
   'credential_delete_in_use_project': 'Проект «{{name}}»',
   'series_title': 'Серии',
   'series_subtitle': 'Проекты с общим миром, сюжетом и ресурсами из библиотеки',
@@ -4908,7 +5052,10 @@ export default {
   'series_assets_add': 'Добавить из библиотеки',
   'series_asset_remove': 'Убрать {{name}} из серии',
   'series_asset_unavailable': 'Больше нет в библиотеке',
-  'series_asset_added': 'Ресурсов добавлено в серию: {{count}}',
+  'series_asset_added_one': 'Ресурсов добавлено в серию: {{count}}',
+  'series_asset_added_few': 'Ресурсов добавлено в серию: {{count}}',
+  'series_asset_added_many': 'Ресурсов добавлено в серию: {{count}}',
+  'series_asset_added_other': 'Ресурсов добавлено в серию: {{count}}',
   'series_asset_removed': 'Ресурс {{name}} убран из серии',
   'series_asset_failed': 'Не удалось изменить ресурсы серии: {{message}}',
   'series_apply': 'Применить ресурсы серии',
