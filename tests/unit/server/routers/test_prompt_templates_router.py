@@ -34,7 +34,13 @@ def templates(tmp_path: Path) -> PromptTemplates:
         category="asset",
         title="资产图",
         description="资产设定图",
-        i18n={"en": {"title": "Asset image", "description": "Asset sheet"}},
+        i18n={
+            "en": {
+                "title": "Asset image",
+                "description": "Asset sheet",
+                "slots": {"asset_type": "Asset type", "description": "Appearance"},
+            }
+        },
         applies_to={"asset_type": ["character", "scene"]},
         slots={"asset_type": "资产类型", "description": "外观描述"},
         protected=False,
@@ -267,15 +273,15 @@ def test_builtin_shared_partial_detail_lists_every_referencing_template_and_list
 
 
 @pytest.mark.parametrize(
-    ("accept_language", "title", "description"),
+    ("accept_language", "title", "description", "slots"),
     [
-        ("en-US,en;q=0.9", "Asset image", "Asset sheet"),
+        ("en-US,en;q=0.9", "Asset image", "Asset sheet", {"asset_type": "Asset type", "description": "Appearance"}),
         # 没有该语言译文时退回简体原文
-        ("ru", "资产图", "资产设定图"),
-        ("zh-CN", "资产图", "资产设定图"),
+        ("ru", "资产图", "资产设定图", {"asset_type": "资产类型", "description": "外观描述"}),
+        ("zh-CN", "资产图", "资产设定图", {"asset_type": "资产类型", "description": "外观描述"}),
     ],
 )
-def test_list_and_detail_localize_title_and_description(templates, accept_language, title, description):
+def test_list_and_detail_localize_title_and_description(templates, accept_language, title, description, slots):
     app = make_app(templates)
     override_auth(app)
     with TestClient(app) as client:
@@ -286,5 +292,5 @@ def test_list_and_detail_localize_title_and_description(templates, accept_langua
     assert (detail["template"]["title"], detail["template"]["description"]) == (title, description)
     assert "i18n" not in sheet
     assert "i18n" not in detail["template"]
-    # 槽位说明与正文不翻译
-    assert sheet["slots"] == {"asset_type": "资产类型", "description": "外观描述"}
+    assert sheet["slots"] == slots
+    assert detail["template"]["slots"] == slots

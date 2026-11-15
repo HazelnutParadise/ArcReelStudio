@@ -144,7 +144,10 @@ def test_every_builtin_template_has_localized_title_and_description():
             assert text.description.strip(), (meta.id, locale)
             if locale != "zh-TW":
                 assert text.title != meta.title or text.title.isascii(), (meta.id, locale)
+            assert set(text.slots) == set(meta.slots), (meta.id, locale)
+            assert all(value.strip() for value in text.slots.values()), (meta.id, locale)
             assert meta.localized(locale).title == text.title
+            assert meta.localized(locale).slots == text.slots
         assert meta.localized(DEFAULT_LOCALE) == meta
 
 
@@ -155,8 +158,9 @@ def test_zh_tw_template_texts_follow_taiwan_wording():
 
     for meta in builtin_templates.list_templates():
         text = meta.i18n["zh-TW"]
-        for value in (text.title, text.description):
-            assert not SIMPLIFIED_ONLY.search(value), (meta.id, value)
+        for value in (text.title, text.description, *text.slots.values()):
+            # ``@图片N`` / ``@音频N`` 是提示词里的引用语法本身，照原样保留
+            assert not SIMPLIFIED_ONLY.search(value.replace("@图片N", "").replace("@音频N", "")), (meta.id, value)
             assert not OPENCC_ARTEFACTS.search(value), (meta.id, value)
             for rule, pattern in ZH_RULES:
                 assert not pattern.search(value), (meta.id, rule, value)

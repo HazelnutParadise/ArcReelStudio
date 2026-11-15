@@ -44,7 +44,7 @@ class PromptTemplateDetailResponse(BaseModel):
 async def list_prompt_templates(templates: Templates, locale: Locale) -> PromptTemplateListResponse:
     """Agent 语言规范随 Agent 会话拼进系统提示，展示在 Agent 分栏，不进本列表；详情接口仍可读取。
 
-    标题与说明按请求语言给出，模版正文与槽位说明不翻译。
+    标题、说明与槽位说明按请求语言给出，模版正文不翻译。
     """
     return PromptTemplateListResponse(
         templates=[

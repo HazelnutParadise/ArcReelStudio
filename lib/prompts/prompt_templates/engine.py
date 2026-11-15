@@ -96,6 +96,8 @@ class LocalizedText(BaseModel):
 
     title: str
     description: str
+    #: 槽位说明的译文，键与模版 ``slots`` 一致；没有槽位的模版省略。
+    slots: dict[str, str] = Field(default_factory=dict)
 
 
 class TemplateMeta(BaseModel):
@@ -115,11 +117,12 @@ class TemplateMeta(BaseModel):
     idempotent: bool = Field(default=False, exclude=True)
 
     def localized(self, locale: str) -> TemplateMeta:
-        """标题与说明换成 ``locale`` 的译文；没有该语言（含简体中文）时保留原文。"""
+        """标题、说明与槽位说明换成 ``locale`` 的译文；没有该语言（含简体中文）或缺某条译文时保留原文。"""
         text = next((value for key, value in self.i18n.items() if key == locale), None)
         if text is None:
             return self
-        return self.model_copy(update={"title": text.title, "description": text.description})
+        slots = {name: text.slots.get(name, original) for name, original in self.slots.items()}
+        return self.model_copy(update={"title": text.title, "description": text.description, "slots": slots})
 
 
 class _PartialHeader(BaseModel):

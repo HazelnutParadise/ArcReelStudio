@@ -7,15 +7,59 @@ i18n:
   zh-TW:
     title: "旁白解說 · 提示詞編寫"
     description: "為旁白解說已定稿的分鏡補上畫面與影片提示詞（image_prompt / video_prompt）。"
+    slots:
+      target_language: "輸出語言"
+      project_overview: "專案概述，鍵齊全的物件 {synopsis, genre, theme, world_setting}；缺值時傳 null"
+      style: "專案風格"
+      style_description: "專案風格描述"
+      aspect_ratio: "畫面比例"
+      aspect_ratio_label: "比例的文字標籤"
+      assets: "出場資產外觀 {characters, scenes, props}，每項為 [{name, appearance}]，角括號已中和"
+      segments_content: "已定稿旁白分鏡的唯讀內容投影"
+      episode: "目前集數"
+      instructions: "附加指示內容；缺值時傳 null"
   en:
     title: "Narration · Prompt writing"
     description: "Fills in the image and video prompts (image_prompt / video_prompt) for finalized narration shots."
+    slots:
+      target_language: "Output language"
+      project_overview: "Project overview, an object with all keys {synopsis, genre, theme, world_setting}; null when missing"
+      style: "Project style"
+      style_description: "Project style description"
+      aspect_ratio: "Aspect ratio"
+      aspect_ratio_label: "Text label of the aspect ratio"
+      assets: "Appearance of assets on screen {characters, scenes, props}, each [{name, appearance}], angle brackets neutralized"
+      segments_content: "Read-only projection of the finalized narration shots"
+      episode: "Current episode number"
+      instructions: "Additional instructions; null when missing"
   ru:
     title: "Закадровый текст · Написание промптов"
     description: "Дописывает промпты изображения и видео (image_prompt / video_prompt) для утверждённых кадров с закадровым текстом."
+    slots:
+      target_language: "Язык вывода"
+      project_overview: "Обзор проекта, объект со всеми ключами {synopsis, genre, theme, world_setting}; null при отсутствии"
+      style: "Стиль проекта"
+      style_description: "Описание стиля проекта"
+      aspect_ratio: "Соотношение сторон"
+      aspect_ratio_label: "Текстовая метка соотношения сторон"
+      assets: "Внешний вид материалов в кадре {characters, scenes, props}, каждый элемент [{name, appearance}], угловые скобки нейтрализованы"
+      segments_content: "Проекция утверждённых кадров с закадровым текстом, только для чтения"
+      episode: "Номер текущей серии"
+      instructions: "Дополнительные указания; null при отсутствии значения"
   vi:
     title: "Thuyết minh · Viết prompt"
     description: "Bổ sung prompt hình ảnh và video (image_prompt / video_prompt) cho các phân cảnh thuyết minh đã chốt."
+    slots:
+      target_language: "Ngôn ngữ đầu ra"
+      project_overview: "Tổng quan dự án, đối tượng đủ khóa {synopsis, genre, theme, world_setting}; null khi thiếu"
+      style: "Phong cách dự án"
+      style_description: "Mô tả phong cách dự án"
+      aspect_ratio: "Tỷ lệ khung hình"
+      aspect_ratio_label: "Nhãn chữ của tỷ lệ"
+      assets: "Ngoại hình tài sản xuất hiện {characters, scenes, props}, mỗi mục là [{name, appearance}], dấu ngoặc nhọn đã được vô hiệu hóa"
+      segments_content: "Bản chiếu chỉ đọc của các phân cảnh thuyết minh đã chốt"
+      episode: "Số tập hiện tại"
+      instructions: "Chỉ dẫn bổ sung; null khi thiếu"
 stage: prompt_authoring
 invoked_by:
   kind: agent_tool
